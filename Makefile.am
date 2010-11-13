@@ -1,93 +1,93 @@
-ACLOCAL_AMFLAGS              = -I m4 --install
+ACLOCAL_AMFLAGS        = -I m4 --install
 
-bin_PROGRAMS                 = libla-shell
-lib_LTLIBRARIES              = libla.la
-noinst_LTLIBRARIES           = shell/lua/liblua.la
+bin_PROGRAMS           = libla-shell
+lib_LTLIBRARIES        = libla.la
+noinst_LTLIBRARIES     = lua/liblua.la
 
-include_HEADERS              = libla/index.h \
-                               libla/vector.h
+include_HEADERS        = libla/index.h \
+                         libla/vector.h
 
-EXTRA_DIST                   = shell/lua/COPYRIGHT
-
-
-libla_la_SOURCES             = libla/blas-private.h \
-                               libla/index.h \
-                               libla/vector.h \
-                               libla/vector.c
-
-libla_la_CPPFLAGS            = $(GLIB_CFLAGS) \
-                               $(AM_CPPFLAGS)
-
-libla_la_LIBADD              = $(BLAS_LIBS) \
-                               $(GLIB_LIBS) \
-                               $(LIBS) \
-                               $(FLIBS)
+EXTRA_DIST             = lua/COPYRIGHT
 
 
-libla_shell_SOURCES          = shell/main.c
+libla_la_SOURCES       = libla/blas-private.h \
+                         libla/index.h \
+                         libla/vector.h \
+                         libla/vector.c
 
-libla_shell_CPPFLAGS         = -Ishell/lua/src \
-                               $(GLIB_CFLAGS) \
-                               $(AM_CPPFLAGS)
+libla_la_CPPFLAGS      = $(GLIB_CFLAGS) \
+                         $(AM_CPPFLAGS)
 
-libla_shell_LDADD            = $(top_builddir)/shell/lua/liblua.la \
-                               $(top_builddir)/libla.la \
-                               $(GLIB_LIBS) \
-                               $(READLINE_LIBS)
+libla_la_LIBADD        = $(BLAS_LIBS) \
+                         $(GLIB_LIBS) \
+                         $(LIBS) \
+                         $(FLIBS)
 
 
-shell_lua_liblua_la_SOURCES  = shell/lua/src/lapi.h \
-                               shell/lua/src/lapi.c \
-                               shell/lua/src/lauxlib.h \
-                               shell/lua/src/lauxlib.c \
-                               shell/lua/src/lbaselib.c \
-                               shell/lua/src/lcode.h \
-                               shell/lua/src/lcode.c \
-                               shell/lua/src/ldblib.c \
-                               shell/lua/src/ldebug.h \
-                               shell/lua/src/ldebug.c \
-                               shell/lua/src/ldo.h \
-                               shell/lua/src/ldo.c \
-                               shell/lua/src/ldump.c \
-                               shell/lua/src/lfunc.h \
-                               shell/lua/src/lfunc.c \
-                               shell/lua/src/lgc.h \
-                               shell/lua/src/lgc.c \
-                               shell/lua/src/linit.c \
-                               shell/lua/src/liolib.c \
-                               shell/lua/src/llex.h \
-                               shell/lua/src/llex.c \
-                               shell/lua/src/llimits.h \
-                               shell/lua/src/lmathlib.c \
-                               shell/lua/src/lmem.h \
-                               shell/lua/src/lmem.c \
-                               shell/lua/src/loadlib.c \
-                               shell/lua/src/lobject.h \
-                               shell/lua/src/lobject.c \
-                               shell/lua/src/lopcodes.h \
-                               shell/lua/src/lopcodes.c \
-                               shell/lua/src/loslib.c \
-                               shell/lua/src/lparser.h \
-                               shell/lua/src/lparser.c \
-                               shell/lua/src/lstate.h \
-                               shell/lua/src/lstate.c \
-                               shell/lua/src/lstring.h \
-                               shell/lua/src/lstring.c \
-                               shell/lua/src/lstrlib.c \
-                               shell/lua/src/ltable.h \
-                               shell/lua/src/ltable.c \
-                               shell/lua/src/ltablib.c \
-                               shell/lua/src/ltm.h \
-                               shell/lua/src/ltm.c \
-                               shell/lua/src/lua.h \
-                               shell/lua/src/luaconf.h \
-                               shell/lua/src/lualib.h \
-                               shell/lua/src/lundump.h \
-                               shell/lua/src/lundump.c \
-                               shell/lua/src/lvm.h \
-                               shell/lua/src/lvm.c \
-                               shell/lua/src/lzio.h \
-                               shell/lua/src/lzio.c
+libla_shell_SOURCES    = shell/main.c
 
-shell_lua_liblua_la_CPPFLAGS = -Ishell/lua/src \
-                               $(AM_CPPFLAGS)
+libla_shell_CPPFLAGS   = -Ilua/src \
+                         $(GLIB_CFLAGS) \
+                         $(AM_CPPFLAGS)
+
+libla_shell_LDADD      = $(top_builddir)/lua/liblua.la \
+                         $(top_builddir)/libla.la \
+                         $(GLIB_LIBS) \
+                         $(READLINE_LIBS)
+
+
+lua_liblua_la_SOURCES  = lua/src/lapi.h \
+                         lua/src/lapi.c \
+                         lua/src/lauxlib.h \
+                         lua/src/lauxlib.c \
+                         lua/src/lbaselib.c \
+                         lua/src/lcode.h \
+                         lua/src/lcode.c \
+                         lua/src/ldblib.c \
+                         lua/src/ldebug.h \
+                         lua/src/ldebug.c \
+                         lua/src/ldo.h \
+                         lua/src/ldo.c \
+                         lua/src/ldump.c \
+                         lua/src/lfunc.h \
+                         lua/src/lfunc.c \
+                         lua/src/lgc.h \
+                         lua/src/lgc.c \
+                         lua/src/linit.c \
+                         lua/src/liolib.c \
+                         lua/src/llex.h \
+                         lua/src/llex.c \
+                         lua/src/llimits.h \
+                         lua/src/lmathlib.c \
+                         lua/src/lmem.h \
+                         lua/src/lmem.c \
+                         lua/src/loadlib.c \
+                         lua/src/lobject.h \
+                         lua/src/lobject.c \
+                         lua/src/lopcodes.h \
+                         lua/src/lopcodes.c \
+                         lua/src/loslib.c \
+                         lua/src/lparser.h \
+                         lua/src/lparser.c \
+                         lua/src/lstate.h \
+                         lua/src/lstate.c \
+                         lua/src/lstring.h \
+                         lua/src/lstring.c \
+                         lua/src/lstrlib.c \
+                         lua/src/ltable.h \
+                         lua/src/ltable.c \
+                         lua/src/ltablib.c \
+                         lua/src/ltm.h \
+                         lua/src/ltm.c \
+                         lua/src/lua.h \
+                         lua/src/luaconf.h \
+                         lua/src/lualib.h \
+                         lua/src/lundump.h \
+                         lua/src/lundump.c \
+                         lua/src/lvm.h \
+                         lua/src/lvm.c \
+                         lua/src/lzio.h \
+                         lua/src/lzio.c
+
+lua_liblua_la_CPPFLAGS = -Ilua/src \
+                         $(AM_CPPFLAGS)
