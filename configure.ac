@@ -16,10 +16,6 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.14.0])
 AC_CHECK_LIBM
 AX_CHECK_BLAS
-AX_LIB_READLINE([dnl
-  AC_DEFINE(LUA_USE_READLINE, 1,
-	    [Define if you want the Lua interpreter to use Readline.])
-])
 
 # Checks for headers
 AC_HEADER_ASSERT
