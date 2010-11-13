@@ -16,12 +16,10 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.14.0])
 AC_CHECK_LIBM
 AX_CHECK_BLAS
-
-# Checks for headers
-AC_HEADER_ASSERT
-
-# Checks for types
-AC_TYPE_SIZE_T
+AX_LIB_READLINE([dnl
+    AC_DEFINE(LUA_USE_READLINE, 1,
+              [Define if you want the Lua interpreter to use Readline.])
+])
 
 # Checks for structures
 # Checks for compiler characteristics
