@@ -29,10 +29,10 @@ void         la_vector_set           (LAVector *vector,
 double *     la_vector_ptr           (LAVector *vector,
                                       la_index  index);
 LAVectorView la_vector_subvector     (LAVector *vector,
-                                      la_index index,
-                                      la_size  dim);
-LAVectorView la_vector_view_array    (double  *array,
-                                      la_size  dim);
+                                      la_index  index,
+                                      la_size   dim);
+LAVectorView la_vector_view_array    (double   *array,
+                                      la_size   dim);
 void         la_vector_copy          (LAVector *dst_vector,
                                       LAVector *vector);
 void         la_vector_swap          (LAVector *vector1,
@@ -41,6 +41,10 @@ void         la_vector_swap_elems    (LAVector *vector,
                                       la_index  index1,
                                       la_index  index2);
 void         la_vector_reverse       (LAVector *vector);
+void         la_vector_scale         (LAVector *vector,
+                                      double    scale);
+void         la_vector_shift         (LAVector *vector,
+                                      double    shift);
 void         la_vector_add           (LAVector *dst_vector,
                                       LAVector *vector);
 void         la_vector_sub           (LAVector *dst_vector,
@@ -52,10 +56,6 @@ void         la_vector_div           (LAVector *dst_vector,
 void         la_vector_acc           (LAVector *dst_vector,
                                       double    scale,
                                       LAVector *vector);
-void         la_vector_scale         (LAVector *vector,
-                                      double    scale);
-void         la_vector_shift         (LAVector *vector,
-                                      double    shift);
 double       la_vector_dot           (LAVector *vector1,
                                       LAVector *vector2);
 double       la_vector_norm          (LAVector *vector);
