@@ -3,6 +3,7 @@
 # include <config.h>
 #endif
 
+#include <stddef.h>
 #include <math.h>
 #include <glib.h>
 #include <libla/blas-private.h>
@@ -179,8 +180,8 @@ la_index  index2)
     if (index1 != index2) {
         e1 = la_vector_get(vector, index1);
         e2 = la_vector_get(vector, index2);
-        la_vector_set_real(vector, index2, e1);
-        la_vector_set_real(vector, index1, e2);
+        la_vector_set(vector, index2, e1);
+        la_vector_set(vector, index1, e2);
     }
 }
 
@@ -370,7 +371,7 @@ la_vector_max_abs (LAVector *vector)
 
     if (la_vector_dim(vector) > 0) {
         i = la_vector_max_abs_index(vector);
-        e = la_vector_get_real(vector, i);
+        e = la_vector_get(vector, i);
         max_abs = fabs(e);
     }
 
@@ -389,7 +390,7 @@ la_vector_max_abs_index (LAVector *vector)
     la_size incx = 1;
 
     la_index index1 = F77_FUNC(idamax)(&n, px, &incx);
-    la_index index  = index - 1;
+    la_index index  = index1 - 1;
     return index;
 }
 
