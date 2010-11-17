@@ -12,7 +12,8 @@ union double_uint64 {
 };
 
 int
-identical (double x, double y)
+la_identical (double x,
+              double y)
 {
     union double_uint64 ux = { x };
     union double_uint64 uy = { y };
