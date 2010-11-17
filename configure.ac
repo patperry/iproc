@@ -16,6 +16,7 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.14.0])
 AC_CHECK_LIBM
 AX_CHECK_BLAS
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.8])
 
 # Checks for structures
 # Checks for compiler characteristics
