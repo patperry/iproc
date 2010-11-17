@@ -62,7 +62,7 @@ la_nextup (double x)
 double
 la_nextdown (double x)
 {
-    return -nextup(-x);
+    return -la_nextup(-x);
 }
 
 /* ported from tango/math/IEEE.d */

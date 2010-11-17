@@ -69,6 +69,19 @@ nextup_tcase ()
     return tc;
 }
 
+START_TEST (test_nextdown)
+{
+    ck_assert_feq(la_nextdown(1 + DBL_EPSILON), 1);
+}
+END_TEST
+
+TCase *
+nextdown_tcase()
+{
+    TCase *tc = tcase_create("nextdown");
+    tcase_add_test(tc, test_nextdown);
+    return tc;
+}
 
 /* eqrel tests ported from Tango v 0.99.9,
  * public domain code written by Don Clugston
@@ -198,6 +211,7 @@ ieee754_suite ()
 {
     Suite *s = suite_create("ieee754");
     suite_add_tcase(s, nextup_tcase());
+    suite_add_tcase(s, nextdown_tcase());
     suite_add_tcase(s, feqrel_tcase());
     return s;
 }
