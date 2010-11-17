@@ -4,7 +4,12 @@
 #include <string.h>
 #include <check.h>
 #include <libla/vector.h>
+#include <libla/ieee754.h>
 
+#define ck_assert_feq(X, Y) \
+    ck_assert_msg(la_identical(X, Y), \
+                  "Assertion 'identical("#X, #Y")' failed: " \
+                  ""#X"==%.22f, "#Y"==%.22f", X, Y)
 
 LAVector *v;
 la_size n;
@@ -27,8 +32,7 @@ START_TEST (test_get)
 {
     int i;
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v, i) == elems_v[i],
-                    "Element value %d not retreived correctly", i);
+        ck_assert_feq(la_vector_get(v, i), elems_v[i]);
     }
 }
 END_TEST
@@ -39,8 +43,7 @@ START_TEST (test_set_all)
     la_vector_set_all(v, 1234);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v, i) == 1234,
-                    "Element %d not initialized", i);
+        ck_assert_feq(la_vector_get(v, i), 1234);
     }
 }
 END_TEST
@@ -51,7 +54,7 @@ START_TEST (test_reverse)
 
     la_vector_reverse(v);
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v, i) == elems_v[n - i - 1]);
+        ck_assert_feq(la_vector_get(v, i), elems_v[n - i - 1]);
     }
 }
 END_TEST
@@ -61,7 +64,7 @@ START_TEST (test_scale)
     int i;
     la_vector_scale(v, 2.0);
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v, i) == 2.0 * elems_v[i]);
+        ck_assert_feq(la_vector_get(v, i), 2.0 * elems_v[i]);
     }
 }
 END_TEST
@@ -71,7 +74,7 @@ START_TEST (test_shift)
     int i;
     la_vector_shift(v, 1.2);
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v, i) == 1.2 + elems_v[i]);
+        ck_assert_feq(la_vector_get(v, i), 1.2 + elems_v[i]);
     }
 }
 END_TEST
@@ -141,12 +144,12 @@ START_TEST (v5_test_set_basis)
 
     la_vector_set_basis(v, 2);
 
-    fail_unless(la_vector_get(v, 2) == 1);
+    ck_assert_feq(la_vector_get(v, 2), 1);
     for (i = 0; i < n; i++) {
         if (i == 2)
             continue;
 
-        fail_unless(la_vector_get(v, i) == 0);
+        ck_assert_feq(la_vector_get(v, i), 0);
     }
 }
 END_TEST
@@ -156,19 +159,19 @@ START_TEST (v5_test_subvector)
     int i;
     LAVectorView v3 = la_vector_subvector(v, 1, 3);
     la_vector_set_all(&v3.vector, 100);
-    fail_unless(la_vector_get(v, 0) == elems_v[0]);
+    ck_assert_feq(la_vector_get(v, 0), elems_v[0]);
     for (i = 1; i < 4; i++) {
-        fail_unless(la_vector_get(v, i) == 100);
+        ck_assert_feq(la_vector_get(v, i), 100);
     }
-    fail_unless(la_vector_get(v, 4) == elems_v[4]);
+    ck_assert_feq(la_vector_get(v, 4), elems_v[4]);
 }
 END_TEST
 
 START_TEST (v5_test_swap_elems)
 {
     la_vector_swap_elems(v, 0, 4);
-    fail_unless(la_vector_get(v, 0) == elems_v[4]);
-    fail_unless(la_vector_get(v, 4) == elems_v[0]);
+    ck_assert_feq(la_vector_get(v, 0), elems_v[4]);
+    ck_assert_feq(la_vector_get(v, 4), elems_v[0]);
 }
 END_TEST
 
@@ -191,10 +194,10 @@ START_TEST (test_add)
     la_vector_add(v1, v2);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v1, i) == elems_v1[i] + elems_v2[i]);
+        ck_assert_feq(la_vector_get(v1, i), elems_v1[i] + elems_v2[i]);
     }
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v2, i) == elems_v2[i]);
+        ck_assert_feq(la_vector_get(v2, i), elems_v2[i]);
     }
 }
 END_TEST
@@ -206,10 +209,10 @@ START_TEST (test_sub)
     la_vector_sub(v1, v2);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v1, i) == elems_v1[i] - elems_v2[i]);
+        ck_assert_feq(la_vector_get(v1, i), elems_v1[i] - elems_v2[i]);
     }
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v2, i) == elems_v2[i]);
+        ck_assert_feq(la_vector_get(v2, i), elems_v2[i]);
     }
 }
 END_TEST
@@ -221,10 +224,10 @@ START_TEST (test_mul)
     la_vector_mul(v1, v2);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v1, i) == elems_v1[i] * elems_v2[i]);
+        ck_assert_feq(la_vector_get(v1, i), elems_v1[i] * elems_v2[i]);
     }
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v2, i) == elems_v2[i]);
+        ck_assert_feq(la_vector_get(v2, i), elems_v2[i]);
     }
 }
 END_TEST
@@ -236,10 +239,10 @@ START_TEST (test_div)
     la_vector_div(v1, v2);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v1, i) == elems_v1[i] / elems_v2[i]);
+        ck_assert_feq(la_vector_get(v1, i), elems_v1[i] / elems_v2[i]);
     }
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v2, i) == elems_v2[i]);
+        ck_assert_feq(la_vector_get(v2, i), elems_v2[i]);
     }
 }
 END_TEST
@@ -250,10 +253,10 @@ START_TEST (test_acc)
     la_vector_acc(v1, 3.14, v2);
 
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v1, i) == elems_v1[i] + 3.14 * elems_v2[i]);
+        ck_assert_feq(la_vector_get(v1, i), elems_v1[i] + 3.14 * elems_v2[i]);
     }
     for (i = 0; i < n; i++) {
-        fail_unless(la_vector_get(v2, i) == elems_v2[i]);
+        ck_assert_feq(la_vector_get(v2, i), elems_v2[i]);
     }
 }
 END_TEST
