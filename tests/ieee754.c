@@ -76,14 +76,38 @@ START_TEST (test_nextdown)
 END_TEST
 
 TCase *
-nextdown_tcase()
+nextdown_tcase ()
 {
     TCase *tc = tcase_create("nextdown");
     tcase_add_test(tc, test_nextdown);
     return tc;
 }
 
-/* eqrel tests ported from Tango v 0.99.9,
+
+START_TEST (test_ieeemean)
+{
+    ck_assert(la_ieeemean(-0.0, -1e-20) < 0);
+    ck_assert(la_ieeemean(+0.0, +1e-20) > 0);
+    ck_assert_feq(la_ieeemean(1, 4), 2);
+    ck_assert_feq(la_ieeemean(2*1.013, 8*1.013), 4*1.013);
+    ck_assert_feq(la_ieeemean(-1, -4), -2);
+    ck_assert_feq(la_ieeemean(-1, -2), -1.5);
+    ck_assert_feq(la_ieeemean(-1*(1+8*DBL_EPSILON), -2*(1+8*DBL_EPSILON)),
+                  -1.5*(1+5*DBL_EPSILON));
+    ck_assert_feq(la_ieeemean(0, INFINITY), 1.5);
+}
+END_TEST
+
+TCase *
+ieeemean_tcase ()
+{
+    TCase *tc = tcase_create("ieeemean");
+    tcase_add_test(tc, test_ieeemean);
+    return tc;
+}
+
+
+/* feqrel tests ported from Tango v 0.99.9,
  * public domain code written by Don Clugston
  */
 
@@ -212,6 +236,7 @@ ieee754_suite ()
     Suite *s = suite_create("ieee754");
     suite_add_tcase(s, nextup_tcase());
     suite_add_tcase(s, nextdown_tcase());
+    suite_add_tcase(s, ieeemean_tcase());
     suite_add_tcase(s, feqrel_tcase());
     return s;
 }
