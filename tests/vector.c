@@ -345,15 +345,3 @@ vector_suite ()
     suite_add_tcase(s, v5_pair_tcase());
     return s;
 }
-
-int
-main ()
-{
-    int nfail;
-    Suite *s = vector_suite();
-    SRunner *sr = srunner_create(s);
-    srunner_run_all(sr, CK_ENV);
-    nfail = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (nfail == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
-}

@@ -17,5 +17,5 @@ configure
 libla-shell
 libtool
 stamp-h1
-tests/vector
+tests/lacheck
 
