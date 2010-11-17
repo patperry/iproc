@@ -1,15 +1,15 @@
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <check.h>
+#include <checkutils.h>
 #include <libla/vector.h>
 #include <libla/ieee754.h>
-
-#define ck_assert_feq(X, Y) \
-    ck_assert_msg(la_identical(X, Y), \
-                  "Assertion 'identical("#X, #Y")' failed: " \
-                  ""#X"==%.22f, "#Y"==%.22f", X, Y)
 
 LAVector *v;
 la_size n;

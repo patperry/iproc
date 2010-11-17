@@ -1,9 +1,74 @@
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <math.h>
 #include <float.h>
 #include <glib.h>
 #include <check.h>
+#include <checkutils.h>
 #include <libla/ieee754.h>
+
+START_TEST (test_nextup_nan)
+{
+    ck_assert_feq(la_nextup(la_mknan(1234)), la_mknan(1234));
+}
+END_TEST
+
+START_TEST (test_nextup_neg)
+{
+    ck_assert_feq(la_nextup(-INFINITY), -DBL_MAX);
+    ck_assert_feq(la_nextup(-1 - DBL_EPSILON), -1);
+    ck_assert_feq(la_nextup(-2), -2 + DBL_EPSILON);
+}
+END_TEST
+
+START_TEST (test_nextup_neg_denorm)
+{
+    ck_assert_feq(la_nextup(-DBL_MIN), -DBL_MIN*(1 - DBL_EPSILON));
+    ck_assert_feq(la_nextup(-DBL_MIN*(1-DBL_EPSILON)),
+                            -DBL_MIN*(1-2*DBL_EPSILON));
+    ck_assert_feq(la_nextup(-DBL_MIN*DBL_EPSILON), -0.0);
+}
+END_TEST
+
+START_TEST (test_nextup_zero)
+{
+    ck_assert_feq(la_nextup(-0.0), DBL_MIN * DBL_EPSILON);
+    ck_assert_feq(la_nextup(+0.0), DBL_MIN * DBL_EPSILON);
+}
+END_TEST
+
+START_TEST (test_nextup_pos_denorm)
+{
+    ck_assert_feq(la_nextup(DBL_MIN*(1-DBL_EPSILON)), DBL_MIN);
+    ck_assert_feq(la_nextup(DBL_MIN), DBL_MIN*(1+DBL_EPSILON));
+}
+END_TEST
+
+START_TEST (test_nextup_pos)
+{
+    ck_assert_feq(la_nextup(1),1 + DBL_EPSILON);
+    ck_assert_feq(la_nextup(2 - DBL_EPSILON), 2);
+    ck_assert_feq(la_nextup(DBL_MAX), INFINITY);
+}
+END_TEST
+
+
+TCase *
+nextup_tcase ()
+{
+    TCase *tc = tcase_create("nextup");
+    tcase_add_test(tc, test_nextup_nan);
+    tcase_add_test(tc, test_nextup_neg);
+    tcase_add_test(tc, test_nextup_neg_denorm);
+    tcase_add_test(tc, test_nextup_zero);
+    tcase_add_test(tc, test_nextup_pos_denorm);
+    tcase_add_test(tc, test_nextup_pos);
+    return tc;
+}
+
 
 /* eqrel tests ported from Tango v 0.99.9,
  * public domain code written by Don Clugston
@@ -132,6 +197,7 @@ Suite *
 ieee754_suite ()
 {
     Suite *s = suite_create("ieee754");
+    suite_add_tcase(s, nextup_tcase());
     suite_add_tcase(s, feqrel_tcase());
     return s;
 }

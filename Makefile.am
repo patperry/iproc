@@ -23,11 +23,13 @@ libla_la_LIBADD        = $(BLAS_LIBS) \
 TESTS                  = tests/lacheck
 check_PROGRAMS         = tests/lacheck
 
-tests_lacheck_SOURCES  = tests/ieee754.c \
+tests_lacheck_SOURCES  = tests/checkutils.h \
+                         tests/ieee754.c \
                          tests/main.c \
                          tests/vector.c
 
-tests_lacheck_CPPFLAGS = $(CHECK_CFLAGS) \
+tests_lacheck_CPPFLAGS = -Itests \
+                         $(CHECK_CFLAGS) \
                          $(GLIB_CFLAGS) \
                          $(AM_CPPFLAGS)
 
