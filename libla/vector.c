@@ -61,6 +61,20 @@ la_vector_set_all (LAVector *vector,
 }
 
 
+void
+la_vector_set_basis (LAVector *vector,
+                     la_index  index)
+{
+    g_assert(vector);
+    g_assert(la_vector_dim(vector) > 0);
+    g_assert(0 <= index);
+    g_assert(index < la_vector_dim(vector));
+    
+    la_vector_set_all(vector, 0);
+    la_vector_set(vector, index, 1);
+}
+
+
 double
 la_vector_get (LAVector *vector,
                la_index  index)

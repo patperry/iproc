@@ -21,6 +21,8 @@ void         la_vector_free          (LAVector *vector);
 la_size      la_vector_dim           (LAVector *vector);
 void         la_vector_set_all       (LAVector *vector,
                                       double    value);
+void         la_vector_set_basis     (LAVector *vector,
+                                      la_index  index);
 double       la_vector_get           (LAVector *vector,
                                       la_index  index);
 void         la_vector_set           (LAVector *vector,
