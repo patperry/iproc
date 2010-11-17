@@ -24,7 +24,8 @@ libla_la_LIBADD        = $(BLAS_LIBS) \
                          $(FLIBS)
 
 
-libla_shell_SOURCES    = shell/main.c
+libla_shell_SOURCES    = shell/main.c \
+                         shell/vector.c
 
 libla_shell_CPPFLAGS   = -Ilua/src \
                          $(GLIB_CFLAGS) \
