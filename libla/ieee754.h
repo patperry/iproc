@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 
+#define LA_MAX_NAN_PAYLOAD ((uint64_t)0x0007FFFFFFFFFFFFULL)
+
 int      la_identical (double   x,
                        double   y);
 double   la_nextup    (double   x);

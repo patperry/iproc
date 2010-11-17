@@ -230,6 +230,22 @@ feqrel_tcase ()
     return tc;
 }
 
+
+START_TEST (test_mknan)
+{
+    ck_assert(isnan(la_mknan(1)));
+    ck_assert(isnan(la_mknan(LA_MAX_NAN_PAYLOAD)));
+}
+END_TEST
+
+TCase *
+nan_tcase ()
+{
+    TCase *tc = tcase_create("nan");
+    tcase_add_test(tc, test_mknan);
+    return tc;
+}
+
 Suite *
 ieee754_suite ()
 {
@@ -238,5 +254,6 @@ ieee754_suite ()
     suite_add_tcase(s, nextdown_tcase());
     suite_add_tcase(s, ieeemean_tcase());
     suite_add_tcase(s, feqrel_tcase());
+    suite_add_tcase(s, nan_tcase());
     return s;
 }
