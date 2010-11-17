@@ -240,7 +240,7 @@ la_vector_shift (LAVector *vector,
     double *end = la_vector_ptr(vector, n);
 
     while (ptr != end) {
-        *ptr += shift;
+        *ptr++ += shift;
     }
 }
 
