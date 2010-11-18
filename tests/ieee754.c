@@ -238,11 +238,22 @@ START_TEST (test_mknan)
 }
 END_TEST
 
+
+START_TEST (test_getnan)
+{
+    ck_assert_int_eq(la_getnan(la_mknan(1)), 1);
+    ck_assert_int_eq(la_getnan(la_mknan(LA_MAX_NAN_PAYLOAD)), LA_MAX_NAN_PAYLOAD);
+    ck_assert_int_eq(la_getnan(la_mknan(LA_MAX_NAN_PAYLOAD + 1)), 0);
+}
+END_TEST
+
+
 TCase *
 nan_tcase ()
 {
     TCase *tc = tcase_create("nan");
     tcase_add_test(tc, test_mknan);
+    tcase_add_test(tc, test_getnan);
     return tc;
 }
 
