@@ -11,13 +11,14 @@
 
 
 LAVector *
-la_vector_new (la_size dim)
+la_vector_new (int64_t  dim)
 {
     LAVector *vector = NULL;
-    gsize    size    = dim * sizeof(double);
+    size_t    size    = dim * sizeof(double);
 
     g_return_val_if_fail(dim >= 0, NULL);
-    g_return_val_if_fail(dim <= G_MAXSIZE / sizeof(double), NULL);
+    g_return_val_if_fail(dim <= F77_INT_MAX, NULL);
+    g_return_val_if_fail(dim <= SIZE_MAX / sizeof(double), NULL);
 
     vector = g_malloc(sizeof(LAVector));
     vector->pdata = g_malloc(size);
@@ -37,7 +38,7 @@ la_vector_free (LAVector *vector)
 }
 
 
-la_size
+int64_t 
 la_vector_dim (LAVector *vector)
 {
     g_assert(vector);
@@ -51,7 +52,7 @@ la_vector_set_all (LAVector *vector,
 {
     g_assert(vector);
 
-    la_size n   = la_vector_dim(vector);
+    int64_t n   = la_vector_dim(vector);
     double *ptr = la_vector_ptr(vector, 0);
     double *end = la_vector_ptr(vector, n);
 
@@ -63,7 +64,7 @@ la_vector_set_all (LAVector *vector,
 
 void
 la_vector_set_basis (LAVector *vector,
-                     la_index  index)
+                     int64_t   index)
 {
     g_assert(vector);
     g_assert(la_vector_dim(vector) > 0);
@@ -77,7 +78,7 @@ la_vector_set_basis (LAVector *vector,
 
 double
 la_vector_get (LAVector *vector,
-               la_index  index)
+               int64_t   index)
 {
     g_assert(vector);
     g_assert(0 <= index);
@@ -90,7 +91,7 @@ la_vector_get (LAVector *vector,
 
 void
 la_vector_set (LAVector *vector,
-               la_index  index,
+               int64_t   index,
                double    value)
 {
     g_assert(vector);
@@ -104,7 +105,7 @@ la_vector_set (LAVector *vector,
 
 double *
 la_vector_ptr (LAVector *vector,
-               la_index  index)
+               int64_t   index)
 {
     g_assert(vector);
 
@@ -115,8 +116,8 @@ la_vector_ptr (LAVector *vector,
 
 LAVectorView
 la_vector_subvector (LAVector *vector,
-                     la_index  index,
-                     la_size   dim)
+                     int64_t   index,
+                     int64_t   dim)
 {
     g_assert(vector);
     g_assert(0 <= index);
@@ -132,7 +133,7 @@ la_vector_subvector (LAVector *vector,
 
 LAVectorView
 la_vector_view_array (double  *array,
-                      la_size  dim)
+                      int64_t  dim)
 {
     g_assert(dim >= 0);
     g_assert(array || dim == 0);
@@ -150,13 +151,13 @@ la_vector_copy (LAVector *dst_vector,
     g_assert(vector);
     g_assert(la_vector_dim(dst_vector) == la_vector_dim(vector));
 
-    la_size n    = la_vector_dim(dst_vector);
+    int64_t n    = la_vector_dim(dst_vector);
     double *px   = la_vector_ptr(vector, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
     double *py   = la_vector_ptr(dst_vector, 0);
-    la_size incy = 1;
+    int64_t incy = 1;
 
-    F77_FUNC(dcopy)(&n, px, &incx, py, &incy);
+    F77_FUNC(dcopy)(F77_INTP(n), px, F77_INTP(incx), py, F77_INTP(incy));
 }
 
 
@@ -168,20 +169,20 @@ la_vector_swap (LAVector *vector1,
     g_assert(vector2);
     g_assert(la_vector_dim(vector1) == la_vector_dim(vector2));
 
-    la_size n    = la_vector_dim(vector1);
+    int64_t n    = la_vector_dim(vector1);
     double *px   = la_vector_ptr(vector1, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
     double *py   = la_vector_ptr(vector2, 0);
-    la_size incy = 1;
+    int64_t incy = 1;
 
-    F77_FUNC(dswap)(&n, px, &incx, py, &incy);
+    F77_FUNC(dswap)(F77_INTP(n), px, F77_INTP(incx), py, F77_INTP(incy));
 }
 
 
 void
 la_vector_swap_elems (LAVector *vector,
-                      la_index  index1,
-                      la_index  index2)
+                      int64_t   index1,
+                      int64_t   index2)
 {
     g_assert(vector);
     g_assert(0 <= index1);
@@ -205,8 +206,8 @@ la_vector_reverse (LAVector *vector)
 {
     g_assert(vector);
 
-    la_index n = la_vector_dim(vector);
-    la_index i;
+    int64_t n = la_vector_dim(vector);
+    int64_t i;
 
     for (i = 0; i < n / 2; i++) {
         la_vector_swap_elems(vector, i, n - 1 - i);
@@ -220,12 +221,12 @@ la_vector_scale (LAVector *vector,
 {
     g_assert(vector);
 
-    la_size n     = la_vector_dim(vector);
+    int64_t n     = la_vector_dim(vector);
     double  alpha = scale;
     void   *px    = la_vector_ptr(vector, 0);
-    la_size incx  = 1;
+    int64_t incx  = 1;
 
-    F77_FUNC(dscal)(&n, &alpha, px, &incx);
+    F77_FUNC(dscal)(F77_INTP(n), &alpha, px, F77_INTP(incx));
 }
 
 
@@ -235,7 +236,7 @@ la_vector_shift (LAVector *vector,
 {
     g_assert(vector);
 
-    la_size  n    = la_vector_dim(vector);
+    int64_t n   = la_vector_dim(vector);
     double *ptr = la_vector_ptr(vector, 0);
     double *end = la_vector_ptr(vector, n);
 
@@ -277,14 +278,15 @@ la_vector_mul (LAVector *dst_vector,
     g_assert(vector);
     g_assert(la_vector_dim(dst_vector) == la_vector_dim(vector));
 
-    la_size n     = la_vector_dim(dst_vector);
-    la_size k     = 0;
+    int64_t n     = la_vector_dim(dst_vector);
+    int64_t k     = 0;
     double *px    = la_vector_ptr(vector, 0);
-    la_size incx  = 1;
+    int64_t incx  = 1;
     double *py    = la_vector_ptr(dst_vector, 0);
-    la_size incy  = 1;
+    int64_t incy  = 1;
 
-    F77_FUNC(dtbmv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
+    F77_FUNC(dtbmv)("U", "N", "N", F77_INTP(n), F77_INTP(k),
+                    px, F77_INTP(incx), py, F77_INTP(incy));
 }
 
 
@@ -296,14 +298,15 @@ la_vector_div (LAVector *dst_vector,
     g_assert(vector);
     g_assert(la_vector_dim(dst_vector) == la_vector_dim(vector));
 
-    la_size n     = la_vector_dim(dst_vector);
-    la_size k     = 0;
+    int64_t n     = la_vector_dim(dst_vector);
+    int64_t k     = 0;
     double *px    = la_vector_ptr(vector, 0);
-    la_size incx  = 1;
+    int64_t incx  = 1;
     double *py    = la_vector_ptr(dst_vector, 0);
-    la_size incy  = 1;
+    int64_t incy  = 1;
 
-    F77_FUNC(dtbsv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
+    F77_FUNC(dtbsv)("U", "N", "N", F77_INTP(n), F77_INTP(k),
+                    px, F77_INTP(incx), py, F77_INTP(incy));
 }
 
 
@@ -316,14 +319,15 @@ la_vector_acc (LAVector *dst_vector,
     g_assert(vector);
     g_assert(la_vector_dim(dst_vector) == la_vector_dim(vector));
 
-    la_size n     = la_vector_dim(dst_vector);
+    int64_t n     = la_vector_dim(dst_vector);
     double  alpha = scale;
     double *px    = la_vector_ptr(vector, 0);
-    la_size incx  = 1;
+    int64_t incx  = 1;
     double *py    = la_vector_ptr(dst_vector, 0);
-    la_size incy  = 1;
+    int64_t incy  = 1;
 
-    F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
+    F77_FUNC(daxpy)(F77_INTP(n), &alpha, px, F77_INTP(incx),
+                    py, F77_INTP(incy));
 }
 
 
@@ -335,13 +339,14 @@ la_vector_dot (LAVector *vector1,
     g_assert(vector2);
     g_assert(la_vector_dim(vector1) == la_vector_dim(vector2));
 
-    la_size n    = la_vector_dim(vector1);
+    int64_t n    = la_vector_dim(vector1);
     double *px   = la_vector_ptr(vector1, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
     double *py   = la_vector_ptr(vector2, 0);
-    la_size incy = 1;
+    int64_t incy = 1;
 
-    double dot = F77_FUNC(ddot)(&n, px, &incx, py, &incy);
+    double dot = F77_FUNC(ddot)(F77_INTP(n), px, F77_INTP(incx), py,
+                                F77_INTP(incy));
     return dot;
 }
 
@@ -351,11 +356,11 @@ la_vector_norm (LAVector *vector)
 {
     g_assert(vector);
 
-    la_size n    = la_vector_dim(vector);
+    int64_t n    = la_vector_dim(vector);
     void   *px   = la_vector_ptr(vector, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
 
-    double norm = F77_FUNC(dnrm2)(&n, px, &incx);
+    double norm = F77_FUNC(dnrm2)(F77_INTP(n), px, F77_INTP(incx));
     return norm;
 }
 
@@ -365,11 +370,11 @@ la_vector_sum_abs (LAVector *vector)
 {
     g_assert(vector);
 
-    la_size n    = la_vector_dim(vector);
+    int64_t n    = la_vector_dim(vector);
     void   *px   = la_vector_ptr(vector, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
 
-    double sum_abs = F77_FUNC(dasum)(&n, px, &incx);
+    double sum_abs = F77_FUNC(dasum)(F77_INTP(n), px, F77_INTP(incx));
     return sum_abs;
 }
 
@@ -381,7 +386,7 @@ la_vector_max_abs (LAVector *vector)
 
     double max_abs = 0;
     double e;
-    la_index i;
+    int64_t i;
 
     if (la_vector_dim(vector) > 0) {
         i = la_vector_max_abs_index(vector);
@@ -393,18 +398,19 @@ la_vector_max_abs (LAVector *vector)
 }
 
 
-la_index
+int64_t 
 la_vector_max_abs_index (LAVector *vector)
 {
     g_assert(vector);
     g_return_val_if_fail(la_vector_dim(vector) > 0, -1);
 
-    la_size n    = la_vector_dim(vector);
+    int64_t n    = la_vector_dim(vector);
     void   *px   = la_vector_ptr(vector, 0);
-    la_size incx = 1;
+    int64_t incx = 1;
 
-    la_index index1 = F77_FUNC(idamax)(&n, px, &incx);
-    la_index index  = index1 - 1;
+    int64_t index1 = (int64_t)(F77_FUNC(idamax)(F77_INTP(n), px,
+                                                F77_INTP(incx)));
+    int64_t index  = index1 - 1;
     return index;
 }
 

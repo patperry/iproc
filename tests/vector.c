@@ -12,7 +12,7 @@
 #include <libla/ieee754.h>
 
 LAVector *v;
-la_size n;
+int n;
 double *elems_v;
 
 LAVector *v1, *v2;

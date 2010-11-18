@@ -2,13 +2,11 @@ ACLOCAL_AMFLAGS        = -I m4 --install
 
 lib_LTLIBRARIES        = libla.la
 include_HEADERS        = libla/ieee754.h \
-                         libla/index.h \
                          libla/vector.h
 
 libla_la_SOURCES       = libla/blas-private.h \
                          libla/ieee754.h \
                          libla/ieee754.c \
-                         libla/index.h \
                          libla/vector.h \
                          libla/vector.c
 
