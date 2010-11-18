@@ -79,6 +79,42 @@ START_TEST (test_shift)
 }
 END_TEST
 
+START_TEST (test_norm)
+{
+    int i;
+    double norm2 = 0, norm;
+    for (i = 0; i < n; i++) {
+        norm2 += elems_v[i] * elems_v[i];
+    }
+    norm = sqrt(norm2);
+
+    ck_assert_feq(la_vector_norm(v), norm);
+}
+END_TEST
+
+START_TEST (test_sum_abs)
+{
+    int i;
+    double sum_abs = 0;
+    for (i = 0; i < n; i++) {
+        sum_abs += fabs(elems_v[i]);
+    }
+    ck_assert_feq(la_vector_sum_abs(v), sum_abs);
+}
+END_TEST
+
+START_TEST (test_max_abs)
+{
+    int i;
+    double max_abs = 0;
+    for (i = 0; i < n; i++) {
+        if (fabs(elems_v[i]) > max_abs)
+            max_abs = fabs(elems_v[i]);
+    }
+    ck_assert_feq(la_vector_max_abs(v), max_abs);
+}
+END_TEST
+
 
 TCase *
 vector_tcase (char *desc, void (*setup)(), void (*teardown)())
@@ -91,6 +127,9 @@ vector_tcase (char *desc, void (*setup)(), void (*teardown)())
     tcase_add_test(tc, test_reverse);
     tcase_add_test(tc, test_scale);
     tcase_add_test(tc, test_shift);
+    tcase_add_test(tc, test_norm);
+    tcase_add_test(tc, test_sum_abs);
+    tcase_add_test(tc, test_max_abs);
 
     return tc;
 }
@@ -138,6 +177,18 @@ v5_teardown ()
     la_vector_free(v);
 }
 
+START_TEST (test_max_abs_index)
+{
+    int i = -1;
+    double max_abs = la_vector_max_abs(v);
+    for (i = 0; i < n; i++) {
+        if (la_identical(fabs(elems_v[i]), max_abs))
+            break;
+    }
+    ck_assert_int_eq(la_vector_max_abs_index(v), i);
+}
+END_TEST
+
 START_TEST (v5_test_set_basis)
 {
     int i;
@@ -181,7 +232,7 @@ v5_tcase ()
     TCase *tc = vector_tcase("vector with dimension 5",
                              v5_setup,
                              v5_teardown);
-
+    tcase_add_test(tc, test_max_abs_index);
     tcase_add_test(tc, v5_test_set_basis);
     tcase_add_test(tc, v5_test_subvector);
     tcase_add_test(tc, v5_test_swap_elems);
