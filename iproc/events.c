@@ -44,7 +44,8 @@ iproc_events_grow_past (iproc_events *events)
 }
 
 static void
-iproc_events_reserve_cur (iproc_events *events, int64_t n)
+iproc_events_reserve_cur (iproc_events *events,
+                          int64_t       n)
 {
     g_assert(events);
 
@@ -54,7 +55,8 @@ iproc_events_reserve_cur (iproc_events *events, int64_t n)
 }
 
 static void
-iproc_events_reserve_past (iproc_events *events, int64_t n)
+iproc_events_reserve_past (iproc_events *events,
+                           int64_t       n)
 {
     g_assert(events);
 
@@ -64,7 +66,8 @@ iproc_events_reserve_past (iproc_events *events, int64_t n)
 }
 
 static void
-iproc_events_move_past (iproc_events *events, int64_t start)
+iproc_events_move_past (iproc_events *events,
+                        int64_t       start)
 {
     g_assert(events);
     int64_t *tail    = events->past + start;
@@ -197,7 +200,7 @@ iproc_events_cur (iproc_events *events,
 
 int64_t
 iproc_events_find_cur (iproc_events *events,
-                       int64_t e)
+                       int64_t       e)
 {
     g_assert(events);
     int64_t i, n = events->ncur;
@@ -214,7 +217,9 @@ iproc_events_find_cur (iproc_events *events,
 }
 
 static int64_t
-iproc_lsearch (int64_t n, int64_t *array, int64_t key)
+iproc_lsearch (int64_t n,
+               int64_t *array,
+               int64_t key)
 {
     g_assert(n >= 0);
     g_assert(array);
@@ -240,7 +245,9 @@ iproc_lsearch (int64_t n, int64_t *array, int64_t key)
 }
 
 static int64_t
-iproc_bsearch (int64_t n, int64_t *array, int64_t key)
+iproc_bsearch (int64_t n,
+               int64_t *array,
+               int64_t key)
 {
     g_assert(n >= 0);
     g_assert(array);
@@ -266,7 +273,8 @@ iproc_bsearch (int64_t n, int64_t *array, int64_t key)
 }
 
 int64_t
-iproc_events_find_past (iproc_events *events, int64_t e)
+iproc_events_find_past (iproc_events *events,
+                        int64_t       e)
 {
     g_assert(events);
     return iproc_bsearch(events->npast, events->past, e);
@@ -281,7 +289,7 @@ iproc_events_npast (iproc_events *events)
 
 int64_t
 iproc_events_past (iproc_events *events,
-                   int64_t        i)
+                   int64_t       i)
 {
     g_assert(events);
     g_assert(0 <= i);
@@ -292,7 +300,7 @@ iproc_events_past (iproc_events *events,
 
 int64_t
 iproc_events_past_dt (iproc_events *events,
-                      int64_t        i)
+                      int64_t       i)
 {
     g_assert(events);
     g_assert(0 <= i);
