@@ -29,13 +29,13 @@ int64_t       iproc_events_ncur      (iproc_events *events);
 int64_t       iproc_events_cur       (iproc_events *events,
                                       int64_t       i);
 int64_t       iproc_events_find_cur  (iproc_events *events,
-                                      int64_t e);
+                                      int64_t       e);
 
 int64_t       iproc_events_npast     (iproc_events *events);
 int64_t       iproc_events_past      (iproc_events *events,
                                       int64_t       i);
 int64_t       iproc_events_find_past (iproc_events *events,
-                                      int64_t e);
+                                      int64_t       e);
 
 int64_t       iproc_events_past_dt   (iproc_events *events,
                                       int64_t       i);
