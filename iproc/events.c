@@ -213,20 +213,21 @@ iproc_events_find_cur (iproc_events *events,
     return i;
 }
 
-int64_t
-iproc_events_find_past (iproc_events *events,
-                        int64_t e)
+static int64_t
+iproc_lsearch (int64_t n, int64_t *array, int64_t key)
 {
-    g_assert(events);
-    int64_t i, n = events->npast;
-    int64_t f;
+    g_assert(n >= 0);
+    g_assert(array);
+
+    int64_t i;
+    int64_t x;
 
     for (i = 0; i < n; i++) {
-        f = iproc_events_past(events, i);
+        x = array[i];
 
-        if (e == f) {
+        if (key == x) {
             break;
-        } else if (e < f) {
+        } else if (key < x) {
             i = ~i;
             break;
         }
@@ -236,6 +237,39 @@ iproc_events_find_past (iproc_events *events,
         i = ~i;
 
     return i;
+}
+
+static int64_t
+iproc_bsearch (int64_t n, int64_t *array, int64_t key)
+{
+    g_assert(n >= 0);
+    g_assert(array);
+
+    int64_t begin = 0;
+    int64_t end = n;
+    int64_t target;
+    int64_t x;
+
+    while (begin < end) {
+        target = begin + ((end - begin) >> 1);
+        x = array[target];
+        if (key < x) {
+            end = target;
+        } else if (key > x) {
+            begin = target + 1;
+        } else { /* key == x */
+            return target;
+        }
+    }
+
+    return ~end; /* begin == end, not found */
+}
+
+int64_t
+iproc_events_find_past (iproc_events *events, int64_t e)
+{
+    g_assert(events);
+    return iproc_bsearch(events->npast, events->past, e);
 }
 
 int64_t
