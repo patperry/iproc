@@ -1,36 +1,36 @@
-ACLOCAL_AMFLAGS        = -I m4 --install
+ACLOCAL_AMFLAGS      = -I m4 --install
 
-lib_LTLIBRARIES        = libla.la
-include_HEADERS        = libla/ieee754.h \
-                         libla/vector.h
+lib_LTLIBRARIES      = libiproc.la
+include_HEADERS      = iproc/ieee754.h \
+                       iproc/vector.h
 
-libla_la_SOURCES       = libla/blas-private.h \
-                         libla/ieee754.h \
-                         libla/ieee754.c \
-                         libla/vector.h \
-                         libla/vector.c
+libiproc_la_SOURCES  = iproc/blas-private.h \
+                       iproc/ieee754.h \
+                       iproc/ieee754.c \
+                       iproc/vector.h \
+                       iproc/vector.c
 
-libla_la_CPPFLAGS      = $(GLIB_CFLAGS) \
-                         $(AM_CPPFLAGS)
+libiproc_la_CPPFLAGS = $(GLIB_CFLAGS) \
+                       $(AM_CPPFLAGS)
 
-libla_la_LIBADD        = $(BLAS_LIBS) \
-                         $(GLIB_LIBS) \
-                         $(LIBS) \
-                         $(FLIBS)
+libiproc_la_LIBADD   = $(BLAS_LIBS) \
+                       $(GLIB_LIBS) \
+                       $(LIBS) \
+                       $(FLIBS)
 
-TESTS                  = tests/lacheck
-check_PROGRAMS         = tests/lacheck
+TESTS                = check-iproc
+check_PROGRAMS       = check-iproc
 
-tests_lacheck_SOURCES  = tests/checkutils.h \
-                         tests/ieee754.c \
-                         tests/main.c \
-                         tests/vector.c
+check_iproc_SOURCES  = tests/checkutils.h \
+                       tests/ieee754.c \
+                       tests/main.c \
+                       tests/vector.c
 
-tests_lacheck_CPPFLAGS = -Itests \
-                         $(CHECK_CFLAGS) \
-                         $(GLIB_CFLAGS) \
-                         $(AM_CPPFLAGS)
+check_iproc_CPPFLAGS = -Itests \
+                       $(CHECK_CFLAGS) \
+                       $(GLIB_CFLAGS) \
+                       $(AM_CPPFLAGS)
 
-tests_lacheck_LDADD    = $(top_builddir)/libla.la \
-                         $(CHECK_LIBS) \
-                         $(GLIB_LIBS)
+check_iproc_LDADD    = $(top_builddir)/libiproc.la \
+                       $(CHECK_LIBS) \
+                       $(GLIB_LIBS)

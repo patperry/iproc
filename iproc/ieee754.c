@@ -5,7 +5,7 @@
 #include <float.h>
 #include <math.h>
 #include <glib.h>
-#include <libla/ieee754.h>
+#include <iproc/ieee754.h>
 
 
 #define DBL_EXPMASK            ((uint16_t) 0x7FF0)
@@ -27,8 +27,8 @@ union double_uint64 {
 };
 
 int
-la_identical (double x,
-              double y)
+iproc_identical (double x,
+                 double y)
 {
     union double_uint64 ux = { x };
     union double_uint64 uy = { y };
@@ -37,7 +37,7 @@ la_identical (double x,
 
 /* ported from tango/math/IEEE.d */
 double
-la_nextup (double x)
+iproc_nextup (double x)
 {
     union double_uint64 ps = { x };
 
@@ -60,15 +60,15 @@ la_nextup (double x)
 
 /* ported from tango/math/IEEE.d */
 double
-la_nextdown (double x)
+iproc_nextdown (double x)
 {
-    return -la_nextup(-x);
+    return -iproc_nextup(-x);
 }
 
 /* ported from tango/math/IEEE.d */
 double
-la_ieeemean (double x,
-             double y)
+iproc_ieeemean (double x,
+                double y)
 {
     if (!((x>=0 && y>=0) || (x<=0 && y<=0))) return NAN;
 
@@ -84,7 +84,7 @@ la_ieeemean (double x,
 }
 
 double
-la_mknan (uint64_t payload)
+iproc_mknan (uint64_t payload)
 {
     union double_uint64 x = { NAN };
 
@@ -99,7 +99,7 @@ la_mknan (uint64_t payload)
 }
 
 uint64_t
-la_getnan (double x)
+iproc_getnan (double x)
 {
     union double_uint64 payload = { x };
 
@@ -109,8 +109,8 @@ la_getnan (double x)
 }
 
 int
-la_feqrel (double x,
-           double y)
+iproc_feqrel (double x,
+              double y)
 {
     /* Public Domain. Original Author: Don Clugston, 18 Aug 2005.
      * Ported to C by Patrick Perry, 26 Feb 2010.

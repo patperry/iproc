@@ -1,6 +1,6 @@
-AC_INIT([libla], [0.1], [patperry@gmail.com])
+AC_INIT([iproc], [0.1], [patperry@gmail.com])
 
-AC_CONFIG_SRCDIR([libla/vector.h])
+AC_CONFIG_SRCDIR([iproc/vector.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 

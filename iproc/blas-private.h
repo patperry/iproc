@@ -1,5 +1,5 @@
-#ifndef _LA_BLAS_PRIVATE_H
-#define _LA_BLAS_PRIVATE_H
+#ifndef _IPROC_BLAS_PRIVATE_H
+#define _IPROC_BLAS_PRIVATE_H
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -273,4 +273,4 @@ extern void     F77_FUNC(dsyr2k) (const char   *uplo,
                                   double       *c,
                                   const f77int *ldc);
 
-#endif /*_LA_BLAS_PRIVATE_H */
+#endif /* _IPROC_BLAS_PRIVATE_H */
