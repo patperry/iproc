@@ -5,6 +5,8 @@ include_HEADERS      = iproc/ieee754.h \
                        iproc/vector.h
 
 libiproc_la_SOURCES  = iproc/blas-private.h \
+                       iproc/events.h \
+                       iproc/events.c \
                        iproc/ieee754.h \
                        iproc/ieee754.c \
                        iproc/vector.h \
@@ -22,6 +24,7 @@ TESTS                = check-iproc
 check_PROGRAMS       = check-iproc
 
 check_iproc_SOURCES  = tests/checkutils.h \
+                       tests/events.c \
                        tests/ieee754.c \
                        tests/main.c \
                        tests/vector.c
