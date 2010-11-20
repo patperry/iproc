@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <check.h>
 
+extern Suite *array_suite ();
 extern Suite *ieee754_suite ();
 extern Suite *vector_suite ();
 extern Suite *events_suite ();
@@ -15,6 +16,7 @@ main ()
 {
     int nfail;
     SRunner *sr = srunner_create(NULL);
+    srunner_add_suite(sr, array_suite());
     srunner_add_suite(sr, ieee754_suite());
     srunner_add_suite(sr, vector_suite());
     srunner_add_suite(sr, events_suite());
