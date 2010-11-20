@@ -4,7 +4,8 @@
 
 #include <float.h>
 #include <math.h>
-#include <glib.h>
+#include <sys/types.h>
+#include <sys/param.h>
 #include <iproc/ieee754.h>
 
 
@@ -13,7 +14,7 @@
 #define DBL_EXPBIAS            ((uint16_t) 0x3FE0)
 #define DBL_EXPBIAS_INT32      ((uint32_t) 0x7FF00000)
 #define DBL_MANTISSAMASK_INT32 ((uint32_t) 0x000FFFFF) /* for the MSB only */
-#if G_BYTE_ORDER == G_BIG_ENDIAN
+#if BYTE_ORDER == BIG_ENDIAN
 # define DBL_EXPPOS_INT16 0
 # define DBL_SIGNPOS_BYTE 0
 #else
