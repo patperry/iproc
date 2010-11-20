@@ -12,7 +12,7 @@
 #define DBL_SIGNMASK           ((uint16_t) 0x8000)
 #define DBL_EXPBIAS            ((uint16_t) 0x3FE0)
 #define DBL_EXPBIAS_INT32      ((uint32_t) 0x7FF00000)
-#define DBL_MANTISSAMASK_INT32 ((uint32_t) 0x000FFFFF); /* for the MSB only */
+#define DBL_MANTISSAMASK_INT32 ((uint32_t) 0x000FFFFF) /* for the MSB only */
 #if G_BYTE_ORDER == G_BIG_ENDIAN
 # define DBL_EXPPOS_INT16 0
 # define DBL_SIGNPOS_BYTE 0
@@ -41,14 +41,14 @@ iproc_nextup (double x)
 {
     union double_uint64 ps = { x };
 
-    if ((ps.w & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) {
+    if ((ps.w & UINT64_C(0x7FF0000000000000)) == UINT64_C(0x7FF0000000000000)) {
         /* First, deal with NANs and infinity */
         if (x == -INFINITY) return -DBL_MAX;
         return x; // +INF and NAN are unchanged.
     }
-    if (ps.w & 0x8000000000000000ULL)  { /* Negative number */
-        if (ps.w == 0x8000000000000000ULL) { /* it was negative zero */
-            ps.w = 0x0000000000000001ULL; /* change to smallest subnormal */
+    if (ps.w & UINT64_C(0x8000000000000000))  { /* Negative number */
+        if (ps.w == UINT64_C(0x8000000000000000)) { /* it was negative zero */
+            ps.w = UINT64_C(0x0000000000000001); /* change to smallest subnormal */
             return ps.d;
         }
         --ps.w;
@@ -75,9 +75,9 @@ iproc_ieeemean (double x,
     union double_uint64 ul;
     union double_uint64 xl = { x };
     union double_uint64 yl = { y };
-    uint64_t m = ( (xl.w & 0x7FFFFFFFFFFFFFFFULL)
-                 + (yl.w & 0x7FFFFFFFFFFFFFFFULL) ) >> 1;
-    m |= (xl.w & 0x8000000000000000ULL);
+    uint64_t m = ( (xl.w & UINT64_C(0x7FFFFFFFFFFFFFFF))
+                 + (yl.w & UINT64_C(0x7FFFFFFFFFFFFFFF)) ) >> 1;
+    m |= (xl.w & UINT64_C(0x8000000000000000));
     ul.w = m;
 
     return ul.d;
@@ -89,10 +89,10 @@ iproc_mknan (uint64_t payload)
     union double_uint64 x = { NAN };
 
     /* get sign, exponent, and quiet bit from NAN */
-    x.w &= 0xFFF8000000000000ULL;
+    x.w &= UINT64_C(0xFFF8000000000000);
 
     /* ignore sign, exponent, and quiet bit in payload */
-    payload &= 0x0007FFFFFFFFFFFFULL;
+    payload &= UINT64_C(0x0007FFFFFFFFFFFF);
     x.w |= payload;
 
     return x.d;
@@ -104,7 +104,7 @@ iproc_getnan (double x)
     union double_uint64 payload = { x };
 
     /* clear sign, exponent, and quiet bit */
-    payload.w &= 0x0007FFFFFFFFFFFFULL;
+    payload.w &= UINT64_C(0x0007FFFFFFFFFFFF);
     return payload.w;
 }
 

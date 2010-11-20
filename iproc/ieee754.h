@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#define  IPROC_MAX_NAN_PAYLOAD ((uint64_t)0x0007FFFFFFFFFFFFULL)
+#define  IPROC_MAX_NAN_PAYLOAD  UINT64_C(0x0007FFFFFFFFFFFF)
 
 int      iproc_identical (double   x,
                           double   y);
