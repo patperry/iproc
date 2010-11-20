@@ -3,9 +3,10 @@
 # include <config.h>
 #endif
 
+#include <assert.h>
 #include <stddef.h>
 #include <math.h>
-#include <glib.h>
+#include <iproc/memory.h>
 #include <iproc/blas-private.h>
 #include <iproc/vector.h>
 
@@ -16,12 +17,12 @@ iproc_vector_new (int64_t  dim)
     iproc_vector *vector = NULL;
     size_t        size   = dim * sizeof(double);
 
-    g_return_val_if_fail(dim >= 0, NULL);
-    g_return_val_if_fail(dim <= F77_INT_MAX, NULL);
-    g_return_val_if_fail(dim <= SIZE_MAX / sizeof(double), NULL);
+    if (!(dim >= 0)) return NULL;
+    if (!(dim <= F77_INT_MAX)) return NULL;
+    if (!(dim <= SIZE_MAX / sizeof(double))) return NULL;
 
-    vector = g_malloc(sizeof(iproc_vector));
-    vector->pdata = g_malloc(size);
+    vector = iproc_malloc(sizeof(iproc_vector));
+    vector->pdata = iproc_malloc(size);
     vector->dim = dim;
 
     return vector;
@@ -32,8 +33,8 @@ void
 iproc_vector_free (iproc_vector *vector)
 {
     if (vector) {
-        g_free(vector->pdata);
-        g_free(vector);
+        iproc_free(vector->pdata);
+        iproc_free(vector);
     }
 }
 
@@ -41,7 +42,7 @@ iproc_vector_free (iproc_vector *vector)
 int64_t
 iproc_vector_dim (iproc_vector *vector)
 {
-    g_assert(vector);
+    assert(vector);
     return vector->dim;
 }
 
@@ -50,7 +51,7 @@ void
 iproc_vector_set_all (iproc_vector *vector,
                       double        value)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n   = iproc_vector_dim(vector);
     double *ptr = iproc_vector_ptr(vector, 0);
@@ -66,10 +67,10 @@ void
 iproc_vector_set_basis (iproc_vector *vector,
                         int64_t       index)
 {
-    g_assert(vector);
-    g_assert(iproc_vector_dim(vector) > 0);
-    g_assert(0 <= index);
-    g_assert(index < iproc_vector_dim(vector));
+    assert(vector);
+    assert(iproc_vector_dim(vector) > 0);
+    assert(0 <= index);
+    assert(index < iproc_vector_dim(vector));
 
     iproc_vector_set_all(vector, 0);
     iproc_vector_set(vector, index, 1);
@@ -80,9 +81,9 @@ double
 iproc_vector_get (iproc_vector *vector,
                   int64_t       index)
 {
-    g_assert(vector);
-    g_assert(0 <= index);
-    g_assert(index < iproc_vector_dim(vector));
+    assert(vector);
+    assert(0 <= index);
+    assert(index < iproc_vector_dim(vector));
 
     double *ptr = iproc_vector_ptr(vector, index);
     return *ptr;
@@ -94,9 +95,9 @@ iproc_vector_set (iproc_vector *vector,
                   int64_t       index,
                   double        value)
 {
-    g_assert(vector);
-    g_assert(0 <= index);
-    g_assert(index < iproc_vector_dim(vector));
+    assert(vector);
+    assert(0 <= index);
+    assert(index < iproc_vector_dim(vector));
 
     double *ptr = iproc_vector_ptr(vector, index);
     *ptr = value;
@@ -107,7 +108,7 @@ double *
 iproc_vector_ptr (iproc_vector *vector,
                   int64_t       index)
 {
-    g_assert(vector);
+    assert(vector);
 
     double *ptr = vector->pdata + index;
     return ptr;
@@ -119,11 +120,11 @@ iproc_vector_subvector (iproc_vector *vector,
                         int64_t       index,
                         int64_t       dim)
 {
-    g_assert(vector);
-    g_assert(0 <= index);
-    g_assert(index <= iproc_vector_dim(vector));
-    g_assert(0 <= dim);
-    g_assert(dim <= iproc_vector_dim(vector) - index);
+    assert(vector);
+    assert(0 <= index);
+    assert(index <= iproc_vector_dim(vector));
+    assert(0 <= dim);
+    assert(dim <= iproc_vector_dim(vector) - index);
 
     double *ptr       = iproc_vector_ptr(vector, index);
     iproc_vector_view view = iproc_vector_view_array(ptr, dim);
@@ -135,8 +136,8 @@ iproc_vector_view
 iproc_vector_view_array (double  *array,
                       int64_t  dim)
 {
-    g_assert(dim >= 0);
-    g_assert(array || dim == 0);
+    assert(dim >= 0);
+    assert(array || dim == 0);
 
     iproc_vector_view view = {{ array, dim }};
     return view;
@@ -147,9 +148,9 @@ void
 iproc_vector_copy (iproc_vector *dst_vector,
                    iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     int64_t n    = iproc_vector_dim(dst_vector);
     double *px   = iproc_vector_ptr(vector, 0);
@@ -165,9 +166,9 @@ void
 iproc_vector_swap (iproc_vector *vector1,
                    iproc_vector *vector2)
 {
-    g_assert(vector1);
-    g_assert(vector2);
-    g_assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
+    assert(vector1);
+    assert(vector2);
+    assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
     int64_t n    = iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
@@ -184,11 +185,11 @@ iproc_vector_swap_elems (iproc_vector *vector,
                          int64_t       index1,
                          int64_t       index2)
 {
-    g_assert(vector);
-    g_assert(0 <= index1);
-    g_assert(index1 < iproc_vector_dim(vector));
-    g_assert(0 <= index2);
-    g_assert(index2 < iproc_vector_dim(vector));
+    assert(vector);
+    assert(0 <= index1);
+    assert(index1 < iproc_vector_dim(vector));
+    assert(0 <= index2);
+    assert(index2 < iproc_vector_dim(vector));
 
     double e1, e2;
 
@@ -204,7 +205,7 @@ iproc_vector_swap_elems (iproc_vector *vector,
 void
 iproc_vector_reverse (iproc_vector *vector)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n = iproc_vector_dim(vector);
     int64_t i;
@@ -219,7 +220,7 @@ void
 iproc_vector_scale (iproc_vector *vector,
                     double        scale)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n     = iproc_vector_dim(vector);
     double  alpha = scale;
@@ -234,7 +235,7 @@ void
 iproc_vector_shift (iproc_vector *vector,
                     double        shift)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n   = iproc_vector_dim(vector);
     double *ptr = iproc_vector_ptr(vector, 0);
@@ -250,9 +251,9 @@ void
 iproc_vector_add (iproc_vector *dst_vector,
                   iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     iproc_vector_acc(dst_vector, 1, vector);
 }
@@ -262,9 +263,9 @@ void
 iproc_vector_sub (iproc_vector *dst_vector,
                   iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     iproc_vector_acc(dst_vector, -1, vector);
 }
@@ -274,9 +275,9 @@ void
 iproc_vector_mul (iproc_vector *dst_vector,
                   iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     int64_t n     = iproc_vector_dim(dst_vector);
     int64_t k     = 0;
@@ -294,9 +295,9 @@ void
 iproc_vector_div (iproc_vector *dst_vector,
                   iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     int64_t n     = iproc_vector_dim(dst_vector);
     int64_t k     = 0;
@@ -315,9 +316,9 @@ iproc_vector_acc (iproc_vector *dst_vector,
                   double        scale,
                   iproc_vector *vector)
 {
-    g_assert(dst_vector);
-    g_assert(vector);
-    g_assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(dst_vector);
+    assert(vector);
+    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
     int64_t n     = iproc_vector_dim(dst_vector);
     double  alpha = scale;
@@ -335,9 +336,9 @@ double
 iproc_vector_dot (iproc_vector *vector1,
                   iproc_vector *vector2)
 {
-    g_assert(vector1);
-    g_assert(vector2);
-    g_assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
+    assert(vector1);
+    assert(vector2);
+    assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
     int64_t n    = iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
@@ -354,7 +355,7 @@ iproc_vector_dot (iproc_vector *vector1,
 double
 iproc_vector_norm (iproc_vector *vector)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
@@ -368,7 +369,7 @@ iproc_vector_norm (iproc_vector *vector)
 double
 iproc_vector_sum_abs (iproc_vector *vector)
 {
-    g_assert(vector);
+    assert(vector);
 
     int64_t n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
@@ -382,7 +383,7 @@ iproc_vector_sum_abs (iproc_vector *vector)
 double
 iproc_vector_max_abs (iproc_vector *vector)
 {
-    g_assert(vector);
+    assert(vector);
 
     double max_abs = 0;
     double e;
@@ -401,8 +402,8 @@ iproc_vector_max_abs (iproc_vector *vector)
 int64_t
 iproc_vector_max_abs_index (iproc_vector *vector)
 {
-    g_assert(vector);
-    g_return_val_if_fail(iproc_vector_dim(vector) > 0, -1);
+    assert(vector);
+    if (!(iproc_vector_dim(vector) > 0)) return -1;
 
     int64_t n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);

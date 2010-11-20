@@ -8,13 +8,13 @@
 
 iproc_events *events;
 
-void
+static void
 setup ()
 {
     events = iproc_events_new();
 }
 
-void
+static void
 teardown ()
 {
     iproc_events_free(events);

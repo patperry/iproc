@@ -11,14 +11,11 @@ libiproc_la_SOURCES  = iproc/blas-private.h \
                        iproc/history.c \
                        iproc/ieee754.h \
                        iproc/ieee754.c \
+                       iproc/memory.h \
                        iproc/vector.h \
                        iproc/vector.c
 
-libiproc_la_CPPFLAGS = $(GLIB_CFLAGS) \
-                       $(AM_CPPFLAGS)
-
 libiproc_la_LIBADD   = $(BLAS_LIBS) \
-                       $(GLIB_LIBS) \
                        $(LIBS) \
                        $(FLIBS)
 
@@ -34,9 +31,7 @@ check_iproc_SOURCES  = tests/checkutils.h \
 
 check_iproc_CPPFLAGS = -Itests \
                        $(CHECK_CFLAGS) \
-                       $(GLIB_CFLAGS) \
                        $(AM_CPPFLAGS)
 
 check_iproc_LDADD    = $(top_builddir)/libiproc.la \
-                       $(CHECK_LIBS) \
-                       $(GLIB_LIBS)
+                       $(CHECK_LIBS)
