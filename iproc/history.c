@@ -6,119 +6,62 @@
 #include <iproc/memory.h>
 #include <iproc/history.h>
 
-
 static void
-iproc_history_reserve_events (int64_t               *pn,
-                              iproc_history_events **parray,
-                              int64_t                n)
+iproc_history_grow_events (iproc_array *array,
+                           int64_t      n)
 {
-    assert(pn);
-    assert(parray);
-
-    iproc_history_events *array = *parray;
-    int64_t nold = *pn;
-    int64_t i;
+    assert(array);
+    int64_t nold = iproc_array_size(array);
 
     if (n > nold) {
-        array = iproc_realloc(array, n * sizeof(*array));
-        for (i = nold; i < n; i++) {
-            array[i].elapsed = 0;
-            array[i].events = iproc_events_new();
-        }
-
-        *pn = n;
-        *parray = array;
+        iproc_array_set_size(array, n);
     }
 }
 
 static void
-iproc_history_grow_events (int64_t               *pn,
-                           int64_t               *pmaxn,
-                           iproc_history_events **parray,
-                           int64_t                n)
+iproc_history_clear_events (iproc_array *array)
 {
-    assert(pn);
-    assert(pmaxn);
-    assert(parray);
+    assert(array);
+    int64_t n = iproc_array_size(array);
+    int64_t i;
+    iproc_history_events *he;
 
-    if (n > *pn) {
-        iproc_history_reserve_events(pmaxn, parray, n);
-        *pn = n;
-    }
-}
+    for (i = 0; i < n; i++) {
+        he = &(iproc_array_index(array, iproc_history_events, i));
+        he->elapsed = 0;
 
-static void
-iproc_history_free_events (int64_t n, iproc_history_events *array)
-{
-    assert (n >= 0);
-    int i;
-
-    if (array) {
-        for (i = 0; i < n; i++) {
-            iproc_events_free(array[i].events);
-        }
-        iproc_free(array);
-    }
-}
-
-static void
-iproc_history_clear_events (int64_t n, iproc_history_events *array)
-{
-    assert (n >= 0);
-    int i;
-
-    if (array) {
-        for (i = 0; i < n; i++) {
-            array[i].elapsed = 0;
-            iproc_events_clear(array[i].events);
-        }
+        if (he->events)
+            iproc_events_clear(he->events);
     }
 }
 
 static iproc_events *
-iproc_history_get (int64_t               elapsed,
-                   iproc_history_events *array,
-                   int64_t               i)
+iproc_history_get (int64_t      elapsed,
+                   iproc_array *array,
+                   int64_t      i)
 {
     assert(array);
     assert(i >= 0);
 
-    iproc_history_events *he = array + i;
-    iproc_events *e = he->events;
-    int64_t he_elapsed = he->elapsed;
+    iproc_history_grow_events(array, i + 1);
 
-    if (he_elapsed != elapsed) {
-        iproc_events_advance(e, elapsed - he_elapsed);
+    iproc_history_events *he = &(iproc_array_index(array,
+                                                   iproc_history_events,
+                                                   i));
+    iproc_events *e;
+
+    if (!(he->events)) {
+        he->events = iproc_events_new();
+    }
+
+    e = he->events;
+
+    if (he->elapsed != elapsed) {
+        iproc_events_advance(e, elapsed - he->elapsed);
         he->elapsed = elapsed;
     }
 
     return e;
-}
-
-static void
-iproc_history_grow_send (iproc_history *history,
-                         int64_t        nsend)
-{
-    assert(history);
-    assert(nsend >= 0);
-
-    iproc_history_grow_events(&(history->nsend),
-                              &(history->max_nsend),
-                              &(history->send),
-                              nsend);
-}
-
-static void
-iproc_history_grow_recv (iproc_history *history,
-                         int64_t        nrecv)
-{
-    assert(history);
-    assert(nrecv >= 0);
-
-    iproc_history_grow_events(&(history->nrecv),
-                              &(history->max_nrecv),
-                              &(history->recv),
-                              nrecv);
 }
 
 iproc_history *
@@ -128,13 +71,14 @@ iproc_history_new ()
 
     if (!history) return NULL;
 
-    history->send = NULL;
-    history->recv = NULL;
-    history->elapsed = 0;
-    history->nsend = 0;
-    history->nrecv = 0;
-    history->max_nsend = 0;
-    history->max_nrecv = 0;
+    history->send = iproc_array_new(sizeof(iproc_history_events));
+    history->recv = iproc_array_new(sizeof(iproc_history_events));
+
+    if (!(history->send && history->recv)) {
+        iproc_history_free(history);
+        history = NULL;
+    }
+
     return history;
 }
 
@@ -142,8 +86,8 @@ void
 iproc_history_free (iproc_history *history)
 {
     if (history) {
-        iproc_history_free_events(history->max_nsend, history->send);
-        iproc_history_free_events(history->max_nrecv, history->recv);
+        iproc_array_free(history->send);
+        iproc_array_free(history->recv);
         iproc_free(history);
     }
 }
@@ -153,8 +97,8 @@ iproc_history_clear (iproc_history *history)
 {
     assert(history);
     history->elapsed = 0;
-    iproc_history_clear_events(history->max_nsend, history->send);
-    iproc_history_clear_events(history->max_nrecv, history->recv);
+    iproc_history_clear_events(history->send);
+    iproc_history_clear_events(history->recv);
 }
 
 void
@@ -177,9 +121,6 @@ iproc_history_insert (iproc_history *history,
     assert(history);
     assert(from >= 0);
     assert(to >= 0);
-
-    iproc_history_grow_send(history, from + 1);
-    iproc_history_grow_recv(history, to + 1);
 
     iproc_events *efrom = iproc_history_send(history, from);
     iproc_events *eto   = iproc_history_recv(history, to);
@@ -214,14 +155,14 @@ int64_t
 iproc_history_nsend (iproc_history *history)
 {
     assert(history);
-    return history->nsend;
+    return iproc_array_size(history->send);
 }
 
 int64_t
 iproc_history_nrecv (iproc_history *history)
 {
     assert(history);
-    return history->nrecv;
+    return iproc_array_size(history->recv);
 }
 
 iproc_events *
@@ -230,7 +171,6 @@ iproc_history_send (iproc_history *history,
 {
     assert(history);
     assert(0 <= i);
-    assert(i < iproc_history_nsend(history));
 
     return iproc_history_get(history->elapsed, history->send, i);
 }
@@ -241,7 +181,6 @@ iproc_history_recv (iproc_history *history,
 {
     assert(history);
     assert(0 <= j);
-    assert(j < iproc_history_nrecv(history));
 
     return iproc_history_get(history->elapsed, history->recv, j);
 }

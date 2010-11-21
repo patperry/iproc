@@ -1,24 +1,21 @@
 #ifndef _IPROC_HISTORY_H
 #define _IPROC_HISTORY_H
 
+#include <iproc/array.h>
 #include <iproc/events.h>
 
 typedef struct _iproc_history        iproc_history;
 typedef struct _iproc_history_events iproc_history_events;
 
 struct _iproc_history_events {
-    int64_t       elapsed;
     iproc_events *events;
+    int64_t       elapsed;
 };
 
 struct _iproc_history {
-    int64_t               elapsed;
-    iproc_history_events *send;
-    iproc_history_events *recv;
-    int64_t               nsend;
-    int64_t               nrecv;
-    int64_t               max_nsend;
-    int64_t               max_nrecv;
+    int64_t      elapsed;
+    iproc_array *send;
+    iproc_array *recv;
 };
 
 
