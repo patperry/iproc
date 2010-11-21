@@ -1,0 +1,37 @@
+#ifndef _IPROC_ACTORS_H
+#define _IPROC_ACTORS_H
+
+#include <iproc/array.h>
+#include <iproc/vector.h>
+
+
+#define IPROC_ACTORS_DEFCLASS   0
+
+typedef struct _iproc_actors iproc_actors;
+
+struct _iproc_actors {
+    iproc_array *class;
+    iproc_array *member;
+};
+
+iproc_actors * iproc_actors_new          (iproc_vector *defvector);
+void           iproc_actors_free         (iproc_actors *actors);
+
+int64_t        iproc_actors_append_class (iproc_actors *actors,
+                                          iproc_vector *vector);
+iproc_vector * iproc_actors_class_vector (iproc_actors *actors,
+                                          int64_t       c);
+int64_t        iproc_actors_nclass       (iproc_actors *actors);
+
+
+void           iproc_actors_insert_actor (iproc_actors *actors,
+                                          int64_t       i,
+                                          int64_t       c);
+int64_t        iproc_actors_class        (iproc_actors *actors,
+                                          int64_t       i);
+iproc_vector * iproc_actors_vector       (iproc_actors *actors,
+                                          int64_t       i);
+
+
+
+#endif /* _IPROC_ACTORS_H */

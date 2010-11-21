@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <check.h>
 
+extern Suite *actors_suite ();
 extern Suite *array_suite ();
 extern Suite *ieee754_suite ();
 extern Suite *vector_suite ();
@@ -21,6 +22,7 @@ main ()
     srunner_add_suite(sr, vector_suite());
     srunner_add_suite(sr, events_suite());
     srunner_add_suite(sr, history_suite());
+    srunner_add_suite(sr, actors_suite());
     srunner_run_all(sr, CK_ENV);
     nfail = srunner_ntests_failed(sr);
     srunner_free(sr);

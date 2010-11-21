@@ -4,7 +4,9 @@ lib_LTLIBRARIES      = libiproc.la
 include_HEADERS      = iproc/ieee754.h \
                        iproc/vector.h
 
-libiproc_la_SOURCES  = iproc/array.h \
+libiproc_la_SOURCES  = iproc/actors.h \
+                       iproc/actors.c \
+                       iproc/array.h \
                        iproc/array.c \
                        iproc/blas-private.h \
                        iproc/events.h \
@@ -24,7 +26,8 @@ libiproc_la_LIBADD   = $(BLAS_LIBS) \
 TESTS                = check-iproc
 check_PROGRAMS       = check-iproc
 
-check_iproc_SOURCES  = tests/array.c \
+check_iproc_SOURCES  = tests/actors.c \
+                       tests/array.c \
                        tests/checkutils.h \
                        tests/events.c \
                        tests/history.c \
