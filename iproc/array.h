@@ -1,6 +1,7 @@
 #ifndef _IPROC_ARRAY_H
 #define _IPROC_ARRAY_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct _iproc_array iproc_array;
