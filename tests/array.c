@@ -122,6 +122,37 @@ START_TEST (test_int_lfind)
 }
 END_TEST
 
+START_TEST (test_int_complex)
+{
+    int e[] = { 5, 1, 3 };
+    int64_t i;
+
+    i = iproc_array_bsearch(array, e + 0, compare_int);
+    ck_assert_int_eq(~i, 0);
+
+    iproc_array_insert(array, ~i, e + 0);
+    ck_assert_int_eq(iproc_array_size(array), 1);
+    ck_assert_int_eq(iproc_array_index(array, int, 0), 5);
+
+    i = iproc_array_bsearch(array, e + 1, compare_int);
+    ck_assert_int_eq(~i, 0);
+
+    iproc_array_insert(array, ~i, e + 1);
+    ck_assert_int_eq(iproc_array_size(array), 2);
+    ck_assert_int_eq(iproc_array_index(array, int, 0), 1);
+    ck_assert_int_eq(iproc_array_index(array, int, 1), 5);
+
+    i = iproc_array_bsearch(array, e + 2, compare_int);
+    ck_assert_int_eq(~i, 1);
+
+    iproc_array_insert(array, ~i, e + 2);
+    ck_assert_int_eq(iproc_array_size(array), 3);
+    ck_assert_int_eq(iproc_array_index(array, int, 0), 1);
+    ck_assert_int_eq(iproc_array_index(array, int, 1), 3);
+    ck_assert_int_eq(iproc_array_index(array, int, 2), 5);
+}
+END_TEST
+
 START_TEST (test_charz_append)
 {
     iproc_array_append(array, "y");
@@ -293,6 +324,7 @@ int_tcase ()
     tcase_add_test(tc, test_int_prepend);
     tcase_add_test(tc, test_int_insert);
     tcase_add_test(tc, test_int_lfind);
+    tcase_add_test(tc, test_int_complex);
     return tc;
 }
 

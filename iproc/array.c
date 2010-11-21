@@ -119,17 +119,18 @@ iproc_array_insert (iproc_array *array,
     assert(i >= 0);
     int64_t n = iproc_array_size(array);
     size_t elem_size = iproc_array_elem_size(array);
-    void *dst = &(iproc_array_index(array, char, i * elem_size));
+    int64_t nnew = (i < n) ? (n + 1) : (i + 1);
+    void *dst;
+
+    iproc_array_set_size(array, nnew);
+
+    /* compute dst after call to set_size, since memory gets realloced */
+    dst = &(iproc_array_index(array, char, i * elem_size));
 
     if (i < n) {
-        iproc_array_set_size(array, n + 1);
         memmove(dst + elem_size, dst, (n - i) * elem_size);
-    } else {
-        iproc_array_set_size(array, i + 1);
     }
 
-    /* we need to re-compute dst since the array may have gotten realloced */
-    dst = &(iproc_array_index(array, char, i * elem_size));
     memcpy(dst, pe, elem_size);
 }
 
