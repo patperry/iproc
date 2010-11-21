@@ -3,18 +3,26 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <iproc/array.h>
 
-typedef struct _iproc_events iproc_events;
+typedef struct _iproc_event      iproc_event;
+typedef struct _iproc_events     iproc_events;
+typedef struct _iproc_past_event iproc_past_event;
 
 struct _iproc_events {
-    int64_t  ncur;
-    int64_t  npast;
-    int64_t *cur;
-    int64_t *past;
-    int64_t *past_dt;
-    int64_t  max_ncur;
-    int64_t  max_npast;
+    iproc_array *cur;
+    iproc_array *past;
 };
+
+struct _iproc_event {
+    int64_t e;
+};
+
+struct _iproc_past_event {
+    iproc_event event;
+    int64_t     dt;
+};
+
 
 iproc_events * iproc_events_new       ();
 void           iproc_events_free      (iproc_events *events);
