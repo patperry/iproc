@@ -86,8 +86,8 @@ START_TEST (test_clear)
     iproc_history_advance(history, 99);
     iproc_history_send(history, 0);
     iproc_history_clear(history);
-    ck_assert_int_eq(iproc_history_nsend(history), 0);
-    ck_assert_int_eq(iproc_history_nrecv(history), 0);
+    ck_assert_int_eq(iproc_history_nsend(history), 1);
+    ck_assert_int_eq(iproc_history_nrecv(history), 6);
 
     iproc_history_insert(history, 0, 5);
     ck_assert_int_eq(iproc_events_cur(iproc_history_send(history, 0), 0), 5);

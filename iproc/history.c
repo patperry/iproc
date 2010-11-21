@@ -153,8 +153,6 @@ iproc_history_clear (iproc_history *history)
 {
     assert(history);
     history->elapsed = 0;
-    history->nsend = 0;
-    history->nrecv = 0;
     iproc_history_clear_events(history->max_nsend, history->send);
     iproc_history_clear_events(history->max_nrecv, history->recv);
 }
