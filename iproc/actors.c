@@ -6,6 +6,20 @@
 #include <iproc/memory.h>
 #include <iproc/actors.h>
 
+static int64_t
+iproc_actors_unsafe_append_class (iproc_actors *actors,
+                                  iproc_vector *vector)
+{
+    assert(actors);
+    assert(vector);
+
+    int64_t n = iproc_vector_dim(vector);
+    iproc_vector *x = iproc_vector_new(n);
+    iproc_vector_copy(x, vector);
+    iproc_array_append(actors->vector, &x);
+    return (iproc_array_size(actors->vector) - 1);
+}
+
 iproc_actors *
 iproc_actors_new (iproc_vector *defvector)
 {
@@ -20,11 +34,7 @@ iproc_actors_new (iproc_vector *defvector)
         iproc_actors_free(actors);
         actors = NULL;
     }
-
-    int64_t n = iproc_vector_dim(defvector);
-    iproc_vector *x0 = iproc_vector_new(n);
-    iproc_vector_copy(x0, defvector);
-    iproc_array_append(actors->vector, &x0);
+    iproc_actors_unsafe_append_class(actors, defvector);
 
     return actors;
 }
@@ -62,13 +72,9 @@ iproc_actors_append_class (iproc_actors *actors,
     assert(actors);
     assert(vector);
     assert(iproc_vector_dim(vector) == iproc_actors_dim(actors));
-
-    int64_t n = iproc_actors_dim(actors);
-    iproc_vector *x = iproc_vector_new(n);
-    iproc_vector_copy(x, vector);
-    iproc_array_append(actors->vector, &x);
-    return iproc_array_size(actors->vector);
+    return iproc_actors_unsafe_append_class(actors, vector);
 }
+
 
 iproc_vector *
 iproc_actors_class_vector (iproc_actors *actors,
