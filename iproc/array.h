@@ -30,6 +30,13 @@ void          iproc_array_insert    (iproc_array *array,
 void          iproc_array_remove    (iproc_array *array,
                                      int64_t      i);
 
+int64_t       iproc_array_lfind     (iproc_array *array,
+                                     void        *value,
+                                     int        (*compare) (void *, void *));
+int64_t       iproc_array_bsearch   (iproc_array *array,
+                                     void        *value,
+                                     int        (*compare) (void *, void *));
+
 #define       iproc_array_index(a,t,i) (((t *)((a)->data))[(i)])
 
 

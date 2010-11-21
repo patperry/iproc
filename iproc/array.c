@@ -79,6 +79,8 @@ iproc_array_set_size (iproc_array *array,
     }
 
     array->n = n;
+
+    assert(array->n <= array->n_max);
 }
 
 int64_t
@@ -126,6 +128,8 @@ iproc_array_insert (iproc_array *array,
         iproc_array_set_size(array, i + 1);
     }
 
+    /* we need to re-compute dst since the array may have gotten realloced */
+    dst = &(iproc_array_index(array, char, i * elem_size));
     memcpy(dst, pe, elem_size);
 }
 
@@ -144,4 +148,60 @@ iproc_array_remove (iproc_array *array,
     memmove(ptr, ptr + elem_size, (n - i) * elem_size);
 
     iproc_array_set_size(array, n - 1);
+}
+
+int64_t
+iproc_array_lfind (iproc_array *array,
+                   void        *value,
+                   int        (*compare) (void *, void *))
+{
+    assert(array);
+    assert(value);
+    assert(compare);
+
+    char *ptr = &(iproc_array_index(array, char, 0));
+    size_t elem_size = iproc_array_elem_size(array);
+    int64_t n = iproc_array_size(array);
+    int64_t i;
+
+    for (i = 0; i < n; ptr += elem_size, i++) {
+        if (compare(value, ptr) == 0)
+            return i;
+    }
+
+    return ~i;
+}
+
+int64_t
+iproc_array_bsearch (iproc_array *array,
+                     void        *value,
+                     int        (*compare) (void *, void *))
+{
+    assert(array);
+    assert(value);
+    assert(compare);
+
+    size_t  elem_size = iproc_array_elem_size(array);
+    void   *base = &(iproc_array_index(array, char, 0));
+    int64_t begin = 0;
+    int64_t end = iproc_array_size(array);
+    int64_t i;
+    void *ptr;
+    int cmp;
+
+    while (begin < end) {
+        i = begin + ((end - begin) >> 1);
+        ptr = base + i * elem_size;
+        cmp = compare(value, ptr);
+
+        if (cmp < 0) {         /* value < array[i] */
+            end = i;
+        } else if (cmp > 0) {  /* value > array[i] */
+            begin = i + 1;
+        } else {               /* value == array[i] */
+            return i;
+        }
+    }
+
+    return ~end;               /* begin == end, not found */
 }

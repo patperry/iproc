@@ -7,6 +7,26 @@
 
 iproc_array *array;
 
+static int
+compare_int (void *px, void *py)
+{
+    int x = *(int *)px;
+    int y = *(int *)py;
+
+    if (x < y) {
+        return -1;
+    } else if (x > y) {
+        return +1;
+    } else {
+        return 0;
+    }
+}
+
+static int
+compare_char (void *x, void *y)
+{
+    return (*(char *)x - *(char *)y);
+}
 
 static void
 int_setup ()
@@ -93,6 +113,15 @@ START_TEST (test_int_insert)
 }
 END_TEST
 
+START_TEST (test_int_lfind)
+{
+    int e = 3;
+    int64_t i = iproc_array_lfind(array, &e, compare_int);
+
+    ck_assert_int_eq(~i, 0);
+}
+END_TEST
+
 START_TEST (test_charz_append)
 {
     iproc_array_append(array, "y");
@@ -126,6 +155,16 @@ START_TEST (test_charz_remove)
 {
     iproc_array_remove(array, 0);
     ck_assert_int_eq(iproc_array_size(array), 0);
+}
+END_TEST
+
+START_TEST (test_charz_lfind)
+{
+    int64_t iz = iproc_array_lfind(array, "z", compare_char);
+    ck_assert_int_eq(iz, 0);
+
+    int64_t ia = iproc_array_lfind(array, "a", compare_char);
+    ck_assert_int_eq(~ia, 1);
 }
 END_TEST
 
@@ -174,6 +213,75 @@ START_TEST (test_int246_remove)
 }
 END_TEST
 
+START_TEST (test_int246_lfind)
+{
+    int elems[] = { 2, 4, 6, 1 };
+    int64_t i2 = iproc_array_lfind(array, elems + 0, compare_int);
+    int64_t i4 = iproc_array_lfind(array, elems + 1, compare_int);
+    int64_t i6 = iproc_array_lfind(array, elems + 2, compare_int);
+    int64_t i8 = iproc_array_lfind(array, elems + 3, compare_int);
+
+    ck_assert_int_eq( i2, 0);
+    ck_assert_int_eq( i4, 1);
+    ck_assert_int_eq( i6, 2);
+    ck_assert_int_eq(~i8, 3);
+}
+END_TEST
+
+static void
+intbig_setup ()
+{
+    int64_t n = 63;
+    int64_t i;
+    int x;
+    array = iproc_array_new(sizeof(int));
+
+    for (i = 0; i < n; i++) {
+        x = 1 + 2 * i;
+        iproc_array_append(array, &x);
+    }
+}
+
+START_TEST (test_intbig_init)
+{
+    ck_assert_int_eq(iproc_array_size(array), 63);
+
+    int64_t n = 63;
+    int64_t i;
+
+    for (i = 0; i < n; i++) {
+        ck_assert_int_eq(iproc_array_index(array, int, i), 1 + 2 * i);
+    }
+}
+END_TEST
+
+START_TEST (test_intbig_bsearch1)
+{
+    int64_t n = 63;
+    int64_t i, ix;
+    int x;
+
+    for (i = 0; i < n; i++) {
+        x = 1 + 2 * i;
+        ix = iproc_array_bsearch(array, &x, compare_int);
+        ck_assert_int_eq(ix, i);
+    }
+}
+END_TEST
+
+START_TEST (test_intbig_bsearch0)
+{
+    int64_t n = 63;
+    int64_t i, ix;
+    int x;
+
+    for (i = 0; i < n; i++) {
+        x = 2 * i;
+        ix = iproc_array_bsearch(array, &x, compare_int);
+        ck_assert_int_eq(~ix, i);
+    }
+}
+END_TEST
 
 static TCase *
 int_tcase ()
@@ -184,6 +292,7 @@ int_tcase ()
     tcase_add_test(tc, test_int_append);
     tcase_add_test(tc, test_int_prepend);
     tcase_add_test(tc, test_int_insert);
+    tcase_add_test(tc, test_int_lfind);
     return tc;
 }
 
@@ -197,6 +306,7 @@ charz_tcase ()
     tcase_add_test(tc, test_charz_prepend);
     tcase_add_test(tc, test_charz_insert);
     tcase_add_test(tc, test_charz_remove);
+    tcase_add_test(tc, test_charz_lfind);
     return tc;
 }
 
@@ -210,9 +320,20 @@ int246_tcase ()
     tcase_add_test(tc, test_int246_prepend);
     tcase_add_test(tc, test_int246_insert);
     tcase_add_test(tc, test_int246_remove);
+    tcase_add_test(tc, test_int246_lfind);
     return tc;
 }
 
+static TCase *
+intbig_tcase ()
+{
+    TCase *tc = tcase_create("int { 1, 3, ..., 2*62 + 1}");
+    tcase_add_checked_fixture(tc, intbig_setup, teardown);
+    tcase_add_test(tc, test_intbig_init);
+    tcase_add_test(tc, test_intbig_bsearch1);
+    tcase_add_test(tc, test_intbig_bsearch0);
+    return tc;
+}
 
 Suite *
 array_suite ()
@@ -221,5 +342,6 @@ array_suite ()
     suite_add_tcase(s, int_tcase());
     suite_add_tcase(s, charz_tcase());
     suite_add_tcase(s, int246_tcase());
+    suite_add_tcase(s, intbig_tcase());
     return s;
 }
