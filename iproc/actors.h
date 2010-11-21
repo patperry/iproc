@@ -10,8 +10,8 @@
 typedef struct _iproc_actors iproc_actors;
 
 struct _iproc_actors {
+    iproc_array *vector;
     iproc_array *class;
-    iproc_array *member;
 };
 
 iproc_actors * iproc_actors_new          (iproc_vector *defvector);
@@ -22,9 +22,10 @@ int64_t        iproc_actors_append_class (iproc_actors *actors,
 iproc_vector * iproc_actors_class_vector (iproc_actors *actors,
                                           int64_t       c);
 int64_t        iproc_actors_nclass       (iproc_actors *actors);
+int64_t        iproc_actors_dim          (iproc_actors *actors);
 
 
-void           iproc_actors_insert_actor (iproc_actors *actors,
+void           iproc_actors_insert       (iproc_actors *actors,
                                           int64_t       i,
                                           int64_t       c);
 int64_t        iproc_actors_class        (iproc_actors *actors,
