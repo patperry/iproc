@@ -15,7 +15,10 @@ libiproc_la_SOURCES  = iproc/actors.h \
                        iproc/history.c \
                        iproc/ieee754.h \
                        iproc/ieee754.c \
+                       iproc/matrix.h \
+                       iproc/matrix.c \
                        iproc/memory.h \
+                       iproc/utils.h \
                        iproc/vector.h \
                        iproc/vector.c
 

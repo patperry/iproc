@@ -16,7 +16,7 @@ struct _iproc_matrix {
 
 struct _iproc_matrix_view {
     iproc_matrix matrix;
-} iproc_matrix_view;
+};
 
 
 iproc_matrix *    iproc_matrix_new                 (int64_t       nrow,
@@ -53,7 +53,7 @@ void              iproc_matrix_acc                 (iproc_matrix *dst_matrix,
 void              iproc_matrix_scale               (iproc_matrix *matrix,
                                                     double        scale);
 void              iproc_matrix_scale_rows          (iproc_matrix *matrix,
-                                                    iproc_vector *vector);
+                                                    iproc_vector *scale);
 
 iproc_vector_view iproc_matrix_col                 (iproc_matrix *a,
                                                     int64_t       j);
