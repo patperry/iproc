@@ -46,6 +46,23 @@ iproc_array_new (size_t elem_size)
     return array;
 }
 
+iproc_array *
+iproc_array_new_copy (iproc_array *array)
+{
+    assert(array);
+
+    size_t elem_size = iproc_array_elem_size(array);
+    iproc_array *copy = iproc_array_new(elem_size);
+    int64_t n = iproc_array_size(array);
+
+    iproc_array_set_size(copy, n);
+    void *src = &(iproc_array_index(array, char, 0));
+    void *dst = &(iproc_array_index(copy, char, 0));
+    memcpy(dst, src, n * elem_size);
+
+    return copy;
+}
+
 void
 iproc_array_free (iproc_array *array)
 {

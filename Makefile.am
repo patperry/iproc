@@ -17,6 +17,8 @@ libiproc_la_SOURCES  = iproc/actors.h \
                        iproc/ieee754.c \
                        iproc/matrix.h \
                        iproc/matrix.c \
+                       iproc/svector.h \
+                       iproc/svector.c \
                        iproc/memory.h \
                        iproc/utils.h \
                        iproc/vector.h \
@@ -36,6 +38,7 @@ check_iproc_SOURCES  = tests/actors.c \
                        tests/history.c \
                        tests/ieee754.c \
                        tests/main.c \
+                       tests/svector.c \
                        tests/vector.c
 
 check_iproc_CPPFLAGS = -Itests \

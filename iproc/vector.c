@@ -103,6 +103,18 @@ iproc_vector_set (iproc_vector *vector,
     *ptr = value;
 }
 
+void
+iproc_vector_inc (iproc_vector *vector,
+                  int64_t       index,
+                  double        value)
+{
+    assert(vector);
+    assert(0 <= index);
+    assert(index < iproc_vector_dim(vector));
+
+    double *ptr = iproc_vector_ptr(vector, index);
+    *ptr += value;
+}
 
 double *
 iproc_vector_ptr (iproc_vector *vector,

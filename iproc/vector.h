@@ -28,6 +28,9 @@ double            iproc_vector_get           (iproc_vector *vector,
 void              iproc_vector_set           (iproc_vector *vector,
                                               int64_t       index,
                                               double        value);
+void              iproc_vector_inc           (iproc_vector *vector,
+                                              int64_t       index,
+                                              double        value);
 double *          iproc_vector_ptr           (iproc_vector *vector,
                                               int64_t       index);
 iproc_vector_view iproc_vector_subvector     (iproc_vector *vector,

@@ -9,6 +9,7 @@ extern Suite *actors_suite ();
 extern Suite *array_suite ();
 extern Suite *ieee754_suite ();
 extern Suite *vector_suite ();
+extern Suite *svector_suite ();
 extern Suite *events_suite ();
 extern Suite *history_suite ();
 
@@ -20,6 +21,7 @@ main ()
     srunner_add_suite(sr, array_suite());
     srunner_add_suite(sr, ieee754_suite());
     srunner_add_suite(sr, vector_suite());
+    srunner_add_suite(sr, svector_suite());
     srunner_add_suite(sr, events_suite());
     srunner_add_suite(sr, history_suite());
     srunner_add_suite(sr, actors_suite());
