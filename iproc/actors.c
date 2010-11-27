@@ -21,8 +21,10 @@ iproc_actors_unsafe_append_class (iproc_actors *actors,
 }
 
 iproc_actors *
-iproc_actors_new (iproc_vector *defvector)
+iproc_actors_new (int64_t      size,
+                 iproc_vector *defvector)
 {
+    assert(0 <= size);
     assert(defvector);
     iproc_actors *actors = iproc_malloc(sizeof(*actors));
     if (!actors) return NULL;
@@ -34,6 +36,10 @@ iproc_actors_new (iproc_vector *defvector)
         iproc_actors_free(actors);
         actors = NULL;
     }
+    /* We rely on array_set growing clearing the tail to zeros.  No further
+     * action is necessary since IPROC_ACTORS_DEFCLASS is zero.
+     */
+    iproc_array_set_size(actors->class, size);
     iproc_actors_unsafe_append_class(actors, defvector);
 
     return actors;
@@ -98,6 +104,13 @@ iproc_actors_nclass (iproc_actors *actors)
 }
 
 int64_t
+iproc_actors_size (iproc_actors *actors)
+{
+    assert(actors);
+    return iproc_array_size(actors->class);
+}
+
+int64_t
 iproc_actors_dim (iproc_actors *actors)
 {
     assert(actors);
@@ -107,19 +120,16 @@ iproc_actors_dim (iproc_actors *actors)
 }
 
 void
-iproc_actors_insert (iproc_actors *actors,
-                     int64_t       i,
-                     int64_t       c)
+iproc_actors_set (iproc_actors *actors,
+                  int64_t       i,
+                  int64_t       c)
 {
     assert(actors);
     assert(0 <= i);
+    assert(i < iproc_actors_size(actors));
     assert(0 <= c);
     assert(c < iproc_actors_nclass(actors));
 
-    /* We rely on array_set growing if necessary, and clearing the tail
-     * to zeros.  No further action is necessary since IPROC_ACTORS_DEFCLASS
-     * is zero.
-     */
     iproc_array_set(actors->class, i, &c);
 }
 
@@ -129,6 +139,7 @@ iproc_actors_class (iproc_actors *actors,
 {
     assert(actors);
     assert(0 <= i);
+    assert(i < iproc_actors_size(actors));
 
     int64_t c = IPROC_ACTORS_DEFCLASS;
     iproc_array *class = actors->class;
@@ -146,6 +157,7 @@ iproc_actors_vector (iproc_actors *actors,
 {
     assert(actors);
     assert(0 <= i);
+    assert(i < iproc_actors_size(actors));
 
     int64_t c = iproc_actors_class(actors, i);
     iproc_vector *x = iproc_actors_class_vector(actors, c);

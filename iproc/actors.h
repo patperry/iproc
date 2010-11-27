@@ -14,7 +14,8 @@ struct _iproc_actors {
     iproc_array *class;
 };
 
-iproc_actors * iproc_actors_new          (iproc_vector *defvector);
+iproc_actors * iproc_actors_new          (int64_t       size,
+                                          iproc_vector *defvector);
 void           iproc_actors_free         (iproc_actors *actors);
 
 int64_t        iproc_actors_append_class (iproc_actors *actors,
@@ -22,10 +23,11 @@ int64_t        iproc_actors_append_class (iproc_actors *actors,
 iproc_vector * iproc_actors_class_vector (iproc_actors *actors,
                                           int64_t       c);
 int64_t        iproc_actors_nclass       (iproc_actors *actors);
+int64_t        iproc_actors_size         (iproc_actors *actors);
 int64_t        iproc_actors_dim          (iproc_actors *actors);
 
 
-void           iproc_actors_insert       (iproc_actors *actors,
+void           iproc_actors_set          (iproc_actors *actors,
                                           int64_t       i,
                                           int64_t       c);
 int64_t        iproc_actors_class        (iproc_actors *actors,
