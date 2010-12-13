@@ -17,7 +17,7 @@ zero5_setup ()
 static void
 teardown ()
 {
-    iproc_svector_free(x);
+    iproc_svector_unref(x);
 }
 
 START_TEST (test_z5_init)

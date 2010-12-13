@@ -11,12 +11,14 @@ struct _iproc_svector {
     int64_t      dim;
     iproc_array *index;
     iproc_array *value;
+    int          refcount;
 };
 
 iproc_svector * iproc_svector_new      (int64_t        dim);
 iproc_svector * iproc_svector_new_copy (iproc_svector *svector);
 void            iproc_svector_clear    (iproc_svector *svector);
-void            iproc_svector_free     (iproc_svector *svector);
+iproc_svector * iproc_svector_ref      (iproc_svector *svector);
+void            iproc_svector_unref    (iproc_svector *svector);
 
 int64_t         iproc_svector_dim      (iproc_svector *svector);
 double          iproc_svector_get      (iproc_svector *svector,

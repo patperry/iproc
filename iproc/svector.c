@@ -31,6 +31,16 @@ iproc_svector_nz_index (iproc_svector *svector, int64_t i)
     return ix;
 }
 
+static void
+iproc_svector_free (iproc_svector *svector)
+{
+    if (svector) {
+        iproc_array_unref(svector->index);
+        iproc_array_unref(svector->value);
+        iproc_free(svector);
+    }
+}
+
 iproc_svector *
 iproc_svector_new (int64_t dim)
 {
@@ -45,6 +55,7 @@ iproc_svector_new (int64_t dim)
     svector->dim = dim;
     svector->index = iproc_array_new(sizeof(int64_t));
     svector->value = iproc_array_new(sizeof(double));
+    svector->refcount = 1;
 
     if (!(svector->index && svector->value)) {
         iproc_svector_free(svector);
@@ -54,13 +65,25 @@ iproc_svector_new (int64_t dim)
     return svector;
 }
 
-void
-iproc_svector_free (iproc_svector *svector)
+iproc_svector *
+iproc_svector_ref (iproc_svector *svector)
 {
     if (svector) {
-        iproc_array_unref(svector->index);
-        iproc_array_unref(svector->value);
-        iproc_free(svector);
+        svector->refcount = svector->refcount + 1;
+    }
+    return svector;
+}
+
+void
+iproc_svector_unref (iproc_svector *svector)
+{
+    if (!svector)
+        return;
+
+    if (svector->refcount == 1) {
+        iproc_svector_free(svector);
+    } else {
+        svector->refcount = svector->refcount - 1;
     }
 }
 
