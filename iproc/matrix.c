@@ -7,6 +7,15 @@
 #include <iproc/matrix.h>
 
 
+static void
+iproc_matrix_free (iproc_matrix *matrix)
+{
+    if (matrix) {
+        iproc_free(matrix->data);
+        iproc_free(matrix);
+    }
+}
+
 iproc_matrix *
 iproc_matrix_new (int64_t nrow, int64_t ncol)
 {
@@ -18,6 +27,7 @@ iproc_matrix_new (int64_t nrow, int64_t ncol)
     matrix->nrow = nrow;
     matrix->ncol = ncol;
     matrix->lda = IPROC_MAX(1, nrow);
+    matrix->refcount = 1;
 
     if (!(matrix->data)) {
         iproc_matrix_free(matrix);
@@ -38,12 +48,25 @@ iproc_matrix_new_copy (iproc_matrix *matrix)
     return copy;
 }
 
-void
-iproc_matrix_iproc_free (iproc_matrix *matrix)
+iproc_matrix *
+iproc_matrix_ref (iproc_matrix *matrix)
 {
     if (matrix) {
-        iproc_free(matrix->data);
-        iproc_free(matrix);
+        matrix->refcount = matrix->refcount + 1;
+    }
+    return matrix;
+}
+
+void
+iproc_matrix_unref (iproc_matrix *matrix)
+{
+    if (!matrix)
+        return;
+
+    if (matrix->refcount == 1) {
+        iproc_matrix_free(matrix);
+    } else {
+        matrix->refcount = matrix->refcount - 1;
     }
 }
 

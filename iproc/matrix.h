@@ -12,6 +12,7 @@ struct _iproc_matrix {
     int64_t nrow;
     int64_t ncol;
     int64_t lda;
+    int     refcount;
 };
 
 struct _iproc_matrix_view {
@@ -22,7 +23,8 @@ struct _iproc_matrix_view {
 iproc_matrix *    iproc_matrix_new                 (int64_t       nrow,
                                                     int64_t       ncol);
 iproc_matrix *    iproc_matrix_new_copy            (iproc_matrix *matrix);
-void              iproc_matrix_free                (iproc_matrix *matrix);
+iproc_matrix *    iproc_matrix_ref                 (iproc_matrix *matrix);
+void              iproc_matrix_unref               (iproc_matrix *matrix);
 void              iproc_matrix_copy                (iproc_matrix *dst,
                                                     iproc_matrix *src);
 void              iproc_matrix_set_all             (iproc_matrix *matrix,
