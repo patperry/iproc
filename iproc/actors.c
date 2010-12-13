@@ -20,31 +20,6 @@ iproc_actors_unsafe_append_class (iproc_actors *actors,
     return (iproc_array_size(actors->vector) - 1);
 }
 
-iproc_actors *
-iproc_actors_new (int64_t      size,
-                 iproc_vector *defvector)
-{
-    assert(0 <= size);
-    assert(defvector);
-    iproc_actors *actors = iproc_malloc(sizeof(*actors));
-    if (!actors) return NULL;
-
-    actors->vector = iproc_array_new(sizeof(iproc_vector *));
-    actors->class = iproc_array_new(sizeof(int64_t));
-
-    if (!(actors->vector && actors->class)) {
-        iproc_actors_free(actors);
-        actors = NULL;
-    }
-    /* We rely on array_set growing clearing the tail to zeros.  No further
-     * action is necessary since IPROC_ACTORS_DEFCLASS is zero.
-     */
-    iproc_array_set_size(actors->class, size);
-    iproc_actors_unsafe_append_class(actors, defvector);
-
-    return actors;
-}
-
 static void
 iproc_actors_vector_free (iproc_array *vector)
 {
@@ -61,13 +36,61 @@ iproc_actors_vector_free (iproc_array *vector)
     }
 }
 
-void
+static void
 iproc_actors_free (iproc_actors *actors)
 {
     if (actors) {
         iproc_actors_vector_free(actors->vector);
         iproc_array_unref(actors->class);
         iproc_free(actors);
+    }
+}
+
+iproc_actors *
+iproc_actors_new (int64_t      size,
+                 iproc_vector *defvector)
+{
+    assert(0 <= size);
+    assert(defvector);
+    iproc_actors *actors = iproc_malloc(sizeof(*actors));
+    if (!actors) return NULL;
+
+    actors->vector = iproc_array_new(sizeof(iproc_vector *));
+    actors->class = iproc_array_new(sizeof(int64_t));
+    actors->refcount = 1;
+
+    if (!(actors->vector && actors->class)) {
+        iproc_actors_free(actors);
+        actors = NULL;
+    }
+    /* We rely on array_set growing clearing the tail to zeros.  No further
+     * action is necessary since IPROC_ACTORS_DEFCLASS is zero.
+     */
+    iproc_array_set_size(actors->class, size);
+    iproc_actors_unsafe_append_class(actors, defvector);
+
+    return actors;
+}
+
+iproc_actors *
+iproc_actors_ref (iproc_actors *actors)
+{
+    if (actors) {
+        actors->refcount = actors->refcount + 1;
+    }
+    return actors;
+}
+
+void
+iproc_actors_unref (iproc_actors *actors)
+{
+    if (!actors)
+        return;
+
+    if (actors->refcount == 1) {
+        return iproc_actors_free(actors);
+    } else {
+        actors->refcount = actors->refcount - 1;
     }
 }
 

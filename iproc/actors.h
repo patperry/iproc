@@ -12,11 +12,13 @@ typedef struct _iproc_actors iproc_actors;
 struct _iproc_actors {
     iproc_array *vector;
     iproc_array *class;
+    int          refcount;
 };
 
 iproc_actors * iproc_actors_new          (int64_t       size,
                                           iproc_vector *defvector);
-void           iproc_actors_free         (iproc_actors *actors);
+iproc_actors * iproc_actors_ref          (iproc_actors *actors);
+void           iproc_actors_unref        (iproc_actors *actors);
 
 int64_t        iproc_actors_append_class (iproc_actors *actors,
                                           iproc_vector *vector);

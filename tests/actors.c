@@ -21,7 +21,7 @@ empty_setup ()
 static void
 teardown ()
 {
-    iproc_actors_free(actors);
+    iproc_actors_unref(actors);
 }
 
 START_TEST (test_empty_init)
