@@ -11,8 +11,8 @@ static void
 iproc_vars_free (iproc_vars *vars)
 {
     if (vars) {
-        iproc_actors_unref(vars->send);
         iproc_actors_unref(vars->recv);
+        iproc_actors_unref(vars->send);
         iproc_free(vars);
     }
 }
@@ -57,6 +57,8 @@ static void
 iproc_vars_ctx_free (iproc_vars_ctx *ctx)
 {
     if (ctx) {
+        iproc_history_unref(ctx->history);
+        iproc_vars_unref(ctx->vars);
         iproc_free(ctx);
     }
 }
@@ -127,8 +129,8 @@ iproc_vars_nrecv (iproc_vars *vars)
 
 
 void
-iproc_vars_ctx_mul (iproc_trans     trans,
-                    double          alpha,
+iproc_vars_ctx_mul (double          alpha,
+                    iproc_trans     trans,
                     iproc_vars_ctx *ctx,
                     iproc_vector   *x,
                     double          beta,
@@ -147,26 +149,38 @@ iproc_vars_ctx_mul (iproc_trans     trans,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
 
-    if (beta == 0.0) {
-        iproc_vector_set_all(y, 0.0);
-    } else if (beta != 1.0) {
-        iproc_vector_scale(y, beta);
-    }
-
-    /*
     iproc_vars *vars = ctx->vars;
     int64_t p = iproc_actors_dim(vars->send);
     int64_t q = iproc_actors_dim(vars->recv);
-    iproc_matrix_view xmat = iproc_matrix_view_vector(x, p, q);
     iproc_vector *s = iproc_actors_vector(vars->send, ctx->isend);
-    */
+    iproc_vector *z = iproc_vector_new(q);
 
-    iproc_vars_ctx_diff_mul(trans, alpha, ctx, x, 1.0, y);
+    if (trans == IPROC_TRANS_NOTRANS) {
+        /* z := alpha t(x) s */
+        iproc_matrix_view xmat = iproc_matrix_view_vector(x, p, q);
+        iproc_matrix_mul(alpha, IPROC_TRANS_TRANS, &xmat.matrix, s, 0.0, z);
+
+        /* y := beta y + R z */
+        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, vars->recv, z, beta, y);
+    } else {
+        /* z := alpha t(R) x */
+        iproc_actors_mul(alpha, IPROC_TRANS_TRANS, vars->recv, x, 0.0, z);
+
+        /* y := beta y + s \otimes z */
+        iproc_matrix_view ymat = iproc_matrix_view_vector(y, p, q);
+        iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
+        iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
+        iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix, &zmat.matrix,
+                            beta, &ymat.matrix);
+    }
+
+    iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 1.0, y);
+    iproc_vector_unref(z);
 }
 
 void
-iproc_vars_ctx_diff_mul (iproc_trans     trans,
-                         double          alpha,
+iproc_vars_ctx_diff_mul (double          alpha,
+                         iproc_trans     trans,
                          iproc_vars_ctx *ctx,
                          iproc_vector   *x,
                          double          beta,

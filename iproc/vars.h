@@ -39,15 +39,14 @@ iproc_vars_ctx * iproc_vars_ctx_new      (iproc_vars     *vars,
 iproc_vars_ctx * iproc_vars_ctx_ref      (iproc_vars_ctx *ctx);
 void             iproc_vars_ctx_unref    (iproc_vars_ctx *ctx);
 
-void             iproc_vars_ctx_mul      (iproc_trans     trans,
-                                          double          alpha,
+void             iproc_vars_ctx_mul      (double          alpha,
+                                          iproc_trans     trans,
                                           iproc_vars_ctx *ctx,
                                           iproc_vector   *x,
                                           double          beta,
                                           iproc_vector   *y);
-
-void             iproc_vars_ctx_diff_mul (iproc_trans     trans,
-                                          double          alpha,
+void             iproc_vars_ctx_diff_mul (double          alpha,
+                                          iproc_trans     trans,
                                           iproc_vars_ctx *ctx,
                                           iproc_vector   *x,
                                           double          beta,
