@@ -86,8 +86,8 @@ void
 iproc_history_free (iproc_history *history)
 {
     if (history) {
-        iproc_array_free(history->send);
-        iproc_array_free(history->recv);
+        iproc_array_unref(history->send);
+        iproc_array_unref(history->recv);
         iproc_free(history);
     }
 }

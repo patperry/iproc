@@ -58,8 +58,8 @@ void
 iproc_svector_free (iproc_svector *svector)
 {
     if (svector) {
-        iproc_array_free(svector->index);
-        iproc_array_free(svector->value);
+        iproc_array_unref(svector->index);
+        iproc_array_unref(svector->value);
         iproc_free(svector);
     }
 }

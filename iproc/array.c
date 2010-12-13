@@ -42,6 +42,7 @@ iproc_array_new (size_t elem_size)
     array->n = 0;
     array->n_max = 1;
     array->data = iproc_malloc(array->n_max * elem_size);
+    array->refcount = 1;
 
     return array;
 }
@@ -63,12 +64,31 @@ iproc_array_new_copy (iproc_array *array)
     return copy;
 }
 
-void
+static void
 iproc_array_free (iproc_array *array)
 {
     if (array) {
         iproc_free(array->data);
         iproc_free(array);
+    }
+}
+
+iproc_array *
+iproc_array_ref (iproc_array *array)
+{
+    assert(array);
+    array->refcount = array->refcount + 1;
+    return array;
+}
+
+void
+iproc_array_unref (iproc_array *array)
+{
+    assert(array);
+    if (array->refcount == 1) {
+        iproc_array_free(array);
+    } else {
+        array->refcount = array->refcount - 1;
     }
 }
 

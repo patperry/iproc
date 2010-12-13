@@ -58,8 +58,8 @@ void
 iproc_events_free (iproc_events *events)
 {
     if (events) {
-        iproc_array_free(events->cur);
-        iproc_array_free(events->past);
+        iproc_array_unref(events->cur);
+        iproc_array_unref(events->past);
         iproc_free(events);
     }
 }

@@ -57,7 +57,7 @@ iproc_actors_vector_free (iproc_array *vector)
             x = iproc_array_index(vector, iproc_vector *, i);
             iproc_vector_free(x);
         }
-        iproc_array_free(vector);
+        iproc_array_unref(vector);
     }
 }
 
@@ -66,7 +66,7 @@ iproc_actors_free (iproc_actors *actors)
 {
     if (actors) {
         iproc_actors_vector_free(actors->vector);
-        iproc_array_free(actors->class);
+        iproc_array_unref(actors->class);
         iproc_free(actors);
     }
 }

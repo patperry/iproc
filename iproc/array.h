@@ -11,11 +11,14 @@ struct _iproc_array {
     int64_t n_max;
     void   *data;
     size_t  elem_size;
+    int     refcount;
 };
 
 iproc_array * iproc_array_new       (size_t       elem_size);
 iproc_array * iproc_array_new_copy  (iproc_array *array);
-void          iproc_array_free      (iproc_array *array);
+iproc_array * iproc_array_ref       (iproc_array *array);
+void          iproc_array_unref     (iproc_array *array);
+
 
 size_t        iproc_array_elem_size (iproc_array *array);
 void          iproc_array_set_size  (iproc_array *array,

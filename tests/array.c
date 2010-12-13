@@ -54,7 +54,7 @@ int246_setup ()
 static void
 teardown ()
 {
-    iproc_array_free(array);
+    iproc_array_unref(array);
 }
 
 START_TEST (test_int_init)
