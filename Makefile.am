@@ -5,14 +5,13 @@ lib_LTLIBRARIES = \
 
 include_HEADERS = \
 	iproc/actors.h \
-	iproc/blas.h \
 	iproc/ieee754.h \
+	iproc/matrix.h \
 	iproc/vars.h \
 	iproc/vector.h
 
 libiproc_la_SOURCES = \
 	iproc/actors.h \
-	iproc/blas.h \
 	iproc/actors.c \
 	iproc/array.h \
 	iproc/array.c \

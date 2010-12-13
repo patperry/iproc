@@ -316,3 +316,77 @@ iproc_matrix_view_vector (iproc_vector *vector,
     double *data = iproc_vector_ptr(vector, 0);
     return iproc_matrix_view_array(data, nrow, ncol);
 }
+
+
+void
+iproc_matrix_mul (iproc_trans   trans,
+                  double        alpha,
+                  iproc_matrix *matrix,
+                  iproc_vector *x,
+                  double        beta,
+                  iproc_vector *y)
+{
+    assert(matrix);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_matrix_ncol(matrix));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_matrix_nrow(matrix));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_matrix_nrow(matrix));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_matrix_ncol(matrix));
+
+    char    *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
+    int64_t  m      = iproc_matrix_nrow(matrix);
+    int64_t  n      = iproc_matrix_ncol(matrix);
+    void    *pa     = iproc_matrix_ptr(matrix, 0, 0);
+    int64_t  lda    = iproc_matrix_lda(matrix);
+    void    *px     = iproc_vector_ptr(x, 0);
+    int64_t  incx   = 1;
+    void    *py     = iproc_vector_ptr(y, 0);
+    int64_t  incy   = 1;
+
+    F77_FUNC(dgemv)(ptrans, F77_INTP(m),  F77_INTP(n), &alpha, pa, F77_INTP(lda), 
+                    px, F77_INTP(incx), &beta, py, F77_INTP(incy));
+}
+
+void
+iproc_matrix_matmul (iproc_trans   trans,
+                     double        alpha,
+                     iproc_matrix *matrix,
+                     iproc_matrix *x,
+                     double        beta,
+                     iproc_matrix *y)
+{
+    assert(matrix);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(x) == iproc_matrix_ncol(matrix));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(y) == iproc_matrix_nrow(matrix));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(x) == iproc_matrix_nrow(matrix));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(y) == iproc_matrix_ncol(matrix));
+    assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
+
+    char    *ptransa = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
+    char    *ptransb = "N";
+    int64_t  m       = iproc_matrix_nrow(y);
+    int64_t  n       = iproc_matrix_ncol(y);
+    int64_t  k       = (trans == IPROC_TRANS_NOTRANS) ? iproc_matrix_ncol(matrix)
+                                                      : iproc_matrix_nrow(matrix);
+    void    *pa      = iproc_matrix_ptr(matrix, 0, 0);
+    int64_t  lda     = iproc_matrix_lda(matrix);
+    void    *pb      = iproc_matrix_ptr(x, 0, 0);
+    int64_t  ldb     = iproc_matrix_lda(x);
+    void    *pc      = iproc_matrix_ptr(y, 0, 0);
+    int64_t  ldc     = iproc_matrix_lda(y);
+
+    F77_FUNC(dgemm)(ptransa, ptransb, F77_INTP(m), F77_INTP(n), F77_INTP(k),
+                    &alpha, pa, F77_INTP(lda), pb, F77_INTP(ldb),
+                    &beta, pc, F77_INTP(ldc));
+}

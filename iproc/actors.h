@@ -2,7 +2,6 @@
 #define _IPROC_ACTORS_H
 
 #include <iproc/array.h>
-#include <iproc/blas.h>
 #include <iproc/matrix.h>
 #include <iproc/vector.h>
 

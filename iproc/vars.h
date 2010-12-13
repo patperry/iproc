@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <iproc/actors.h>
-#include <iproc/blas.h>
 #include <iproc/history.h>
+#include <iproc/matrix.h>
 #include <iproc/vector.h>
 
 typedef struct _iproc_vars     iproc_vars;
@@ -20,7 +20,7 @@ struct _iproc_vars {
 struct _iproc_vars_ctx {
     iproc_vars    *vars;
     iproc_history *history;
-    int64_t        send;
+    int64_t        isend;
     int            refcount;
 };
 
@@ -29,9 +29,13 @@ iproc_vars *     iproc_vars_new          (iproc_actors   *send,
                                           iproc_actors   *recv);
 iproc_vars *     iproc_vars_ref          (iproc_vars     *vars);
 void             iproc_vars_unref        (iproc_vars     *vars);
+int64_t          iproc_vars_dim          (iproc_vars     *vars);
+int64_t          iproc_vars_nsend        (iproc_vars     *vars);
+int64_t          iproc_vars_nrecv        (iproc_vars     *vars);
+
 iproc_vars_ctx * iproc_vars_ctx_new      (iproc_vars     *vars,
                                           iproc_history  *h,
-                                          int64_t         send);
+                                          int64_t         isend);
 iproc_vars_ctx * iproc_vars_ctx_ref      (iproc_vars_ctx *ctx);
 void             iproc_vars_ctx_unref    (iproc_vars_ctx *ctx);
 
@@ -42,7 +46,7 @@ void             iproc_vars_ctx_mul      (iproc_trans     trans,
                                           double          beta,
                                           iproc_vector   *y);
 
-void             iproc_vars_cxt_diff_mul (iproc_trans     trans,
+void             iproc_vars_ctx_diff_mul (iproc_trans     trans,
                                           double          alpha,
                                           iproc_vars_ctx *ctx,
                                           iproc_vector   *x,
