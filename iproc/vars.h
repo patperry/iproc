@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <iproc/actors.h>
 #include <iproc/blas.h>
+#include <iproc/history.h>
 #include <iproc/vector.h>
 
 typedef struct _iproc_vars     iproc_vars;
