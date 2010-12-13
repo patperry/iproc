@@ -155,23 +155,33 @@ iproc_vars_ctx_mul (double          alpha,
     iproc_vector *s = iproc_actors_vector(vars->send, ctx->isend);
     iproc_vector *z = iproc_vector_new(q);
 
+    /* y := beta y */
+    if (beta == 0.0) {
+        iproc_vector_set_all(y, 0.0);
+    } else if (beta != 1.0) {
+        iproc_vector_scale(y, beta);
+    }
+
     if (trans == IPROC_TRANS_NOTRANS) {
+        iproc_vector_view xsub = iproc_vector_subvector(x, 0, p * q);
+
         /* z := alpha t(x) s */
-        iproc_matrix_view xmat = iproc_matrix_view_vector(x, p, q);
+        iproc_matrix_view xmat = iproc_matrix_view_vector(&xsub.vector, p, q);
         iproc_matrix_mul(alpha, IPROC_TRANS_TRANS, &xmat.matrix, s, 0.0, z);
 
-        /* y := beta y + R z */
-        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, vars->recv, z, beta, y);
+        /* y := y + R z */
+        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, vars->recv, z, 1.0, y);
     } else {
         /* z := alpha t(R) x */
         iproc_actors_mul(alpha, IPROC_TRANS_TRANS, vars->recv, x, 0.0, z);
 
-        /* y := beta y + s \otimes z */
-        iproc_matrix_view ymat = iproc_matrix_view_vector(y, p, q);
+        /* y := y + s \otimes z */
+        iproc_vector_view ysub = iproc_vector_subvector(y, 0, p * q);
+        iproc_matrix_view ymat = iproc_matrix_view_vector(&ysub.vector, p, q);
         iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
         iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
         iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix, &zmat.matrix,
-                            beta, &ymat.matrix);
+                            1.0, &ymat.matrix);
     }
 
     iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 1.0, y);
@@ -199,6 +209,7 @@ iproc_vars_ctx_diff_mul (double          alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
 
+    /* y := beta y */
     if (beta == 0.0) {
         iproc_vector_set_all(y, 0.0);
     } else if (beta != 1.0) {
