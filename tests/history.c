@@ -16,7 +16,7 @@ setup ()
 static void
 teardown ()
 {
-    iproc_history_free(history);
+    iproc_history_unref(history);
 }
 
 START_TEST (test_init)

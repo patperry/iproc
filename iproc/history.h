@@ -16,11 +16,13 @@ struct _iproc_history {
     int64_t      elapsed;
     iproc_array *send;
     iproc_array *recv;
+    int          refcount;
 };
 
 
 iproc_history * iproc_history_new     ();
-void            iproc_history_free    (iproc_history *history);
+iproc_history * iproc_history_ref     (iproc_history *history);
+void            iproc_history_unref   (iproc_history *history);
 void            iproc_history_clear   (iproc_history *history);
 
 void            iproc_history_advance (iproc_history *history,

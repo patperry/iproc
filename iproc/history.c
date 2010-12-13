@@ -64,6 +64,16 @@ iproc_history_get (int64_t      elapsed,
     return e;
 }
 
+static void
+iproc_history_free (iproc_history *history)
+{
+    if (history) {
+        iproc_array_unref(history->send);
+        iproc_array_unref(history->recv);
+        iproc_free(history);
+    }
+}
+
 iproc_history *
 iproc_history_new ()
 {
@@ -82,13 +92,25 @@ iproc_history_new ()
     return history;
 }
 
-void
-iproc_history_free (iproc_history *history)
+iproc_history *
+iproc_history_ref (iproc_history *history)
 {
     if (history) {
-        iproc_array_unref(history->send);
-        iproc_array_unref(history->recv);
-        iproc_free(history);
+        history->refcount = history->refcount + 1;
+    }
+    return history;
+}
+
+void
+iproc_history_unref (iproc_history *history)
+{
+    if (!history)
+        return;
+
+    if (history->refcount == 1) {
+        iproc_history_free(history);
+    } else {
+        history->refcount = history->refcount - 1;
     }
 }
 
