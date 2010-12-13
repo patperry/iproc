@@ -113,6 +113,64 @@ START_TEST (test_twoclass_class)
 }
 END_TEST
 
+START_TEST (test_twoclass_mul_notrans)
+{
+    double x_data[] = { 3.0 };
+    double y_data[] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+    int n = 7;
+    int p = 1;
+    iproc_vector_view x = iproc_vector_view_array(x_data, p);
+    iproc_vector_view y = iproc_vector_view_array(y_data, n);
+
+    iproc_actors_mul(IPROC_TRANS_NOTRANS, 1.0, actors, &x.vector, 0.0, &y.vector);
+    ck_assert_feq(y_data[0],  0.0);
+    ck_assert_feq(y_data[1], 12.0);
+    ck_assert_feq(y_data[2],  0.0);
+    ck_assert_feq(y_data[3], 12.0);
+    ck_assert_feq(y_data[4],  0.0);
+    ck_assert_feq(y_data[5],  6.0);
+    ck_assert_feq(y_data[6],  0.0);
+
+    iproc_actors_mul(IPROC_TRANS_NOTRANS, 2.0, actors, &x.vector, 1.0, &y.vector);
+    ck_assert_feq(y_data[0],  0.0);
+    ck_assert_feq(y_data[1], 36.0);
+    ck_assert_feq(y_data[2],  0.0);
+    ck_assert_feq(y_data[3], 36.0);
+    ck_assert_feq(y_data[4],  0.0);
+    ck_assert_feq(y_data[5], 18.0);
+    ck_assert_feq(y_data[6],  0.0);
+
+    iproc_actors_mul(IPROC_TRANS_NOTRANS, -1.0, actors, &x.vector, 0.5, &y.vector);
+    ck_assert_feq(y_data[0],  0.0);
+    ck_assert_feq(y_data[1],  6.0);
+    ck_assert_feq(y_data[2],  0.0);
+    ck_assert_feq(y_data[3],  6.0);
+    ck_assert_feq(y_data[4],  0.0);
+    ck_assert_feq(y_data[5],  3.0);
+    ck_assert_feq(y_data[6],  0.0);
+}
+END_TEST
+
+START_TEST (test_twoclass_mul_trans)
+{
+    double x_data[] = { 1.0, 0.0, 1.0, 2.0, 1.0, -1.0, 1.0 };
+    double y_data[] = { 2.0 };
+    int n = 7;
+    int p = 1;
+    iproc_vector_view x = iproc_vector_view_array(x_data, n);
+    iproc_vector_view y = iproc_vector_view_array(y_data, p);
+
+    iproc_actors_mul(IPROC_TRANS_TRANS, 1.0, actors, &x.vector, 0.0, &y.vector);
+    ck_assert_feq(y_data[0], 6.0);
+
+    iproc_actors_mul(IPROC_TRANS_TRANS, 2.0, actors, &x.vector, 1.0, &y.vector);
+    ck_assert_feq(y_data[0], 18.0);
+
+    iproc_actors_mul(IPROC_TRANS_TRANS, -1.0, actors, &x.vector, 0.5, &y.vector);
+    ck_assert_feq(y_data[0], 3.0);
+}
+END_TEST
+
 static TCase *
 empty_tcase ()
 {
@@ -132,6 +190,8 @@ twoclass_tcase ()
     tcase_add_checked_fixture(tc, twoclass_setup, teardown);
     tcase_add_test(tc, test_twoclass_init);
     tcase_add_test(tc, test_twoclass_class);
+    tcase_add_test(tc, test_twoclass_mul_notrans);
+    tcase_add_test(tc, test_twoclass_mul_trans);
     return tc;
 }
 

@@ -115,7 +115,7 @@ iproc_actors_class_vector (iproc_actors *actors,
 
     iproc_vector *x = iproc_array_index(actors->vector,
                                         iproc_vector *,
-                                        0);
+                                        c);
     return x;
 }
 
