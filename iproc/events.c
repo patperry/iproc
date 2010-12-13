@@ -36,6 +36,16 @@ iproc_events_clear_past (iproc_events *events)
     iproc_array_set_size(events->past, 0);
 }
 
+static void
+iproc_events_free (iproc_events *events)
+{
+    if (events) {
+        iproc_array_unref(events->cur);
+        iproc_array_unref(events->past);
+        iproc_free(events);
+    }
+}
+
 iproc_events *
 iproc_events_new ()
 {
@@ -45,6 +55,7 @@ iproc_events_new ()
 
     events->cur  = iproc_array_new(sizeof(iproc_event));
     events->past = iproc_array_new(sizeof(iproc_past_event));
+    events->refcount = 1;
 
     if (!(events->cur && events->past)) {
         iproc_events_free(events);
@@ -54,13 +65,25 @@ iproc_events_new ()
     return events;
 }
 
-void
-iproc_events_free (iproc_events *events)
+iproc_events *
+iproc_events_ref (iproc_events *events)
 {
     if (events) {
-        iproc_array_unref(events->cur);
-        iproc_array_unref(events->past);
-        iproc_free(events);
+        events->refcount = events->refcount + 1;
+    }
+    return events;
+}
+
+void
+iproc_events_unref (iproc_events *events)
+{
+    if (!events)
+        return;
+
+    if (events->refcount == 1) {
+        iproc_events_free(events);
+    } else {
+        events->refcount = events->refcount - 1;
     }
 }
 

@@ -17,7 +17,7 @@ setup ()
 static void
 teardown ()
 {
-    iproc_events_free(events);
+    iproc_events_unref(events);
 }
 
 START_TEST (test_init)

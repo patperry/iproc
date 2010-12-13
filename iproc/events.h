@@ -12,6 +12,7 @@ typedef struct _iproc_past_event iproc_past_event;
 struct _iproc_events {
     iproc_array *cur;
     iproc_array *past;
+    int          refcount;
 };
 
 struct _iproc_event {
@@ -25,7 +26,8 @@ struct _iproc_past_event {
 
 
 iproc_events * iproc_events_new       ();
-void           iproc_events_free      (iproc_events *events);
+iproc_events * iproc_events_ref       (iproc_events *events);
+void           iproc_events_unref     (iproc_events *events);
 void           iproc_events_clear     (iproc_events *events);
 
 void           iproc_events_insert    (iproc_events *events,
