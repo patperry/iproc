@@ -188,8 +188,8 @@ iproc_actors_vector (iproc_actors *actors,
 }
 
 void
-iproc_actors_mul (iproc_trans   trans,
-                  double        alpha,
+iproc_actors_mul (double        alpha,
+                  iproc_trans   trans,
                   iproc_actors *actors,
                   iproc_vector *x,
                   double        beta,
@@ -235,8 +235,8 @@ iproc_actors_mul (iproc_trans   trans,
 
 
 void
-iproc_actors_matmul (iproc_trans   trans,
-                     double        alpha,
+iproc_actors_matmul (double        alpha,
+                     iproc_trans   trans,
                      iproc_actors *actors,
                      iproc_matrix *x,
                      double        beta,
@@ -267,6 +267,6 @@ iproc_actors_matmul (iproc_trans   trans,
     for (j = 0; j < m; j++) {
         iproc_vector_view xcol = iproc_matrix_col(x, j);
         iproc_vector_view ycol = iproc_matrix_col(y, j);
-        iproc_actors_mul(trans, alpha, actors, &xcol.vector, 1.0, &ycol.vector);
+        iproc_actors_mul(alpha, trans, actors, &xcol.vector, 1.0, &ycol.vector);
     }
 }

@@ -37,14 +37,14 @@ int64_t        iproc_actors_class        (iproc_actors *actors,
 iproc_vector * iproc_actors_vector       (iproc_actors *actors,
                                           int64_t       i);
 
-void           iproc_actors_mul          (iproc_trans   trans,
-                                          double        alpha,
+void           iproc_actors_mul          (double        alpha,
+                                          iproc_trans   trans,
                                           iproc_actors *actors,
                                           iproc_vector *x,
                                           double        beta,
                                           iproc_vector *y);
-void           iproc_actors_matmul       (iproc_trans   trans,
-                                          double        alpha,
+void           iproc_actors_matmul       (double        alpha,
+                                          iproc_trans   trans,
                                           iproc_actors *actors,
                                           iproc_matrix *x,
                                           double        beta,

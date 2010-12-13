@@ -122,7 +122,7 @@ START_TEST (test_twoclass_mul_notrans)
     iproc_vector_view x = iproc_vector_view_array(x_data, p);
     iproc_vector_view y = iproc_vector_view_array(y_data, n);
 
-    iproc_actors_mul(IPROC_TRANS_NOTRANS, 1.0, actors, &x.vector, 0.0, &y.vector);
+    iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &x.vector, 0.0, &y.vector);
     ck_assert_feq(y_data[0],  0.0);
     ck_assert_feq(y_data[1], 12.0);
     ck_assert_feq(y_data[2],  0.0);
@@ -131,7 +131,7 @@ START_TEST (test_twoclass_mul_notrans)
     ck_assert_feq(y_data[5],  6.0);
     ck_assert_feq(y_data[6],  0.0);
 
-    iproc_actors_mul(IPROC_TRANS_NOTRANS, 2.0, actors, &x.vector, 1.0, &y.vector);
+    iproc_actors_mul(2.0, IPROC_TRANS_NOTRANS, actors, &x.vector, 1.0, &y.vector);
     ck_assert_feq(y_data[0],  0.0);
     ck_assert_feq(y_data[1], 36.0);
     ck_assert_feq(y_data[2],  0.0);
@@ -140,7 +140,7 @@ START_TEST (test_twoclass_mul_notrans)
     ck_assert_feq(y_data[5], 18.0);
     ck_assert_feq(y_data[6],  0.0);
 
-    iproc_actors_mul(IPROC_TRANS_NOTRANS, -1.0, actors, &x.vector, 0.5, &y.vector);
+    iproc_actors_mul(-1.0, IPROC_TRANS_NOTRANS, actors, &x.vector, 0.5, &y.vector);
     ck_assert_feq(y_data[0],  0.0);
     ck_assert_feq(y_data[1],  6.0);
     ck_assert_feq(y_data[2],  0.0);
@@ -160,13 +160,13 @@ START_TEST (test_twoclass_mul_trans)
     iproc_vector_view x = iproc_vector_view_array(x_data, n);
     iproc_vector_view y = iproc_vector_view_array(y_data, p);
 
-    iproc_actors_mul(IPROC_TRANS_TRANS, 1.0, actors, &x.vector, 0.0, &y.vector);
+    iproc_actors_mul(1.0, IPROC_TRANS_TRANS, actors, &x.vector, 0.0, &y.vector);
     ck_assert_feq(y_data[0], 6.0);
 
-    iproc_actors_mul(IPROC_TRANS_TRANS, 2.0, actors, &x.vector, 1.0, &y.vector);
+    iproc_actors_mul(2.0, IPROC_TRANS_TRANS, actors, &x.vector, 1.0, &y.vector);
     ck_assert_feq(y_data[0], 18.0);
 
-    iproc_actors_mul(IPROC_TRANS_TRANS, -1.0, actors, &x.vector, 0.5, &y.vector);
+    iproc_actors_mul(-1.0, IPROC_TRANS_TRANS, actors, &x.vector, 0.5, &y.vector);
     ck_assert_feq(y_data[0], 3.0);
 }
 END_TEST

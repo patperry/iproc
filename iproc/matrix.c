@@ -319,8 +319,8 @@ iproc_matrix_view_vector (iproc_vector *vector,
 
 
 void
-iproc_matrix_mul (iproc_trans   trans,
-                  double        alpha,
+iproc_matrix_mul (double        alpha,
+                  iproc_trans   trans,
                   iproc_matrix *matrix,
                   iproc_vector *x,
                   double        beta,
@@ -353,8 +353,8 @@ iproc_matrix_mul (iproc_trans   trans,
 }
 
 void
-iproc_matrix_matmul (iproc_trans   trans,
-                     double        alpha,
+iproc_matrix_matmul (double        alpha,
+                     iproc_trans   trans,
                      iproc_matrix *matrix,
                      iproc_matrix *x,
                      double        beta,
