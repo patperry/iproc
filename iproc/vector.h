@@ -9,6 +9,7 @@ typedef struct _iproc_vector_view iproc_vector_view;
 struct _iproc_vector {
     double *pdata;
     int64_t dim;
+    int     refcount;
 };
 
 struct _iproc_vector_view {
@@ -17,7 +18,8 @@ struct _iproc_vector_view {
 
 
 iproc_vector *    iproc_vector_new           (int64_t       dim);
-void              iproc_vector_free          (iproc_vector *vector);
+iproc_vector *    iproc_vector_ref           (iproc_vector *vector);
+void              iproc_vector_unref         (iproc_vector *vector);
 int64_t           iproc_vector_dim           (iproc_vector *vector);
 void              iproc_vector_set_all       (iproc_vector *vector,
                                               double        value);

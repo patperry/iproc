@@ -145,7 +145,7 @@ v0_setup ()
 void
 v0_teardown()
 {
-    iproc_vector_free(v);
+    iproc_vector_unref(v);
 }
 
 TCase *
@@ -174,7 +174,7 @@ void
 v5_teardown ()
 {
     free(elems_v);
-    iproc_vector_free(v);
+    iproc_vector_unref(v);
 }
 
 START_TEST (test_max_abs_index)
@@ -338,8 +338,8 @@ v0_pair_setup ()
 void
 v0_pair_teardown ()
 {
-    iproc_vector_free(v1);
-    iproc_vector_free(v2);
+    iproc_vector_unref(v1);
+    iproc_vector_unref(v2);
 }
 
 TCase *
@@ -373,8 +373,8 @@ v5_pair_teardown ()
 {
     free(elems_v1);
     free(elems_v2);
-    iproc_vector_free(v1);
-    iproc_vector_free(v2);
+    iproc_vector_unref(v1);
+    iproc_vector_unref(v2);
 }
 
 TCase *

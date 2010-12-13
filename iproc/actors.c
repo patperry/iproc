@@ -55,7 +55,7 @@ iproc_actors_vector_free (iproc_array *vector)
         n = iproc_array_size(vector);
         for (i = 0; i < n; i++) {
             x = iproc_array_index(vector, iproc_vector *, i);
-            iproc_vector_free(x);
+            iproc_vector_unref(x);
         }
         iproc_array_unref(vector);
     }

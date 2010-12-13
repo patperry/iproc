@@ -24,12 +24,13 @@ iproc_vector_new (int64_t  dim)
     vector = iproc_malloc(sizeof(iproc_vector));
     vector->pdata = iproc_malloc(size);
     vector->dim = dim;
+    vector->refcount = 1;
 
     return vector;
 }
 
 
-void
+static void
 iproc_vector_free (iproc_vector *vector)
 {
     if (vector) {
@@ -38,6 +39,28 @@ iproc_vector_free (iproc_vector *vector)
     }
 }
 
+iproc_vector *
+iproc_vector_ref (iproc_vector *vector)
+{
+    if (vector) {
+        vector->refcount = vector->refcount + 1;
+    }
+
+    return vector;
+}
+
+void
+iproc_vector_unref (iproc_vector *vector)
+{
+    if (!vector)
+        return;
+
+    if (vector->refcount == 1) {
+        iproc_vector_free(vector);
+    } else {
+        vector->refcount = vector->refcount - 1;
+    }
+}
 
 int64_t
 iproc_vector_dim (iproc_vector *vector)
@@ -45,7 +68,6 @@ iproc_vector_dim (iproc_vector *vector)
     assert(vector);
     return vector->dim;
 }
-
 
 void
 iproc_vector_set_all (iproc_vector *vector,

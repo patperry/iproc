@@ -76,15 +76,18 @@ iproc_array_free (iproc_array *array)
 iproc_array *
 iproc_array_ref (iproc_array *array)
 {
-    assert(array);
-    array->refcount = array->refcount + 1;
+    if (array) {
+        array->refcount = array->refcount + 1;
+    }
     return array;
 }
 
 void
 iproc_array_unref (iproc_array *array)
 {
-    assert(array);
+    if (!array)
+        return;
+
     if (array->refcount == 1) {
         iproc_array_free(array);
     } else {
