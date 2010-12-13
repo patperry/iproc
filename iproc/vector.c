@@ -160,7 +160,7 @@ iproc_vector_subvector (iproc_vector *vector,
     assert(0 <= dim);
     assert(dim <= iproc_vector_dim(vector) - index);
 
-    double *ptr       = iproc_vector_ptr(vector, index);
+    double *ptr = iproc_vector_ptr(vector, index);
     iproc_vector_view view = iproc_vector_view_array(ptr, dim);
     return view;
 }
@@ -168,12 +168,12 @@ iproc_vector_subvector (iproc_vector *vector,
 
 iproc_vector_view
 iproc_vector_view_array (double  *array,
-                      int64_t  dim)
+                         int64_t  dim)
 {
     assert(dim >= 0);
     assert(array || dim == 0);
 
-    iproc_vector_view view = {{ array, dim }};
+    iproc_vector_view view = {{ array, dim, 0 }};
     return view;
 }
 

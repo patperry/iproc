@@ -302,7 +302,7 @@ iproc_matrix_view_array_with_lda (double *data,
 {
     assert(lda >= IPROC_MAX(1, nrow));
 
-    iproc_matrix_view view = {{ data, nrow, ncol, lda }};
+    iproc_matrix_view view = {{ data, nrow, ncol, lda, 0 }};
     return view;
 }
 
