@@ -14,22 +14,26 @@ typedef struct _iproc_vars_ctx iproc_vars_ctx;
 struct _iproc_vars {
     iproc_actors *send;
     iproc_actors *recv;
+    int           refcount;
 };
 
 struct _iproc_vars_ctx {
     iproc_vars    *vars;
     iproc_history *history;
     int64_t        send;
+    int            refcount;
 };
 
 
 iproc_vars *     iproc_vars_new          (iproc_actors   *send,
                                           iproc_actors   *recv);
-void             iproc_vars_free         (iproc_vars     *vars);
+iproc_vars *     iproc_vars_ref          (iproc_vars     *vars);
+void             iproc_vars_unref        (iproc_vars     *vars);
 iproc_vars_ctx * iproc_vars_ctx_new      (iproc_vars     *vars,
                                           iproc_history  *h,
                                           int64_t         send);
-void             iproc_vars_ctx_free     (iproc_vars_ctx *ctx);
+iproc_vars_ctx * iproc_vars_ctx_ref      (iproc_vars_ctx *ctx);
+void             iproc_vars_ctx_unref    (iproc_vars_ctx *ctx);
 
 void             iproc_vars_ctx_mul      (iproc_trans     trans,
                                           double          alpha,
