@@ -186,3 +186,87 @@ iproc_actors_vector (iproc_actors *actors,
     iproc_vector *x = iproc_actors_class_vector(actors, c);
     return x;
 }
+
+void
+iproc_actors_mul (iproc_trans   trans,
+                  double        alpha,
+                  iproc_actors *actors,
+                  iproc_vector *x,
+                  double        beta,
+                  iproc_vector *y)
+{
+    assert(actors);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_actors_dim(actors));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_actors_dim(actors));
+
+    int64_t n = iproc_actors_size(actors);
+    int64_t i;
+    iproc_vector *row;
+    double dot, entry;
+
+    if (beta == 0) {
+        iproc_vector_set_all(y, 0.0);
+    } else if (beta != 1) {
+        iproc_vector_scale(y, beta);
+    }
+
+    if (trans == IPROC_TRANS_NOTRANS) {
+        for (i = 0; i < n; i++) {
+            row = iproc_actors_vector(actors, i);
+            dot = iproc_vector_dot(row, x);
+            iproc_vector_inc(y, i, alpha * dot);
+        }
+    } else {
+        for (i = 0; i < n; i++) {
+            row = iproc_actors_vector(actors, i);
+            entry = iproc_vector_get(x, i);
+            iproc_vector_acc(y, alpha * entry, row);
+        }
+    }
+}
+
+
+void
+iproc_actors_matmul (iproc_trans   trans,
+                     double        alpha,
+                     iproc_actors *actors,
+                     iproc_matrix *x,
+                     double        beta,
+                     iproc_matrix *y)
+{
+    assert(actors);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(x) == iproc_actors_dim(actors));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(y) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(x) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_matrix_nrow(y) == iproc_actors_dim(actors));
+    assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
+
+    int64_t m = iproc_matrix_ncol(x);
+    int64_t j;
+
+    if (beta == 0) {
+        iproc_matrix_set_all(y, 0.0);
+    } else if (beta != 1) {
+        iproc_matrix_scale(y, beta);
+    }
+
+    for (j = 0; j < m; j++) {
+        iproc_vector_view xcol = iproc_matrix_col(x, j);
+        iproc_vector_view ycol = iproc_matrix_col(y, j);
+        iproc_actors_mul(trans, alpha, actors, &xcol.vector, 1.0, &ycol.vector);
+    }
+}

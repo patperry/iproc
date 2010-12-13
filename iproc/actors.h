@@ -2,6 +2,8 @@
 #define _IPROC_ACTORS_H
 
 #include <iproc/array.h>
+#include <iproc/blas.h>
+#include <iproc/matrix.h>
 #include <iproc/vector.h>
 
 
@@ -10,9 +12,9 @@
 typedef struct _iproc_actors iproc_actors;
 
 struct _iproc_actors {
-    iproc_array *vector;
-    iproc_array *class;
-    int          refcount;
+    iproc_array  *vector;
+    iproc_array  *class;
+    int           refcount;
 };
 
 iproc_actors * iproc_actors_new          (int64_t       size,
@@ -28,7 +30,6 @@ int64_t        iproc_actors_nclass       (iproc_actors *actors);
 int64_t        iproc_actors_size         (iproc_actors *actors);
 int64_t        iproc_actors_dim          (iproc_actors *actors);
 
-
 void           iproc_actors_set          (iproc_actors *actors,
                                           int64_t       i,
                                           int64_t       c);
@@ -37,6 +38,18 @@ int64_t        iproc_actors_class        (iproc_actors *actors,
 iproc_vector * iproc_actors_vector       (iproc_actors *actors,
                                           int64_t       i);
 
+void           iproc_actors_mul          (iproc_trans   trans,
+                                          double        alpha,
+                                          iproc_actors *actors,
+                                          iproc_vector *x,
+                                          double        beta,
+                                          iproc_vector *y);
+void           iproc_actors_matmul       (iproc_trans   trans,
+                                          double        alpha,
+                                          iproc_actors *actors,
+                                          iproc_matrix *x,
+                                          double        beta,
+                                          iproc_matrix *y);
 
 
 #endif /* _IPROC_ACTORS_H */
