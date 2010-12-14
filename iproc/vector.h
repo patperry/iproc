@@ -18,6 +18,7 @@ struct _iproc_vector_view {
 
 
 iproc_vector *    iproc_vector_new           (int64_t       dim);
+iproc_vector *    iproc_vector_new_copy      (iproc_vector *vector);
 iproc_vector *    iproc_vector_ref           (iproc_vector *vector);
 void              iproc_vector_unref         (iproc_vector *vector);
 int64_t           iproc_vector_dim           (iproc_vector *vector);
@@ -69,5 +70,9 @@ double            iproc_vector_norm          (iproc_vector *vector);
 double            iproc_vector_sum_abs       (iproc_vector *vector);
 double            iproc_vector_max_abs       (iproc_vector *vector);
 int64_t           iproc_vector_max_abs_index (iproc_vector *vector);
+int64_t           iproc_vector_max_index     (iproc_vector *vector);
+
+void              iproc_vector_exp           (iproc_vector *vector);
+
 
 #endif /* _IPROC_VECTOR_H */

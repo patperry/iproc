@@ -7,6 +7,7 @@ include_HEADERS = \
 	iproc/actors.h \
 	iproc/ieee754.h \
 	iproc/matrix.h \
+	iproc/model.h \
 	iproc/vars.h \
 	iproc/vector.h
 
@@ -24,6 +25,8 @@ libiproc_la_SOURCES = \
 	iproc/ieee754.c \
 	iproc/matrix.h \
 	iproc/matrix.c \
+	iproc/model.h \
+	iproc/model.c \
 	iproc/svector.h \
 	iproc/svector.c \
 	iproc/memory.h \

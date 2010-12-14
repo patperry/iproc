@@ -29,6 +29,15 @@ iproc_vector_new (int64_t  dim)
     return vector;
 }
 
+iproc_vector *
+iproc_vector_new_copy (iproc_vector *vector)
+{
+    assert(vector);
+    int64_t n = iproc_vector_dim(vector);
+    iproc_vector *copy = iproc_vector_new(n);
+    iproc_vector_copy(copy, vector);
+    return copy;
+}
 
 static void
 iproc_vector_free (iproc_vector *vector)
@@ -449,5 +458,47 @@ iproc_vector_max_abs_index (iproc_vector *vector)
     return index;
 }
 
+int64_t
+iproc_vector_max_index (iproc_vector *vector)
+{
+    assert(vector);
+    assert(iproc_vector_dim(vector) > 0);
 
+    int64_t n = iproc_vector_dim(vector);
+    int64_t i, imax;
+    double x, max = NAN;
 
+    /* Find the first non-NaN entry of the vector */
+    for (imax = 0; imax < n && isnan(max); imax++) {
+        max = iproc_vector_get(vector, imax);
+    }
+
+    /* If all of the entries are NaN, define imax as 0. */
+    if (imax == n)
+        return 0;
+
+    /* Otherwise, search for the largest entry in the tail of the vector */
+    for (i = imax + 1; i < n; i++) {
+        x = iproc_vector_get(vector, i);
+        if (x > max) {
+            max = x;
+            imax = i;
+        }
+    }
+
+    return imax;
+}
+
+void
+iproc_vector_exp (iproc_vector *vector)
+{
+    assert(vector);
+    int64_t n = iproc_vector_dim(vector);
+    int64_t i;
+    double x;
+
+    for (i = 0; i < n; i++) {
+        x = iproc_vector_get(vector, i);
+        iproc_vector_set(vector, i, exp(x));
+    }
+}
