@@ -5,6 +5,7 @@
 #include <iproc/actors.h>
 #include <iproc/history.h>
 #include <iproc/matrix.h>
+#include <iproc/svector.h>
 #include <iproc/vector.h>
 
 typedef struct _iproc_vars     iproc_vars;
@@ -50,6 +51,6 @@ void             iproc_vars_ctx_diff_mul (double          alpha,
                                           iproc_vars_ctx *ctx,
                                           iproc_vector   *x,
                                           double          beta,
-                                          iproc_vector   *y);
+                                          iproc_svector  *y);
 
 #endif /* _IPROC_VARS_H */

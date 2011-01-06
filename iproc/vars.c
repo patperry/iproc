@@ -184,7 +184,9 @@ iproc_vars_ctx_mul (double          alpha,
                             1.0, &ymat.matrix);
     }
 
-    iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 1.0, y);
+    /* TODO: need something like the following:
+     * iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 1.0, y);
+     */
     iproc_vector_unref(z);
 }
 
@@ -194,7 +196,7 @@ iproc_vars_ctx_diff_mul (double          alpha,
                          iproc_vars_ctx *ctx,
                          iproc_vector   *x,
                          double          beta,
-                         iproc_vector   *y)
+                         iproc_svector  *y)
 {
     assert(ctx);
     assert(ctx->vars);
@@ -203,17 +205,17 @@ iproc_vars_ctx_diff_mul (double          alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_nrecv(ctx->vars));
+           || iproc_svector_dim(y) == iproc_vars_nrecv(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(x) == iproc_vars_nrecv(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
+           || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
 
     /* y := beta y */
     if (beta == 0.0) {
-        iproc_vector_set_all(y, 0.0);
+        iproc_svector_clear(y);
     } else if (beta != 1.0) {
-        iproc_vector_scale(y, beta);
+        iproc_svector_scale(y, beta);
     }
 
     if (ctx->history == NULL)
