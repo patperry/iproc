@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <iproc/blas-private.h>
 #include <iproc/memory.h>
 #include <iproc/svector.h>
 
@@ -171,6 +172,20 @@ iproc_svector_inc (iproc_svector *svector,
     } else {
         iproc_array_index(svector->value, double, ix) += value;
     }
+}
+
+void
+iproc_svector_scale (iproc_svector *svector,
+                     double         scale)
+{
+    assert(svector);
+
+    int64_t  n     = iproc_svector_nnz(svector);
+    double   alpha = scale;
+    int64_t  incx  = 1;
+    double  *px    = &(iproc_array_index(svector->value, double, 0));
+
+    F77_FUNC(dscal)(F77_INTP(n), &alpha, px, F77_INTP(incx));
 }
 
 int64_t

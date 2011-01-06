@@ -29,6 +29,8 @@ void            iproc_svector_set      (iproc_svector *svector,
 void            iproc_svector_inc      (iproc_svector *svector,
                                         int64_t        i,
                                         double         value);
+void            iproc_svector_scale    (iproc_svector *svector,
+                                        double         scale);
 
 int64_t         iproc_svector_nnz      (iproc_svector *svector);
 int64_t         iproc_svector_nz       (iproc_svector *svector,
