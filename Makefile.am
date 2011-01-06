@@ -6,6 +6,7 @@ lib_LTLIBRARIES = \
 include_HEADERS = \
 	iproc/actors.h \
 	iproc/ieee754.h \
+	iproc/loglik.h \
 	iproc/matrix.h \
 	iproc/model.h \
 	iproc/vars.h \
@@ -23,6 +24,8 @@ libiproc_la_SOURCES = \
 	iproc/history.c \
 	iproc/ieee754.h \
 	iproc/ieee754.c \
+	iproc/loglik.h \
+	iproc/loglik.c \
 	iproc/matrix.h \
 	iproc/matrix.c \
 	iproc/model.h \
