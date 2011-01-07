@@ -219,6 +219,16 @@ iproc_svector_nz_val (iproc_svector *svector,
     return iproc_array_index(svector->value, double, i);
 }
 
+iproc_vector_view
+iproc_svector_view_nz (iproc_svector *svector)
+{
+    assert(svector);
+
+    int64_t  nnz = iproc_svector_nnz(svector);
+    double  *px  = &(iproc_array_index(svector->value, double, 0));
+    return iproc_vector_view_array(px, nnz);
+}
+
 double
 iproc_vector_sdot (iproc_vector  *vector,
                    iproc_svector *svector)

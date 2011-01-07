@@ -191,8 +191,10 @@ iproc_model_get_new_logprobs (iproc_model    *model,
         return;
     }
 
+    iproc_vector_view logprobs_nz = iproc_svector_view_nz(logprobs);
+
     /* compute the scale for the weight differences */
-    double lwmax = iproc_svector_nz_max(logprobs);
+    double lwmax = iproc_vector_max(&logprobs_nz.vector);
     double logscale = IPROC_MAX(0.0, lwmax);
     double invscale = exp(-logscale);
 
@@ -207,7 +209,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     for (i = 0; i < nnz; i++) {
         int64_t j = iproc_svector_nz(logprobs, i);
         double lp0 = iproc_model_logprob0(model, j);
-        double dlw = iproc_svector_nz_val(logprobs, i);
+        double dlw = iproc_vector_get(&logprobs_nz.vector, i);
         double log_abs_dw;
 
         if (dlw >= 0) {
@@ -219,7 +221,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
         }
 
         /* make logprobs[j] store the (unnormalized) log probability */
-        iproc_svector_nz_inc(logprobs, i, lp0);
+        iproc_vector_inc(&logprobs_nz.vector, i, lp0);
     }
 
     double log_sum_abs_dw_p = logsumexp_result(&sp, &mp);
@@ -229,6 +231,6 @@ iproc_model_get_new_logprobs (iproc_model    *model,
                         + logscale);
     assert(log_sum_abs_dw_p >= log_sum_abs_dw_n);
 
-    iproc_svector_nz_shift(logprobs, -log_sum_w);
+    iproc_vector_shift(&logprobs_nz.vector, -log_sum_w);
     *plogprob0_shift = -log_sum_w;
 }

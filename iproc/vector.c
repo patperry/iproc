@@ -492,6 +492,18 @@ iproc_vector_max_index (iproc_vector *vector)
     return imax;
 }
 
+double
+iproc_vector_max (iproc_vector *vector)
+{
+    assert(vector);
+    if (iproc_vector_dim(vector) == 0) {
+        return -INFINITY;
+    } else {
+        int64_t i = iproc_vector_max_index(vector);
+        return iproc_vector_get(vector, i);
+    }
+}
+
 void
 iproc_vector_exp (iproc_vector *vector)
 {
