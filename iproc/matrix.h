@@ -2,17 +2,18 @@
 #define _IPROC_MATRIX_H
 
 #include <stdint.h>
+#include <iproc/refcount.h>
 #include <iproc/vector.h>
 
 typedef struct _iproc_matrix      iproc_matrix;
 typedef struct _iproc_matrix_view iproc_matrix_view;
 
 struct _iproc_matrix {
-    double *data;
-    int64_t nrow;
-    int64_t ncol;
-    int64_t lda;
-    int     refcount;
+    double        *data;
+    int64_t        nrow;
+    int64_t        ncol;
+    int64_t        lda;
+    iproc_refcount refcount;
 };
 
 struct _iproc_matrix_view {

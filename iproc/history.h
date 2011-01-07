@@ -3,6 +3,7 @@
 
 #include <iproc/array.h>
 #include <iproc/events.h>
+#include <iproc/refcount.h>
 
 typedef struct _iproc_history        iproc_history;
 typedef struct _iproc_history_events iproc_history_events;
@@ -13,10 +14,10 @@ struct _iproc_history_events {
 };
 
 struct _iproc_history {
-    int64_t      elapsed;
-    iproc_array *send;
-    iproc_array *recv;
-    int          refcount;
+    int64_t        elapsed;
+    iproc_array   *send;
+    iproc_array   *recv;
+    iproc_refcount refcount;
 };
 
 

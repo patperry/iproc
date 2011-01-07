@@ -4,15 +4,16 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <iproc/array.h>
+#include <iproc/refcount.h>
 
 typedef struct _iproc_event      iproc_event;
 typedef struct _iproc_events     iproc_events;
 typedef struct _iproc_past_event iproc_past_event;
 
 struct _iproc_events {
-    iproc_array *cur;
-    iproc_array *past;
-    int          refcount;
+    iproc_array   *cur;
+    iproc_array   *past;
+    iproc_refcount refcount;
 };
 
 struct _iproc_event {

@@ -3,15 +3,16 @@
 
 #include <stdint.h>
 #include <iproc/array.h>
+#include <iproc/refcount.h>
 #include <iproc/vector.h>
 
 typedef struct _iproc_svector iproc_svector;
 
 struct _iproc_svector {
-    int64_t      dim;
-    iproc_array *index;
-    iproc_array *value;
-    int          refcount;
+    int64_t        dim;
+    iproc_array   *index;
+    iproc_array   *value;
+    iproc_refcount refcount;
 };
 
 iproc_svector * iproc_svector_new      (int64_t        dim);

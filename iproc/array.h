@@ -3,15 +3,16 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <iproc/refcount.h>
 
 typedef struct _iproc_array iproc_array;
 
 struct _iproc_array {
-    int64_t n;
-    int64_t n_max;
-    void   *data;
-    size_t  elem_size;
-    int     refcount;
+    int64_t        n;
+    int64_t        n_max;
+    void          *data;
+    size_t         elem_size;
+    iproc_refcount refcount;
 };
 
 iproc_array * iproc_array_new       (size_t       elem_size);

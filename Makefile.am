@@ -30,6 +30,8 @@ libiproc_la_SOURCES = \
 	iproc/matrix.c \
 	iproc/model.h \
 	iproc/model.c \
+	iproc/refcount.h \
+	iproc/refcount.c \
 	iproc/svector.h \
 	iproc/svector.c \
 	iproc/memory.h \

@@ -3,6 +3,7 @@
 
 #include <iproc/array.h>
 #include <iproc/matrix.h>
+#include <iproc/refcount.h>
 #include <iproc/vector.h>
 
 
@@ -11,9 +12,9 @@
 typedef struct _iproc_actors iproc_actors;
 
 struct _iproc_actors {
-    iproc_array  *vector;
-    iproc_array  *class;
-    int           refcount;
+    iproc_array   *vector;
+    iproc_array   *class;
+    iproc_refcount refcount;
 };
 
 iproc_actors * iproc_actors_new          (int64_t       size,

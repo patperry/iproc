@@ -27,7 +27,7 @@ iproc_vars_new (iproc_actors *send,
     iproc_vars *vars = iproc_malloc(sizeof(*vars));
     vars->send = iproc_actors_ref(send);
     vars->recv = iproc_actors_ref(recv);
-    vars->refcount = 1;
+    iproc_refcount_init(&vars->refcount);
     return vars;
 }
 
@@ -35,9 +35,16 @@ iproc_vars *
 iproc_vars_ref (iproc_vars *vars)
 {
     if (vars) {
-        vars->refcount = vars->refcount + 1;
+        iproc_refcount_get(&vars->refcount);
     }
     return vars;
+}
+
+static void
+iproc_vars_release (iproc_refcount *refcount)
+{
+    iproc_vars *vars = container_of(refcount, iproc_vars, refcount);
+    iproc_vars_free(vars);
 }
 
 void
@@ -46,11 +53,7 @@ iproc_vars_unref (iproc_vars *vars)
     if (!vars)
         return;
 
-    if (vars->refcount == 1) {
-        iproc_vars_free(vars);
-    } else {
-        vars->refcount = vars->refcount - 1;
-    }
+    iproc_refcount_put(&vars->refcount, iproc_vars_release);
 }
 
 static void
@@ -77,7 +80,7 @@ iproc_vars_ctx_new (iproc_vars    *vars,
     ctx->vars = iproc_vars_ref(vars);
     ctx->history = iproc_history_ref(h);
     ctx->isend = isend;
-    ctx->refcount = 1;
+    iproc_refcount_init(&ctx->refcount);
     return ctx;
 }
 
@@ -85,9 +88,16 @@ iproc_vars_ctx *
 iproc_vars_ctx_ref (iproc_vars_ctx *ctx)
 {
     if (ctx) {
-        ctx->refcount = ctx->refcount + 1;
+        iproc_refcount_get(&ctx->refcount);
     }
     return ctx;
+}
+
+static void
+iproc_vars_ctx_release (iproc_refcount *refcount)
+{
+    iproc_vars_ctx *ctx = container_of(refcount, iproc_vars_ctx, refcount);
+    iproc_vars_ctx_free(ctx);
 }
 
 void
@@ -96,11 +106,7 @@ iproc_vars_ctx_unref (iproc_vars_ctx *ctx)
     if (!ctx)
         return;
 
-    if (ctx->refcount == 1) {
-        iproc_vars_ctx_free(ctx);
-    } else {
-        ctx->refcount = ctx->refcount - 1;
-    }
+    iproc_refcount_put(&ctx->refcount, iproc_vars_ctx_release);
 }
 
 int64_t

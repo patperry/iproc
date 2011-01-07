@@ -2,14 +2,15 @@
 #define _IPROC_VECTOR_H
 
 #include <stdint.h>
+#include <iproc/refcount.h>
 
 typedef struct _iproc_vector      iproc_vector;
 typedef struct _iproc_vector_view iproc_vector_view;
 
 struct _iproc_vector {
-    double *pdata;
-    int64_t dim;
-    int     refcount;
+    double        *pdata;
+    int64_t        dim;
+    iproc_refcount refcount;
 };
 
 struct _iproc_vector_view {

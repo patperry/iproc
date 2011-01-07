@@ -1,16 +1,18 @@
 #ifndef _IPROC_MODEL_H
 #define _IPROC_MODEL_H
 
+#include <iproc/refcount.h>
 #include <iproc/vars.h>
 #include <iproc/vector.h>
+
 
 typedef struct _iproc_model iproc_model;
 
 struct _iproc_model {
-    iproc_vars   *vars;
-    iproc_vector *coef;
-    int           has_loops;
-    int           refcount;
+    iproc_vars    *vars;
+    iproc_vector  *coef;
+    int            has_loops;
+    iproc_refcount refcount;
 };
 
 iproc_model * iproc_model_new              (iproc_vars     *vars,

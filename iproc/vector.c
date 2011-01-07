@@ -6,13 +6,13 @@
 #include <assert.h>
 #include <stddef.h>
 #include <math.h>
-#include <iproc/memory.h>
 #include <iproc/blas-private.h>
+#include <iproc/memory.h>
 #include <iproc/vector.h>
 
 
 iproc_vector *
-iproc_vector_new (int64_t  dim)
+iproc_vector_new (int64_t dim)
 {
     iproc_vector *vector = NULL;
     size_t        size   = dim * sizeof(double);
@@ -24,7 +24,7 @@ iproc_vector_new (int64_t  dim)
     vector = iproc_malloc(sizeof(iproc_vector));
     vector->pdata = iproc_malloc(size);
     vector->dim = dim;
-    vector->refcount = 1;
+    iproc_refcount_init(&vector->refcount);
 
     return vector;
 }
@@ -52,10 +52,17 @@ iproc_vector *
 iproc_vector_ref (iproc_vector *vector)
 {
     if (vector) {
-        vector->refcount = vector->refcount + 1;
+        iproc_refcount_get(&vector->refcount);
     }
 
     return vector;
+}
+
+static void
+iproc_vector_release (iproc_refcount *refcount)
+{
+    iproc_vector *vector = container_of(refcount, iproc_vector, refcount);
+    iproc_vector_free(vector);
 }
 
 void
@@ -64,11 +71,7 @@ iproc_vector_unref (iproc_vector *vector)
     if (!vector)
         return;
 
-    if (vector->refcount == 1) {
-        iproc_vector_free(vector);
-    } else {
-        vector->refcount = vector->refcount - 1;
-    }
+    iproc_refcount_put(&vector->refcount, iproc_vector_release);
 }
 
 int64_t
@@ -182,7 +185,7 @@ iproc_vector_view_array (double  *array,
     assert(dim >= 0);
     assert(array || dim == 0);
 
-    iproc_vector_view view = {{ array, dim, 0 }};
+    iproc_vector_view view = {{ array, dim, {0} }};
     return view;
 }
 

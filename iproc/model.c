@@ -34,7 +34,7 @@ iproc_model_new (iproc_vars   *vars,
     model->vars = iproc_vars_ref(vars);
     model->coef = iproc_vector_new_copy(coef);
     model->has_loops = has_loops;
-    model->refcount = 1;
+    iproc_refcount_init(&model->refcount);
     return model;
 }
 
@@ -42,9 +42,16 @@ iproc_model *
 iproc_model_ref (iproc_model *model)
 {
     if (model) {
-        model->refcount = model->refcount + 1;
+        iproc_refcount_get(&model->refcount);
     }
     return model;
+}
+
+static void
+iproc_model_release (iproc_refcount *refcount)
+{
+    iproc_model *model = container_of(refcount, iproc_model, refcount);
+    iproc_model_free(model);
 }
 
 void
@@ -53,11 +60,7 @@ iproc_model_unref (iproc_model *model)
     if (!model)
         return;
 
-    if (model->refcount == 1) {
-        iproc_model_free(model);
-    } else {
-        model->refcount = model->refcount - 1;
-    }
+    iproc_refcount_put(&model->refcount, iproc_model_release);
 }
 
 void

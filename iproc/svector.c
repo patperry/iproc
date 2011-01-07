@@ -56,7 +56,7 @@ iproc_svector_new (int64_t dim)
     svector->dim = dim;
     svector->index = iproc_array_new(sizeof(int64_t));
     svector->value = iproc_array_new(sizeof(double));
-    svector->refcount = 1;
+    iproc_refcount_init(&svector->refcount);
 
     if (!(svector->index && svector->value)) {
         iproc_svector_free(svector);
@@ -70,9 +70,16 @@ iproc_svector *
 iproc_svector_ref (iproc_svector *svector)
 {
     if (svector) {
-        svector->refcount = svector->refcount + 1;
+        iproc_refcount_get(&svector->refcount);
     }
     return svector;
+}
+
+static void
+iproc_svector_release (iproc_refcount *refcount)
+{
+    iproc_svector *svector = container_of(refcount, iproc_svector, refcount);
+    iproc_svector_free(svector);
 }
 
 void
@@ -81,11 +88,7 @@ iproc_svector_unref (iproc_svector *svector)
     if (!svector)
         return;
 
-    if (svector->refcount == 1) {
-        iproc_svector_free(svector);
-    } else {
-        svector->refcount = svector->refcount - 1;
-    }
+    iproc_refcount_put(&svector->refcount, iproc_svector_release);
 }
 
 iproc_svector *
@@ -97,6 +100,7 @@ iproc_svector_new_copy (iproc_svector *svector)
     copy->dim = dim;
     copy->index = iproc_array_new_copy(svector->index);
     copy->value = iproc_array_new_copy(svector->value);
+    iproc_refcount_init(&copy->refcount);
     return copy;
 }
 

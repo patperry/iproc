@@ -5,6 +5,7 @@
 #include <iproc/actors.h>
 #include <iproc/history.h>
 #include <iproc/matrix.h>
+#include <iproc/refcount.h>
 #include <iproc/svector.h>
 #include <iproc/vector.h>
 
@@ -13,16 +14,16 @@ typedef struct _iproc_vars_ctx iproc_vars_ctx;
 
 
 struct _iproc_vars {
-    iproc_actors *send;
-    iproc_actors *recv;
-    int           refcount;
+    iproc_actors  *send;
+    iproc_actors  *recv;
+    iproc_refcount refcount;
 };
 
 struct _iproc_vars_ctx {
     iproc_vars    *vars;
     iproc_history *history;
     int64_t        isend;
-    int            refcount;
+    iproc_refcount refcount;
 };
 
 

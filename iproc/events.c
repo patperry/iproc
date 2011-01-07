@@ -55,7 +55,7 @@ iproc_events_new ()
 
     events->cur  = iproc_array_new(sizeof(iproc_event));
     events->past = iproc_array_new(sizeof(iproc_past_event));
-    events->refcount = 1;
+    iproc_refcount_init(&events->refcount);
 
     if (!(events->cur && events->past)) {
         iproc_events_free(events);
@@ -69,9 +69,16 @@ iproc_events *
 iproc_events_ref (iproc_events *events)
 {
     if (events) {
-        events->refcount = events->refcount + 1;
+        iproc_refcount_get(&events->refcount);
     }
     return events;
+}
+
+static void
+iproc_events_release (iproc_refcount *refcount)
+{
+    iproc_events *events = container_of(refcount, iproc_events, refcount);
+    iproc_events_free(events);
 }
 
 void
@@ -80,11 +87,7 @@ iproc_events_unref (iproc_events *events)
     if (!events)
         return;
 
-    if (events->refcount == 1) {
-        iproc_events_free(events);
-    } else {
-        events->refcount = events->refcount - 1;
-    }
+    iproc_refcount_put(&events->refcount, iproc_events_release);
 }
 
 void

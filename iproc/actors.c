@@ -57,7 +57,7 @@ iproc_actors_new (int64_t      size,
 
     actors->vector = iproc_array_new(sizeof(iproc_vector *));
     actors->class = iproc_array_new(sizeof(int64_t));
-    actors->refcount = 1;
+    iproc_refcount_init(&actors->refcount);
 
     if (!(actors->vector && actors->class)) {
         iproc_actors_free(actors);
@@ -76,9 +76,16 @@ iproc_actors *
 iproc_actors_ref (iproc_actors *actors)
 {
     if (actors) {
-        actors->refcount = actors->refcount + 1;
+        iproc_refcount_get(&actors->refcount);
     }
     return actors;
+}
+
+static void
+iproc_actors_release (iproc_refcount *refcount)
+{
+    iproc_actors *actors = container_of(refcount, iproc_actors, refcount);
+    iproc_actors_free(actors);
 }
 
 void
@@ -87,11 +94,7 @@ iproc_actors_unref (iproc_actors *actors)
     if (!actors)
         return;
 
-    if (actors->refcount == 1) {
-        return iproc_actors_free(actors);
-    } else {
-        actors->refcount = actors->refcount - 1;
-    }
+    iproc_refcount_put(&actors->refcount, iproc_actors_release);
 }
 
 int64_t

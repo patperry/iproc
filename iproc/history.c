@@ -83,6 +83,7 @@ iproc_history_new ()
 
     history->send = iproc_array_new(sizeof(iproc_history_events));
     history->recv = iproc_array_new(sizeof(iproc_history_events));
+    iproc_refcount_init(&history->refcount);
 
     if (!(history->send && history->recv)) {
         iproc_history_free(history);
@@ -96,9 +97,16 @@ iproc_history *
 iproc_history_ref (iproc_history *history)
 {
     if (history) {
-        history->refcount = history->refcount + 1;
+        iproc_refcount_get(&history->refcount);
     }
     return history;
+}
+
+static void
+iproc_history_release (iproc_refcount *refcount)
+{
+    iproc_history *history = container_of(refcount, iproc_history, refcount);
+    iproc_history_free(history);
 }
 
 void
@@ -107,11 +115,7 @@ iproc_history_unref (iproc_history *history)
     if (!history)
         return;
 
-    if (history->refcount == 1) {
-        iproc_history_free(history);
-    } else {
-        history->refcount = history->refcount - 1;
-    }
+    iproc_refcount_put(&history->refcount, iproc_history_release);
 }
 
 void

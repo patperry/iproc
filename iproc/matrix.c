@@ -27,7 +27,7 @@ iproc_matrix_new (int64_t nrow, int64_t ncol)
     matrix->nrow = nrow;
     matrix->ncol = ncol;
     matrix->lda = IPROC_MAX(1, nrow);
-    matrix->refcount = 1;
+    iproc_refcount_init(&matrix->refcount);
 
     if (!(matrix->data)) {
         iproc_matrix_free(matrix);
@@ -52,9 +52,16 @@ iproc_matrix *
 iproc_matrix_ref (iproc_matrix *matrix)
 {
     if (matrix) {
-        matrix->refcount = matrix->refcount + 1;
+        iproc_refcount_get(&matrix->refcount);
     }
     return matrix;
+}
+
+static void
+iproc_matrix_release (iproc_refcount *refcount)
+{
+    iproc_matrix *matrix = container_of(refcount, iproc_matrix, refcount);
+    iproc_matrix_free(matrix);
 }
 
 void
@@ -63,11 +70,7 @@ iproc_matrix_unref (iproc_matrix *matrix)
     if (!matrix)
         return;
 
-    if (matrix->refcount == 1) {
-        iproc_matrix_free(matrix);
-    } else {
-        matrix->refcount = matrix->refcount - 1;
-    }
+    iproc_refcount_put(&matrix->refcount, iproc_matrix_release);
 }
 
 int64_t
@@ -302,7 +305,7 @@ iproc_matrix_view_array_with_lda (double *data,
 {
     assert(lda >= IPROC_MAX(1, nrow));
 
-    iproc_matrix_view view = {{ data, nrow, ncol, lda, 0 }};
+    iproc_matrix_view view = {{ data, nrow, ncol, lda, {0} }};
     return view;
 }
 
