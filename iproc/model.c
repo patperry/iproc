@@ -6,6 +6,7 @@
 #include <math.h>
 #include <iproc/memory.h>
 #include <iproc/model.h>
+#include <iproc/utils.h>
 
 
 static void
@@ -109,4 +110,122 @@ iproc_model_get_logprobs (iproc_model    *model,
      * log(p[i]) = log(w[i]) - log(sum(w[j])).
      */
     iproc_vector_shift(logprobs, -log1p(summ1));
+}
+
+
+/* Algorithm logsumexp
+ *   INPUT: a[1], ..., a[N]
+ *   OUTPUT: log(sum(exp(ai)))
+ *
+ *   INVARIANT: S[n] = sum(exp(a[i] - M[n])) - 1
+ *              M[n] = max(a[i])
+ *
+ *   S := -1
+ *   M := -INFINITY
+ *
+ *   for i = 1 to N do
+ *       if a[i] <= M
+ *       then
+ *           S := S + exp(a[i] - M)
+ *       else
+ *           S := (S + 1) * exp(M - a[i])
+ *           M := a[i]
+ *       end
+ *   end
+ *
+ *   return M + log(S + 1)
+ */
+static void
+logsumexp_init (double *psum_exp, double *pmax)
+{
+    *psum_exp = -1.0;
+    *pmax = -INFINITY;
+}
+
+
+static void
+logsumexp_iter (double val, double *psum_exp, double *pmax)
+{
+    double sum_exp = *psum_exp;
+    double max = *pmax;
+
+    if (val <= *pmax) {
+        *psum_exp = sum_exp + exp(val - max);
+    } else {
+        double scale = exp(max - val);
+        *psum_exp = sum_exp * scale + scale;
+        *pmax = val;
+    }
+}
+
+static double
+logsumexp_result (double *psum_exp, double *pmax)
+{
+    return (*pmax + log1p(*psum_exp));
+}
+
+void
+iproc_model_get_new_logprobs (iproc_model    *model,
+                              iproc_vars_ctx *ctx,
+                              double         *plogprob0_shift,
+                              iproc_svector  *logprobs)
+{
+    assert(model);
+    assert(ctx);
+    assert(logprobs);
+    assert(model->vars == ctx->vars);
+    assert(plogprob0_shift);
+    assert(iproc_vars_nrecv(model->vars) == iproc_svector_dim(logprobs));
+
+    int64_t nnz, i;
+
+    /* compute the changes in weights */
+    iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, model->coef, 0.0, logprobs);
+    nnz = iproc_svector_nnz(logprobs);
+
+    if (nnz == 0) {
+        *plogprob0_shift = 0;
+        return;
+    }
+
+    /* compute the scale for the weight differences */
+    double lwmax = iproc_svector_nz_max(logprobs);
+    double logscale = IPROC_MAX(0.0, lwmax);
+    double invscale = exp(-logscale);
+
+    double sp, mp, sn, mn;
+    logsumexp_init(&sp, &mp);
+    logsumexp_init(&sn, &mn);
+
+    /* treat the initial sum of weights as the first positive difference */
+    logsumexp_iter(-logscale, &sp, &mp);
+
+    /* compute the log sums of the positive and negative differences in weights */
+    for (i = 0; i < nnz; i++) {
+        int64_t j = iproc_svector_nz(logprobs, i);
+        double lp0 = iproc_model_logprob0(model, j);
+        double dlw = iproc_svector_nz_val(logprobs, i);
+        double log_abs_dw;
+
+        if (dlw >= 0) {
+            log_abs_dw = lp0 + (exp(dlw - logscale) - invscale);
+            logsumexp_iter(log_abs_dw, &sp, &mp);
+        } else {
+            log_abs_dw = lp0 + (invscale - exp(dlw - logscale));
+            logsumexp_iter(log_abs_dw, &sn, &mn);
+        }
+
+        /* make logprobs[j] store the (unnormalized) log probability */
+        iproc_svector_nz_inc(logprobs, i, lp0);
+    }
+
+    double log_sum_abs_dw_p = logsumexp_result(&sp, &mp);
+    double log_sum_abs_dw_n = logsumexp_result(&sn, &mn);
+    double log_sum_w = (log_sum_abs_dw_p
+                        + log1p(-exp(log_sum_abs_dw_n - log_sum_abs_dw_p))
+                        + logscale);
+    assert(log_sum_abs_dw_p >= log_sum_abs_dw_n);
+
+    iproc_svector_nz_shift(logprobs, -log_sum_w);
+    *plogprob0_shift = -log_sum_w;
 }
