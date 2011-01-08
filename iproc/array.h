@@ -26,6 +26,11 @@ void          iproc_array_set_size  (iproc_array *array,
                                      int64_t      n);
 
 int64_t       iproc_array_size      (iproc_array *array);
+
+/* Grow the array if necessary, padding it with zeroes */
+void          iproc_array_set_size  (iproc_array *array,
+                                     int64_t      n);
+
 void          iproc_array_set       (iproc_array *array,
                                      int64_t      i,
                                      void        *pe);

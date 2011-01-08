@@ -517,3 +517,27 @@ iproc_vector_exp (iproc_vector *vector)
         iproc_vector_set(vector, i, exp(x));
     }
 }
+
+double 
+iproc_vector_log_sum_exp (iproc_vector *vector)
+{
+    assert(vector);
+    int64_t n = iproc_vector_dim(vector);
+
+    if (n == 0)
+        return -INFINITY;
+
+    int64_t imax = iproc_vector_max_index(vector);
+    double max = iproc_vector_get(vector, imax);
+    double summ1 = 0.0;
+    int64_t i;
+
+    for (i = 0; i < n; i++) {
+        if (i == imax)
+            continue;
+
+        summ1 += exp(iproc_vector_get(vector, i) - max);
+    }
+
+    return max + log1p(summ1);
+}

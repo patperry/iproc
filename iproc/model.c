@@ -8,6 +8,58 @@
 #include <iproc/model.h>
 #include <iproc/utils.h>
 
+static iproc_array *
+iproc_model_array_new (iproc_vars   *vars,
+                       iproc_vector *coef)
+{
+    assert(vars);
+    assert(coef);
+
+    iproc_actors *send = vars->send;
+    int64_t i, nsend = iproc_actors_size(send);
+    int64_t nrecv = iproc_actors_size(vars->recv);
+
+    iproc_array *array = iproc_array_new(sizeof(iproc_vector *));
+    iproc_array_set_size(array, iproc_actors_nclass(send));
+
+    for (i = 0; i < nsend; i++) {
+        int64_t k = iproc_actors_class(send, i);
+        iproc_vector *logprobs = iproc_array_index(array, iproc_vector *, k);
+
+        if (logprobs)
+            continue;
+
+        iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, NULL, i);
+
+        logprobs = iproc_vector_new(nrecv);
+        iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coef, 0.0, logprobs);
+        iproc_vector_shift(logprobs, -iproc_vector_max(logprobs));
+        double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
+        iproc_vector_shift(logprobs, -log_sum_exp);
+
+        iproc_array_index(array, iproc_vector *, k) = logprobs;
+        iproc_vars_ctx_unref(ctx);
+    }
+
+    return array;
+}
+
+static void
+iproc_model_array_unref (iproc_array *array)
+{
+    if (!array)
+        return;
+
+    int64_t n = iproc_array_size(array);
+    int64_t i;
+
+    for (i = 0; i < n; i++) {
+        iproc_vector *vector = iproc_array_index(array, iproc_vector *, i);
+        iproc_vector_unref(vector);
+    }
+
+    iproc_array_unref(array);
+}
 
 static void
 iproc_model_free (iproc_model *model)
@@ -15,6 +67,7 @@ iproc_model_free (iproc_model *model)
     if (model) {
         iproc_vector_unref(model->coef);
         iproc_vars_unref(model->vars);
+        iproc_model_array_unref(model->logprobs0_array);
         iproc_free(model);
     }
 }
@@ -35,6 +88,7 @@ iproc_model_new (iproc_vars   *vars,
     model->coef = iproc_vector_new_copy(coef);
     model->has_loops = has_loops;
     iproc_refcount_init(&model->refcount);
+    model->logprobs0_array = iproc_model_array_new(vars, coef);
     return model;
 }
 
@@ -115,6 +169,20 @@ iproc_model_get_logprobs (iproc_model    *model,
     iproc_vector_shift(logprobs, -log1p(summ1));
 }
 
+
+double
+iproc_model_logprob0 (iproc_model *model,
+                      int64_t      i,
+                      int64_t      j)
+{
+    iproc_vars *vars = model->vars;
+    iproc_actors *send = vars->send;
+    int64_t k = iproc_actors_class(send, i);
+    iproc_array *array = model->logprobs0_array;
+    iproc_vector *logprobs0 = iproc_array_index(array, iproc_vector *, k);
+    double lp0 = iproc_vector_get(logprobs0, j);
+    return lp0;
+}
 
 /* Algorithm logsumexp
  *   INPUT: a[1], ..., a[N]

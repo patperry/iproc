@@ -68,11 +68,13 @@ void              iproc_vector_acc           (iproc_vector *dst_vector,
 double            iproc_vector_dot           (iproc_vector *vector1,
                                               iproc_vector *vector2);
 double            iproc_vector_norm          (iproc_vector *vector);
+
 double            iproc_vector_sum_abs       (iproc_vector *vector);
 double            iproc_vector_max_abs       (iproc_vector *vector);
 int64_t           iproc_vector_max_abs_index (iproc_vector *vector);
 double            iproc_vector_max           (iproc_vector *vector);
 int64_t           iproc_vector_max_index     (iproc_vector *vector);
+double            iproc_vector_log_sum_exp   (iproc_vector *vector);
 
 void              iproc_vector_exp           (iproc_vector *vector);
 

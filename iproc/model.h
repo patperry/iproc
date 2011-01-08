@@ -13,6 +13,7 @@ struct _iproc_model {
     iproc_vector  *coef;
     int            has_loops;
     iproc_refcount refcount;
+    iproc_array   *logprobs0_array;
 };
 
 iproc_model * iproc_model_new              (iproc_vars     *vars,
@@ -23,9 +24,6 @@ void          iproc_model_unref            (iproc_model    *model);
 
 
 double        iproc_model_logprob0         (iproc_model    *model,
-                                            int64_t         i,
-                                            int64_t         j);
-double        iproc_model_prob0            (iproc_model    *model,
                                             int64_t         i,
                                             int64_t         j);
 
