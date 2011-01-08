@@ -205,12 +205,27 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     /* treat the initial sum of weights as the first positive difference */
     logsumexp_iter(-logscale, &sp, &mp);
 
+    /* treat the self-loop as the first negative difference */
+    if (!model->has_loops) {
+        double lp0 = iproc_model_logprob0(model, i, i);
+        double log_abs_dw = lp0 + invscale;
+        logsumexp_iter(log_abs_dw, &sn, &mn);
+    }
+
     /* compute the log sums of the positive and negative differences in weights */
     for (i = 0; i < nnz; i++) {
         int64_t j = iproc_svector_nz(logprobs, i);
-        double lp0 = iproc_model_logprob0(model, j);
+        double lp0 = iproc_model_logprob0(model, i, j);
         double dlw = iproc_vector_get(&logprobs_nz.vector, i);
         double log_abs_dw;
+
+        /* special handling for self-loops */
+        if (j == i && !model->has_loops) {
+            /* no need to call logsumexp_iter since self-loop gets handled before
+             * the for loop */
+            iproc_vector_set(&logprobs_nz.vector, i, -INFINITY);
+            continue;
+        }
 
         if (dlw >= 0) {
             log_abs_dw = lp0 + (exp(dlw - logscale) - invscale);
