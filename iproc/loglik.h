@@ -3,22 +3,28 @@
 
 #include <iproc/array.h>
 #include <iproc/model.h>
+#include <iproc/refcount.h>
+#include <iproc/svector.h>
 
-typedef struct _iproc_loglik      iproc_loglik;
-typedef struct _iproc_send_loglik iproc_send_loglik;
+typedef struct _iproc_loglik  iproc_loglik;
+typedef struct _iproc_sloglik iproc_sloglik;
 
 struct _iproc_loglik {
-    iproc_array *send_loglik;
+    iproc_array *sloglik_array;
 };
 
-struct _iproc_send_loglik {
-    iproc_model  *model;
-    int64_t       isend;
-    int64_t       nsend;
-    int64_t       nrecv;
-    iproc_vector *ovarsdiff;
-    double        value;
-    iproc_vector *evarsdiff;
+struct _iproc_sloglik {
+    iproc_model   *model;
+    int64_t        isend;
+    int64_t        nsend;
+    int64_t        nrecv;
+    iproc_svector *ovarsdiff;
+    double         value;
+    double         suminvwt;
+    double         suminvwt_scale;
+    iproc_svector *newprob;
+    iproc_svector *evarsdiff;
+    iproc_refcount refcount;
 };
 
 iproc_loglik * iproc_loglik_new    (iproc_model   *model);
