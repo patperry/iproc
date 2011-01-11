@@ -22,8 +22,8 @@ compare_int64 (void *px, void *py)
     }
 }
 
-static int64_t
-iproc_svector_nz_index (iproc_svector *svector, int64_t i)
+int64_t
+iproc_svector_find_nz (iproc_svector *svector, int64_t i)
 {
     assert(svector);
     assert(0 <= i);
@@ -129,7 +129,7 @@ iproc_svector_get (iproc_svector *svector,
     assert(i < iproc_svector_dim(svector));
 
     double value = 0.0;
-    int64_t ix = iproc_svector_nz_index(svector, i);
+    int64_t ix = iproc_svector_find_nz(svector, i);
 
     if (ix >= 0) {
         value = iproc_svector_nz_val(svector, ix);
@@ -147,7 +147,7 @@ iproc_svector_set (iproc_svector *svector,
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
 
-    int64_t ix = iproc_svector_nz_index(svector, i);
+    int64_t ix = iproc_svector_find_nz(svector, i);
 
     if (ix < 0) {
         ix = ~ix;
@@ -167,7 +167,7 @@ iproc_svector_inc (iproc_svector *svector,
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
 
-    int64_t ix = iproc_svector_nz_index(svector, i);
+    int64_t ix = iproc_svector_find_nz(svector, i);
 
     if (ix < 0) {
         ix = ~ix;
