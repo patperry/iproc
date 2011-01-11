@@ -1,10 +1,10 @@
 #ifndef _IPROC_LOGLIK_H
 #define _IPROC_LOGLIK_H
 
-#include <iproc/array.h>
-#include <iproc/model.h>
-#include <iproc/refcount.h>
-#include <iproc/svector.h>
+#include "array.h"
+#include "model.h"
+#include "refcount.h"
+#include "svector.h"
 
 typedef struct _iproc_loglik iproc_loglik;
 

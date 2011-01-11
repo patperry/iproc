@@ -3,8 +3,8 @@
 #endif
 
 #include <assert.h>
-#include <iproc/memory.h>
-#include <iproc/actors.h>
+#include "memory.h"
+#include "actors.h"
 
 static int64_t
 iproc_actors_unsafe_append_class (iproc_actors *actors,

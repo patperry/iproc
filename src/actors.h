@@ -1,10 +1,10 @@
 #ifndef _IPROC_ACTORS_H
 #define _IPROC_ACTORS_H
 
-#include <iproc/array.h>
-#include <iproc/matrix.h>
-#include <iproc/refcount.h>
-#include <iproc/vector.h>
+#include "array.h"
+#include "matrix.h"
+#include "refcount.h"
+#include "vector.h"
 
 
 #define IPROC_ACTORS_DEFCLASS   0

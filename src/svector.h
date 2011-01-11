@@ -2,9 +2,9 @@
 #define _IPROC_SVECTOR_H
 
 #include <stdint.h>
-#include <iproc/array.h>
-#include <iproc/refcount.h>
-#include <iproc/vector.h>
+#include "array.h"
+#include "refcount.h"
+#include "vector.h"
 
 typedef struct _iproc_svector iproc_svector;
 

@@ -5,8 +5,8 @@
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
-#include <iproc/memory.h>
-#include <iproc/array.h>
+#include "memory.h"
+#include "array.h"
 
 static void
 iproc_array_grow (iproc_array *array)

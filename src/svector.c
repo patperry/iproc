@@ -3,9 +3,9 @@
 #endif
 
 #include <assert.h>
-#include <iproc/blas-private.h>
-#include <iproc/memory.h>
-#include <iproc/svector.h>
+#include "blas-private.h"
+#include "memory.h"
+#include "svector.h"
 
 static int
 compare_int64 (void *px, void *py)

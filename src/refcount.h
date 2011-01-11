@@ -1,7 +1,7 @@
 #ifndef _IPROC_REFCOUNT_H
 #define _IPROC_REFCOUNT_H
 
-#include <iproc/utils.h>
+#include "utils.h"
 
 typedef struct _iproc_refcount iproc_refcount;
 

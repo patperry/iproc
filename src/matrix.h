@@ -2,8 +2,8 @@
 #define _IPROC_MATRIX_H
 
 #include <stdint.h>
-#include <iproc/refcount.h>
-#include <iproc/vector.h>
+#include "refcount.h"
+#include "vector.h"
 
 typedef struct _iproc_matrix      iproc_matrix;
 typedef struct _iproc_matrix_view iproc_matrix_view;

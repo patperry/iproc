@@ -2,7 +2,7 @@
 #define _IPROC_VECTOR_H
 
 #include <stdint.h>
-#include <iproc/refcount.h>
+#include "refcount.h"
 
 typedef struct _iproc_vector      iproc_vector;
 typedef struct _iproc_vector_view iproc_vector_view;

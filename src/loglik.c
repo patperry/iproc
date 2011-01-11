@@ -4,9 +4,9 @@
 
 #include <assert.h>
 #include <math.h>
-#include <iproc/memory.h>
-#include <iproc/sloglik.h>
-#include <iproc/loglik.h>
+#include "memory.h"
+#include "sloglik.h"
+#include "loglik.h"
 
 static void
 iproc_loglik_free (iproc_loglik *loglik)

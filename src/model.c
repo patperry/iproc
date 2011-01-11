@@ -4,9 +4,9 @@
 
 #include <assert.h>
 #include <math.h>
-#include <iproc/memory.h>
-#include <iproc/model.h>
-#include <iproc/utils.h>
+#include "memory.h"
+#include "model.h"
+#include "utils.h"
 
 static iproc_array *
 iproc_model_array_new (iproc_vars   *vars,

@@ -6,9 +6,9 @@
 #include <assert.h>
 #include <stddef.h>
 #include <math.h>
-#include <iproc/blas-private.h>
-#include <iproc/memory.h>
-#include <iproc/vector.h>
+#include "blas-private.h"
+#include "memory.h"
+#include "vector.h"
 
 
 iproc_vector *

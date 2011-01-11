@@ -3,7 +3,7 @@
 #endif
 
 #include <assert.h>
-#include <iproc/refcount.h>
+#include "refcount.h"
 
 void
 iproc_refcount_init (iproc_refcount *refcount)

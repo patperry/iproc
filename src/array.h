@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <iproc/refcount.h>
+#include "refcount.h"
 
 typedef struct _iproc_array iproc_array;
 

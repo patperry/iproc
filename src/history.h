@@ -1,9 +1,9 @@
 #ifndef _IPROC_HISTORY_H
 #define _IPROC_HISTORY_H
 
-#include <iproc/array.h>
-#include <iproc/events.h>
-#include <iproc/refcount.h>
+#include "array.h"
+#include "events.h"
+#include "refcount.h"
 
 typedef struct _iproc_history        iproc_history;
 typedef struct _iproc_history_events iproc_history_events;

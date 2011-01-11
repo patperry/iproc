@@ -6,7 +6,7 @@
 #include <math.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <iproc/ieee754.h>
+#include "ieee754.h"
 
 
 #define DBL_EXPMASK            ((uint16_t) 0x7FF0)

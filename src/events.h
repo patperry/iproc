@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <iproc/array.h>
-#include <iproc/refcount.h>
+#include "array.h"
+#include "refcount.h"
 
 typedef struct _iproc_event      iproc_event;
 typedef struct _iproc_events     iproc_events;

@@ -4,8 +4,8 @@
 
 #include <string.h>
 #include <assert.h>
-#include <iproc/events.h>
-#include <iproc/memory.h>
+#include "events.h"
+#include "memory.h"
 
 static int
 compare_event (void *px, void *py)

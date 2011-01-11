@@ -1,9 +1,9 @@
 #ifndef _IPROC_MODEL_H
 #define _IPROC_MODEL_H
 
-#include <iproc/refcount.h>
-#include <iproc/vars.h>
-#include <iproc/vector.h>
+#include "refcount.h"
+#include "vars.h"
+#include "vector.h"
 
 
 typedef struct _iproc_model iproc_model;

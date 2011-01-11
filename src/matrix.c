@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <strings.h>
-#include <iproc/blas-private.h>
-#include <iproc/memory.h>
-#include <iproc/utils.h>
-#include <iproc/matrix.h>
+#include "blas-private.h"
+#include "memory.h"
+#include "utils.h"
+#include "matrix.h"
 
 
 static void

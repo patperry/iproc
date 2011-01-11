@@ -1,10 +1,7 @@
 #ifndef _IPROC_BLAS_PRIVATE_H
 #define _IPROC_BLAS_PRIVATE_H
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
+#include "config.h"
 
 extern double   F77_FUNC(ddot)   (const f77int *n,
                                   const double *x,

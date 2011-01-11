@@ -1,11 +1,11 @@
 #ifndef _IPROC_SLOGLIK_H
 #define _IPROC_SLOGLIK_H
 
-#include <iproc/array.h>
-#include <iproc/history.h>
-#include <iproc/model.h>
-#include <iproc/refcount.h>
-#include <iproc/svector.h>
+#include "array.h"
+#include "history.h"
+#include "model.h"
+#include "refcount.h"
+#include "svector.h"
 
 typedef struct _iproc_sloglik iproc_sloglik;
 

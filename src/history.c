@@ -3,8 +3,8 @@
 #endif
 
 #include <assert.h>
-#include <iproc/memory.h>
-#include <iproc/history.h>
+#include "memory.h"
+#include "history.h"
 
 static void
 iproc_history_grow_events (iproc_array *array,

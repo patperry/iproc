@@ -4,8 +4,8 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <iproc/memory.h>
-#include <iproc/vars.h>
+#include "memory.h"
+#include "vars.h"
 
 static void
 iproc_vars_free (iproc_vars *vars)

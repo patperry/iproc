@@ -2,12 +2,12 @@
 #define _IPROC_VARS_H
 
 #include <stdint.h>
-#include <iproc/actors.h>
-#include <iproc/history.h>
-#include <iproc/matrix.h>
-#include <iproc/refcount.h>
-#include <iproc/svector.h>
-#include <iproc/vector.h>
+#include "actors.h"
+#include "history.h"
+#include "matrix.h"
+#include "refcount.h"
+#include "svector.h"
+#include "vector.h"
 
 typedef struct _iproc_vars     iproc_vars;
 typedef struct _iproc_vars_ctx iproc_vars_ctx;
