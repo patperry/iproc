@@ -32,6 +32,8 @@ libiproc_la_SOURCES = \
 	iproc/model.c \
 	iproc/refcount.h \
 	iproc/refcount.c \
+	iproc/sloglik.h \
+	iproc/sloglik.c \
 	iproc/svector.h \
 	iproc/svector.c \
 	iproc/memory.h \

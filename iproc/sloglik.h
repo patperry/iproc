@@ -1,0 +1,39 @@
+#ifndef _IPROC_SLOGLIK_H
+#define _IPROC_SLOGLIK_H
+
+#include <iproc/array.h>
+#include <iproc/history.h>
+#include <iproc/model.h>
+#include <iproc/refcount.h>
+#include <iproc/svector.h>
+
+typedef struct _iproc_sloglik iproc_sloglik;
+
+struct _iproc_sloglik {
+    iproc_model   *model;
+    int64_t        isend;
+    int64_t        nsend;
+    int64_t        nrecv;
+    iproc_svector *ovarsdiff;
+    double         value;
+    double         suminvwt;
+    double         suminvwt_scale;
+    iproc_svector *newprob;
+    iproc_svector *evarsdiff;
+    iproc_refcount refcount;
+};
+
+iproc_sloglik * iproc_sloglik_new             (iproc_model   *model,
+                                               int64_t      isend);
+iproc_sloglik * iproc_sloglik_ref             (iproc_sloglik *sll);
+void            iproc_sloglik_unref           (iproc_sloglik *sll);
+
+void            iproc_sloglik_insert          (iproc_sloglik *sll,
+                                               int64_t        jrecv,
+                                               iproc_history *history);
+
+double          iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,
+                                               double         scale,
+                                               iproc_sloglik *sll);
+
+#endif /* _IPROC_LOGLIK_H */
