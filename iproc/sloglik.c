@@ -11,6 +11,7 @@ static void
 iproc_sloglik_free (iproc_sloglik *sll)
 {
     if (sll) {
+        iproc_model_unref(sll->model);
         iproc_svector_unref(sll->ovarsdiff);
         iproc_svector_unref(sll->newprob);
         iproc_svector_unref(sll->evarsdiff);
