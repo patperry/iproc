@@ -27,6 +27,23 @@ dim.actors <- function(actors) {
     .Call("Riproc_actors_dim", actors)
 }
 
+vector.actors <- function(actors, ids) {
+    ids <- as.integer(ids)
+    xt <- .Call("Riproc_actors_vector", actors, ids)
+    t(xt)
+}
+
+class.actors <- function(actors, ids) {
+    ids <- as.integer(ids)
+    .Call("Riproc_actors_class", actors, ids)
+}
+
+class.vector.actors <- function(actors, class.ids) {
+    class.ids <- as.integer(class.ids)
+    xt <- .Call("Riproc_actors_class_vector", actors, class.ids)
+    t(xt)
+}
+
 vars <- function(senders, receivers) {
 
 }

@@ -16,6 +16,8 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_actors_nclass", (DL_FUNC) &Riproc_actors_nclass, 1 },
     { "Riproc_actors_size",   (DL_FUNC) &Riproc_actors_size,   1 },
     { "Riproc_actors_dim",    (DL_FUNC) &Riproc_actors_dim,    1 },
+    { "Riproc_actors_vector", (DL_FUNC) &Riproc_actors_vector, 2 },
+    { "Riproc_actors_class",  (DL_FUNC) &Riproc_actors_class,  2 },
     { NULL,                   NULL,                            0 }
 };
 
@@ -88,7 +90,6 @@ Riproc_actors_new (SEXP Rclasses,
         iproc_actors_set(actors, i, c);
     }
 
-    printf("Allocated actors %p\n", actors);
     Ractors = Riproc_from_actors(actors);
     return Ractors;
 }
@@ -133,4 +134,88 @@ Riproc_actors_dim (SEXP Ractors)
 
     UNPROTECT(1);
     return Rdim;
+}
+
+SEXP
+Riproc_actors_vector (SEXP Ractors,
+                      SEXP Ractor_ids)
+{
+    iproc_actors *actors = Riproc_to_actors(Ractors);
+    int64_t size = iproc_actors_size(actors);
+    int64_t dim = iproc_actors_dim(actors);
+    int64_t i, n = GET_LENGTH(Ractor_ids);
+    SEXP *Rxt;
+
+    PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
+    double *data = NUMERIC_POINTER(Rxt);
+    iproc_matrix_view xt = iproc_matrix_view_array(data, dim, n);
+
+    for (i = 0; i < n; i++) {
+        int64_t id = INTEGER(Ractor_ids)[i] - 1;
+        if (!(0 <= id && id < size))
+            error("actor id out of range");
+
+        iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
+        iproc_vector *src = iproc_actors_vector(actors, id);
+
+        iproc_vector_copy(&dst.vector, src);
+    }
+
+    UNPROTECT(1);
+    return Rxt;
+}
+
+
+SEXP
+Riproc_actors_class (SEXP Ractors,
+                     SEXP Ractor_ids)
+{
+    iproc_actors *actors = Riproc_to_actors(Ractors);
+    int64_t size = iproc_actors_size(actors);
+    int64_t i, n = GET_LENGTH(Ractor_ids);
+    SEXP *Rclass_ids;
+
+    PROTECT(Rclass_ids = NEW_INTEGER(n));
+
+    for (i = 0; i < n; i++) {
+        int64_t id = INTEGER(Ractor_ids)[i] - 1;
+        if (!(0 <= id && id < size))
+            error("actor id out of range");
+
+        int64_t class_id = iproc_actors_class(actors, id);
+        INTEGER(Rclass_ids)[i] = class_id + 1;
+    }
+
+    UNPROTECT(1);
+    return Rclass_ids;
+}
+
+
+SEXP
+Riproc_actors_class_vector (SEXP Ractors,
+                            SEXP Rclass_ids)
+{
+    iproc_actors *actors = Riproc_to_actors(Ractors);
+    int64_t nclass = iproc_actors_nclass(actors);
+    int64_t dim = iproc_actors_dim(actors);
+    int64_t i, n = GET_LENGTH(Rclass_ids);
+    SEXP *Rxt;
+
+    PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
+    double *data = NUMERIC_POINTER(Rxt);
+    iproc_matrix_view xt = iproc_matrix_view_array(data, dim, n);
+
+    for (i = 0; i < n; i++) {
+        int64_t id = INTEGER(Rclass_ids)[i] - 1;
+        if (!(0 <= id && id < nclass))
+            error("class id out of range");
+
+        iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
+        iproc_vector *src = iproc_actors_class_vector(actors, id);
+
+        iproc_vector_copy(&dst.vector, src);
+    }
+
+    UNPROTECT(1);
+    return Rxt;
 }
