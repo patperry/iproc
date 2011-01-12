@@ -1,25 +1,25 @@
 
-actors <- function (classes, class.traits) {
-    classes <- as.integer(classes)
-    class.traits <- as.matrix(class.traits)
-    storage.mode(class.traits) <- 'numeric'
+actors <- function (groups, group.traits) {
+    groups <- as.integer(groups)
+    group.traits <- as.matrix(group.traits)
+    storage.mode(group.traits) <- 'numeric'
     
-    n <- length(classes)
-    k <- nrow(class.traits)
-    p <- ncol(class.traits)
+    n <- length(groups)
+    k <- nrow(group.traits)
+    p <- ncol(group.traits)
 
-    if (!(all(1 <= classes & classes <= k)))
-        stop("classs label out of bounds")
+    if (!(all(1 <= groups & groups <= k)))
+        stop("groups label out of bounds")
     
-    class.traits.t <- t(class.traits)
-    .Call("Riproc_actors_new", classes, class.traits.t)
+    group.traits.t <- t(group.traits)
+    .Call("Riproc_actors_new", groups, group.traits.t)
 }
 
-nclass.actors <- function(actors) {
-    .Call("Riproc_actors_nclass", actors)
+ngroup.actors <- function(actors) {
+    .Call("Riproc_actors_ngroup", actors)
 }
 
-size.actors <- function(actors) {
+size.actors <- function(actors, ...) {
     .Call("Riproc_actors_size", actors)
 }
 
@@ -33,13 +33,13 @@ traits.actors <- function(actors, ids) {
     t(xt)
 }
 
-class.actors <- function(actors, ids) {
+group.actors <- function(actors, ids) {
     ids <- as.integer(ids)
-    .Call("Riproc_actors_class", actors, ids)
+    .Call("Riproc_actors_group", actors, ids)
 }
 
-class.traits.actors <- function(actors, class.ids) {
-    class.ids <- as.integer(class.ids)
-    xt <- .Call("Riproc_actors_class_traits", actors, class.ids)
+group.traits.actors <- function(actors, group.ids) {
+    group.ids <- as.integer(group.ids)
+    xt <- .Call("Riproc_actors_group_traits", actors, group.ids)
     t(xt)
 }

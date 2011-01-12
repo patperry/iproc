@@ -20,10 +20,10 @@ iproc_model_array_new (iproc_vars   *vars,
     int64_t nrecv = iproc_actors_size(vars->recv);
 
     iproc_array *array = iproc_array_new(sizeof(iproc_vector *));
-    iproc_array_set_size(array, iproc_actors_nclass(send));
+    iproc_array_set_size(array, iproc_actors_ngroup(send));
 
     for (i = 0; i < nsend; i++) {
-        int64_t k = iproc_actors_class(send, i);
+        int64_t k = iproc_actors_group(send, i);
         iproc_vector *logprobs = iproc_array_index(array, iproc_vector *, k);
 
         if (logprobs)
@@ -177,7 +177,7 @@ iproc_model_logprob0 (iproc_model *model,
 {
     iproc_vars *vars = model->vars;
     iproc_actors *send = vars->send;
-    int64_t k = iproc_actors_class(send, i);
+    int64_t k = iproc_actors_group(send, i);
     iproc_array *array = model->logprobs0_array;
     iproc_vector *logprobs0 = iproc_array_index(array, iproc_vector *, k);
     double lp0 = iproc_vector_get(logprobs0, j);

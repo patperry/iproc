@@ -7,30 +7,30 @@
 #include "actors.h"
 
 static int64_t
-iproc_actors_unsafe_append_class (iproc_actors *actors,
+iproc_actors_unsafe_append_group (iproc_actors *actors,
                                   iproc_vector *traits)
 {
     assert(actors);
     assert(traits);
 
     iproc_vector *x = iproc_vector_new_copy(traits);
-    iproc_array_append(actors->class_traits, &x);
-    return (iproc_array_size(actors->class_traits) - 1);
+    iproc_array_append(actors->group_traits, &x);
+    return (iproc_array_size(actors->group_traits) - 1);
 }
 
 static void
-iproc_actors_class_traits_free (iproc_array *class_traits)
+iproc_actors_group_traits_free (iproc_array *group_traits)
 {
     int64_t i, n;
     iproc_vector *x;
 
-    if (class_traits) {
-        n = iproc_array_size(class_traits);
+    if (group_traits) {
+        n = iproc_array_size(group_traits);
         for (i = 0; i < n; i++) {
-            x = iproc_array_index(class_traits, iproc_vector *, i);
+            x = iproc_array_index(group_traits, iproc_vector *, i);
             iproc_vector_unref(x);
         }
-        iproc_array_unref(class_traits);
+        iproc_array_unref(group_traits);
     }
 }
 
@@ -38,8 +38,8 @@ static void
 iproc_actors_free (iproc_actors *actors)
 {
     if (actors) {
-        iproc_actors_class_traits_free(actors->class_traits);
-        iproc_array_unref(actors->classes);
+        iproc_actors_group_traits_free(actors->group_traits);
+        iproc_array_unref(actors->groups);
         iproc_free(actors);
     }
 }
@@ -53,19 +53,19 @@ iproc_actors_new (int64_t      size,
     iproc_actors *actors = iproc_malloc(sizeof(*actors));
     if (!actors) return NULL;
 
-    actors->class_traits = iproc_array_new(sizeof(iproc_vector *));
-    actors->classes = iproc_array_new(sizeof(int64_t));
+    actors->group_traits = iproc_array_new(sizeof(iproc_vector *));
+    actors->groups = iproc_array_new(sizeof(int64_t));
     iproc_refcount_init(&actors->refcount);
 
-    if (!(actors->class_traits && actors->classes)) {
+    if (!(actors->group_traits && actors->groups)) {
         iproc_actors_free(actors);
         actors = NULL;
     }
     /* We rely on array_set growing clearing the tail to zeros.  No further
-     * action is necessary since IPROC_ACTORS_DEFCLASS is zero.
+     * action is necessary since IPROC_ACTORS_DEFGROUP is zero.
      */
-    iproc_array_set_size(actors->classes, size);
-    iproc_actors_unsafe_append_class(actors, traits0);
+    iproc_array_set_size(actors->groups, size);
+    iproc_actors_unsafe_append_group(actors, traits0);
 
     return actors;
 }
@@ -96,49 +96,49 @@ iproc_actors_unref (iproc_actors *actors)
 }
 
 int64_t
-iproc_actors_append_class (iproc_actors *actors,
+iproc_actors_append_group (iproc_actors *actors,
                            iproc_vector *traits)
 {
     assert(actors);
     assert(traits);
     assert(iproc_vector_dim(traits) == iproc_actors_dim(actors));
-    return iproc_actors_unsafe_append_class(actors, traits);
+    return iproc_actors_unsafe_append_group(actors, traits);
 }
 
 
 iproc_vector *
-iproc_actors_class_traits (iproc_actors *actors,
-                           int64_t       c)
+iproc_actors_group_traits (iproc_actors *actors,
+                           int64_t       g)
 {
     assert(actors);
-    assert(0 <= c);
-    assert(c < iproc_actors_nclass(actors));
+    assert(0 <= g);
+    assert(g < iproc_actors_ngroup(actors));
 
-    iproc_vector *x = iproc_array_index(actors->class_traits,
+    iproc_vector *x = iproc_array_index(actors->group_traits,
                                         iproc_vector *,
-                                        c);
+                                        g);
     return x;
 }
 
 int64_t
-iproc_actors_nclass (iproc_actors *actors)
+iproc_actors_ngroup (iproc_actors *actors)
 {
     assert(actors);
-    return iproc_array_size(actors->class_traits);
+    return iproc_array_size(actors->group_traits);
 }
 
 int64_t
 iproc_actors_size (iproc_actors *actors)
 {
     assert(actors);
-    return iproc_array_size(actors->classes);
+    return iproc_array_size(actors->groups);
 }
 
 int64_t
 iproc_actors_dim (iproc_actors *actors)
 {
     assert(actors);
-    iproc_vector *x0 = iproc_actors_class_traits(actors, 0);
+    iproc_vector *x0 = iproc_actors_group_traits(actors, 0);
     int64_t n = iproc_vector_dim(x0);
     return n;
 }
@@ -146,33 +146,33 @@ iproc_actors_dim (iproc_actors *actors)
 void
 iproc_actors_set (iproc_actors *actors,
                   int64_t       i,
-                  int64_t       c)
+                  int64_t       g)
 {
     assert(actors);
     assert(0 <= i);
     assert(i < iproc_actors_size(actors));
-    assert(0 <= c);
-    assert(c < iproc_actors_nclass(actors));
+    assert(0 <= g);
+    assert(g < iproc_actors_ngroup(actors));
 
-    iproc_array_set(actors->classes, i, &c);
+    iproc_array_set(actors->groups, i, &g);
 }
 
 int64_t
-iproc_actors_class (iproc_actors *actors,
+iproc_actors_group (iproc_actors *actors,
                     int64_t       i)
 {
     assert(actors);
     assert(0 <= i);
     assert(i < iproc_actors_size(actors));
 
-    int64_t c = IPROC_ACTORS_DEFCLASS;
-    iproc_array *classes = actors->classes;
+    int64_t g = IPROC_ACTORS_DEFGROUP;
+    iproc_array *groups = actors->groups;
 
-    if (i < iproc_array_size(classes)) {
-        c = iproc_array_index(classes, int64_t, i);
+    if (i < iproc_array_size(groups)) {
+        g = iproc_array_index(groups, int64_t, i);
     }
 
-    return c;
+    return g;
 }
 
 iproc_vector *
@@ -183,8 +183,8 @@ iproc_actors_traits (iproc_actors *actors,
     assert(0 <= i);
     assert(i < iproc_actors_size(actors));
 
-    int64_t c = iproc_actors_class(actors, i);
-    iproc_vector *x = iproc_actors_class_traits(actors, c);
+    int64_t g = iproc_actors_group(actors, i);
+    iproc_vector *x = iproc_actors_group_traits(actors, g);
     return x;
 }
 

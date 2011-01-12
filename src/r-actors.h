@@ -10,14 +10,14 @@ void           Riproc_actors_init ();
 /* External functions */
 SEXP           Riproc_actors_new          (SEXP Rclasses,
                                            SEXP Rclass_vectors_t);
-SEXP           Riproc_actors_nclass       (SEXP Ractors);
+SEXP           Riproc_actors_ngroup       (SEXP Ractors);
 SEXP           Riproc_actors_size         (SEXP Ractors);
 SEXP           Riproc_actors_dim          (SEXP Ractors);
 SEXP           Riproc_actors_traits       (SEXP Ractors,
                                            SEXP Ractor_ids);
-SEXP           Riproc_actors_class        (SEXP Ractors,
+SEXP           Riproc_actors_group        (SEXP Ractors,
                                            SEXP Ractor_ids);
-SEXP           Riproc_actors_class_traits (SEXP Ractors,
+SEXP           Riproc_actors_group_traits (SEXP Ractors,
                                            SEXP Rclass_ids);
 
 /* Internal use only */

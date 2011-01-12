@@ -7,13 +7,13 @@
 #include "vector.h"
 
 
-#define IPROC_ACTORS_DEFCLASS   0
+#define IPROC_ACTORS_DEFGROUP   0
 
 typedef struct _iproc_actors iproc_actors;
 
 struct _iproc_actors {
-    iproc_array   *class_traits;
-    iproc_array   *classes;
+    iproc_array   *group_traits;
+    iproc_array   *groups;
     iproc_refcount refcount;
 };
 
@@ -24,18 +24,18 @@ iproc_actors * iproc_actors_ref          (iproc_actors *actors);
 void           iproc_actors_unref        (iproc_actors *actors);
 
 /* Makes a copy of vector */
-int64_t        iproc_actors_append_class (iproc_actors *actors,
+int64_t        iproc_actors_append_group (iproc_actors *actors,
                                           iproc_vector *traits);
-iproc_vector * iproc_actors_class_traits (iproc_actors *actors,
-                                          int64_t       c);
-int64_t        iproc_actors_nclass       (iproc_actors *actors);
+iproc_vector * iproc_actors_group_traits (iproc_actors *actors,
+                                          int64_t       g);
+int64_t        iproc_actors_ngroup       (iproc_actors *actors);
 int64_t        iproc_actors_size         (iproc_actors *actors);
 int64_t        iproc_actors_dim          (iproc_actors *actors);
 
 void           iproc_actors_set          (iproc_actors *actors,
                                           int64_t       i,
-                                          int64_t       c);
-int64_t        iproc_actors_class        (iproc_actors *actors,
+                                          int64_t       g);
+int64_t        iproc_actors_group        (iproc_actors *actors,
                                           int64_t       i);
 iproc_vector * iproc_actors_traits       (iproc_actors *actors,
                                           int64_t       i);
