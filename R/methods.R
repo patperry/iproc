@@ -1,0 +1,5 @@
+group        <- function(object, ...) UseMethod("group")
+group.traits <- function(object, ...) UseMethod("group.traits")
+ngroup       <- function(object, ...) UseMethod("ngroup")
+size         <- function(object, ...) UseMethod("size")
+traits       <- function(object, ...) UseMethod("traits")

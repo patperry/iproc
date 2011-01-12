@@ -4,52 +4,59 @@ require(iproc)
 
 basic <- function(test) {
     setup <- function () {
-        v1 <<- c( 1, 100, 2)
-        v2 <<- c(-3,   8, 7)
-        classes <<- c(1, 1, 2, 1)
-        class.traits <<- rbind(v1, v2, deparse.level = 0)
-        a <<- actors(classes, class.traits)
+        within(list(), {
+            v1 <- c( 1, 100, 2)
+            v2 <- c(-3,   8, 7)
+            groups <- c(1, 1, 2, 1)
+            group.traits <- rbind(v1, v2, deparse.level = 0)
+            a <- actors(groups, group.traits)
+        })
     }
 
     teardown <- function() {
-        rm(a, class.traits, classes, v1, v2, inherits = TRUE)
         gc()
     }
 
-    function() { setup(); test(); teardown() }
+    function() {
+        env <- setup()
+        attach(env)
+        test()
+        teardown()
+        detach(env)
+    }
 }
 
 test.dimensions <- basic(function() {
-    checkEquals(size.actors(a), length(classes))
-    checkEquals(nclass.actors(a), nrow(class.traits))
-    checkEquals(dim.actors(a), ncol(class.traits))
+    checkEquals(size(a), length(groups))
+    checkEquals(ngroup(a), nrow(group.traits))
+    checkEquals(dim(a), ncol(group.traits))
 })
 
 test.traits <- basic(function() {
-    for (i in seq_along(classes)) {
-        checkEquals(traits.actors(a, i), class.traits[classes[i],,drop=FALSE])
+    for (i in seq_along(groups)) {
+        checkEquals(traits(a, i), group.traits[groups[i],,drop=FALSE])
     }
 
     ids <- c(3,2)
-    checkEquals(traits.actors(a, ids),
-                class.traits[classes[ids],,drop=FALSE])
+    checkEquals(traits(a, ids),
+                group.traits[groups[ids],,drop=FALSE])
 })
 
-test.class <- basic(function() {
-    for (i in seq_along(classes)) {
-        checkEquals(class.actors(a, i), classes[i])
+test.group <- basic(function() {
+    for (i in seq_along(groups)) {
+        checkEquals(group(a, i), groups[i])
     }
 
     ids <- c(4, 1, 2, 1, 1)
-    checkEquals(class.actors(a, ids), classes[ids])
+    checkEquals(group(a, ids), groups[ids])
 })
 
-test.class.vector <- basic(function() {
-    for (i in seq_len(classes)) {
-        checkEquals(class.traits.actors(a, i), class.traits[i,,drop=FALSE])
+test.group.traits <- basic(function() {
+    for (i in seq_len(groups)) {
+        checkEquals(group.traits(a, i), group.traits[i,,drop=FALSE])
     }
 
     ids <- c(1, 2, 1)
-    checkEquals(class.traits.actors(a, ids),
-                class.traits[ids,,drop=FALSE])
+    checkEquals(group.traits(a, ids),
+                group.traits[ids,,drop=FALSE])
 })
