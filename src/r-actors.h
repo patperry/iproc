@@ -13,11 +13,11 @@ SEXP           Riproc_actors_new          (SEXP Rclasses,
 SEXP           Riproc_actors_nclass       (SEXP Ractors);
 SEXP           Riproc_actors_size         (SEXP Ractors);
 SEXP           Riproc_actors_dim          (SEXP Ractors);
-SEXP           Riproc_actors_vector       (SEXP Ractors,
+SEXP           Riproc_actors_traits       (SEXP Ractors,
                                            SEXP Ractor_ids);
 SEXP           Riproc_actors_class        (SEXP Ractors,
                                            SEXP Ractor_ids);
-SEXP           Riproc_actors_class_vector (SEXP Ractors,
+SEXP           Riproc_actors_class_traits (SEXP Ractors,
                                            SEXP Rclass_ids);
 
 /* Internal use only */

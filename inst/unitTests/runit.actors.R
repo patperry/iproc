@@ -7,12 +7,12 @@ basic <- function(test) {
         v1 <<- c( 1, 100, 2)
         v2 <<- c(-3,   8, 7)
         classes <<- c(1, 1, 2, 1)
-        class.vectors <<- rbind(v1, v2, deparse.level = 0)
-        a <<- actors(classes, class.vectors)
+        class.traits <<- rbind(v1, v2, deparse.level = 0)
+        a <<- actors(classes, class.traits)
     }
 
     teardown <- function() {
-        rm(a, class.vectors, classes, v1, v2, inherits = TRUE)
+        rm(a, class.traits, classes, v1, v2, inherits = TRUE)
         gc()
     }
 
@@ -21,18 +21,18 @@ basic <- function(test) {
 
 test.dimensions <- basic(function() {
     checkEquals(size.actors(a), length(classes))
-    checkEquals(nclass.actors(a), nrow(class.vectors))
-    checkEquals(dim.actors(a), ncol(class.vectors))
+    checkEquals(nclass.actors(a), nrow(class.traits))
+    checkEquals(dim.actors(a), ncol(class.traits))
 })
 
-test.vector <- basic(function() {
+test.traits <- basic(function() {
     for (i in seq_along(classes)) {
-        checkEquals(vector.actors(a, i), class.vectors[classes[i],,drop=FALSE])
+        checkEquals(traits.actors(a, i), class.traits[classes[i],,drop=FALSE])
     }
 
     ids <- c(3,2)
-    checkEquals(vector.actors(a, ids),
-                class.vectors[classes[ids],,drop=FALSE])
+    checkEquals(traits.actors(a, ids),
+                class.traits[classes[ids],,drop=FALSE])
 })
 
 test.class <- basic(function() {
@@ -46,10 +46,10 @@ test.class <- basic(function() {
 
 test.class.vector <- basic(function() {
     for (i in seq_len(classes)) {
-        checkEquals(class.vector.actors(a, i), class.vectors[i,,drop=FALSE])
+        checkEquals(class.traits.actors(a, i), class.traits[i,,drop=FALSE])
     }
 
     ids <- c(1, 2, 1)
-    checkEquals(class.vector.actors(a, ids),
-                class.vectors[ids,,drop=FALSE])
+    checkEquals(class.traits.actors(a, ids),
+                class.traits[ids,,drop=FALSE])
 })

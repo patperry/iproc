@@ -12,21 +12,21 @@
 typedef struct _iproc_actors iproc_actors;
 
 struct _iproc_actors {
-    iproc_array   *vector;
-    iproc_array   *class;
+    iproc_array   *class_traits;
+    iproc_array   *classes;
     iproc_refcount refcount;
 };
 
 /* Makes a copy of defvector */
 iproc_actors * iproc_actors_new          (int64_t       size,
-                                          iproc_vector *defvector);
+                                          iproc_vector *traits0);
 iproc_actors * iproc_actors_ref          (iproc_actors *actors);
 void           iproc_actors_unref        (iproc_actors *actors);
 
 /* Makes a copy of vector */
 int64_t        iproc_actors_append_class (iproc_actors *actors,
-                                          iproc_vector *vector);
-iproc_vector * iproc_actors_class_vector (iproc_actors *actors,
+                                          iproc_vector *traits);
+iproc_vector * iproc_actors_class_traits (iproc_actors *actors,
                                           int64_t       c);
 int64_t        iproc_actors_nclass       (iproc_actors *actors);
 int64_t        iproc_actors_size         (iproc_actors *actors);
@@ -37,7 +37,7 @@ void           iproc_actors_set          (iproc_actors *actors,
                                           int64_t       c);
 int64_t        iproc_actors_class        (iproc_actors *actors,
                                           int64_t       i);
-iproc_vector * iproc_actors_vector       (iproc_actors *actors,
+iproc_vector * iproc_actors_traits       (iproc_actors *actors,
                                           int64_t       i);
 
 void           iproc_actors_mul          (double        alpha,

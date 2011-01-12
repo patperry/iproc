@@ -12,13 +12,14 @@
 static SEXP Riproc_actors_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_actors_new",    (DL_FUNC) &Riproc_actors_new,    2 },
-    { "Riproc_actors_nclass", (DL_FUNC) &Riproc_actors_nclass, 1 },
-    { "Riproc_actors_size",   (DL_FUNC) &Riproc_actors_size,   1 },
-    { "Riproc_actors_dim",    (DL_FUNC) &Riproc_actors_dim,    1 },
-    { "Riproc_actors_vector", (DL_FUNC) &Riproc_actors_vector, 2 },
-    { "Riproc_actors_class",  (DL_FUNC) &Riproc_actors_class,  2 },
-    { NULL,                   NULL,                            0 }
+    { "Riproc_actors_new",           (DL_FUNC) &Riproc_actors_new,           2 },
+    { "Riproc_actors_nclass",        (DL_FUNC) &Riproc_actors_nclass,        1 },
+    { "Riproc_actors_size",          (DL_FUNC) &Riproc_actors_size,          1 },
+    { "Riproc_actors_dim",           (DL_FUNC) &Riproc_actors_dim,           1 },
+    { "Riproc_actors_traits",        (DL_FUNC) &Riproc_actors_traits,        2 },
+    { "Riproc_actors_class",         (DL_FUNC) &Riproc_actors_class,         2 },
+    { "Riproc_actors_class_traits",  (DL_FUNC) &Riproc_actors_class_traits,  2 },
+    { NULL,                          NULL,                                   0 }
 };
 
 
@@ -67,26 +68,34 @@ Riproc_to_actors (SEXP Ractors)
 
 SEXP
 Riproc_actors_new (SEXP Rclasses,
-                   SEXP Rclass_vectors_t)
+                   SEXP Rclass_traits_t)
 {
     int64_t n = GET_LENGTH(Rclasses);
     int *classes = INTEGER_POINTER(Rclasses);
-    int64_t p    = INTEGER(GET_DIM(Rclass_vectors_t))[0];
-    int64_t k    = INTEGER(GET_DIM(Rclass_vectors_t))[1];
-    double *data = NUMERIC_POINTER(Rclass_vectors_t);
-    iproc_matrix_view class_vectors_t = iproc_matrix_view_array(data, p, k);
-    iproc_vector_view defvector = iproc_matrix_col(&class_vectors_t.matrix, 0);
-    iproc_actors *actors = iproc_actors_new(n, &defvector.vector);
+    int64_t p    = INTEGER(GET_DIM(Rclass_traits_t))[0];
+    int64_t k    = INTEGER(GET_DIM(Rclass_traits_t))[1];
+    double *data = NUMERIC_POINTER(Rclass_traits_t);
+
+    if (!(k > 0))
+        error("must specify at least one class");
+            
+    iproc_matrix_view class_traits_t = iproc_matrix_view_array(data, p, k);
+    iproc_vector_view traits0 = iproc_matrix_col(&class_traits_t.matrix, 0);
+    iproc_actors *actors = iproc_actors_new(n, &traits0.vector);
     int64_t i;
     SEXP Ractors;
 
     for (i = 1; i < k; i++) {
-        iproc_vector_view col = iproc_matrix_col(&class_vectors_t.matrix, i);
-        iproc_actors_append_class(actors, &col.vector);
+        iproc_vector_view traits = iproc_matrix_col(&class_traits_t.matrix, i);
+        iproc_actors_append_class(actors, &traits.vector);
     }
 
     for (i = 0; i < n; i++) {
         int64_t c = classes[i] - 1;
+        
+        if (!(0 <= c && c < k))
+            error("class id out of bounds");
+
         iproc_actors_set(actors, i, c);
     }
 
@@ -137,7 +146,7 @@ Riproc_actors_dim (SEXP Ractors)
 }
 
 SEXP
-Riproc_actors_vector (SEXP Ractors,
+Riproc_actors_traits (SEXP Ractors,
                       SEXP Ractor_ids)
 {
     iproc_actors *actors = Riproc_to_actors(Ractors);
@@ -156,7 +165,7 @@ Riproc_actors_vector (SEXP Ractors,
             error("actor id out of range");
 
         iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        iproc_vector *src = iproc_actors_vector(actors, id);
+        iproc_vector *src = iproc_actors_traits(actors, id);
 
         iproc_vector_copy(&dst.vector, src);
     }
@@ -192,7 +201,7 @@ Riproc_actors_class (SEXP Ractors,
 
 
 SEXP
-Riproc_actors_class_vector (SEXP Ractors,
+Riproc_actors_class_traits (SEXP Ractors,
                             SEXP Rclass_ids)
 {
     iproc_actors *actors = Riproc_to_actors(Ractors);
@@ -211,7 +220,7 @@ Riproc_actors_class_vector (SEXP Ractors,
             error("class id out of range");
 
         iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        iproc_vector *src = iproc_actors_class_vector(actors, id);
+        iproc_vector *src = iproc_actors_class_traits(actors, id);
 
         iproc_vector_copy(&dst.vector, src);
     }

@@ -158,7 +158,7 @@ iproc_vars_ctx_mul (double          alpha,
     iproc_vars *vars = ctx->vars;
     int64_t p = iproc_actors_dim(vars->send);
     int64_t q = iproc_actors_dim(vars->recv);
-    iproc_vector *s = iproc_actors_vector(vars->send, ctx->isend);
+    iproc_vector *s = iproc_actors_traits(vars->send, ctx->isend);
     iproc_vector *z = iproc_vector_new(q);
 
     /* y := beta y */
