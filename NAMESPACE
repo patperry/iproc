@@ -1,0 +1,5 @@
+useDynLib(iproc)
+
+export(actors, nclass.actors, size.actors, dim.actors)
+
+

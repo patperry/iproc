@@ -17,11 +17,13 @@ struct _iproc_actors {
     iproc_refcount refcount;
 };
 
+/* Makes a copy of defvector */
 iproc_actors * iproc_actors_new          (int64_t       size,
                                           iproc_vector *defvector);
 iproc_actors * iproc_actors_ref          (iproc_actors *actors);
 void           iproc_actors_unref        (iproc_actors *actors);
 
+/* Makes a copy of vector */
 int64_t        iproc_actors_append_class (iproc_actors *actors,
                                           iproc_vector *vector);
 iproc_vector * iproc_actors_class_vector (iproc_actors *actors,

@@ -2,15 +2,13 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+#include "r-actors.h"
 
-static R_CallMethodDef callMethods[] = {
-    { NULL,               NULL,                        0 }
-};
 
 void
 R_init_iproc (DllInfo *info)
 {
-    R_registerRoutines (info, NULL, callMethods, NULL, NULL);
+    Riproc_actors_init(info);
 }
 
 void
