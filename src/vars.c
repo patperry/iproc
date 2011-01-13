@@ -11,22 +11,22 @@ static void
 iproc_vars_free (iproc_vars *vars)
 {
     if (vars) {
-        iproc_actors_unref(vars->recv);
-        iproc_actors_unref(vars->send);
+        iproc_actors_unref(vars->receivers);
+        iproc_actors_unref(vars->senders);
         iproc_free(vars);
     }
 }
 
 iproc_vars *     
-iproc_vars_new (iproc_actors *send,
-                iproc_actors *recv)
+iproc_vars_new (iproc_actors *senders,
+                iproc_actors *receivers)
 {
-    assert(send);
-    assert(recv);
+    assert(senders);
+    assert(receivers);
 
     iproc_vars *vars = iproc_malloc(sizeof(*vars));
-    vars->send = iproc_actors_ref(send);
-    vars->recv = iproc_actors_ref(recv);
+    vars->senders = iproc_actors_ref(senders);
+    vars->receivers = iproc_actors_ref(receivers);
     iproc_refcount_init(&vars->refcount);
     return vars;
 }
@@ -72,9 +72,8 @@ iproc_vars_ctx_new (iproc_vars    *vars,
                     int64_t        isend)
 {
     assert(vars);
-    assert(vars->send);
     assert(0 <= isend);
-    assert(isend < iproc_actors_size(vars->send));
+    assert(isend < iproc_vars_nsender(vars));
 
     iproc_vars_ctx *ctx = iproc_malloc(sizeof(*ctx));
     ctx->vars = iproc_vars_ref(vars);
@@ -113,24 +112,44 @@ int64_t
 iproc_vars_dim (iproc_vars *vars)
 {
     assert(vars);
-    int64_t p = iproc_actors_dim(vars->send);
-    int64_t q = iproc_actors_dim(vars->recv);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    int64_t p = iproc_actors_dim(senders);
+    int64_t q = iproc_actors_dim(receivers);
     int64_t dim = p * q;
     return dim;
 }
 
 int64_t
-iproc_vars_nsend (iproc_vars *vars)
+iproc_vars_nsender (iproc_vars *vars)
 {
     assert(vars);
-    return iproc_actors_size(vars->send);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    return iproc_actors_size(senders);
 }
 
 int64_t
-iproc_vars_nrecv (iproc_vars *vars)
+iproc_vars_nreceiver (iproc_vars *vars)
 {
     assert(vars);
-    return iproc_actors_size(vars->recv);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    return iproc_actors_size(receivers);
+}
+
+iproc_actors *
+iproc_vars_senders (iproc_vars *vars)
+{
+    assert(vars);
+    iproc_actors *senders = vars->senders;
+    return senders;
+}
+
+iproc_actors *
+iproc_vars_receivers (iproc_vars *vars)
+{
+    assert(vars);
+    iproc_actors *receivers = vars->receivers;
+    return receivers;
 }
 
 
@@ -149,16 +168,18 @@ iproc_vars_ctx_mul (double          alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_nrecv(ctx->vars));
+           || iproc_vector_dim(y) == iproc_vars_nreceiver(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_nrecv(ctx->vars));
+           || iproc_vector_dim(x) == iproc_vars_nreceiver(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
 
     iproc_vars *vars = ctx->vars;
-    int64_t p = iproc_actors_dim(vars->send);
-    int64_t q = iproc_actors_dim(vars->recv);
-    iproc_vector *s = iproc_actors_traits(vars->send, ctx->isend);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    int64_t p = iproc_actors_dim(senders);
+    int64_t q = iproc_actors_dim(receivers);
+    iproc_vector *s = iproc_actors_traits(senders, ctx->isend);
     iproc_vector *z = iproc_vector_new(q);
 
     /* y := beta y */
@@ -176,10 +197,10 @@ iproc_vars_ctx_mul (double          alpha,
         iproc_matrix_mul(alpha, IPROC_TRANS_TRANS, &xmat.matrix, s, 0.0, z);
 
         /* y := y + R z */
-        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, vars->recv, z, 1.0, y);
+        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0, y);
     } else {
         /* z := alpha t(R) x */
-        iproc_actors_mul(alpha, IPROC_TRANS_TRANS, vars->recv, x, 0.0, z);
+        iproc_actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
         /* y := y + s \otimes z */
         iproc_vector_view ysub = iproc_vector_subvector(y, 0, p * q);
@@ -211,9 +232,9 @@ iproc_vars_ctx_diff_mul (double          alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(y) == iproc_vars_nrecv(ctx->vars));
+           || iproc_svector_dim(y) == iproc_vars_nreceiver(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_nrecv(ctx->vars));
+           || iproc_vector_dim(x) == iproc_vars_nreceiver(ctx->vars));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
 

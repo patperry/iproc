@@ -14,8 +14,8 @@ typedef struct _iproc_vars_ctx iproc_vars_ctx;
 
 
 struct _iproc_vars {
-    iproc_actors  *send;
-    iproc_actors  *recv;
+    iproc_actors  *senders;
+    iproc_actors  *receivers;
     iproc_refcount refcount;
 };
 
@@ -27,13 +27,15 @@ struct _iproc_vars_ctx {
 };
 
 
-iproc_vars *     iproc_vars_new          (iproc_actors   *send,
-                                          iproc_actors   *recv);
+iproc_vars *     iproc_vars_new          (iproc_actors   *senders,
+                                          iproc_actors   *receivers);
 iproc_vars *     iproc_vars_ref          (iproc_vars     *vars);
 void             iproc_vars_unref        (iproc_vars     *vars);
 int64_t          iproc_vars_dim          (iproc_vars     *vars);
-int64_t          iproc_vars_nsend        (iproc_vars     *vars);
-int64_t          iproc_vars_nrecv        (iproc_vars     *vars);
+int64_t          iproc_vars_nsender      (iproc_vars     *vars);
+int64_t          iproc_vars_nreceiver    (iproc_vars     *vars);
+iproc_actors *   iproc_vars_senders      (iproc_vars     *vars);
+iproc_actors *   iproc_vars_receivers    (iproc_vars     *vars);
 
 iproc_vars_ctx * iproc_vars_ctx_new      (iproc_vars     *vars,
                                           iproc_history  *h,

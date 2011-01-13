@@ -28,7 +28,7 @@ iproc_sloglik_new (iproc_model *model,
         return NULL;
 
     iproc_vars *vars = model->vars;
-    int64_t n = iproc_vars_nrecv(vars);
+    int64_t n = iproc_vars_nreceiver(vars);
     int64_t p = iproc_vars_dim(vars);
 
     sll->model = iproc_model_ref(model);
@@ -84,8 +84,8 @@ iproc_sloglik_insert (iproc_sloglik *sll,
     iproc_model *model = sll->model;
     iproc_vars *vars = model->vars;
     iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, history, isend);
-    int64_t nrecv = iproc_vars_nrecv(vars);
-    iproc_svector *logprobs = iproc_svector_new(nrecv);
+    int64_t nreceiver = iproc_vars_nreceiver(vars);
+    iproc_svector *logprobs = iproc_svector_new(nreceiver);
     double logprob0_shift = -INFINITY;
 
     iproc_model_get_new_logprobs(model, ctx, &logprob0_shift, logprobs);

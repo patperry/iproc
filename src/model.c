@@ -15,15 +15,16 @@ iproc_model_array_new (iproc_vars   *vars,
     assert(vars);
     assert(coef);
 
-    iproc_actors *send = vars->send;
-    int64_t i, nsend = iproc_actors_size(send);
-    int64_t nrecv = iproc_actors_size(vars->recv);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    int64_t i, nsender = iproc_actors_size(senders);
+    int64_t nreceiver = iproc_actors_size(receivers);
 
     iproc_array *array = iproc_array_new(sizeof(iproc_vector *));
-    iproc_array_set_size(array, iproc_actors_ngroup(send));
+    iproc_array_set_size(array, iproc_actors_ngroup(senders));
 
-    for (i = 0; i < nsend; i++) {
-        int64_t k = iproc_actors_group(send, i);
+    for (i = 0; i < nsender; i++) {
+        int64_t k = iproc_actors_group(senders, i);
         iproc_vector *logprobs = iproc_array_index(array, iproc_vector *, k);
 
         if (logprobs)
@@ -31,7 +32,7 @@ iproc_model_array_new (iproc_vars   *vars,
 
         iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, NULL, i);
 
-        logprobs = iproc_vector_new(nrecv);
+        logprobs = iproc_vector_new(nreceiver);
         iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coef, 0.0, logprobs);
         iproc_vector_shift(logprobs, -iproc_vector_max(logprobs));
         double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
@@ -80,8 +81,8 @@ iproc_model_new (iproc_vars   *vars,
     assert(vars);
     assert(coef);
     assert(iproc_vars_dim(vars) == iproc_vector_dim(coef));
-    assert(iproc_vars_nrecv(vars) > 0);
-    assert(!has_loops || iproc_vars_nrecv(vars) > 1);
+    assert(iproc_vars_nreceiver(vars) > 0);
+    assert(!has_loops || iproc_vars_nreceiver(vars) > 1);
 
     iproc_model *model = iproc_malloc(sizeof(*model));
     model->vars = iproc_vars_ref(vars);
@@ -135,7 +136,7 @@ iproc_model_get_logprobs (iproc_model    *model,
     assert(ctx);
     assert(logprobs);
     assert(model->vars == ctx->vars);
-    assert(iproc_vars_nrecv(model->vars) == iproc_vector_dim(logprobs));
+    assert(iproc_vars_nreceiver(model->vars) == iproc_vector_dim(logprobs));
 
     int64_t imax, i, n = iproc_vector_dim(logprobs);
     double max, summ1;
@@ -176,8 +177,8 @@ iproc_model_logprob0 (iproc_model *model,
                       int64_t      j)
 {
     iproc_vars *vars = model->vars;
-    iproc_actors *send = vars->send;
-    int64_t k = iproc_actors_group(send, i);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    int64_t k = iproc_actors_group(senders, i);
     iproc_array *array = model->logprobs0_array;
     iproc_vector *logprobs0 = iproc_array_index(array, iproc_vector *, k);
     double lp0 = iproc_vector_get(logprobs0, j);
@@ -246,7 +247,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     assert(logprobs);
     assert(model->vars == ctx->vars);
     assert(plogprob0_shift);
-    assert(iproc_vars_nrecv(model->vars) == iproc_svector_dim(logprobs));
+    assert(iproc_vars_nreceiver(model->vars) == iproc_svector_dim(logprobs));
 
     int64_t nnz, i;
 

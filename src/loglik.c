@@ -31,7 +31,7 @@ iproc_loglik_new (iproc_model *model)
 {
     iproc_loglik *loglik = iproc_malloc(sizeof(*loglik));
     iproc_vars *vars = model->vars;
-    int64_t nsend = iproc_vars_nsend(vars);
+    int64_t nsender = iproc_vars_nsender(vars);
 
     if (!loglik)
         return NULL;
@@ -45,7 +45,7 @@ iproc_loglik_new (iproc_model *model)
         loglik = NULL;
     }
 
-    iproc_array_set_size(loglik->sloglik_array, nsend);
+    iproc_array_set_size(loglik->sloglik_array, nsender);
 
     return loglik;
 }
