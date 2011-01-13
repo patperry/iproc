@@ -26,7 +26,7 @@ static R_CallMethodDef callMethods[] = {
 void
 Riproc_actors_init (DllInfo *info)
 {
-    Riproc_actors_type_tag = install("Riproc_type_tag");
+    Riproc_actors_type_tag = install("Riproc_actors_type_tag");
     R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 }
 
@@ -108,13 +108,7 @@ Riproc_actors_ngroup (SEXP Ractors)
 {
     iproc_actors *actors = Riproc_to_actors(Ractors);
     int64_t ngroup = iproc_actors_ngroup(actors);
-    SEXP Rngroup;
-
-    PROTECT(Rngroup = NEW_INTEGER(1));
-    INTEGER(Rngroup)[0] = ngroup;
-
-    UNPROTECT(1);
-    return Rngroup;
+    return ScalarInteger(ngroup);
 }
 
 SEXP
@@ -122,13 +116,7 @@ Riproc_actors_size (SEXP Ractors)
 {
     iproc_actors *actors = Riproc_to_actors(Ractors);
     int64_t size = iproc_actors_size(actors);
-    SEXP Rsize;
-
-    PROTECT(Rsize = NEW_INTEGER(1));
-    INTEGER(Rsize)[0] = size;
-
-    UNPROTECT(1);
-    return Rsize;
+    return ScalarInteger(size);
 }
 
 SEXP
@@ -136,13 +124,7 @@ Riproc_actors_dim (SEXP Ractors)
 {
     iproc_actors *actors = Riproc_to_actors(Ractors);
     int64_t dim = iproc_actors_dim(actors);
-    SEXP Rdim;
-
-    PROTECT(Rdim = NEW_INTEGER(1));
-    INTEGER(Rdim)[0] = dim;
-
-    UNPROTECT(1);
-    return Rdim;
+    return ScalarInteger(dim);
 }
 
 SEXP
