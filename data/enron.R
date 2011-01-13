@@ -1,13 +1,8 @@
 
 enron <- local({
     pkg <- "iproc"
-    if (Sys.getenv("RCMDCHECK") == "FALSE") {
-        ## PKG/tests/../inst/extdata/enron
-        path <- file.path(getwd(), "..", "inst", "extdata", "enron")
-    } else {
-        path <- system.file(package = pkg, "extdata", "enron")
-    }
-
+    path <- system.file(package = pkg, "extdata", "enron")
+    
     employees <- read.table(file.path(path, "employees.tsv"),
                             sep = "\t",
                             quote = "",
