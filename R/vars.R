@@ -20,5 +20,5 @@ senders.vars <- function(vars) {
 }
 
 receivers.vars <- function(vars) {
-    .Call("Riproc_actors_receivers", actors)
+    .Call("Riproc_vars_receivers", vars)
 }

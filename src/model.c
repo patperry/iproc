@@ -254,6 +254,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     /* compute the changes in weights */
     iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, model->coef, 0.0, logprobs);
     nnz = iproc_svector_nnz(logprobs);
+    i = ctx->isend;
 
     if (nnz == 0) {
         *plogprob0_shift = 0;

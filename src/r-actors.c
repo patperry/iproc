@@ -134,7 +134,7 @@ Riproc_actors_traits (SEXP Ractors,
     int64_t size = iproc_actors_size(actors);
     int64_t dim = iproc_actors_dim(actors);
     int64_t i, n = GET_LENGTH(Ractor_ids);
-    SEXP *Rxt;
+    SEXP Rxt;
 
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
     double *data = NUMERIC_POINTER(Rxt);
@@ -163,7 +163,7 @@ Riproc_actors_group (SEXP Ractors,
     iproc_actors *actors = Riproc_to_actors(Ractors);
     int64_t size = iproc_actors_size(actors);
     int64_t i, n = GET_LENGTH(Ractor_ids);
-    SEXP *Rgroup_ids;
+    SEXP Rgroup_ids;
 
     PROTECT(Rgroup_ids = NEW_INTEGER(n));
 
@@ -189,7 +189,7 @@ Riproc_actors_group_traits (SEXP Ractors,
     int64_t ngroup = iproc_actors_ngroup(actors);
     int64_t dim = iproc_actors_dim(actors);
     int64_t i, n = GET_LENGTH(Rgroup_ids);
-    SEXP *Rxt;
+    SEXP Rxt;
 
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
     double *data = NUMERIC_POINTER(Rxt);

@@ -4,6 +4,7 @@
 #include <R_ext/Rdynload.h>
 
 #include "r-utils.h"
+#include "r-actors.h"
 #include "r-vars.h"
 
 
@@ -71,7 +72,7 @@ Riproc_vars_new (SEXP Rsenders,
 SEXP
 Riproc_vars_dim (SEXP Rvars)
 {
-    iproc_vars *vars = Riproc_to_vars(vars);
+    iproc_vars *vars = Riproc_to_vars(Rvars);
     int64_t dim = iproc_vars_dim(vars);
     return ScalarInteger(dim);
 }
@@ -80,7 +81,7 @@ Riproc_vars_dim (SEXP Rvars)
 SEXP
 Riproc_vars_nsender (SEXP Rvars)
 {
-    iproc_vars *vars = Riproc_to_vars(vars);
+    iproc_vars *vars = Riproc_to_vars(Rvars);
     int64_t nsender = iproc_vars_nsender(vars);
     return ScalarInteger(nsender);
 }
@@ -88,7 +89,7 @@ Riproc_vars_nsender (SEXP Rvars)
 SEXP
 Riproc_vars_nreceiver (SEXP Rvars)
 {
-    iproc_vars *vars = Riproc_to_vars(vars);
+    iproc_vars *vars = Riproc_to_vars(Rvars);
     int64_t nreceiver = iproc_vars_nreceiver(vars);
     return ScalarInteger(nreceiver);
 }
@@ -96,7 +97,7 @@ Riproc_vars_nreceiver (SEXP Rvars)
 SEXP
 Riproc_vars_senders (SEXP Rvars)
 {
-    iproc_vars *vars = Riproc_to_vars(vars);
+    iproc_vars *vars = Riproc_to_vars(Rvars);
     iproc_actors *senders = iproc_vars_senders(vars);
     iproc_actors_ref(senders);
     return Riproc_from_actors(senders);
@@ -105,7 +106,7 @@ Riproc_vars_senders (SEXP Rvars)
 SEXP
 Riproc_vars_receivers (SEXP Rvars)
 {
-    iproc_vars *vars = Riproc_to_vars(vars);
+    iproc_vars *vars = Riproc_to_vars(Rvars);
     iproc_actors *receivers = iproc_vars_receivers(vars);
     iproc_actors_ref(receivers);
     return Riproc_from_actors(receivers);
