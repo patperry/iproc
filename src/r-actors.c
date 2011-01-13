@@ -41,7 +41,6 @@ SEXP
 Riproc_from_actors (iproc_actors *actors)
 {
     SEXP Ractors, class;
-    iproc_actors *actors1;
 
     /* store the actors pointer in an external pointer */
     Ractors = R_MakeExternalPtr(actors, Riproc_actors_type_tag, R_NilValue);
