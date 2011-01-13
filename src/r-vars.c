@@ -39,13 +39,16 @@ Riproc_vars_free (SEXP Rvars)
 iproc_vars *
 Riproc_to_vars (SEXP Rvars)
 {
-    return Riproc_sexp2ptr(Rvars, TRUE, Riproc_vars_type_tag, "vars");
+    iproc_vars *vars =  Riproc_sexp2ptr(Rvars, TRUE, Riproc_vars_type_tag, "vars");
+    return vars;
 }
 
 SEXP
 Riproc_from_vars (iproc_vars *vars)
 {
     SEXP Rvars, class;
+
+    iproc_vars_ref(vars);
 
     Rvars = R_MakeExternalPtr(vars, Riproc_vars_type_tag, R_NilValue);
     R_RegisterCFinalizer(Rvars, Riproc_vars_free);
@@ -66,7 +69,9 @@ Riproc_vars_new (SEXP Rsenders,
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
     iproc_vars *vars = iproc_vars_new(senders, receivers);
-    return Riproc_from_vars(vars);
+    SEXP Rvars = Riproc_from_vars(vars);
+    iproc_vars_unref(vars);
+    return Rvars;
 }
 
 SEXP
@@ -99,7 +104,6 @@ Riproc_vars_senders (SEXP Rvars)
 {
     iproc_vars *vars = Riproc_to_vars(Rvars);
     iproc_actors *senders = iproc_vars_senders(vars);
-    iproc_actors_ref(senders);
     return Riproc_from_actors(senders);
 }
 
@@ -108,6 +112,5 @@ Riproc_vars_receivers (SEXP Rvars)
 {
     iproc_vars *vars = Riproc_to_vars(Rvars);
     iproc_actors *receivers = iproc_vars_receivers(vars);
-    iproc_actors_ref(receivers);
     return Riproc_from_actors(receivers);
 }

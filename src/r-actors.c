@@ -42,6 +42,8 @@ Riproc_from_actors (iproc_actors *actors)
 {
     SEXP Ractors, class;
 
+    iproc_actors_ref(actors);
+
     /* store the actors pointer in an external pointer */
     Ractors = R_MakeExternalPtr(actors, Riproc_actors_type_tag, R_NilValue);
     R_RegisterCFinalizer(Ractors, Riproc_actors_free);
@@ -61,8 +63,8 @@ Riproc_to_actors (SEXP Ractors)
     Rboolean null_ok = TRUE;
     SEXP tag = Riproc_actors_type_tag;
     char *type = "actors";
-
-    return Riproc_sexp2ptr(Ractors, null_ok, tag, type);
+    iproc_actors *actors = Riproc_sexp2ptr(Ractors, null_ok, tag, type);
+    return actors;
 }
 
 SEXP
@@ -97,6 +99,7 @@ Riproc_actors_new (SEXP Rgroups,
     }
 
     Ractors = Riproc_from_actors(actors);
+    iproc_actors_unref(actors);
     return Ractors;
 }
 

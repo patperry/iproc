@@ -41,13 +41,16 @@ Riproc_model_free (SEXP Rmodel)
 iproc_model *
 Riproc_to_model (SEXP Rmodel)
 {
-    return Riproc_sexp2ptr(Rmodel, FALSE, Riproc_model_type_tag, "model");
+    iproc_model *model = Riproc_sexp2ptr(Rmodel, FALSE, Riproc_model_type_tag, "model");
+    return model;
 }
 
 SEXP
 Riproc_from_model (iproc_model *model)
 {
     SEXP Rmodel, class;
+
+    iproc_model_ref(model);
 
     Rmodel = R_MakeExternalPtr(model, Riproc_model_type_tag, R_NilValue);
     R_RegisterCFinalizer(Rmodel, Riproc_model_free);
@@ -76,7 +79,9 @@ Riproc_model_new (SEXP Rvars,
         error("has.loops is be NA");
 
     iproc_model *model = iproc_model_new(vars, &coefs.vector, has_loops);
-    return Riproc_from_model(model);
+    SEXP Rmodel = Riproc_from_model(model);
+    iproc_model_unref(model);
+    return Rmodel;
 }
 
 SEXP
