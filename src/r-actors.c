@@ -40,17 +40,17 @@ Riproc_actors_free (SEXP Ractors)
 SEXP
 Riproc_from_actors (iproc_actors *actors)
 {
-    SEXP Ractors, group;
+    SEXP Ractors, class;
     iproc_actors *actors1;
 
     /* store the actors pointer in an external pointer */
     Ractors = R_MakeExternalPtr(actors, Riproc_actors_type_tag, R_NilValue);
     R_RegisterCFinalizer(Ractors, Riproc_actors_free);
 
-    /* set the group of the result */
-    PROTECT(group = allocVector(STRSXP, 1));
-    SET_STRING_ELT(group, 0, mkChar("actors"));
-    classgets(Ractors, group);
+    /* set the class of the result */
+    PROTECT(class = allocVector(STRSXP, 1));
+    SET_STRING_ELT(class, 0, mkChar("actors"));
+    classgets(Ractors, class);
     UNPROTECT(1);
 
     return Ractors;
