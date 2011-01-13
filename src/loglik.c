@@ -30,7 +30,7 @@ iproc_loglik *
 iproc_loglik_new (iproc_model *model)
 {
     iproc_loglik *loglik = iproc_malloc(sizeof(*loglik));
-    iproc_vars *vars = model->vars;
+    iproc_vars *vars = iproc_model_vars(model);
     int64_t nsender = iproc_vars_nsender(vars);
 
     if (!loglik)

@@ -10,10 +10,10 @@
 
 static iproc_array *
 iproc_model_array_new (iproc_vars   *vars,
-                       iproc_vector *coef)
+                       iproc_vector *coefs)
 {
     assert(vars);
-    assert(coef);
+    assert(coefs);
 
     iproc_actors *senders = iproc_vars_senders(vars);
     iproc_actors *receivers = iproc_vars_receivers(vars);
@@ -33,7 +33,7 @@ iproc_model_array_new (iproc_vars   *vars,
         iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, NULL, i);
 
         logprobs = iproc_vector_new(nreceiver);
-        iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coef, 0.0, logprobs);
+        iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
         iproc_vector_shift(logprobs, -iproc_vector_max(logprobs));
         double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
         iproc_vector_shift(logprobs, -log_sum_exp);
@@ -66,8 +66,8 @@ static void
 iproc_model_free (iproc_model *model)
 {
     if (model) {
-        iproc_vector_unref(model->coef);
-        iproc_vars_unref(model->vars);
+        iproc_vector_unref(model->coefs);
+        iproc_vars_unref(model->varz);
         iproc_model_array_unref(model->logprobs0_array);
         iproc_free(model);
     }
@@ -75,21 +75,21 @@ iproc_model_free (iproc_model *model)
 
 iproc_model *
 iproc_model_new (iproc_vars   *vars,
-                 iproc_vector *coef,
+                 iproc_vector *coefs,
                  int           has_loops)
 {
     assert(vars);
-    assert(coef);
-    assert(iproc_vars_dim(vars) == iproc_vector_dim(coef));
+    assert(coefs);
+    assert(iproc_vars_dim(vars) == iproc_vector_dim(coefs));
     assert(iproc_vars_nreceiver(vars) > 0);
     assert(!has_loops || iproc_vars_nreceiver(vars) > 1);
 
     iproc_model *model = iproc_malloc(sizeof(*model));
-    model->vars = iproc_vars_ref(vars);
-    model->coef = iproc_vector_new_copy(coef);
-    model->has_loops = has_loops;
+    model->varz = iproc_vars_ref(vars);
+    model->coefs = iproc_vector_new_copy(coefs);
+    model->has_loopz = has_loops;
     iproc_refcount_init(&model->refcount);
-    model->logprobs0_array = iproc_model_array_new(vars, coef);
+    model->logprobs0_array = iproc_model_array_new(vars, coefs);
     return model;
 }
 
@@ -118,6 +118,51 @@ iproc_model_unref (iproc_model *model)
     iproc_refcount_put(&model->refcount, iproc_model_release);
 }
 
+iproc_vars *
+iproc_model_vars (iproc_model *model)
+{
+    assert(model);
+    return model->varz;
+}
+
+iproc_vector *
+iproc_model_coefs (iproc_model *model)
+{
+    assert(model);
+    return model->coefs;
+}
+
+int
+iproc_model_has_loops (iproc_model *model)
+{
+    assert(model);
+    return model->has_loopz;
+}
+
+int64_t
+iproc_model_nsender (iproc_model *model)
+{
+    assert(model);
+    iproc_vars *vars = iproc_model_vars(model);
+    return iproc_vars_nsender(vars);
+}
+
+int64_t
+iproc_model_nreceiver (iproc_model *model)
+{
+    assert(model);
+    iproc_vars *vars = iproc_model_vars(model);
+    return iproc_vars_nreceiver(vars);
+}
+
+int64_t
+iproc_model_dim (iproc_model *model)
+{
+    assert(model);
+    iproc_vars *vars = iproc_model_vars(model);
+    return iproc_vars_dim(vars);
+}
+
 void
 iproc_model_get_probs (iproc_model    *model,
                        iproc_vars_ctx *ctx,
@@ -135,10 +180,11 @@ iproc_model_get_logprobs (iproc_model    *model,
     assert(model);
     assert(ctx);
     assert(logprobs);
-    assert(model->vars == ctx->vars);
-    assert(iproc_vars_nreceiver(model->vars) == iproc_vector_dim(logprobs));
+    assert(iproc_model_vars(model) == ctx->vars);
+    assert(iproc_model_nreceiver(model) == iproc_vector_dim(logprobs));
 
     int64_t imax, i, n = iproc_vector_dim(logprobs);
+    iproc_vector *coefs = iproc_model_coefs(model);
     double max, summ1;
 
     /* NOTE: should we worry about overflow in the multiplication?  It is possible
@@ -146,9 +192,9 @@ iproc_model_get_logprobs (iproc_model    *model,
      * multiplication, then unscaling after subtracting of the max value.  This
      * shouldn't be necessary in most (all?) real-world situations.
      */
-    iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, model->coef, 0.0, logprobs);
+    iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
 
-    if (!model->has_loops) {
+    if (!iproc_model_has_loops(model)) {
         iproc_vector_set(logprobs, ctx->isend, -INFINITY);
     }
 
@@ -176,7 +222,7 @@ iproc_model_logprob0 (iproc_model *model,
                       int64_t      i,
                       int64_t      j)
 {
-    iproc_vars *vars = model->vars;
+    iproc_vars *vars = iproc_model_vars(model);
     iproc_actors *senders = iproc_vars_senders(vars);
     int64_t k = iproc_actors_group(senders, i);
     iproc_array *array = model->logprobs0_array;
@@ -245,14 +291,16 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     assert(model);
     assert(ctx);
     assert(logprobs);
-    assert(model->vars == ctx->vars);
+    assert(iproc_model_vars(model) == ctx->vars);
     assert(plogprob0_shift);
-    assert(iproc_vars_nreceiver(model->vars) == iproc_svector_dim(logprobs));
+    assert(iproc_model_nreceiver(model) == iproc_svector_dim(logprobs));
 
     int64_t nnz, i;
+    iproc_vector *coefs = iproc_model_coefs(model);
+    int has_loops = iproc_model_has_loops(model);
 
     /* compute the changes in weights */
-    iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, model->coef, 0.0, logprobs);
+    iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
     nnz = iproc_svector_nnz(logprobs);
     i = ctx->isend;
 
@@ -276,7 +324,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
     logsumexp_iter(-logscale, &sp, &mp);
 
     /* treat the self-loop as the first negative difference */
-    if (!model->has_loops) {
+    if (!has_loops) {
         double lp0 = iproc_model_logprob0(model, i, i);
         double log_abs_dw = lp0 + invscale;
         logsumexp_iter(log_abs_dw, &sn, &mn);
@@ -290,7 +338,7 @@ iproc_model_get_new_logprobs (iproc_model    *model,
         double log_abs_dw;
 
         /* special handling for self-loops */
-        if (j == i && !model->has_loops) {
+        if (j == i && !has_loops) {
             /* no need to call logsumexp_iter since self-loop gets handled before
              * the for loop */
             iproc_vector_set(&logprobs_nz.vector, i, -INFINITY);

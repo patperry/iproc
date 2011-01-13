@@ -1,5 +1,5 @@
 
-vars <- function(senders, receivers = senders) {
+vars.default <- function(senders, receivers = senders) {
     .Call("Riproc_vars_new", senders, receivers)
 }
 

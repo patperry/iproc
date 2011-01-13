@@ -27,9 +27,8 @@ iproc_sloglik_new (iproc_model *model,
     if (!sll)
         return NULL;
 
-    iproc_vars *vars = model->vars;
-    int64_t n = iproc_vars_nreceiver(vars);
-    int64_t p = iproc_vars_dim(vars);
+    int64_t n = iproc_model_nreceiver(model);
+    int64_t p = iproc_model_dim(model);
 
     sll->model = iproc_model_ref(model);
     sll->isend = isend;
@@ -82,7 +81,8 @@ iproc_sloglik_insert (iproc_sloglik *sll,
 {
     int64_t isend = sll->isend;
     iproc_model *model = sll->model;
-    iproc_vars *vars = model->vars;
+    iproc_vars *vars = iproc_model_vars(model);
+    int has_loops = iproc_model_has_loops(model);
     iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, history, isend);
     int64_t nreceiver = iproc_vars_nreceiver(vars);
     iproc_svector *logprobs = iproc_svector_new(nreceiver);
@@ -91,7 +91,7 @@ iproc_sloglik_insert (iproc_sloglik *sll,
     iproc_model_get_new_logprobs(model, ctx, &logprob0_shift, logprobs);
     int64_t jnz = iproc_svector_find_nz(logprobs, jrecv);
 
-    if (jrecv == isend && !model->has_loops) {
+    if (jrecv == isend && !has_loops) {
         sll->value += -INFINITY;
     } else if (jnz >= 0) {
         sll->value += iproc_svector_nz(logprobs, jnz);

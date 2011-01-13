@@ -71,14 +71,12 @@ Riproc_actors_new (SEXP Rgroups,
 {
     int64_t n = GET_LENGTH(Rgroups);
     int *groups = INTEGER_POINTER(Rgroups);
-    int64_t p    = INTEGER(GET_DIM(Rgroup_traits_t))[0];
-    int64_t k    = INTEGER(GET_DIM(Rgroup_traits_t))[1];
-    double *data = NUMERIC_POINTER(Rgroup_traits_t);
+    iproc_matrix_view group_traits_t = Riproc_matrix_view_sexp(Rgroup_traits_t);
+    int64_t k = iproc_matrix_ncol(&group_traits_t.matrix);
 
     if (!(k > 0))
         error("must specify at least one group");
-            
-    iproc_matrix_view group_traits_t = iproc_matrix_view_array(data, p, k);
+
     iproc_vector_view traits0 = iproc_matrix_col(&group_traits_t.matrix, 0);
     iproc_actors *actors = iproc_actors_new(n, &traits0.vector);
     int64_t i;
@@ -137,8 +135,7 @@ Riproc_actors_traits (SEXP Ractors,
     SEXP Rxt;
 
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
-    double *data = NUMERIC_POINTER(Rxt);
-    iproc_matrix_view xt = iproc_matrix_view_array(data, dim, n);
+    iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
 
     for (i = 0; i < n; i++) {
         int64_t id = INTEGER(Ractor_ids)[i] - 1;
@@ -192,8 +189,7 @@ Riproc_actors_group_traits (SEXP Ractors,
     SEXP Rxt;
 
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
-    double *data = NUMERIC_POINTER(Rxt);
-    iproc_matrix_view xt = iproc_matrix_view_array(data, dim, n);
+    iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
 
     for (i = 0; i < n; i++) {
         int64_t id = INTEGER(Rgroup_ids)[i] - 1;
