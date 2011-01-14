@@ -157,23 +157,18 @@ iproc_history_insert (iproc_history *history,
 
 void
 iproc_history_insertm (iproc_history *history,
-                       int            nfrom,
-                       int64_t       *from,
-                       int            nto,
-                       int64_t       *to)
+                       int64_t        from,
+                       int64_t       *to,
+                       int64_t        nto)
 {
     assert(history);
-    assert(nfrom > 0);
-    assert(from);
-    assert(nto > 0);
-    assert(to);
+    assert(to || nto == 0);
+    assert(nto >= 0);
 
-    int i, j;
+    int i;
 
-    for (i = 0; i < nfrom; i++) {
-        for (j = 0; j < nto; j++) {
-            iproc_history_insert(history, from[i], to[j]);
-        }
+    for (i = 0; i < nto; i++) {
+        iproc_history_insert(history, from, to[i]);
     }
 }
 

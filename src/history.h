@@ -32,10 +32,9 @@ void            iproc_history_insert  (iproc_history *history,
                                        int64_t        from,
                                        int64_t        to);
 void            iproc_history_insertm (iproc_history *history,
-                                       int            nfrom,
-                                       int64_t       *from,
-                                       int            nto,
-                                       int64_t       *to);
+                                       int64_t        from,
+                                       int64_t       *to,
+                                       int64_t        nto);
 
 int64_t         iproc_history_nsend   (iproc_history *history);
 int64_t         iproc_history_nrecv   (iproc_history *history);
