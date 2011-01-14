@@ -52,15 +52,15 @@ Riproc_from_model (iproc_model *model)
 
     iproc_model_ref(model);
 
-    Rmodel = R_MakeExternalPtr(model, Riproc_model_type_tag, R_NilValue);
+    PROTECT(Rmodel = R_MakeExternalPtr(model, Riproc_model_type_tag, R_NilValue));
     R_RegisterCFinalizer(Rmodel, Riproc_model_free);
 
     /* set the class of the result */
     PROTECT(class = allocVector(STRSXP, 1));
     SET_STRING_ELT(class, 0, mkChar("model"));
     classgets(Rmodel, class);
-    UNPROTECT(1);
 
+    UNPROTECT(2);
     return Rmodel;
 }
 

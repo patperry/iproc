@@ -50,15 +50,15 @@ Riproc_from_vars (iproc_vars *vars)
 
     iproc_vars_ref(vars);
 
-    Rvars = R_MakeExternalPtr(vars, Riproc_vars_type_tag, R_NilValue);
+    PROTECT(Rvars = R_MakeExternalPtr(vars, Riproc_vars_type_tag, R_NilValue));
     R_RegisterCFinalizer(Rvars, Riproc_vars_free);
 
     /* set the class of the result */
     PROTECT(class = allocVector(STRSXP, 1));
     SET_STRING_ELT(class, 0, mkChar("vars"));
     classgets(Rvars, class);
-    UNPROTECT(1);
 
+    UNPROTECT(2);
     return Rvars;
 }
 

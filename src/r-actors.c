@@ -45,15 +45,15 @@ Riproc_from_actors (iproc_actors *actors)
     iproc_actors_ref(actors);
 
     /* store the actors pointer in an external pointer */
-    Ractors = R_MakeExternalPtr(actors, Riproc_actors_type_tag, R_NilValue);
+    PROTECT(Ractors = R_MakeExternalPtr(actors, Riproc_actors_type_tag, R_NilValue));
     R_RegisterCFinalizer(Ractors, Riproc_actors_free);
 
     /* set the class of the result */
     PROTECT(class = allocVector(STRSXP, 1));
     SET_STRING_ELT(class, 0, mkChar("actors"));
     classgets(Ractors, class);
-    UNPROTECT(1);
 
+    UNPROTECT(2);
     return Ractors;
 }
 
