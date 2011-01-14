@@ -65,11 +65,11 @@ iproc_message_iter_time (iproc_message_iter *it)
 }
 
 int64_t
-iproc_message_iter_nties (iproc_message_iter *it)
+iproc_message_iter_ntie (iproc_message_iter *it)
 {
     assert(it);
     assert(it->message);
-    return it->nties;
+    return it->ntie;
 }
 
 void
@@ -78,7 +78,7 @@ iproc_message_iter_select (iproc_message_iter *it,
 {
     assert(it);
     assert(tie >= 0);
-    assert(tie < iproc_message_iter_nties(it));
+    assert(tie < iproc_message_iter_ntie(it));
 
     int64_t i = it->offset + tie;
     it->message = &(iproc_array_index(it->messages->array, iproc_message, i));
@@ -114,15 +114,15 @@ iproc_message_iter_reset (iproc_message_iter *it)
     assert(it);
     it->message = NULL;
     it->offset = 0;
-    it->nties = 0;
+    it->ntie = 0;
 }
 
 int
 iproc_message_iter_next (iproc_message_iter *it)
 {
     assert(it);
-    int64_t offset = it->offset + it->nties;
-    int64_t nties = 0;
+    int64_t offset = it->offset + it->ntie;
+    int64_t ntie = 0;
     iproc_message *message = NULL;
 
     iproc_array *messages = it->messages->array;
@@ -132,16 +132,16 @@ iproc_message_iter_next (iproc_message_iter *it)
     if (has_next) {
         message = &(iproc_array_index(messages, iproc_message, offset));
         int64_t time = message[0].time;
-        int64_t nties_max = n - offset;
-        nties = 1;
+        int64_t ntie_max = n - offset;
+        ntie = 1;
 
-        while (nties < nties_max && message[nties].time == time) {
-            nties++;
+        while (ntie < ntie_max && message[ntie].time == time) {
+            ntie++;
         }
     }
 
     it->offset = offset;
-    it->nties = nties;
+    it->ntie = ntie;
     it->message = message;
     return has_next;
 }

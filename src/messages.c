@@ -96,14 +96,14 @@ iproc_messages_insert (iproc_messages *msgs,
     assert(msgs);
     assert(from >= 0);
     assert(to >= 0);
-    iproc_messages_insertm(msgs, from, 1, &to);
+    iproc_messages_insertm(msgs, from, &to, 1);
 }
 
 void
 iproc_messages_insertm (iproc_messages *msgs,
                         int64_t         from,
-                        int64_t         nto,
-                        int64_t        *to)
+                        int64_t        *to,
+                        int64_t         nto)
 {
     assert(msgs);
     assert(from >= 0);
@@ -119,8 +119,8 @@ iproc_messages_insertm (iproc_messages *msgs,
     iproc_message m = {
         time = time, 
         from = from,
-        nto = nto,
-        to  = mto
+        to  = mto,
+        nto = nto
     };
 
     int64_t i;

@@ -12,8 +12,8 @@ typedef struct _iproc_message_iter iproc_message_iter;
 struct _iproc_message {
     int64_t  time;
     int64_t  from;
-    int64_t  nto;
     int64_t *to;
+    int64_t  nto;
 };
 
 struct _iproc_messages {
@@ -29,7 +29,7 @@ struct _iproc_messages {
 struct _iproc_message_iter {
     iproc_messages *messages;
     int64_t         offset;
-    int64_t         nties;
+    int64_t         ntie;
     iproc_message  *message;
     iproc_refcount  refcount;
 };
@@ -50,8 +50,8 @@ void             iproc_messages_insert     (iproc_messages *msgs,
                                             int64_t         to);
 void             iproc_messages_insertm    (iproc_messages *msgs,
                                             int64_t         from,
-                                            int64_t         nto,
-                                            int64_t        *to);
+                                            int64_t        *to,
+                                            int64_t         nto);
 
 int64_t          iproc_messages_max_from   (iproc_messages *msgs);
 int64_t          iproc_messages_max_to     (iproc_messages *msgs);
@@ -63,7 +63,7 @@ iproc_message_iter * iproc_message_iter_ref    (iproc_message_iter *it);
 void                 iproc_message_iter_unref  (iproc_message_iter *it);
 
 int64_t              iproc_message_iter_time   (iproc_message_iter *it);
-int64_t              iproc_message_iter_nties  (iproc_message_iter *it);
+int64_t              iproc_message_iter_ntie   (iproc_message_iter *it);
 void                 iproc_message_iter_select (iproc_message_iter *it,
                                                 int64_t             tie);
 
