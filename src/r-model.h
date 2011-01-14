@@ -5,7 +5,7 @@
 #include "model.h"
 
 /* Call once to initialize library */
-void          Riproc_model_init ();
+void          Riproc_model_init      (DllInfo *info);
 
 /* External functions */
 SEXP          Riproc_model_new       (SEXP Rvars,

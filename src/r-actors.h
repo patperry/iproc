@@ -5,7 +5,7 @@
 #include "actors.h"
 
 /* Call once to initialize library */
-void           Riproc_actors_init ();
+void           Riproc_actors_init         (DllInfo *info);
 
 /* External functions */
 SEXP           Riproc_actors_new          (SEXP Rclasses,

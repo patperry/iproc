@@ -5,7 +5,7 @@
 #include "vars.h"
 
 /* Call once to initialize library */
-void         Riproc_vars_init ();
+void         Riproc_vars_init      (DllInfo *info);
 
 /* External functions */
 SEXP         Riproc_vars_new       (SEXP Rsenders,
