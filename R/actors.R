@@ -19,7 +19,7 @@ ngroup.actors <- function(actors) {
     .Call("Riproc_actors_ngroup", actors)
 }
 
-size.actors <- function(actors, ...) {
+size.actors <- function(actors) {
     .Call("Riproc_actors_size", actors)
 }
 
