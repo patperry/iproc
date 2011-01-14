@@ -69,8 +69,12 @@ Riproc_vars_new (SEXP Rsenders,
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
     iproc_vars *vars = iproc_vars_new(senders, receivers);
-    SEXP Rvars = Riproc_from_vars(vars);
+    SEXP Rvars;
+
+    PROTECT(Rvars = Riproc_from_vars(vars));
     iproc_vars_unref(vars);
+
+    UNPROTECT(1);
     return Rvars;
 }
 

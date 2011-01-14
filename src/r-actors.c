@@ -98,8 +98,10 @@ Riproc_actors_new (SEXP Rgroups,
         iproc_actors_set(actors, i, c);
     }
 
-    Ractors = Riproc_from_actors(actors);
+    PROTECT(Ractors = Riproc_from_actors(actors));
     iproc_actors_unref(actors);
+
+    UNPROTECT(1);
     return Ractors;
 }
 

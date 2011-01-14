@@ -79,8 +79,12 @@ Riproc_model_new (SEXP Rvars,
         error("has.loops is be NA");
 
     iproc_model *model = iproc_model_new(vars, &coefs.vector, has_loops);
-    SEXP Rmodel = Riproc_from_model(model);
+    SEXP Rmodel;
+
+    PROTECT(Rmodel = Riproc_from_model(model));
     iproc_model_unref(model);
+
+    UNPROTECT(1);
     return Rmodel;
 }
 
