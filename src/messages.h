@@ -12,7 +12,7 @@ typedef struct _iproc_message_iter iproc_message_iter;
 struct _iproc_message {
     int64_t  time;
     int64_t  from;
-    int64_t *to;
+    int64_t  ito;
     int64_t  nto;
 };
 
@@ -36,7 +36,7 @@ struct _iproc_message_iter {
 
 iproc_messages * iproc_messages_new        (int64_t         t0);
 iproc_messages * iproc_messages_ref        (iproc_messages *msgs);
-iproc_messages * iproc_messages_unref      (iproc_messages *msgs);
+void             iproc_messages_unref      (iproc_messages *msgs);
 
 int64_t          iproc_messages_size       (iproc_messages *msgs);
 void             iproc_messages_advance    (iproc_messages *msgs,

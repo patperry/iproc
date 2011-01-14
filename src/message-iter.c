@@ -105,7 +105,10 @@ iproc_message_iter_to (iproc_message_iter *it)
 {
     assert(it);
     assert(it->message);
-    return it->message->to;
+
+    int64_t ito = it->message->ito;
+    int64_t *to = &(iproc_array_index(it->messages->recipients, int64_t, ito));
+    return to;
 }
 
 void

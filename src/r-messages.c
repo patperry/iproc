@@ -3,6 +3,7 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
+#include <assert.h>
 #include <stdint.h>
 #include "r-utils.h"
 #include "r-messages.h"
@@ -98,6 +99,18 @@ to_array_copy (int64_t *dst, int *src, int64_t n)
     }
 }
 
+static void
+from_array_copy (int *dst, int64_t *src, int64_t n)
+{
+    int64_t i;
+    int64_t s;
+
+    for (i = 0; i < n; i++) {
+        s = src[i];
+        dst[i] = s + 1;
+    }
+}
+
 SEXP
 Riproc_messages_new (SEXP Rtime,
                      SEXP Rfrom,
@@ -111,40 +124,40 @@ Riproc_messages_new (SEXP Rtime,
     int max_nto = int_array_max(nto, n);
 
     if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rnto) == n))
-        error("'time', 'from', and 'to' do not have same lengths");
+        error("'time', 'from', and 'nto' do not have same lengths");
     if (max_nto < 0)
         error("'nto' values must be nonnegative");
 
     int size_to = GET_LENGTH(Rto);
     int *to = INTEGER_POINTER(Rto);
     int *to_end = to + size_to;
-    int64_t *to_buf = (int64_t *)R_alloc(max_nto, sizeof(int64_t));
+    int64_t *msg_to = (int64_t *)R_alloc(max_nto, sizeof(int64_t));
     int64_t tcur = INT64_MIN;
-    int64_t f, t, l;
+    int64_t msg_from, msg_time, msg_nto;
     int64_t i;
     iproc_messages *msgs = iproc_messages_new(tcur);
     SEXP Rmsgs;
 
     for (i = 0; i < n; i++) {
-        t = time[i];
-        f = from[i] - 1;
-        l = nto[i];
+        msg_time = time[i];
+        msg_from = from[i] - 1;
+        msg_nto = nto[i];
 
-        if (t < tcur)
+        if (msg_time < tcur)
             error("'time' values must be sorted in increasing order");
-        if (f < 0)
+        if (msg_from < 0)
             error("'from' values must be positive");
-        if (l < 0)
+        if (msg_nto < 0)
             error("'nto' values must be nonnegative");
-        if (to + l > to_end)
+        if (to + msg_nto > to_end)
             error("not enough elements in 'to' array");
 
-        to_array_copy(to_buf, to, l);
-        iproc_messages_advance_to(msgs, t);
-        iproc_messages_insertm(msgs, f, to_buf, l);
+        to_array_copy(msg_to, to, msg_nto);
+        iproc_messages_advance_to(msgs, msg_time);
+        iproc_messages_insertm(msgs, msg_from, msg_to, msg_nto);
         
-        tcur = t;
-        to += l;
+        tcur = msg_time;
+        to += msg_nto;
     }
 
     if (to != to_end)
@@ -196,16 +209,86 @@ Riproc_messages_time (SEXP Rmsgs)
 SEXP
 Riproc_messages_from (SEXP Rmsgs)
 {
+    iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+    int64_t i, ntie, n = iproc_messages_size(msgs);
+    SEXP Rfrom;
+
+    PROTECT(Rfrom = NEW_INTEGER(n));
+    int *from = INTEGER_POINTER(Rfrom);
+    
+    iproc_message_iter *it = iproc_message_iter_new(msgs);
+
+    while (iproc_message_iter_next(it)) {
+        ntie = iproc_message_iter_ntie(it);
+        for (i = 0; i < ntie; i++) {
+            *from++ = iproc_message_iter_from(it) + 1;
+        }
+    }
+
+    iproc_message_iter_unref(it);
+
+    UNPROTECT(1);
+    return Rfrom;
 }
 
 SEXP
 Riproc_messages_to (SEXP Rmsgs)
 {
+    iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+    int64_t i, msg, ntie, nto, n = iproc_messages_size(msgs);
+    int64_t *msg_to;
+    SEXP Rto, Rmsg_to;
+    iproc_message_iter *it;
+
+    PROTECT(Rto = NEW_LIST(n));
+
+    it = iproc_message_iter_new(msgs);
+    msg = 0;
+
+    while (iproc_message_iter_next(it)) {
+        ntie = iproc_message_iter_ntie(it);
+        for (i = 0; i < ntie; i++) {
+            nto = iproc_message_iter_nto(it);
+            msg_to = iproc_message_iter_to(it);
+
+            PROTECT(Rmsg_to = NEW_INTEGER(nto));
+            from_array_copy(INTEGER_POINTER(Rmsg_to), msg_to, nto);
+            SET_VECTOR_ELT(Rto, msg, Rmsg_to);
+            UNPROTECT(1);
+            msg++;
+        }
+    }
+    assert(msg == n);
+
+    iproc_message_iter_unref(it);
+
+    UNPROTECT(1);
+    return Rto;
 }
 
 SEXP
 Riproc_messages_nto (SEXP Rmsgs)
 {
+    iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+    int64_t i, ntie, n = iproc_messages_size(msgs);
+    SEXP Rnto;
+
+    PROTECT(Rnto = NEW_INTEGER(n));
+    int *nto = INTEGER_POINTER(Rnto);
+    
+    iproc_message_iter *it = iproc_message_iter_new(msgs);
+
+    while (iproc_message_iter_next(it)) {
+        ntie = iproc_message_iter_ntie(it);
+        for (i = 0; i < ntie; i++) {
+            *nto++ = iproc_message_iter_nto(it);
+        }
+    }
+
+    iproc_message_iter_unref(it);
+
+    UNPROTECT(1);
+    return Rnto;
 }
 
 SEXP

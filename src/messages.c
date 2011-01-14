@@ -55,7 +55,7 @@ iproc_messages_release (iproc_refcount *refcount)
     iproc_messages_free(msgs);
 }
 
-iproc_messages *
+void
 iproc_messages_unref (iproc_messages *msgs)
 {
     if (msgs) {
@@ -114,16 +114,10 @@ iproc_messages_insertm (iproc_messages *msgs,
     iproc_array *array = msgs->array;
     iproc_array *recipients = msgs->recipients;
 
-    int64_t n = iproc_array_size(recipients);
-    int64_t *mto  = &(iproc_array_index(recipients, int64_t, n));
-    iproc_message m = {
-        time = time, 
-        from = from,
-        to  = mto,
-        nto = nto
-    };
-
+    int64_t ito = iproc_array_size(recipients);
+    iproc_message m = { time, from, ito, nto };
     int64_t i;
+
     for (i = 0; i < nto; i++) {
         assert(to[i] >= 0);
 
