@@ -46,11 +46,27 @@ enron <- local({
                                            "receiver.id"),
                              colClasses = c("integer",
                                             "integer",
-                                            "integer"))                            
-
+                                            "integer"))
+    n <- nrow(messages)
+    receiver.id <- vector("list", n)
+    offset <- 1
+    last <- nrow(recipients)
+    for (i in seq_len(n)) {
+        if (offset > last || recipients$message.id[offset] != i) {
+            receiver.id[[i]] <- integer(0)
+        } else {
+            end <- offset + 1
+            while(end <= last && recipients$message.id[end] == i)
+                end <- end + 1
+            receiver.id[[i]] <- recipients$receiver.id[offset:(end-1)]
+            offset <- end
+        }
+    }
+    messages$receiver.id <- receiver.id
+    messages$nreceiver <- sapply(receiver.id, length)
+    
     enron <- list(employees = employees,
-                  messages = messages,
-                  recipients = recipients)
+                  messages = messages)
     class(enron) <- "enron"
     enron
 })

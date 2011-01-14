@@ -34,6 +34,3 @@ test.messages.nrow <- function() {
     checkEquals(nrow(enron$messages), 21635)
 }
 
-test.recipients.nrow <- function() {
-    checkEquals(nrow(enron$recipients), 38388)
-}
