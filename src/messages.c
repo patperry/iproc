@@ -26,6 +26,9 @@ iproc_messages_new (int64_t t0)
     msgs->tcur = t0;
     msgs->array = iproc_array_new(sizeof(iproc_message));
     msgs->recipients = iproc_array_new(sizeof(int64_t));
+    msgs->max_to = -1;
+    msgs->max_from = -1;
+    msgs->max_nto = 0;
     iproc_refcount_init(&msgs->refcount);
 
     if (!(msgs->array && msgs->recipients)) {
@@ -91,6 +94,8 @@ iproc_messages_insert (iproc_messages *msgs,
                        int64_t         to)
 {
     assert(msgs);
+    assert(from >= 0);
+    assert(to >= 0);
     iproc_messages_insertm(msgs, from, 1, &to);
 }
 
@@ -101,6 +106,7 @@ iproc_messages_insertm (iproc_messages *msgs,
                         int64_t        *to)
 {
     assert(msgs);
+    assert(from >= 0);
     assert(nto >= 0);
     assert(to || nto == 0);
 
@@ -119,8 +125,39 @@ iproc_messages_insertm (iproc_messages *msgs,
 
     int64_t i;
     for (i = 0; i < nto; i++) {
+        assert(to[i] >= 0);
+
         iproc_array_append(recipients, to + i);
+        if (to[i] > msgs->max_to)
+            msgs->max_to = to[i];
     }
-    
+
+    if (from > msgs->max_from)
+        msgs->max_from = from;
+    if (nto > msgs->max_nto)
+        msgs->max_nto = nto;
+
     iproc_array_append(array, &m);
 }
+
+int64_t
+iproc_messages_max_from (iproc_messages *msgs)
+{
+    assert(msgs);
+    return msgs->max_from;
+}
+
+int64_t
+iproc_messages_max_to (iproc_messages *msgs)
+{
+    assert(msgs);
+    return msgs->max_to;
+}
+
+int64_t
+iproc_messages_max_nto (iproc_messages *msgs)
+{
+    assert(msgs);
+    return msgs->max_nto;
+}
+

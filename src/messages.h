@@ -21,6 +21,9 @@ struct _iproc_messages {
     iproc_array *array;
     iproc_array *recipients;
     iproc_refcount refcount;
+    int64_t max_from;
+    int64_t max_to;
+    int64_t max_nto;
 };
 
 struct _iproc_message_iter {
@@ -49,6 +52,11 @@ void             iproc_messages_insertm    (iproc_messages *msgs,
                                             int64_t         from,
                                             int64_t         nto,
                                             int64_t        *to);
+
+int64_t          iproc_messages_max_from   (iproc_messages *msgs);
+int64_t          iproc_messages_max_to     (iproc_messages *msgs);
+int64_t          iproc_messages_max_nto    (iproc_messages *msgs);
+
 
 iproc_message_iter * iproc_message_iter_new    (iproc_messages     *msgs);
 iproc_message_iter * iproc_message_iter_ref    (iproc_message_iter *it);
