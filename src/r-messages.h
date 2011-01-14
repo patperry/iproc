@@ -10,8 +10,7 @@ void             Riproc_messages_init     (DllInfo *info);
 /* External functions */
 SEXP             Riproc_messages_new      (SEXP Rtime,
                                            SEXP Rfrom,
-                                           SEXP Rto,
-                                           SEXP Rnto);
+                                           SEXP Rto);
 SEXP             Riproc_messages_size     (SEXP Rmsgs);
 SEXP             Riproc_messages_time     (SEXP Rmsgs);
 SEXP             Riproc_messages_from     (SEXP Rmsgs);

@@ -1,10 +1,10 @@
 
-messages.default <- function(time, from, to, nto = rep(1, length(from))) {
+messages.default <- function(time, from, to) {
     time <- as.integer(time)
     from <- as.integer(from)
-    to <- as.integer(to)
-    nto <- as.integer(nto)
-    .Call("Riproc_messages_new", time, from, to, nto)
+    to <- lapply(as.list(to), as.integer)
+
+    .Call("Riproc_messages_new", time, from, to)
 }
 
 size.messages <- function(messages) {

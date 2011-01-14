@@ -5,13 +5,14 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include "array.h"
 #include "r-utils.h"
 #include "r-messages.h"
 
 static SEXP Riproc_messages_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_messages_new",      (DL_FUNC) &Riproc_messages_new,      4 },
+    { "Riproc_messages_new",      (DL_FUNC) &Riproc_messages_new,      3 },
     { "Riproc_messages_size",     (DL_FUNC) &Riproc_messages_size,     1 },
     { "Riproc_messages_time",     (DL_FUNC) &Riproc_messages_time,     1 },
     { "Riproc_messages_from",     (DL_FUNC) &Riproc_messages_from,     1 },
@@ -84,19 +85,24 @@ int_array_max (int *data, int n)
     return max;
 }
 
-static void
-to_array_copy (int64_t *dst, int *src, int64_t n)
+static int64_t *
+copy_sexp_to_int64 (iproc_array *dst, SEXP Rsrc)
 {
-    int64_t i;
+    int i, n = GET_LENGTH(Rsrc);
+    int *src = INTEGER_POINTER(Rsrc);
     int s;
+
+    iproc_array_set_size(dst, n);
 
     for (i = 0; i < n; i++) {
         s = src[i];
         if (s <= 0)
             error("'to' values must be positive");
 
-        dst[i] = s - 1;
+        iproc_array_index(dst, int64_t, i) = s - 1;
     }
+
+    return &(iproc_array_index(dst, int64_t, 0));
 }
 
 static void
@@ -114,57 +120,44 @@ from_array_copy (int *dst, int64_t *src, int64_t n)
 SEXP
 Riproc_messages_new (SEXP Rtime,
                      SEXP Rfrom,
-                     SEXP Rto,
-                     SEXP Rnto)
+                     SEXP Rto)
 {
     int64_t n = GET_LENGTH(Rtime);
     int *time = INTEGER_POINTER(Rtime);
     int *from = INTEGER_POINTER(Rfrom);
-    int *nto = INTEGER_POINTER(Rnto);
-    int max_nto = int_array_max(nto, n);
 
-    if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rnto) == n))
-        error("'time', 'from', and 'nto' do not have same lengths");
-    if (max_nto < 0)
-        error("'nto' values must be nonnegative");
+    if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rto) == n))
+        error("'time', 'from', and 'to' do not have same lengths");
 
-    int size_to = GET_LENGTH(Rto);
-    int *to = INTEGER_POINTER(Rto);
-    int *to_end = to + size_to;
-    int64_t *msg_to = (int64_t *)R_alloc(max_nto, sizeof(int64_t));
+    iproc_array *to_buf = iproc_array_new(sizeof(int64_t));
     int64_t tcur = INT64_MIN;
     int64_t msg_from, msg_time, msg_nto;
+    int64_t *msg_to;
     int64_t i;
     iproc_messages *msgs = iproc_messages_new(tcur);
-    SEXP Rmsgs;
+    SEXP Rmsgs, Rmsg_to;
 
     for (i = 0; i < n; i++) {
         msg_time = time[i];
         msg_from = from[i] - 1;
-        msg_nto = nto[i];
+        Rmsg_to = VECTOR_ELT(Rto, i);
+        msg_to = copy_sexp_to_int64(to_buf, Rmsg_to);
+        msg_nto = iproc_array_size(to_buf);
 
         if (msg_time < tcur)
             error("'time' values must be sorted in increasing order");
         if (msg_from < 0)
             error("'from' values must be positive");
-        if (msg_nto < 0)
-            error("'nto' values must be nonnegative");
-        if (to + msg_nto > to_end)
-            error("not enough elements in 'to' array");
 
-        to_array_copy(msg_to, to, msg_nto);
         iproc_messages_advance_to(msgs, msg_time);
         iproc_messages_insertm(msgs, msg_from, msg_to, msg_nto);
         
         tcur = msg_time;
-        to += msg_nto;
     }
-
-    if (to != to_end)
-        error("too many elements in 'to' array");
     
     PROTECT(Rmsgs = Riproc_from_messages(msgs));
     iproc_messages_unref(msgs);
+    iproc_array_unref(to_buf);
 
     UNPROTECT(1);
     return Rmsgs;
@@ -221,6 +214,7 @@ Riproc_messages_from (SEXP Rmsgs)
     while (iproc_message_iter_next(it)) {
         ntie = iproc_message_iter_ntie(it);
         for (i = 0; i < ntie; i++) {
+            iproc_message_iter_select(it, i);
             *from++ = iproc_message_iter_from(it) + 1;
         }
     }
@@ -248,6 +242,7 @@ Riproc_messages_to (SEXP Rmsgs)
     while (iproc_message_iter_next(it)) {
         ntie = iproc_message_iter_ntie(it);
         for (i = 0; i < ntie; i++) {
+            iproc_message_iter_select(it, i);
             nto = iproc_message_iter_nto(it);
             msg_to = iproc_message_iter_to(it);
 
@@ -281,6 +276,7 @@ Riproc_messages_nto (SEXP Rmsgs)
     while (iproc_message_iter_next(it)) {
         ntie = iproc_message_iter_ntie(it);
         for (i = 0; i < ntie; i++) {
+            iproc_message_iter_select(it, i);
             *nto++ = iproc_message_iter_nto(it);
         }
     }
