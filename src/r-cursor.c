@@ -11,7 +11,7 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_cursor_new",     (DL_FUNC) &Riproc_cursor_new,     2 },
     { "Riproc_cursor_advance", (DL_FUNC) &Riproc_cursor_advance, 1 },
     { "Riproc_cursor_reset",   (DL_FUNC) &Riproc_cursor_reset,   1 },
-    { NULL,                          NULL,                       0 }
+    { NULL,                    NULL,                             0 }
 };
 
 void
