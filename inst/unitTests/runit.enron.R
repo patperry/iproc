@@ -12,7 +12,7 @@ test.employees.data <- function() {
     e <- enron$employees[c(1,34,156),]
     name <- c("John Arnold", "Drew Fossum", "Phillip K. Allen")
     department <- factor(c("Trading", "Legal", "Trading"),
-                         levels = c("Legal", "Other", "Trading"))
+                         levels = c("Legal", "Trading", "Other"))
     long.department <- c("ENA Gas Financial", "ETS", "ENA Gas West")
     title <- c("VP Trading", "VP & Gen Cnsl", "Mng Dir Trading")
     gender <- factor(c("Male", "Male", "Male"),

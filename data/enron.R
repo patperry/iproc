@@ -15,11 +15,13 @@ enron <- local({
                                           "seniority"),
                             colClasses = c("integer",
                                            "character",
-                                           "factor",
+                                           "character",
                                            "character",
                                            "character",
                                            "factor",
                                            "factor"))
+    employees$department <- factor(employees$department,
+                                   levels = c("Legal", "Trading", "Other"))
 
     messages <- read.table(file.path(path, "messages.tsv"),
                            sep = "\t",
