@@ -65,7 +65,9 @@ iproc_cursor_unref (iproc_cursor *cursor)
 void
 iproc_cursor_reset (iproc_cursor *cursor)
 {
-    assert(cursor);
+    if (!cursor)
+        return;
+
     cursor->tcur = INT64_MIN;
     iproc_history_clear(cursor->history);
     iproc_message_iter_reset(cursor->it);
@@ -74,7 +76,9 @@ iproc_cursor_reset (iproc_cursor *cursor)
 int
 iproc_cursor_next (iproc_cursor *cursor)
 {
-    assert(cursor);
+    if (!cursor)
+        return 0;
+
     int64_t tprev = iproc_cursor_time(cursor);
     iproc_message_iter *it = cursor->it;
     int has_next = 0;
@@ -107,21 +111,27 @@ iproc_cursor_next (iproc_cursor *cursor)
 int64_t
 iproc_cursor_time (iproc_cursor *cursor)
 {
-    assert(cursor);
+    if (!cursor)
+        return INT64_MIN;
+
     return cursor->tcur;
 }
 
 iproc_history *
 iproc_cursor_history (iproc_cursor *cursor)
 {
-    assert(cursor);
+    if (!cursor)
+        return NULL;
+
     return cursor->history;
 }
 
 int64_t
 iproc_cursor_nmsg (iproc_cursor *cursor)
 {
-    assert(cursor);
+    if (!cursor)
+        return 0;
+
     return iproc_message_iter_ntie(cursor->it);
 }
 
