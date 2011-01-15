@@ -24,13 +24,17 @@ struct _iproc_sloglik {
 };
 
 iproc_sloglik * iproc_sloglik_new             (iproc_model   *model,
-                                               int64_t      isend);
+                                               int64_t        isend);
 iproc_sloglik * iproc_sloglik_ref             (iproc_sloglik *sll);
 void            iproc_sloglik_unref           (iproc_sloglik *sll);
 
 void            iproc_sloglik_insert          (iproc_sloglik *sll,
-                                               int64_t        jrecv,
-                                               iproc_history *history);
+                                               iproc_history *history,
+                                               int64_t        jrecv);
+void            iproc_sloglik_insertm         (iproc_sloglik *sll,
+                                               iproc_history *history,
+                                               int64_t       *jrecv,
+                                               int64_t        n);
 
 double          iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,
                                                double         scale,

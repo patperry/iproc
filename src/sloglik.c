@@ -76,8 +76,8 @@ iproc_sloglik_unref (iproc_sloglik *sll)
 
 void
 iproc_sloglik_insert (iproc_sloglik *sll,
-                      int64_t        jrecv,
-                      iproc_history *history)
+                      iproc_history *history,
+                      int64_t        jrecv)
 {
     int64_t isend = sll->isend;
     iproc_model *model = sll->model;
@@ -104,6 +104,16 @@ iproc_sloglik_insert (iproc_sloglik *sll,
     iproc_svector_unref(logprobs);
     iproc_vars_ctx_unref(ctx);
 }
+
+void
+iproc_sloglik_insertm (iproc_sloglik *sll,
+                       iproc_history *history,
+                       int64_t       *jrecv,
+                       int64_t        n)
+{
+
+}
+
 
 double
 iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,

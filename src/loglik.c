@@ -75,22 +75,42 @@ iproc_loglik_unref (iproc_loglik *loglik)
     }
 }
 
-void
-iproc_loglik_insert (iproc_loglik  *loglik,
-                     int64_t        from,
-                     int64_t        to,
-                     iproc_history *history)
+static iproc_sloglik *
+iproc_loglik_sloglik (iproc_loglik *loglik,
+                      int64_t       isend)
 {
     iproc_array *array = loglik->sloglik_array;
-    iproc_sloglik *sll = iproc_array_index(array, iproc_sloglik *, from);
+    iproc_sloglik *sll = iproc_array_index(array, iproc_sloglik *, isend);
 
     if (!sll) {
         iproc_model *model = loglik->model;
-        sll = iproc_sloglik_new(model, from);
-        iproc_array_index(array, iproc_sloglik *, from) = sll;
+        sll = iproc_sloglik_new(model, isend);
+        iproc_array_index(array, iproc_sloglik *, isend) = sll;
     }
 
-    iproc_sloglik_insert(sll, to, history);
+    return sll;
+}
+
+void
+iproc_loglik_insert (iproc_loglik  *loglik,
+                     iproc_history *history,
+                     int64_t        from,
+                     int64_t        to)
+
+{
+    iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
+    iproc_sloglik_insert(sll, history, to);
+}
+
+void
+iproc_loglik_insertm  (iproc_loglik  *loglik,
+                       iproc_history *history,
+                       int64_t        from,
+                       int64_t       *to,
+                       int64_t        nto)
+{
+    iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
+    iproc_sloglik_insertm(sll, history, to, nto);
 }
 
 double
