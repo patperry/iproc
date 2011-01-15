@@ -70,21 +70,6 @@ Riproc_from_messages (iproc_messages *msgs)
 }
 
 
-static int
-int_array_max (int *data, int n)
-{
-    int i;
-    int max = 0;
-    
-    for (i = 0; i < n; i++) {
-        int x = data[i];
-        if (x > max)
-            max = x;
-    }
-
-    return max;
-}
-
 static int64_t *
 copy_sexp_to_int64 (iproc_array *dst, SEXP Rsrc)
 {
