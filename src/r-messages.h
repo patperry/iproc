@@ -2,6 +2,7 @@
 #define _RIPROC_MESSAGES_H
 
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include "messages.h"
 
 /* Call once to initialize library */

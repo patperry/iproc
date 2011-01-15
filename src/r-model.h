@@ -2,6 +2,7 @@
 #define _RIPROC_MODEL_H
 
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include "model.h"
 
 /* Call once to initialize library */

@@ -2,6 +2,7 @@
 #define _RIPROC_VARS_H
 
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include "vars.h"
 
 /* Call once to initialize library */

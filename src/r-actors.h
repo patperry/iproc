@@ -2,6 +2,7 @@
 #define _IPROC_R_ACTORS_H
 
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include "actors.h"
 
 /* Call once to initialize library */
