@@ -79,30 +79,7 @@ iproc_sloglik_insert (iproc_sloglik *sll,
                       iproc_history *history,
                       int64_t        jrecv)
 {
-    int64_t isend = sll->isend;
-    iproc_model *model = sll->model;
-    iproc_vars *vars = iproc_model_vars(model);
-    int has_loops = iproc_model_has_loops(model);
-    iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, history, isend);
-    int64_t nreceiver = iproc_vars_nreceiver(vars);
-    iproc_svector *logprobs = iproc_svector_new(nreceiver);
-    double logprob0_shift = -INFINITY;
-
-    iproc_model_get_new_logprobs(model, ctx, &logprob0_shift, logprobs);
-    int64_t jnz = iproc_svector_find_nz(logprobs, jrecv);
-
-    if (jrecv == isend && !has_loops) {
-        sll->value += -INFINITY;
-    } else if (jnz >= 0) {
-        sll->value += iproc_svector_nz(logprobs, jnz);
-    } else {
-        sll->value += (iproc_model_logprob0(model, isend, jrecv) + logprob0_shift);
-    }
-    
-    /* update gradient vars */
-
-    iproc_svector_unref(logprobs);
-    iproc_vars_ctx_unref(ctx);
+    iproc_sloglik_insertm(sll, history, &jrecv, 1);
 }
 
 void
@@ -111,7 +88,16 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
                        int64_t       *jrecv,
                        int64_t        n)
 {
+    int64_t isend = sll->isend;
+    iproc_model *model = sll->model;
+    iproc_model_ctx *ctx = iproc_model_ctx_new(model, history, isend);
+    int64_t i;
 
+    for (i = 0; i < n; i++) {
+        sll->value += iproc_model_ctx_logprob(ctx, jrecv[i]);
+    }
+
+    iproc_model_ctx_unref(ctx);
 }
 
 

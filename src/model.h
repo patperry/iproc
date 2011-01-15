@@ -6,58 +6,59 @@
 #include "vector.h"
 
 
-typedef struct _iproc_model iproc_model;
+typedef struct _iproc_model     iproc_model;
+typedef struct _iproc_model_ctx iproc_model_ctx;
 
 struct _iproc_model {
-    iproc_vars    *varz;
+    iproc_vars    *vars;
     iproc_vector  *coefs;
-    int            has_loopz;
+    int            has_loops;
+    iproc_array   *group_logprobs0;
     iproc_refcount refcount;
-    iproc_array   *logprobs0_array;
 };
 
-iproc_model *  iproc_model_new              (iproc_vars     *vars,
-                                             iproc_vector   *coefs,
-                                             int             has_loops);
-iproc_model *  iproc_model_ref              (iproc_model    *model);
-void           iproc_model_unref            (iproc_model    *model);
+struct _iproc_model_ctx {
+    iproc_model    *model;
+    int64_t         isend;
+    iproc_vector   *logprobs0;
+    iproc_svector  *logprobs;
+    double          logprob0_shift;
+    iproc_refcount  refcount;
+};
 
-iproc_vars *   iproc_model_vars             (iproc_model    *model);
-iproc_vector * iproc_model_coefs            (iproc_model    *model);
-int            iproc_model_has_loops        (iproc_model    *model);
-int64_t        iproc_model_nsender          (iproc_model    *model);
-int64_t        iproc_model_nreceiver        (iproc_model    *model);
-int64_t        iproc_model_dim              (iproc_model    *model);
+iproc_model *     iproc_model_new       (iproc_vars   *vars,
+                                         iproc_vector *coefs,
+                                         int           has_loops);
+iproc_model *     iproc_model_ref       (iproc_model  *model);
+void              iproc_model_unref     (iproc_model  *model);
+
+iproc_vars *      iproc_model_vars      (iproc_model *model);
+iproc_vector *    iproc_model_coefs     (iproc_model *model);
+int               iproc_model_has_loops (iproc_model *model);
+int64_t           iproc_model_nsender   (iproc_model *model);
+int64_t           iproc_model_nreceiver (iproc_model *model);
+int64_t           iproc_model_dim       (iproc_model *model);
+
+/* Initial probability, without adjustment for self-loops. */
+iproc_vector *    iproc_model_logprobs0 (iproc_model *model,
+                                         int64_t      isend);
 
 
-double         iproc_model_logprob0         (iproc_model    *model,
-                                             int64_t         i,
-                                             int64_t         j);
+iproc_model_ctx * iproc_model_ctx_new          (iproc_model     *model,
+                                                iproc_history   *h,
+                                                int64_t          isend);
+iproc_model_ctx * iproc_model_ctx_ref          (iproc_model_ctx *ctx);
+void              iproc_model_ctx_unref        (iproc_model_ctx *ctx);
 
-void           iproc_model_get_probs        (iproc_model    *model,
-                                             iproc_vars_ctx *ctx,
-                                             iproc_vector   *probs);
-void           iproc_model_get_logprobs     (iproc_model    *model,
-                                             iproc_vars_ctx *ctx,
-                                             iproc_vector   *logprobs);
-
-/* The output of this function (logprob0_shift and logprobs) can be used
- * to compute the probabilites for the given context.  To compute log(p[j])
- * do the following:
- *
- *   1. If j == i and no self-loops are allowed, return -INFINITY
- *   2. If j is a sparse index of logprobs, return logprobs[j]
- *   3. Otherwise return iproc_model_logprob0(i,j) + logprob0_shift.
- *
- * Note the special handling for self loops.  An invalid self-loop may or may
- * not be have an index in 'logprobs'.  We only gaurantee that if it *does*
- * have an index in logprobs, then the corresponding value will be -INFINITY
- * (thus, steps 1 and 2 commute).
- */
-void           iproc_model_get_new_logprobs (iproc_model    *model,
-                                             iproc_vars_ctx *ctx,
-                                             double         *plogprob0_shift,
-                                             iproc_svector  *logprobs);
+int64_t           iproc_model_ctx_nreceiver    (iproc_model_ctx *ctx);
+double            iproc_model_ctx_prob         (iproc_model_ctx *ctx,
+                                                int64_t          jrecv);
+double            iproc_model_ctx_logprob      (iproc_model_ctx *ctx,
+                                                int64_t          jrecv);
+void              iproc_model_ctx_get_probs    (iproc_model_ctx *ctx,
+                                                iproc_vector    *probs);
+void              iproc_model_ctx_get_logprobs (iproc_model_ctx *ctx,
+                                                iproc_vector    *logprobs);
 
 
 #endif /* _IPROC_MODEL_H */

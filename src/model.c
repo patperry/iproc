@@ -8,58 +8,86 @@
 #include "model.h"
 #include "utils.h"
 
-static iproc_array *
-iproc_model_array_new (iproc_vars   *vars,
-                       iproc_vector *coefs)
+static void
+compute_logprobs (iproc_vars_ctx *ctx,
+                  iproc_vector   *coefs,
+                  int             has_loops,
+                  iproc_vector   *logprobs)
 {
-    assert(vars);
+    assert(ctx);
     assert(coefs);
+    assert(logprobs);
 
+    /* NOTE: should we worry about overflow in the multiplication?  It is possible
+     * to gaurd against said overflow by scaling the coefficient vector before the
+     * multiplication, then unscaling after subtracting of the max value.  This
+     * shouldn't be necessary in most (all?) real-world situations.
+     */
+    iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
+
+    if (!has_loops) {
+        iproc_vector_set(logprobs, ctx->isend, -INFINITY);
+    }
+
+    /* protect against overflow */
+    double max = iproc_vector_max(logprobs);
+    iproc_vector_shift(logprobs, -max);
+
+    /* The probabilities are p[i] = w[i] / sum(w[j]), so
+     * log(p[i]) = log(w[i]) - log(sum(w[j])).
+     */
+    double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
+    iproc_vector_shift(logprobs, -log_sum_exp);
+}
+
+
+static void
+iproc_group_logprobs0_init (iproc_array  *group_logprobs0,
+                            iproc_vars   *vars,
+                            iproc_vector *coefs)
+{
+    int64_t i, nsender = iproc_vars_nsender(vars);
+    int64_t nreceiver = iproc_vars_nreceiver(vars);
     iproc_actors *senders = iproc_vars_senders(vars);
-    iproc_actors *receivers = iproc_vars_receivers(vars);
-    int64_t i, nsender = iproc_actors_size(senders);
-    int64_t nreceiver = iproc_actors_size(receivers);
 
-    iproc_array *array = iproc_array_new(sizeof(iproc_vector *));
-    iproc_array_set_size(array, iproc_actors_ngroup(senders));
+    iproc_array_set_size(group_logprobs0, iproc_actors_ngroup(senders));
 
+    /* We have to loop over all senders, not over all groups, because we
+     * need a representative sender for each group when we call
+     * iproc_vars_ctx_new(vars, NULL, i).
+     */
     for (i = 0; i < nsender; i++) {
         int64_t k = iproc_actors_group(senders, i);
-        iproc_vector *logprobs = iproc_array_index(array, iproc_vector *, k);
+        iproc_vector *logprobs0 = iproc_array_index(group_logprobs0,
+                                                    iproc_vector *,
+                                                    k);
 
-        if (logprobs)
+        if (logprobs0)
             continue;
 
         iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, NULL, i);
 
-        logprobs = iproc_vector_new(nreceiver);
-        iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
-        iproc_vector_shift(logprobs, -iproc_vector_max(logprobs));
-        double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
-        iproc_vector_shift(logprobs, -log_sum_exp);
-
-        iproc_array_index(array, iproc_vector *, k) = logprobs;
+        logprobs0 = iproc_vector_new(nreceiver);
+        compute_logprobs(ctx, coefs, 1, logprobs0);
+        iproc_array_index(group_logprobs0, iproc_vector *, k) = logprobs0;
         iproc_vars_ctx_unref(ctx);
     }
-
-    return array;
 }
 
+
 static void
-iproc_model_array_unref (iproc_array *array)
+iproc_group_logprobs0_deinit (iproc_array *group_logprobs0)
 {
-    if (!array)
+    if (!group_logprobs0)
         return;
 
-    int64_t n = iproc_array_size(array);
+    int64_t n = iproc_array_size(group_logprobs0);
     int64_t i;
 
     for (i = 0; i < n; i++) {
-        iproc_vector *vector = iproc_array_index(array, iproc_vector *, i);
-        iproc_vector_unref(vector);
+        iproc_vector *logprobs0 = iproc_array_index(group_logprobs0, iproc_vector *, i);
+        iproc_vector_unref(logprobs0);
     }
-
-    iproc_array_unref(array);
 }
 
 static void
@@ -67,8 +95,9 @@ iproc_model_free (iproc_model *model)
 {
     if (model) {
         iproc_vector_unref(model->coefs);
-        iproc_vars_unref(model->varz);
-        iproc_model_array_unref(model->logprobs0_array);
+        iproc_vars_unref(model->vars);
+        iproc_group_logprobs0_deinit(model->group_logprobs0);
+        iproc_array_unref(model->group_logprobs0);
         iproc_free(model);
     }
 }
@@ -85,11 +114,13 @@ iproc_model_new (iproc_vars   *vars,
     assert(!has_loops || iproc_vars_nreceiver(vars) > 1);
 
     iproc_model *model = iproc_malloc(sizeof(*model));
-    model->varz = iproc_vars_ref(vars);
+    model->vars = iproc_vars_ref(vars);
     model->coefs = iproc_vector_new_copy(coefs);
-    model->has_loopz = has_loops;
+    model->has_loops = has_loops;
+    model->group_logprobs0 = iproc_array_new(sizeof(iproc_vector *));
+    iproc_group_logprobs0_init(model->group_logprobs0, vars, coefs);
     iproc_refcount_init(&model->refcount);
-    model->logprobs0_array = iproc_model_array_new(vars, coefs);
+
     return model;
 }
 
@@ -122,7 +153,7 @@ iproc_vars *
 iproc_model_vars (iproc_model *model)
 {
     assert(model);
-    return model->varz;
+    return model->vars;
 }
 
 iproc_vector *
@@ -136,7 +167,7 @@ int
 iproc_model_has_loops (iproc_model *model)
 {
     assert(model);
-    return model->has_loopz;
+    return model->has_loops;
 }
 
 int64_t
@@ -163,6 +194,27 @@ iproc_model_dim (iproc_model *model)
     return iproc_vars_dim(vars);
 }
 
+iproc_vector *
+iproc_model_logprobs0 (iproc_model *model,
+                       int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_array *group_logprobs0 = model->group_logprobs0;
+    iproc_vars *vars = iproc_model_vars(model);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    int64_t g = iproc_actors_group(senders, isend);
+    iproc_vector *lp0 = iproc_array_index(group_logprobs0,
+                                          iproc_vector *,
+                                          g);
+    return lp0;
+}
+
+
+#if 0
+
 void
 iproc_model_get_probs (iproc_model    *model,
                        iproc_vars_ctx *ctx,
@@ -172,49 +224,6 @@ iproc_model_get_probs (iproc_model    *model,
     iproc_vector_exp(probs);
 }
 
-void
-iproc_model_get_logprobs (iproc_model    *model,
-                          iproc_vars_ctx *ctx,
-                          iproc_vector   *logprobs)
-{
-    assert(model);
-    assert(ctx);
-    assert(logprobs);
-    assert(iproc_model_vars(model) == ctx->vars);
-    assert(iproc_model_nreceiver(model) == iproc_vector_dim(logprobs));
-
-    int64_t imax, i, n = iproc_vector_dim(logprobs);
-    iproc_vector *coefs = iproc_model_coefs(model);
-    double max, summ1;
-
-    /* NOTE: should we worry about overflow in the multiplication?  It is possible
-     * to gaurd against said overflow by scaling the coefficient vector before the
-     * multiplication, then unscaling after subtracting of the max value.  This
-     * shouldn't be necessary in most (all?) real-world situations.
-     */
-    iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
-
-    if (!iproc_model_has_loops(model)) {
-        iproc_vector_set(logprobs, ctx->isend, -INFINITY);
-    }
-
-    imax = iproc_vector_max_index(logprobs);
-    max = iproc_vector_get(logprobs, imax);
-    iproc_vector_shift(logprobs, -max);
-
-    /* compute the (scaled) sum of the weights, minus 1 */
-    summ1 = 0.0;
-    for (i = 0; i < n; i++) {
-        if (i == imax)
-            continue;
-        summ1 += exp(iproc_vector_get(logprobs, i));
-    }
-
-    /* The probabilities are p[i] = w[i] / sum(w[j]), so
-     * log(p[i]) = log(w[i]) - log(sum(w[j])).
-     */
-    iproc_vector_shift(logprobs, -log1p(summ1));
-}
 
 
 double
@@ -231,139 +240,7 @@ iproc_model_logprob0 (iproc_model *model,
     return lp0;
 }
 
-/* Algorithm logsumexp
- *   INPUT: a[1], ..., a[N]
- *   OUTPUT: log(sum(exp(ai)))
- *
- *   INVARIANT: S[n] = sum(exp(a[i] - M[n])) - 1
- *              M[n] = max(a[i])
- *
- *   S := -1
- *   M := -INFINITY
- *
- *   for i = 1 to N do
- *       if a[i] <= M
- *       then
- *           S := S + exp(a[i] - M)
- *       else
- *           S := (S + 1) * exp(M - a[i])
- *           M := a[i]
- *       end
- *   end
- *
- *   return M + log(S + 1)
- */
-static void
-logsumexp_init (double *psum_exp, double *pmax)
-{
-    *psum_exp = -1.0;
-    *pmax = -INFINITY;
-}
 
 
-static void
-logsumexp_iter (double val, double *psum_exp, double *pmax)
-{
-    double sum_exp = *psum_exp;
-    double max = *pmax;
+#endif
 
-    if (val <= *pmax) {
-        *psum_exp = sum_exp + exp(val - max);
-    } else {
-        double scale = exp(max - val);
-        *psum_exp = sum_exp * scale + scale;
-        *pmax = val;
-    }
-}
-
-static double
-logsumexp_result (double *psum_exp, double *pmax)
-{
-    return (*pmax + log1p(*psum_exp));
-}
-
-void
-iproc_model_get_new_logprobs (iproc_model    *model,
-                              iproc_vars_ctx *ctx,
-                              double         *plogprob0_shift,
-                              iproc_svector  *logprobs)
-{
-    assert(model);
-    assert(ctx);
-    assert(logprobs);
-    assert(iproc_model_vars(model) == ctx->vars);
-    assert(plogprob0_shift);
-    assert(iproc_model_nreceiver(model) == iproc_svector_dim(logprobs));
-
-    int64_t nnz, i;
-    iproc_vector *coefs = iproc_model_coefs(model);
-    int has_loops = iproc_model_has_loops(model);
-
-    /* compute the changes in weights */
-    iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
-    nnz = iproc_svector_nnz(logprobs);
-    i = ctx->isend;
-
-    if (nnz == 0) {
-        *plogprob0_shift = 0;
-        return;
-    }
-
-    iproc_vector_view logprobs_nz = iproc_svector_view_nz(logprobs);
-
-    /* compute the scale for the weight differences */
-    double lwmax = iproc_vector_max(&logprobs_nz.vector);
-    double logscale = IPROC_MAX(0.0, lwmax);
-    double invscale = exp(-logscale);
-
-    double sp, mp, sn, mn;
-    logsumexp_init(&sp, &mp);
-    logsumexp_init(&sn, &mn);
-
-    /* treat the initial sum of weights as the first positive difference */
-    logsumexp_iter(-logscale, &sp, &mp);
-
-    /* treat the self-loop as the first negative difference */
-    if (!has_loops) {
-        double lp0 = iproc_model_logprob0(model, i, i);
-        double log_abs_dw = lp0 + invscale;
-        logsumexp_iter(log_abs_dw, &sn, &mn);
-    }
-
-    /* compute the log sums of the positive and negative differences in weights */
-    for (i = 0; i < nnz; i++) {
-        int64_t j = iproc_svector_nz(logprobs, i);
-        double lp0 = iproc_model_logprob0(model, i, j);
-        double dlw = iproc_vector_get(&logprobs_nz.vector, i);
-        double log_abs_dw;
-
-        /* special handling for self-loops */
-        if (j == i && !has_loops) {
-            /* no need to call logsumexp_iter since self-loop gets handled before
-             * the for loop */
-            iproc_vector_set(&logprobs_nz.vector, i, -INFINITY);
-            continue;
-        }
-
-        if (dlw >= 0) {
-            log_abs_dw = lp0 + (exp(dlw - logscale) - invscale);
-            logsumexp_iter(log_abs_dw, &sp, &mp);
-        } else {
-            log_abs_dw = lp0 + (invscale - exp(dlw - logscale));
-            logsumexp_iter(log_abs_dw, &sn, &mn);
-        }
-
-        /* make logprobs[j] store the (unnormalized) log probability */
-        iproc_vector_inc(&logprobs_nz.vector, i, lp0);
-    }
-
-    double log_sum_abs_dw_p = logsumexp_result(&sp, &mp);
-    double log_sum_abs_dw_n = logsumexp_result(&sn, &mn);
-    double log_sum_w = (log_sum_abs_dw_p
-                        + log1p(-exp(log_sum_abs_dw_n - log_sum_abs_dw_p))
-                        + logscale);
-    assert(log_sum_abs_dw_p >= log_sum_abs_dw_n);
-
-    iproc_vector_shift(&logprobs_nz.vector, -log_sum_w);
-    *plogprob0_shift = -log_sum_w;
-}
