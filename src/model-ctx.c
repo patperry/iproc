@@ -122,8 +122,8 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
 
 iproc_model_ctx *
 iproc_model_ctx_new (iproc_model     *model,
-                     iproc_history   *h,
-                     int64_t          isend)
+                     int64_t          isend,
+                     iproc_history   *h)
 {
     assert(model);
     assert(isend >= 0);
@@ -135,7 +135,7 @@ iproc_model_ctx_new (iproc_model     *model,
         return NULL;
 
     iproc_vars *vars = iproc_model_vars(model);
-    iproc_vars_ctx *vars_ctx = iproc_vars_ctx_new(vars, h, isend);
+    iproc_vars_ctx *vars_ctx = iproc_vars_ctx_new(vars, isend, h);
     iproc_vector *coefs = iproc_model_coefs(model);
     int has_loops = iproc_model_has_loops(model);
     iproc_vector *logprobs0 = iproc_model_logprobs0(model, isend);

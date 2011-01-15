@@ -38,8 +38,8 @@ iproc_actors *   iproc_vars_senders      (iproc_vars     *vars);
 iproc_actors *   iproc_vars_receivers    (iproc_vars     *vars);
 
 iproc_vars_ctx * iproc_vars_ctx_new      (iproc_vars     *vars,
-                                          iproc_history  *h,
-                                          int64_t         isend);
+                                          int64_t         isend,
+                                          iproc_history  *h);
 iproc_vars_ctx * iproc_vars_ctx_ref      (iproc_vars_ctx *ctx);
 void             iproc_vars_ctx_unref    (iproc_vars_ctx *ctx);
 

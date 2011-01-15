@@ -45,8 +45,8 @@ iproc_vector *    iproc_model_logprobs0 (iproc_model *model,
 
 
 iproc_model_ctx * iproc_model_ctx_new          (iproc_model     *model,
-                                                iproc_history   *h,
-                                                int64_t          isend);
+                                                int64_t          isend,
+                                                iproc_history   *h);
 iproc_model_ctx * iproc_model_ctx_ref          (iproc_model_ctx *ctx);
 void              iproc_model_ctx_unref        (iproc_model_ctx *ctx);
 

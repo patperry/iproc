@@ -68,8 +68,9 @@ iproc_vars_ctx_free (iproc_vars_ctx *ctx)
 
 iproc_vars_ctx *
 iproc_vars_ctx_new (iproc_vars    *vars,
-                    iproc_history *h,
-                    int64_t        isend)
+                    int64_t        isend,
+                    iproc_history *h)
+
 {
     assert(vars);
     assert(0 <= isend);

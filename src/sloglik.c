@@ -90,7 +90,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
 {
     int64_t isend = sll->isend;
     iproc_model *model = sll->model;
-    iproc_model_ctx *ctx = iproc_model_ctx_new(model, history, isend);
+    iproc_model_ctx *ctx = iproc_model_ctx_new(model, isend, history);
     int64_t i;
 
     for (i = 0; i < n; i++) {

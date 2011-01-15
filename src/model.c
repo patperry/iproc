@@ -65,7 +65,7 @@ iproc_group_logprobs0_init (iproc_array  *group_logprobs0,
         if (logprobs0)
             continue;
 
-        iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, NULL, i);
+        iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, i, NULL);
 
         logprobs0 = iproc_vector_new(nreceiver);
         compute_logprobs(ctx, coefs, 1, logprobs0);
@@ -211,36 +211,3 @@ iproc_model_logprobs0 (iproc_model *model,
                                           g);
     return lp0;
 }
-
-
-#if 0
-
-void
-iproc_model_get_probs (iproc_model    *model,
-                       iproc_vars_ctx *ctx,
-                       iproc_vector   *probs)
-{
-    iproc_model_get_logprobs(model, ctx, probs);
-    iproc_vector_exp(probs);
-}
-
-
-
-double
-iproc_model_logprob0 (iproc_model *model,
-                      int64_t      i,
-                      int64_t      j)
-{
-    iproc_vars *vars = iproc_model_vars(model);
-    iproc_actors *senders = iproc_vars_senders(vars);
-    int64_t k = iproc_actors_group(senders, i);
-    iproc_array *array = model->logprobs0_array;
-    iproc_vector *logprobs0 = iproc_array_index(array, iproc_vector *, k);
-    double lp0 = iproc_vector_get(logprobs0, j);
-    return lp0;
-}
-
-
-
-#endif
-
