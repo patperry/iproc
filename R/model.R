@@ -32,3 +32,14 @@ nsender.model <- function(model) {
 nreceiver.model <- function(model) {
     .Call("Riproc_model_nreceiver", model)
 }
+
+probs.model <- function(model, isend, cursor = NULL) {
+    lp <- log.probs.model(model, isend, cursor)
+    exp(lp)
+}
+
+log.probs.model <- function(model, isend, cursor = NULL) {
+    isend <- as.integer(isend)
+    lpt <- .Call("Riproc_model_log_probs", model, isend, cursor)
+    t(lpt)
+}

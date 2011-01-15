@@ -5,6 +5,7 @@
 
 #include "r-utils.h"
 #include "r-actors.h"
+#include "r-cursor.h"
 #include "r-vars.h"
 #include "r-model.h"
 
@@ -19,6 +20,7 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_model_dim",       (DL_FUNC) &Riproc_model_dim,       1 },
     { "Riproc_model_nreceiver", (DL_FUNC) &Riproc_model_nreceiver, 1 },
     { "Riproc_model_nsender",   (DL_FUNC) &Riproc_model_nsender,   1 },
+    { "Riproc_model_log_probs", (DL_FUNC) &Riproc_model_log_probs, 3 },
     { NULL,                     NULL,                              0 }
 };
 
@@ -138,4 +140,39 @@ Riproc_model_has_loops (SEXP Rmodel)
     } else {
         return ScalarLogical(FALSE);
     }
+}
+
+SEXP
+Riproc_model_log_probs (SEXP Rmodel,
+                        SEXP Risend,
+                        SEXP Rcursor)
+{
+    iproc_model *model = Riproc_to_model(Rmodel);
+    int i, n = GET_LENGTH(Risend);
+    iproc_cursor *cursor = (Rcursor == NULL_USER_OBJECT
+                            ? NULL
+                            : Riproc_to_cursor(Rcursor));
+    int64_t nsender = iproc_model_nsender(model);
+    int64_t nreceiver = iproc_model_nreceiver(model);
+    iproc_history *history = iproc_cursor_history(cursor);
+
+    SEXP Rprobst;
+
+    PROTECT(Rprobst = allocMatrix(REALSXP, nreceiver, n));
+    iproc_matrix_view probst = Riproc_matrix_view_sexp(Rprobst);
+
+    for (i = 0; i < n; i++) {
+        int64_t isend = INTEGER(Risend)[i] - 1;
+        if (isend < 0 || isend >= nsender)
+            error("invalid sender");
+
+        iproc_model_ctx *ctx = iproc_model_ctx_new(model, isend, history);
+        iproc_vector_view dst = iproc_matrix_col(&probst.matrix, i);
+        
+        iproc_model_ctx_get_logprobs(ctx, &dst.vector);
+        iproc_model_ctx_unref(ctx);
+    }
+
+    UNPROTECT(1);
+    return Rprobst;
 }
