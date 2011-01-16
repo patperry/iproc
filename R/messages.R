@@ -7,6 +7,13 @@ messages.default <- function(time, from, to) {
     .Call("Riproc_messages_new", time, from, to)
 }
 
+messages.enron <- function(enron) {
+    time <- as.integer(enron$messages$time)
+    from <- enron$messages$sender.id
+    to <- enron$messages$receiver.id
+    messages.default(time, from, to)
+}
+
 size.messages <- function(messages) {
     .Call("Riproc_messages_size", messages)
 }

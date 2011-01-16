@@ -7,11 +7,10 @@ data(enron)
 time <- from <- to <- msgs <- NULL
 
 .setUp <- function() {
-    n <- nrow(enron$messages)
-    time <<- enron$messages$unix.time[1:n]
-    from <<- enron$messages$sender.id[1:n]
-    to <<- enron$messages$receiver.id[1:n]
-    msgs <<- messages(time, from, to)
+    time <<- as.integer(enron$messages$time)
+    from <<- enron$messages$sender.id
+    to <<- enron$messages$receiver.id
+    msgs <<- messages(enron)
 }
 
 test.size <- function() {
