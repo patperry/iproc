@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "logsumexp.h"
 #include "memory.h"
@@ -38,18 +39,10 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     assert(plogprob0_shift);
     assert(iproc_vector_dim(logprobs0) == iproc_svector_dim(logprobs));
 
-    int64_t nnz, i;
-
     /* compute the changes in weights */
     iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
-    nnz = iproc_svector_nnz(logprobs);
-    i = ctx->isend;
-
-    if (nnz == 0) {
-        *plogprob0_shift = 0;
-        return;
-    }
-
+    int64_t i, nnz = iproc_svector_nnz(logprobs);
+    int64_t isend = ctx->isend;
     iproc_vector_view logprobs_nz = iproc_svector_view_nz(logprobs);
 
     /* compute the scale for the weight differences */
@@ -66,31 +59,37 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
 
     /* treat the self-loop as the first negative difference */
     if (!has_loops) {
-        double lp0 = iproc_vector_get(logprobs0, i);
-        double log_abs_dw = lp0 + invscale;
+        double lp0 = iproc_vector_get(logprobs0, isend);
+        double log_abs_dw = lp0 - logscale;
         iproc_logsumexp_insert(&neg, log_abs_dw);
     }
 
     /* compute the log sums of the positive and negative differences in weights */
     for (i = 0; i < nnz; i++) {
-        int64_t j = iproc_svector_nz(logprobs, i);
-        double lp0 = iproc_vector_get(logprobs0, j);
+        int64_t jrecv = iproc_svector_nz(logprobs, i);
+        double lp0 = iproc_vector_get(logprobs0, jrecv);
         double dlw = iproc_vector_get(&logprobs_nz.vector, i);
         double log_abs_dw;
 
         /* special handling for self-loops */
-        if (j == i && !has_loops) {
+        if (jrecv == isend && !has_loops) {
             /* no need to call logsumexp_iter since self-loop gets handled before
              * the for loop */
             iproc_vector_set(&logprobs_nz.vector, i, -INFINITY);
             continue;
         }
 
+        /* When w > w0:
+         *   w - w0      = w0 * [exp(dlw) - 1];
+         *               = w0 * {exp[dlw - log(scale)] - 1/scale} * scale
+         *
+         *   log(w - w0) = log(w0) + log{exp[(dlw) - log(scale)] - 1/scale} + log(scale)
+         */
         if (dlw >= 0) {
-            log_abs_dw = lp0 + (exp(dlw - logscale) - invscale);
+            log_abs_dw = lp0 + log(exp(dlw - logscale) - invscale);
             iproc_logsumexp_insert(&pos, log_abs_dw);
         } else {
-            log_abs_dw = lp0 + (invscale - exp(dlw - logscale));
+            log_abs_dw = lp0 + log(invscale - exp(dlw - logscale));
             iproc_logsumexp_insert(&neg, log_abs_dw);
         }
 
@@ -100,6 +99,16 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
 
     double log_sum_abs_dw_p = iproc_logsumexp_value(&pos);
     double log_sum_abs_dw_n = iproc_logsumexp_value(&neg);
+
+    if (log_sum_abs_dw_n > log_sum_abs_dw_p) {
+        /* The sum of the weights is positive, so this only happens as a
+         * result of numerical errors */
+        log_sum_abs_dw_n = log_sum_abs_dw_p;
+        printf("\nWARNING: numerical errors in model-ctx.c (compute_new_logprobs)"
+               "\nPlease report a bug to the authors"
+               "\n\n");
+    }
+
     double log_sum_w = (log_sum_abs_dw_p
                         + log1p(-exp(log_sum_abs_dw_n - log_sum_abs_dw_p))
                         + logscale);
