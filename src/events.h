@@ -22,7 +22,7 @@ struct _iproc_event {
 
 struct _iproc_past_event {
     iproc_event event;
-    int64_t     dt;
+    uint64_t    dt;
 };
 
 
@@ -34,7 +34,7 @@ void           iproc_events_clear     (iproc_events *events);
 void           iproc_events_insert    (iproc_events *events,
                                        int64_t       e);
 void           iproc_events_advance   (iproc_events *events,
-                                       int64_t       dt);
+                                       uint64_t      dt);
 
 int64_t        iproc_events_ncur      (iproc_events *events);
 int64_t        iproc_events_cur       (iproc_events *events,
@@ -48,7 +48,7 @@ int64_t        iproc_events_past      (iproc_events *events,
 int64_t        iproc_events_find_past (iproc_events *events,
                                        int64_t       e);
 
-int64_t        iproc_events_past_dt   (iproc_events *events,
+uint64_t       iproc_events_past_dt   (iproc_events *events,
                                        int64_t       i);
 
 

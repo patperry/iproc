@@ -10,11 +10,11 @@ typedef struct _iproc_history_events iproc_history_events;
 
 struct _iproc_history_events {
     iproc_events *events;
-    int64_t       elapsed;
+    uint64_t      elapsed;
 };
 
 struct _iproc_history {
-    int64_t        elapsed;
+    uint64_t       elapsed;
     iproc_array   *send;
     iproc_array   *recv;
     iproc_refcount refcount;
@@ -27,7 +27,7 @@ void            iproc_history_unref   (iproc_history *history);
 void            iproc_history_clear   (iproc_history *history);
 
 void            iproc_history_advance (iproc_history *history,
-                                       int64_t        dt);
+                                       uint64_t       dt);
 void            iproc_history_insert  (iproc_history *history,
                                        int64_t        from,
                                        int64_t        to);

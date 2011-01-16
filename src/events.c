@@ -111,19 +111,15 @@ iproc_events_insert (iproc_events *events,
 
 void
 iproc_events_advance (iproc_events *events,
-                      int64_t       dt)
+                      uint64_t      dt)
 {
     assert(events);
-    assert(dt >= 0);
 
     int64_t e;
     int64_t ic, ip;
     int64_t nc = iproc_events_ncur(events);
     int64_t np = iproc_events_npast(events);
     iproc_array *past = events->past;
-
-    if (dt <= 0)
-        return;
 
     /* Add time to all past events */
     for (ip = 0; ip < np; ip++) {
@@ -137,8 +133,8 @@ iproc_events_advance (iproc_events *events,
 
         /* If event doesn't already exist in past set, insert it */
         if (ip < 0) {
-            iproc_event event = { e=e };
-            iproc_past_event past_event = { event=event, dt=dt };
+            iproc_event event = { e };
+            iproc_past_event past_event = { event, dt };
             iproc_array_insert(past, ~ip, &past_event);
 
         /* Set the time of the event to the time advance */
@@ -206,7 +202,7 @@ iproc_events_past (iproc_events *events,
     return iproc_array_index(events->past, iproc_past_event, i).event.e;
 }
 
-int64_t
+uint64_t
 iproc_events_past_dt (iproc_events *events,
                       int64_t       i)
 {

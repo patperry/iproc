@@ -129,10 +129,9 @@ iproc_history_clear (iproc_history *history)
 
 void
 iproc_history_advance (iproc_history *history,
-                       int64_t        dt)
+                       uint64_t       dt)
 {
     assert(history);
-    assert(dt >= 0);
 
     if (dt > 0) {
         history->elapsed += dt;
