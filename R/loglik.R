@@ -1,4 +1,8 @@
 
-loglik.model <- function(model, messages) {
-    .Call("Riproc_model_loglik", model, messages)
+loglik.default <- function(model, messages) {
+    .Call("Riproc_loglik_new", model, messages)
+}
+
+value.loglik <- function(loglik) {
+    .Call("Riproc_loglik_value", loglik)
 }

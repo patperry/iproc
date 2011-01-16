@@ -36,8 +36,12 @@ void            iproc_sloglik_insertm         (iproc_sloglik *sll,
                                                int64_t       *jrecv,
                                                int64_t        n);
 
+double          iproc_sloglik_value           (iproc_sloglik *sll);
+
+/*
 double          iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,
                                                double         scale,
                                                iproc_sloglik *sll);
+*/
 
 #endif /* _IPROC_LOGLIK_H */

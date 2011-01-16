@@ -29,8 +29,12 @@ void           iproc_loglik_insertm         (iproc_loglik  *loglik,
                                              int64_t       *to,
                                              int64_t        nto);
 
+double         iproc_loglik_value           (iproc_loglik  *loglik);
+
+/*
 double         iproc_vector_acc_loglik_grad (iproc_vector *dst_vector,
                                              double        scale,
                                              iproc_loglik *loglik);
+*/                                             
 
 #endif /* _IPROC_LOGLIK_H */

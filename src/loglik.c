@@ -114,6 +114,26 @@ iproc_loglik_insertm  (iproc_loglik  *loglik,
 }
 
 double
+iproc_loglik_value (iproc_loglik *loglik)
+{
+    if (!loglik)
+        return 0.0;
+
+    iproc_array *array = loglik->sloglik_array;
+    int64_t i, n = iproc_array_size(array);
+    iproc_sloglik *sll;
+    double value = 0.0;
+    
+    for (i = 0; i < n; i++) {
+        sll = iproc_array_index(array, iproc_sloglik *, i);
+        value += iproc_sloglik_value(sll);
+    }
+    
+    return value;
+}
+
+/*
+double
 iproc_vector_acc_loglik_grad (iproc_vector *dst_vector,
                               double        scale,
                               iproc_loglik *loglik)
@@ -133,3 +153,4 @@ iproc_vector_acc_loglik_grad (iproc_vector *dst_vector,
     
     return value;
 }
+*/

@@ -100,11 +100,11 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     iproc_model_ctx_unref(ctx);
 }
 
-
 double
-iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,
-                               double         scale,
-                               iproc_sloglik *sll)
+iproc_sloglik_value (iproc_sloglik *sll)
 {
+    if (!sll)
+        return 0.0;
+
     return sll->value;
 }
