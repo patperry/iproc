@@ -39,10 +39,15 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     assert(plogprob0_shift);
     assert(iproc_vector_dim(logprobs0) == iproc_svector_dim(logprobs));
 
+    int64_t isend = ctx->isend;
+
     /* compute the changes in weights */
     iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
+    if (!has_loops) {
+        iproc_svector_set(logprobs, isend, -INFINITY);
+    }
+
     int64_t i, nnz = iproc_svector_nnz(logprobs);
-    int64_t isend = ctx->isend;
     iproc_vector_view logprobs_nz = iproc_svector_view_nz(logprobs);
 
     /* compute the scale for the weight differences */
@@ -57,27 +62,12 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     /* treat the initial sum of weights as the first positive difference */
     iproc_logsumexp_insert(&pos, -logscale);
 
-    /* treat the self-loop as the first negative difference */
-    if (!has_loops) {
-        double lp0 = iproc_vector_get(logprobs0, isend);
-        double log_abs_dw = lp0 - logscale;
-        iproc_logsumexp_insert(&neg, log_abs_dw);
-    }
-
     /* compute the log sums of the positive and negative differences in weights */
     for (i = 0; i < nnz; i++) {
         int64_t jrecv = iproc_svector_nz(logprobs, i);
         double lp0 = iproc_vector_get(logprobs0, jrecv);
         double dlw = iproc_vector_get(&logprobs_nz.vector, i);
         double log_abs_dw;
-
-        /* special handling for self-loops */
-        if (jrecv == isend && !has_loops) {
-            /* no need to call logsumexp_iter since self-loop gets handled before
-             * the for loop */
-            iproc_vector_set(&logprobs_nz.vector, i, -INFINITY);
-            continue;
-        }
 
         /* When w > w0:
          *   w - w0      = w0 * [exp(dlw) - 1];
