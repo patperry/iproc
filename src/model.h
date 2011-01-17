@@ -6,14 +6,22 @@
 #include "vector.h"
 
 
-typedef struct _iproc_model     iproc_model;
-typedef struct _iproc_model_ctx iproc_model_ctx;
+typedef struct _iproc_group_model iproc_group_model;
+typedef struct _iproc_model       iproc_model;
+typedef struct _iproc_model_ctx   iproc_model_ctx;
+
+struct _iproc_group_model {
+    iproc_vector *logprobs0;
+    iproc_vector *probs0;
+    double        invsumweight0;
+    double        logsumweight0;
+};
 
 struct _iproc_model {
     iproc_vars    *vars;
     iproc_vector  *coefs;
     int            has_loops;
-    iproc_array   *group_logprobs0;
+    iproc_array   *group_models;
     iproc_refcount refcount;
 };
 
@@ -40,7 +48,9 @@ int64_t           iproc_model_nreceiver          (iproc_model *model);
 int64_t           iproc_model_dim                (iproc_model *model);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-double            iproc_model_sumweight0         (iproc_model *model,
+double            iproc_model_invsumweight0      (iproc_model *model,
+                                                  int64_t      isend);
+double            iproc_model_logsumweight0      (iproc_model *model,
                                                   int64_t      isend);
 iproc_vector *    iproc_model_logprobs0          (iproc_model *model,
                                                   int64_t      isend);
@@ -64,9 +74,10 @@ void              iproc_model_ctx_get_probs      (iproc_model_ctx *ctx,
 void              iproc_model_ctx_get_logprobs   (iproc_model_ctx *ctx,
                                                   iproc_vector    *logprobs);
 
-double            iproc_model_sumweight          (iproc_model_ctx *ctx);
-double            iproc_model_sumweight_ratio    (iproc_model_ctx *ctx);
-double            iproc_model_sumweight_logratio (iproc_model_ctx *ctx);
+double            iproc_model_invsumweight       (iproc_model_ctx *ctx);
+double            iproc_model_logsumweight       (iproc_model_ctx *ctx);
+double            iproc_model_invsumweight_ratio (iproc_model_ctx *ctx);
+double            iproc_model_logsumweight_diff  (iproc_model_ctx *ctx);
 iproc_svector *   iproc_model_active_probs       (iproc_model_ctx *ctx);
 iproc_svector *   iproc_model_active_logprobs    (iproc_model_ctx *ctx);
 

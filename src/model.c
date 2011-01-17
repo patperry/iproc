@@ -12,11 +12,13 @@ static void
 compute_logprobs (iproc_vars_ctx *ctx,
                   iproc_vector   *coefs,
                   int             has_loops,
-                  iproc_vector   *logprobs)
+                  iproc_vector   *logprobs,
+                  double         *logsumweight)
 {
     assert(ctx);
     assert(coefs);
     assert(logprobs);
+    assert(logsumweight);
 
     /* NOTE: should we worry about overflow in the multiplication?  It is possible
      * to gaurd against said overflow by scaling the coefficient vector before the
@@ -38,19 +40,20 @@ compute_logprobs (iproc_vars_ctx *ctx,
      */
     double log_sum_exp = iproc_vector_log_sum_exp(logprobs);
     iproc_vector_shift(logprobs, -log_sum_exp);
+    *logsumweight = log_sum_exp + max;
 }
 
 
 static void
-iproc_group_logprobs0_init (iproc_array  *group_logprobs0,
-                            iproc_vars   *vars,
-                            iproc_vector *coefs)
+iproc_group_models_init (iproc_array  *group_models,
+                         iproc_vars   *vars,
+                         iproc_vector *coefs)
 {
     int64_t i, nsender = iproc_vars_nsender(vars);
     int64_t nreceiver = iproc_vars_nreceiver(vars);
     iproc_actors *senders = iproc_vars_senders(vars);
 
-    iproc_array_set_size(group_logprobs0, iproc_actors_ngroup(senders));
+    iproc_array_set_size(group_models, iproc_actors_ngroup(senders));
 
     /* We have to loop over all senders, not over all groups, because we
      * need a representative sender for each group when we call
@@ -58,36 +61,57 @@ iproc_group_logprobs0_init (iproc_array  *group_logprobs0,
      */
     for (i = 0; i < nsender; i++) {
         int64_t k = iproc_actors_group(senders, i);
-        iproc_vector *logprobs0 = iproc_array_index(group_logprobs0,
-                                                    iproc_vector *,
-                                                    k);
-
-        if (logprobs0)
+        iproc_group_model *group = &(iproc_array_index(group_models,
+                                                       iproc_group_model,
+                                                       k));
+        if (group->logprobs0)
             continue;
 
         iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, i, NULL);
 
-        logprobs0 = iproc_vector_new(nreceiver);
-        compute_logprobs(ctx, coefs, 1, logprobs0);
-        iproc_array_index(group_logprobs0, iproc_vector *, k) = logprobs0;
+        group->logprobs0 = iproc_vector_new(nreceiver);
+        compute_logprobs(ctx, coefs, 1, group->logprobs0, &group->logsumweight0);
+
+        group->probs0 = iproc_vector_new_copy(group->logprobs0);
+        iproc_vector_exp(group->probs0);
+        group->invsumweight0 = exp(-group->logsumweight0);
+
         iproc_vars_ctx_unref(ctx);
     }
 }
 
 
 static void
-iproc_group_logprobs0_deinit (iproc_array *group_logprobs0)
+iproc_group_models_deinit (iproc_array *group_models)
 {
-    if (!group_logprobs0)
+    if (!group_models)
         return;
 
-    int64_t n = iproc_array_size(group_logprobs0);
+    int64_t n = iproc_array_size(group_models);
     int64_t i;
 
     for (i = 0; i < n; i++) {
-        iproc_vector *logprobs0 = iproc_array_index(group_logprobs0, iproc_vector *, i);
-        iproc_vector_unref(logprobs0);
+        iproc_group_model *group = &(iproc_array_index(group_models,
+                                                       iproc_group_model,
+                                                       i));
+        iproc_vector_unref(group->logprobs0);
+        iproc_vector_unref(group->probs0);
     }
+}
+
+static iproc_group_model *
+iproc_model_send_group (iproc_model *model,
+                        int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_array *group_models = model->group_models;
+    iproc_vars *vars = iproc_model_vars(model);
+    iproc_actors *senders = iproc_vars_senders(vars);
+    int64_t g = iproc_actors_group(senders, isend);
+    return &(iproc_array_index(group_models, iproc_group_model, g));
 }
 
 static void
@@ -96,8 +120,8 @@ iproc_model_free (iproc_model *model)
     if (model) {
         iproc_vector_unref(model->coefs);
         iproc_vars_unref(model->vars);
-        iproc_group_logprobs0_deinit(model->group_logprobs0);
-        iproc_array_unref(model->group_logprobs0);
+        iproc_group_models_deinit(model->group_models);
+        iproc_array_unref(model->group_models);
         iproc_free(model);
     }
 }
@@ -117,8 +141,8 @@ iproc_model_new (iproc_vars   *vars,
     model->vars = iproc_vars_ref(vars);
     model->coefs = iproc_vector_new_copy(coefs);
     model->has_loops = has_loops;
-    model->group_logprobs0 = iproc_array_new(sizeof(iproc_vector *));
-    iproc_group_logprobs0_init(model->group_logprobs0, vars, coefs);
+    model->group_models = iproc_array_new(sizeof(iproc_group_model));
+    iproc_group_models_init(model->group_models, vars, coefs);
     iproc_refcount_init(&model->refcount);
 
     return model;
@@ -194,6 +218,34 @@ iproc_model_dim (iproc_model *model)
     return iproc_vars_dim(vars);
 }
 
+double
+iproc_model_invsumweight0 (iproc_model *model,
+                           int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_group_model *group = iproc_model_send_group(model, isend);
+    assert(group);
+
+    return group->invsumweight0;
+}
+
+double
+iproc_model_logsumweight0 (iproc_model *model,
+                           int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_group_model *group = iproc_model_send_group(model, isend);
+    assert(group);
+
+    return group->logsumweight0;
+}
+
 iproc_vector *
 iproc_model_logprobs0 (iproc_model *model,
                        int64_t      isend)
@@ -202,12 +254,20 @@ iproc_model_logprobs0 (iproc_model *model,
     assert(isend >= 0);
     assert(isend < iproc_model_nsender(model));
 
-    iproc_array *group_logprobs0 = model->group_logprobs0;
-    iproc_vars *vars = iproc_model_vars(model);
-    iproc_actors *senders = iproc_vars_senders(vars);
-    int64_t g = iproc_actors_group(senders, isend);
-    iproc_vector *lp0 = iproc_array_index(group_logprobs0,
-                                          iproc_vector *,
-                                          g);
-    return lp0;
+    iproc_group_model *group = iproc_model_send_group(model, isend);
+    assert(group);
+    return group->logprobs0;
+}
+
+iproc_vector *
+iproc_model_probs0 (iproc_model *model,
+                    int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_group_model *group = iproc_model_send_group(model, isend);
+    assert(group);
+    return group->probs0;
 }
