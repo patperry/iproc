@@ -51,6 +51,7 @@ iproc_group_models_init (iproc_array  *group_models,
 {
     int64_t i, nsender = iproc_vars_nsender(vars);
     int64_t nreceiver = iproc_vars_nreceiver(vars);
+    int64_t dim = iproc_vars_dim(vars);
     iproc_actors *senders = iproc_vars_senders(vars);
 
     iproc_array_set_size(group_models, iproc_actors_ngroup(senders));
@@ -76,6 +77,10 @@ iproc_group_models_init (iproc_array  *group_models,
         iproc_vector_exp(group->probs0);
         group->invsumweight0 = exp(-group->logsumweight0);
 
+        group->mean0 = iproc_vector_new(dim);
+        iproc_vars_ctx_mul(1.0, IPROC_TRANS_TRANS, ctx, group->probs0,
+                           0.0, group->mean0);
+
         iproc_vars_ctx_unref(ctx);
     }
 }
@@ -96,6 +101,7 @@ iproc_group_models_deinit (iproc_array *group_models)
                                                        i));
         iproc_vector_unref(group->logprobs0);
         iproc_vector_unref(group->probs0);
+        iproc_vector_unref(group->mean0);
     }
 }
 
@@ -270,4 +276,17 @@ iproc_model_probs0 (iproc_model *model,
     iproc_group_model *group = iproc_model_send_group(model, isend);
     assert(group);
     return group->probs0;
+}
+
+iproc_vector *
+iproc_model_mean0 (iproc_model *model,
+                    int64_t      isend)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_group_model *group = iproc_model_send_group(model, isend);
+    assert(group);
+    return group->mean0;
 }

@@ -11,10 +11,11 @@ typedef struct _iproc_model       iproc_model;
 typedef struct _iproc_model_ctx   iproc_model_ctx;
 
 struct _iproc_group_model {
-    iproc_vector *logprobs0;
-    iproc_vector *probs0;
     double        invsumweight0;
     double        logsumweight0;
+    iproc_vector *logprobs0;
+    iproc_vector *probs0;
+    iproc_vector *mean0;
 };
 
 struct _iproc_model {
@@ -58,6 +59,8 @@ double              iproc_model_logsumweight0      (iproc_model *model,
 iproc_vector *      iproc_model_logprobs0          (iproc_model *model,
                                                     int64_t      isend);
 iproc_vector *      iproc_model_probs0             (iproc_model *model,
+                                                    int64_t      isend);
+iproc_vector *      iproc_model_mean0              (iproc_model *model,
                                                     int64_t      isend);
 
 
