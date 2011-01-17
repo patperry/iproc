@@ -15,14 +15,9 @@
  * to compute the probabilites for the given context.  To compute log(p[j])
  * do the following:
  *
- *   1. If jrecv == isend and no self-loops are allowed, return -INFINITY
- *   2. If jrecv is a sparse index of logprobs, return logprobs[jrecv]
- *   3. Otherwise return logprobs0[jrecv] + logprob0_shift.
+ *   1. If jrecv is a sparse index of logprobs, return logprobs[jrecv]
+ *   2. Otherwise return logprobs0[jrecv] - logsumweight_diff
  *
- * Note the special handling for self loops.  An invalid self-loop may or may
- * not be have an index in 'logprobs'.  We only gaurantee that if it *does*
- * have an index in logprobs, then the corresponding value will be -INFINITY
- * (thus, steps 1 and 2 commute).
  */
 static void
 compute_new_logprobs (iproc_vars_ctx *ctx,
@@ -30,13 +25,13 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
                       int             has_loops,
                       iproc_vector   *logprobs0,
                       iproc_svector  *logprobs,
-                      double         *plogprob0_shift)
+                      double         *plogsumweight_diff)
 {
     assert(ctx);
     assert(coefs);
     assert(logprobs0);
     assert(logprobs);
-    assert(plogprob0_shift);
+    assert(plogsumweight_diff);
     assert(iproc_vector_dim(logprobs0) == iproc_svector_dim(logprobs));
 
     /* compute the changes in weights */
@@ -104,7 +99,7 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     assert(log_sum_abs_dw_p >= log_sum_abs_dw_n);
 
     iproc_vector_shift(&logprobs_nz.vector, -log_sum_w);
-    *plogprob0_shift = -log_sum_w;
+    *plogsumweight_diff = log_sum_w;
 }
 
 static void
@@ -112,8 +107,8 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
 {
     if (ctx) {
         iproc_model_unref(ctx->model);
-        iproc_vector_unref(ctx->logprobs0);
-        iproc_svector_unref(ctx->logprobs);
+        iproc_svector_unref(ctx->active_probs);
+        iproc_svector_unref(ctx->active_logprobs);
         iproc_free(ctx);
     }
 }
@@ -132,29 +127,41 @@ iproc_model_ctx_new (iproc_model     *model,
     if (!ctx)
         return NULL;
 
+    ctx->active_probs = NULL;
+    ctx->active_logprobs = NULL;
+
     iproc_vars *vars = iproc_model_vars(model);
     iproc_vars_ctx *vars_ctx = iproc_vars_ctx_new(vars, isend, h);
     iproc_vector *coefs = iproc_model_coefs(model);
     int has_loops = iproc_model_has_loops(model);
-    iproc_vector *logprobs0 = iproc_model_logprobs0(model, isend);
+    iproc_group_model *group = iproc_model_send_group(model, isend);
     int64_t nreceiver = iproc_model_nreceiver(model);
 
     ctx->model = iproc_model_ref(model);
-    ctx->isend = isend;
-    ctx->logprobs0 = iproc_vector_ref(logprobs0);
-    ctx->logprobs = iproc_svector_new(nreceiver);
-    iproc_refcount_init(&ctx->refcount);
+    ctx->group = group;
+    ctx->active_logprobs = iproc_svector_new(nreceiver);
     
-    if (!(vars_ctx && ctx->logprobs)) {
+    if (!(vars_ctx && ctx->active_logprobs)) {
         iproc_model_ctx_free(ctx);
-        ctx = NULL;
-    } else {
-        compute_new_logprobs(vars_ctx, coefs, has_loops, logprobs0,
-                             ctx->logprobs, &ctx->logprob0_shift);
+        return NULL;
     }
 
+    compute_new_logprobs(vars_ctx, coefs, has_loops, group->logprobs0,
+                         ctx->active_logprobs, &ctx->logsumweight_diff);
     iproc_vars_ctx_unref(vars_ctx);
 
+    ctx->active_probs = iproc_svector_new_copy(ctx->active_logprobs);
+
+    if (!ctx->active_probs) {
+        iproc_model_ctx_free(ctx);
+        return NULL;
+    }
+
+    iproc_vector_view view = iproc_svector_view_nz(ctx->active_probs);
+    iproc_vector_exp(&view.vector);
+    ctx->invsumweight_ratio = exp(-ctx->logsumweight_diff);
+
+    iproc_refcount_init(&ctx->refcount);
     return ctx;
 }
 
@@ -212,23 +219,17 @@ iproc_model_ctx_logprob (iproc_model_ctx *ctx,
     assert(0 <= jrecv);
     assert(jrecv < iproc_model_ctx_nreceiver(ctx));
 
-    int64_t isend = ctx->isend;
-    int has_loops = iproc_model_has_loops(ctx->model);
-
-    if (jrecv == isend && !has_loops)
-        return -INFINITY;
-
-    iproc_svector *logprobs = ctx->logprobs;
+    iproc_svector *logprobs = ctx->active_logprobs;
     int64_t jnz = iproc_svector_find_nz(logprobs, jrecv);
     double lp;
     
     if (jnz >= 0) {
-        lp = iproc_svector_nz(logprobs, jnz);
+        lp = iproc_svector_nz_val(logprobs, jnz);
     } else {
-        iproc_vector *logprobs0 = ctx->logprobs0;
-        double logprob0_shift = ctx->logprob0_shift;
+        iproc_vector *logprobs0 = ctx->group->logprobs0;
+        double logsumweight_diff = ctx->logsumweight_diff;
         
-        lp = iproc_vector_get(logprobs0, jrecv) + logprob0_shift;
+        lp = iproc_vector_get(logprobs0, jrecv) - logsumweight_diff;
     }
 
     lp = IPROC_MIN(lp, 0.0);
@@ -262,4 +263,46 @@ iproc_model_ctx_get_logprobs (iproc_model_ctx *ctx,
         double lp = iproc_model_ctx_logprob(ctx, j);
         iproc_vector_set(logprobs, j, lp);
     }
+}
+
+double
+iproc_model_invsumweight (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return exp(iproc_model_logsumweight(ctx));
+}
+
+double
+iproc_model_logsumweight (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return ctx->group->logsumweight0 + ctx->logsumweight_diff;
+}
+
+double
+iproc_model_invsumweight_ratio (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return ctx->invsumweight_ratio;
+}
+
+double
+iproc_model_logsumweight_diff (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return ctx->logsumweight_diff;
+}
+
+iproc_svector *
+iproc_model_active_probs (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return ctx->active_probs;
+}
+
+iproc_svector *
+iproc_model_active_logprobs (iproc_model_ctx *ctx)
+{
+    assert(ctx);
+    return ctx->active_logprobs;
 }

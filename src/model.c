@@ -99,7 +99,7 @@ iproc_group_models_deinit (iproc_array *group_models)
     }
 }
 
-static iproc_group_model *
+iproc_group_model *
 iproc_model_send_group (iproc_model *model,
                         int64_t      isend)
 {
