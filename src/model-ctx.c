@@ -39,11 +39,10 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     assert(plogprob0_shift);
     assert(iproc_vector_dim(logprobs0) == iproc_svector_dim(logprobs));
 
-    int64_t isend = ctx->isend;
-
     /* compute the changes in weights */
     iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
     if (!has_loops) {
+        int64_t isend = ctx->isend;
         iproc_svector_set(logprobs, isend, -INFINITY);
     }
 
