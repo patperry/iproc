@@ -267,3 +267,60 @@ iproc_vector_sacc (iproc_vector  *dst_vector,
         iproc_vector_inc(dst_vector, ix, scale * e);
     }
 }
+
+double
+iproc_svector_sdot (iproc_svector *svector1,
+                    iproc_svector *svector2)
+{
+    assert(svector1);
+    assert(svector2);
+    assert(iproc_svector_dim(svector1) == iproc_svector_dim(svector2));
+
+    int64_t n1 = iproc_svector_nnz(svector1);
+    int64_t n2 = iproc_svector_nnz(svector2);
+
+    if (n1 == 0 || n2 == 0)
+        return 0.0;
+
+    int64_t i1 = 0;
+    int64_t i2 = 0;
+    int64_t ix1, ix2;
+    double dot = 0.0, val1, val2;
+
+    while (i1 < n1 && i2 < n2) {
+        ix1 = iproc_svector_nz(svector1, i1);
+        ix2 = iproc_svector_nz(svector2, i2);
+
+        if (ix1 == ix2) {
+            val1 = iproc_svector_nz_val(svector1, i1);
+            val2 = iproc_svector_nz_val(svector2, i2);
+            dot += val1 * val2;
+            i1++;
+            i2++;
+        } else if (ix1 < ix2) {
+            i1++;
+        } else { /* ix1 > ix2 */
+            i2++;
+        }
+    }
+    
+    return dot;
+}
+
+
+void
+iproc_svector_sacc (iproc_svector *dst_svector,
+                    double         scale,
+                    iproc_svector *svector)
+{
+    assert(dst_svector);
+    assert(svector);
+    assert(iproc_svector_dim(dst_svector) == iproc_svector_dim(svector));
+
+    int64_t inz, nnz = iproc_svector_nnz(svector);
+    for (inz = 0; inz < nnz; inz++) {
+        int64_t i = iproc_svector_nz(svector, inz);
+        double val = iproc_svector_nz_val(svector, inz);
+        iproc_svector_inc(dst_svector, i, scale * val);
+    }
+}

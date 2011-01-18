@@ -25,15 +25,15 @@ struct _iproc_vars {
 
 struct _iproc_sender_vars {
     int64_t        jrecv;
-    iproc_svector *changes;
+    iproc_svector *jdiff;
 };
 
 struct _iproc_vars_ctx {
-    iproc_vars        *vars;
-    iproc_history     *history;
-    int64_t            isend;
-    iproc_sender_vars *sender_vars;
-    iproc_refcount     refcount;
+    iproc_vars    *vars;
+    iproc_history *history;
+    int64_t        isend;
+    iproc_array   *sender_vars;
+    iproc_refcount refcount;
 };
 
 
@@ -76,6 +76,15 @@ void             iproc_vars_ctx_mul      (double          alpha,
                                           iproc_vector   *x,
                                           double          beta,
                                           iproc_vector   *y);
+
+void             iproc_vars_ctx_smul     (double          alpha,
+                                          iproc_trans     trans,
+                                          iproc_vars_ctx *ctx,
+                                          iproc_svector  *x,
+                                          double          beta,
+                                          iproc_vector   *y);
+
+
 */
 
 void             iproc_vars_ctx_diff_mul  (double          alpha,

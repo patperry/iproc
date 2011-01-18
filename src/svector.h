@@ -48,6 +48,11 @@ void              iproc_vector_sacc      (iproc_vector  *dst_vector,
                                           double         scale,
                                           iproc_svector *svector);
 
+double            iproc_svector_sdot     (iproc_svector *svector1,
+                                          iproc_svector *svector2);
+void              iproc_svector_sacc     (iproc_svector *dst_svector,
+                                          double         scale,
+                                          iproc_svector *svector);
 
 
 

@@ -84,6 +84,10 @@ iproc_vars_ctx_diff_mul (double          alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
 
+    iproc_array *sender_vars = ctx->sender_vars;
+    int64_t ix_begin = 0;
+    int64_t ix_end = 0;
+
     /* y := beta y */
     if (beta == 0.0) {
         iproc_svector_clear(y);
@@ -93,5 +97,131 @@ iproc_vars_ctx_diff_mul (double          alpha,
 
     if (ctx->history == NULL)
         return;
+
+    if (trans == IPROC_TRANS_NOTRANS) {
+        iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ix_end);
+        int64_t i, n = iproc_array_size(sender_vars);
+        
+        for (i = 0; i < n; i++ ) {
+            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
+                                                        iproc_sender_vars,
+                                                        i));
+            int64_t jrecv = sv->jrecv;
+            iproc_svector *jdiff = sv->jdiff;
+            double dot = iproc_vector_sdot(&xsub.vector, jdiff);
+            iproc_svector_inc(y, jrecv, alpha * dot);
+        }
+    } else {
+        int64_t i, n = iproc_array_size(sender_vars);
+        
+        for (i = 0; i < n; i++ ) {
+            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
+                                                        iproc_sender_vars,
+                                                        i));
+            int64_t jrecv = sv->jrecv;
+            iproc_svector *jdiff = sv->jdiff;
+            double xjrecv = iproc_vector_get(x, jrecv);
+
+            if (xjrecv == 0.0)
+                continue;
+
+            /* y := y + alpha * x[j] * diff[j] */
+            double jscale = alpha * xjrecv;
+            int64_t inz, nnz = iproc_svector_nnz(jdiff);
+            for (inz = 0; inz < nnz; inz++) {
+                int64_t ix = iproc_svector_nz(jdiff, inz);
+                double val = iproc_svector_nz_val(jdiff, inz);
+
+                assert(ix + ix_begin < ix_end);
+                iproc_svector_inc(y, ix + ix_begin, jscale * val);
+            }
+        }
+    }
 }
 
+
+void
+iproc_vars_ctx_diff_muls (double          alpha,
+                          iproc_trans     trans,
+                          iproc_vars_ctx *ctx,
+                          iproc_svector  *x,
+                          double          beta,
+                          iproc_svector  *y)
+{
+    assert(ctx);
+    assert(ctx->vars);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_vars_dim(ctx->vars));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
+
+    iproc_array *sender_vars = ctx->sender_vars;
+    int64_t ix_begin = 0;
+    int64_t ix_end = 0;
+
+    /* y := beta y */
+    if (beta == 0.0) {
+        iproc_svector_clear(y);
+    } else if (beta != 1.0) {
+        iproc_svector_scale(y, beta);
+    }
+
+    if (ctx->history == NULL)
+        return;
+
+    if (trans == IPROC_TRANS_NOTRANS) {
+        int64_t i, n = iproc_array_size(sender_vars);
+        
+        for (i = 0; i < n; i++ ) {
+            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
+                                                        iproc_sender_vars,
+                                                        i));
+            int64_t jrecv = sv->jrecv;
+            iproc_svector *jdiff = sv->jdiff;
+            int64_t inz, nnz = iproc_svector_nnz(x);
+            double dot = 0.0; 
+            for (inz = 0; inz < nnz; inz++) {
+                int64_t ix = iproc_svector_nz(x, inz);
+                if (ix < ix_begin || ix >= ix_end)
+                    continue;
+
+                double xval = iproc_svector_nz_val(x, inz);
+                double diffval = iproc_svector_get(jdiff, ix - ix_begin);
+                dot += xval * diffval;
+            }
+
+            iproc_svector_inc(y, jrecv, alpha * dot);
+        }
+    } else {
+        int64_t i, n = iproc_array_size(sender_vars);
+        
+        for (i = 0; i < n; i++ ) {
+            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
+                                                        iproc_sender_vars,
+                                                        i));
+            int64_t jrecv = sv->jrecv;
+            iproc_svector *jdiff = sv->jdiff;
+            double xjrecv = iproc_svector_get(x, jrecv);
+            if (xjrecv == 0.0)
+                continue;
+
+            /* y := y + alpha * x[j] * diff[j] */
+            double jscale = alpha * xjrecv;
+            int64_t inz, nnz = iproc_svector_nnz(jdiff);
+            for (inz = 0; inz < nnz; inz++) {
+                int64_t ix = iproc_svector_nz(jdiff, inz);
+                double val = iproc_svector_nz_val(jdiff, inz);
+
+                assert(ix + ix_begin < ix_end);
+                iproc_svector_inc(y, ix + ix_begin, jscale * val);
+            }
+        }
+    }
+
+}
