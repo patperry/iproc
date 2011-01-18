@@ -62,6 +62,64 @@ iproc_vars_ctx_unref (iproc_vars_ctx *ctx)
     iproc_refcount_put(&ctx->refcount, iproc_vars_ctx_release);
 }
 
+void
+iproc_vars_ctx_mul (double          alpha,
+                    iproc_trans     trans,
+                    iproc_vars_ctx *ctx,
+                    iproc_vector   *x,
+                    double          beta,
+                    iproc_vector   *y)
+{
+    assert(ctx);
+    assert(ctx->vars);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
+
+    iproc_vars_sender0_mul(alpha, trans, ctx->vars, ctx->isend, x, beta, y);
+    
+    iproc_svector *diffprod = iproc_svector_new(iproc_vector_dim(y));
+    iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 0.0, diffprod);
+    iproc_vector_sacc(y, 1.0, diffprod);
+    iproc_svector_unref(diffprod);
+}
+
+void
+iproc_vars_ctx_muls (double          alpha,
+                     iproc_trans     trans,
+                     iproc_vars_ctx *ctx,
+                     iproc_svector  *x,
+                     double          beta,
+                     iproc_vector   *y)
+{
+    assert(ctx);
+    assert(ctx->vars);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_vars_dim(ctx->vars));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
+
+    iproc_vars_sender0_muls(alpha, trans, ctx->vars, ctx->isend, x, beta, y);
+    
+    iproc_svector *diffprod = iproc_svector_new(iproc_vector_dim(y));
+    iproc_vars_ctx_diff_muls(alpha, trans, ctx, x, 0.0, diffprod);
+    iproc_vector_sacc(y, 1.0, diffprod);
+    iproc_svector_unref(diffprod);
+}
+
 
 void
 iproc_vars_ctx_diff_mul (double          alpha,
