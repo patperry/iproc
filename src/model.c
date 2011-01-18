@@ -9,13 +9,14 @@
 #include "utils.h"
 
 static void
-compute_logprobs (iproc_vars_ctx *ctx,
-                  iproc_vector   *coefs,
-                  int             has_loops,
-                  iproc_vector   *logprobs,
-                  double         *logsumweight)
+compute_logprobs0 (iproc_vars   *vars,
+                   int64_t       isend,
+                   iproc_vector *coefs,
+                   int           has_loops,
+                   iproc_vector *logprobs,
+                   double       *logsumweight)
 {
-    assert(ctx);
+    assert(vars);
     assert(coefs);
     assert(logprobs);
     assert(logsumweight);
@@ -25,10 +26,11 @@ compute_logprobs (iproc_vars_ctx *ctx,
      * multiplication, then unscaling after subtracting of the max value.  This
      * shouldn't be necessary in most (all?) real-world situations.
      */
-    iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
+    iproc_vars_sender0_mul(1.0, IPROC_TRANS_NOTRANS, vars, isend, coefs,
+                           0.0, logprobs);
 
     if (!has_loops) {
-        iproc_vector_set(logprobs, ctx->isend, -INFINITY);
+        iproc_vector_set(logprobs, isend, -INFINITY);
     }
 
     /* protect against overflow */
@@ -68,20 +70,16 @@ iproc_group_models_init (iproc_array  *group_models,
         if (group->logprobs0)
             continue;
 
-        iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, i, NULL);
-
         group->logprobs0 = iproc_vector_new(nreceiver);
-        compute_logprobs(ctx, coefs, 1, group->logprobs0, &group->logsumweight0);
+        compute_logprobs0(vars, i, coefs, 1, group->logprobs0, &group->logsumweight0);
 
         group->probs0 = iproc_vector_new_copy(group->logprobs0);
         iproc_vector_exp(group->probs0);
         group->invsumweight0 = exp(-group->logsumweight0);
 
         group->mean0 = iproc_vector_new(dim);
-        iproc_vars_ctx_mul(1.0, IPROC_TRANS_TRANS, ctx, group->probs0,
-                           0.0, group->mean0);
-
-        iproc_vars_ctx_unref(ctx);
+        iproc_vars_sender0_mul(1.0, IPROC_TRANS_TRANS, vars, i, group->probs0,
+                               0.0, group->mean0);
     }
 }
 

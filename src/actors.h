@@ -4,6 +4,7 @@
 #include "array.h"
 #include "matrix.h"
 #include "refcount.h"
+#include "svector.h"
 #include "vector.h"
 
 
@@ -46,6 +47,13 @@ void           iproc_actors_mul          (double        alpha,
                                           iproc_vector *x,
                                           double        beta,
                                           iproc_vector *y);
+void           iproc_actors_muls         (double         alpha,
+                                          iproc_trans    trans,
+                                          iproc_actors  *actors,
+                                          iproc_svector *x,
+                                          double         beta,
+                                          iproc_vector  *y);
+
 void           iproc_actors_matmul       (double        alpha,
                                           iproc_trans   trans,
                                           iproc_actors *actors,

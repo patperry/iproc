@@ -219,6 +219,7 @@ iproc_actors_mul (double        alpha,
         iproc_vector_scale(y, beta);
     }
 
+    /* NOTE: this could be more efficient by using info about actor groups */
     if (trans == IPROC_TRANS_NOTRANS) {
         for (i = 0; i < n; i++) {
             row = iproc_actors_traits(actors, i);
@@ -229,6 +230,56 @@ iproc_actors_mul (double        alpha,
         for (i = 0; i < n; i++) {
             row = iproc_actors_traits(actors, i);
             entry = iproc_vector_get(x, i);
+            iproc_vector_acc(y, alpha * entry, row);
+        }
+    }
+}
+
+
+void
+iproc_actors_muls (double         alpha,
+                   iproc_trans    trans,
+                   iproc_actors  *actors,
+                   iproc_svector *x,
+                   double         beta,
+                   iproc_vector  *y)
+{
+    assert(actors);
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_actors_dim(actors));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_actors_size(actors));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_actors_dim(actors));
+
+    int64_t n = iproc_actors_size(actors);
+    int64_t i;
+    iproc_vector *row;
+    double dot, entry;
+
+    if (beta == 0) {
+        iproc_vector_set_all(y, 0.0);
+    } else if (beta != 1) {
+        iproc_vector_scale(y, beta);
+    }
+
+    /* NOTE: this could be more efficient by using info about actor groups */
+    if (trans == IPROC_TRANS_NOTRANS) {
+        for (i = 0; i < n; i++) {
+            row = iproc_actors_traits(actors, i);
+            dot = iproc_vector_sdot(row, x);
+            iproc_vector_inc(y, i, alpha * dot);
+        }
+    } else {
+        int64_t inz, nnz = iproc_svector_nnz(x);
+        for (inz = 0; inz < nnz; inz++) {
+            i = iproc_svector_nz(x, inz);
+            row = iproc_actors_traits(actors, i);
+            entry = iproc_svector_nz_val(x, inz);
             iproc_vector_acc(y, alpha * entry, row);
         }
     }
