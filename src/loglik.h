@@ -4,13 +4,15 @@
 #include "array.h"
 #include "model.h"
 #include "refcount.h"
-#include "svector.h"
+#include "vector.h"
 
 typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
     iproc_model   *model;
     iproc_array   *sloglik_array;
+    iproc_vector  *grad;
+    int            grad_cached;
     iproc_refcount refcount;
 };
 
@@ -30,11 +32,6 @@ void           iproc_loglik_insertm         (iproc_loglik  *loglik,
                                              int64_t        nto);
 
 double         iproc_loglik_value           (iproc_loglik  *loglik);
-
-/*
-double         iproc_vector_acc_loglik_grad (iproc_vector *dst_vector,
-                                             double        scale,
-                                             iproc_loglik *loglik);
-*/                                             
+iproc_vector * iproc_loglik_grad            (iproc_loglik  *loglik);
 
 #endif /* _IPROC_LOGLIK_H */

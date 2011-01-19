@@ -22,6 +22,7 @@ iproc_loglik_free (iproc_loglik *loglik)
 
         iproc_array_unref(array);
         iproc_model_unref(loglik->model);
+        iproc_vector_unref(loglik->grad);
         iproc_free(loglik);
     }
 }
@@ -38,9 +39,11 @@ iproc_loglik_new (iproc_model *model)
 
     loglik->sloglik_array = iproc_array_new(sizeof(iproc_sloglik *));
     loglik->model = iproc_model_ref(model);
+    loglik->grad = iproc_vector_new(iproc_vars_dim(vars));
+    loglik->grad_cached = 0;
     iproc_refcount_init(&loglik->refcount);
 
-    if (!loglik->sloglik_array) {
+    if (!(loglik->sloglik_array && loglik->grad)) {
         iproc_loglik_free(loglik);
         loglik = NULL;
     }
@@ -111,6 +114,7 @@ iproc_loglik_insertm  (iproc_loglik  *loglik,
 {
     iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
     iproc_sloglik_insertm(sll, history, to, nto);
+    loglik->grad_cached = 0;
 }
 
 double
@@ -132,25 +136,37 @@ iproc_loglik_value (iproc_loglik *loglik)
     return value;
 }
 
-/*
-double
-iproc_vector_acc_loglik_grad (iproc_vector *dst_vector,
-                              double        scale,
-                              iproc_loglik *loglik)
+
+static void
+iproc_vector_acc_loglik_grad_nocache (iproc_vector *dst_vector,
+                                      double        scale,
+                                      iproc_loglik *loglik)
 {
     iproc_array *array = loglik->sloglik_array;
     int64_t nsend = iproc_array_size(array);
     int64_t i;
     iproc_sloglik *sll;
-    double value = 0.0;
     
     for (i = 0; i < nsend; i++) {
         sll = iproc_array_index(array, iproc_sloglik *, i);
         if (sll) {
-            value += iproc_vector_acc_sloglik_grad(dst_vector, scale, sll);
+            iproc_vector *g = iproc_sloglik_grad(sll);
+            iproc_vector_acc(dst_vector, scale, g);
         }
     }
-    
-    return value;
 }
-*/
+
+
+iproc_vector *
+iproc_loglik_grad (iproc_loglik *loglik)
+{
+    if (!loglik)
+        return NULL;
+
+    if (!loglik->grad_cached) {
+        iproc_vector_set_all(loglik->grad, 0.0);
+        iproc_vector_acc_loglik_grad_nocache(loglik->grad, 1.0, loglik);
+        loglik->grad_cached = 1;
+    }
+    return loglik->grad;
+}

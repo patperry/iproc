@@ -11,6 +11,7 @@ static SEXP Riproc_loglik_type_tag;
 static R_CallMethodDef callMethods[] = {
     { "Riproc_loglik_new",   (DL_FUNC) &Riproc_loglik_new,   2 },
     { "Riproc_loglik_value", (DL_FUNC) &Riproc_loglik_value, 1 },
+    { "Riproc_loglik_grad",  (DL_FUNC) &Riproc_loglik_grad,  1 },
     { NULL,                  NULL,                           0 }
 };
 
@@ -99,4 +100,12 @@ Riproc_loglik_value (SEXP Rloglik)
     iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
     double value = iproc_loglik_value(loglik);
     return ScalarReal(value);
+}
+
+SEXP
+Riproc_loglik_grad  (SEXP Rloglik)
+{
+    iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
+    iproc_vector *grad = iproc_loglik_grad(loglik);
+    return Riproc_vector_new_copy(grad);
 }

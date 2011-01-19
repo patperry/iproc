@@ -12,6 +12,7 @@ void           Riproc_loglik_init  (DllInfo *info);
 SEXP           Riproc_loglik_new   (SEXP          Rmodel,
                                     SEXP          Rmessages);
 SEXP           Riproc_loglik_value (SEXP          Rloglik);
+SEXP           Riproc_loglik_grad  (SEXP          Rloglik);
 
 /* Internal use only */
 iproc_loglik * Riproc_to_loglik    (SEXP          Rloglik);

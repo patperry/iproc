@@ -13,13 +13,14 @@ struct _iproc_sloglik {
     iproc_model   *model;
     int64_t        isend;
     int64_t        nsend;
-    int64_t        nrecv;
-    iproc_svector *ovarsdiff;
+    iproc_svector *nrecv;
+    iproc_svector *sum_obs_var_diff;
     double         value;
     double         suminvwt;
-    double         suminvwt_scale;
-    iproc_svector *newprob;
-    iproc_svector *evarsdiff;
+    iproc_svector *sum_active_probs;
+    iproc_svector *sum_mean_var_diff;
+    iproc_vector  *grad;
+    int            grad_cached;
     iproc_refcount refcount;
 };
 
@@ -37,11 +38,6 @@ void            iproc_sloglik_insertm         (iproc_sloglik *sll,
                                                int64_t        n);
 
 double          iproc_sloglik_value           (iproc_sloglik *sll);
-
-/*
-double          iproc_vector_acc_sloglik_grad (iproc_vector  *dst_vector,
-                                               double         scale,
-                                               iproc_sloglik *sll);
-*/
+iproc_vector *  iproc_sloglik_grad            (iproc_sloglik *sll);
 
 #endif /* _IPROC_LOGLIK_H */

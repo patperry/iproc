@@ -12,9 +12,11 @@ iproc_sloglik_free (iproc_sloglik *sll)
 {
     if (sll) {
         iproc_model_unref(sll->model);
-        iproc_svector_unref(sll->ovarsdiff);
-        iproc_svector_unref(sll->newprob);
-        iproc_svector_unref(sll->evarsdiff);
+        iproc_svector_unref(sll->sum_obs_var_diff);
+        iproc_svector_unref(sll->sum_active_probs);
+        iproc_svector_unref(sll->sum_mean_var_diff);
+        iproc_vector_unref(sll->grad);
+        iproc_svector_unref(sll->nrecv);
         iproc_free(sll);
     }
 }
@@ -33,16 +35,18 @@ iproc_sloglik_new (iproc_model *model,
     sll->model = iproc_model_ref(model);
     sll->isend = isend;
     sll->nsend = 0;
-    sll->nrecv = 0;
-    sll->ovarsdiff = iproc_svector_new(p);
+    sll->nrecv = iproc_svector_new(n);
+    sll->grad = iproc_vector_new(p);
+    sll->grad_cached = 0;
+    sll->sum_obs_var_diff = iproc_svector_new(p);
     sll->value = 0;
     sll->suminvwt = 0;
-    sll->suminvwt_scale = -INFINITY;
-    sll->newprob = iproc_svector_new(n);
-    sll->evarsdiff = iproc_svector_new(p);
+    sll->sum_active_probs = iproc_svector_new(n);
+    sll->sum_mean_var_diff = iproc_svector_new(p);
     iproc_refcount_init(&sll->refcount);
 
-    if (!(sll->ovarsdiff && sll->newprob && sll->evarsdiff)) {
+    if (!(sll->grad && sll->sum_obs_var_diff && sll->sum_active_probs
+          && sll->sum_mean_var_diff)) {
         iproc_sloglik_free(sll);
         sll = NULL;
     }
@@ -90,13 +94,44 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
 {
     int64_t isend = sll->isend;
     iproc_model *model = sll->model;
+    int64_t nreceiver = iproc_model_nreceiver(model);
     iproc_model_ctx *ctx = iproc_model_ctx_new(model, isend, history);
     int64_t i;
+    iproc_svector *wt = iproc_svector_new(nreceiver);
+
+    sll->grad_cached = 0;
 
     for (i = 0; i < n; i++) {
+        assert(jrecv[i] >= 0);
+        assert(jrecv[i] < nreceiver);
+
+        /* update log likelihood */
         sll->value += iproc_model_ctx_logprob(ctx, jrecv[i]);
+        iproc_svector_set(wt, jrecv[i], 1.0);
+
+        /* update number of receives */
+        iproc_svector_inc(sll->nrecv, jrecv[i], 1.0);
     }
 
+    /* update number of sends */
+    sll->nsend += 1;
+
+    /* update observed variables */
+    iproc_vars_ctx_diff_muls(1.0, IPROC_TRANS_TRANS, ctx->vars_ctx, wt,
+                             1.0, sll->sum_obs_var_diff);
+
+    /* update sum of weights */
+    sll->suminvwt += iproc_model_ctx_invsumweight_ratio(ctx);
+
+    /* update active probs */
+    iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
+    iproc_svector_sacc(sll->sum_active_probs, n, active_probs);
+
+    /* update expected diff */
+    iproc_vars_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->vars_ctx, active_probs,
+                             1.0, sll->sum_mean_var_diff);
+
+    iproc_svector_unref(wt);
     iproc_model_ctx_unref(ctx);
 }
 
@@ -108,3 +143,58 @@ iproc_sloglik_value (iproc_sloglik *sll)
 
     return sll->value;
 }
+
+static void
+iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
+                                       double         scale,
+                                       iproc_sloglik *sll)
+{
+    if (!sll)
+        return;
+    
+    double suminvwt = sll->suminvwt;
+
+    /* compute relative difference in active and initial probabilities */
+    iproc_svector *dp = iproc_svector_new_copy(sll->sum_active_probs);
+    int64_t inz, nnz = iproc_svector_nnz(dp);
+    for (inz = 0; inz < nnz; inz++) {
+        int64_t j = iproc_svector_nz(dp, inz);
+        double p0 = iproc_svector_nz_val(dp, inz);
+        iproc_svector_inc(dp, j, -suminvwt * p0);
+    }
+
+    iproc_vector *mean0 = iproc_model_mean0(sll->model, sll->isend);
+
+    /* sum of observed variables */
+    iproc_vars_sender0_muls(scale, IPROC_TRANS_TRANS, sll->model->vars, sll->isend,
+                            sll->nrecv, 1.0, dst_vector);
+    iproc_vector_sacc(dst_vector, scale, sll->sum_obs_var_diff);
+
+
+    /* sum of expected variables */
+    iproc_vector_acc(dst_vector, -scale * suminvwt, mean0);
+
+    iproc_vars_sender0_muls(-scale, IPROC_TRANS_TRANS,
+                            sll->model->vars, sll->isend, dp,
+                            1.0, dst_vector);
+
+    iproc_vector_sacc(dst_vector, -scale, sll->sum_mean_var_diff);
+
+    iproc_svector_unref(dp);
+}
+
+
+iproc_vector *
+iproc_sloglik_grad (iproc_sloglik *sll)
+{
+    if (!sll)
+        return NULL;
+
+    if (!sll->grad_cached) {
+        iproc_vector_set_all(sll->grad, 0.0);
+        iproc_vector_acc_sloglik_grad_nocache(sll->grad, 1.0, sll);
+        sll->grad_cached = 1;
+    }
+    return sll->grad;
+}
+

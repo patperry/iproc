@@ -109,6 +109,7 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
         iproc_model_unref(ctx->model);
         iproc_svector_unref(ctx->active_probs);
         iproc_svector_unref(ctx->active_logprobs);
+        iproc_vars_ctx_unref(ctx->vars_ctx);
         iproc_free(ctx);
     }
 }
@@ -138,6 +139,7 @@ iproc_model_ctx_new (iproc_model     *model,
     int64_t nreceiver = iproc_model_nreceiver(model);
 
     ctx->model = iproc_model_ref(model);
+    ctx->vars_ctx = vars_ctx;
     ctx->group = group;
     ctx->active_logprobs = iproc_svector_new(nreceiver);
     
@@ -148,8 +150,6 @@ iproc_model_ctx_new (iproc_model     *model,
 
     compute_new_logprobs(vars_ctx, coefs, has_loops, group->logprobs0,
                          ctx->active_logprobs, &ctx->logsumweight_diff);
-    iproc_vars_ctx_unref(vars_ctx);
-
     ctx->active_probs = iproc_svector_new_copy(ctx->active_logprobs);
 
     if (!ctx->active_probs) {
@@ -266,42 +266,42 @@ iproc_model_ctx_get_logprobs (iproc_model_ctx *ctx,
 }
 
 double
-iproc_model_invsumweight (iproc_model_ctx *ctx)
+iproc_model_ctx_invsumweight (iproc_model_ctx *ctx)
 {
     assert(ctx);
-    return exp(iproc_model_logsumweight(ctx));
+    return exp(iproc_model_ctx_logsumweight(ctx));
 }
 
 double
-iproc_model_logsumweight (iproc_model_ctx *ctx)
+iproc_model_ctx_logsumweight (iproc_model_ctx *ctx)
 {
     assert(ctx);
     return ctx->group->logsumweight0 + ctx->logsumweight_diff;
 }
 
 double
-iproc_model_invsumweight_ratio (iproc_model_ctx *ctx)
+iproc_model_ctx_invsumweight_ratio (iproc_model_ctx *ctx)
 {
     assert(ctx);
     return ctx->invsumweight_ratio;
 }
 
 double
-iproc_model_logsumweight_diff (iproc_model_ctx *ctx)
+iproc_model_ctx_logsumweight_diff (iproc_model_ctx *ctx)
 {
     assert(ctx);
     return ctx->logsumweight_diff;
 }
 
 iproc_svector *
-iproc_model_active_probs (iproc_model_ctx *ctx)
+iproc_model_ctx_active_probs (iproc_model_ctx *ctx)
 {
     assert(ctx);
     return ctx->active_probs;
 }
 
 iproc_svector *
-iproc_model_active_logprobs (iproc_model_ctx *ctx)
+iproc_model_ctx_active_logprobs (iproc_model_ctx *ctx)
 {
     assert(ctx);
     return ctx->active_logprobs;

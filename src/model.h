@@ -28,6 +28,7 @@ struct _iproc_model {
 
 struct _iproc_model_ctx {
     iproc_model       *model;
+    iproc_vars_ctx    *vars_ctx;
     iproc_group_model *group;
     iproc_svector     *active_logprobs;
     iproc_svector     *active_probs;
@@ -80,12 +81,12 @@ void                iproc_model_ctx_get_probs      (iproc_model_ctx *ctx,
 void                iproc_model_ctx_get_logprobs   (iproc_model_ctx *ctx,
                                                     iproc_vector    *logprobs);
 
-double              iproc_model_invsumweight       (iproc_model_ctx *ctx);
-double              iproc_model_logsumweight       (iproc_model_ctx *ctx);
-double              iproc_model_invsumweight_ratio (iproc_model_ctx *ctx);
-double              iproc_model_logsumweight_diff  (iproc_model_ctx *ctx);
-iproc_svector *     iproc_model_active_probs       (iproc_model_ctx *ctx);
-iproc_svector *     iproc_model_active_logprobs    (iproc_model_ctx *ctx);
+double              iproc_model_ctx_invsumweight       (iproc_model_ctx *ctx);
+double              iproc_model_ctx_logsumweight       (iproc_model_ctx *ctx);
+double              iproc_model_ctx_invsumweight_ratio (iproc_model_ctx *ctx);
+double              iproc_model_ctx_logsumweight_diff  (iproc_model_ctx *ctx);
+iproc_svector *     iproc_model_ctx_active_probs       (iproc_model_ctx *ctx);
+iproc_svector *     iproc_model_ctx_active_logprobs    (iproc_model_ctx *ctx);
 
 
 /*
