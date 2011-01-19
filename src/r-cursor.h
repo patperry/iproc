@@ -15,6 +15,11 @@ SEXP           Riproc_cursor_new     (SEXP          Rmessages);
 SEXP           Riproc_cursor_advance (SEXP          Rcursor);
 SEXP           Riproc_cursor_reset   (SEXP          Rcursor);
 
+SEXP           Riproc_cursor_time    (SEXP          Rcursor);
+SEXP           Riproc_cursor_nties   (SEXP          Rcursor);
+SEXP           Riproc_cursor_from    (SEXP          Rcursor);
+SEXP           Riproc_cursor_to      (SEXP          Rcursor);
+
 /* Internal use only */
 iproc_cursor * Riproc_to_cursor      (SEXP          Rcursor);
 SEXP           Riproc_from_cursor    (iproc_cursor *cursor);

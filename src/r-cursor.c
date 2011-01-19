@@ -1,4 +1,5 @@
 
+
 #include "r-messages.h"
 #include "r-utils.h"
 #include "r-cursor.h"
@@ -11,6 +12,10 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_cursor_new",     (DL_FUNC) &Riproc_cursor_new,     2 },
     { "Riproc_cursor_advance", (DL_FUNC) &Riproc_cursor_advance, 1 },
     { "Riproc_cursor_reset",   (DL_FUNC) &Riproc_cursor_reset,   1 },
+    { "Riproc_cursor_time",    (DL_FUNC) &Riproc_cursor_time,    1 },
+    { "Riproc_cursor_nties",   (DL_FUNC) &Riproc_cursor_nties,   1 },
+    { "Riproc_cursor_from",    (DL_FUNC) &Riproc_cursor_from,    1 },
+    { "Riproc_cursor_to",      (DL_FUNC) &Riproc_cursor_to,      1 },
     { NULL,                    NULL,                             0 }
 };
 
@@ -90,3 +95,70 @@ Riproc_cursor_reset (SEXP Rcursor)
     iproc_cursor_reset(cursor);
     return NULL_USER_OBJECT;
 }
+
+SEXP
+Riproc_cursor_time (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    int64_t time = iproc_cursor_time(cursor);
+    return ScalarInteger(time);
+}
+
+SEXP
+Riproc_cursor_nties (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    int64_t nties = iproc_cursor_nmsg(cursor);
+    return ScalarInteger(nties);
+}
+
+SEXP
+Riproc_cursor_from (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    int64_t i, n = iproc_cursor_nmsg(cursor);
+    int *from;
+    SEXP Rfrom;
+
+    PROTECT(Rfrom = NEW_INTEGER(n));
+    from = INTEGER_POINTER(Rfrom);
+
+    for (i = 0; i < n; i++) {
+        iproc_cursor_select_msg(cursor, i);
+        int64_t msg_from = iproc_cursor_msg_from(cursor);
+        from[i] = msg_from + 1;
+    }
+
+    UNPROTECT(1);
+    return Rfrom;
+}
+
+SEXP
+Riproc_cursor_to (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    int64_t i, n = iproc_cursor_nmsg(cursor);
+    SEXP Rto;
+
+    PROTECT(Rto = NEW_LIST(n));
+
+    for (i = 0; i < n; i++) {
+        iproc_cursor_select_msg(cursor, i);
+        int64_t  msg_nto = iproc_cursor_msg_nto(cursor);
+        int64_t *msg_to = iproc_cursor_msg_to(cursor);
+        SEXP Rmsg_to;
+
+        PROTECT(Rmsg_to = NEW_INTEGER(msg_nto));
+        int64_t j;
+        for (j = 0; j < msg_nto; j++) {
+            INTEGER(Rmsg_to)[j] = msg_to[j] + 1;
+        }
+        SET_VECTOR_ELT(Rto, i, Rmsg_to);
+
+        UNPROTECT(1);
+    }
+
+    UNPROTECT(1);
+    return Rto;
+}
+
