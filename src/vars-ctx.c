@@ -142,10 +142,7 @@ iproc_vars_ctx_diff_mul (double          alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
 
-    iproc_array *sender_vars = ctx->sender_vars;
-    int64_t ix_begin = 0;
-    int64_t ix_end = 0;
-
+    
     /* y := beta y */
     if (beta == 0.0) {
         iproc_svector_clear(y);
@@ -155,6 +152,16 @@ iproc_vars_ctx_diff_mul (double          alpha,
 
     if (ctx->history == NULL)
         return;
+
+    iproc_vars *vars = ctx->vars;
+    int64_t ndynamic = iproc_vars_ndynamic(vars);
+
+    if (ndynamic == 0)
+        return;
+    
+    int64_t ix_begin = iproc_vars_idynamic(vars, 0);
+    int64_t ix_end = ix_begin + ndynamic;
+    iproc_array *sender_vars = ctx->sender_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ix_end);
@@ -219,10 +226,6 @@ iproc_vars_ctx_diff_muls (double          alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
 
-    iproc_array *sender_vars = ctx->sender_vars;
-    int64_t ix_begin = 0;
-    int64_t ix_end = 0;
-
     /* y := beta y */
     if (beta == 0.0) {
         iproc_svector_clear(y);
@@ -232,6 +235,16 @@ iproc_vars_ctx_diff_muls (double          alpha,
 
     if (ctx->history == NULL)
         return;
+
+    iproc_vars *vars = ctx->vars;
+    int64_t ndynamic = iproc_vars_ndynamic(vars);
+
+    if (ndynamic == 0)
+        return;
+    
+    int64_t ix_begin = iproc_vars_idynamic(vars, 0);
+    int64_t ix_end = ix_begin + ndynamic;
+    iproc_array *sender_vars = ctx->sender_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         int64_t i, n = iproc_array_size(sender_vars);

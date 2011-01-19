@@ -18,7 +18,8 @@ typedef struct _iproc_sender_vars iproc_sender_vars;
 struct _iproc_vars {
     iproc_actors  *senders;
     iproc_actors  *receivers;
-    int64_t        nsender_vars;
+    int64_t        nstatic;
+    int64_t        ndynamic;
     void (*get_sender_vars) (iproc_history *, int64_t, iproc_array *);
     iproc_refcount refcount;
 };
@@ -38,10 +39,22 @@ struct _iproc_vars_ctx {
 
 
 iproc_vars *     iproc_vars_new           (iproc_actors   *senders,
-                                           iproc_actors   *receivers);
+                                           iproc_actors   *receivers,
+                                           int64_t         ndynamic,
+                                           void          (*get_sender_vars) (iproc_history *history,
+                                                                             int64_t        isend,
+                                                                             iproc_array   *sender_vars));
 iproc_vars *     iproc_vars_ref           (iproc_vars     *vars);
 void             iproc_vars_unref         (iproc_vars     *vars);
+
 int64_t          iproc_vars_dim           (iproc_vars     *vars);
+int64_t          iproc_vars_nstatic       (iproc_vars     *vars);
+int64_t          iproc_vars_istatic       (iproc_vars     *vars,
+                                           int64_t         i);
+int64_t          iproc_vars_ndynamic      (iproc_vars     *vars);
+int64_t          iproc_vars_idynamic      (iproc_vars     *vars,
+                                           int64_t         i);
+
 int64_t          iproc_vars_nsender       (iproc_vars     *vars);
 int64_t          iproc_vars_nreceiver     (iproc_vars     *vars);
 iproc_actors *   iproc_vars_senders       (iproc_vars     *vars);

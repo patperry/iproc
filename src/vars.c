@@ -20,14 +20,30 @@ iproc_vars_free (iproc_vars *vars)
 
 iproc_vars *     
 iproc_vars_new (iproc_actors *senders,
-                iproc_actors *receivers)
+                iproc_actors *receivers,
+                int64_t       ndynamic,
+                void        (*get_sender_vars) (iproc_history *history,
+                                                int64_t        isend,
+                                                iproc_array   *sender_vars))
 {
     assert(senders);
     assert(receivers);
+    assert(ndynamic >= 0);
 
     iproc_vars *vars = iproc_malloc(sizeof(*vars));
+
+    if (!vars)
+        return NULL;
+
+    int64_t p = iproc_actors_dim(senders);
+    int64_t q = iproc_actors_dim(receivers);
+    int64_t nstatic = p * q;
+
     vars->senders = iproc_actors_ref(senders);
     vars->receivers = iproc_actors_ref(receivers);
+    vars->nstatic = nstatic;
+    vars->ndynamic = ndynamic;
+    vars->get_sender_vars = get_sender_vars;
     iproc_refcount_init(&vars->refcount);
     return vars;
 }
@@ -61,12 +77,49 @@ int64_t
 iproc_vars_dim (iproc_vars *vars)
 {
     assert(vars);
-    iproc_actors *senders = iproc_vars_senders(vars);
-    iproc_actors *receivers = iproc_vars_receivers(vars);
-    int64_t p = iproc_actors_dim(senders);
-    int64_t q = iproc_actors_dim(receivers);
-    int64_t dim = p * q;
+    int64_t nstatic = iproc_vars_nstatic(vars);
+    int64_t ndynamic = iproc_vars_ndynamic(vars);
+    int64_t dim = nstatic + ndynamic;
     return dim;
+}
+
+int64_t
+iproc_vars_nstatic (iproc_vars *vars)
+{
+    assert(vars);
+    return vars->nstatic;
+}
+
+int64_t
+iproc_vars_istatic (iproc_vars *vars,
+                    int64_t     i)
+{
+    assert(vars);
+    assert(i >= 0);
+    assert(i < iproc_vars_nstatic(vars));
+
+    int64_t ndynamic = iproc_vars_ndynamic(vars);
+    int64_t istatic = ndynamic + i;
+    return istatic;
+}
+
+int64_t
+iproc_vars_ndynamic (iproc_vars *vars)
+{
+    assert(vars);
+    return vars->ndynamic;
+}
+
+int64_t
+iproc_vars_idynamic (iproc_vars *vars,
+                     int64_t     i)
+{
+    assert(vars);
+    assert(i >= 0);
+    assert(i < iproc_vars_ndynamic(vars));
+
+    int64_t idynamic = i;
+    return idynamic;
 }
 
 int64_t
@@ -125,21 +178,24 @@ iproc_vars_sender0_mul (double        alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(y) == iproc_vars_dim(vars));
 
-    iproc_actors *senders = iproc_vars_senders(vars);
-    iproc_actors *receivers = iproc_vars_receivers(vars);
-    int64_t p = iproc_actors_dim(senders);
-    int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = 0;
-    int64_t ix_end = ix_begin + p * q;
-    iproc_vector *s = iproc_actors_traits(senders, isend);
-    iproc_vector *z = iproc_vector_new(q);
-
     /* y := beta y */
     if (beta == 0.0) {
         iproc_vector_set_all(y, 0.0);
     } else if (beta != 1.0) {
         iproc_vector_scale(y, beta);
     }
+
+    if (iproc_vars_nstatic(vars) == 0)
+        return;
+
+    iproc_actors *senders = iproc_vars_senders(vars);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    int64_t p = iproc_actors_dim(senders);
+    int64_t q = iproc_actors_dim(receivers);
+    int64_t ix_begin = iproc_vars_istatic(vars, 0);
+    int64_t ix_end = ix_begin + iproc_vars_nstatic(vars);
+    iproc_vector *s = iproc_actors_traits(senders, isend);
+    iproc_vector *z = iproc_vector_new(q);
 
     if (trans == IPROC_TRANS_NOTRANS) {
         iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ix_end);
@@ -190,21 +246,24 @@ iproc_vars_sender0_muls (double          alpha,
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_vector_dim(y) == iproc_vars_dim(vars));
 
-    iproc_actors *senders = iproc_vars_senders(vars);
-    iproc_actors *receivers = iproc_vars_receivers(vars);
-    int64_t p = iproc_actors_dim(senders);
-    int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = 0;
-    int64_t ix_end = ix_begin + p * q;
-    iproc_vector *s = iproc_actors_traits(senders, isend);
-    iproc_vector *z = iproc_vector_new(q);
-
     /* y := beta y */
     if (beta == 0.0) {
         iproc_vector_set_all(y, 0.0);
     } else if (beta != 1.0) {
         iproc_vector_scale(y, beta);
     }
+
+    if (iproc_vars_nstatic(vars) == 0)
+        return;
+
+    iproc_actors *senders = iproc_vars_senders(vars);
+    iproc_actors *receivers = iproc_vars_receivers(vars);
+    int64_t p = iproc_actors_dim(senders);
+    int64_t q = iproc_actors_dim(receivers);
+    int64_t ix_begin = iproc_vars_istatic(vars, 0);
+    int64_t ix_end = ix_begin + iproc_vars_nstatic(vars);
+    iproc_vector *s = iproc_actors_traits(senders, isend);
+    iproc_vector *z = iproc_vector_new(q);
 
     if (trans == IPROC_TRANS_NOTRANS) {
         /* z := alpha t(x) s 
