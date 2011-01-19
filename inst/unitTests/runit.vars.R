@@ -1,12 +1,15 @@
 
 require(RUnit)
 require(iproc)
+data(enron)
 
 senders <- receivers <- v <- NULL
 
 .setUp <- function() {
-    senders <<- actors(c(2,1,2), matrix(1:6, 2, 3))
-    receivers <<- actors(1:4, rbind(2,4,6,8) %*% cbind(1,-1))
+    a <- actors(enron)
+    senders <<- a
+    receivers <<- actors(c(1, 1, 2, 2, 1, 2),  rbind(1, -1) %*% cbind(2, 4))
+    set.seed(0)
     v <<- vars(senders, receivers)
 }
 
@@ -34,4 +37,26 @@ test.nreceiver <- function() {
 
 test.dim <- function() {
     checkEquals(dim(v), dim(senders) * dim(receivers))
+}
+
+test.as.matrix <- function() {
+    s <- as.matrix(senders)
+    r <- as.matrix(receivers)
+    for (i in seq_len(nsender(v))) {
+        checkEquals(as.matrix(v, sender = i), kronecker(r, s[i,,drop = FALSE]))
+    }
+}
+
+test.mul <- function() {
+    x <- sample(-2:2, dim(v), replace = TRUE)
+    for (i in seq_len(nsender(v))) {
+        checkEquals(mul(v, x, sender = i), as.matrix(v, sender = i) %*% x)
+    }
+}
+
+test.tmul <- function() {
+    x <- sample(-2:2, nreceiver(v), replace = TRUE)
+    for (i in seq_len(nsender(v))) {
+        checkEquals(tmul(v, x, sender = i), t(as.matrix(v, sender = i)) %*% x)
+    }
 }

@@ -5,6 +5,7 @@
 
 #include "r-utils.h"
 #include "r-actors.h"
+#include "r-cursor.h"
 #include "r-vars.h"
 
 
@@ -17,7 +18,9 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_vars_nsender",   (DL_FUNC) &Riproc_vars_nsender,   1 },
     { "Riproc_vars_receivers", (DL_FUNC) &Riproc_vars_receivers, 1 },
     { "Riproc_vars_senders",   (DL_FUNC) &Riproc_vars_senders,   1 },
-    { NULL,                          NULL,                       0 }
+    { "Riproc_vars_mul",       (DL_FUNC) &Riproc_vars_mul,       4 },
+    { "Riproc_vars_tmul",      (DL_FUNC) &Riproc_vars_tmul,      4 },
+    { NULL,                    NULL,                             0 }
 };
 
 
@@ -118,4 +121,88 @@ Riproc_vars_receivers (SEXP Rvars)
     iproc_vars *vars = Riproc_to_vars(Rvars);
     iproc_actors *receivers = iproc_vars_receivers(vars);
     return Riproc_from_actors(receivers);
+}
+
+SEXP
+Riproc_vars_mul (SEXP Rvars,
+                 SEXP Rx,
+                 SEXP Rsender,
+                 SEXP Rcursor)
+{
+    iproc_vars *vars = Riproc_to_vars(Rvars);
+    int64_t dim = iproc_vars_dim(vars);
+    int64_t nsender = iproc_vars_nsender(vars);
+    int64_t nreceiver = iproc_vars_nreceiver(vars);
+    iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
+    int64_t nrow = iproc_matrix_nrow(&x.matrix);
+    int64_t ncol = iproc_matrix_ncol(&x.matrix);
+    int64_t sender = INTEGER(Rsender)[0] - 1;
+    iproc_cursor *cursor =  (Rcursor == NULL_USER_OBJECT
+                            ? NULL
+                            : Riproc_to_cursor(Rcursor));
+    iproc_history *history = iproc_cursor_history(cursor);
+    
+    if (sender < 0 || sender >= nsender)
+        error("invalid sender");
+    if (nrow != dim)
+        error("dimension mismatch");
+
+    SEXP Rresult;
+    PROTECT(Rresult = allocMatrix(REALSXP, nreceiver, ncol));
+    iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+    iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, sender, history);
+
+    int64_t j;
+    for (j = 0; j < ncol; j++) {
+        iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
+        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
+        iproc_vars_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, &col.vector, 0.0, &dst.vector);
+    }
+
+    iproc_vars_ctx_unref(ctx);
+
+    UNPROTECT(1);
+    return Rresult;
+}
+
+SEXP
+Riproc_vars_tmul (SEXP Rvars,
+                  SEXP Rx,
+                  SEXP Rsender,
+                  SEXP Rcursor)
+{
+    iproc_vars *vars = Riproc_to_vars(Rvars);
+    int64_t dim = iproc_vars_dim(vars);
+    int64_t nsender = iproc_vars_nsender(vars);
+    int64_t nreceiver = iproc_vars_nreceiver(vars);
+    iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
+    int64_t nrow = iproc_matrix_nrow(&x.matrix);
+    int64_t ncol = iproc_matrix_ncol(&x.matrix);
+    int64_t sender = INTEGER(Rsender)[0] - 1;
+    iproc_cursor *cursor =  (Rcursor == NULL_USER_OBJECT
+                            ? NULL
+                            : Riproc_to_cursor(Rcursor));
+    iproc_history *history = iproc_cursor_history(cursor);
+    
+    if (sender < 0 || sender >= nsender)
+        error("invalid sender");
+    if (nrow != nreceiver)
+        error("dimension mismatch");
+
+    SEXP Rresult;
+    PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
+    iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+    iproc_vars_ctx *ctx = iproc_vars_ctx_new(vars, sender, history);
+
+    int64_t j;
+    for (j = 0; j < ncol; j++) {
+        iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
+        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
+        iproc_vars_ctx_mul(1.0, IPROC_TRANS_TRANS, ctx, &col.vector, 0.0, &dst.vector);
+    }
+
+    iproc_vars_ctx_unref(ctx);
+
+    UNPROTECT(1);
+    return Rresult;
 }

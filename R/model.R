@@ -33,13 +33,13 @@ nreceiver.model <- function(model) {
     .Call("Riproc_model_nreceiver", model)
 }
 
-probs.model <- function(model, isend, cursor = NULL) {
-    lp <- log.probs.model(model, isend, cursor)
+probs.model <- function(model, sender, cursor = NULL) {
+    lp <- log.probs.model(model, sender, cursor)
     exp(lp)
 }
 
-log.probs.model <- function(model, isend, cursor = NULL) {
-    isend <- as.integer(isend)
-    lpt <- .Call("Riproc_model_log_probs", model, isend, cursor)
+log.probs.model <- function(model, sender, cursor = NULL) {
+    sender <- as.integer(sender)
+    lpt <- .Call("Riproc_model_log_probs", model, sender, cursor)
     t(lpt)
 }
