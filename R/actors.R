@@ -73,3 +73,15 @@ group.traits.actors <- function(actors, group.ids = NULL) {
     xt <- .Call("Riproc_actors_group_traits", actors, group.ids)
     t(xt)
 }
+
+mul.actors <- function(actors, matrix) {
+    matrix <- as.matrix(matrix)
+    storage.mode(matrix) <- "numeric"
+    .Call("Riproc_actors_mul", actors, matrix)
+}
+
+tmul.actors <- function(actors, matrix) {
+    matrix <- as.matrix(matrix)
+    storage.mode(matrix) <- "numeric"
+    .Call("Riproc_actors_tmul", actors, matrix)
+}

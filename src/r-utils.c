@@ -71,9 +71,16 @@ Riproc_vector_view_sexp (SEXP Rvector)
 iproc_matrix_view
 Riproc_matrix_view_sexp (SEXP Rmatrix)
 {
-    int64_t nrow = INTEGER(GET_DIM(Rmatrix))[0];
-    int64_t ncol = INTEGER(GET_DIM(Rmatrix))[1];
-    double *data = NUMERIC_POINTER(Rmatrix);
-    return iproc_matrix_view_array(data, nrow, ncol);
+    if (isMatrix(Rmatrix)) {
+        int64_t nrow = INTEGER(GET_DIM(Rmatrix))[0];
+        int64_t ncol = INTEGER(GET_DIM(Rmatrix))[1];
+        double *data = NUMERIC_POINTER(Rmatrix);
+        return iproc_matrix_view_array(data, nrow, ncol);
+    } else {
+        int64_t nrow = GET_LENGTH(Rmatrix);
+        int64_t ncol = 1;
+        double *data = NUMERIC_POINTER(Rmatrix);
+        return iproc_matrix_view_array(data, nrow, ncol);
+    }
 }
 

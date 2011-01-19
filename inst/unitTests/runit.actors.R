@@ -1,15 +1,18 @@
 
 require(RUnit)
 require(iproc)
+data(enron)
 
 groups <- group.traits <- a <- NULL
 
 .setUp <- function() {
-    v1 <- c( 1, 100, 2)
-    v2 <- c(-3,   8, 7)
-    groups <<- c(1, 1, 2, 1)
-    group.traits <<- rbind(v1, v2, deparse.level = 0)
-    a <<- actors(groups, group.traits)
+    e <- enron$employees
+    groups <<- (6 * (as.integer(e$gender) - 1)
+               + 2 * (as.integer(e$department) - 1)
+               + as.integer(e$seniority))
+    group.traits <<- diag(12)
+    a <<- actors(enron)
+    set.seed(0)
 }
 
 .tearDown <- function() {
@@ -51,4 +54,14 @@ test.group.traits <- function() {
     ids <- c(1, 2, 1)
     checkEquals(group.traits(a, ids),
                 group.traits[ids,,drop=FALSE])
+}
+
+test.mul <- function() {
+    x <- sample(-2:2, dim(a), replace = TRUE)
+    checkEquals(mul(a, x), traits(a) %*% x)
+}
+
+test.tmul <- function() {
+    x <- sample(-2:2, size(a), replace = TRUE)
+    checkEquals(tmul(a, x), t(traits(a)) %*% x)
 }

@@ -19,6 +19,8 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_actors_traits",        (DL_FUNC) &Riproc_actors_traits,        2 },
     { "Riproc_actors_group",         (DL_FUNC) &Riproc_actors_group,         2 },
     { "Riproc_actors_group_traits",  (DL_FUNC) &Riproc_actors_group_traits,  2 },
+    { "Riproc_actors_mul",           (DL_FUNC) &Riproc_actors_mul,           2 },
+    { "Riproc_actors_tmul",          (DL_FUNC) &Riproc_actors_tmul,          2 },
     { NULL,                          NULL,                                   0 }
 };
 
@@ -209,4 +211,63 @@ Riproc_actors_group_traits (SEXP Ractors,
 
     UNPROTECT(1);
     return Rxt;
+}
+
+
+SEXP
+Riproc_actors_mul (SEXP Ractors,
+                   SEXP Rmatrix)
+{
+    iproc_actors *actors = Riproc_to_actors(Ractors);
+    iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
+    int64_t dim = iproc_actors_dim(actors);
+    int64_t size = iproc_actors_size(actors);
+    int64_t nrow = iproc_matrix_nrow(&view.matrix);
+    int64_t ncol = iproc_matrix_ncol(&view.matrix);
+    SEXP Rresult;
+
+    if (nrow != dim)
+        error("dimension mismatch");
+
+    PROTECT(Rresult = allocMatrix(REALSXP, size, ncol));
+    iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+
+    int64_t j;
+    for (j = 0; j < ncol; j++) {
+        iproc_vector_view col = iproc_matrix_col(&view.matrix, j);
+        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
+        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col.vector, 0.0, &dst.vector);
+    }
+
+    UNPROTECT(1);
+    return Rresult;
+}
+
+SEXP
+Riproc_actors_tmul (SEXP Ractors,
+                    SEXP Rmatrix)
+{
+    iproc_actors *actors = Riproc_to_actors(Ractors);
+    iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
+    int64_t dim = iproc_actors_dim(actors);
+    int64_t size = iproc_actors_size(actors);
+    int64_t nrow = iproc_matrix_nrow(&view.matrix);
+    int64_t ncol = iproc_matrix_ncol(&view.matrix);
+    SEXP Rresult;
+
+    if (nrow != size)
+        error("dimension mismatch");
+
+    PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
+    iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+
+    int64_t j;
+    for (j = 0; j < ncol; j++) {
+        iproc_vector_view col = iproc_matrix_col(&view.matrix, j);
+        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
+        iproc_actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col.vector, 0.0, &dst.vector);
+    }
+
+    UNPROTECT(1);
+    return Rresult;
 }

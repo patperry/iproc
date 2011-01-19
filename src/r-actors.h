@@ -21,6 +21,12 @@ SEXP           Riproc_actors_group        (SEXP Ractors,
 SEXP           Riproc_actors_group_traits (SEXP Ractors,
                                            SEXP Rclass_ids);
 
+SEXP           Riproc_actors_mul          (SEXP Ractors,
+                                           SEXP Rmatrix);
+SEXP           Riproc_actors_tmul         (SEXP Ractors,
+                                           SEXP Rmatrix);
+
+
 /* Internal use only */
 iproc_actors * Riproc_to_actors          (SEXP Ractors);
 SEXP           Riproc_from_actors        (iproc_actors *actors);
