@@ -74,6 +74,10 @@ group.traits.actors <- function(actors, group.ids = NULL) {
     t(xt)
 }
 
+as.matrix.actors <- function(actors) {
+    traits(actors)
+}
+    
 mul.actors <- function(actors, matrix) {
     matrix <- as.matrix(matrix)
     storage.mode(matrix) <- "numeric"

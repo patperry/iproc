@@ -56,12 +56,16 @@ test.group.traits <- function() {
                 group.traits[ids,,drop=FALSE])
 }
 
+test.as.matrix <- function() {
+    checkEquals(as.matrix(a), traits(a))
+}
+
 test.mul <- function() {
     x <- sample(-2:2, dim(a), replace = TRUE)
-    checkEquals(mul(a, x), traits(a) %*% x)
+    checkEquals(mul(a, x), as.matrix(a) %*% x)
 }
 
 test.tmul <- function() {
     x <- sample(-2:2, size(a), replace = TRUE)
-    checkEquals(tmul(a, x), t(traits(a)) %*% x)
+    checkEquals(tmul(a, x), t(as.matrix(a)) %*% x)
 }
