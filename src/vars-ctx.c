@@ -15,6 +15,7 @@ iproc_vars_ctx_free (iproc_vars_ctx *ctx)
     if (ctx) {
         iproc_history_unref(ctx->history);
         iproc_vars_unref(ctx->vars);
+        iproc_array_unref(ctx->sender_vars);
         iproc_free(ctx);
     }
 }
@@ -33,7 +34,16 @@ iproc_vars_ctx_new (iproc_vars    *vars,
     ctx->vars = iproc_vars_ref(vars);
     ctx->history = iproc_history_ref(h);
     ctx->isend = isend;
+
     iproc_refcount_init(&ctx->refcount);
+
+    if (vars->get_sender_vars) {
+        ctx->sender_vars = iproc_array_new(sizeof(iproc_sender_vars));
+        vars->get_sender_vars(h, isend, ctx->sender_vars);
+    } else {
+        ctx->sender_vars = NULL;
+    }
+
     return ctx;
 }
 
