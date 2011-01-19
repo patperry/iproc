@@ -121,7 +121,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
                              1.0, sll->sum_obs_var_diff);
 
     /* update sum of weights */
-    sll->suminvwt += iproc_model_ctx_invsumweight_ratio(ctx);
+    sll->suminvwt += n * iproc_model_ctx_invsumweight_ratio(ctx);
 
     /* update active probs */
     iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
