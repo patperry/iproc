@@ -78,5 +78,7 @@ double            iproc_vector_log_sum_exp   (iproc_vector *vector);
 
 void              iproc_vector_exp           (iproc_vector *vector);
 
+void              iproc_vector_printf        (iproc_vector *vector);
+
 
 #endif /* _IPROC_VECTOR_H */

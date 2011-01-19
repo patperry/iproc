@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include "memory.h"
 #include "sloglik.h"
 
@@ -39,8 +40,8 @@ iproc_sloglik_new (iproc_model *model,
     sll->grad = iproc_vector_new(p);
     sll->grad_cached = 0;
     sll->sum_obs_var_diff = iproc_svector_new(p);
-    sll->value = 0;
-    sll->suminvwt = 0;
+    sll->value = 0.0;
+    sll->suminvwt = 0.0;
     sll->sum_active_probs = iproc_svector_new(n);
     sll->sum_mean_var_diff = iproc_svector_new(p);
     iproc_refcount_init(&sll->refcount);
@@ -107,7 +108,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
 
         /* update log likelihood */
         sll->value += iproc_model_ctx_logprob(ctx, jrecv[i]);
-        iproc_svector_set(wt, jrecv[i], 1.0);
+        iproc_svector_inc(wt, jrecv[i], 1.0);
 
         /* update number of receives */
         iproc_svector_inc(sll->nrecv, jrecv[i], 1.0);
@@ -123,13 +124,41 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     /* update sum of weights */
     sll->suminvwt += n * iproc_model_ctx_invsumweight_ratio(ctx);
 
+    // printf("\nnrecv");
+    // printf("\n-----");
+    // iproc_svector_printf(sll->nrecv);
+
+    // printf("\ninvsumweight_ratio");
+    // printf("\n------------------");
+    // printf("\n%.8f\n", iproc_model_ctx_invsumweight_ratio(ctx));
+
+    // printf("\nsuminvwt");
+    // printf("\n--------");
+    // printf("\n%.8f\n", sll->suminvwt);
+
     /* update active probs */
     iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
     iproc_svector_sacc(sll->sum_active_probs, n, active_probs);
 
+    // printf("\nactive_probs");
+    // printf("\n------------");
+    // iproc_svector_printf(active_probs);
+
+    // printf("\nsum_active_probs");
+    // printf("\n----------------");
+    // iproc_svector_printf(sll->sum_active_probs);
+
     /* update expected diff */
     iproc_vars_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->vars_ctx, active_probs,
                              1.0, sll->sum_mean_var_diff);
+
+    // printf("\nsum_obs_var_diff");
+    // printf("\n----------------");
+    // iproc_svector_printf(sll->sum_obs_var_diff);
+
+    // printf("\nsum_mean_var_diff");
+    // printf("\n-----------------");
+    // iproc_svector_printf(sll->sum_mean_var_diff);
 
     iproc_svector_unref(wt);
     iproc_model_ctx_unref(ctx);
@@ -154,31 +183,59 @@ iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
     
     double suminvwt = sll->suminvwt;
 
+    // printf("\nsuminvwt");
+    // printf("\n--------");
+    // printf("\n%.8f\n", suminvwt);
+
     /* compute relative difference in active and initial probabilities */
+    iproc_vector *probs0 = iproc_model_probs0(sll->model, sll->isend);
     iproc_svector *dp = iproc_svector_new_copy(sll->sum_active_probs);
     int64_t inz, nnz = iproc_svector_nnz(dp);
     for (inz = 0; inz < nnz; inz++) {
         int64_t j = iproc_svector_nz(dp, inz);
-        double p0 = iproc_svector_nz_val(dp, inz);
+        double p0 = iproc_vector_get(probs0, j);
         iproc_svector_inc(dp, j, -suminvwt * p0);
     }
 
+    // printf("\ndp");
+    // printf("\n--");
+    // iproc_svector_printf(dp);
+
     iproc_vector *mean0 = iproc_model_mean0(sll->model, sll->isend);
+
+    // printf("\nmean0");
+    // printf("\n-----");
+    // iproc_vector_printf(mean0);
 
     /* sum of observed variables */
     iproc_vars_sender0_muls(scale, IPROC_TRANS_TRANS, sll->model->vars, sll->isend,
                             sll->nrecv, 1.0, dst_vector);
     iproc_vector_sacc(dst_vector, scale, sll->sum_obs_var_diff);
 
+    // printf("\nsum of observed");
+    // printf("\n---------------");
+    // iproc_vector_printf(dst_vector);
 
     /* sum of expected variables */
     iproc_vector_acc(dst_vector, -scale * suminvwt, mean0);
+
+    // printf("\nsum of expected (I)");
+    // printf("\n-------------------");
+    // iproc_vector_printf(dst_vector);
 
     iproc_vars_sender0_muls(-scale, IPROC_TRANS_TRANS,
                             sll->model->vars, sll->isend, dp,
                             1.0, dst_vector);
 
+    // printf("\nsum of expected (II)");
+    // printf("\n--------------------");
+    // iproc_vector_printf(dst_vector);
+
     iproc_vector_sacc(dst_vector, -scale, sll->sum_mean_var_diff);
+
+    // printf("\nsum of expected (III)");
+    // printf("\n---------------------");
+    // iproc_vector_printf(dst_vector);
 
     iproc_svector_unref(dp);
 }

@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <math.h>
 #include "blas-private.h"
 #include "memory.h"
@@ -540,4 +541,23 @@ iproc_vector_log_sum_exp (iproc_vector *vector)
     }
 
     return max + log1p(summ1);
+}
+
+void
+iproc_vector_printf (iproc_vector *vector)
+{
+    printf("\nvector {");
+    printf("\n  dim: %lld", iproc_vector_dim(vector));
+    printf("\n   nz: {");
+
+    int64_t i, n = iproc_vector_dim(vector);
+    for (i = 0; i < n; i++) {
+        if (iproc_vector_get(vector, i) == 0.0)
+            continue;
+
+        printf("\n         %lld, %.8f", i,
+               iproc_vector_get(vector, i));
+    }
+    printf("\n       }");
+    printf("\n}\n");
 }

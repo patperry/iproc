@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <stdio.h>
 #include "blas-private.h"
 #include "memory.h"
 #include "svector.h"
@@ -323,4 +324,22 @@ iproc_svector_sacc (iproc_svector *dst_svector,
         double val = iproc_svector_nz_val(svector, inz);
         iproc_svector_inc(dst_svector, i, scale * val);
     }
+}
+
+
+void
+iproc_svector_printf (iproc_svector *svector)
+{
+    printf("\nsvector {");
+    printf("\n  dim: %lld", iproc_svector_dim(svector));
+    printf("\n   nz: {");
+
+    int64_t i, n = iproc_svector_nnz(svector);
+    for (i = 0; i < n; i++) {
+        printf("\n         %lld, %.8f",
+               iproc_svector_nz(svector, i),
+               iproc_svector_nz_val(svector, i));
+    }
+    printf("\n       }");
+    printf("\n}\n");
 }
