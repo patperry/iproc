@@ -20,7 +20,9 @@ struct _iproc_vars {
     iproc_actors  *receivers;
     int64_t        nstatic;
     int64_t        ndynamic;
-    void (*get_sender_vars) (iproc_history *, int64_t, iproc_array *);
+    void (*get_sender_vars) (iproc_vars_ctx *ctx);
+    void (*free_user_data) (void *);
+    void *user_data;
     iproc_refcount refcount;
 };
 
@@ -37,13 +39,12 @@ struct _iproc_vars_ctx {
     iproc_refcount refcount;
 };
 
-
 iproc_vars *     iproc_vars_new           (iproc_actors   *senders,
                                            iproc_actors   *receivers,
                                            int64_t         ndynamic,
-                                           void          (*get_sender_vars) (iproc_history *history,
-                                                                             int64_t        isend,
-                                                                             iproc_array   *sender_vars));
+                                           void           *user_data,
+                                           void          (*get_sender_vars) (iproc_vars_ctx *ctx),
+                                           void          (*free_user_data)  (void *user_data));
 iproc_vars *     iproc_vars_ref           (iproc_vars     *vars);
 void             iproc_vars_unref         (iproc_vars     *vars);
 

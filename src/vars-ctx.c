@@ -39,7 +39,7 @@ iproc_vars_ctx_new (iproc_vars    *vars,
 
     if (vars->get_sender_vars) {
         ctx->sender_vars = iproc_array_new(sizeof(iproc_sender_vars));
-        vars->get_sender_vars(h, isend, ctx->sender_vars);
+        vars->get_sender_vars(ctx);
     } else {
         ctx->sender_vars = NULL;
     }

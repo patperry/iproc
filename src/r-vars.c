@@ -72,7 +72,7 @@ Riproc_vars_new (SEXP Rsenders,
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
     int64_t ndynamic = 0;
-    iproc_vars *vars = iproc_vars_new(senders, receivers, ndynamic, NULL);
+    iproc_vars *vars = iproc_vars_new(senders, receivers, ndynamic, NULL, NULL, NULL);
     SEXP Rvars;
 
     PROTECT(Rvars = Riproc_from_vars(vars));

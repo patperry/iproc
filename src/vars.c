@@ -14,6 +14,8 @@ iproc_vars_free (iproc_vars *vars)
     if (vars) {
         iproc_actors_unref(vars->receivers);
         iproc_actors_unref(vars->senders);
+        if (vars->free_user_data)
+            vars->free_user_data(vars->user_data);
         iproc_free(vars);
     }
 }
@@ -22,9 +24,9 @@ iproc_vars *
 iproc_vars_new (iproc_actors *senders,
                 iproc_actors *receivers,
                 int64_t       ndynamic,
-                void        (*get_sender_vars) (iproc_history *history,
-                                                int64_t        isend,
-                                                iproc_array   *sender_vars))
+                void         *user_data,
+                void        (*get_sender_vars) (iproc_vars_ctx *ctx),
+                void        (*free_user_data)  (void *user_data))
 {
     assert(senders);
     assert(receivers);
@@ -43,7 +45,9 @@ iproc_vars_new (iproc_actors *senders,
     vars->receivers = iproc_actors_ref(receivers);
     vars->nstatic = nstatic;
     vars->ndynamic = ndynamic;
+    vars->user_data = user_data;
     vars->get_sender_vars = get_sender_vars;
+    vars->free_user_data = free_user_data;
     iproc_refcount_init(&vars->refcount);
     return vars;
 }
