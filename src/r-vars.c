@@ -12,7 +12,7 @@
 static SEXP Riproc_vars_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_vars_new",       (DL_FUNC) &Riproc_vars_new,       2 },
+    { "Riproc_vars_new",       (DL_FUNC) &Riproc_vars_new,       3 },
     { "Riproc_vars_dim",       (DL_FUNC) &Riproc_vars_dim,       1 },
     { "Riproc_vars_nreceiver", (DL_FUNC) &Riproc_vars_nreceiver, 1 },
     { "Riproc_vars_nsender",   (DL_FUNC) &Riproc_vars_nsender,   1 },
@@ -67,7 +67,8 @@ Riproc_from_vars (iproc_vars *vars)
 
 SEXP
 Riproc_vars_new (SEXP Rsenders,
-                 SEXP Rreceivers)
+                 SEXP Rreceivers,
+                 SEXP Rreceive_intervals)
 {
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);

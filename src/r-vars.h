@@ -10,7 +10,8 @@ void         Riproc_vars_init      (DllInfo *info);
 
 /* External functions */
 SEXP         Riproc_vars_new       (SEXP Rsenders,
-                                    SEXP Rreceivers);
+                                    SEXP Rreceivers,
+                                    SEXP Rreceive_intervals);
 SEXP         Riproc_vars_dim       (SEXP Rvars);
 SEXP         Riproc_vars_nsender   (SEXP Rvars);
 SEXP         Riproc_vars_nreceiver (SEXP Rvars);

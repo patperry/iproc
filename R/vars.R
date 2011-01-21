@@ -1,6 +1,7 @@
 
-vars.default <- function(senders, receivers = senders) {
-    .Call("Riproc_vars_new", senders, receivers)
+vars.default <- function(senders, receivers = senders, receive.intervals = NULL) {
+    receive.intervals <- as.integer(receive.intervals)
+    .Call("Riproc_vars_new", senders, receivers, receive.intervals)
 }
 
 dim.vars <- function(vars) {
