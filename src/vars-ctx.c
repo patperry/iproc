@@ -15,6 +15,17 @@ iproc_vars_ctx_free (iproc_vars_ctx *ctx)
     if (ctx) {
         iproc_history_unref(ctx->history);
         iproc_vars_unref(ctx->vars);
+        
+        if (ctx->sender_vars) {
+            int64_t i, n = iproc_array_size(ctx->sender_vars);
+            for (i = 0; i < n; i++) {
+                iproc_sender_vars *sv = &(iproc_array_index(ctx->sender_vars,
+                                                            iproc_sender_vars,
+                                                            i));
+                iproc_svector_unref(sv->jdiff);
+            }
+        }
+
         iproc_array_unref(ctx->sender_vars);
         iproc_free(ctx);
     }
