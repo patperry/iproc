@@ -169,7 +169,7 @@ iproc_events_find_cur (iproc_events *events,
                        int64_t       e)
 {
     assert(events);
-    iproc_event event = { e=e };
+    iproc_event event = { e };
     return iproc_array_lfind(events->cur, &event, compare_event);
 }
 
