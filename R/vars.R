@@ -1,6 +1,13 @@
 
 vars.default <- function(senders, receivers = senders, receive.intervals = NULL) {
-    receive.intervals <- as.integer(receive.intervals)
+    receive.intervals.orig <- as.integer(receive.intervals)
+    if (any(is.na(receive.intervals.orig) | (receive.intervals.orig <= 0)))
+        stop("'receive.intervals' contains a nonpositive or NA value")
+
+    receive.intervals <- unique(sort(receive.intervals.orig))
+    if (!identical(receive.intervals, receive.intervals.orig))
+        stop("'receive.intervals' not unique and sorted in ascending order")
+
     .Call("Riproc_vars_new", senders, receivers, receive.intervals)
 }
 

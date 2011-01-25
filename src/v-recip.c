@@ -117,10 +117,12 @@ iproc_v_recip_get (iproc_v_recip *v,
                    int64_t        parent_dim)
 {
     assert(v);
-    assert(history);
     assert(dst);
     assert(offset >= 0);
     assert(parent_dim >= iproc_v_recip_dim(v) + offset);
+
+    if (!history)
+        return;
 
     iproc_array *intvls = v->intvls;
     int64_t nintvl = iproc_array_size(intvls);
