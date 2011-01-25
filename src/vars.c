@@ -197,12 +197,12 @@ iproc_vars_sender0_mul (double        alpha,
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
     int64_t ix_begin = iproc_vars_istatic(vars, 0);
-    int64_t ix_end = ix_begin + iproc_vars_nstatic(vars);
+    int64_t nstatic = iproc_vars_nstatic(vars);
     iproc_vector *s = iproc_actors_traits(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
     if (trans == IPROC_TRANS_NOTRANS) {
-        iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ix_end);
+        iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, nstatic);
 
         /* z := alpha t(x) s */
         iproc_matrix_view xmat = iproc_matrix_view_vector(&xsub.vector, p, q);
@@ -215,7 +215,7 @@ iproc_vars_sender0_mul (double        alpha,
         iproc_actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
         /* y := y + s \otimes z */
-        iproc_vector_view ysub = iproc_vector_subvector(y, ix_begin, ix_end);
+        iproc_vector_view ysub = iproc_vector_subvector(y, ix_begin, nstatic);
         iproc_matrix_view ymat = iproc_matrix_view_vector(&ysub.vector, p, q);
         iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
         iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
@@ -265,7 +265,8 @@ iproc_vars_sender0_muls (double          alpha,
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
     int64_t ix_begin = iproc_vars_istatic(vars, 0);
-    int64_t ix_end = ix_begin + iproc_vars_nstatic(vars);
+    int64_t nstatic = iproc_vars_nstatic(vars);
+    int64_t ix_end = ix_begin + nstatic;
     iproc_vector *s = iproc_actors_traits(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
@@ -301,7 +302,7 @@ iproc_vars_sender0_muls (double          alpha,
         iproc_actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
         /* y := y + s \otimes z */
-        iproc_vector_view ysub = iproc_vector_subvector(y, ix_begin, ix_end);
+        iproc_vector_view ysub = iproc_vector_subvector(y, ix_begin, nstatic);
         iproc_matrix_view ymat = iproc_matrix_view_vector(&ysub.vector, p, q);
         iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
         iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);

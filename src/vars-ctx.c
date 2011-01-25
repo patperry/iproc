@@ -185,7 +185,7 @@ iproc_vars_ctx_diff_mul (double          alpha,
     iproc_array *sender_vars = ctx->sender_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
-        iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ix_end);
+        iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ndynamic);
         int64_t i, n = iproc_array_size(sender_vars);
         
         for (i = 0; i < n; i++ ) {
