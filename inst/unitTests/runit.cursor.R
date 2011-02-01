@@ -27,3 +27,11 @@ test.finished <- function() {
     }
     checkEquals(finished(it), TRUE)
 }
+
+test.advance <- function() {
+    n <- 0
+    while (advance(it)) {
+        n <- n + nties(it)
+    }
+    checkEquals(n, size(msgs))
+}
