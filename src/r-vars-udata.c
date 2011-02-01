@@ -28,8 +28,9 @@ Riproc_vars_udata_new (SEXP Rreceive_intervals)
 }
 
 void
-Riproc_vars_udata_free (Riproc_vars_udata *udata)
+Riproc_vars_udata_free (void *vars_udata)
 {
+    Riproc_vars_udata *udata = vars_udata;
     if (udata) {
         iproc_v_recip_unref(udata->recip);
         iproc_free(udata);

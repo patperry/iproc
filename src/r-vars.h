@@ -39,8 +39,8 @@ struct _Riproc_vars_udata {
     iproc_v_recip *recip;
 };
 
-Riproc_vars_udata * Riproc_vars_udata_new             (SEXP Rreceive_intervals);
-void                Riproc_vars_udata_free            (Riproc_vars_udata *udata);
+Riproc_vars_udata * Riproc_vars_udata_new             (SEXP               Rreceive_intervals);
+void                Riproc_vars_udata_free            (void              *vars_udata);
 int64_t             Riproc_vars_udata_dim             (Riproc_vars_udata *udata);
 void                Riproc_vars_udata_get_sender_vars (iproc_vars_ctx    *ctx);
 
