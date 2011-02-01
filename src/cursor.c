@@ -74,9 +74,28 @@ iproc_cursor_reset (iproc_cursor *cursor)
 }
 
 int
-iproc_cursor_next (iproc_cursor *cursor)
+iproc_cursor_started (iproc_cursor *cursor)
 {
     if (!cursor)
+        return 0;
+
+    return iproc_message_iter_started(cursor->it);
+}
+
+int
+iproc_cursor_finished (iproc_cursor *cursor)
+{
+    if (!cursor)
+        return 1;
+
+    return iproc_message_iter_finished(cursor->it);
+}
+
+
+int
+iproc_cursor_next (iproc_cursor *cursor)
+{
+    if (iproc_cursor_finished(cursor))
         return 0;
 
     int64_t tprev = iproc_cursor_time(cursor);

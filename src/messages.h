@@ -31,6 +31,7 @@ struct _iproc_message_iter {
     int64_t         offset;
     int64_t         ntie;
     iproc_message  *message;
+    int             finished;
     iproc_refcount  refcount;
 };
 
@@ -71,7 +72,9 @@ int64_t              iproc_message_iter_from   (iproc_message_iter *it);
 int64_t              iproc_message_iter_nto    (iproc_message_iter *it);
 int64_t *            iproc_message_iter_to     (iproc_message_iter *it);
 
-void                 iproc_message_iter_reset  (iproc_message_iter *it);
-int                  iproc_message_iter_next   (iproc_message_iter *it);
+void                 iproc_message_iter_reset    (iproc_message_iter *it);
+int                  iproc_message_iter_next     (iproc_message_iter *it);
+int                  iproc_message_iter_started  (iproc_message_iter *it);
+int                  iproc_message_iter_finished (iproc_message_iter *it);
 
 #endif /* _IPROC_MESSAGES_H */

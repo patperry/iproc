@@ -11,6 +11,14 @@ advance.cursor <- function(cursor) {
     .Call("Riproc_cursor_advance", cursor)
 }
 
+started.cursor <- function(cursor) {
+    .Call("Riproc_cursor_started", cursor)
+}
+
+finished.cursor <- function(cursor) {
+    .Call("Riproc_cursor_finished", cursor)
+}
+
 time.cursor <- function(cursor) {
     .Call("Riproc_cursor_time", cursor)
 }
@@ -26,3 +34,4 @@ from.cursor <- function(cursor) {
 to.cursor <- function(cursor) {
     .Call("Riproc_cursor_to", cursor)
 }
+

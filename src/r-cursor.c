@@ -9,14 +9,16 @@
 static SEXP Riproc_cursor_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_cursor_new",     (DL_FUNC) &Riproc_cursor_new,     2 },
-    { "Riproc_cursor_advance", (DL_FUNC) &Riproc_cursor_advance, 1 },
-    { "Riproc_cursor_reset",   (DL_FUNC) &Riproc_cursor_reset,   1 },
-    { "Riproc_cursor_time",    (DL_FUNC) &Riproc_cursor_time,    1 },
-    { "Riproc_cursor_nties",   (DL_FUNC) &Riproc_cursor_nties,   1 },
-    { "Riproc_cursor_from",    (DL_FUNC) &Riproc_cursor_from,    1 },
-    { "Riproc_cursor_to",      (DL_FUNC) &Riproc_cursor_to,      1 },
-    { NULL,                    NULL,                             0 }
+    { "Riproc_cursor_new",      (DL_FUNC) &Riproc_cursor_new,      2 },
+    { "Riproc_cursor_advance",  (DL_FUNC) &Riproc_cursor_advance,  1 },
+    { "Riproc_cursor_started",  (DL_FUNC) &Riproc_cursor_started,  1 },
+    { "Riproc_cursor_finished", (DL_FUNC) &Riproc_cursor_finished, 1 },
+    { "Riproc_cursor_reset",    (DL_FUNC) &Riproc_cursor_reset,    1 },
+    { "Riproc_cursor_time",     (DL_FUNC) &Riproc_cursor_time,     1 },
+    { "Riproc_cursor_nties",    (DL_FUNC) &Riproc_cursor_nties,    1 },
+    { "Riproc_cursor_from",     (DL_FUNC) &Riproc_cursor_from,     1 },
+    { "Riproc_cursor_to",       (DL_FUNC) &Riproc_cursor_to,       1 },
+    { NULL,                     NULL,                               0 }
 };
 
 void
@@ -162,3 +164,24 @@ Riproc_cursor_to (SEXP Rcursor)
     return Rto;
 }
 
+SEXP
+Riproc_cursor_started (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    if (iproc_cursor_started(cursor)) {
+        return ScalarLogical(TRUE);
+    } else {
+        return ScalarLogical(FALSE);
+    }
+}
+
+SEXP
+Riproc_cursor_finished (SEXP Rcursor)
+{
+    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    if (iproc_cursor_finished(cursor)) {
+        return ScalarLogical(TRUE);
+    } else {
+        return ScalarLogical(FALSE);
+    }
+}
