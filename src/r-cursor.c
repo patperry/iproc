@@ -102,6 +102,12 @@ SEXP
 Riproc_cursor_time (SEXP Rcursor)
 {
     iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+
+    if (!iproc_cursor_started(cursor))
+        error("cursor has not started");
+    if (iproc_cursor_finished(cursor))
+        error("cursor has finished");
+
     int64_t time = iproc_cursor_time(cursor);
     return ScalarInteger(time);
 }
@@ -110,6 +116,12 @@ SEXP
 Riproc_cursor_nties (SEXP Rcursor)
 {
     iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+
+    if (!iproc_cursor_started(cursor))
+        error("cursor has not started");
+    if (iproc_cursor_finished(cursor))
+        error("cursor has finished");
+
     int64_t nties = iproc_cursor_nmsg(cursor);
     return ScalarInteger(nties);
 }
@@ -118,6 +130,12 @@ SEXP
 Riproc_cursor_from (SEXP Rcursor)
 {
     iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+
+    if (!iproc_cursor_started(cursor))
+        error("cursor has not started");
+    if (iproc_cursor_finished(cursor))
+        error("cursor has finished");
+
     int64_t i, n = iproc_cursor_nmsg(cursor);
     int *from;
     SEXP Rfrom;
@@ -139,6 +157,12 @@ SEXP
 Riproc_cursor_to (SEXP Rcursor)
 {
     iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+
+    if (!iproc_cursor_started(cursor))
+        error("cursor has not started");
+    if (iproc_cursor_finished(cursor))
+        error("cursor has finished");
+
     int64_t i, n = iproc_cursor_nmsg(cursor);
     SEXP Rto;
 
