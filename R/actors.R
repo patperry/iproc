@@ -1,8 +1,8 @@
 
 actors.default <- function(groups, group.traits) {
     groups <- as.integer(groups)
-    group.traits <- as.matrix(group.traits)
     storage.mode(group.traits) <- 'numeric'
+    group.traits <- as.matrix(group.traits)
     
     n <- length(groups)
     k <- nrow(group.traits)
