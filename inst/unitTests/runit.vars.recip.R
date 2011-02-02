@@ -10,7 +10,7 @@ msgs <- it <- NULL
     a <- actors(enron)
     senders <<- actors(group(a), matrix(numeric(0), ngroup(a), 0))
     receivers <<- senders
-    receive.intervals <<- 10^seq_len(6)
+    receive.intervals <<- 3600 * 2^seq(-6, 14)
     v <<- vars(senders, receivers, receive.intervals = receive.intervals)
 
     msgs <<- messages(enron)
@@ -33,7 +33,6 @@ test.as.matrix <- function() {
     tlast <- matrix(-Inf, size(senders), size(receivers))
     while(advance(it)) {
         tcur <- time(it)
-        
         for (i in from(it)) {
             delta <- tcur - tlast[,i]
             x <- matrix(0.0, size(receivers), dim(v))
@@ -49,6 +48,25 @@ test.as.matrix <- function() {
 
         for (t in seq_len(nties(it))) {
             tlast[from(it)[t], to(it)[[t]]] <- tcur
+        }
+    }
+}
+
+
+test.mul <- function() {
+    x <- sample(-2:2, dim(v), replace = TRUE)
+    while (advance(it)) {
+        for (i in from(it)) {
+            checkEquals(mul(v, x, sender = i, it), as.matrix(v, sender = i, it) %*% x)
+        }
+    }
+}
+
+test.tmul <- function() {
+    x <- sample(-2:2, nreceiver(v), replace = TRUE)
+    while (advance(it)) {
+        for (i in from(it)) {
+            checkEquals(tmul(v, x, sender = i, it), t(as.matrix(v, sender = i, it)) %*% x)
         }
     }
 }
