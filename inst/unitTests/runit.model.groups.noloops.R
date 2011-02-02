@@ -1,14 +1,17 @@
 
 require(RUnit)
 require(iproc)
+data(enron)
 
 vars <- coef <- has.loops <- m <- NULL
 
 .setUp <- function() {
-    senders <- actors(c(2,1,2), matrix(1:6, 2, 3))
-    receivers <- actors(1:4, rbind(2,4,6,8) %*% cbind(1,-1))
+    a <- actors(enron)
+    senders <- a
+    receivers <- a
     vars <<- vars(senders, receivers)
-    coef <<- c(0, 3, -2, 0, 1, -1)
+    set.seed(0)
+    coef <<- sample(-2:2, dim(vars), replace = TRUE)
     has.loops <<- FALSE
     m <<- model(vars, coef, has.loops)
 }
@@ -41,4 +44,27 @@ test.nsender <- function() {
 
 test.nreceiver <- function() {
     checkEquals(nreceiver(m), nreceiver(vars))
+}
+
+test.log.probs <- function() {
+    for (i in seq_len(nsender(vars))) {
+        lw <- t(mul(vars, coef, sender = i))
+        if (!has.loops(m)) {
+            lw[i] <- -Inf
+        }
+
+        jmax <- which.max(lw)
+        lw.max <- lw[jmax]
+        lw1 <- lw - lw.max
+        scale <- log1p(sum(exp(lw1[-jmax])))
+        lp <- lw1 - scale
+
+        checkEquals(log.probs(m, i), lp)
+    }
+}
+
+test.probs <- function() {
+    for (i in seq_len(nsender(vars))) {
+        checkEquals(probs(m, i), exp(log.probs(m, i)))
+    }
 }
