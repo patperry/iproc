@@ -87,6 +87,99 @@ iproc_sloglik_insert (iproc_sloglik *sll,
     iproc_sloglik_insertm(sll, history, &jrecv, 1);
 }
 
+/* update active probs;
+ * If we add a new nonzero, we need to retroactively make the entry active;
+ * if a prob is no longer active, we need to add the old prob.
+ */
+static void
+insertm_update_active_probs (iproc_sloglik   *sll,
+                             int64_t          n,
+                             iproc_model_ctx *ctx)
+{
+    int64_t isend = sll->isend;
+    iproc_model *model = sll->model;
+    iproc_vector *logprobs0 = iproc_model_logprobs0(model, isend);
+    double logsuminvwt = log(sll->suminvwt);
+    double logsumweight_diff = iproc_model_ctx_logsumweight_diff(ctx);
+
+    iproc_svector *s = sll->sum_active_probs;
+    iproc_svector *x = iproc_model_ctx_active_probs(ctx);
+    int64_t inz_s = 0, nnz_s = iproc_svector_nnz(s);
+    int64_t inz_x = 0, nnz_x = iproc_svector_nnz(x);
+
+    while (inz_s < nnz_s && inz_x < nnz_x) {
+        int64_t jrecv_s = iproc_svector_nz(s, inz_s);
+        int64_t jrecv_x = iproc_svector_nz(x, inz_x);
+
+        /* Update old nonzeros in s up to jrecv_x (these are not active in x) */
+        if (jrecv_s < jrecv_x) {
+            double lp0 = iproc_vector_get(logprobs0, jrecv_s);
+            double p1 = exp(lp0 - logsumweight_diff);
+            iproc_svector_nz_inc(s, inz_s, n * p1);
+            inz_s++;
+
+        /* If we are at an index which is active in both, update it */
+        } else if (jrecv_s == jrecv_x) {
+            double p1 = iproc_svector_nz_get(x, inz_x);
+            iproc_svector_nz_inc(s, inz_s, n * p1);
+
+            inz_s++;
+            inz_x++;
+
+        /* Otherwise, we are at a new nonzero; retroactively make it active */
+        } else {
+            double lp0 = iproc_vector_get(logprobs0, jrecv_x);
+            double np0 = exp(lp0 + logsuminvwt);
+            double p1 = iproc_svector_nz_get(x, inz_x);
+            double value = np0 + n * p1;
+
+            iproc_array_insert(s->index, inz_s, &jrecv_x);
+            iproc_array_insert(s->value, inz_s, &value);
+            inz_s++;
+            nnz_s++;
+            inz_x++;
+        }
+    }
+
+    /* Leftovers in s are old nonzeros */
+    while (inz_s < nnz_s) {
+        int64_t jrecv = iproc_svector_nz(s, inz_s);
+        double lp0 = iproc_vector_get(logprobs0, jrecv);
+        double p1 = exp(lp0 - logsumweight_diff);
+        iproc_svector_nz_inc(s, inz_s, n * p1);
+
+        inz_s++;
+    }
+
+    /* Leftovers in x are new nonzeros */
+    while (inz_x < nnz_x) {
+        int64_t jrecv = iproc_svector_nz(x, inz_x);
+        double lp0 = iproc_vector_get(logprobs0, jrecv);
+        double np0 = exp(lp0 + logsuminvwt);
+        double p1 = iproc_svector_nz_get(x, inz_x);
+        double value = np0 + n * p1;
+
+        iproc_array_append(s->index, &jrecv);
+        iproc_array_append(s->value, &value);
+
+        inz_x++;
+    }
+
+
+    sll->suminvwt += n * iproc_model_ctx_invsumweight_ratio(ctx);
+    // iproc_svector_sacc(sll->sum_active_probs, n, active_probs);
+}
+
+static void
+insertm_update_sum_mean_var_diff (iproc_sloglik   *sll,
+                                  int64_t          n,
+                                  iproc_model_ctx *ctx)
+{
+    iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
+    iproc_vars_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->vars_ctx, active_probs,
+                             1.0, sll->sum_mean_var_diff);
+}
+
 void
 iproc_sloglik_insertm (iproc_sloglik *sll,
                        iproc_history *history,
@@ -114,15 +207,10 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
         iproc_svector_inc(sll->nrecv, jrecv[i], 1.0);
     }
 
-    /* update number of sends */
-    sll->nsend += 1;
-
     /* update observed variables */
     iproc_vars_ctx_diff_muls(1.0, IPROC_TRANS_TRANS, ctx->vars_ctx, wt,
                              1.0, sll->sum_obs_var_diff);
 
-    /* update sum of weights */
-    sll->suminvwt += n * iproc_model_ctx_invsumweight_ratio(ctx);
 
     // printf("\nnrecv");
     // printf("\n-----");
@@ -136,9 +224,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     // printf("\n--------");
     // printf("\n%.8f\n", sll->suminvwt);
 
-    /* update active probs */
-    iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
-    iproc_svector_sacc(sll->sum_active_probs, n, active_probs);
+    insertm_update_active_probs(sll, n, ctx);
 
     // printf("\nactive_probs");
     // printf("\n------------");
@@ -148,9 +234,14 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     // printf("\n----------------");
     // iproc_svector_printf(sll->sum_active_probs);
 
-    /* update expected diff */
-    iproc_vars_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->vars_ctx, active_probs,
-                             1.0, sll->sum_mean_var_diff);
+    insertm_update_sum_mean_var_diff(sll, n, ctx);
+
+    /* update number of sends */
+    sll->nsend += n;
+
+    /* update sum of weights
+     * IMPORTANT: this must get done *after* active_probs gets updated
+     */
 
     // printf("\nsum_obs_var_diff");
     // printf("\n----------------");
@@ -159,6 +250,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     // printf("\nsum_mean_var_diff");
     // printf("\n-----------------");
     // iproc_svector_printf(sll->sum_mean_var_diff);
+
 
     iproc_svector_unref(wt);
     iproc_model_ctx_unref(ctx);
@@ -182,6 +274,10 @@ iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
         return;
     
     double suminvwt = sll->suminvwt;
+
+    // printf("\nisend");
+    // printf("\n-----");
+    // printf("\n%lld\n", sll->isend);
 
     // printf("\nsuminvwt");
     // printf("\n--------");

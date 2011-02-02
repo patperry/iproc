@@ -224,7 +224,7 @@ iproc_model_ctx_logprob (iproc_model_ctx *ctx,
     double lp;
     
     if (jnz >= 0) {
-        lp = iproc_svector_nz_val(logprobs, jnz);
+        lp = iproc_svector_nz_get(logprobs, jnz);
     } else {
         iproc_vector *logprobs0 = ctx->group->logprobs0;
         double logsumweight_diff = ctx->logsumweight_diff;

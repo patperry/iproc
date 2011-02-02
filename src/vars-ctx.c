@@ -216,7 +216,7 @@ iproc_vars_ctx_diff_mul (double          alpha,
             int64_t inz, nnz = iproc_svector_nnz(jdiff);
             for (inz = 0; inz < nnz; inz++) {
                 int64_t ix = iproc_svector_nz(jdiff, inz);
-                double val = iproc_svector_nz_val(jdiff, inz);
+                double val = iproc_svector_nz_get(jdiff, inz);
 
                 assert(ix + ix_begin < ix_end);
                 iproc_svector_inc(y, ix + ix_begin, jscale * val);
@@ -283,7 +283,7 @@ iproc_vars_ctx_diff_muls (double          alpha,
                 if (ix < ix_begin || ix >= ix_end)
                     continue;
 
-                double xval = iproc_svector_nz_val(x, inz);
+                double xval = iproc_svector_nz_get(x, inz);
                 double diffval = iproc_svector_get(jdiff, ix - ix_begin);
                 dot += xval * diffval;
             }
@@ -308,7 +308,7 @@ iproc_vars_ctx_diff_muls (double          alpha,
             int64_t inz, nnz = iproc_svector_nnz(jdiff);
             for (inz = 0; inz < nnz; inz++) {
                 int64_t ix = iproc_svector_nz(jdiff, inz);
-                double val = iproc_svector_nz_val(jdiff, inz);
+                double val = iproc_svector_nz_get(jdiff, inz);
 
                 assert(ix + ix_begin < ix_end);
                 iproc_svector_inc(y, ix + ix_begin, jscale * val);

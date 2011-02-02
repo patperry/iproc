@@ -279,7 +279,7 @@ iproc_actors_muls (double         alpha,
         for (inz = 0; inz < nnz; inz++) {
             i = iproc_svector_nz(x, inz);
             row = iproc_actors_traits(actors, i);
-            entry = iproc_svector_nz_val(x, inz);
+            entry = iproc_svector_nz_get(x, inz);
             iproc_vector_acc(y, alpha * entry, row);
         }
     }

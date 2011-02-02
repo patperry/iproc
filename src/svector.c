@@ -133,7 +133,7 @@ iproc_svector_get (iproc_svector *svector,
     int64_t ix = iproc_svector_find_nz(svector, i);
 
     if (ix >= 0) {
-        value = iproc_svector_nz_val(svector, ix);
+        value = iproc_svector_nz_get(svector, ix);
     }
 
     return value;
@@ -211,13 +211,35 @@ iproc_svector_nz (iproc_svector *svector,
 }
 
 double
-iproc_svector_nz_val (iproc_svector *svector,
+iproc_svector_nz_get (iproc_svector *svector,
                       int64_t        i)
 {
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_nnz(svector));
     return iproc_array_index(svector->value, double, i);
+}
+
+void
+iproc_svector_nz_set (iproc_svector *svector,
+                      int64_t        i,
+                      double         value)
+{
+    assert(svector);
+    assert(0 <= i);
+    assert(i < iproc_svector_nnz(svector));
+    iproc_array_index(svector->value, double, i) = value;
+}
+
+void
+iproc_svector_nz_inc (iproc_svector *svector,
+                      int64_t        i,
+                      double         inc)
+{
+    assert(svector);
+    assert(0 <= i);
+    assert(i < iproc_svector_nnz(svector));
+    iproc_array_index(svector->value, double, i) += inc;
 }
 
 iproc_vector_view
@@ -244,7 +266,7 @@ iproc_vector_sdot (iproc_vector  *vector,
     for (i = 0; i < n; i++) {
         ix = iproc_svector_nz(svector, i);
         e1 = iproc_vector_get(vector, ix);
-        e2 = iproc_svector_nz_val(svector, i);
+        e2 = iproc_svector_nz_get(svector, i);
         dot += e1 * e2;
     }
     return dot;
@@ -263,7 +285,7 @@ iproc_vector_sacc (iproc_vector  *dst_vector,
     double e;
 
     for (i = 0; i < n; i++) {
-        e = iproc_svector_nz_val(svector, i);
+        e = iproc_svector_nz_get(svector, i);
         ix = iproc_svector_nz(svector, i);
         iproc_vector_inc(dst_vector, ix, scale * e);
     }
@@ -293,8 +315,8 @@ iproc_svector_sdot (iproc_svector *svector1,
         ix2 = iproc_svector_nz(svector2, i2);
 
         if (ix1 == ix2) {
-            val1 = iproc_svector_nz_val(svector1, i1);
-            val2 = iproc_svector_nz_val(svector2, i2);
+            val1 = iproc_svector_nz_get(svector1, i1);
+            val2 = iproc_svector_nz_get(svector2, i2);
             dot += val1 * val2;
             i1++;
             i2++;
@@ -321,7 +343,7 @@ iproc_svector_sacc (iproc_svector *dst_svector,
     int64_t inz, nnz = iproc_svector_nnz(svector);
     for (inz = 0; inz < nnz; inz++) {
         int64_t i = iproc_svector_nz(svector, inz);
-        double val = iproc_svector_nz_val(svector, inz);
+        double val = iproc_svector_nz_get(svector, inz);
         iproc_svector_inc(dst_svector, i, scale * val);
     }
 }
@@ -338,7 +360,7 @@ iproc_svector_printf (iproc_svector *svector)
     for (i = 0; i < n; i++) {
         printf("\n         %lld, %.8f",
                iproc_svector_nz(svector, i),
-               iproc_svector_nz_val(svector, i));
+               iproc_svector_nz_get(svector, i));
     }
     printf("\n       }");
     printf("\n}\n");

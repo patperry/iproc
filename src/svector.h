@@ -36,8 +36,15 @@ void              iproc_svector_scale    (iproc_svector *svector,
 int64_t           iproc_svector_nnz      (iproc_svector *svector);
 int64_t           iproc_svector_nz       (iproc_svector *svector,
                                           int64_t        inz);
-double            iproc_svector_nz_val   (iproc_svector *svector,
+double            iproc_svector_nz_get   (iproc_svector *svector,
                                           int64_t        inz);
+void              iproc_svector_nz_set   (iproc_svector *svector,
+                                          int64_t        inz,
+                                          double         value);
+void              iproc_svector_nz_inc   (iproc_svector *svector,
+                                          int64_t        inz,
+                                          double         inc);
+
 iproc_vector_view iproc_svector_view_nz  (iproc_svector *svector);
 int64_t           iproc_svector_find_nz  (iproc_svector *svector,
                                           int64_t        i);

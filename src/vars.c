@@ -289,7 +289,7 @@ iproc_vars_sender0_muls (double          alpha,
             imaxdiv_t ij = imaxdiv(ix - ix_begin, p);
             int64_t i = ij.rem;  /* ix % p */
             int64_t j = ij.quot; /* ix / p */
-            double x_ij = iproc_svector_nz_val(x, inz);
+            double x_ij = iproc_svector_nz_get(x, inz);
             double s_i = iproc_vector_get(s, i);
             iproc_vector_inc(z, j, x_ij * s_i);
         }

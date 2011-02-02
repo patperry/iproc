@@ -9,7 +9,7 @@ msgs <- actrs <- vrs <- beta <- mdl <- it <- NULL
     set.seed(0)
     msgs <<- messages(enron)
     actrs <<- actors(enron)
-    vrs <<- vars(actrs)
+    vrs <<- vars(actrs, actrs,  3600 * 2^seq(-6, 14))
     beta <<- sample(-2:2, dim(vrs), replace = TRUE)
     mdl <<- model(vrs, beta)
     it <<- cursor(msgs)
@@ -17,7 +17,7 @@ msgs <- actrs <- vrs <- beta <- mdl <- it <- NULL
 
 test.value <- function() {
     value <- 0.0
-    ll <- loglik(mdl, msgs)
+    ll <- loglik(mdl)
     
     while(advance(it)) {
         for (tie in seq_len(nties(it))) {
@@ -27,6 +27,9 @@ test.value <- function() {
             lp <- as.vector(log.probs(mdl, msg.from, it))
             value <- value + sum(lp[msg.to])
         }
+
+        insert(ll, it)
+        checkEquals(value(ll), value)
     }
 
     checkEquals(value(ll), value)
@@ -37,8 +40,14 @@ test.grad <- function() {
     mdl0 <- model(vrs, beta, has.loops=TRUE)
     grad <- rep(0.0, dim(vrs))
     nrecv <- nreceiver(vrs)
+    
 
     err <- c()
+    
+    # advance(it); advance(it); advance(it); advance(it);
+    # advance(it); advance(it); advance(it); advance(it);
+    # advance(it); advance(it); advance(it); advance(it);
+    # advance(it);
     
     while(advance(it)) {
         for (tie in seq_len(nties(it))) {
@@ -52,28 +61,46 @@ test.grad <- function() {
             for (t in seq_along(msg.to)) {
                 n.actual[msg.to[t]] <- n.actual[msg.to[t]] + 1.0
             }
-            grad <- grad + tmul(vrs, n.actual - n.expected, sender = msg.from, it)
+            dgrad <- tmul(vrs, n.actual - n.expected, sender = msg.from, it)
+
+
+            # w0 <- exp(mul(vrs, beta, msg.from))
+            # w <- exp(mul(vrs, beta, msg.from, it)); w[msg.from] <- 0
+            # suminvwt <- msg.nto * (sum(w0)/sum(w))
+            # p0 <- as.vector(probs(mdl0, msg.from))
+            # p <- as.vector(probs(mdl, msg.from, it))
+            # p.active <- rep(0, nrecv)            
+            # p.active[w != w0] <- p[w != w0]
+            #
+            # dp <- p.active
+            # dp[w != w0] <- (msg.nto * p.active - suminvwt * p0)[w != w0]
+            #
+            # x <- tmul(vrs, n.actual, msg.from, it)
+            # e1 <- suminvwt * tmul(vrs, p0, msg.from)
+            # e2 <- tmul(vrs, dp, msg.from)
+            # e3 <- msg.nto * (tmul(vrs, p, msg.from, it) - tmul(vrs, p, msg.from))
+            # dgrad1 <- (((x - e1) - e2) - e3)
+            #
+            # grad1 <- grad + dgrad1
             
-            if (FALSE) { #internally, this is how the computation is done:
-                w0 <- exp(mul(vrs, beta, msg.from))
-                w <- exp(mul(vrs, beta, msg.from, it))
-                w[msg.from] <- 0
-                p0 <- as.vector(probs(mdl0, msg.from))
-                p <- as.vector(probs(mdl, msg.from, it))
-                e0 <- tmul(vrs, p0, msg.from)
-                dp.active <- rep(0, nrecv)
-                dp.active[msg.from] <- (-p0[msg.from]) * (sum(w0)/sum(w))
-                e <- msg.nto * ((sum(w0)/sum(w))*e0
-                                + tmul(vrs, dp.active, msg.from))
-                grad <- grad + (tmul(vrs, n.actual, msg.from, it) - e)
-            }
+            grad <- grad + dgrad
+
         }
         grad <- as.vector(grad)
 
         insert(ll, it)
         err.new <- mean(abs(grad(ll) - grad) / (abs(grad) + 0.1))
         err <- c(err, err.new)
+
+        #suminvwt.old <- suminvwt
+        #dp.old <- dp
+        #x.old <- x
+        #e1.old <- e1
+        #e2.old <- e2
+        #e3.old <- e3
         
         checkTrue(err.new < 1e-10)
+
+        #advance(it)
     }
 }
