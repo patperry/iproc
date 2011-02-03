@@ -64,4 +64,4 @@ void              iproc_svector_sacc     (iproc_svector *dst_svector,
 void              iproc_svector_printf   (iproc_svector *svector);
 
 
-#endif _IPROC_SVECTOR_H
+#endif /* _IPROC_SVECTOR_H */
