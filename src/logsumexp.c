@@ -44,9 +44,17 @@ iproc_logsumexp_insert (iproc_logsumexp *lse,
 {
     assert(lse);
 
+    if (isinf(val)) {
+        if (val > 0) {
+            lse->max = val;
+            lse->sumexpm1 = val;
+        }
+        return;
+    }
+
     double sumexpm1 = lse->sumexpm1;
     double max = lse->max;
-
+    
     if (!(val > max)) {
         lse->sumexpm1 += exp(val - max);
     } else {
