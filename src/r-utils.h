@@ -4,9 +4,19 @@
 #include <R.h>
 #include <Rdefines.h>
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
+
 #include "vector.h"
 #include "matrix.h"
 
+
+/* Call once to initialize library */
+void              Riproc_utils_init       (DllInfo *info);
+
+/* External functions */
+SEXP              Riproc_hash_numeric     (SEXP     x);
+
+/* Internal use only */
 void *            Riproc_sexp2ptr         (SEXP     s,
                                            Rboolean null_ok,
                                            SEXP     tag,

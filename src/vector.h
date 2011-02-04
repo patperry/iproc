@@ -1,6 +1,7 @@
 #ifndef _IPROC_VECTOR_H
 #define _IPROC_VECTOR_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include "refcount.h"
 
@@ -79,6 +80,8 @@ double            iproc_vector_log_sum_exp   (iproc_vector *vector);
 void              iproc_vector_exp           (iproc_vector *vector);
 
 void              iproc_vector_printf        (iproc_vector *vector);
+
+size_t            iproc_vector_hash          (iproc_vector *vector);
 
 
 #endif /* _IPROC_VECTOR_H */

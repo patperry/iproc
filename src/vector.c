@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "blas-private.h"
+#include "hash.h"
 #include "memory.h"
 #include "vector.h"
 
@@ -560,4 +561,22 @@ iproc_vector_printf (iproc_vector *vector)
     }
     printf("\n       }");
     printf("\n}\n");
+}
+
+size_t
+iproc_vector_hash (iproc_vector *vector)
+{
+    if (!vector)
+        return 0;
+
+    size_t seed = 0;
+    int64_t i, n = iproc_vector_dim(vector);
+
+    for (i = 0; i < n; i++) {
+        double v = iproc_vector_get(vector, i);
+        size_t hash_value = iproc_hash_double(v);
+        seed = iproc_hash_combine(seed, hash_value);
+    }
+
+    return seed;
 }

@@ -2,7 +2,30 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
+#include <limits.h>
 #include "r-utils.h"
+
+
+static R_CallMethodDef callMethods[] = {
+    { "Riproc_hash_numeric", (DL_FUNC) &Riproc_hash_numeric, 1 },
+    { NULL,                  NULL,                            0 }
+};
+
+
+void
+Riproc_utils_init (DllInfo *info)
+{
+    R_registerRoutines(info, NULL, callMethods, NULL, NULL);
+}
+
+SEXP
+Riproc_hash_numeric (SEXP x)
+{
+    iproc_vector_view view = Riproc_vector_view_sexp(x);
+    size_t hash = iproc_vector_hash(&view.vector);
+    int int_hash = hash % INT_MAX;
+    return ScalarInteger(int_hash);
+}
 
 /* Adapted from Luke Tierney's Regular expressions package
  *   http://www.stat.uiowa.edu/~luke/R/regexp.html

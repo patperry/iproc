@@ -6,6 +6,7 @@
 #include "r-cursor.h"
 #include "r-messages.h"
 #include "r-model.h"
+#include "r-utils.h"
 #include "r-vars.h"
 
 
@@ -16,6 +17,7 @@ R_init_iproc (DllInfo *info)
     Riproc_cursor_init(info);
     Riproc_messages_init(info);
     Riproc_model_init(info);
+    Riproc_utils_init(info);
     Riproc_vars_init(info);
 }
 
