@@ -10,7 +10,7 @@ senders <- receivers <- v <- NULL
     senders <<- a
     groups <- c(1, 1, 2, 2, 1, 2)
     group.traits <- rbind(1, -1) %*% cbind(2, 4)
-    receivers <<- actors(group.traits[groups,,drop=FALSE])
+    receivers <<- actors(~ . -1, data.frame(group.traits[groups,,drop=FALSE]))
     set.seed(0)
     v <<- vars(senders, receivers)
 }

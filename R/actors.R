@@ -1,15 +1,7 @@
 
-
-actors.default <- function(object, ...) {
-    x <- as.matrix(object)
-    storage.mode(x) <- "numeric"
-    actrs <- .Call("Riproc_actors_new", t(x))
-    actrs
-}
-
 # object should be a formula or a terms object
 # no support for subset, since it makes ids confusing
-actors.formula <- function(object, data, na.action, contrasts = NULL, ...)
+actors.default <- function(object, data, na.action, contrasts = NULL, ...)
 {
     mf <- match.call(expand.dots = FALSE)
     m <- match(c("object", "data", "na.action"), names(mf), 0L)
@@ -30,7 +22,8 @@ actors.formula <- function(object, data, na.action, contrasts = NULL, ...)
 
 
     x <- model.matrix(mt, mf, contrasts)
-    actors(x)
+    actrs <- .Call("Riproc_actors_new", t(x))
+    actrs
 }
 
 actors.enron <- function(object, ...) {

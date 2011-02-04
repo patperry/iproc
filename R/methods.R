@@ -4,6 +4,9 @@ group        <- function(object, ...) UseMethod("group")
 ngroup       <- function(object, ...) UseMethod("ngroup")
 group.traits <- function(object, ...) UseMethod("group.traits")
 
+# iproc.frame methods
+iproc.frame  <- function(object, ...) UseMethod("iproc.frame")
+
 # matrix multiplicaiton
 mul          <- function(x, y, ...) UseMethod("mul")
 tmul         <- function(x, y, ...) UseMethod("tmul")
