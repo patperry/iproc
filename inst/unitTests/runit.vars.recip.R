@@ -8,7 +8,7 @@ msgs <- it <- NULL
 
 .setUp <- function() {
     a <- actors(enron)
-    senders <<- actors(matrix(numeric(), size(a), 0))
+    senders <<- actors(matrix(numeric(), nrow(a), 0))
     receivers <<- senders
     receive.intervals <<- 3600 * 2^seq(-6, 14)
     v <<- vars(senders, receivers, receive.intervals = receive.intervals)
@@ -30,13 +30,13 @@ test.dim <- function() {
 }
 
 test.as.matrix <- function() {
-    tlast <- matrix(-Inf, size(senders), size(receivers))
+    tlast <- matrix(-Inf, nrow(senders), nrow(receivers))
     while(advance(it)) {
         tcur <- time(it)
         for (i in from(it)) {
             delta <- tcur - tlast[,i]
-            x <- matrix(0.0, size(receivers), dim(v))
-            for (j in seq_len(size(receivers))) {
+            x <- matrix(0.0, nrow(receivers), dim(v))
+            for (j in seq_len(nrow(receivers))) {
                 int <- which(delta[j] <= receive.intervals)
                 if (any(int)) {
                     x[j, min(int)] <- 1.0

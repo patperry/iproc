@@ -1,84 +1,79 @@
 
-actors.default <- function(traits) {
-    traits <- as.matrix(traits)
-    traits.t <- t(traits)
 
-    .Call("Riproc_actors_new", traits.t)
+actors.default <- function(object, ...) {
+    x <- as.matrix(object)
+    storage.mode(x) <- "numeric"
+    actrs <- .Call("Riproc_actors_new", t(x))
+    actrs
 }
 
-actors.enron <- function(enron) {
-    group <- function(emp) {
-        (6 * (as.integer(emp$gender) - 1)
-         + 2 * (as.integer(emp$department) - 1)
-         + as.integer(emp$seniority))
-    }
+# object should be a formula or a terms object
+# no support for subset, since it makes ids confusing
+actors.formula <- function(object, data, na.action, contrasts = NULL, ...)
+{
+    mf <- match.call(expand.dots = FALSE)
+    m <- match(c("object", "data", "na.action"), names(mf), 0L)
+    mf <- mf[c(1L, m)]
+    mf$drop.unused.levels <- TRUE
+    mf[[1L]] <- as.name("model.frame")
+    names(mf)[[2]] <- "formula"
 
-    g <- rep(NA, nrow(enron$employees))
-    for (i in seq_along(g)) {
-        g[i] <- group(enron$employees[i,])
-    }
+    mf <- eval(mf, parent.frame())
 
-    gt <- diag(12)
+    #mf <- lm(object, quote(data), quote(na.action), method = "model.frame")
+    mt <- attr(mf, "terms")
+    if (attr(mt, "response") > 0)
+        stop("response should be left unspecified, but was '",
+             names(mf)[[attr(mt, "response")]], "'")
+    if (nrow(mf) == 0)
+        stop("number of actors is 0, should be positive")
 
-    traits <- gt[g,,drop=FALSE]
 
-    actors.default(traits)
+    x <- model.matrix(mt, mf, contrasts)
+    actors(x)
 }
 
-ngroup.actors <- function(actors) {
-    .Call("Riproc_actors_ngroup", actors)
+actors.enron <- function(object, ...) {
+    actors( ~ gender*seniority*department, object$employees, ...)
 }
 
-size.actors <- function(actors) {
-    .Call("Riproc_actors_size", actors)
+ngroup.actors <- function(object, ...) {
+    .Call("Riproc_actors_ngroup", object)
 }
 
-dim.actors <- function(actors) {
-    .Call("Riproc_actors_dim", actors)
+dim.actors <- function(object, ...) {
+    n <- .Call("Riproc_actors_size", object)
+    p <- .Call("Riproc_actors_dim", object)
+    c(n,p)
 }
 
-traits.actors <- function(actors, ids = NULL) {
-    if (is.null(ids)) {
-        ids <- seq_len(size(actors))
-    } else {
-        ids <- as.integer(ids)
-    }
-    xt <- .Call("Riproc_actors_traits", actors, ids)
+group.actors <- function(object, ...) {
+    ids <- seq_len(nrow(object))
+    .Call("Riproc_actors_group", object, ids)
+}
+
+group.traits.actors <- function(object, ...) {
+    group.ids <- seq_len(ngroup(object))
+    xt <- .Call("Riproc_actors_group_traits", object, group.ids)
     t(xt)
 }
 
-group.actors <- function(actors, ids = NULL) {
-    if (is.null(ids)) {
-        ids <- seq_len(size(actors))
-    } else {
-        ids <- as.integer(ids)
-    }
-    .Call("Riproc_actors_group", actors, ids)
-}
-
-group.traits.actors <- function(actors, group.ids = NULL) {
-    if (is.null(group.ids)) {
-        group.ids <- seq_len(ngroup(actors))
-    } else {
-        group.ids <- as.integer(group.ids)
-    }
-    
-    xt <- .Call("Riproc_actors_group_traits", actors, group.ids)
-    t(xt)
-}
-
-as.matrix.actors <- function(actors) {
-    traits(actors)
+as.matrix.actors <- function(x, ...) {
+    ids <- seq_len(nrow(x))
+    mat <- .Call("Riproc_actors_traits", x, ids)
+    t(mat)
 }
     
-mul.actors <- function(actors, matrix) {
-    matrix <- as.matrix(matrix)
+mul.actors <- function(x, y, ...) {
+    actors <- x
+    matrix <- as.matrix(y)
     storage.mode(matrix) <- "numeric"
     .Call("Riproc_actors_mul", actors, matrix)
 }
 
-tmul.actors <- function(actors, matrix) {
-    matrix <- as.matrix(matrix)
+tmul.actors <- function(x, y, ...) {
+    actors <- x
+    matrix <- as.matrix(y)
     storage.mode(matrix) <- "numeric"
     .Call("Riproc_actors_tmul", actors, matrix)
 }

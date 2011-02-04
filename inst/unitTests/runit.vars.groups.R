@@ -30,15 +30,15 @@ test.receivers <- function() {
 }
 
 test.nsender <- function() {
-    checkEquals(nsender(v), size(senders))
+    checkEquals(nsender(v), nrow(senders))
 }
 
 test.nreceiver <- function() {
-    checkEquals(nreceiver(v), size(receivers))
+    checkEquals(nreceiver(v), nrow(receivers))
 }
 
 test.dim <- function() {
-    checkEquals(dim(v), dim(senders) * dim(receivers))
+    checkEquals(dim(v), ncol(senders) * ncol(receivers))
 }
 
 test.as.matrix <- function() {

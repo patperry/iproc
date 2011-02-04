@@ -9,7 +9,7 @@ msgs <- actrs <- vrs <- beta <- has.loops <- mdl <- it <- NULL
     set.seed(0)
     msgs <<- messages(enron)
     a <- actors(enron)
-    actrs <<- actors(matrix(numeric(), size(a), 0))
+    actrs <<- actors(matrix(numeric(), nrow(a), 0))
     receive.intervals <- 3600 * 2^seq(-6, 14)
     vrs <<- vars(actrs, actrs, receive.intervals = receive.intervals)
     beta <<- sample(-2:2, dim(vrs), replace = TRUE)

@@ -8,7 +8,7 @@ msgs <- it <- NULL
 
 .setUp <- function() {
     a <- actors(enron)
-    a0 <- actors(matrix(numeric(), size(a), 0))
+    a0 <- actors(matrix(numeric(), nrow(a), 0))
     senders <<- a
     receivers <<- a
     receive.intervals <<- 3600 * 2^seq(-6, 14)
