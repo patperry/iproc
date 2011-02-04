@@ -1,18 +1,9 @@
 
-actors.default <- function(groups, group.traits) {
-    groups <- as.integer(groups)
-    storage.mode(group.traits) <- 'numeric'
-    group.traits <- as.matrix(group.traits)
-    
-    n <- length(groups)
-    k <- nrow(group.traits)
-    p <- ncol(group.traits)
+actors.default <- function(traits) {
+    traits <- as.matrix(traits)
+    traits.t <- t(traits)
 
-    if (!(all(1 <= groups & groups <= k)))
-        stop("groups label out of bounds")
-    
-    group.traits.t <- t(group.traits)
-    .Call("Riproc_actors_new", groups, group.traits.t)
+    .Call("Riproc_actors_new", traits.t)
 }
 
 actors.enron <- function(enron) {
@@ -29,7 +20,9 @@ actors.enron <- function(enron) {
 
     gt <- diag(12)
 
-    actors.default(g, gt)
+    traits <- gt[g,,drop=FALSE]
+
+    actors.default(traits)
 }
 
 ngroup.actors <- function(actors) {

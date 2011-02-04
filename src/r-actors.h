@@ -9,8 +9,7 @@
 void           Riproc_actors_init         (DllInfo *info);
 
 /* External functions */
-SEXP           Riproc_actors_new          (SEXP Rclasses,
-                                           SEXP Rclass_vectors_t);
+SEXP           Riproc_actors_new          (SEXP Rtraits_t);
 SEXP           Riproc_actors_ngroup       (SEXP Ractors);
 SEXP           Riproc_actors_size         (SEXP Ractors);
 SEXP           Riproc_actors_dim          (SEXP Ractors);

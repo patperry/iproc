@@ -198,7 +198,7 @@ iproc_vars_sender0_mul (double        alpha,
     int64_t q = iproc_actors_dim(receivers);
     int64_t ix_begin = iproc_vars_istatic(vars, 0);
     int64_t nstatic = iproc_vars_nstatic(vars);
-    iproc_vector *s = iproc_actors_traits(senders, isend);
+    iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
     if (trans == IPROC_TRANS_NOTRANS) {
@@ -267,7 +267,7 @@ iproc_vars_sender0_muls (double          alpha,
     int64_t ix_begin = iproc_vars_istatic(vars, 0);
     int64_t nstatic = iproc_vars_nstatic(vars);
     int64_t ix_end = ix_begin + nstatic;
-    iproc_vector *s = iproc_actors_traits(senders, isend);
+    iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
     if (trans == IPROC_TRANS_NOTRANS) {

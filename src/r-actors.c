@@ -12,7 +12,7 @@
 static SEXP Riproc_actors_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_actors_new",           (DL_FUNC) &Riproc_actors_new,           2 },
+    { "Riproc_actors_new",           (DL_FUNC) &Riproc_actors_new,           1 },
     { "Riproc_actors_ngroup",        (DL_FUNC) &Riproc_actors_ngroup,        1 },
     { "Riproc_actors_size",          (DL_FUNC) &Riproc_actors_size,          1 },
     { "Riproc_actors_dim",           (DL_FUNC) &Riproc_actors_dim,           1 },
@@ -70,34 +70,23 @@ Riproc_to_actors (SEXP Ractors)
 }
 
 SEXP
-Riproc_actors_new (SEXP Rgroups,
-                   SEXP Rgroup_traits_t)
+Riproc_actors_new (SEXP Rtraits_t)
+
 {
-    int64_t n = GET_LENGTH(Rgroups);
-    int *groups = INTEGER_POINTER(Rgroups);
-    iproc_matrix_view group_traits_t = Riproc_matrix_view_sexp(Rgroup_traits_t);
-    int64_t k = iproc_matrix_ncol(&group_traits_t.matrix);
+    iproc_matrix_view traits_t = Riproc_matrix_view_sexp(Rtraits_t);
+    int64_t n = iproc_matrix_ncol(&traits_t.matrix);
 
-    if (!(k > 0))
-        error("must specify at least one group");
+    if (!(n > 0))
+        error("must specify at least one actor");
 
-    iproc_vector_view traits0 = iproc_matrix_col(&group_traits_t.matrix, 0);
+    iproc_vector_view traits0 = iproc_matrix_col(&traits_t.matrix, 0);
     iproc_actors *actors = iproc_actors_new(n, &traits0.vector);
     int64_t i;
     SEXP Ractors;
 
-    for (i = 1; i < k; i++) {
-        iproc_vector_view traits = iproc_matrix_col(&group_traits_t.matrix, i);
-        iproc_actors_append_group(actors, &traits.vector);
-    }
-
     for (i = 0; i < n; i++) {
-        int64_t c = groups[i] - 1;
-        
-        if (!(0 <= c && c < k))
-            error("group id out of bounds");
-
-        iproc_actors_set(actors, i, c);
+        iproc_vector_view traits = iproc_matrix_col(&traits_t.matrix, i);
+        iproc_actors_set(actors, i, &traits.vector);
     }
 
     PROTECT(Ractors = Riproc_from_actors(actors));
@@ -150,7 +139,7 @@ Riproc_actors_traits (SEXP Ractors,
             error("actor id out of range");
 
         iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        iproc_vector *src = iproc_actors_traits(actors, id);
+        iproc_vector *src = iproc_actors_get(actors, id);
 
         iproc_vector_copy(&dst.vector, src);
     }

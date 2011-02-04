@@ -9,6 +9,7 @@
 #include <math.h>
 #include "blas-private.h"
 #include "hash.h"
+#include "ieee754.h"
 #include "memory.h"
 #include "vector.h"
 
@@ -79,7 +80,8 @@ iproc_vector_unref (iproc_vector *vector)
 int64_t
 iproc_vector_dim (iproc_vector *vector)
 {
-    assert(vector);
+    if (!vector)
+        return 0;
     return vector->dim;
 }
 
@@ -579,4 +581,59 @@ iproc_vector_hash (iproc_vector *vector)
     }
 
     return seed;
+}
+
+int
+iproc_vector_identical (iproc_vector *vector1,
+                        iproc_vector *vector2)
+{
+    if (vector1 == vector2)
+        return 1;
+
+    int64_t n = iproc_vector_dim(vector1);
+
+    if (iproc_vector_dim(vector2) != n)
+        return 0;
+
+    int64_t i;
+    for (i = 0; i < n; i++) {
+        double x1 = iproc_vector_get(vector1, i);
+        double x2 = iproc_vector_get(vector2, i);
+
+        if (!iproc_identical(x1, x2))
+            return 0;
+    }
+
+    return 1;
+}
+
+int
+iproc_vector_compare (iproc_vector *vector1,
+                      iproc_vector *vector2)
+{
+    int64_t n1 = iproc_vector_dim(vector1);
+    int64_t n2 = iproc_vector_dim(vector2);
+
+    if (n1 < n2) {
+        return -1;
+    } else if (n1 > n2) {
+        return +1;
+    }
+
+    /* compare using uint64_t instead of double to avoid dealing with NaN comparisons;
+     * this relies on IEEE doubles being 8 bytes and lexicographically ordered, and
+     * uint64_t having the same endianness as double */
+    uint64_t *p1 = (uint64_t *)iproc_vector_ptr(vector1, 0);
+    uint64_t *p2 = (uint64_t *)iproc_vector_ptr(vector2, 0);
+    int64_t i, n = n1;
+
+    for (i = 0; i < n; i++) {
+        if (p1[i] < p2[i]) {
+            return -1;
+        } else if (p1[i] > p2[i]) {
+            return +1;
+        }
+    }
+
+    return 0;
 }
