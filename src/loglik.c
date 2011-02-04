@@ -31,15 +31,15 @@ iproc_loglik *
 iproc_loglik_new (iproc_model *model)
 {
     iproc_loglik *loglik = iproc_malloc(sizeof(*loglik));
-    iproc_vars *vars = iproc_model_vars(model);
-    int64_t nsender = iproc_vars_nsender(vars);
+    iproc_frame *frame = iproc_model_frame(model);
+    int64_t nsender = iproc_frame_nsender(frame);
 
     if (!loglik)
         return NULL;
 
     loglik->sloglik_array = iproc_array_new(sizeof(iproc_sloglik *));
     loglik->model = iproc_model_ref(model);
-    loglik->grad = iproc_vector_new(iproc_vars_dim(vars));
+    loglik->grad = iproc_vector_new(iproc_frame_dim(frame));
     loglik->grad_cached = 0;
     iproc_refcount_init(&loglik->refcount);
 

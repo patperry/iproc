@@ -3,16 +3,16 @@ require(iproc)
 
 data(enron)
 
-msgs <- actrs <- vrs <- beta <- has.loops <- mdl <- it <- NULL
+msgs <- actrs <- frame <- beta <- has.loops <- mdl <- it <- NULL
 
 .setUp <- function() {
     set.seed(0)
     msgs <<- messages(enron)
     actrs <<- actors(enron)
-    vrs <<- vars(actrs, actrs,  3600 * 2^seq(-6, 14))
-    beta <<- sample(-2:2, dim(vrs), replace = TRUE)
+    frame <<- iproc.frame(actrs, actrs, receive.intervals = 3600 * 2^seq(-6, 14))
+    beta <<- sample(-2:2, ncol(frame), replace = TRUE)
     has.loops <<- TRUE
-    mdl <<- model(vrs, beta, has.loops)
+    mdl <<- model(frame, beta, has.loops)
     it <<- cursor(msgs)
 }
 
@@ -38,8 +38,8 @@ test.value <- function() {
 
 test.grad <- function() {
     ll <- loglik(mdl)
-    grad <- rep(0.0, dim(vrs))
-    nrecv <- nreceiver(vrs)
+    grad <- rep(0.0, ncol(frame))
+    nrecv <- nrow(frame)
     
     checkEquals(grad(ll), grad)
     
@@ -55,7 +55,7 @@ test.grad <- function() {
             for (t in seq_along(msg.to)) {
                 n.actual[msg.to[t]] <- n.actual[msg.to[t]] + 1.0
             }
-            dgrad <- tmul(vrs, n.actual - n.expected, sender = msg.from, it)
+            dgrad <- tmul(frame, n.actual - n.expected, sender = msg.from, it)
             grad <- grad + dgrad
 
         }

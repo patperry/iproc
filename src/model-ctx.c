@@ -20,7 +20,7 @@
  *
  */
 static void
-compute_new_logprobs (iproc_vars_ctx *ctx,
+compute_new_logprobs (iproc_frame_ctx *ctx,
                       iproc_vector   *coefs,
                       int             has_loops,
                       iproc_vector   *logprobs0,
@@ -35,7 +35,7 @@ compute_new_logprobs (iproc_vars_ctx *ctx,
     assert(iproc_vector_dim(logprobs0) == iproc_svector_dim(logprobs));
 
     /* compute the changes in weights */
-    iproc_vars_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
+    iproc_frame_ctx_diff_mul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, logprobs);
     if (!has_loops) {
         int64_t isend = ctx->isend;
         iproc_svector_set(logprobs, isend, -INFINITY);
@@ -109,7 +109,7 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
         iproc_model_unref(ctx->model);
         iproc_svector_unref(ctx->active_probs);
         iproc_svector_unref(ctx->active_logprobs);
-        iproc_vars_ctx_unref(ctx->vars_ctx);
+        iproc_frame_ctx_unref(ctx->frame_ctx);
         iproc_free(ctx);
     }
 }
@@ -131,24 +131,24 @@ iproc_model_ctx_new (iproc_model     *model,
     ctx->active_probs = NULL;
     ctx->active_logprobs = NULL;
 
-    iproc_vars *vars = iproc_model_vars(model);
-    iproc_vars_ctx *vars_ctx = iproc_vars_ctx_new(vars, isend, h);
+    iproc_frame *frame = iproc_model_frame(model);
+    iproc_frame_ctx *frame_ctx = iproc_frame_ctx_new(frame, isend, h);
     iproc_vector *coefs = iproc_model_coefs(model);
     int has_loops = iproc_model_has_loops(model);
     iproc_group_model *group = iproc_model_send_group(model, isend);
     int64_t nreceiver = iproc_model_nreceiver(model);
 
     ctx->model = iproc_model_ref(model);
-    ctx->vars_ctx = vars_ctx;
+    ctx->frame_ctx = frame_ctx;
     ctx->group = group;
     ctx->active_logprobs = iproc_svector_new(nreceiver);
     
-    if (!(vars_ctx && ctx->active_logprobs)) {
+    if (!(frame_ctx && ctx->active_logprobs)) {
         iproc_model_ctx_free(ctx);
         return NULL;
     }
 
-    compute_new_logprobs(vars_ctx, coefs, has_loops, group->logprobs0,
+    compute_new_logprobs(frame_ctx, coefs, has_loops, group->logprobs0,
                          ctx->active_logprobs, &ctx->logsumweight_diff);
     ctx->active_probs = iproc_svector_new_copy(ctx->active_logprobs);
 

@@ -6,7 +6,7 @@
 #include "r-utils.h"
 #include "r-actors.h"
 #include "r-cursor.h"
-#include "r-vars.h"
+#include "r-frame.h"
 #include "r-model.h"
 
 
@@ -14,7 +14,7 @@ static SEXP Riproc_model_type_tag;
 
 static R_CallMethodDef callMethods[] = {
     { "Riproc_model_new",       (DL_FUNC) &Riproc_model_new,       3 },
-    { "Riproc_model_vars",      (DL_FUNC) &Riproc_model_vars,      1 },
+    { "Riproc_model_frame",      (DL_FUNC) &Riproc_model_frame,      1 },
     { "Riproc_model_coefs",     (DL_FUNC) &Riproc_model_coefs,     1 },
     { "Riproc_model_has_loops", (DL_FUNC) &Riproc_model_has_loops, 1 },
     { "Riproc_model_dim",       (DL_FUNC) &Riproc_model_dim,       1 },
@@ -67,20 +67,20 @@ Riproc_from_model (iproc_model *model)
 }
 
 SEXP
-Riproc_model_new (SEXP Rvars,
+Riproc_model_new (SEXP Rframe,
                   SEXP Rcoefs,
                   SEXP Rhas_loops)
 {
-    iproc_vars *vars = Riproc_to_vars(Rvars);
+    iproc_frame *frame = Riproc_to_frame(Rframe);
     iproc_vector_view coefs = Riproc_vector_view_sexp(Rcoefs);
     Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
-    if (iproc_vars_dim(vars) != iproc_vector_dim(&coefs.vector))
-        error("vars and coefs have different dimensions");
+    if (iproc_frame_dim(frame) != iproc_vector_dim(&coefs.vector))
+        error("frame and coefs have different dimensions");
     if (has_loops == NA_LOGICAL)
         error("has.loops is be NA");
 
-    iproc_model *model = iproc_model_new(vars, &coefs.vector, has_loops);
+    iproc_model *model = iproc_model_new(frame, &coefs.vector, has_loops);
     SEXP Rmodel;
 
     PROTECT(Rmodel = Riproc_from_model(model));
@@ -115,11 +115,11 @@ Riproc_model_nreceiver (SEXP Rmodel)
 }
 
 SEXP
-Riproc_model_vars (SEXP Rmodel)
+Riproc_model_frame (SEXP Rmodel)
 {
     iproc_model *model = Riproc_to_model(Rmodel);
-    iproc_vars *vars = iproc_model_vars(model);
-    return Riproc_from_vars(vars);
+    iproc_frame *frame = iproc_model_frame(model);
+    return Riproc_from_frame(frame);
 }
 
 SEXP

@@ -6,6 +6,8 @@ group.traits <- function(object, ...) UseMethod("group.traits")
 
 # iproc.frame methods
 iproc.frame  <- function(object, ...) UseMethod("iproc.frame")
+receivers    <- function(object, ...) UseMethod("receivers")
+senders      <- function(object, ...) UseMethod("senders")
 
 # matrix multiplicaiton
 mul          <- function(x, y, ...) UseMethod("mul")
@@ -30,11 +32,8 @@ nsender      <- function(object, ...) UseMethod("nsender")
 nties        <- function(object, ...) UseMethod("nties")
 nto          <- function(object, ...) UseMethod("nto")
 probs        <- function(object, ...) UseMethod("probs")
-receivers    <- function(object, ...) UseMethod("receivers")
 reset        <- function(object, ...) UseMethod("reset")
-senders      <- function(object, ...) UseMethod("senders")
 size         <- function(object, ...) UseMethod("size")
 started      <- function(object, ...) UseMethod("started")
 to           <- function(object, ...) UseMethod("to")
-vars         <- function(object, ...) UseMethod("vars")
 value        <- function(object, ...) UseMethod("value")

@@ -3,7 +3,7 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-vars <- coef <- has.loops <- m <- NULL
+frame <- coef <- has.loops <- m <- NULL
 msgs <- it <- NULL
 
 .setUp <- function() {
@@ -11,26 +11,26 @@ msgs <- it <- NULL
     senders <- actors( ~ -1, data.frame(matrix(NA, nrow(a), 0)))
     receivers <- senders
     receive.intervals <- 3600 * 2^seq(-6, 14)
-    vars <<- vars(senders, receivers, receive.intervals = receive.intervals)
+    frame <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
 
 
     msgs <<- messages(enron)
     it <<- cursor(msgs)
 
     set.seed(0)
-    coef <<- sample(-2:2, dim(vars), replace = TRUE)
+    coef <<- sample(-2:2, ncol(frame), replace = TRUE)
     has.loops <<- FALSE
-    m <<- model(vars, coef, has.loops)
+    m <<- model(frame, coef, has.loops)
 }
 
 .tearDown <- function() {
-    vars <<- coef <<- has.loops <<- m <<- NULL
+    frame <<- coef <<- has.loops <<- m <<- NULL
     gc()
 }
 
 
-test.vars <- function() {
-    checkIdentical(vars(m), vars)
+test.iproc.frame <- function() {
+    checkIdentical(iproc.frame(m), frame)
 }
 
 test.coef <- function() {
@@ -42,21 +42,21 @@ test.has.loops <- function() {
 }
 
 test.dim <- function() {
-    checkEquals(dim(m), dim(vars))
+    checkEquals(dim(m), ncol(frame))
 }
 
 test.nsender <- function() {
-    checkEquals(nsender(m), nsender(vars))
+    checkEquals(nsender(m), nrow(senders(frame)))
 }
 
 test.nreceiver <- function() {
-    checkEquals(nreceiver(m), nreceiver(vars))
+    checkEquals(nreceiver(m), nrow(frame))
 }
 
 test.log.probs <- function() {
     while (advance(it)) {
         for (i in from(it)) {
-            lw <- t(mul(vars, coef, sender = i, it))
+            lw <- t(mul(frame, coef, sender = i, it))
             if (!has.loops(m)) {
                 lw[i] <- -Inf
             }

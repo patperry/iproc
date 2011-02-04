@@ -3,7 +3,7 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-senders <- receivers <- receive.intervals <- v <- v.group <- v.recip <- NULL
+senders <- receivers <- receive.intervals <- f <- f.group <- f.recip <- NULL
 msgs <- it <- NULL
 
 .setUp <- function() {
@@ -12,9 +12,9 @@ msgs <- it <- NULL
     senders <<- a
     receivers <<- a
     receive.intervals <<- 3600 * 2^seq(-6, 14)
-    v <<- vars(senders, receivers, receive.intervals = receive.intervals)
-    v.group <<- vars(senders, receivers)
-    v.recip <<- vars(a0, a0, receive.intervals = receive.intervals)
+    f <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
+    f.group <<- iproc.frame(senders, receivers)
+    f.recip <<- iproc.frame(a0, a0, receive.intervals = receive.intervals)
 
     msgs <<- messages(enron)
     it <<- cursor(msgs)
@@ -23,7 +23,7 @@ msgs <- it <- NULL
 }
 
 test.dim <- function() {
-    checkEquals(dim(v), dim(v.group) + dim(v.recip))
+    checkEquals(ncol(f), ncol(f.group) + ncol(f.recip))
 }
 
 test.as.matrix <- function() {
@@ -31,9 +31,9 @@ test.as.matrix <- function() {
     while(advance(it)) {
         n <- n + 1
         for (i in from(it)) {
-            checkEquals(as.matrix(v, sender = i, it),
-                        cbind(as.matrix(v.recip, sender = i, it),
-                              as.matrix(v.group, sender = i, it)))
+            checkEquals(as.matrix(f, sender = i, it),
+                        cbind(as.matrix(f.recip, sender = i, it),
+                              as.matrix(f.group, sender = i, it)))
         }
 
         if (n == 500)
@@ -43,12 +43,13 @@ test.as.matrix <- function() {
 
 
 test.mul <- function() {
-    x <- sample(-2:2, dim(v), replace = TRUE)
+    x <- sample(-2:2, ncol(f), replace = TRUE)
     n <- 0
     while (advance(it)) {
         n <- n + 1
         for (i in from(it)) {
-            checkEquals(mul(v, x, sender = i, it), as.matrix(v, sender = i, it) %*% x)
+            checkEquals(mul(f, x, sender = i, it),
+                        as.matrix(f, sender = i, it) %*% x)
         }
 
         if (n == 500) break
@@ -56,13 +57,14 @@ test.mul <- function() {
 }
 
 test.tmul <- function() {
-    x <- sample(-2:2, nreceiver(v), replace = TRUE)
+    x <- sample(-2:2, nrow(f), replace = TRUE)
     n <- 0
     while (advance(it)) {
         n <-  n + 1
         
         for (i in from(it)) {
-            checkEquals(tmul(v, x, sender = i, it), t(as.matrix(v, sender = i, it)) %*% x)
+            checkEquals(tmul(f, x, sender = i, it),
+                        t(as.matrix(f, sender = i, it)) %*% x)
         }
 
         if (n == 500) break

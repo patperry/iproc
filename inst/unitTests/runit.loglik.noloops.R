@@ -3,15 +3,15 @@ require(iproc)
 
 data(enron)
 
-msgs <- actrs <- vrs <- beta <- mdl <- it <- NULL
+msgs <- actrs <- frame <- beta <- mdl <- it <- NULL
 
 .setUp <- function() {
     set.seed(0)
     msgs <<- messages(enron)
     actrs <<- actors(enron)
-    vrs <<- vars(actrs, actrs,  3600 * 2^seq(-6, 14))
-    beta <<- sample(-2:2, dim(vrs), replace = TRUE)
-    mdl <<- model(vrs, beta)
+    frame <<- iproc.frame(actrs, actrs,  receive.intervals = 3600 * 2^seq(-6, 14))
+    beta <<- sample(-2:2, ncol(frame), replace = TRUE)
+    mdl <<- model(frame, beta)
     it <<- cursor(msgs)
 }
 
@@ -37,9 +37,9 @@ test.value <- function() {
 
 test.grad <- function() {
     ll <- loglik(mdl)
-    mdl0 <- model(vrs, beta, has.loops=TRUE)
-    grad <- rep(0.0, dim(vrs))
-    nrecv <- nreceiver(vrs)
+    mdl0 <- model(frame, beta, has.loops=TRUE)
+    grad <- rep(0.0, ncol(frame))
+    nrecv <- nrow(frame)
     
 
     err <- c()
@@ -61,11 +61,11 @@ test.grad <- function() {
             for (t in seq_along(msg.to)) {
                 n.actual[msg.to[t]] <- n.actual[msg.to[t]] + 1.0
             }
-            dgrad <- tmul(vrs, n.actual - n.expected, sender = msg.from, it)
+            dgrad <- tmul(frame, n.actual - n.expected, sender = msg.from, it)
 
 
-            # w0 <- exp(mul(vrs, beta, msg.from))
-            # w <- exp(mul(vrs, beta, msg.from, it)); w[msg.from] <- 0
+            # w0 <- exp(mul(frame, beta, msg.from))
+            # w <- exp(mul(frame, beta, msg.from, it)); w[msg.from] <- 0
             # suminvwt <- msg.nto * (sum(w0)/sum(w))
             # p0 <- as.vector(probs(mdl0, msg.from))
             # p <- as.vector(probs(mdl, msg.from, it))
@@ -75,10 +75,10 @@ test.grad <- function() {
             # dp <- p.active
             # dp[w != w0] <- (msg.nto * p.active - suminvwt * p0)[w != w0]
             #
-            # x <- tmul(vrs, n.actual, msg.from, it)
-            # e1 <- suminvwt * tmul(vrs, p0, msg.from)
-            # e2 <- tmul(vrs, dp, msg.from)
-            # e3 <- msg.nto * (tmul(vrs, p, msg.from, it) - tmul(vrs, p, msg.from))
+            # x <- tmul(frame, n.actual, msg.from, it)
+            # e1 <- suminvwt * tmul(frame, p0, msg.from)
+            # e2 <- tmul(frame, dp, msg.from)
+            # e3 <- msg.nto * (tmul(frame, p, msg.from, it) - tmul(frame, p, msg.from))
             # dgrad1 <- (((x - e1) - e2) - e3)
             #
             # grad1 <- grad + dgrad1

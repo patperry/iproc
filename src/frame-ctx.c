@@ -6,60 +6,60 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include "memory.h"
-#include "vars.h"
+#include "frame.h"
 
 
 static void
-iproc_vars_ctx_free (iproc_vars_ctx *ctx)
+iproc_frame_ctx_free (iproc_frame_ctx *ctx)
 {
     if (ctx) {
         iproc_history_unref(ctx->history);
-        iproc_vars_unref(ctx->vars);
+        iproc_frame_unref(ctx->frame);
         
-        if (ctx->sender_vars) {
-            int64_t i, n = iproc_array_size(ctx->sender_vars);
+        if (ctx->sender_frame) {
+            int64_t i, n = iproc_array_size(ctx->sender_frame);
             for (i = 0; i < n; i++) {
-                iproc_sender_vars *sv = &(iproc_array_index(ctx->sender_vars,
-                                                            iproc_sender_vars,
+                iproc_sender_frame *sv = &(iproc_array_index(ctx->sender_frame,
+                                                            iproc_sender_frame,
                                                             i));
                 iproc_svector_unref(sv->jdiff);
             }
         }
 
-        iproc_array_unref(ctx->sender_vars);
+        iproc_array_unref(ctx->sender_frame);
         iproc_free(ctx);
     }
 }
 
-iproc_vars_ctx *
-iproc_vars_ctx_new (iproc_vars    *vars,
+iproc_frame_ctx *
+iproc_frame_ctx_new (iproc_frame    *frame,
                     int64_t        isend,
                     iproc_history *h)
 
 {
-    assert(vars);
+    assert(frame);
     assert(0 <= isend);
-    assert(isend < iproc_vars_nsender(vars));
+    assert(isend < iproc_frame_nsender(frame));
 
-    iproc_vars_ctx *ctx = iproc_malloc(sizeof(*ctx));
-    ctx->vars = iproc_vars_ref(vars);
+    iproc_frame_ctx *ctx = iproc_malloc(sizeof(*ctx));
+    ctx->frame = iproc_frame_ref(frame);
     ctx->history = iproc_history_ref(h);
     ctx->isend = isend;
 
     iproc_refcount_init(&ctx->refcount);
 
-    if (vars->get_sender_vars) {
-        ctx->sender_vars = iproc_array_new(sizeof(iproc_sender_vars));
-        vars->get_sender_vars(ctx);
+    if (frame->get_sender_frame) {
+        ctx->sender_frame = iproc_array_new(sizeof(iproc_sender_frame));
+        frame->get_sender_frame(ctx);
     } else {
-        ctx->sender_vars = NULL;
+        ctx->sender_frame = NULL;
     }
 
     return ctx;
 }
 
-iproc_vars_ctx *
-iproc_vars_ctx_ref (iproc_vars_ctx *ctx)
+iproc_frame_ctx *
+iproc_frame_ctx_ref (iproc_frame_ctx *ctx)
 {
     if (ctx) {
         iproc_refcount_get(&ctx->refcount);
@@ -68,100 +68,100 @@ iproc_vars_ctx_ref (iproc_vars_ctx *ctx)
 }
 
 static void
-iproc_vars_ctx_release (iproc_refcount *refcount)
+iproc_frame_ctx_release (iproc_refcount *refcount)
 {
-    iproc_vars_ctx *ctx = container_of(refcount, iproc_vars_ctx, refcount);
-    iproc_vars_ctx_free(ctx);
+    iproc_frame_ctx *ctx = container_of(refcount, iproc_frame_ctx, refcount);
+    iproc_frame_ctx_free(ctx);
 }
 
 void
-iproc_vars_ctx_unref (iproc_vars_ctx *ctx)
+iproc_frame_ctx_unref (iproc_frame_ctx *ctx)
 {
     if (!ctx)
         return;
 
-    iproc_refcount_put(&ctx->refcount, iproc_vars_ctx_release);
+    iproc_refcount_put(&ctx->refcount, iproc_frame_ctx_release);
 }
 
 void
-iproc_vars_ctx_mul (double          alpha,
+iproc_frame_ctx_mul (double          alpha,
                     iproc_trans     trans,
-                    iproc_vars_ctx *ctx,
+                    iproc_frame_ctx *ctx,
                     iproc_vector   *x,
                     double          beta,
                     iproc_vector   *y)
 {
     assert(ctx);
-    assert(ctx->vars);
+    assert(ctx->frame);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
+           || iproc_vector_dim(x) == iproc_frame_dim(ctx->frame));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_vector_dim(y) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_vector_dim(x) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
+           || iproc_vector_dim(y) == iproc_frame_dim(ctx->frame));
 
-    iproc_vars_sender0_mul(alpha, trans, ctx->vars, ctx->isend, x, beta, y);
+    iproc_frame_sender0_mul(alpha, trans, ctx->frame, ctx->isend, x, beta, y);
     
     iproc_svector *diffprod = iproc_svector_new(iproc_vector_dim(y));
-    iproc_vars_ctx_diff_mul(alpha, trans, ctx, x, 0.0, diffprod);
+    iproc_frame_ctx_diff_mul(alpha, trans, ctx, x, 0.0, diffprod);
     iproc_vector_sacc(y, 1.0, diffprod);
     iproc_svector_unref(diffprod);
 }
 
 void
-iproc_vars_ctx_muls (double          alpha,
+iproc_frame_ctx_muls (double          alpha,
                      iproc_trans     trans,
-                     iproc_vars_ctx *ctx,
+                     iproc_frame_ctx *ctx,
                      iproc_svector  *x,
                      double          beta,
                      iproc_vector   *y)
 {
     assert(ctx);
-    assert(ctx->vars);
+    assert(ctx->frame);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_vars_dim(ctx->vars));
+           || iproc_svector_dim(x) == iproc_frame_dim(ctx->frame));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_vector_dim(y) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_svector_dim(x) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_vars_dim(ctx->vars));
+           || iproc_vector_dim(y) == iproc_frame_dim(ctx->frame));
 
-    iproc_vars_sender0_muls(alpha, trans, ctx->vars, ctx->isend, x, beta, y);
+    iproc_frame_sender0_muls(alpha, trans, ctx->frame, ctx->isend, x, beta, y);
     
     iproc_svector *diffprod = iproc_svector_new(iproc_vector_dim(y));
-    iproc_vars_ctx_diff_muls(alpha, trans, ctx, x, 0.0, diffprod);
+    iproc_frame_ctx_diff_muls(alpha, trans, ctx, x, 0.0, diffprod);
     iproc_vector_sacc(y, 1.0, diffprod);
     iproc_svector_unref(diffprod);
 }
 
 
 void
-iproc_vars_ctx_diff_mul (double          alpha,
+iproc_frame_ctx_diff_mul (double          alpha,
                          iproc_trans     trans,
-                         iproc_vars_ctx *ctx,
+                         iproc_frame_ctx *ctx,
                          iproc_vector   *x,
                          double          beta,
                          iproc_svector  *y)
 {
     assert(ctx);
-    assert(ctx->vars);
+    assert(ctx->frame);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_dim(ctx->vars));
+           || iproc_vector_dim(x) == iproc_frame_dim(ctx->frame));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_svector_dim(y) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_vector_dim(x) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
+           || iproc_svector_dim(y) == iproc_frame_dim(ctx->frame));
 
     
     /* y := beta y */
@@ -174,23 +174,23 @@ iproc_vars_ctx_diff_mul (double          alpha,
     if (ctx->history == NULL)
         return;
 
-    iproc_vars *vars = ctx->vars;
-    int64_t ndynamic = iproc_vars_ndynamic(vars);
+    iproc_frame *frame = ctx->frame;
+    int64_t ndynamic = iproc_frame_ndynamic(frame);
 
     if (ndynamic == 0)
         return;
     
-    int64_t ix_begin = iproc_vars_idynamic(vars, 0);
+    int64_t ix_begin = iproc_frame_idynamic(frame, 0);
     int64_t ix_end = ix_begin + ndynamic;
-    iproc_array *sender_vars = ctx->sender_vars;
+    iproc_array *sender_frame = ctx->sender_frame;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ndynamic);
-        int64_t i, n = iproc_array_size(sender_vars);
+        int64_t i, n = iproc_array_size(sender_frame);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
-                                                        iproc_sender_vars,
+            iproc_sender_frame *sv = &(iproc_array_index(sender_frame,
+                                                        iproc_sender_frame,
                                                         i));
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
@@ -198,11 +198,11 @@ iproc_vars_ctx_diff_mul (double          alpha,
             iproc_svector_inc(y, jrecv, alpha * dot);
         }
     } else {
-        int64_t i, n = iproc_array_size(sender_vars);
+        int64_t i, n = iproc_array_size(sender_frame);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
-                                                        iproc_sender_vars,
+            iproc_sender_frame *sv = &(iproc_array_index(sender_frame,
+                                                        iproc_sender_frame,
                                                         i));
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
@@ -227,25 +227,25 @@ iproc_vars_ctx_diff_mul (double          alpha,
 
 
 void
-iproc_vars_ctx_diff_muls (double          alpha,
+iproc_frame_ctx_diff_muls (double          alpha,
                           iproc_trans     trans,
-                          iproc_vars_ctx *ctx,
+                          iproc_frame_ctx *ctx,
                           iproc_svector  *x,
                           double          beta,
                           iproc_svector  *y)
 {
     assert(ctx);
-    assert(ctx->vars);
+    assert(ctx->frame);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_vars_dim(ctx->vars));
+           || iproc_svector_dim(x) == iproc_frame_dim(ctx->frame));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(y) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_svector_dim(y) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_vars_nreceiver(ctx->vars));
+           || iproc_svector_dim(x) == iproc_frame_nreceiver(ctx->frame));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(y) == iproc_vars_dim(ctx->vars));
+           || iproc_svector_dim(y) == iproc_frame_dim(ctx->frame));
 
     /* y := beta y */
     if (beta == 0.0) {
@@ -257,22 +257,22 @@ iproc_vars_ctx_diff_muls (double          alpha,
     if (ctx->history == NULL)
         return;
 
-    iproc_vars *vars = ctx->vars;
-    int64_t ndynamic = iproc_vars_ndynamic(vars);
+    iproc_frame *frame = ctx->frame;
+    int64_t ndynamic = iproc_frame_ndynamic(frame);
 
     if (ndynamic == 0)
         return;
     
-    int64_t ix_begin = iproc_vars_idynamic(vars, 0);
+    int64_t ix_begin = iproc_frame_idynamic(frame, 0);
     int64_t ix_end = ix_begin + ndynamic;
-    iproc_array *sender_vars = ctx->sender_vars;
+    iproc_array *sender_frame = ctx->sender_frame;
 
     if (trans == IPROC_TRANS_NOTRANS) {
-        int64_t i, n = iproc_array_size(sender_vars);
+        int64_t i, n = iproc_array_size(sender_frame);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
-                                                        iproc_sender_vars,
+            iproc_sender_frame *sv = &(iproc_array_index(sender_frame,
+                                                        iproc_sender_frame,
                                                         i));
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
@@ -291,11 +291,11 @@ iproc_vars_ctx_diff_muls (double          alpha,
             iproc_svector_inc(y, jrecv, alpha * dot);
         }
     } else {
-        int64_t i, n = iproc_array_size(sender_vars);
+        int64_t i, n = iproc_array_size(sender_frame);
         
-        for (i = 0; i < n; i++ ) {
-            iproc_sender_vars *sv = &(iproc_array_index(sender_vars,
-                                                        iproc_sender_vars,
+        for (i = 0; i < n; i++) {
+            iproc_sender_frame *sv = &(iproc_array_index(sender_frame,
+                                                        iproc_sender_frame,
                                                         i));
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;

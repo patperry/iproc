@@ -3,27 +3,27 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-vars <- coef <- has.loops <- m <- NULL
+frame <- coef <- has.loops <- m <- NULL
 
 .setUp <- function() {
     a <- actors(enron)
     senders <- a
     receivers <- a
-    vars <<- vars(senders, receivers)
+    frame <<- iproc.frame(senders, receivers)
     set.seed(0)
-    coef <<- sample(-2:2, dim(vars), replace = TRUE)
+    coef <<- sample(-2:2, ncol(frame), replace = TRUE)
     has.loops <<- TRUE
-    m <<- model(vars, coef, has.loops)
+    m <<- model(frame, coef, has.loops)
 }
 
 .tearDown <- function() {
-    vars <<- coef <<- has.loops <<- m <<- NULL
+    frame <<- coef <<- has.loops <<- m <<- NULL
     gc()
 }
 
 
-test.vars <- function() {
-    checkIdentical(vars(m), vars)
+test.iproc.frame <- function() {
+    checkIdentical(iproc.frame(m), frame)
 }
 
 test.coef <- function() {
@@ -35,20 +35,20 @@ test.has.loops <- function() {
 }
 
 test.dim <- function() {
-    checkEquals(dim(m), dim(vars))
+    checkEquals(dim(m), ncol(frame))
 }
 
 test.nsender <- function() {
-    checkEquals(nsender(m), nsender(vars))
+    checkEquals(nsender(m), nrow(senders(frame)))
 }
 
 test.nreceiver <- function() {
-    checkEquals(nreceiver(m), nreceiver(vars))
+    checkEquals(nreceiver(m), nrow(frame))
 }
 
 test.log.probs <- function() {
-    for (i in seq_len(nsender(vars))) {
-        lw <- t(mul(vars, coef, sender = i))
+    for (i in seq_len(nrow(senders(frame)))) {
+        lw <- t(mul(frame, coef, sender = i))
         if (!has.loops(m)) {
             lw[i] <- -Inf
         }
@@ -64,7 +64,7 @@ test.log.probs <- function() {
 }
 
 test.probs <- function() {
-    for (i in seq_len(nsender(vars))) {
+    for (i in seq_len(nrow(senders(frame)))) {
         checkEquals(probs(m, i), exp(log.probs(m, i)))
     }
 }

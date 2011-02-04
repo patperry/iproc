@@ -2,7 +2,7 @@
 #define _IPROC_MODEL_H
 
 #include "refcount.h"
-#include "vars.h"
+#include "frame.h"
 #include "vector.h"
 
 
@@ -19,7 +19,7 @@ struct _iproc_group_model {
 };
 
 struct _iproc_model {
-    iproc_vars    *vars;
+    iproc_frame    *frame;
     iproc_vector  *coefs;
     int            has_loops;
     iproc_array   *group_models;
@@ -28,7 +28,7 @@ struct _iproc_model {
 
 struct _iproc_model_ctx {
     iproc_model       *model;
-    iproc_vars_ctx    *vars_ctx;
+    iproc_frame_ctx    *frame_ctx;
     iproc_group_model *group;
     iproc_svector     *active_logprobs;
     iproc_svector     *active_probs;
@@ -37,13 +37,13 @@ struct _iproc_model_ctx {
     iproc_refcount     refcount;
 };
 
-iproc_model *       iproc_model_new                (iproc_vars   *vars,
+iproc_model *       iproc_model_new                (iproc_frame   *frame,
                                                     iproc_vector *coefs,
                                                     int           has_loops);
 iproc_model *       iproc_model_ref                (iproc_model  *model);
 void                iproc_model_unref              (iproc_model  *model);
 
-iproc_vars *        iproc_model_vars               (iproc_model *model);
+iproc_frame *        iproc_model_frame               (iproc_model *model);
 iproc_vector *      iproc_model_coefs              (iproc_model *model);
 int                 iproc_model_has_loops          (iproc_model *model);
 int64_t             iproc_model_nsender            (iproc_model *model);
