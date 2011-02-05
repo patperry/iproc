@@ -5,6 +5,7 @@ data(enron)
 
 senders <- receivers <- receive.intervals <- f <- NULL
 msgs <- it <- NULL
+max.advance <- NULL
 
 .setUp <- function() {
     a <- actors(enron)
@@ -16,6 +17,8 @@ msgs <- it <- NULL
     msgs <<- messages(enron)
     it <<- cursor(msgs)
 
+    max.advance <<- 100
+    
     set.seed(0)
 }
 
@@ -31,7 +34,9 @@ test.dim <- function() {
 
 test.as.matrix <- function() {
     tlast <- matrix(-Inf, nrow(senders), nrow(receivers))
+    n <- 0
     while(advance(it)) {
+        n <- n + 1
         tcur <- time(it)
         for (i in from(it)) {
             delta <- tcur - tlast[,i]
@@ -49,26 +54,38 @@ test.as.matrix <- function() {
         for (t in seq_len(nties(it))) {
             tlast[from(it)[t], to(it)[[t]]] <- tcur
         }
+
+        if (n == max.advance)
+            break
     }
 }
 
 
 test.mul <- function() {
     x <- sample(-2:2, ncol(f), replace = TRUE)
+    n <- 0
     while (advance(it)) {
+        n <- n + 1
         for (i in from(it)) {
             checkEquals(mul(f, x, sender = i, it),
                         as.matrix(f, sender = i, it) %*% x)
         }
+        if (n == max.advance)
+            break
     }
 }
 
 test.tmul <- function() {
     x <- sample(-2:2, nrow(f), replace = TRUE)
+    n <- 0
     while (advance(it)) {
+        n <- n + 1
         for (i in from(it)) {
             checkEquals(tmul(f, x, sender = i, it),
                         t(as.matrix(f, sender = i, it)) %*% x)
         }
+
+        if (n == max.advance)
+            break
     }
 }

@@ -3,23 +3,30 @@ require(iproc)
 
 data(enron)
 
-msgs <- actrs <- frame <- beta <- mdl <- it <- NULL
+msgs <- senders <- receivers <- receive.intervals <- frame <- beta <- mdl <- it <- NULL
+max.advance <- NULL
 
-.setUp <- function() {
+loglik.setUp <- function(senders, receivers, receive.intervals = NULL,
+                         has.loops = FALSE) {
     set.seed(0)
     msgs <<- messages(enron)
-    actrs <<- actors(enron)
-    frame <<- iproc.frame(actrs, actrs,  receive.intervals = 3600 * 2^seq(-6, 14))
+    senders <<- senders
+    receivers <<- receivers
+    receive.intervals <<- receive.intervals
+    frame <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
     beta <<- sample(-2:2, ncol(frame), replace = TRUE)
-    mdl <<- model(frame, beta)
+    mdl <<- model(frame, beta, has.loops = has.loops)
     it <<- cursor(msgs)
+    max.advance <<- 100
 }
 
 test.value <- function() {
     value <- 0.0
     ll <- loglik(mdl)
+    n <- 0
     
     while(advance(it)) {
+        n <- n + 1
         for (tie in seq_len(nties(it))) {
             msg.from <- from(it)[[tie]]
             msg.to <- to(it)[[tie]]
@@ -30,14 +37,15 @@ test.value <- function() {
 
         insert(ll, it)
         checkEquals(value(ll), value)
-    }
 
-    checkEquals(value(ll), value)
+        if (n == max.advance)
+            break
+    }
 }
 
 test.grad <- function() {
     ll <- loglik(mdl)
-    mdl0 <- model(frame, beta, has.loops=TRUE)
+    mdl0 <- model(frame, beta, has.loops = TRUE)
     grad <- rep(0.0, ncol(frame))
     nrecv <- nrow(frame)
     
@@ -48,8 +56,10 @@ test.grad <- function() {
     # advance(it); advance(it); advance(it); advance(it);
     # advance(it); advance(it); advance(it); advance(it);
     # advance(it);
-    
+
+    n <- 0
     while(advance(it)) {
+        n <- n + 1
         for (tie in seq_len(nties(it))) {
             msg.from <- from(it)[[tie]]
             msg.to <- to(it)[[tie]]
@@ -102,5 +112,7 @@ test.grad <- function() {
         checkTrue(err.new < 1e-10)
 
         #advance(it)
+        if (n == max.advance)
+            break
     }
 }

@@ -14,17 +14,27 @@ msgs <<- it <<- NULL
 
 test.started <- function() {
     checkEquals(started(it), FALSE)
-    while (advance(it)) {
-        checkEquals(started(it), TRUE)
-    }
+    
+    advance(it)
+    checkEquals(started(it), TRUE)
+    
+    while (advance(it)) { }
+    checkEquals(started(it), TRUE)
+
+    advance(it)
     checkEquals(started(it), TRUE)
 }
 
 test.finished <- function() {
     checkEquals(finished(it), FALSE)
-    while (advance(it)) {
+
+    if (advance(it))
         checkEquals(finished(it), FALSE)
-    }
+
+    while (advance(it)) { }
+    checkEquals(finished(it), TRUE)
+
+    advance(it)
     checkEquals(finished(it), TRUE)
 }
 

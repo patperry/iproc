@@ -5,6 +5,7 @@ data(enron)
 
 senders <- receivers <- receive.intervals <- f <- f.group <- f.recip <- NULL
 msgs <- it <- NULL
+max.advance <- NULL
 
 .setUp <- function() {
     a <- actors(enron)
@@ -18,6 +19,8 @@ msgs <- it <- NULL
 
     msgs <<- messages(enron)
     it <<- cursor(msgs)
+
+    max.advance <<- 100
 
     set.seed(0)
 }
@@ -36,7 +39,7 @@ test.as.matrix <- function() {
                               as.matrix(f.group, sender = i, it)))
         }
 
-        if (n == 500)
+        if (n == max.advance)
             break
     }
 }
@@ -52,7 +55,8 @@ test.mul <- function() {
                         as.matrix(f, sender = i, it) %*% x)
         }
 
-        if (n == 500) break
+        if (n == max.advance)
+            break
     }
 }
 
@@ -67,6 +71,7 @@ test.tmul <- function() {
                         t(as.matrix(f, sender = i, it)) %*% x)
         }
 
-        if (n == 500) break
+        if (n == max.advance)
+            break
     }
 }
