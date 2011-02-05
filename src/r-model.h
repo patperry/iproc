@@ -9,10 +9,10 @@
 void          Riproc_model_init      (DllInfo *info);
 
 /* External functions */
-SEXP          Riproc_model_new       (SEXP Rframe,
+SEXP          Riproc_model_new       (SEXP Rdesign,
                                       SEXP Rcoefs,
                                       SEXP Rhas_loops);
-SEXP          Riproc_model_frame      (SEXP Rmodel);
+SEXP          Riproc_model_design      (SEXP Rmodel);
 SEXP          Riproc_model_coefs     (SEXP Rmodel);
 SEXP          Riproc_model_has_loops (SEXP Rmodel);
 

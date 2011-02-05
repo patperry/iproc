@@ -6,181 +6,181 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include "memory.h"
-#include "frame.h"
+#include "design.h"
 
 static void
-iproc_frame_free (iproc_frame *frame)
+iproc_design_free (iproc_design *design)
 {
-    if (frame) {
-        iproc_actors_unref(frame->receivers);
-        iproc_actors_unref(frame->senders);
-        if (frame->free_user_data)
-            frame->free_user_data(frame->user_data);
-        iproc_free(frame);
+    if (design) {
+        iproc_actors_unref(design->receivers);
+        iproc_actors_unref(design->senders);
+        if (design->free_user_data)
+            design->free_user_data(design->user_data);
+        iproc_free(design);
     }
 }
 
-iproc_frame *     
-iproc_frame_new (iproc_actors *senders,
+iproc_design *     
+iproc_design_new (iproc_actors *senders,
                 iproc_actors *receivers,
                 int64_t       ndynamic,
                 void         *user_data,
-                void        (*get_sender_frame) (iproc_frame_ctx *ctx),
+                void        (*get_sender_design) (iproc_design_ctx *ctx),
                 void        (*free_user_data)  (void *user_data))
 {
     assert(senders);
     assert(receivers);
     assert(ndynamic >= 0);
 
-    iproc_frame *frame = iproc_malloc(sizeof(*frame));
+    iproc_design *design = iproc_malloc(sizeof(*design));
 
-    if (!frame)
+    if (!design)
         return NULL;
 
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
     int64_t nstatic = p * q;
 
-    frame->senders = iproc_actors_ref(senders);
-    frame->receivers = iproc_actors_ref(receivers);
-    frame->nstatic = nstatic;
-    frame->ndynamic = ndynamic;
-    frame->user_data = user_data;
-    frame->get_sender_frame = get_sender_frame;
-    frame->free_user_data = free_user_data;
-    iproc_refcount_init(&frame->refcount);
-    return frame;
+    design->senders = iproc_actors_ref(senders);
+    design->receivers = iproc_actors_ref(receivers);
+    design->nstatic = nstatic;
+    design->ndynamic = ndynamic;
+    design->user_data = user_data;
+    design->get_sender_design = get_sender_design;
+    design->free_user_data = free_user_data;
+    iproc_refcount_init(&design->refcount);
+    return design;
 }
 
-iproc_frame *
-iproc_frame_ref (iproc_frame *frame)
+iproc_design *
+iproc_design_ref (iproc_design *design)
 {
-    if (frame) {
-        iproc_refcount_get(&frame->refcount);
+    if (design) {
+        iproc_refcount_get(&design->refcount);
     }
-    return frame;
+    return design;
 }
 
 static void
-iproc_frame_release (iproc_refcount *refcount)
+iproc_design_release (iproc_refcount *refcount)
 {
-    iproc_frame *frame = container_of(refcount, iproc_frame, refcount);
-    iproc_frame_free(frame);
+    iproc_design *design = container_of(refcount, iproc_design, refcount);
+    iproc_design_free(design);
 }
 
 void
-iproc_frame_unref (iproc_frame *frame)
+iproc_design_unref (iproc_design *design)
 {
-    if (!frame)
+    if (!design)
         return;
 
-    iproc_refcount_put(&frame->refcount, iproc_frame_release);
+    iproc_refcount_put(&design->refcount, iproc_design_release);
 }
 
 int64_t
-iproc_frame_dim (iproc_frame *frame)
+iproc_design_dim (iproc_design *design)
 {
-    assert(frame);
-    int64_t nstatic = iproc_frame_nstatic(frame);
-    int64_t ndynamic = iproc_frame_ndynamic(frame);
+    assert(design);
+    int64_t nstatic = iproc_design_nstatic(design);
+    int64_t ndynamic = iproc_design_ndynamic(design);
     int64_t dim = nstatic + ndynamic;
     return dim;
 }
 
 int64_t
-iproc_frame_nstatic (iproc_frame *frame)
+iproc_design_nstatic (iproc_design *design)
 {
-    assert(frame);
-    return frame->nstatic;
+    assert(design);
+    return design->nstatic;
 }
 
 int64_t
-iproc_frame_istatic (iproc_frame *frame,
+iproc_design_istatic (iproc_design *design,
                     int64_t     i)
 {
-    assert(frame);
+    assert(design);
     assert(i >= 0);
-    assert(i < iproc_frame_nstatic(frame));
+    assert(i < iproc_design_nstatic(design));
 
-    int64_t ndynamic = iproc_frame_ndynamic(frame);
+    int64_t ndynamic = iproc_design_ndynamic(design);
     int64_t istatic = ndynamic + i;
     return istatic;
 }
 
 int64_t
-iproc_frame_ndynamic (iproc_frame *frame)
+iproc_design_ndynamic (iproc_design *design)
 {
-    assert(frame);
-    return frame->ndynamic;
+    assert(design);
+    return design->ndynamic;
 }
 
 int64_t
-iproc_frame_idynamic (iproc_frame *frame,
+iproc_design_idynamic (iproc_design *design,
                      int64_t     i)
 {
-    assert(frame);
+    assert(design);
     assert(i >= 0);
-    assert(i < iproc_frame_ndynamic(frame));
+    assert(i < iproc_design_ndynamic(design));
 
     int64_t idynamic = i;
     return idynamic;
 }
 
 int64_t
-iproc_frame_nsender (iproc_frame *frame)
+iproc_design_nsender (iproc_design *design)
 {
-    assert(frame);
-    iproc_actors *senders = iproc_frame_senders(frame);
+    assert(design);
+    iproc_actors *senders = iproc_design_senders(design);
     return iproc_actors_size(senders);
 }
 
 int64_t
-iproc_frame_nreceiver (iproc_frame *frame)
+iproc_design_nreceiver (iproc_design *design)
 {
-    assert(frame);
-    iproc_actors *receivers = iproc_frame_receivers(frame);
+    assert(design);
+    iproc_actors *receivers = iproc_design_receivers(design);
     return iproc_actors_size(receivers);
 }
 
 iproc_actors *
-iproc_frame_senders (iproc_frame *frame)
+iproc_design_senders (iproc_design *design)
 {
-    assert(frame);
-    iproc_actors *senders = frame->senders;
+    assert(design);
+    iproc_actors *senders = design->senders;
     return senders;
 }
 
 iproc_actors *
-iproc_frame_receivers (iproc_frame *frame)
+iproc_design_receivers (iproc_design *design)
 {
-    assert(frame);
-    iproc_actors *receivers = frame->receivers;
+    assert(design);
+    iproc_actors *receivers = design->receivers;
     return receivers;
 }
 
 
 void
-iproc_frame_sender0_mul (double        alpha,
+iproc_design_sender0_mul (double        alpha,
                         iproc_trans   trans,
-                        iproc_frame   *frame,
+                        iproc_design   *design,
                         int64_t       isend,
                         iproc_vector *x,
                         double        beta,
                         iproc_vector *y)
 {
-    assert(frame);
+    assert(design);
     assert(isend >= 0);
-    assert(isend < iproc_frame_nsender(frame));
+    assert(isend < iproc_design_nsender(design));
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_frame_dim(frame));
+           || iproc_vector_dim(x) == iproc_design_dim(design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_frame_nreceiver(frame));
+           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_frame_nreceiver(frame));
+           || iproc_vector_dim(x) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_frame_dim(frame));
+           || iproc_vector_dim(y) == iproc_design_dim(design));
 
     /* y := beta y */
     if (beta == 0.0) {
@@ -189,15 +189,15 @@ iproc_frame_sender0_mul (double        alpha,
         iproc_vector_scale(y, beta);
     }
 
-    if (iproc_frame_nstatic(frame) == 0)
+    if (iproc_design_nstatic(design) == 0)
         return;
 
-    iproc_actors *senders = iproc_frame_senders(frame);
-    iproc_actors *receivers = iproc_frame_receivers(frame);
+    iproc_actors *senders = iproc_design_senders(design);
+    iproc_actors *receivers = iproc_design_receivers(design);
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = iproc_frame_istatic(frame, 0);
-    int64_t nstatic = iproc_frame_nstatic(frame);
+    int64_t ix_begin = iproc_design_istatic(design, 0);
+    int64_t nstatic = iproc_design_nstatic(design);
     iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
@@ -228,27 +228,27 @@ iproc_frame_sender0_mul (double        alpha,
 
 
 void
-iproc_frame_sender0_muls (double          alpha,
+iproc_design_sender0_muls (double          alpha,
                          iproc_trans     trans,
-                         iproc_frame     *frame,
+                         iproc_design     *design,
                          int64_t         isend,
                          iproc_svector  *x,
                          double          beta,
                          iproc_vector   *y)
 {
-    assert(frame);
+    assert(design);
     assert(isend >= 0);
-    assert(isend < iproc_frame_nsender(frame));
+    assert(isend < iproc_design_nsender(design));
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_frame_dim(frame));
+           || iproc_svector_dim(x) == iproc_design_dim(design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_frame_nreceiver(frame));
+           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_frame_nreceiver(frame));
+           || iproc_svector_dim(x) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_frame_dim(frame));
+           || iproc_vector_dim(y) == iproc_design_dim(design));
 
     /* y := beta y */
     if (beta == 0.0) {
@@ -257,15 +257,15 @@ iproc_frame_sender0_muls (double          alpha,
         iproc_vector_scale(y, beta);
     }
 
-    if (iproc_frame_nstatic(frame) == 0)
+    if (iproc_design_nstatic(design) == 0)
         return;
 
-    iproc_actors *senders = iproc_frame_senders(frame);
-    iproc_actors *receivers = iproc_frame_receivers(frame);
+    iproc_actors *senders = iproc_design_senders(design);
+    iproc_actors *receivers = iproc_design_receivers(design);
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = iproc_frame_istatic(frame, 0);
-    int64_t nstatic = iproc_frame_nstatic(frame);
+    int64_t ix_begin = iproc_design_istatic(design, 0);
+    int64_t nstatic = iproc_design_nstatic(design);
     int64_t ix_end = ix_begin + nstatic;
     iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);

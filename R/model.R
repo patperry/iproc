@@ -1,21 +1,21 @@
 
-model.default <- function(frame, coef, has.loops = FALSE) {
+model.default <- function(design, coef, has.loops = FALSE) {
     coef <- as.numeric(coef)
     has.loops <- as.logical(has.loops)
 
     if (length(has.loops) != 1)
         stop("'has.loops' should have length 1")
     
-    model <- .Call("Riproc_model_new", frame, coef, has.loops);
-    attr(model, "attributes.frame") <- attributes(frame)
+    model <- .Call("Riproc_model_new", design, coef, has.loops);
+    attr(model, "attributes.design") <- attributes(design)
     model
 }
 
-iproc.frame.model <- function(object, ...) {
+iproc.design.model <- function(object, ...) {
     model <- object
-    frame <- .Call("Riproc_model_frame", model)
-    attributes(frame) <- attr(model, "attributes.frame")
-    frame
+    design <- .Call("Riproc_model_design", model)
+    attributes(design) <- attr(model, "attributes.design")
+    design
 }
 
 coef.model <- function(model) {

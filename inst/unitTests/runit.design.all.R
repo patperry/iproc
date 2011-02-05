@@ -3,7 +3,8 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-senders <- receivers <- receive.intervals <- f <- f.group <- f.recip <- NULL
+senders <- receivers <- receive.intervals <- NULL
+design <- design.group <- design.recip <- NULL
 msgs <- it <- NULL
 max.advance <- NULL
 
@@ -13,9 +14,9 @@ max.advance <- NULL
     senders <<- a
     receivers <<- a
     receive.intervals <<- 3600 * 2^seq(-6, 14)
-    f <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
-    f.group <<- iproc.frame(senders, receivers)
-    f.recip <<- iproc.frame(a0, a0, receive.intervals = receive.intervals)
+    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    design.group <<- iproc.design(senders, receivers)
+    design.recip <<- iproc.design(a0, a0, receive.intervals = receive.intervals)
 
     msgs <<- messages(enron)
     it <<- cursor(msgs)
@@ -26,7 +27,7 @@ max.advance <- NULL
 }
 
 test.dim <- function() {
-    checkEquals(ncol(f), ncol(f.group) + ncol(f.recip))
+    checkEquals(ncol(design), ncol(design.group) + ncol(design.recip))
 }
 
 test.as.matrix <- function() {
@@ -34,9 +35,9 @@ test.as.matrix <- function() {
     while(advance(it)) {
         n <- n + 1
         for (i in from(it)) {
-            checkEquals(as.matrix(f, sender = i, it),
-                        cbind(as.matrix(f.recip, sender = i, it),
-                              as.matrix(f.group, sender = i, it)))
+            checkEquals(as.matrix(design, sender = i, it),
+                        cbind(as.matrix(design.recip, sender = i, it),
+                              as.matrix(design.group, sender = i, it)))
         }
 
         if (n == max.advance)
@@ -46,13 +47,13 @@ test.as.matrix <- function() {
 
 
 test.mul <- function() {
-    x <- sample(-2:2, ncol(f), replace = TRUE)
+    x <- sample(-2:2, ncol(design), replace = TRUE)
     n <- 0
     while (advance(it)) {
         n <- n + 1
         for (i in from(it)) {
-            checkEquals(mul(f, x, sender = i, it),
-                        as.matrix(f, sender = i, it) %*% x)
+            checkEquals(mul(design, x, sender = i, it),
+                        as.matrix(design, sender = i, it) %*% x)
         }
 
         if (n == max.advance)
@@ -61,14 +62,14 @@ test.mul <- function() {
 }
 
 test.tmul <- function() {
-    x <- sample(-2:2, nrow(f), replace = TRUE)
+    x <- sample(-2:2, nrow(design), replace = TRUE)
     n <- 0
     while (advance(it)) {
         n <-  n + 1
         
         for (i in from(it)) {
-            checkEquals(tmul(f, x, sender = i, it),
-                        t(as.matrix(f, sender = i, it)) %*% x)
+            checkEquals(tmul(design, x, sender = i, it),
+                        t(as.matrix(design, sender = i, it)) %*% x)
         }
 
         if (n == max.advance)

@@ -3,30 +3,30 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-frame <- coef <- has.loops <- m <- NULL
+design <- coef <- has.loops <- m <- NULL
 msgs <- it <- NULL
 max.advance <- NULL
 
 model.setUp <- function(senders, receivers,
                         receive.intervals = NULL,
                         has.loops = FALSE) {
-    frame <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
+    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
     set.seed(0)
-    coef <<- sample(-2:2, ncol(frame), replace = TRUE)
+    coef <<- sample(-2:2, ncol(design), replace = TRUE)
     has.loops <<- has.loops
-    m <<- model(frame, coef, has.loops)
+    m <<- model(design, coef, has.loops)
     msgs <<- messages(enron)
     it <<- cursor(msgs)
     max.advance <<- 100
 }
 
 .tearDown <- function() {
-    frame <<- coef <<- has.loops <<- m <<- NULL
+    design <<- coef <<- has.loops <<- m <<- NULL
     gc()
 }
 
-test.iproc.frame <- function() {
-    checkIdentical(iproc.frame(m), frame)
+test.iproc.design <- function() {
+    checkIdentical(iproc.design(m), design)
 }
 
 test.coef <- function() {
@@ -38,20 +38,20 @@ test.has.loops <- function() {
 }
 
 test.dim <- function() {
-    checkEquals(dim(m), ncol(frame))
+    checkEquals(dim(m), ncol(design))
 }
 
 test.nsender <- function() {
-    checkEquals(nsender(m), nrow(senders(frame)))
+    checkEquals(nsender(m), nrow(senders(design)))
 }
 
 test.nreceiver <- function() {
-    checkEquals(nreceiver(m), nrow(frame))
+    checkEquals(nreceiver(m), nrow(design))
 }
 
 test.log.probs0 <- function() {
-    for (i in seq_len(nrow(senders(frame)))) {
-        lw <- t(mul(frame, coef, sender = i))
+    for (i in seq_len(nrow(senders(design)))) {
+        lw <- t(mul(design, coef, sender = i))
         if (!has.loops(m)) {
             lw[i] <- -Inf
         }
@@ -74,7 +74,7 @@ test.log.probs <- function() {
         for (tie in seq_len(nties(it))) {
             i <- from(it)[[tie]]
 
-            lw <- t(mul(frame, coef, sender = i, it))
+            lw <- t(mul(design, coef, sender = i, it))
             if (!has.loops(m)) {
                 lw[i] <- -Inf
             }
@@ -94,7 +94,7 @@ test.log.probs <- function() {
 }
 
 test.probs0 <- function() {
-    for (i in seq_len(nrow(senders(frame)))) {
+    for (i in seq_len(nrow(senders(design)))) {
         checkEquals(probs(m, i), exp(log.probs(m, i)))
     }
 }

@@ -3,7 +3,7 @@ require(iproc)
 
 data(enron)
 
-msgs <- senders <- receivers <- receive.intervals <- frame <- beta <- mdl <- it <- NULL
+msgs <- senders <- receivers <- receive.intervals <- design <- beta <- mdl <- it <- NULL
 max.advance <- NULL
 
 loglik.setUp <- function(senders, receivers, receive.intervals = NULL,
@@ -13,9 +13,9 @@ loglik.setUp <- function(senders, receivers, receive.intervals = NULL,
     senders <<- senders
     receivers <<- receivers
     receive.intervals <<- receive.intervals
-    frame <<- iproc.frame(senders, receivers, receive.intervals = receive.intervals)
-    beta <<- sample(-2:2, ncol(frame), replace = TRUE)
-    mdl <<- model(frame, beta, has.loops = has.loops)
+    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    beta <<- sample(-2:2, ncol(design), replace = TRUE)
+    mdl <<- model(design, beta, has.loops = has.loops)
     it <<- cursor(msgs)
     max.advance <<- 100
 }
@@ -45,9 +45,9 @@ test.value <- function() {
 
 test.grad <- function() {
     ll <- loglik(mdl)
-    mdl0 <- model(frame, beta, has.loops = TRUE)
-    grad <- rep(0.0, ncol(frame))
-    nrecv <- nrow(frame)
+    mdl0 <- model(design, beta, has.loops = TRUE)
+    grad <- rep(0.0, ncol(design))
+    nrecv <- nrow(design)
     
 
     err <- c()
@@ -71,11 +71,11 @@ test.grad <- function() {
             for (t in seq_along(msg.to)) {
                 n.actual[msg.to[t]] <- n.actual[msg.to[t]] + 1.0
             }
-            dgrad <- tmul(frame, n.actual - n.expected, sender = msg.from, it)
+            dgrad <- tmul(design, n.actual - n.expected, sender = msg.from, it)
 
 
-            # w0 <- exp(mul(frame, beta, msg.from))
-            # w <- exp(mul(frame, beta, msg.from, it)); w[msg.from] <- 0
+            # w0 <- exp(mul(design, beta, msg.from))
+            # w <- exp(mul(design, beta, msg.from, it)); w[msg.from] <- 0
             # suminvwt <- msg.nto * (sum(w0)/sum(w))
             # p0 <- as.vector(probs(mdl0, msg.from))
             # p <- as.vector(probs(mdl, msg.from, it))
@@ -85,10 +85,10 @@ test.grad <- function() {
             # dp <- p.active
             # dp[w != w0] <- (msg.nto * p.active - suminvwt * p0)[w != w0]
             #
-            # x <- tmul(frame, n.actual, msg.from, it)
-            # e1 <- suminvwt * tmul(frame, p0, msg.from)
-            # e2 <- tmul(frame, dp, msg.from)
-            # e3 <- msg.nto * (tmul(frame, p, msg.from, it) - tmul(frame, p, msg.from))
+            # x <- tmul(design, n.actual, msg.from, it)
+            # e1 <- suminvwt * tmul(design, p0, msg.from)
+            # e2 <- tmul(design, dp, msg.from)
+            # e3 <- msg.nto * (tmul(design, p, msg.from, it) - tmul(design, p, msg.from))
             # dgrad1 <- (((x - e1) - e2) - e3)
             #
             # grad1 <- grad + dgrad1

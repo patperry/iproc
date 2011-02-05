@@ -176,7 +176,7 @@ insertm_update_sum_mean_var_diff (iproc_sloglik   *sll,
                                   iproc_model_ctx *ctx)
 {
     iproc_svector *active_probs = iproc_model_ctx_active_probs(ctx);
-    iproc_frame_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->frame_ctx, active_probs,
+    iproc_design_ctx_diff_muls(n, IPROC_TRANS_TRANS, ctx->design_ctx, active_probs,
                              1.0, sll->sum_mean_var_diff);
 }
 
@@ -208,7 +208,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     }
 
     /* update observed variables */
-    iproc_frame_ctx_diff_muls(1.0, IPROC_TRANS_TRANS, ctx->frame_ctx, wt,
+    iproc_design_ctx_diff_muls(1.0, IPROC_TRANS_TRANS, ctx->design_ctx, wt,
                              1.0, sll->sum_obs_var_diff);
 
 
@@ -304,7 +304,7 @@ iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
     // iproc_vector_printf(mean0);
 
     /* sum of observed variables */
-    iproc_frame_sender0_muls(scale, IPROC_TRANS_TRANS, sll->model->frame, sll->isend,
+    iproc_design_sender0_muls(scale, IPROC_TRANS_TRANS, sll->model->design, sll->isend,
                             sll->nrecv, 1.0, dst_vector);
     iproc_vector_sacc(dst_vector, scale, sll->sum_obs_var_diff);
 
@@ -319,8 +319,8 @@ iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
     // printf("\n-------------------");
     // iproc_vector_printf(dst_vector);
 
-    iproc_frame_sender0_muls(-scale, IPROC_TRANS_TRANS,
-                            sll->model->frame, sll->isend, dp,
+    iproc_design_sender0_muls(-scale, IPROC_TRANS_TRANS,
+                            sll->model->design, sll->isend, dp,
                             1.0, dst_vector);
 
     // printf("\nsum of expected (II)");

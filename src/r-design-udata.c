@@ -1,12 +1,12 @@
 
 #include <Rdefines.h>
 #include "memory.h"
-#include "r-frame.h"
+#include "r-design.h"
 
-Riproc_frame_udata *
-Riproc_frame_udata_new (SEXP Rreceive_intervals)
+Riproc_design_udata *
+Riproc_design_udata_new (SEXP Rreceive_intervals)
 {
-    Riproc_frame_udata *udata = iproc_malloc(sizeof(*udata));
+    Riproc_design_udata *udata = iproc_malloc(sizeof(*udata));
     int64_t i, n;
     int64_t *intvls;
 
@@ -28,9 +28,9 @@ Riproc_frame_udata_new (SEXP Rreceive_intervals)
 }
 
 void
-Riproc_frame_udata_free (void *frame_udata)
+Riproc_design_udata_free (void *design_udata)
 {
-    Riproc_frame_udata *udata = frame_udata;
+    Riproc_design_udata *udata = design_udata;
     if (udata) {
         iproc_vrecip_unref(udata->recip);
         iproc_free(udata);
@@ -38,7 +38,7 @@ Riproc_frame_udata_free (void *frame_udata)
 }
 
 int64_t
-Riproc_frame_udata_dim (Riproc_frame_udata *udata)
+Riproc_design_udata_dim (Riproc_design_udata *udata)
 {
     if (!udata)
         return 0;
@@ -47,14 +47,14 @@ Riproc_frame_udata_dim (Riproc_frame_udata *udata)
 }
 
 void
-Riproc_frame_udata_get_sender_frame (iproc_frame_ctx *ctx)
+Riproc_design_udata_get_sender_design (iproc_design_ctx *ctx)
 {
-    Riproc_frame_udata *udata = ctx->frame->user_data;
+    Riproc_design_udata *udata = ctx->design->user_data;
     iproc_history *history = ctx->history;
     int64_t isend = ctx->isend;
-    iproc_array *dst = ctx->sender_frame;
+    iproc_array *dst = ctx->sender_design;
     int64_t offset = 0;
-    int64_t parent_dim = Riproc_frame_udata_dim(udata);
+    int64_t parent_dim = Riproc_design_udata_dim(udata);
 
     iproc_vrecip_get(udata->recip, history, isend, dst, offset, parent_dim);
 }

@@ -4,8 +4,8 @@ group        <- function(object, ...) UseMethod("group")
 ngroup       <- function(object, ...) UseMethod("ngroup")
 group.traits <- function(object, ...) UseMethod("group.traits")
 
-# iproc.frame methods
-iproc.frame  <- function(object, ...) UseMethod("iproc.frame")
+# iproc.design methods
+iproc.design <- function(object, ...) UseMethod("iproc.design")
 receivers    <- function(object, ...) UseMethod("receivers")
 senders      <- function(object, ...) UseMethod("senders")
 

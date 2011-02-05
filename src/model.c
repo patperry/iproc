@@ -9,14 +9,14 @@
 #include "utils.h"
 
 static void
-compute_logprobs0 (iproc_frame   *frame,
+compute_logprobs0 (iproc_design   *design,
                    int64_t       isend,
                    iproc_vector *coefs,
                    int           has_loops,
                    iproc_vector *logprobs,
                    double       *logsumweight)
 {
-    assert(frame);
+    assert(design);
     assert(coefs);
     assert(logprobs);
     assert(logsumweight);
@@ -26,7 +26,7 @@ compute_logprobs0 (iproc_frame   *frame,
      * multiplication, then unscaling after subtracting of the max value.  This
      * shouldn't be necessary in most (all?) real-world situations.
      */
-    iproc_frame_sender0_mul(1.0, IPROC_TRANS_NOTRANS, frame, isend, coefs,
+    iproc_design_sender0_mul(1.0, IPROC_TRANS_NOTRANS, design, isend, coefs,
                            0.0, logprobs);
 
     if (!has_loops) {
@@ -48,19 +48,19 @@ compute_logprobs0 (iproc_frame   *frame,
 
 static void
 iproc_group_models_init (iproc_array  *group_models,
-                         iproc_frame   *frame,
+                         iproc_design   *design,
                          iproc_vector *coefs)
 {
-    int64_t i, nsender = iproc_frame_nsender(frame);
-    int64_t nreceiver = iproc_frame_nreceiver(frame);
-    int64_t dim = iproc_frame_dim(frame);
-    iproc_actors *senders = iproc_frame_senders(frame);
+    int64_t i, nsender = iproc_design_nsender(design);
+    int64_t nreceiver = iproc_design_nreceiver(design);
+    int64_t dim = iproc_design_dim(design);
+    iproc_actors *senders = iproc_design_senders(design);
 
     iproc_array_set_size(group_models, iproc_actors_ngroup(senders));
 
     /* We have to loop over all senders, not over all groups, because we
      * need a representative sender for each group when we call
-     * iproc_frame_ctx_new(frame, NULL, i).
+     * iproc_design_ctx_new(design, NULL, i).
      */
     for (i = 0; i < nsender; i++) {
         int64_t k = iproc_actors_group(senders, i);
@@ -71,14 +71,14 @@ iproc_group_models_init (iproc_array  *group_models,
             continue;
 
         group->logprobs0 = iproc_vector_new(nreceiver);
-        compute_logprobs0(frame, i, coefs, 1, group->logprobs0, &group->logsumweight0);
+        compute_logprobs0(design, i, coefs, 1, group->logprobs0, &group->logsumweight0);
 
         group->probs0 = iproc_vector_new_copy(group->logprobs0);
         iproc_vector_exp(group->probs0);
         group->invsumweight0 = exp(-group->logsumweight0);
 
         group->mean0 = iproc_vector_new(dim);
-        iproc_frame_sender0_mul(1.0, IPROC_TRANS_TRANS, frame, i, group->probs0,
+        iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->probs0,
                                0.0, group->mean0);
     }
 }
@@ -112,8 +112,8 @@ iproc_model_send_group (iproc_model *model,
     assert(isend < iproc_model_nsender(model));
 
     iproc_array *group_models = model->group_models;
-    iproc_frame *frame = iproc_model_frame(model);
-    iproc_actors *senders = iproc_frame_senders(frame);
+    iproc_design *design = iproc_model_design(model);
+    iproc_actors *senders = iproc_design_senders(design);
     int64_t g = iproc_actors_group(senders, isend);
     return &(iproc_array_index(group_models, iproc_group_model, g));
 }
@@ -123,7 +123,7 @@ iproc_model_free (iproc_model *model)
 {
     if (model) {
         iproc_vector_unref(model->coefs);
-        iproc_frame_unref(model->frame);
+        iproc_design_unref(model->design);
         iproc_group_models_deinit(model->group_models);
         iproc_array_unref(model->group_models);
         iproc_free(model);
@@ -131,22 +131,22 @@ iproc_model_free (iproc_model *model)
 }
 
 iproc_model *
-iproc_model_new (iproc_frame   *frame,
+iproc_model_new (iproc_design   *design,
                  iproc_vector *coefs,
                  int           has_loops)
 {
-    assert(frame);
+    assert(design);
     assert(coefs);
-    assert(iproc_frame_dim(frame) == iproc_vector_dim(coefs));
-    assert(iproc_frame_nreceiver(frame) > 0);
-    assert(!has_loops || iproc_frame_nreceiver(frame) > 1);
+    assert(iproc_design_dim(design) == iproc_vector_dim(coefs));
+    assert(iproc_design_nreceiver(design) > 0);
+    assert(!has_loops || iproc_design_nreceiver(design) > 1);
 
     iproc_model *model = iproc_malloc(sizeof(*model));
-    model->frame = iproc_frame_ref(frame);
+    model->design = iproc_design_ref(design);
     model->coefs = iproc_vector_new_copy(coefs);
     model->has_loops = has_loops;
     model->group_models = iproc_array_new(sizeof(iproc_group_model));
-    iproc_group_models_init(model->group_models, frame, coefs);
+    iproc_group_models_init(model->group_models, design, coefs);
     iproc_refcount_init(&model->refcount);
 
     return model;
@@ -177,11 +177,11 @@ iproc_model_unref (iproc_model *model)
     iproc_refcount_put(&model->refcount, iproc_model_release);
 }
 
-iproc_frame *
-iproc_model_frame (iproc_model *model)
+iproc_design *
+iproc_model_design (iproc_model *model)
 {
     assert(model);
-    return model->frame;
+    return model->design;
 }
 
 iproc_vector *
@@ -202,24 +202,24 @@ int64_t
 iproc_model_nsender (iproc_model *model)
 {
     assert(model);
-    iproc_frame *frame = iproc_model_frame(model);
-    return iproc_frame_nsender(frame);
+    iproc_design *design = iproc_model_design(model);
+    return iproc_design_nsender(design);
 }
 
 int64_t
 iproc_model_nreceiver (iproc_model *model)
 {
     assert(model);
-    iproc_frame *frame = iproc_model_frame(model);
-    return iproc_frame_nreceiver(frame);
+    iproc_design *design = iproc_model_design(model);
+    return iproc_design_nreceiver(design);
 }
 
 int64_t
 iproc_model_dim (iproc_model *model)
 {
     assert(model);
-    iproc_frame *frame = iproc_model_frame(model);
-    return iproc_frame_dim(frame);
+    iproc_design *design = iproc_model_design(model);
+    return iproc_design_dim(design);
 }
 
 double

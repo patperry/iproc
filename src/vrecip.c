@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include "memory.h"
-#include "frame.h"
+#include "design.h"
 #include "vrecip.h"
 
 static void
@@ -93,11 +93,11 @@ compare_int64 (void *px,
 }
 
 static int
-compare_sender_frame_jrecv (void *px,
+compare_sender_design_jrecv (void *px,
                            void *py)
 {
-    int64_t x = ((iproc_sender_frame *)px)->jrecv;
-    int64_t y = ((iproc_sender_frame *)py)->jrecv;
+    int64_t x = ((iproc_sender_design *)px)->jrecv;
+    int64_t y = ((iproc_sender_design *)py)->jrecv;
 
     if (x < y) {
         return -1;
@@ -143,14 +143,14 @@ iproc_vrecip_get (iproc_vrecip  *v,
         
         /* (jsend, [(pos, +1.0)]) */
         if (pos < nintvl) {
-            iproc_sender_frame sv = { jsend, NULL };
-            int64_t k = iproc_array_bsearch(dst, &sv, compare_sender_frame_jrecv);
+            iproc_sender_design sv = { jsend, NULL };
+            int64_t k = iproc_array_bsearch(dst, &sv, compare_sender_design_jrecv);
             
             if (k < 0) {
                 sv.jdiff = iproc_svector_new(parent_dim);
                 iproc_array_insert(dst, ~k, &sv);
             } else {
-                sv.jdiff = iproc_array_index(dst, iproc_sender_frame, k).jdiff;
+                sv.jdiff = iproc_array_index(dst, iproc_sender_design, k).jdiff;
             }
 
             iproc_svector_inc(sv.jdiff, offset + pos, 1.0);

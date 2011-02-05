@@ -1,5 +1,5 @@
-#ifndef _IPROC_FRAME_H
-#define _IPROC_FRAME_H
+#ifndef _IPROC_DESIGN_H
+#define _IPROC_DESIGN_H
 
 #include <stdint.h>
 #include "actors.h"
@@ -10,105 +10,105 @@
 #include "vector.h"
 
 
-typedef struct _iproc_frame        iproc_frame;
-typedef struct _iproc_frame_ctx    iproc_frame_ctx;
-typedef struct _iproc_sender_frame iproc_sender_frame;
+typedef struct _iproc_design        iproc_design;
+typedef struct _iproc_design_ctx    iproc_design_ctx;
+typedef struct _iproc_sender_design iproc_sender_design;
 
 
-struct _iproc_frame {
+struct _iproc_design {
     iproc_actors  *senders;
     iproc_actors  *receivers;
     int64_t        nstatic;
     int64_t        ndynamic;
-    void (*get_sender_frame) (iproc_frame_ctx *ctx);
+    void (*get_sender_design) (iproc_design_ctx *ctx);
     void (*free_user_data) (void *);
     void *user_data;
     iproc_refcount refcount;
 };
 
-struct _iproc_sender_frame {
+struct _iproc_sender_design {
     int64_t        jrecv;
     iproc_svector *jdiff;
 };
 
-struct _iproc_frame_ctx {
-    iproc_frame    *frame;
+struct _iproc_design_ctx {
+    iproc_design    *design;
     iproc_history *history;
     int64_t        isend;
-    iproc_array   *sender_frame;
+    iproc_array   *sender_design;
     iproc_refcount refcount;
 };
 
-iproc_frame *     iproc_frame_new           (iproc_actors   *senders,
+iproc_design *     iproc_design_new           (iproc_actors   *senders,
                                            iproc_actors   *receivers,
                                            int64_t         ndynamic,
                                            void           *user_data,
-                                           void          (*get_sender_frame) (iproc_frame_ctx *ctx),
+                                           void          (*get_sender_design) (iproc_design_ctx *ctx),
                                            void          (*free_user_data)  (void *user_data));
-iproc_frame *     iproc_frame_ref           (iproc_frame     *frame);
-void             iproc_frame_unref         (iproc_frame     *frame);
+iproc_design *     iproc_design_ref           (iproc_design     *design);
+void             iproc_design_unref         (iproc_design     *design);
 
-int64_t          iproc_frame_dim           (iproc_frame     *frame);
-int64_t          iproc_frame_nstatic       (iproc_frame     *frame);
-int64_t          iproc_frame_istatic       (iproc_frame     *frame,
+int64_t          iproc_design_dim           (iproc_design     *design);
+int64_t          iproc_design_nstatic       (iproc_design     *design);
+int64_t          iproc_design_istatic       (iproc_design     *design,
                                            int64_t         i);
-int64_t          iproc_frame_ndynamic      (iproc_frame     *frame);
-int64_t          iproc_frame_idynamic      (iproc_frame     *frame,
+int64_t          iproc_design_ndynamic      (iproc_design     *design);
+int64_t          iproc_design_idynamic      (iproc_design     *design,
                                            int64_t         i);
 
-int64_t          iproc_frame_nsender       (iproc_frame     *frame);
-int64_t          iproc_frame_nreceiver     (iproc_frame     *frame);
-iproc_actors *   iproc_frame_senders       (iproc_frame     *frame);
-iproc_actors *   iproc_frame_receivers     (iproc_frame     *frame);
+int64_t          iproc_design_nsender       (iproc_design     *design);
+int64_t          iproc_design_nreceiver     (iproc_design     *design);
+iproc_actors *   iproc_design_senders       (iproc_design     *design);
+iproc_actors *   iproc_design_receivers     (iproc_design     *design);
 
-void             iproc_frame_sender0_mul   (double          alpha,
+void             iproc_design_sender0_mul   (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame     *frame,
+                                           iproc_design     *design,
                                            int64_t         isend,
                                            iproc_vector   *x,
                                            double          beta,
                                            iproc_vector   *y);
-void             iproc_frame_sender0_muls  (double          alpha,
+void             iproc_design_sender0_muls  (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame     *frame,
+                                           iproc_design     *design,
                                            int64_t         isend,
                                            iproc_svector  *x,
                                            double          beta,
                                            iproc_vector   *y);
 
 
-iproc_frame_ctx * iproc_frame_ctx_new       (iproc_frame     *frame,
+iproc_design_ctx * iproc_design_ctx_new       (iproc_design     *design,
                                            int64_t         isend,
                                            iproc_history  *h);
-iproc_frame_ctx * iproc_frame_ctx_ref       (iproc_frame_ctx *ctx);
-void             iproc_frame_ctx_unref     (iproc_frame_ctx *ctx);
+iproc_design_ctx * iproc_design_ctx_ref       (iproc_design_ctx *ctx);
+void             iproc_design_ctx_unref     (iproc_design_ctx *ctx);
 
 
-void             iproc_frame_ctx_mul       (double          alpha,
+void             iproc_design_ctx_mul       (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame_ctx *ctx,
+                                           iproc_design_ctx *ctx,
                                            iproc_vector   *x,
                                            double          beta,
                                            iproc_vector   *y);
-void             iproc_frame_ctx_muls      (double          alpha,
+void             iproc_design_ctx_muls      (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame_ctx *ctx,
+                                           iproc_design_ctx *ctx,
                                            iproc_svector  *x,
                                            double          beta,
                                            iproc_vector   *y);
 
-void             iproc_frame_ctx_diff_mul  (double          alpha,
+void             iproc_design_ctx_diff_mul  (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame_ctx *ctx,
+                                           iproc_design_ctx *ctx,
                                            iproc_vector   *x,
                                            double          beta,
                                            iproc_svector  *y);
-void             iproc_frame_ctx_diff_muls (double          alpha,
+void             iproc_design_ctx_diff_muls (double          alpha,
                                            iproc_trans     trans,
-                                           iproc_frame_ctx *ctx,
+                                           iproc_design_ctx *ctx,
                                            iproc_svector  *x,
                                            double          beta,
                                            iproc_svector  *y);
 
 
-#endif /* _IPROC_FRAME_H */
+#endif /* _IPROC_DESIGN_H */
