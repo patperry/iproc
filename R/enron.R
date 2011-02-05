@@ -1,5 +1,5 @@
 
-enron <- local({
+read.enron.nocache <- function() {
     pkg <- "iproc"
     path <- system.file(package = pkg, "extdata", "enron")
     
@@ -70,5 +70,7 @@ enron <- local({
     enron <- list(employees = employees,
                   messages = messages)
     class(enron) <- "enron"
+
     enron
-})
+}
+
