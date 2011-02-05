@@ -38,7 +38,9 @@ test.from <- function() {
 }
 
 test.to <- function() {
-    checkEquals(to(msgs), to)
+    # the check goes a lot faster if we concatenate
+    checkEquals(c(to(msgs), recursive = TRUE),
+                c(to, recursive = TRUE))
 }
     
 test.nto <- function() {
