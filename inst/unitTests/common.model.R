@@ -70,8 +70,10 @@ test.log.probs <- function() {
     n <- 0
     while (advance(it)) {
         n <- n + 1
-        
-        for (i in seq_len(nrow(senders(frame)))) {
+
+        for (tie in seq_len(nties(it))) {
+            i <- from(it)[[tie]]
+
             lw <- t(mul(frame, coef, sender = i, it))
             if (!has.loops(m)) {
                 lw[i] <- -Inf
@@ -101,9 +103,12 @@ test.probs <- function() {
     n <- 0
     while (advance(it)) {
         n <- n + 1
-        for (i in seq_len(nrow(senders(frame)))) {
+
+        for (tie in seq_len(nties(it))) {
+            i <- from(it)[[tie]]
             checkEquals(probs(m, i), exp(log.probs(m, i)))
         }
+        
         if (n == max.advance)
             break
     }
