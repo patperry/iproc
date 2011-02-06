@@ -10,7 +10,7 @@ time <- from <- to <- msgs <- NULL
     time <<- as.integer(enron$messages$time)
     from <<- enron$messages$sender.id
     to <<- enron$messages$receiver.id
-    msgs <<- messages(enron)
+    msgs <<- messages(time, sender.id, receiver.id, enron$messages)
 }
 
 test.size <- function() {

@@ -18,7 +18,7 @@ max.advance <- NULL
     design.group <<- iproc.design(senders, receivers)
     design.recip <<- iproc.design(a0, a0, receive.intervals = receive.intervals)
 
-    msgs <<- messages(enron)
+    msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     it <<- cursor(msgs)
 
     max.advance <<- 100

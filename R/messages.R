@@ -1,18 +1,28 @@
 
-messages.default <- function(time, from, to) {
+messages <- function(time, from, to, data = NULL) {
+    if (missing(time))
+        stop("Must have a time argument")
+    if (missing(from))
+        stop("Must have a from argument")
+    if (missing(to))
+        stop("Must have a to argument")
+
+    time <- eval(call("with", substitute(data), substitute(time)))
+    from <- eval(call("with", substitute(data), substitute(from)))
+    to <- eval(call("with", substitute(data), substitute(to)))    
+             
     time <- as.integer(time)
     from <- as.integer(from)
     to <- lapply(as.list(to), as.integer)
-
     .Call("Riproc_messages_new", time, from, to)
 }
 
-messages.enron <- function(enron) {
-    time <- as.integer(enron$messages$time)
-    from <- enron$messages$sender.id
-    to <- enron$messages$receiver.id
-    messages.default(time, from, to)
-}
+# messages.enron <- function(enron) {
+#    time <- as.integer(enron$messages$time)
+#    from <- enron$messages$sender.id
+#    to <- enron$messages$receiver.id
+#    messages.default(time, from, to)
+# }
 
 size.messages <- function(messages) {
     .Call("Riproc_messages_size", messages)

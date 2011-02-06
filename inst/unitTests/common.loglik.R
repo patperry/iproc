@@ -9,7 +9,7 @@ max.advance <- NULL
 loglik.setUp <- function(senders, receivers, receive.intervals = NULL,
                          has.loops = FALSE) {
     set.seed(0)
-    msgs <<- messages(enron)
+    msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     senders <<- senders
     receivers <<- receivers
     receive.intervals <<- receive.intervals

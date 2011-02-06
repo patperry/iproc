@@ -15,7 +15,7 @@ model.setUp <- function(senders, receivers,
     coef <<- sample(-2:2, ncol(design), replace = TRUE)
     has.loops <<- has.loops
     m <<- model(design, coef, has.loops)
-    msgs <<- messages(enron)
+    msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     it <<- cursor(msgs)
     max.advance <<- 100
 }

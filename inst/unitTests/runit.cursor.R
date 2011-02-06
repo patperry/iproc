@@ -8,7 +8,7 @@ msgs <<- it <<- NULL
 
 
 .setUp <- function() {
-    msgs <<- messages(enron)
+    msgs <<- messages(time, sender.id, receiver.id, enron$messages[1:100,])
     it <<- cursor(msgs)
 }
 
