@@ -9,7 +9,7 @@ msgs <- it <- NULL
 max.advance <- NULL
 
 .setUp <- function() {
-    a <- actors(enron)
+    a <- actors(~ gender *seniority * department, enron$employees)
     a0 <- actors(~ -1, data.frame(matrix(NA, nrow(a), 0)))
     senders <<- a
     receivers <<- a

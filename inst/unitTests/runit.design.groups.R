@@ -6,7 +6,7 @@ data(enron)
 senders <- receivers <- design <- NULL
 
 .setUp <- function() {
-    a <- actors(enron)
+    a <- actors(~ gender *seniority * department, enron$employees)
     senders <<- a
     groups <- c(1, 1, 2, 2, 1, 2)
     group.traits <- rbind(1, -1) %*% cbind(2, 4)

@@ -8,7 +8,7 @@ msgs <- it <- NULL
 max.advance <- NULL
 
 .setUp <- function() {
-    a <- actors(enron)
+    a <- actors(~ gender *seniority * department, enron$employees)
     senders <<- actors(~ -1, data.frame(matrix(NA, nrow(a), 0)))
     receivers <<- senders
     receive.intervals <<- 3600 * 2^seq(-6, 14)

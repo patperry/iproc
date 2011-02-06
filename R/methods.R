@@ -1,5 +1,4 @@
 # actors methods
-actors       <- function(object, ...) UseMethod("actors")
 group        <- function(object, ...) UseMethod("group")
 ngroup       <- function(object, ...) UseMethod("ngroup")
 group.traits <- function(object, ...) UseMethod("group.traits")

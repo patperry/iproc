@@ -14,7 +14,7 @@ a <- traits <- ngroup <- NULL
 
     traits <<- mm
     ngroup <<- 12
-    a <<- actors(enron)
+    a <<- actors(~ gender *seniority * department, enron$employees)
     set.seed(0)
 }
 

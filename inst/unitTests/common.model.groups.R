@@ -2,8 +2,8 @@
 source(file.path(runit.dir(), "common.model.R"), TRUE)
 
 model.groups.setUp <- function(has.loops) {
-    a <- actors(enron)
-    senders <- a
-    receivers <- a
+    actrs <- actors(~ gender *seniority * department, enron$employees)
+    senders <- actrs
+    receivers <- actrs
     model.setUp(senders, receivers, has.loops = has.loops)
 }

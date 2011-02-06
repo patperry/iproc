@@ -1,18 +1,17 @@
 
 # object should be a formula or a terms object
 # no support for subset, since it makes ids confusing
-actors.default <- function(object, data, na.action, contrasts = NULL, ...)
+actors <- function(formula, data, na.action, contrasts = NULL, ...)
 {
     mf <- match.call(expand.dots = FALSE)
-    m <- match(c("object", "data", "na.action"), names(mf), 0L)
+    m <- match(c("formula", "data", "na.action"), names(mf), 0L)
     mf <- mf[c(1L, m)]
     mf$drop.unused.levels <- TRUE
     mf[[1L]] <- as.name("model.frame")
-    names(mf)[[2]] <- "formula"
 
     mf <- eval(mf, parent.frame())
 
-    #mf <- lm(object, quote(data), quote(na.action), method = "model.frame")
+    #mf <- lm(formula, quote(data), quote(na.action), method = "model.frame")
     mt <- attr(mf, "terms")
     if (attr(mt, "response") > 0)
         stop("response should be left unspecified, but was '",
@@ -24,10 +23,6 @@ actors.default <- function(object, data, na.action, contrasts = NULL, ...)
     x <- model.matrix(mt, mf, contrasts)
     actrs <- .Call("Riproc_actors_new", t(x))
     actrs
-}
-
-actors.enron <- function(object, ...) {
-    actors( ~ gender*seniority*department, object$employees, ...)
 }
 
 ngroup.actors <- function(object, ...) {
