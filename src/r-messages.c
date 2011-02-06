@@ -108,18 +108,18 @@ Riproc_messages_new (SEXP Rtime,
                      SEXP Rto)
 {
     int64_t n = GET_LENGTH(Rtime);
-    int *time = INTEGER_POINTER(Rtime);
+    double *time = NUMERIC_POINTER(Rtime);
     int *from = INTEGER_POINTER(Rfrom);
 
     if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rto) == n))
         error("'time', 'from', and 'to' do not have same lengths");
 
     iproc_array *to_buf = iproc_array_new(sizeof(int64_t));
-    int64_t tcur = INT64_MIN;
+    double tcur = -INFINITY;
     int64_t msg_from, msg_time, msg_nto;
     int64_t *msg_to;
     int64_t i;
-    iproc_messages *msgs = iproc_messages_new(tcur);
+    iproc_messages *msgs = iproc_messages_new();
     SEXP Rmsgs, Rmsg_to;
 
     for (i = 0; i < n; i++) {
@@ -165,8 +165,8 @@ Riproc_messages_time (SEXP Rmsgs)
     int t;
     SEXP Rtime;
 
-    PROTECT(Rtime = NEW_INTEGER(n));
-    int *time = INTEGER_POINTER(Rtime);
+    PROTECT(Rtime = NEW_NUMERIC(n));
+    double *time = NUMERIC_POINTER(Rtime);
     
     iproc_message_iter *it = iproc_message_iter_new(msgs);
 

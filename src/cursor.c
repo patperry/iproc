@@ -105,19 +105,11 @@ iproc_cursor_next (iproc_cursor *cursor)
     if (iproc_message_iter_next(it)) {
         iproc_history *history = cursor->history;
         int64_t tnext = iproc_message_iter_time(it);
-        uint64_t delta;
         int64_t i, n = iproc_message_iter_ntie(it);
 
         assert(tnext >= tprev);
 
-        /* be careful of overflow */
-        if (tprev < 0 && tnext >= 0) {
-            delta = ((uint64_t)tnext + 1U) + ((uint64_t) -(tprev + 1));
-        } else {
-            delta = tnext - tprev;
-        }
-
-        iproc_history_advance(history, delta);
+        iproc_history_advance_to(history, tnext);
 
         for (i = 0; i < n; i++) {
             iproc_message_iter_select(it, i);

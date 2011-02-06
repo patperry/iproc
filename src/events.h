@@ -11,6 +11,7 @@ typedef struct _iproc_events     iproc_events;
 typedef struct _iproc_past_event iproc_past_event;
 
 struct _iproc_events {
+    double         tcur;
     iproc_array   *cur;
     iproc_array   *past;
     iproc_refcount refcount;
@@ -22,7 +23,7 @@ struct _iproc_event {
 
 struct _iproc_past_event {
     iproc_event event;
-    uint64_t    dt;
+    double      t;
 };
 
 
@@ -31,25 +32,25 @@ iproc_events * iproc_events_ref       (iproc_events *events);
 void           iproc_events_unref     (iproc_events *events);
 void           iproc_events_clear     (iproc_events *events);
 
-void           iproc_events_insert    (iproc_events *events,
-                                       int64_t       e);
-void           iproc_events_advance   (iproc_events *events,
-                                       uint64_t      dt);
+void           iproc_events_insert     (iproc_events *events,
+                                        int64_t       e);
+void           iproc_events_advance_to (iproc_events *events,
+                                        double        t);
 
-int64_t        iproc_events_ncur      (iproc_events *events);
-int64_t        iproc_events_cur       (iproc_events *events,
-                                       int64_t       i);
-int64_t        iproc_events_find_cur  (iproc_events *events,
-                                       int64_t       e);
+int64_t        iproc_events_ncur       (iproc_events *events);
+int64_t        iproc_events_cur        (iproc_events *events,
+                                        int64_t       i);
+int64_t        iproc_events_find_cur   (iproc_events *events,
+                                        int64_t       e);
 
-int64_t        iproc_events_npast     (iproc_events *events);
-int64_t        iproc_events_past      (iproc_events *events,
-                                       int64_t       i);
-int64_t        iproc_events_find_past (iproc_events *events,
-                                       int64_t       e);
+int64_t        iproc_events_npast      (iproc_events *events);
+int64_t        iproc_events_past       (iproc_events *events,
+                                        int64_t       i);
+int64_t        iproc_events_find_past  (iproc_events *events,
+                                        int64_t       e);
 
-uint64_t       iproc_events_past_dt   (iproc_events *events,
-                                       int64_t       i);
+double         iproc_events_past_dt    (iproc_events *events,
+                                        int64_t       i);
 
 
 #endif /* _IPROC_EVENTS_H */

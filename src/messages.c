@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include "memory.h"
 #include "messages.h"
 
@@ -17,13 +18,13 @@ iproc_messages_free (iproc_messages *msgs)
 }
 
 iproc_messages *
-iproc_messages_new (int64_t t0)
+iproc_messages_new ()
 {
     iproc_messages *msgs = iproc_malloc(sizeof(*msgs));
     if (!msgs)
         return NULL;
 
-    msgs->tcur = t0;
+    msgs->tcur = -INFINITY;
     msgs->array = iproc_array_new(sizeof(iproc_message));
     msgs->recipients = iproc_array_new(sizeof(int64_t));
     msgs->max_to = -1;
@@ -71,17 +72,8 @@ iproc_messages_size (iproc_messages *msgs)
 }
 
 void
-iproc_messages_advance (iproc_messages *msgs,
-                        int64_t         dt)
-{
-    assert(msgs);
-    assert(dt >= 0);
-    msgs->tcur += dt;
-}
-
-void
 iproc_messages_advance_to (iproc_messages *msgs,
-                           int64_t         t)
+                           double          t)
 {
     assert(msgs);
     assert(t >= msgs->tcur);

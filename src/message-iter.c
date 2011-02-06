@@ -56,7 +56,7 @@ iproc_message_iter_unref (iproc_message_iter *it)
     }
 }
 
-int64_t
+double
 iproc_message_iter_time (iproc_message_iter *it)
 {
     assert(iproc_message_iter_started(it));

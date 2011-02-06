@@ -10,14 +10,14 @@ typedef struct _iproc_messages     iproc_messages;
 typedef struct _iproc_message_iter iproc_message_iter;
 
 struct _iproc_message {
-    int64_t  time;
+    double   time;
     int64_t  from;
     int64_t  ito;
     int64_t  nto;
 };
 
 struct _iproc_messages {
-    int64_t tcur;
+    double tcur;
     iproc_array *array;
     iproc_array *recipients;
     iproc_refcount refcount;
@@ -35,15 +35,13 @@ struct _iproc_message_iter {
     iproc_refcount  refcount;
 };
 
-iproc_messages * iproc_messages_new        (int64_t         t0);
+iproc_messages * iproc_messages_new        ();
 iproc_messages * iproc_messages_ref        (iproc_messages *msgs);
 void             iproc_messages_unref      (iproc_messages *msgs);
 
 int64_t          iproc_messages_size       (iproc_messages *msgs);
-void             iproc_messages_advance    (iproc_messages *msgs,
-                                            int64_t         dt);
 void             iproc_messages_advance_to (iproc_messages *msgs,
-                                            int64_t         t);
+                                            double          t);
 
 
 void             iproc_messages_insert     (iproc_messages *msgs,
@@ -63,7 +61,7 @@ iproc_message_iter * iproc_message_iter_new    (iproc_messages     *msgs);
 iproc_message_iter * iproc_message_iter_ref    (iproc_message_iter *it);
 void                 iproc_message_iter_unref  (iproc_message_iter *it);
 
-int64_t              iproc_message_iter_time   (iproc_message_iter *it);
+double               iproc_message_iter_time   (iproc_message_iter *it);
 int64_t              iproc_message_iter_ntie   (iproc_message_iter *it);
 void                 iproc_message_iter_select (iproc_message_iter *it,
                                                 int64_t             tie);

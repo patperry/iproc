@@ -2,6 +2,7 @@
 # include <config.h>
 #endif
 
+#include <math.h>
 #include <string.h>
 #include <assert.h>
 #include "events.h"
@@ -53,6 +54,7 @@ iproc_events_new ()
 
     if (!events) return NULL;
 
+    events->tcur = -INFINITY;
     events->cur  = iproc_array_new(sizeof(iproc_event));
     events->past = iproc_array_new(sizeof(iproc_past_event));
     iproc_refcount_init(&events->refcount);
@@ -93,6 +95,7 @@ iproc_events_unref (iproc_events *events)
 void
 iproc_events_clear (iproc_events *events)
 {
+    events->tcur = -INFINITY;
     iproc_events_clear_cur(events);
     iproc_events_clear_past(events);
 }
@@ -110,21 +113,20 @@ iproc_events_insert (iproc_events *events,
 }
 
 void
-iproc_events_advance (iproc_events *events,
-                      uint64_t      dt)
+iproc_events_advance_to (iproc_events *events,
+                         double        t)
 {
     assert(events);
+    assert(t >= events->tcur);
 
+    if (t == events->tcur)
+        return;
+
+    double t0 = events->tcur;
     int64_t e;
     int64_t ic, ip;
     int64_t nc = iproc_events_ncur(events);
-    int64_t np = iproc_events_npast(events);
     iproc_array *past = events->past;
-
-    /* Add time to all past events */
-    for (ip = 0; ip < np; ip++) {
-        iproc_array_index(past, iproc_past_event, ip).dt += dt;
-    }
 
     /* Move current events to past event set */
     for (ic = 0; ic < nc; ic++) {
@@ -134,16 +136,17 @@ iproc_events_advance (iproc_events *events,
         /* If event doesn't already exist in past set, insert it */
         if (ip < 0) {
             iproc_event event = { e };
-            iproc_past_event past_event = { event, dt };
+            iproc_past_event past_event = { event, t0 };
             iproc_array_insert(past, ~ip, &past_event);
 
-        /* Set the time of the event to the time advance */
+        /* Set the time of the event to the old time */
         } else {
-            iproc_array_index(past, iproc_past_event, ip).dt = dt;
+            iproc_array_index(past, iproc_past_event, ip).t = t0;
         }
     }
 
     iproc_events_clear_cur(events);
+    events->tcur = t;
 }
 
 int64_t
@@ -202,13 +205,16 @@ iproc_events_past (iproc_events *events,
     return iproc_array_index(events->past, iproc_past_event, i).event.e;
 }
 
-uint64_t
+double
 iproc_events_past_dt (iproc_events *events,
                       int64_t       i)
 {
     assert(events);
     assert(0 <= i);
     assert(i < iproc_events_npast(events));
-
-    return iproc_array_index(events->past, iproc_past_event, i).dt;
+    
+    double tcur = events->tcur;
+    double tevent = iproc_array_index(events->past, iproc_past_event, i).t;
+    double dt = tcur - tevent;
+    return dt;
 }

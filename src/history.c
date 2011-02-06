@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include "memory.h"
 #include "history.h"
 
@@ -28,7 +29,7 @@ iproc_history_clear_events (iproc_array *array)
 
     for (i = 0; i < n; i++) {
         he = &(iproc_array_index(array, iproc_history_events, i));
-        he->elapsed = 0;
+        he->tcur = -INFINITY;
 
         if (he->events)
             iproc_events_clear(he->events);
@@ -36,7 +37,7 @@ iproc_history_clear_events (iproc_array *array)
 }
 
 static iproc_events *
-iproc_history_get (int64_t      elapsed,
+iproc_history_get (double       tcur,
                    iproc_array *array,
                    int64_t      i)
 {
@@ -51,14 +52,14 @@ iproc_history_get (int64_t      elapsed,
     iproc_events *e;
 
     if (!(he->events)) {
-        he->events = iproc_events_new();
+        he->events = iproc_events_new(tcur);
     }
 
     e = he->events;
 
-    if (he->elapsed != elapsed) {
-        iproc_events_advance(e, elapsed - he->elapsed);
-        he->elapsed = elapsed;
+    if (he->tcur != tcur) {
+        iproc_events_advance_to(e, tcur);
+        he->tcur = tcur;
     }
 
     return e;
@@ -81,6 +82,7 @@ iproc_history_new ()
 
     if (!history) return NULL;
 
+    history->tcur = -INFINITY;
     history->send = iproc_array_new(sizeof(iproc_history_events));
     history->recv = iproc_array_new(sizeof(iproc_history_events));
     iproc_refcount_init(&history->refcount);
@@ -122,20 +124,19 @@ void
 iproc_history_clear (iproc_history *history)
 {
     assert(history);
-    history->elapsed = 0;
+    history->tcur = -INFINITY;
     iproc_history_clear_events(history->send);
     iproc_history_clear_events(history->recv);
 }
 
 void
-iproc_history_advance (iproc_history *history,
-                       uint64_t       dt)
+iproc_history_advance_to (iproc_history *history,
+                          double         t)
 {
     assert(history);
+    assert(history->tcur <= t);
 
-    if (dt > 0) {
-        history->elapsed += dt;
-    }
+    history->tcur = t;
 }
 
 void
@@ -192,7 +193,7 @@ iproc_history_send (iproc_history *history,
     assert(history);
     assert(0 <= i);
 
-    return iproc_history_get(history->elapsed, history->send, i);
+    return iproc_history_get(history->tcur, history->send, i);
 }
 
 iproc_events *
@@ -202,5 +203,5 @@ iproc_history_recv (iproc_history *history,
     assert(history);
     assert(0 <= j);
 
-    return iproc_history_get(history->elapsed, history->recv, j);
+    return iproc_history_get(history->tcur, history->recv, j);
 }
