@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include "memory.h"
 #include "cursor.h"
 
@@ -68,7 +69,7 @@ iproc_cursor_reset (iproc_cursor *cursor)
     if (!cursor)
         return;
 
-    cursor->tcur = INT64_MIN;
+    cursor->tcur = -INFINITY;
     iproc_history_clear(cursor->history);
     iproc_message_iter_reset(cursor->it);
 }
@@ -104,7 +105,7 @@ iproc_cursor_next (iproc_cursor *cursor)
 
     if (iproc_message_iter_next(it)) {
         iproc_history *history = cursor->history;
-        int64_t tnext = iproc_message_iter_time(it);
+        double tnext = iproc_message_iter_time(it);
         int64_t i, n = iproc_message_iter_ntie(it);
 
         assert(tnext >= tprev);
@@ -129,11 +130,11 @@ iproc_cursor_next (iproc_cursor *cursor)
     return has_next;
 }
 
-int64_t
+double
 iproc_cursor_time (iproc_cursor *cursor)
 {
     if (!cursor)
-        return INT64_MIN;
+        return -INFINITY;
 
     return cursor->tcur;
 }
