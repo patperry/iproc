@@ -10,11 +10,19 @@ messages <- function(time, from, to, data = NULL) {
     time <- eval(call("with", substitute(data), substitute(time)))
     from <- eval(call("with", substitute(data), substitute(from)))
     to <- eval(call("with", substitute(data), substitute(to)))    
-             
-    time <- as.numeric(time)
+
+    if (length(time) != length(from) || length(time) != length(to))
+        stop("Time, from, and to must have same lengths.")
+
+    rawtime <- unclass(time)
+    if (!is.numeric(rawtime))
+        stop("Time must inherit from numeric or POSIXct")
     from <- as.integer(from)
     to <- lapply(as.list(to), as.integer)
-    .Call("Riproc_messages_new", time, from, to)
+
+    msgs <- .Call("Riproc_messages_new", rawtime, from, to)
+    attr(msgs, "attributes.time") <- attributes(time)
+    msgs
 }
 
 size.messages <- function(messages) {
@@ -22,7 +30,9 @@ size.messages <- function(messages) {
 }
 
 time.messages <- function(messages) {
-    .Call("Riproc_messages_time", messages)
+    time <- .Call("Riproc_messages_time", messages)
+    attributes(time) <- attr(messages, "attributes.time")
+    time
 }
 
 from.messages <- function(messages) {

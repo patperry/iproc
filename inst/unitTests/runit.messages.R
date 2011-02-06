@@ -7,7 +7,7 @@ data(enron)
 time <- from <- to <- msgs <- NULL
 
 .setUp <- function() {
-    time <<- as.numeric(enron$messages$time)
+    time <<- enron$messages$time
     from <<- enron$messages$sender.id
     to <<- enron$messages$receiver.id
     msgs <<- messages(time, sender.id, receiver.id, enron$messages)
