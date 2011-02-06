@@ -1,6 +1,8 @@
 
 cursor.messages <- function(messages) {
-    .Call("Riproc_cursor_new", messages)
+    it <- .Call("Riproc_cursor_new", messages)
+    attr(it, "attributes.messages") <- attributes(messages)
+    it
 }
 
 reset.cursor <- function(cursor) {
@@ -20,7 +22,10 @@ finished.cursor <- function(cursor) {
 }
 
 time.cursor <- function(cursor) {
-    .Call("Riproc_cursor_time", cursor)
+    time <- .Call("Riproc_cursor_time", cursor)
+    msgs.attr <- attr(cursor, "attributes.messages")
+    attributes(time) <- msgs.attr$attributes.time
+    time
 }
 
 nties.cursor <- function(cursor) {
@@ -41,12 +46,12 @@ print.cursor <- function(x, ...) {
     } else if (finished(x)) {
         cat("(finished cursor)\n")
     } else {
-        cat("cursor at time ", time(x), ":\n", sep='')
+        cat("cursor at time ", format(time(x)), "\n", sep='')
         from <- from(x)
         to <- to(x)
 
         for (i in seq_along(from)) {
-            cat("    ", from[[i]], " -> {", sep='')
+            cat("    ", from[[i]], " ->", sep='')
             nto <- length(to[[i]])
             if (nto > 0) {
                 cat(" ", to[[i]][1], sep='')
@@ -54,7 +59,7 @@ print.cursor <- function(x, ...) {
             for (j in (1 + seq_len(nto - 1))) {
                 cat(", ", to[[i]][j], sep='')
             }
-            cat(" }\n")
+            cat("\n")
         }
     }
     invisible(x)
