@@ -7,22 +7,17 @@ Riproc_design_udata *
 Riproc_design_udata_new (SEXP Rreceive_intervals)
 {
     Riproc_design_udata *udata = iproc_malloc(sizeof(*udata));
-    int64_t i, n;
-    int64_t *intvls;
+    int64_t n;
+    double *intvls;
 
     if (Rreceive_intervals == NULL_USER_OBJECT) {
         n = 0;
         intvls = NULL;
     } else {
-        int *intvls_src = INTEGER_POINTER(Rreceive_intervals);
         n = GET_LENGTH(Rreceive_intervals);
-
-        intvls = (int64_t *)R_alloc(n, sizeof(int64_t)); /* reclaimed on exit */
-        for (i = 0; i < n; i++) {
-            intvls[i] = intvls_src[i];
-        }
+        intvls = NUMERIC_POINTER(Rreceive_intervals);
     }
-    
+
     udata->recip = iproc_vrecip_new(intvls, n);
     return udata;
 }

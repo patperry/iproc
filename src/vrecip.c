@@ -18,7 +18,7 @@ iproc_vrecip_free (iproc_vrecip *v)
 }
 
 iproc_vrecip *
-iproc_vrecip_new (int64_t *intvls,
+iproc_vrecip_new (double  *intvls,
                   int64_t  n)
 {
     iproc_vrecip *v = iproc_malloc(sizeof(*v));
@@ -26,7 +26,7 @@ iproc_vrecip_new (int64_t *intvls,
     if (!v)
         return NULL;
     
-    v->intvls = iproc_array_new(sizeof(int64_t));
+    v->intvls = iproc_array_new(sizeof(double));
     iproc_refcount_init(&v->refcount);
 
     if (!v->intvls) {
@@ -77,11 +77,11 @@ iproc_vrecip_dim (iproc_vrecip *v)
 }
 
 static int
-compare_int64 (void *px,
-               void *py)
+compare_double (void *px,
+                void *py)
 {
-    int64_t x = *((int64_t *)px);
-    int64_t y = *((int64_t *)py);
+    double x = *((double *)px);
+    double y = *((double *)py);
     
     if (x < y) {
         return -1;
@@ -92,9 +92,10 @@ compare_int64 (void *px,
     }
 }
 
+
 static int
 compare_sender_design_jrecv (void *px,
-                           void *py)
+                            void *py)
 {
     int64_t x = ((iproc_sender_design *)px)->jrecv;
     int64_t y = ((iproc_sender_design *)py)->jrecv;
@@ -135,8 +136,8 @@ iproc_vrecip_get (iproc_vrecip  *v,
     int64_t i, n = iproc_events_npast(events);
     for (i = 0; i < n; i++) {
         int64_t jsend = iproc_events_past(events, i);
-        int64_t dt    = iproc_events_past_dt(events, i);
-        int64_t pos   = iproc_array_bsearch(intvls, &dt, compare_int64);
+        double dt     = iproc_events_past_dt(events, i);
+        int64_t pos   = iproc_array_bsearch(intvls, &dt, compare_double);
 
         if (pos < 0)
             pos = ~pos;

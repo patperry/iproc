@@ -18,7 +18,7 @@ iproc.design.default <- function(senders, receivers, data, data.receivers = data
         }
     }
 
-    receive.intervals.orig <- as.integer(receive.intervals)
+    receive.intervals.orig <- as.numeric(receive.intervals)
     if (any(is.na(receive.intervals.orig) | (receive.intervals.orig <= 0)))
         stop("'receive.intervals' contains a nonpositive or NA value")
     

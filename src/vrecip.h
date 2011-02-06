@@ -13,7 +13,7 @@ struct _iproc_vrecip {
     iproc_refcount  refcount;
 };
 
-iproc_vrecip * iproc_vrecip_new   (int64_t       *intvls,
+iproc_vrecip * iproc_vrecip_new   (double        *intvls,
                                    int64_t        n);
 iproc_vrecip * iproc_vrecip_ref   (iproc_vrecip *v);
 void           iproc_vrecip_unref (iproc_vrecip *v);
