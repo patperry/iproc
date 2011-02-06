@@ -141,10 +141,10 @@ Riproc_design_mul (SEXP Rdesign,
     int64_t nrow = iproc_matrix_nrow(&x.matrix);
     int64_t ncol = iproc_matrix_ncol(&x.matrix);
     int64_t sender = INTEGER(Rsender)[0] - 1;
-    iproc_cursor *cursor =  (Rcursor == NULL_USER_OBJECT
-                            ? NULL
-                            : Riproc_to_cursor(Rcursor));
-    iproc_history *history = iproc_cursor_history(cursor);
+    iproc_message_iter *cursor =  (Rcursor == NULL_USER_OBJECT
+                                   ? NULL
+                                   : Riproc_to_cursor(Rcursor));
+    iproc_history *history = iproc_message_iter_history(cursor);
     
     if (sender < 0 || sender >= nsender)
         error("invalid sender");
@@ -183,10 +183,10 @@ Riproc_design_tmul (SEXP Rdesign,
     int64_t nrow = iproc_matrix_nrow(&x.matrix);
     int64_t ncol = iproc_matrix_ncol(&x.matrix);
     int64_t sender = INTEGER(Rsender)[0] - 1;
-    iproc_cursor *cursor =  (Rcursor == NULL_USER_OBJECT
-                            ? NULL
-                            : Riproc_to_cursor(Rcursor));
-    iproc_history *history = iproc_cursor_history(cursor);
+    iproc_message_iter *cursor =  (Rcursor == NULL_USER_OBJECT
+                                   ? NULL
+                                   : Riproc_to_cursor(Rcursor));
+    iproc_history *history = iproc_message_iter_history(cursor);
     
     if (sender < 0 || sender >= nsender)
         error("invalid sender");

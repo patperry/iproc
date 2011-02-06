@@ -1,5 +1,5 @@
 
-#include "cursor.h"
+#include "messages.h"
 #include "r-messages.h"
 #include "r-model.h"
 #include "r-cursor.h"
@@ -76,23 +76,23 @@ Riproc_loglik_new (SEXP Rmodel,
     iproc_loglik_unref(loglik);
 
     if (messages) {
-        iproc_cursor *cursor = iproc_cursor_new(messages);
+        iproc_message_iter *cursor = iproc_message_iter_new(messages);
 
-        while (iproc_cursor_next(cursor)) {
-            iproc_history *history = iproc_cursor_history(cursor);
-            int64_t i, n = iproc_cursor_nmsg(cursor);
+        while (iproc_message_iter_next(cursor)) {
+            iproc_history *history = iproc_message_iter_history(cursor);
+            int64_t i, n = iproc_message_iter_ntie(cursor);
 
             for (i = 0; i < n; i++) {
-                iproc_cursor_select_msg(cursor, i);
-                int64_t  msg_from = iproc_cursor_msg_from(cursor);
-                int64_t *msg_to = iproc_cursor_msg_to(cursor);
-                int64_t  msg_nto = iproc_cursor_msg_nto(cursor);
+                iproc_message_iter_select(cursor, i);
+                int64_t  msg_from = iproc_message_iter_from(cursor);
+                int64_t *msg_to = iproc_message_iter_to(cursor);
+                int64_t  msg_nto = iproc_message_iter_nto(cursor);
                 
                 iproc_loglik_insertm(loglik, history, msg_from, msg_to, msg_nto);
             }
         }
         
-        iproc_cursor_unref(cursor);
+        iproc_message_iter_unref(cursor);
     }
 
     UNPROTECT(1);
@@ -104,15 +104,15 @@ Riproc_loglik_insert (SEXP Rloglik,
                       SEXP Rcursor)
 {
     iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
-    iproc_history *history = iproc_cursor_history(cursor);
-    int64_t i, n = iproc_cursor_nmsg(cursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+    iproc_history *history = iproc_message_iter_history(cursor);
+    int64_t i, n = iproc_message_iter_ntie(cursor);
 
     for (i = 0; i < n; i++) {
-        iproc_cursor_select_msg(cursor, i);
-        int64_t  msg_from = iproc_cursor_msg_from(cursor);
-        int64_t *msg_to = iproc_cursor_msg_to(cursor);
-        int64_t  msg_nto = iproc_cursor_msg_nto(cursor);
+        iproc_message_iter_select(cursor, i);
+        int64_t  msg_from = iproc_message_iter_from(cursor);
+        int64_t *msg_to = iproc_message_iter_to(cursor);
+        int64_t  msg_nto = iproc_message_iter_nto(cursor);
 
         iproc_loglik_insertm(loglik, history, msg_from, msg_to, msg_nto);
     }

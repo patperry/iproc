@@ -31,20 +31,20 @@ Riproc_cursor_init (DllInfo *info)
 static void
 Riproc_cursor_free (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
-    iproc_cursor_unref(cursor);
+    iproc_message_iter *it = Riproc_to_cursor(Rcursor);
+    iproc_message_iter_unref(it);
 }
 
 
 SEXP
-Riproc_from_cursor (iproc_cursor *cursor)
+Riproc_from_cursor (iproc_message_iter *it)
 {
     SEXP Rcursor, class;
 
-    iproc_cursor_ref(cursor);
+    iproc_message_iter_ref(it);
 
     /* store the cursor pointer in an external pointer */
-    PROTECT(Rcursor = R_MakeExternalPtr(cursor, Riproc_cursor_type_tag, R_NilValue));
+    PROTECT(Rcursor = R_MakeExternalPtr(it, Riproc_cursor_type_tag, R_NilValue));
     R_RegisterCFinalizer(Rcursor, Riproc_cursor_free);
 
     /* set the class of the result */
@@ -57,23 +57,23 @@ Riproc_from_cursor (iproc_cursor *cursor)
 }
 
 
-iproc_cursor *
+iproc_message_iter *
 Riproc_to_cursor (SEXP Rcursor)
 {
-    iproc_cursor *cursor;
-    cursor = Riproc_sexp2ptr(Rcursor, FALSE, Riproc_cursor_type_tag, "cursor");
-    return cursor;
+    iproc_message_iter *it;
+    it = Riproc_sexp2ptr(Rcursor, FALSE, Riproc_cursor_type_tag, "cursor");
+    return it;
 }
 
 SEXP
 Riproc_cursor_new (SEXP Rmessages)
 {
     iproc_messages *messages = Riproc_to_messages(Rmessages);
-    iproc_cursor *cursor = iproc_cursor_new(messages);
+    iproc_message_iter *cursor = iproc_message_iter_new(messages);
     SEXP Rcursor;
 
     PROTECT(Rcursor = Riproc_from_cursor(cursor));
-    iproc_cursor_unref(cursor);
+    iproc_message_iter_unref(cursor);
     UNPROTECT(1);
     return Rcursor;
 }
@@ -81,9 +81,9 @@ Riproc_cursor_new (SEXP Rmessages)
 SEXP
 Riproc_cursor_advance (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 
-    if (iproc_cursor_next(cursor)) {
+    if (iproc_message_iter_next(cursor)) {
         return ScalarLogical(TRUE);
     } else {
         return ScalarLogical(FALSE);
@@ -93,50 +93,50 @@ Riproc_cursor_advance (SEXP Rcursor)
 SEXP
 Riproc_cursor_reset (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
-    iproc_cursor_reset(cursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter_reset(cursor);
     return NULL_USER_OBJECT;
 }
 
 SEXP
 Riproc_cursor_time (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 
-    if (!iproc_cursor_started(cursor))
+    if (!iproc_message_iter_started(cursor))
         error("cursor has not started");
-    if (iproc_cursor_finished(cursor))
+    if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t time = iproc_cursor_time(cursor);
+    double time = iproc_message_iter_time(cursor);
     return ScalarInteger(time);
 }
 
 SEXP
 Riproc_cursor_nties (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 
-    if (!iproc_cursor_started(cursor))
+    if (!iproc_message_iter_started(cursor))
         error("cursor has not started");
-    if (iproc_cursor_finished(cursor))
+    if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t nties = iproc_cursor_nmsg(cursor);
+    int64_t nties = iproc_message_iter_ntie(cursor);
     return ScalarInteger(nties);
 }
 
 SEXP
 Riproc_cursor_from (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 
-    if (!iproc_cursor_started(cursor))
+    if (!iproc_message_iter_started(cursor))
         error("cursor has not started");
-    if (iproc_cursor_finished(cursor))
+    if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t i, n = iproc_cursor_nmsg(cursor);
+    int64_t i, n = iproc_message_iter_ntie(cursor);
     int *from;
     SEXP Rfrom;
 
@@ -144,8 +144,8 @@ Riproc_cursor_from (SEXP Rcursor)
     from = INTEGER_POINTER(Rfrom);
 
     for (i = 0; i < n; i++) {
-        iproc_cursor_select_msg(cursor, i);
-        int64_t msg_from = iproc_cursor_msg_from(cursor);
+        iproc_message_iter_select(cursor, i);
+        int64_t msg_from = iproc_message_iter_from(cursor);
         from[i] = msg_from + 1;
     }
 
@@ -156,22 +156,22 @@ Riproc_cursor_from (SEXP Rcursor)
 SEXP
 Riproc_cursor_to (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 
-    if (!iproc_cursor_started(cursor))
+    if (!iproc_message_iter_started(cursor))
         error("cursor has not started");
-    if (iproc_cursor_finished(cursor))
+    if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t i, n = iproc_cursor_nmsg(cursor);
+    int64_t i, n = iproc_message_iter_ntie(cursor);
     SEXP Rto;
 
     PROTECT(Rto = NEW_LIST(n));
 
     for (i = 0; i < n; i++) {
-        iproc_cursor_select_msg(cursor, i);
-        int64_t  msg_nto = iproc_cursor_msg_nto(cursor);
-        int64_t *msg_to = iproc_cursor_msg_to(cursor);
+        iproc_message_iter_select(cursor, i);
+        int64_t  msg_nto = iproc_message_iter_nto(cursor);
+        int64_t *msg_to = iproc_message_iter_to(cursor);
         SEXP Rmsg_to;
 
         PROTECT(Rmsg_to = NEW_INTEGER(msg_nto));
@@ -191,8 +191,8 @@ Riproc_cursor_to (SEXP Rcursor)
 SEXP
 Riproc_cursor_started (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
-    if (iproc_cursor_started(cursor)) {
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+    if (iproc_message_iter_started(cursor)) {
         return ScalarLogical(TRUE);
     } else {
         return ScalarLogical(FALSE);
@@ -202,8 +202,8 @@ Riproc_cursor_started (SEXP Rcursor)
 SEXP
 Riproc_cursor_finished (SEXP Rcursor)
 {
-    iproc_cursor *cursor = Riproc_to_cursor(Rcursor);
-    if (iproc_cursor_finished(cursor)) {
+    iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+    if (iproc_message_iter_finished(cursor)) {
         return ScalarLogical(TRUE);
     } else {
         return ScalarLogical(FALSE);

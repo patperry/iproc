@@ -4,7 +4,7 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-#include "cursor.h"
+#include "messages.h"
 
 
 /* Call once to initialize library */
@@ -23,8 +23,8 @@ SEXP           Riproc_cursor_from     (SEXP          Rcursor);
 SEXP           Riproc_cursor_to       (SEXP          Rcursor);
 
 /* Internal use only */
-iproc_cursor * Riproc_to_cursor       (SEXP          Rcursor);
-SEXP           Riproc_from_cursor     (iproc_cursor *cursor);
+iproc_message_iter * Riproc_to_cursor       (SEXP          Rcursor);
+SEXP                 Riproc_from_cursor     (iproc_message_iter *it);
 
 
 #endif /* _RIPROC_CURSOR_H */

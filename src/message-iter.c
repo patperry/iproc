@@ -12,6 +12,7 @@ static void
 iproc_message_iter_free (iproc_message_iter *it)
 {
     if (it) {
+        iproc_history_unref(it->history);
         iproc_messages_unref(it->messages);
         iproc_free(it);
     }
@@ -25,6 +26,7 @@ iproc_message_iter_new (iproc_messages *msgs)
         return NULL;
 
     it->messages = iproc_messages_ref(msgs);
+    it->history = iproc_history_new();
     iproc_refcount_init(&it->refcount);
     iproc_message_iter_reset(it);
 
@@ -120,6 +122,7 @@ iproc_message_iter_reset (iproc_message_iter *it)
     if (!it)
         return;
 
+    iproc_history_clear(it->history);
     it->message = NULL;
     it->offset = 0;
     it->ntie = 0;
@@ -135,16 +138,26 @@ iproc_message_iter_next (iproc_message_iter *it)
     int64_t offset = it->offset + it->ntie;
 
     iproc_array *messages = it->messages->array;
+    iproc_array *recipients = it->messages->recipients;
+    iproc_history *history = it->history;
     int64_t n = iproc_array_size(messages);
     int64_t has_next = offset < n ? 1 : 0;
 
     if (has_next) {
         iproc_message *message = &(iproc_array_index(messages, iproc_message, offset));
-        int64_t time = message[0].time;
+        double time = message[0].time;
         int64_t ntie_max = n - offset;
-        int64_t ntie = 1;
+        int64_t ntie = 0;
+
+        iproc_history_advance_to(history, time);
 
         while (ntie < ntie_max && message[ntie].time == time) {
+            int64_t  msg_from = message[ntie].from;
+            int64_t  msg_ito = message[ntie].ito;
+            int64_t *msg_to = &(iproc_array_index(recipients, int64_t, msg_ito));
+            int64_t  msg_nto = message[ntie].nto;
+
+            iproc_history_insertm(history, msg_from, msg_to, msg_nto);
             ntie++;
         }
         it->ntie = ntie;
@@ -173,4 +186,13 @@ iproc_message_iter_finished (iproc_message_iter *it)
         return 1;
 
     return it->finished;
+}
+
+iproc_history *
+iproc_message_iter_history (iproc_message_iter *it)
+{
+    if (!it)
+        return NULL;
+
+    return it->history;
 }

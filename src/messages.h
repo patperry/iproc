@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "array.h"
+#include "history.h"
 #include "refcount.h"
 
 typedef struct _iproc_message      iproc_message;
@@ -28,6 +29,7 @@ struct _iproc_messages {
 
 struct _iproc_message_iter {
     iproc_messages *messages;
+    iproc_history  *history;
     int64_t         offset;
     int64_t         ntie;
     iproc_message  *message;
@@ -69,6 +71,8 @@ void                 iproc_message_iter_select (iproc_message_iter *it,
 int64_t              iproc_message_iter_from   (iproc_message_iter *it);
 int64_t              iproc_message_iter_nto    (iproc_message_iter *it);
 int64_t *            iproc_message_iter_to     (iproc_message_iter *it);
+
+iproc_history *      iproc_message_iter_history (iproc_message_iter *it);
 
 void                 iproc_message_iter_reset    (iproc_message_iter *it);
 int                  iproc_message_iter_next     (iproc_message_iter *it);

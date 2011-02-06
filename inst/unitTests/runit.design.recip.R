@@ -37,7 +37,7 @@ test.as.matrix <- function() {
     n <- 0
     while(advance(it)) {
         n <- n + 1
-        tcur <- time(it)
+        tcur <- as.numeric(time(it))
         for (i in from(it)) {
             delta <- tcur - tlast[,i]
             x <- matrix(0.0, nrow(receivers), ncol(design))
