@@ -42,14 +42,13 @@ Riproc_design_udata_dim (Riproc_design_udata *udata)
 }
 
 void
-Riproc_design_udata_get_sender_design (iproc_design_ctx *ctx)
+Riproc_design_udata_get_sdesign_vars (iproc_design_ctx *ctx)
 {
     Riproc_design_udata *udata = ctx->design->user_data;
     iproc_history *history = ctx->history;
     int64_t isend = ctx->isend;
-    iproc_array *dst = ctx->sender_design;
+    iproc_array *dst = ctx->sdesign_vars;
     int64_t offset = 0;
-    int64_t parent_dim = Riproc_design_udata_dim(udata);
 
-    iproc_vrecip_get(udata->recip, history, isend, dst, offset, parent_dim);
+    iproc_vrecip_get(ctx->design, udata->recip, history, isend, dst, offset);
 }

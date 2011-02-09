@@ -9,20 +9,21 @@
 #include "design.h"
 
 static void
-sender_design_clear (iproc_array *sender_design)
+sdesign_vars_clear (iproc_design *design,
+                    iproc_array  *sdesign_vars)
 {
-    if (!sender_design)
+    if (!sdesign_vars)
         return;
 
-    int64_t i, n = iproc_array_size(sender_design);
+    int64_t i, n = iproc_array_size(sdesign_vars);
     for (i = 0; i < n; i++) {
-        iproc_sender_design *sv = &(iproc_array_index(sender_design,
-                                                      iproc_sender_design,
-                                                      i));
-        iproc_svector_unref(sv->jdiff);
+        iproc_sdesign_var *sv = iproc_array_index(sdesign_vars,
+                                                  iproc_sdesign_var *,
+                                                  i);
+        iproc_sdesign_var_free(design, sv);
     }
     
-    iproc_array_set_size(sender_design, 0);
+    iproc_array_set_size(sdesign_vars, 0);
 }
 
 
@@ -32,7 +33,7 @@ iproc_design_ctx_free (iproc_design_ctx *ctx)
     if (ctx) {
         iproc_history_unref(ctx->history);
         ctx->history = NULL;
-        sender_design_clear(ctx->sender_design);
+        sdesign_vars_clear(ctx->design, ctx->sdesign_vars);
 
         iproc_design *design = ctx->design;
         iproc_array_append(design->ctxs, &ctx);
@@ -58,10 +59,10 @@ iproc_design_ctx_new_alloc (iproc_design  *design,
 
     iproc_refcount_init(&ctx->refcount);
 
-    if (design->get_sender_design) {
-        ctx->sender_design = iproc_array_new(sizeof(iproc_sender_design));
+    if (design->get_sdesign_vars) {
+        ctx->sdesign_vars = iproc_array_new(sizeof(iproc_sdesign_var *));
     } else {
-        ctx->sender_design = NULL;
+        ctx->sdesign_vars = NULL;
     }
 
     iproc_design_ctx_set(ctx, isend, h);
@@ -116,11 +117,11 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
     }
     ctx->isend = isend;
 
-    sender_design_clear(ctx->sender_design);
+    sdesign_vars_clear(ctx->design, ctx->sdesign_vars);
 
 
-    if (design->get_sender_design)
-        design->get_sender_design(ctx);
+    if (design->get_sdesign_vars)
+        design->get_sdesign_vars(ctx);
 }
 
 
@@ -248,28 +249,28 @@ iproc_design_ctx_diff_mul (double          alpha,
     
     int64_t ix_begin = iproc_design_idynamic(design, 0);
     int64_t ix_end = ix_begin + ndynamic;
-    iproc_array *sender_design = ctx->sender_design;
+    iproc_array *sdesign_vars = ctx->sdesign_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         iproc_vector_view xsub = iproc_vector_subvector(x, ix_begin, ndynamic);
-        int64_t i, n = iproc_array_size(sender_design);
+        int64_t i, n = iproc_array_size(sdesign_vars);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_design *sv = &(iproc_array_index(sender_design,
-                                                        iproc_sender_design,
-                                                        i));
+            iproc_sdesign_var *sv = iproc_array_index(sdesign_vars,
+                                                      iproc_sdesign_var *,
+                                                      i);
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
             double dot = iproc_vector_sdot(&xsub.vector, jdiff);
             iproc_svector_inc(y, jrecv, alpha * dot);
         }
     } else {
-        int64_t i, n = iproc_array_size(sender_design);
+        int64_t i, n = iproc_array_size(sdesign_vars);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_design *sv = &(iproc_array_index(sender_design,
-                                                        iproc_sender_design,
-                                                        i));
+            iproc_sdesign_var *sv = iproc_array_index(sdesign_vars,
+                                                      iproc_sdesign_var *,
+                                                      i);
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
             double xjrecv = iproc_vector_get(x, jrecv);
@@ -331,15 +332,15 @@ iproc_design_ctx_diff_muls (double          alpha,
     
     int64_t ix_begin = iproc_design_idynamic(design, 0);
     int64_t ix_end = ix_begin + ndynamic;
-    iproc_array *sender_design = ctx->sender_design;
+    iproc_array *sdesign_vars = ctx->sdesign_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
-        int64_t i, n = iproc_array_size(sender_design);
+        int64_t i, n = iproc_array_size(sdesign_vars);
         
         for (i = 0; i < n; i++ ) {
-            iproc_sender_design *sv = &(iproc_array_index(sender_design,
-                                                        iproc_sender_design,
-                                                        i));
+            iproc_sdesign_var *sv = iproc_array_index(sdesign_vars,
+                                                      iproc_sdesign_var *,
+                                                      i);
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
             int64_t inz, nnz = iproc_svector_nnz(x);
@@ -357,12 +358,12 @@ iproc_design_ctx_diff_muls (double          alpha,
             iproc_svector_inc(y, jrecv, alpha * dot);
         }
     } else {
-        int64_t i, n = iproc_array_size(sender_design);
+        int64_t i, n = iproc_array_size(sdesign_vars);
         
         for (i = 0; i < n; i++) {
-            iproc_sender_design *sv = &(iproc_array_index(sender_design,
-                                                        iproc_sender_design,
-                                                        i));
+            iproc_sdesign_var *sv = iproc_array_index(sdesign_vars,
+                                                      iproc_sdesign_var *,
+                                                      i);
             int64_t jrecv = sv->jrecv;
             iproc_svector *jdiff = sv->jdiff;
             double xjrecv = iproc_svector_get(x, jrecv);

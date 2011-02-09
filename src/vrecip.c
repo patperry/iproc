@@ -18,8 +18,8 @@ iproc_vrecip_free (iproc_vrecip *v)
 }
 
 iproc_vrecip *
-iproc_vrecip_new (double  *intvls,
-                  int64_t  n)
+iproc_vrecip_new (double       *intvls,
+                  int64_t       n)
 {
     iproc_vrecip *v = iproc_malloc(sizeof(*v));
 
@@ -94,11 +94,11 @@ compare_double (void *px,
 
 
 static int
-compare_sender_design_jrecv (void *px,
-                            void *py)
+compare_sdesign_var_jrecv (void *px,
+                           void *py)
 {
-    int64_t x = ((iproc_sender_design *)px)->jrecv;
-    int64_t y = ((iproc_sender_design *)py)->jrecv;
+    int64_t x = ((iproc_sdesign_var *)px)->jrecv;
+    int64_t y = ((iproc_sdesign_var *)py)->jrecv;
 
     if (x < y) {
         return -1;
@@ -110,17 +110,17 @@ compare_sender_design_jrecv (void *px,
 }
 
 void
-iproc_vrecip_get (iproc_vrecip  *v,
+iproc_vrecip_get (iproc_design  *design,
+                  iproc_vrecip  *v,
                   iproc_history *history,
                   int64_t        isend,
                   iproc_array   *dst,
-                  int64_t        offset,
-                  int64_t        parent_dim)
+                  int64_t        offset)
 {
     assert(v);
     assert(dst);
     assert(offset >= 0);
-    assert(parent_dim >= iproc_vrecip_dim(v) + offset);
+    assert(iproc_design_dim(design) >= iproc_vrecip_dim(v) + offset);
 
     if (!history)
         return;
@@ -143,18 +143,18 @@ iproc_vrecip_get (iproc_vrecip  *v,
             pos = ~pos;
         
         /* (jsend, [(pos, +1.0)]) */
+        iproc_sdesign_var *sv;
         if (pos < nintvl) {
-            iproc_sender_design sv = { jsend, NULL };
-            int64_t k = iproc_array_bsearch(dst, &sv, compare_sender_design_jrecv);
+            int64_t k = iproc_array_bsearch(dst, &jsend, compare_sdesign_var_jrecv);
             
             if (k < 0) {
-                sv.jdiff = iproc_svector_new(parent_dim);
+                sv = iproc_sdesign_var_new(design, jsend);
                 iproc_array_insert(dst, ~k, &sv);
             } else {
-                sv.jdiff = iproc_array_index(dst, iproc_sender_design, k).jdiff;
+                sv = iproc_array_index(dst, iproc_sdesign_var *, k);
             }
 
-            iproc_svector_inc(sv.jdiff, offset + pos, 1.0);
+            iproc_svector_inc(sv->jdiff, offset + pos, 1.0);
         }
     }
 

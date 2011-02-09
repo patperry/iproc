@@ -13,8 +13,8 @@ static void
 iproc_design_ctx_free_dealloc (iproc_design_ctx *ctx)
 {
     if (ctx) {
-        assert(iproc_array_size(ctx->sender_design) == 0);
-        iproc_array_unref(ctx->sender_design);
+        assert(iproc_array_size(ctx->sdesign_vars) == 0);
+        iproc_array_unref(ctx->sdesign_vars);
         iproc_free(ctx);
     }
 }
@@ -47,7 +47,7 @@ iproc_design_new (iproc_actors *senders,
                 iproc_actors *receivers,
                 int64_t       ndynamic,
                 void         *user_data,
-                void        (*get_sender_design) (iproc_design_ctx *ctx),
+                void        (*get_sdesign_vars) (iproc_design_ctx *ctx),
                 void        (*free_user_data)  (void *user_data))
 {
     assert(senders);
@@ -68,7 +68,7 @@ iproc_design_new (iproc_actors *senders,
     design->nstatic = nstatic;
     design->ndynamic = ndynamic;
     design->user_data = user_data;
-    design->get_sender_design = get_sender_design;
+    design->get_sdesign_vars = get_sdesign_vars;
     design->free_user_data = free_user_data;
     design->ctxs = iproc_array_new(sizeof(iproc_design_ctx *));
     iproc_refcount_init(&design->refcount);
@@ -337,3 +337,27 @@ iproc_design_sender0_muls (double          alpha,
     iproc_vector_unref(z);
 }
 
+iproc_sdesign_var *
+iproc_sdesign_var_new  (iproc_design      *design,
+                        int64_t            jrecv)
+{
+    iproc_sdesign_var *sv = iproc_malloc(sizeof(*sv));
+    if (!sv)
+        return NULL;
+
+    int64_t dim = iproc_design_ndynamic(design);
+    sv->jrecv = jrecv;
+    sv->jdiff = iproc_svector_new(dim);
+    return sv;
+}
+
+void
+iproc_sdesign_var_free (iproc_design      *design,
+                        iproc_sdesign_var *sv)
+{
+    if (!sv)
+        return;
+
+    iproc_svector_unref(sv->jdiff);
+    iproc_free(sv);
+}

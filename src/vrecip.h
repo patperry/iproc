@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "array.h"
+#include "design.h"
 #include "history.h"
 #include "refcount.h"
 
@@ -19,12 +20,13 @@ iproc_vrecip * iproc_vrecip_ref   (iproc_vrecip *v);
 void           iproc_vrecip_unref (iproc_vrecip *v);
 int64_t        iproc_vrecip_dim   (iproc_vrecip *v);
 
-void           iproc_vrecip_get   (iproc_vrecip *v,
+void           iproc_vrecip_get   (iproc_design  *design,
+                                   iproc_vrecip  *v,
                                    iproc_history *history,
                                    int64_t        isend,
                                    iproc_array   *dst,
-                                   int64_t        offset,
-                                   int64_t        parent_dim);
+                                   int64_t        offset);
+
                                      
 
 

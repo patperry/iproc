@@ -42,6 +42,6 @@ struct _Riproc_design_udata {
 Riproc_design_udata * Riproc_design_udata_new             (SEXP               Rreceive_intervals);
 void                 Riproc_design_udata_free             (void              *design_udata);
 int64_t              Riproc_design_udata_dim              (Riproc_design_udata *udata);
-void                 Riproc_design_udata_get_sender_design (iproc_design_ctx    *ctx);
+void                 Riproc_design_udata_get_sdesign_vars (iproc_design_ctx    *ctx);
 
 #endif /* _RIPROC_DESIGN_H */
