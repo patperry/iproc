@@ -365,3 +365,24 @@ iproc_svector_printf (iproc_svector *svector)
     printf("\n       }");
     printf("\n}\n");
 }
+
+void
+iproc_svector_copy (iproc_svector *dst_svector,
+                    iproc_svector *src_svector)
+{
+    assert(dst_svector);
+    assert(src_svector);
+    assert(iproc_svector_dim(dst_svector) == iproc_svector_dim(src_svector));
+
+    int64_t nnz = iproc_svector_nnz(src_svector);
+
+    iproc_array_set_size(dst_svector->index, nnz);
+    int64_t *idst = &iproc_array_index(dst_svector->index, int64_t, 0);
+    int64_t *isrc = &iproc_array_index(src_svector->index, int64_t, 0);
+    memcpy(idst, isrc, nnz * sizeof(int64_t));
+
+    iproc_array_set_size(dst_svector->value, nnz);
+    double *vdst = &iproc_array_index(dst_svector->value, double, 0);
+    double *vsrc = &iproc_array_index(src_svector->value, double, 0);
+    memcpy(vdst, vsrc, nnz * sizeof(double));
+}

@@ -18,6 +18,8 @@ struct _iproc_svector {
 iproc_svector *   iproc_svector_new      (int64_t        dim);
 iproc_svector *   iproc_svector_new_copy (iproc_svector *svector);
 void              iproc_svector_clear    (iproc_svector *svector);
+void              iproc_svector_copy     (iproc_svector *dst_svector,
+                                          iproc_svector *src_svector);
 iproc_svector *   iproc_svector_ref      (iproc_svector *svector);
 void              iproc_svector_unref    (iproc_svector *svector);
 
