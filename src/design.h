@@ -23,6 +23,7 @@ struct _iproc_design {
     void (*get_sender_design) (iproc_design_ctx *ctx);
     void (*free_user_data) (void *);
     void *user_data;
+    iproc_array   *ctxs;
     iproc_refcount refcount;
 };
 

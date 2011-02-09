@@ -8,10 +8,32 @@
 #include "memory.h"
 #include "design.h"
 
+
+static void
+iproc_design_ctx_free_dealloc (iproc_design_ctx *ctx)
+{
+    if (ctx) {
+        assert(iproc_array_size(ctx->sender_design) == 0);
+        iproc_array_unref(ctx->sender_design);
+        iproc_free(ctx);
+    }
+}
+
 static void
 iproc_design_free (iproc_design *design)
 {
     if (design) {
+        if (design->ctxs) {
+            int64_t i, n = iproc_array_size(design->ctxs);
+            for (i = 0; i < n; i++) {
+                iproc_design_ctx *ctx = iproc_array_index(design->ctxs,
+                                                          iproc_design_ctx *,
+                                                          i);
+                iproc_design_ctx_free_dealloc(ctx);
+            }
+            iproc_array_unref(design->ctxs);
+        }
+
         iproc_actors_unref(design->receivers);
         iproc_actors_unref(design->senders);
         if (design->free_user_data)
@@ -48,7 +70,9 @@ iproc_design_new (iproc_actors *senders,
     design->user_data = user_data;
     design->get_sender_design = get_sender_design;
     design->free_user_data = free_user_data;
+    design->ctxs = iproc_array_new(sizeof(iproc_design_ctx *));
     iproc_refcount_init(&design->refcount);
+
     return design;
 }
 

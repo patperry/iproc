@@ -25,16 +25,20 @@ sender_design_clear (iproc_array *sender_design)
     iproc_array_set_size(sender_design, 0);
 }
 
+
 static void
 iproc_design_ctx_free (iproc_design_ctx *ctx)
 {
     if (ctx) {
         iproc_history_unref(ctx->history);
-        iproc_design_unref(ctx->design);
+        ctx->history = NULL;
         sender_design_clear(ctx->sender_design);
-        iproc_array_unref(ctx->sender_design);
-        iproc_free(ctx);
+
+        iproc_design *design = ctx->design;
+        iproc_array_append(design->ctxs, &ctx);
+        iproc_design_unref(design);
     }
+ 
 }
 
 static iproc_design_ctx *
@@ -81,6 +85,10 @@ iproc_design_ctx_new (iproc_design  *design,
     if (n > 0) {
         ctx = iproc_array_index(ctxs, iproc_design_ctx *, n - 1);
         iproc_array_set_size(ctxs, n - 1);
+        iproc_design_ref(design);
+        iproc_refcount_init(&ctx->refcount);
+        iproc_design_ctx_set(ctx, isend, h);
+        assert(ctx->design == design);
     } else {
         ctx = iproc_design_ctx_new_alloc(design, isend, h);
     }
