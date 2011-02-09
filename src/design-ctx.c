@@ -8,6 +8,22 @@
 #include "memory.h"
 #include "design.h"
 
+static void
+sender_design_clear (iproc_array *sender_design)
+{
+    if (!sender_design)
+        return;
+
+    int64_t i, n = iproc_array_size(sender_design);
+    for (i = 0; i < n; i++) {
+        iproc_sender_design *sv = &(iproc_array_index(sender_design,
+                                                      iproc_sender_design,
+                                                      i));
+        iproc_svector_unref(sv->jdiff);
+    }
+    
+    iproc_array_set_size(sender_design, 0);
+}
 
 static void
 iproc_design_ctx_free (iproc_design_ctx *ctx)
@@ -15,26 +31,16 @@ iproc_design_ctx_free (iproc_design_ctx *ctx)
     if (ctx) {
         iproc_history_unref(ctx->history);
         iproc_design_unref(ctx->design);
-        
-        if (ctx->sender_design) {
-            int64_t i, n = iproc_array_size(ctx->sender_design);
-            for (i = 0; i < n; i++) {
-                iproc_sender_design *sv = &(iproc_array_index(ctx->sender_design,
-                                                            iproc_sender_design,
-                                                            i));
-                iproc_svector_unref(sv->jdiff);
-            }
-        }
-
+        sender_design_clear(ctx->sender_design);
         iproc_array_unref(ctx->sender_design);
         iproc_free(ctx);
     }
 }
 
-iproc_design_ctx *
-iproc_design_ctx_new (iproc_design    *design,
-                    int64_t        isend,
-                    iproc_history *h)
+static iproc_design_ctx *
+iproc_design_ctx_new_alloc (iproc_design  *design,
+                            int64_t        isend,
+                            iproc_history *h)
 
 {
     assert(design);
@@ -59,6 +65,30 @@ iproc_design_ctx_new (iproc_design    *design,
     return ctx;
 }
 
+iproc_design_ctx *
+iproc_design_ctx_new (iproc_design  *design,
+                      int64_t        isend,
+                      iproc_history *h)
+{
+    assert(design);
+    assert(0 <= isend);
+    assert(isend < iproc_design_nsender(design));
+
+    iproc_design_ctx *ctx;
+    iproc_array *ctxs = design->ctxs;
+    int64_t n = iproc_array_size(ctxs);
+    
+    if (n > 0) {
+        ctx = iproc_array_index(ctxs, iproc_design_ctx *, n - 1);
+        iproc_array_set_size(ctxs, n - 1);
+    } else {
+        ctx = iproc_design_ctx_new_alloc(design, isend, h);
+    }
+
+    return ctx;
+}
+
+
 void
 iproc_design_ctx_set (iproc_design_ctx *ctx,
                       int64_t           isend,
@@ -78,7 +108,8 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
     }
     ctx->isend = isend;
 
-    iproc_array_set_size(ctx->sender_design, 0);
+    sender_design_clear(ctx->sender_design);
+
 
     if (design->get_sender_design)
         design->get_sender_design(ctx);
