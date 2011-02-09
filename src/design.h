@@ -84,6 +84,9 @@ iproc_design_ctx * iproc_design_ctx_ref       (iproc_design_ctx *ctx);
 void             iproc_design_ctx_unref     (iproc_design_ctx *ctx);
 
 
+void             iproc_design_ctx_set     (iproc_design_ctx *ctx,
+                                           int64_t           isend,
+                                           iproc_history    *h);
 void             iproc_design_ctx_mul       (double          alpha,
                                            iproc_trans     trans,
                                            iproc_design_ctx *ctx,

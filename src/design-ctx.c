@@ -43,20 +43,47 @@ iproc_design_ctx_new (iproc_design    *design,
 
     iproc_design_ctx *ctx = iproc_malloc(sizeof(*ctx));
     ctx->design = iproc_design_ref(design);
-    ctx->history = iproc_history_ref(h);
-    ctx->isend = isend;
+    ctx->history = NULL;
+    ctx->isend = -1;
 
     iproc_refcount_init(&ctx->refcount);
 
     if (design->get_sender_design) {
         ctx->sender_design = iproc_array_new(sizeof(iproc_sender_design));
-        design->get_sender_design(ctx);
     } else {
         ctx->sender_design = NULL;
     }
 
+    iproc_design_ctx_set(ctx, isend, h);
+
     return ctx;
 }
+
+void
+iproc_design_ctx_set (iproc_design_ctx *ctx,
+                      int64_t           isend,
+                      iproc_history    *h)
+{
+    assert(ctx);
+    assert(ctx->design);
+    assert(0 <= isend);
+    assert(isend < iproc_design_nsender(ctx->design));
+
+    iproc_design *design = ctx->design;
+
+    if (h != ctx->history) {
+        iproc_history_ref(h);
+        iproc_history_unref(ctx->history);
+        ctx->history = h;
+    }
+    ctx->isend = isend;
+
+    iproc_array_set_size(ctx->sender_design, 0);
+
+    if (design->get_sender_design)
+        design->get_sender_design(ctx);
+}
+
 
 iproc_design_ctx *
 iproc_design_ctx_ref (iproc_design_ctx *ctx)
