@@ -106,13 +106,44 @@ static void
 iproc_model_ctx_free (iproc_model_ctx *ctx)
 {
     if (ctx) {
-        iproc_model_unref(ctx->model);
-        iproc_svector_unref(ctx->active_probs);
-        iproc_svector_unref(ctx->active_logprobs);
         iproc_design_ctx_unref(ctx->design_ctx);
-        iproc_free(ctx);
+
+        iproc_model *model = ctx->model;
+        iproc_array_append(model->ctxs, &ctx);
+        iproc_model_unref(model);
     }
 }
+
+static iproc_model_ctx *
+iproc_model_ctx_new_alloc (iproc_model     *model,
+                           int64_t          isend,
+                           iproc_history   *h)
+{
+    assert(model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(model));
+
+    iproc_model_ctx *ctx = iproc_malloc(sizeof(*ctx));
+    if (!ctx)
+        return NULL;
+
+    int64_t nreceiver = iproc_model_nreceiver(model);
+    ctx->model = iproc_model_ref(model);
+    ctx->design_ctx = NULL;
+    ctx->group = NULL;
+    ctx->active_logprobs = iproc_svector_new(nreceiver);
+    ctx->active_probs = iproc_svector_new(nreceiver);
+    iproc_refcount_init(&ctx->refcount);
+    
+    if (!(ctx->active_logprobs && ctx->active_probs)) {
+        iproc_model_ctx_free(ctx);
+        return NULL;
+    }
+
+    iproc_model_ctx_set(ctx, isend, h);
+    return ctx;
+}
+
 
 iproc_model_ctx *
 iproc_model_ctx_new (iproc_model     *model,
@@ -120,50 +151,62 @@ iproc_model_ctx_new (iproc_model     *model,
                      iproc_history   *h)
 {
     assert(model);
-    assert(isend >= 0);
+    assert(0 <= isend);
     assert(isend < iproc_model_nsender(model));
 
-    iproc_model_ctx *ctx = iproc_malloc(sizeof(*ctx));
+    iproc_model_ctx *ctx;
+    iproc_array *ctxs = model->ctxs;
+    int64_t n = iproc_array_size(ctxs);
+    
+    if (n > 0) {
+        ctx = iproc_array_index(ctxs, iproc_model_ctx *, n - 1);
+        iproc_array_set_size(ctxs, n - 1);
+        iproc_model_ref(model);
+        iproc_refcount_init(&ctx->refcount);
+        iproc_model_ctx_set(ctx, isend, h);
+        assert(ctx->model == model);
+    } else {
+        ctx = iproc_model_ctx_new_alloc(model, isend, h);
+    }
 
-    if (!ctx)
-        return NULL;
+    return ctx;
 
-    ctx->active_probs = NULL;
-    ctx->active_logprobs = NULL;
+}
 
+
+void
+iproc_model_ctx_set (iproc_model_ctx *ctx,
+                     int64_t          isend,
+                     iproc_history   *h)
+{
+    assert(ctx);
+    assert(ctx->model);
+    assert(isend >= 0);
+    assert(isend < iproc_model_nsender(ctx->model));
+
+    iproc_design_ctx_unref(ctx->design_ctx);
+    iproc_svector_clear(ctx->active_probs);
+    iproc_svector_clear(ctx->active_logprobs);
+
+    iproc_model *model = ctx->model;
     iproc_design *design = iproc_model_design(model);
     iproc_design_ctx *design_ctx = iproc_design_ctx_new(design, isend, h);
     iproc_vector *coefs = iproc_model_coefs(model);
     int has_loops = iproc_model_has_loops(model);
     iproc_group_model *group = iproc_model_send_group(model, isend);
-    int64_t nreceiver = iproc_model_nreceiver(model);
 
-    ctx->model = iproc_model_ref(model);
     ctx->design_ctx = design_ctx;
     ctx->group = group;
-    ctx->active_logprobs = iproc_svector_new(nreceiver);
-    
-    if (!(design_ctx && ctx->active_logprobs)) {
-        iproc_model_ctx_free(ctx);
-        return NULL;
-    }
 
     compute_new_logprobs(design_ctx, coefs, has_loops, group->logprobs0,
                          ctx->active_logprobs, &ctx->logsumweight_diff);
-    ctx->active_probs = iproc_svector_new_copy(ctx->active_logprobs);
-
-    if (!ctx->active_probs) {
-        iproc_model_ctx_free(ctx);
-        return NULL;
-    }
-
+    iproc_svector_copy(ctx->active_probs, ctx->active_logprobs);
+    
     iproc_vector_view view = iproc_svector_view_nz(ctx->active_probs);
     iproc_vector_exp(&view.vector);
     ctx->invsumweight_ratio = exp(-ctx->logsumweight_diff);
-
-    iproc_refcount_init(&ctx->refcount);
-    return ctx;
 }
+
 
 iproc_model_ctx *
 iproc_model_ctx_ref (iproc_model_ctx *ctx)

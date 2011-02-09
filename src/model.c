@@ -119,9 +119,32 @@ iproc_model_send_group (iproc_model *model,
 }
 
 static void
+iproc_model_ctx_free_dealloc (iproc_model_ctx *ctx)
+{
+    if (ctx) {
+        iproc_svector_unref(ctx->active_probs);
+        iproc_svector_unref(ctx->active_logprobs);
+        iproc_free(ctx);
+    }
+}
+
+static void
 iproc_model_free (iproc_model *model)
 {
     if (model) {
+        if (model->ctxs) {
+            int64_t i, n = iproc_array_size(model->ctxs);
+
+            for (i = 0; i < n; i++) {
+                iproc_model_ctx *ctx = iproc_array_index(model->ctxs,
+                                                         iproc_model_ctx *,
+                                                         i);
+                iproc_model_ctx_free_dealloc(ctx);
+            }
+
+            iproc_array_unref(model->ctxs);
+        }
+
         iproc_vector_unref(model->coefs);
         iproc_design_unref(model->design);
         iproc_group_models_deinit(model->group_models);
@@ -147,6 +170,7 @@ iproc_model_new (iproc_design   *design,
     model->has_loops = has_loops;
     model->group_models = iproc_array_new(sizeof(iproc_group_model));
     iproc_group_models_init(model->group_models, design, coefs);
+    model->ctxs = iproc_array_new(sizeof(iproc_model_ctx *));
     iproc_refcount_init(&model->refcount);
 
     return model;

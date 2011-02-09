@@ -2,6 +2,7 @@
 #define _IPROC_MODEL_H
 
 #include "refcount.h"
+#include "array.h"
 #include "design.h"
 #include "vector.h"
 
@@ -19,10 +20,11 @@ struct _iproc_group_model {
 };
 
 struct _iproc_model {
-    iproc_design    *design;
+    iproc_design  *design;
     iproc_vector  *coefs;
     int            has_loops;
     iproc_array   *group_models;
+    iproc_array   *ctxs;
     iproc_refcount refcount;
 };
 
@@ -70,6 +72,10 @@ iproc_model_ctx *   iproc_model_ctx_new            (iproc_model     *model,
                                                     iproc_history   *h);
 iproc_model_ctx *   iproc_model_ctx_ref            (iproc_model_ctx *ctx);
 void                iproc_model_ctx_unref          (iproc_model_ctx *ctx);
+
+void                iproc_model_ctx_set            (iproc_model_ctx *ctx,
+                                                    int64_t          isend,
+                                                    iproc_history   *h);
 
 int64_t             iproc_model_ctx_nreceiver      (iproc_model_ctx *ctx);
 double              iproc_model_ctx_prob           (iproc_model_ctx *ctx,
