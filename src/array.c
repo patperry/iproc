@@ -148,7 +148,8 @@ iproc_array_set (iproc_array *array,
 int64_t
 iproc_array_size (iproc_array *array)
 {
-    assert(array);
+    if (!array)
+        return 0;
     return array->n;
 }
 
