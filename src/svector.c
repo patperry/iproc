@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "blas-private.h"
 #include "memory.h"
 #include "svector.h"
@@ -353,12 +354,12 @@ void
 iproc_svector_printf (iproc_svector *svector)
 {
     printf("\nsvector {");
-    printf("\n  dim: %lld", iproc_svector_dim(svector));
+    printf("\n  dim: %"PRId64"", iproc_svector_dim(svector));
     printf("\n   nz: {");
 
     int64_t i, n = iproc_svector_nnz(svector);
     for (i = 0; i < n; i++) {
-        printf("\n         %lld, %.8f",
+        printf("\n         %"PRId64", %.8f",
                iproc_svector_nz(svector, i),
                iproc_svector_nz_get(svector, i));
     }

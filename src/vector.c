@@ -4,6 +4,7 @@
 #endif
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <math.h>
@@ -546,7 +547,7 @@ void
 iproc_vector_printf (iproc_vector *vector)
 {
     printf("\nvector {");
-    printf("\n  dim: %lld", iproc_vector_dim(vector));
+    printf("\n  dim: %"PRId64"", iproc_vector_dim(vector));
     printf("\n   nz: {");
 
     int64_t i, n = iproc_vector_dim(vector);
@@ -554,7 +555,7 @@ iproc_vector_printf (iproc_vector *vector)
         if (iproc_vector_get(vector, i) == 0.0)
             continue;
 
-        printf("\n         %lld, %.8f", i,
+        printf("\n         %"PRId64", %.8f", i,
                iproc_vector_get(vector, i));
     }
     printf("\n       }");

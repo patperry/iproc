@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include "memory.h"
@@ -277,7 +278,7 @@ iproc_vector_acc_sloglik_grad_nocache (iproc_vector  *dst_vector,
 
     // printf("\nisend");
     // printf("\n-----");
-    // printf("\n%lld\n", sll->isend);
+    // printf("\n%"PRId64"\n", sll->isend);
 
     // printf("\nsuminvwt");
     // printf("\n--------");
