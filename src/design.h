@@ -115,9 +115,8 @@ void             iproc_design_ctx_diff_muls (double          alpha,
                                            iproc_svector  *y);
 
 
-iproc_sdesign_var * iproc_sdesign_var_new  (iproc_design      *design,
-                                            int64_t            jrecv);
-void                iproc_sdesign_var_free (iproc_design      *design,
-                                            iproc_sdesign_var *sv);
+iproc_svector * iproc_sdesign_var_new  (iproc_design  *design);
+void            iproc_sdesign_var_free (iproc_design  *design,
+                                        iproc_svector *svector);
 
 #endif /* _IPROC_DESIGN_H */

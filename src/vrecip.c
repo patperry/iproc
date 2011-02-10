@@ -143,18 +143,19 @@ iproc_vrecip_get (iproc_design  *design,
             pos = ~pos;
         
         /* (jsend, [(pos, +1.0)]) */
-        iproc_sdesign_var *sv;
+        iproc_svector *jdiff;
         if (pos < nintvl) {
             int64_t k = iproc_array_bsearch(dst, &jsend, compare_sdesign_var_jrecv);
             
             if (k < 0) {
-                sv = iproc_sdesign_var_new(design, jsend);
-                iproc_array_insert(dst, ~k, &sv);
+                jdiff = iproc_sdesign_var_new(design);
+                iproc_sdesign_var new_sv = { jsend, jdiff };
+                iproc_array_insert(dst, ~k, &new_sv);
             } else {
-                sv = iproc_array_index(dst, iproc_sdesign_var *, k);
+                jdiff = (iproc_array_index(dst, iproc_sdesign_var, k)).jdiff;
             }
 
-            iproc_svector_inc(sv->jdiff, offset + pos, 1.0);
+            iproc_svector_inc(jdiff, offset + pos, 1.0);
         }
     }
 

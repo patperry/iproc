@@ -337,27 +337,19 @@ iproc_design_sender0_muls (double          alpha,
     iproc_vector_unref(z);
 }
 
-iproc_sdesign_var *
-iproc_sdesign_var_new  (iproc_design      *design,
-                        int64_t            jrecv)
+iproc_svector *
+iproc_sdesign_var_new (iproc_design *design)
 {
-    iproc_sdesign_var *sv = iproc_malloc(sizeof(*sv));
-    if (!sv)
-        return NULL;
-
     int64_t dim = iproc_design_ndynamic(design);
-    sv->jrecv = jrecv;
-    sv->jdiff = iproc_svector_new(dim);
-    return sv;
+    return iproc_svector_new(dim);
 }
 
 void
-iproc_sdesign_var_free (iproc_design      *design,
-                        iproc_sdesign_var *sv)
+iproc_sdesign_var_free (iproc_design  *design,
+                        iproc_svector *svector)
 {
-    if (!sv)
+    if (!svector)
         return;
 
-    iproc_svector_unref(sv->jdiff);
-    iproc_free(sv);
+    iproc_svector_unref(svector);
 }
