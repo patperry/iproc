@@ -120,17 +120,17 @@ iproc_matrix_copy (iproc_matrix *dst_matrix,
     assert(iproc_matrix_nrow(dst_matrix) == iproc_matrix_nrow(matrix));
     assert(iproc_matrix_ncol(dst_matrix) == iproc_matrix_ncol(matrix));
 
-    int64_t m = iproc_matrix_nrow(dst_matrix);
-    int64_t n = iproc_matrix_ncol(dst_matrix);
-    int64_t i, j;
+    f77int m = iproc_matrix_nrow(dst_matrix);
+    f77int n = iproc_matrix_ncol(dst_matrix);
+    f77int i, j;
 
     if (iproc_matrix_lda(dst_matrix) == m && iproc_matrix_lda(matrix) == m) {
-        int64_t mn = m * n;
-        int64_t one = 1;
+        f77int mn = m * n;
+        f77int one = 1;
 
-        F77_FUNC(dcopy)(F77_INTP(mn), iproc_matrix_ptr(matrix, 0, 0),
-                        F77_INTP(one), iproc_matrix_ptr(dst_matrix, 0, 0),
-                        F77_INTP(one));
+        F77_FUNC(dcopy)(&mn, iproc_matrix_ptr(matrix, 0, 0),
+                        &one, iproc_matrix_ptr(dst_matrix, 0, 0),
+                        &one);
     } else {
         double value;
 
@@ -201,21 +201,21 @@ iproc_matrix_acc (iproc_matrix *dst_matrix,
     assert(iproc_matrix_nrow(dst_matrix) == iproc_matrix_nrow(matrix));
     assert(iproc_matrix_ncol(dst_matrix) == iproc_matrix_ncol(matrix));
 
-    int64_t m = iproc_matrix_nrow(dst_matrix);
-    int64_t n = iproc_matrix_ncol(dst_matrix);
-    int64_t one = 1;
-    int64_t j;
+    f77int m = iproc_matrix_nrow(dst_matrix);
+    f77int n = iproc_matrix_ncol(dst_matrix);
+    f77int one = 1;
+    f77int j;
 
     if (iproc_matrix_lda(matrix) == m && iproc_matrix_lda(dst_matrix) == m) {
-        int64_t mn = m * n;
-        F77_FUNC(daxpy)(F77_INTP(mn), &scale,
-                        iproc_matrix_ptr(matrix, 0, 0), F77_INTP(one),
-                        iproc_matrix_ptr(dst_matrix, 0, 0), F77_INTP(one));
+        f77int mn = m * n;
+        F77_FUNC(daxpy)(&mn, &scale,
+                        iproc_matrix_ptr(matrix, 0, 0), &one,
+                        iproc_matrix_ptr(dst_matrix, 0, 0), &one);
     } else {
         for (j = 0; j < n; j++) {
-            F77_FUNC(daxpy)(F77_INTP(m), &scale,
-                            iproc_matrix_ptr(matrix, 0, j), F77_INTP(one),
-                            iproc_matrix_ptr(dst_matrix, 0, j), F77_INTP(one));
+            F77_FUNC(daxpy)(&m, &scale,
+                            iproc_matrix_ptr(matrix, 0, j), &one,
+                            iproc_matrix_ptr(dst_matrix, 0, j), &one);
         }
     }
 
@@ -342,17 +342,17 @@ iproc_matrix_mul (double        alpha,
            || iproc_vector_dim(y) == iproc_matrix_ncol(matrix));
 
     char    *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
-    int64_t  m      = iproc_matrix_nrow(matrix);
-    int64_t  n      = iproc_matrix_ncol(matrix);
+    f77int   m      = iproc_matrix_nrow(matrix);
+    f77int   n      = iproc_matrix_ncol(matrix);
     void    *pa     = iproc_matrix_ptr(matrix, 0, 0);
-    int64_t  lda    = iproc_matrix_lda(matrix);
+    f77int   lda    = iproc_matrix_lda(matrix);
     void    *px     = iproc_vector_ptr(x, 0);
-    int64_t  incx   = 1;
+    f77int   incx   = 1;
     void    *py     = iproc_vector_ptr(y, 0);
-    int64_t  incy   = 1;
+    f77int   incy   = 1;
 
-    F77_FUNC(dgemv)(ptrans, F77_INTP(m),  F77_INTP(n), &alpha, pa, F77_INTP(lda), 
-                    px, F77_INTP(incx), &beta, py, F77_INTP(incy));
+    F77_FUNC(dgemv)(ptrans, &m,  &n, &alpha, pa, &lda, 
+                    px, &incx, &beta, py, &incy);
 }
 
 void
@@ -378,18 +378,18 @@ iproc_matrix_matmul (double        alpha,
 
     char    *ptransa = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
     char    *ptransb = "N";
-    int64_t  m       = iproc_matrix_nrow(y);
-    int64_t  n       = iproc_matrix_ncol(y);
-    int64_t  k       = (trans == IPROC_TRANS_NOTRANS) ? iproc_matrix_ncol(matrix)
+    f77int   m       = iproc_matrix_nrow(y);
+    f77int   n       = iproc_matrix_ncol(y);
+    f77int   k       = (trans == IPROC_TRANS_NOTRANS) ? iproc_matrix_ncol(matrix)
                                                       : iproc_matrix_nrow(matrix);
     void    *pa      = iproc_matrix_ptr(matrix, 0, 0);
-    int64_t  lda     = iproc_matrix_lda(matrix);
+    f77int   lda     = iproc_matrix_lda(matrix);
     void    *pb      = iproc_matrix_ptr(x, 0, 0);
-    int64_t  ldb     = iproc_matrix_lda(x);
+    f77int   ldb     = iproc_matrix_lda(x);
     void    *pc      = iproc_matrix_ptr(y, 0, 0);
-    int64_t  ldc     = iproc_matrix_lda(y);
+    f77int   ldc     = iproc_matrix_lda(y);
 
-    F77_FUNC(dgemm)(ptransa, ptransb, F77_INTP(m), F77_INTP(n), F77_INTP(k),
-                    &alpha, pa, F77_INTP(lda), pb, F77_INTP(ldb),
-                    &beta, pc, F77_INTP(ldc));
+    F77_FUNC(dgemm)(ptransa, ptransb, &m, &n, &k,
+                    &alpha, pa, &lda, pb, &ldb,
+                    &beta, pc, &ldc);
 }

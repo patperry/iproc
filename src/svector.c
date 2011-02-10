@@ -185,12 +185,12 @@ iproc_svector_scale (iproc_svector *svector,
 {
     assert(svector);
 
-    int64_t  n     = iproc_svector_nnz(svector);
+    f77int   n     = iproc_svector_nnz(svector);
     double   alpha = scale;
-    int64_t  incx  = 1;
+    f77int   incx  = 1;
     double  *px    = &(iproc_array_index(svector->value, double, 0));
 
-    F77_FUNC(dscal)(F77_INTP(n), &alpha, px, F77_INTP(incx));
+    F77_FUNC(dscal)(&n, &alpha, px, &incx);
 }
 
 int64_t

@@ -202,13 +202,13 @@ iproc_vector_copy (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    int64_t n    = iproc_vector_dim(dst_vector);
+    f77int  n    = iproc_vector_dim(dst_vector);
     double *px   = iproc_vector_ptr(vector, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
     double *py   = iproc_vector_ptr(dst_vector, 0);
-    int64_t incy = 1;
+    f77int  incy = 1;
 
-    F77_FUNC(dcopy)(F77_INTP(n), px, F77_INTP(incx), py, F77_INTP(incy));
+    F77_FUNC(dcopy)(&n, px, &incx, py, &incy);
 }
 
 
@@ -220,13 +220,13 @@ iproc_vector_swap (iproc_vector *vector1,
     assert(vector2);
     assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
-    int64_t n    = iproc_vector_dim(vector1);
+    f77int  n    = iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
     double *py   = iproc_vector_ptr(vector2, 0);
-    int64_t incy = 1;
+    f77int  incy = 1;
 
-    F77_FUNC(dswap)(F77_INTP(n), px, F77_INTP(incx), py, F77_INTP(incy));
+    F77_FUNC(dswap)(&n, px, &incx, py, &incy);
 }
 
 
@@ -272,12 +272,12 @@ iproc_vector_scale (iproc_vector *vector,
 {
     assert(vector);
 
-    int64_t n     = iproc_vector_dim(vector);
+    f77int  n     = iproc_vector_dim(vector);
     double  alpha = scale;
     void   *px    = iproc_vector_ptr(vector, 0);
-    int64_t incx  = 1;
+    f77int  incx  = 1;
 
-    F77_FUNC(dscal)(F77_INTP(n), &alpha, px, F77_INTP(incx));
+    F77_FUNC(dscal)(&n, &alpha, px, &incx);
 }
 
 
@@ -329,15 +329,14 @@ iproc_vector_mul (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    int64_t n     = iproc_vector_dim(dst_vector);
-    int64_t k     = 0;
+    f77int  n     = iproc_vector_dim(dst_vector);
+    f77int  k     = 0;
     double *px    = iproc_vector_ptr(vector, 0);
-    int64_t incx  = 1;
+    f77int  incx  = 1;
     double *py    = iproc_vector_ptr(dst_vector, 0);
-    int64_t incy  = 1;
+    f77int  incy  = 1;
 
-    F77_FUNC(dtbmv)("U", "N", "N", F77_INTP(n), F77_INTP(k),
-                    px, F77_INTP(incx), py, F77_INTP(incy));
+    F77_FUNC(dtbmv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
 }
 
 
@@ -349,15 +348,14 @@ iproc_vector_div (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    int64_t n     = iproc_vector_dim(dst_vector);
-    int64_t k     = 0;
+    f77int  n     = iproc_vector_dim(dst_vector);
+    f77int  k     = 0;
     double *px    = iproc_vector_ptr(vector, 0);
-    int64_t incx  = 1;
+    f77int  incx  = 1;
     double *py    = iproc_vector_ptr(dst_vector, 0);
-    int64_t incy  = 1;
+    f77int  incy  = 1;
 
-    F77_FUNC(dtbsv)("U", "N", "N", F77_INTP(n), F77_INTP(k),
-                    px, F77_INTP(incx), py, F77_INTP(incy));
+    F77_FUNC(dtbsv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
 }
 
 
@@ -370,15 +368,14 @@ iproc_vector_acc (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    int64_t n     = iproc_vector_dim(dst_vector);
+    f77int  n     = iproc_vector_dim(dst_vector);
     double  alpha = scale;
     double *px    = iproc_vector_ptr(vector, 0);
-    int64_t incx  = 1;
+    f77int  incx  = 1;
     double *py    = iproc_vector_ptr(dst_vector, 0);
-    int64_t incy  = 1;
+    f77int  incy  = 1;
 
-    F77_FUNC(daxpy)(F77_INTP(n), &alpha, px, F77_INTP(incx),
-                    py, F77_INTP(incy));
+    F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
 }
 
 
@@ -390,14 +387,13 @@ iproc_vector_dot (iproc_vector *vector1,
     assert(vector2);
     assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
-    int64_t n    = iproc_vector_dim(vector1);
+    f77int  n    = iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
     double *py   = iproc_vector_ptr(vector2, 0);
-    int64_t incy = 1;
+    f77int  incy = 1;
 
-    double dot = F77_FUNC(ddot)(F77_INTP(n), px, F77_INTP(incx), py,
-                                F77_INTP(incy));
+    double dot = F77_FUNC(ddot)(&n, px, &incx, py, &incy);
     return dot;
 }
 
@@ -407,11 +403,11 @@ iproc_vector_norm (iproc_vector *vector)
 {
     assert(vector);
 
-    int64_t n    = iproc_vector_dim(vector);
+    f77int  n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
 
-    double norm = F77_FUNC(dnrm2)(F77_INTP(n), px, F77_INTP(incx));
+    double norm = F77_FUNC(dnrm2)(&n, px, &incx);
     return norm;
 }
 
@@ -421,11 +417,11 @@ iproc_vector_sum_abs (iproc_vector *vector)
 {
     assert(vector);
 
-    int64_t n    = iproc_vector_dim(vector);
+    f77int  n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
 
-    double sum_abs = F77_FUNC(dasum)(F77_INTP(n), px, F77_INTP(incx));
+    double sum_abs = F77_FUNC(dasum)(&n, px, &incx);
     return sum_abs;
 }
 
@@ -455,12 +451,12 @@ iproc_vector_max_abs_index (iproc_vector *vector)
     assert(vector);
     if (!(iproc_vector_dim(vector) > 0)) return -1;
 
-    int64_t n    = iproc_vector_dim(vector);
+    f77int  n    = iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
-    int64_t incx = 1;
+    f77int  incx = 1;
 
-    int64_t index1 = (int64_t)(F77_FUNC(idamax)(F77_INTP(n), px,
-                                                F77_INTP(incx)));
+    f77int  index1 = F77_FUNC(idamax)(&n, px, &incx);
+                                      
     int64_t index  = index1 - 1;
     return index;
 }
