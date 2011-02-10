@@ -112,6 +112,11 @@ iproc_array_set_size (iproc_array *array,
     assert(array);
     assert(n >= 0);
 
+    if (n == 0) {
+        array->n = 0;
+        return;
+    }
+
     int64_t nold = iproc_array_size(array);
     size_t elem_size = iproc_array_elem_size(array);
 
