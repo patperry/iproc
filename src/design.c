@@ -34,6 +34,17 @@ iproc_design_free (iproc_design *design)
             iproc_array_unref(design->ctxs);
         }
 
+        if (design->svectors) {
+            int64_t i, n = iproc_array_size(design->svectors);
+            for (i = 0; i < n; i++) {
+                iproc_svector *x = iproc_array_index(design->svectors,
+                                                     iproc_svector *,
+                                                     i);
+                iproc_svector_unref(x);
+            }
+            iproc_array_unref(design->svectors);
+        }
+
         iproc_actors_unref(design->receivers);
         iproc_actors_unref(design->senders);
         if (design->free_user_data)
@@ -71,6 +82,7 @@ iproc_design_new (iproc_actors *senders,
     design->get_sdesign_vars = get_sdesign_vars;
     design->free_user_data = free_user_data;
     design->ctxs = iproc_array_new(sizeof(iproc_design_ctx *));
+    design->svectors = iproc_array_new(sizeof(iproc_svector *));
     iproc_refcount_init(&design->refcount);
 
     return design;
@@ -337,19 +349,42 @@ iproc_design_sender0_muls (double          alpha,
     iproc_vector_unref(z);
 }
 
-iproc_svector *
-iproc_sdesign_var_new (iproc_design *design)
+static iproc_svector *
+iproc_sdesign_var_new_alloc (iproc_design *design)
 {
     int64_t dim = iproc_design_ndynamic(design);
     return iproc_svector_new(dim);
+}
+
+
+iproc_svector *
+iproc_sdesign_var_new (iproc_design *design)
+{
+    assert(design);
+    iproc_array *svectors = design->svectors;
+    int64_t n = iproc_array_size(svectors);
+    iproc_svector *svector;
+
+    if (n > 0) {
+        svector = iproc_array_index(svectors, iproc_svector *, n - 1);
+        iproc_array_set_size(svectors, n - 1);
+    } else {
+        svector = iproc_sdesign_var_new_alloc(design);
+    }
+
+    return svector;
 }
 
 void
 iproc_sdesign_var_free (iproc_design  *design,
                         iproc_svector *svector)
 {
+    assert(design);
+    iproc_array *svectors = design->svectors;
+
     if (!svector)
         return;
 
-    iproc_svector_unref(svector);
+    iproc_svector_clear(svector);
+    iproc_array_append(svectors, &svector);
 }

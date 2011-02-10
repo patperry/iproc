@@ -24,6 +24,7 @@ struct _iproc_design {
     void (*free_user_data) (void *);
     void *user_data;
     iproc_array   *ctxs;
+    iproc_array   *svectors;
     iproc_refcount refcount;
 };
 
@@ -115,6 +116,8 @@ void             iproc_design_ctx_diff_muls (double          alpha,
                                            iproc_svector  *y);
 
 
+/* only call these functions if you retain a reference to design; retain the
+ * reference until after you call iproc_sdesign_var_free */
 iproc_svector * iproc_sdesign_var_new  (iproc_design  *design);
 void            iproc_sdesign_var_free (iproc_design  *design,
                                         iproc_svector *svector);
