@@ -248,7 +248,6 @@ iproc_design_ctx_diff_mul (double          alpha,
         return;
     
     int64_t ix_begin = iproc_design_idynamic(design, 0);
-    int64_t ix_end = ix_begin + ndynamic;
     iproc_array *sdesign_vars = ctx->sdesign_vars;
 
     if (trans == IPROC_TRANS_NOTRANS) {
