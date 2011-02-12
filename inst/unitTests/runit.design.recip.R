@@ -3,7 +3,7 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-senders <- receivers <- receive.intervals <- design <- NULL
+senders <- receivers <- recip.intervals <- design <- NULL
 msgs <- it <- NULL
 max.advance <- NULL
 
@@ -11,8 +11,8 @@ max.advance <- NULL
     a <- actors(~ gender *seniority * department, enron$employees)
     senders <<- actors(~ -1, data.frame(matrix(NA, nrow(a), 0)))
     receivers <<- senders
-    receive.intervals <<- 3600 * 2^seq(-6, 14)
-    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    recip.intervals <<- 3600 * 2^seq(-6, 14)
+    design <<- iproc.design(senders, receivers, recip.intervals = recip.intervals)
 
     msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     it <<- cursor(msgs)
@@ -29,7 +29,7 @@ max.advance <- NULL
 }
 
 test.dim <- function() {
-    checkEquals(ncol(design), length(receive.intervals))
+    checkEquals(ncol(design), length(recip.intervals))
 }
 
 test.as.matrix <- function() {
@@ -42,7 +42,7 @@ test.as.matrix <- function() {
             delta <- tcur - tlast[,i]
             x <- matrix(0.0, nrow(receivers), ncol(design))
             for (j in seq_len(nrow(receivers))) {
-                int <- which(delta[j] <= receive.intervals)
+                int <- which(delta[j] <= recip.intervals)
                 if (any(int)) {
                     x[j, min(int)] <- 1.0
                 }

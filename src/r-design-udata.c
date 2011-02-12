@@ -4,18 +4,18 @@
 #include "r-design.h"
 
 Riproc_design_udata *
-Riproc_design_udata_new (SEXP Rreceive_intervals)
+Riproc_design_udata_new (SEXP Rrecip_intervals)
 {
     Riproc_design_udata *udata = iproc_malloc(sizeof(*udata));
     int64_t n;
     double *intvls;
 
-    if (Rreceive_intervals == NULL_USER_OBJECT) {
+    if (Rrecip_intervals == NULL_USER_OBJECT) {
         n = 0;
         intvls = NULL;
     } else {
-        n = GET_LENGTH(Rreceive_intervals);
-        intvls = NUMERIC_POINTER(Rreceive_intervals);
+        n = GET_LENGTH(Rrecip_intervals);
+        intvls = NUMERIC_POINTER(Rrecip_intervals);
     }
 
     udata->recip = iproc_vrecip_new(intvls, n);

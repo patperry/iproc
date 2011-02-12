@@ -1,6 +1,6 @@
 
 iproc.design.default <- function(senders, receivers, data, data.receivers = data,
-                                 receive.intervals = NULL, data.senders = data, ...)
+                                 recip.intervals = NULL, data.senders = data, ...)
 {
     if (!inherits(senders, "actors")) {
         if (missing(data) && missing(data.senders)) {
@@ -18,15 +18,15 @@ iproc.design.default <- function(senders, receivers, data, data.receivers = data
         }
     }
 
-    receive.intervals.orig <- as.numeric(receive.intervals)
-    if (any(is.na(receive.intervals.orig) | (receive.intervals.orig <= 0)))
-        stop("'receive.intervals' contains a nonpositive or NA value")
+    recip.intervals.orig <- as.numeric(recip.intervals)
+    if (any(is.na(recip.intervals.orig) | (recip.intervals.orig <= 0)))
+        stop("'recip.intervals' contains a nonpositive or NA value")
     
-    receive.intervals <- unique(sort(receive.intervals.orig))
-    if (!identical(receive.intervals, receive.intervals.orig))
-        stop("'receive.intervals' not unique and sorted in ascending order")
+    recip.intervals <- unique(sort(recip.intervals.orig))
+    if (!identical(recip.intervals, recip.intervals.orig))
+        stop("'recip.intervals' not unique and sorted in ascending order")
 
-    design <- .Call("Riproc_design_new", senders, receivers, receive.intervals)
+    design <- .Call("Riproc_design_new", senders, receivers, recip.intervals)
     attr(design, "class") <- "iproc.design"
     attr(design, "attributes.senders") <- attributes(senders)
     attr(design, "attributes.receivers") <- attributes(receivers)

@@ -68,11 +68,11 @@ Riproc_from_design (iproc_design *design)
 SEXP
 Riproc_design_new (SEXP Rsenders,
                  SEXP Rreceivers,
-                 SEXP Rreceive_intervals)
+                 SEXP Rrecip_intervals)
 {
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
-    Riproc_design_udata *udata = Riproc_design_udata_new(Rreceive_intervals);
+    Riproc_design_udata *udata = Riproc_design_udata_new(Rrecip_intervals);
     int64_t ndynamic = Riproc_design_udata_dim(udata);
     iproc_design *design = iproc_design_new(senders, receivers, ndynamic, udata,
                                       Riproc_design_udata_get_sdesign_vars,

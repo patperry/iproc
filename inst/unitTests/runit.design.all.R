@@ -3,7 +3,7 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-senders <- receivers <- receive.intervals <- NULL
+senders <- receivers <- recip.intervals <- NULL
 design <- design.group <- design.recip <- NULL
 msgs <- it <- NULL
 max.advance <- NULL
@@ -13,10 +13,10 @@ max.advance <- NULL
     a0 <- actors(~ -1, data.frame(matrix(NA, nrow(a), 0)))
     senders <<- a
     receivers <<- a
-    receive.intervals <<- 3600 * 2^seq(-6, 14)
-    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    recip.intervals <<- 3600 * 2^seq(-6, 14)
+    design <<- iproc.design(senders, receivers, recip.intervals = recip.intervals)
     design.group <<- iproc.design(senders, receivers)
-    design.recip <<- iproc.design(a0, a0, receive.intervals = receive.intervals)
+    design.recip <<- iproc.design(a0, a0, recip.intervals = recip.intervals)
 
     msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     it <<- cursor(msgs)

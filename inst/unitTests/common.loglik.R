@@ -3,17 +3,17 @@ require(iproc)
 
 data(enron)
 
-msgs <- senders <- receivers <- receive.intervals <- design <- beta <- mdl <- it <- NULL
+msgs <- senders <- receivers <- recip.intervals <- design <- beta <- mdl <- it <- NULL
 max.advance <- NULL
 
-loglik.setUp <- function(senders, receivers, receive.intervals = NULL,
+loglik.setUp <- function(senders, receivers, recip.intervals = NULL,
                          has.loops = FALSE) {
     set.seed(0)
     msgs <<- messages(time, sender.id, receiver.id, enron$messages)
     senders <<- senders
     receivers <<- receivers
-    receive.intervals <<- receive.intervals
-    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    recip.intervals <<- recip.intervals
+    design <<- iproc.design(senders, receivers, recip.intervals = recip.intervals)
     beta <<- sample(-2:2, ncol(design), replace = TRUE)
     mdl <<- model(design, beta, has.loops = has.loops)
     it <<- cursor(msgs)

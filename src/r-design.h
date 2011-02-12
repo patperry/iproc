@@ -12,7 +12,7 @@ void         Riproc_design_init      (DllInfo *info);
 /* External functions */
 SEXP         Riproc_design_new       (SEXP Rsenders,
                                      SEXP Rreceivers,
-                                     SEXP Rreceive_intervals);
+                                     SEXP Rrecip_intervals);
 SEXP         Riproc_design_dim       (SEXP Rdesign);
 SEXP         Riproc_design_nsender   (SEXP Rdesign);
 SEXP         Riproc_design_nreceiver (SEXP Rdesign);
@@ -39,7 +39,7 @@ struct _Riproc_design_udata {
     iproc_vrecip *recip;
 };
 
-Riproc_design_udata * Riproc_design_udata_new             (SEXP               Rreceive_intervals);
+Riproc_design_udata * Riproc_design_udata_new             (SEXP               Rrecip_intervals);
 void                 Riproc_design_udata_free             (void              *design_udata);
 int64_t              Riproc_design_udata_dim              (Riproc_design_udata *udata);
 void                 Riproc_design_udata_get_sdesign_vars (iproc_design_ctx    *ctx);

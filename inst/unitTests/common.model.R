@@ -8,9 +8,9 @@ msgs <- it <- NULL
 max.advance <- NULL
 
 model.setUp <- function(senders, receivers,
-                        receive.intervals = NULL,
+                        recip.intervals = NULL,
                         has.loops = FALSE) {
-    design <<- iproc.design(senders, receivers, receive.intervals = receive.intervals)
+    design <<- iproc.design(senders, receivers, recip.intervals = recip.intervals)
     set.seed(0)
     coef <<- sample(-2:2, ncol(design), replace = TRUE)
     has.loops <<- has.loops
