@@ -71,7 +71,7 @@ test.log.probs <- function() {
     while (advance(it)) {
         n <- n + 1
 
-        for (tie in seq_len(nties(it))) {
+        for (tie in seq_len(nrow(it))) {
             i <- from(it)[[tie]]
 
             lw <- t(mul(design, coef, sender = i, it))
@@ -104,7 +104,7 @@ test.probs <- function() {
     while (advance(it)) {
         n <- n + 1
 
-        for (tie in seq_len(nties(it))) {
+        for (tie in seq_len(nrow(it))) {
             i <- from(it)[[tie]]
             checkEquals(probs(m, i), exp(log.probs(m, i)))
         }

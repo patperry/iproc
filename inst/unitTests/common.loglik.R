@@ -27,7 +27,7 @@ test.value <- function() {
     
     while(advance(it)) {
         n <- n + 1
-        for (tie in seq_len(nties(it))) {
+        for (tie in seq_len(nrow(it))) {
             msg.from <- from(it)[[tie]]
             msg.to <- to(it)[[tie]]
 
@@ -60,7 +60,7 @@ test.grad <- function() {
     n <- 0
     while(advance(it)) {
         n <- n + 1
-        for (tie in seq_len(nties(it))) {
+        for (tie in seq_len(nrow(it))) {
             msg.from <- from(it)[[tie]]
             msg.to <- to(it)[[tie]]
             msg.nto <- length(msg.to)

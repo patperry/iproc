@@ -13,21 +13,21 @@ time <- from <- to <- msgs <- NULL
     msgs <<- messages(time, sender.id, receiver.id, enron$messages)
 }
 
-test.size <- function() {
-    checkIdentical(size(msgs), length(time))
+test.nrow <- function() {
+    checkIdentical(nrow(msgs), length(time))
 }
 
-test.max.from <- function() {
-    checkIdentical(max.from(msgs), max(from))
-}
+# test.max.from <- function() {
+#     checkIdentical(max.from(msgs), max(from))
+# }
 
-test.max.to <- function() {
-    checkIdentical(max.to(msgs), max(sapply(to, max)))
-}
+# test.max.to <- function() {
+#    checkIdentical(max.to(msgs), max(sapply(to, max)))
+# }
 
-test.max.nto <- function() {
-    checkIdentical(max.nto(msgs), max(sapply(to, length)))
-}
+# test.max.nto <- function() {
+#     checkIdentical(max.nto(msgs), max(sapply(to, length)))
+# }
 
 test.time <- function() {
     checkIdentical(time(msgs), time)
@@ -44,6 +44,5 @@ test.to <- function() {
 }
     
 test.nto <- function() {
-    checkIdentical(nto(msgs), sapply(to, length))
+    checkIdentical(sapply(to(msgs), length), sapply(to, length))
 }
-

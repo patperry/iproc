@@ -51,7 +51,7 @@ test.as.matrix <- function() {
             checkEquals(as.matrix(design, sender = i, it), x)
         }
 
-        for (t in seq_len(nties(it))) {
+        for (t in seq_len(nrow(it))) {
             tlast[from(it)[t], to(it)[[t]]] <- tcur
         }
 

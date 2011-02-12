@@ -41,7 +41,7 @@ test.finished <- function() {
 test.advance <- function() {
     n <- 0
     while (advance(it)) {
-        n <- n + nties(it)
+        n <- n + nrow(it)
     }
-    checkEquals(n, size(msgs))
+    checkEquals(n, nrow(msgs))
 }

@@ -25,36 +25,42 @@ messages <- function(time, from, to, data = NULL) {
     msgs
 }
 
-size.messages <- function(messages) {
-    .Call("Riproc_messages_size", messages)
+dim.messages <- function(x, ...) {
+    messages <- x
+    n <- .Call("Riproc_messages_size", messages)
+    p <- 3L
+    c(n,p)
 }
 
-time.messages <- function(messages) {
+time.messages <- function(x, ...) {
+    messages <- x
     time <- .Call("Riproc_messages_time", messages)
     attributes(time) <- attr(messages, "attributes.time")
     time
 }
 
-from.messages <- function(messages) {
+from.messages <- function(x, ...) {
+    messages <- x
     .Call("Riproc_messages_from", messages)
 }
 
-to.messages <- function(messages) {
+to.messages <- function(x, ...) {
+    messages <- x
     .Call("Riproc_messages_to", messages)
 }
     
-nto.messages <- function(messages) {
-    .Call("Riproc_messages_nto", messages)
-}
+# nto.messages <- function(messages) {
+#     .Call("Riproc_messages_nto", messages)
+# }
 
-max.from.messages <- function(messages) {
-    .Call("Riproc_messages_max_from", messages)
-}
+# max.from.messages <- function(messages) {
+#     .Call("Riproc_messages_max_from", messages)
+# }
 
-max.to.messages <- function(messages) {
-    .Call("Riproc_messages_max_to", messages)
-}
+# max.to.messages <- function(messages) {
+#     .Call("Riproc_messages_max_to", messages)
+# }
 
-max.nto.messages <- function(messages) {
-    .Call("Riproc_messages_max_nto", messages)
-}
+# max.nto.messages <- function(messages) {
+#     .Call("Riproc_messages_max_nto", messages)
+# }
