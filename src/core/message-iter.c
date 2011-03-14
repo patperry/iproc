@@ -141,7 +141,7 @@ iproc_message_iter_next (iproc_message_iter *it)
     iproc_array *recipients = it->messages->recipients;
     iproc_history *history = it->history;
     int64_t n = iproc_array_size(messages);
-    int64_t has_next = offset < n ? 1 : 0;
+    int has_next = offset < n ? 1 : 0;
 
     if (has_next) {
         iproc_message *message = &(iproc_array_index(messages, iproc_message, offset));

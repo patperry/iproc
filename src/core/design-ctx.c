@@ -284,7 +284,7 @@ iproc_design_ctx_diff_mul (double          alpha,
                 int64_t ix = iproc_svector_nz(jdiff, inz);
                 double val = iproc_svector_nz_get(jdiff, inz);
 
-                assert(ix + ix_begin < ix_end);
+                assert(ix + ix_begin < iproc_svector_dim(y));
                 iproc_svector_inc(y, ix + ix_begin, jscale * val);
             }
         }
