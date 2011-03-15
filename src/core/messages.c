@@ -102,7 +102,7 @@ iproc_messages_insertm (iproc_messages *msgs,
     assert(nto >= 0);
     assert(to || nto == 0);
 
-    int64_t time = msgs->tcur;
+    double time = msgs->tcur;
     iproc_array *array = msgs->array;
     iproc_array *recipients = msgs->recipients;
 
