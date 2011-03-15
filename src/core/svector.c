@@ -186,7 +186,7 @@ iproc_svector_scale (iproc_svector *svector,
 {
     assert(svector);
 
-    f77int   n     = iproc_svector_nnz(svector);
+    f77int   n     = (f77int)iproc_svector_nnz(svector);
     double   alpha = scale;
     f77int   incx  = 1;
     double  *px    = &(iproc_array_index(svector->value, double, 0));

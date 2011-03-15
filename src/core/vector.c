@@ -203,7 +203,7 @@ iproc_vector_copy (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    f77int  n    = iproc_vector_dim(dst_vector);
+    f77int  n    = (f77int)iproc_vector_dim(dst_vector);
     double *px   = iproc_vector_ptr(vector, 0);
     f77int  incx = 1;
     double *py   = iproc_vector_ptr(dst_vector, 0);
@@ -221,7 +221,7 @@ iproc_vector_swap (iproc_vector *vector1,
     assert(vector2);
     assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
-    f77int  n    = iproc_vector_dim(vector1);
+    f77int  n    = (f77int)iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
     f77int  incx = 1;
     double *py   = iproc_vector_ptr(vector2, 0);
@@ -273,7 +273,7 @@ iproc_vector_scale (iproc_vector *vector,
 {
     assert(vector);
 
-    f77int  n     = iproc_vector_dim(vector);
+    f77int  n     = (f77int)iproc_vector_dim(vector);
     double  alpha = scale;
     void   *px    = iproc_vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -330,7 +330,7 @@ iproc_vector_mul (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    f77int  n     = iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
     f77int  k     = 0;
     double *px    = iproc_vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -349,7 +349,7 @@ iproc_vector_div (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    f77int  n     = iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
     f77int  k     = 0;
     double *px    = iproc_vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -369,7 +369,7 @@ iproc_vector_acc (iproc_vector *dst_vector,
     assert(vector);
     assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
 
-    f77int  n     = iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
     double  alpha = scale;
     double *px    = iproc_vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -388,7 +388,7 @@ iproc_vector_dot (iproc_vector *vector1,
     assert(vector2);
     assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
 
-    f77int  n    = iproc_vector_dim(vector1);
+    f77int  n    = (f77int)iproc_vector_dim(vector1);
     double *px   = iproc_vector_ptr(vector1, 0);
     f77int  incx = 1;
     double *py   = iproc_vector_ptr(vector2, 0);
@@ -404,7 +404,7 @@ iproc_vector_norm (iproc_vector *vector)
 {
     assert(vector);
 
-    f77int  n    = iproc_vector_dim(vector);
+    f77int  n    = (f77int)iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
     f77int  incx = 1;
 
@@ -418,7 +418,7 @@ iproc_vector_sum_abs (iproc_vector *vector)
 {
     assert(vector);
 
-    f77int  n    = iproc_vector_dim(vector);
+    f77int  n    = (f77int)iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
     f77int  incx = 1;
 
@@ -452,7 +452,7 @@ iproc_vector_max_abs_index (iproc_vector *vector)
     assert(vector);
     if (!(iproc_vector_dim(vector) > 0)) return -1;
 
-    f77int  n    = iproc_vector_dim(vector);
+    f77int  n    = (f77int)iproc_vector_dim(vector);
     void   *px   = iproc_vector_ptr(vector, 0);
     f77int  incx = 1;
 
