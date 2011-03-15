@@ -94,7 +94,7 @@ SEXP
 Riproc_model_dim (SEXP Rmodel)
 {
     iproc_model *model = Riproc_to_model(Rmodel);
-    int64_t dim = iproc_model_dim(model);
+    int dim = (int)iproc_model_dim(model);
     return ScalarInteger(dim);
 }
 
@@ -102,7 +102,7 @@ SEXP
 Riproc_model_nsender (SEXP Rmodel)
 {
     iproc_model *model = Riproc_to_model(Rmodel);
-    int64_t n = iproc_model_nsender(model);
+    int n = (int)iproc_model_nsender(model);
     return ScalarInteger(n);
 }
 
@@ -110,7 +110,7 @@ SEXP
 Riproc_model_nreceiver (SEXP Rmodel)
 {
     iproc_model *model = Riproc_to_model(Rmodel);
-    int64_t n = iproc_model_nreceiver(model);
+    int n = (int)iproc_model_nreceiver(model);
     return ScalarInteger(n);
 }
 
@@ -152,8 +152,8 @@ Riproc_model_log_probs (SEXP Rmodel,
     iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
                                   ? NULL
                                   : Riproc_to_cursor(Rcursor));
-    int64_t nsender = iproc_model_nsender(model);
-    int64_t nreceiver = iproc_model_nreceiver(model);
+    int nsender = (int)iproc_model_nsender(model);
+    int nreceiver = (int)iproc_model_nreceiver(model);
     iproc_history *history = iproc_message_iter_history(cursor);
 
     SEXP Rprobst;
@@ -162,7 +162,7 @@ Riproc_model_log_probs (SEXP Rmodel,
     iproc_matrix_view probst = Riproc_matrix_view_sexp(Rprobst);
 
     for (i = 0; i < n; i++) {
-        int64_t isend = INTEGER(Risend)[i] - 1;
+        int isend = INTEGER(Risend)[i] - 1;
         if (isend < 0 || isend >= nsender)
             error("invalid sender");
 

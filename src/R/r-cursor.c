@@ -109,7 +109,7 @@ Riproc_cursor_time (SEXP Rcursor)
         error("cursor has finished");
 
     double time = iproc_message_iter_time(cursor);
-    return ScalarInteger(time);
+    return ScalarReal(time);
 }
 
 SEXP
@@ -122,7 +122,7 @@ Riproc_cursor_nties (SEXP Rcursor)
     if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t nties = iproc_message_iter_ntie(cursor);
+    int nties = (int)iproc_message_iter_ntie(cursor);
     return ScalarInteger(nties);
 }
 
@@ -136,7 +136,7 @@ Riproc_cursor_from (SEXP Rcursor)
     if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t i, n = iproc_message_iter_ntie(cursor);
+    int i, n = (int)iproc_message_iter_ntie(cursor);
     int *from;
     SEXP Rfrom;
 
@@ -145,7 +145,7 @@ Riproc_cursor_from (SEXP Rcursor)
 
     for (i = 0; i < n; i++) {
         iproc_message_iter_select(cursor, i);
-        int64_t msg_from = iproc_message_iter_from(cursor);
+        int msg_from = (int)iproc_message_iter_from(cursor);
         from[i] = msg_from + 1;
     }
 
@@ -163,21 +163,21 @@ Riproc_cursor_to (SEXP Rcursor)
     if (iproc_message_iter_finished(cursor))
         error("cursor has finished");
 
-    int64_t i, n = iproc_message_iter_ntie(cursor);
+    int i, n = (int)iproc_message_iter_ntie(cursor);
     SEXP Rto;
 
     PROTECT(Rto = NEW_LIST(n));
 
     for (i = 0; i < n; i++) {
         iproc_message_iter_select(cursor, i);
-        int64_t  msg_nto = iproc_message_iter_nto(cursor);
+        int  msg_nto = (int)iproc_message_iter_nto(cursor);
         int64_t *msg_to = iproc_message_iter_to(cursor);
         SEXP Rmsg_to;
 
         PROTECT(Rmsg_to = NEW_INTEGER(msg_nto));
-        int64_t j;
+        int j;
         for (j = 0; j < msg_nto; j++) {
-            INTEGER(Rmsg_to)[j] = msg_to[j] + 1;
+            INTEGER(Rmsg_to)[j] = (int)msg_to[j] + 1;
         }
         SET_VECTOR_ELT(Rto, i, Rmsg_to);
 

@@ -90,7 +90,7 @@ SEXP
 Riproc_design_dim (SEXP Rdesign)
 {
     iproc_design *design = Riproc_to_design(Rdesign);
-    int64_t dim = iproc_design_dim(design);
+    int dim = (int)iproc_design_dim(design);
     return ScalarInteger(dim);
 }
 
@@ -99,7 +99,7 @@ SEXP
 Riproc_design_nsender (SEXP Rdesign)
 {
     iproc_design *design = Riproc_to_design(Rdesign);
-    int64_t nsender = iproc_design_nsender(design);
+    int nsender = (int)iproc_design_nsender(design);
     return ScalarInteger(nsender);
 }
 
@@ -107,7 +107,7 @@ SEXP
 Riproc_design_nreceiver (SEXP Rdesign)
 {
     iproc_design *design = Riproc_to_design(Rdesign);
-    int64_t nreceiver = iproc_design_nreceiver(design);
+    int nreceiver = (int)iproc_design_nreceiver(design);
     return ScalarInteger(nreceiver);
 }
 
@@ -134,13 +134,13 @@ Riproc_design_mul (SEXP Rdesign,
                  SEXP Rcursor)
 {
     iproc_design *design = Riproc_to_design(Rdesign);
-    int64_t dim = iproc_design_dim(design);
-    int64_t nsender = iproc_design_nsender(design);
-    int64_t nreceiver = iproc_design_nreceiver(design);
+    int dim = (int)iproc_design_dim(design);
+    int nsender = (int)iproc_design_nsender(design);
+    int nreceiver = (int)iproc_design_nreceiver(design);
     iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
-    int64_t nrow = iproc_matrix_nrow(&x.matrix);
-    int64_t ncol = iproc_matrix_ncol(&x.matrix);
-    int64_t sender = INTEGER(Rsender)[0] - 1;
+    int nrow = (int)iproc_matrix_nrow(&x.matrix);
+    int ncol = (int)iproc_matrix_ncol(&x.matrix);
+    int sender = INTEGER(Rsender)[0] - 1;
     iproc_message_iter *cursor =  (Rcursor == NULL_USER_OBJECT
                                    ? NULL
                                    : Riproc_to_cursor(Rcursor));
@@ -156,7 +156,7 @@ Riproc_design_mul (SEXP Rdesign,
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
     iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
 
-    int64_t j;
+    int j;
     for (j = 0; j < ncol; j++) {
         iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
         iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
@@ -176,13 +176,13 @@ Riproc_design_tmul (SEXP Rdesign,
                   SEXP Rcursor)
 {
     iproc_design *design = Riproc_to_design(Rdesign);
-    int64_t dim = iproc_design_dim(design);
-    int64_t nsender = iproc_design_nsender(design);
-    int64_t nreceiver = iproc_design_nreceiver(design);
+    int dim = (int)iproc_design_dim(design);
+    int nsender = (int)iproc_design_nsender(design);
+    int nreceiver = (int)iproc_design_nreceiver(design);
     iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
-    int64_t nrow = iproc_matrix_nrow(&x.matrix);
-    int64_t ncol = iproc_matrix_ncol(&x.matrix);
-    int64_t sender = INTEGER(Rsender)[0] - 1;
+    int nrow = (int)iproc_matrix_nrow(&x.matrix);
+    int ncol = (int)iproc_matrix_ncol(&x.matrix);
+    int sender = INTEGER(Rsender)[0] - 1;
     iproc_message_iter *cursor =  (Rcursor == NULL_USER_OBJECT
                                    ? NULL
                                    : Riproc_to_cursor(Rcursor));
@@ -198,7 +198,7 @@ Riproc_design_tmul (SEXP Rdesign,
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
     iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
 
-    int64_t j;
+    int j;
     for (j = 0; j < ncol; j++) {
         iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
         iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
