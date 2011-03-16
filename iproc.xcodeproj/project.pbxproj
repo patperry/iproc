@@ -6,33 +6,6 @@
 	objectVersion = 46;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		221FEF0B132EDEF70000097B /* R Unit Tests */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 221FEF0C132EDEF70000097B /* Build configuration list for PBXAggregateTarget "R Unit Tests" */;
-			buildPhases = (
-				221FEF11132EDF0A0000097B /* ShellScript */,
-			);
-			dependencies = (
-				221FEF10132EDEFF0000097B /* PBXTargetDependency */,
-			);
-			name = "R Unit Tests";
-			productName = "R Unit Tests";
-		};
-		224D054D132EC082007F5646 /* R package */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = 224D054E132EC082007F5646 /* Build configuration list for PBXAggregateTarget "R package" */;
-			buildPhases = (
-				221FEEFE132ED65C0000097B /* ShellScript */,
-			);
-			dependencies = (
-				224D055C132EC123007F5646 /* PBXTargetDependency */,
-			);
-			name = "R package";
-			productName = "R package";
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		2210E32313304DDF004D9E56 /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2210E32113304DDF004D9E56 /* fit.c */; };
 		2210E32413304DDF004D9E56 /* fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 2210E32213304DDF004D9E56 /* fit.h */; };
@@ -102,24 +75,8 @@
 		22867A12132FDA830090D617 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A10132FDA830090D617 /* dcsrch.c */; };
 		22867A13132FDA830090D617 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A11132FDA830090D617 /* dcstep.c */; };
 		22867A16132FDABD0090D617 /* f2c.h in Headers */ = {isa = PBXBuildFile; fileRef = 22867A15132FDABD0090D617 /* f2c.h */; };
+		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		221FEF0F132EDEFF0000097B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 224D054D132EC082007F5646;
-			remoteInfo = "R package";
-		};
-		224D055B132EC123007F5646 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 224D0556132EC113007F5646;
-			remoteInfo = Riproc;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		2210E32113304DDF004D9E56 /* fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fit.c; path = src/core/fit.c; sourceTree = "<group>"; };
@@ -191,6 +148,7 @@
 		22867A10132FDA830090D617 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = src/minpack/dcsrch.c; sourceTree = "<group>"; };
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
+		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
 		22E8B700132F13C400ED84FF /* interfaces */ = {isa = PBXFileReference; lastKnownFileType = folder; path = interfaces; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -260,6 +218,7 @@
 		221FEEBB132EC8970000097B /* R */ = {
 			isa = PBXGroup;
 			children = (
+				22A2F8A1133158B000E97C79 /* config.h */,
 				22708B9E13311B8E0055AD94 /* r-actors.c */,
 				22708B9F13311B8E0055AD94 /* r-actors.h */,
 				22708BA013311B8E0055AD94 /* r-cursor.c */,
@@ -369,6 +328,7 @@
 				22708BBD13311B8E0055AD94 /* r-messages.h in Headers */,
 				22708BBF13311B8E0055AD94 /* r-model.h in Headers */,
 				22708BC113311B8E0055AD94 /* r-utils.h in Headers */,
+				22A2F8A2133158B000E97C79 /* config.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,40 +373,9 @@
 			projectRoot = "";
 			targets = (
 				224D0556132EC113007F5646 /* Riproc */,
-				224D054D132EC082007F5646 /* R package */,
-				221FEF0B132EDEF70000097B /* R Unit Tests */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		221FEEFE132ED65C0000097B /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "echo $TARGET_BUILD_DIR\necho $PWD\n\ncp -r interfaces/R ${TARGET_BUILD_DIR}/iproc\n\npushd $TARGET_BUILD_DIR\nmkdir -p iproc/inst/libs/x86_64\ncp libRiproc.dylib iproc/inst/libs/x86_64/iproc.so\nR CMD INSTALL iproc\npopd\n";
-		};
-		221FEF11132EDF0A0000097B /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "pushd $TARGET_BUILD_DIR\nR --vanilla --slave < iproc/tests/doRUnit.R\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		224D0553132EC113007F5646 /* Sources */ = {
@@ -493,50 +422,7 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		221FEF10132EDEFF0000097B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 224D054D132EC082007F5646 /* R package */;
-			targetProxy = 221FEF0F132EDEFF0000097B /* PBXContainerItemProxy */;
-		};
-		224D055C132EC123007F5646 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 224D0556132EC113007F5646 /* Riproc */;
-			targetProxy = 224D055B132EC123007F5646 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		221FEF0D132EDEF70000097B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		221FEF0E132EDEF70000097B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		224D054F132EC082007F5646 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		224D0550132EC082007F5646 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		224D0559132EC113007F5646 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -546,7 +432,10 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = /Library/Frameworks/R.framework/Resources/include;
+				HEADER_SEARCH_PATHS = (
+					interfaces/R/src,
+					/Library/Frameworks/R.framework/Resources/include,
+				);
 				LIBRARY_SEARCH_PATHS = (
 					/Library/Frameworks/R.framework/Resources/lib/x86_64,
 					"\"$(LOCAL_LIBRARY_DIR)/Frameworks/R.framework/Versions/2.12/Resources/lib\"",
@@ -565,7 +454,10 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = /Library/Frameworks/R.framework/Resources/include;
+				HEADER_SEARCH_PATHS = (
+					interfaces/R/src,
+					/Library/Frameworks/R.framework/Resources/include,
+				);
 				LIBRARY_SEARCH_PATHS = (
 					/Library/Frameworks/R.framework/Resources/lib/x86_64,
 					"\"$(LOCAL_LIBRARY_DIR)/Frameworks/R.framework/Versions/2.12/Resources/lib\"",
@@ -610,24 +502,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		221FEF0C132EDEF70000097B /* Build configuration list for PBXAggregateTarget "R Unit Tests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				221FEF0D132EDEF70000097B /* Debug */,
-				221FEF0E132EDEF70000097B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		224D054E132EC082007F5646 /* Build configuration list for PBXAggregateTarget "R package" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				224D054F132EC082007F5646 /* Debug */,
-				224D0550132EC082007F5646 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		224D0558132EC113007F5646 /* Build configuration list for PBXNativeTarget "Riproc" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
