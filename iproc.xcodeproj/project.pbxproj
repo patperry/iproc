@@ -77,28 +77,28 @@
 		221FEEB8132EC8710000097B /* vector.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8F132EC8710000097B /* vector.h */; };
 		221FEEB9132EC8710000097B /* vrecip.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE90132EC8710000097B /* vrecip.c */; };
 		221FEEBA132EC8710000097B /* vrecip.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE91132EC8710000097B /* vrecip.h */; };
-		221FEECC132EC8BE0000097B /* r-actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEBC132EC8BE0000097B /* r-actors.c */; };
-		221FEECD132EC8BE0000097B /* r-actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEBD132EC8BE0000097B /* r-actors.h */; };
-		221FEECE132EC8BE0000097B /* r-cursor.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEBE132EC8BE0000097B /* r-cursor.c */; };
-		221FEECF132EC8BE0000097B /* r-cursor.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEBF132EC8BE0000097B /* r-cursor.h */; };
-		221FEED0132EC8BE0000097B /* r-design-udata.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC0132EC8BE0000097B /* r-design-udata.c */; };
-		221FEED1132EC8BE0000097B /* r-design.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC1132EC8BE0000097B /* r-design.c */; };
-		221FEED2132EC8BE0000097B /* r-design.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEC2132EC8BE0000097B /* r-design.h */; };
-		221FEED3132EC8BE0000097B /* r-init.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC3132EC8BE0000097B /* r-init.c */; };
-		221FEED4132EC8BE0000097B /* r-loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC4132EC8BE0000097B /* r-loglik.c */; };
-		221FEED5132EC8BE0000097B /* r-loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEC5132EC8BE0000097B /* r-loglik.h */; };
-		221FEED6132EC8BE0000097B /* r-messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC6132EC8BE0000097B /* r-messages.c */; };
-		221FEED7132EC8BE0000097B /* r-messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEC7132EC8BE0000097B /* r-messages.h */; };
-		221FEED8132EC8BE0000097B /* r-model.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEEC8132EC8BE0000097B /* r-model.c */; };
-		221FEED9132EC8BE0000097B /* r-model.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEEC9132EC8BE0000097B /* r-model.h */; };
-		221FEEDA132EC8BE0000097B /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEECA132EC8BE0000097B /* r-utils.c */; };
-		221FEEDB132EC8BE0000097B /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEECB132EC8BE0000097B /* r-utils.h */; };
 		221FEEE0132ECAAE0000097B /* R.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEDC132EC91A0000097B /* R.framework */; };
 		221FEEE9132ED2B40000097B /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEE8132ED2B40000097B /* vecLib.framework */; };
 		225DAD64132FE4B700696C9B /* s_cmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD62132FE4B700696C9B /* s_cmp.c */; };
 		225DAD65132FE4B700696C9B /* s_copy.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD63132FE4B700696C9B /* s_copy.c */; };
-		225FE9C213305E5D00C5E79D /* r-fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 225FE9C013305E5D00C5E79D /* r-fit.c */; };
-		225FE9C313305E5D00C5E79D /* r-fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 225FE9C113305E5D00C5E79D /* r-fit.h */; };
+		22708BB013311B8E0055AD94 /* r-actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708B9E13311B8E0055AD94 /* r-actors.c */; };
+		22708BB113311B8E0055AD94 /* r-actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708B9F13311B8E0055AD94 /* r-actors.h */; };
+		22708BB213311B8E0055AD94 /* r-cursor.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA013311B8E0055AD94 /* r-cursor.c */; };
+		22708BB313311B8E0055AD94 /* r-cursor.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA113311B8E0055AD94 /* r-cursor.h */; };
+		22708BB413311B8E0055AD94 /* r-design-udata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA213311B8E0055AD94 /* r-design-udata.c */; };
+		22708BB513311B8E0055AD94 /* r-design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA313311B8E0055AD94 /* r-design.c */; };
+		22708BB613311B8E0055AD94 /* r-design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA413311B8E0055AD94 /* r-design.h */; };
+		22708BB713311B8E0055AD94 /* r-fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA513311B8E0055AD94 /* r-fit.c */; };
+		22708BB813311B8E0055AD94 /* r-fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA613311B8E0055AD94 /* r-fit.h */; };
+		22708BB913311B8E0055AD94 /* r-init.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA713311B8E0055AD94 /* r-init.c */; };
+		22708BBA13311B8E0055AD94 /* r-loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA813311B8E0055AD94 /* r-loglik.c */; };
+		22708BBB13311B8E0055AD94 /* r-loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA913311B8E0055AD94 /* r-loglik.h */; };
+		22708BBC13311B8E0055AD94 /* r-messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAA13311B8E0055AD94 /* r-messages.c */; };
+		22708BBD13311B8E0055AD94 /* r-messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAB13311B8E0055AD94 /* r-messages.h */; };
+		22708BBE13311B8E0055AD94 /* r-model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAC13311B8E0055AD94 /* r-model.c */; };
+		22708BBF13311B8E0055AD94 /* r-model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAD13311B8E0055AD94 /* r-model.h */; };
+		22708BC013311B8E0055AD94 /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAE13311B8E0055AD94 /* r-utils.c */; };
+		22708BC113311B8E0055AD94 /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAF13311B8E0055AD94 /* r-utils.h */; };
 		22867A12132FDA830090D617 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A10132FDA830090D617 /* dcsrch.c */; };
 		22867A13132FDA830090D617 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A11132FDA830090D617 /* dcstep.c */; };
 		22867A16132FDABD0090D617 /* f2c.h in Headers */ = {isa = PBXBuildFile; fileRef = 22867A15132FDABD0090D617 /* f2c.h */; };
@@ -165,29 +165,29 @@
 		221FEE8F132EC8710000097B /* vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vector.h; path = src/core/vector.h; sourceTree = "<group>"; };
 		221FEE90132EC8710000097B /* vrecip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vrecip.c; path = src/core/vrecip.c; sourceTree = "<group>"; };
 		221FEE91132EC8710000097B /* vrecip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vrecip.h; path = src/core/vrecip.h; sourceTree = "<group>"; };
-		221FEEBC132EC8BE0000097B /* r-actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-actors.c"; path = "src/R/r-actors.c"; sourceTree = "<group>"; };
-		221FEEBD132EC8BE0000097B /* r-actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-actors.h"; path = "src/R/r-actors.h"; sourceTree = "<group>"; };
-		221FEEBE132EC8BE0000097B /* r-cursor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-cursor.c"; path = "src/R/r-cursor.c"; sourceTree = "<group>"; };
-		221FEEBF132EC8BE0000097B /* r-cursor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-cursor.h"; path = "src/R/r-cursor.h"; sourceTree = "<group>"; };
-		221FEEC0132EC8BE0000097B /* r-design-udata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-design-udata.c"; path = "src/R/r-design-udata.c"; sourceTree = "<group>"; };
-		221FEEC1132EC8BE0000097B /* r-design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-design.c"; path = "src/R/r-design.c"; sourceTree = "<group>"; };
-		221FEEC2132EC8BE0000097B /* r-design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-design.h"; path = "src/R/r-design.h"; sourceTree = "<group>"; };
-		221FEEC3132EC8BE0000097B /* r-init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-init.c"; path = "src/R/r-init.c"; sourceTree = "<group>"; };
-		221FEEC4132EC8BE0000097B /* r-loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-loglik.c"; path = "src/R/r-loglik.c"; sourceTree = "<group>"; };
-		221FEEC5132EC8BE0000097B /* r-loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-loglik.h"; path = "src/R/r-loglik.h"; sourceTree = "<group>"; };
-		221FEEC6132EC8BE0000097B /* r-messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-messages.c"; path = "src/R/r-messages.c"; sourceTree = "<group>"; };
-		221FEEC7132EC8BE0000097B /* r-messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-messages.h"; path = "src/R/r-messages.h"; sourceTree = "<group>"; };
-		221FEEC8132EC8BE0000097B /* r-model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-model.c"; path = "src/R/r-model.c"; sourceTree = "<group>"; };
-		221FEEC9132EC8BE0000097B /* r-model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-model.h"; path = "src/R/r-model.h"; sourceTree = "<group>"; };
-		221FEECA132EC8BE0000097B /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "src/R/r-utils.c"; sourceTree = "<group>"; };
-		221FEECB132EC8BE0000097B /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "src/R/r-utils.h"; sourceTree = "<group>"; };
 		221FEEDC132EC91A0000097B /* R.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = R.framework; path = Library/Frameworks/R.framework; sourceTree = SDKROOT; };
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		224D0557132EC113007F5646 /* libRiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libRiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		225DAD62132FE4B700696C9B /* s_cmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_cmp.c; path = src/libf2c/s_cmp.c; sourceTree = "<group>"; };
 		225DAD63132FE4B700696C9B /* s_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_copy.c; path = src/libf2c/s_copy.c; sourceTree = "<group>"; };
-		225FE9C013305E5D00C5E79D /* r-fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-fit.c"; path = "src/R/r-fit.c"; sourceTree = "<group>"; };
-		225FE9C113305E5D00C5E79D /* r-fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-fit.h"; path = "src/R/r-fit.h"; sourceTree = "<group>"; };
+		22708B9E13311B8E0055AD94 /* r-actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-actors.c"; path = "interfaces/R/src/r-actors.c"; sourceTree = "<group>"; };
+		22708B9F13311B8E0055AD94 /* r-actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-actors.h"; path = "interfaces/R/src/r-actors.h"; sourceTree = "<group>"; };
+		22708BA013311B8E0055AD94 /* r-cursor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-cursor.c"; path = "interfaces/R/src/r-cursor.c"; sourceTree = "<group>"; };
+		22708BA113311B8E0055AD94 /* r-cursor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-cursor.h"; path = "interfaces/R/src/r-cursor.h"; sourceTree = "<group>"; };
+		22708BA213311B8E0055AD94 /* r-design-udata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-design-udata.c"; path = "interfaces/R/src/r-design-udata.c"; sourceTree = "<group>"; };
+		22708BA313311B8E0055AD94 /* r-design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-design.c"; path = "interfaces/R/src/r-design.c"; sourceTree = "<group>"; };
+		22708BA413311B8E0055AD94 /* r-design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-design.h"; path = "interfaces/R/src/r-design.h"; sourceTree = "<group>"; };
+		22708BA513311B8E0055AD94 /* r-fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-fit.c"; path = "interfaces/R/src/r-fit.c"; sourceTree = "<group>"; };
+		22708BA613311B8E0055AD94 /* r-fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-fit.h"; path = "interfaces/R/src/r-fit.h"; sourceTree = "<group>"; };
+		22708BA713311B8E0055AD94 /* r-init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-init.c"; path = "interfaces/R/src/r-init.c"; sourceTree = "<group>"; };
+		22708BA813311B8E0055AD94 /* r-loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-loglik.c"; path = "interfaces/R/src/r-loglik.c"; sourceTree = "<group>"; };
+		22708BA913311B8E0055AD94 /* r-loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-loglik.h"; path = "interfaces/R/src/r-loglik.h"; sourceTree = "<group>"; };
+		22708BAA13311B8E0055AD94 /* r-messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-messages.c"; path = "interfaces/R/src/r-messages.c"; sourceTree = "<group>"; };
+		22708BAB13311B8E0055AD94 /* r-messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-messages.h"; path = "interfaces/R/src/r-messages.h"; sourceTree = "<group>"; };
+		22708BAC13311B8E0055AD94 /* r-model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-model.c"; path = "interfaces/R/src/r-model.c"; sourceTree = "<group>"; };
+		22708BAD13311B8E0055AD94 /* r-model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-model.h"; path = "interfaces/R/src/r-model.h"; sourceTree = "<group>"; };
+		22708BAE13311B8E0055AD94 /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "interfaces/R/src/r-utils.c"; sourceTree = "<group>"; };
+		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
 		22867A10132FDA830090D617 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = src/minpack/dcsrch.c; sourceTree = "<group>"; };
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
@@ -260,24 +260,24 @@
 		221FEEBB132EC8970000097B /* R */ = {
 			isa = PBXGroup;
 			children = (
-				221FEEBC132EC8BE0000097B /* r-actors.c */,
-				221FEEBD132EC8BE0000097B /* r-actors.h */,
-				221FEEBE132EC8BE0000097B /* r-cursor.c */,
-				221FEEBF132EC8BE0000097B /* r-cursor.h */,
-				221FEEC0132EC8BE0000097B /* r-design-udata.c */,
-				221FEEC1132EC8BE0000097B /* r-design.c */,
-				221FEEC2132EC8BE0000097B /* r-design.h */,
-				225FE9C013305E5D00C5E79D /* r-fit.c */,
-				225FE9C113305E5D00C5E79D /* r-fit.h */,
-				221FEEC3132EC8BE0000097B /* r-init.c */,
-				221FEEC4132EC8BE0000097B /* r-loglik.c */,
-				221FEEC5132EC8BE0000097B /* r-loglik.h */,
-				221FEEC6132EC8BE0000097B /* r-messages.c */,
-				221FEEC7132EC8BE0000097B /* r-messages.h */,
-				221FEEC8132EC8BE0000097B /* r-model.c */,
-				221FEEC9132EC8BE0000097B /* r-model.h */,
-				221FEECA132EC8BE0000097B /* r-utils.c */,
-				221FEECB132EC8BE0000097B /* r-utils.h */,
+				22708B9E13311B8E0055AD94 /* r-actors.c */,
+				22708B9F13311B8E0055AD94 /* r-actors.h */,
+				22708BA013311B8E0055AD94 /* r-cursor.c */,
+				22708BA113311B8E0055AD94 /* r-cursor.h */,
+				22708BA213311B8E0055AD94 /* r-design-udata.c */,
+				22708BA313311B8E0055AD94 /* r-design.c */,
+				22708BA413311B8E0055AD94 /* r-design.h */,
+				22708BA513311B8E0055AD94 /* r-fit.c */,
+				22708BA613311B8E0055AD94 /* r-fit.h */,
+				22708BA713311B8E0055AD94 /* r-init.c */,
+				22708BA813311B8E0055AD94 /* r-loglik.c */,
+				22708BA913311B8E0055AD94 /* r-loglik.h */,
+				22708BAA13311B8E0055AD94 /* r-messages.c */,
+				22708BAB13311B8E0055AD94 /* r-messages.h */,
+				22708BAC13311B8E0055AD94 /* r-model.c */,
+				22708BAD13311B8E0055AD94 /* r-model.h */,
+				22708BAE13311B8E0055AD94 /* r-utils.c */,
+				22708BAF13311B8E0055AD94 /* r-utils.h */,
 			);
 			name = R;
 			sourceTree = "<group>";
@@ -359,16 +359,16 @@
 				221FEEB6132EC8710000097B /* utils.h in Headers */,
 				221FEEB8132EC8710000097B /* vector.h in Headers */,
 				221FEEBA132EC8710000097B /* vrecip.h in Headers */,
-				221FEECD132EC8BE0000097B /* r-actors.h in Headers */,
-				221FEECF132EC8BE0000097B /* r-cursor.h in Headers */,
-				221FEED2132EC8BE0000097B /* r-design.h in Headers */,
-				221FEED5132EC8BE0000097B /* r-loglik.h in Headers */,
-				221FEED7132EC8BE0000097B /* r-messages.h in Headers */,
-				221FEED9132EC8BE0000097B /* r-model.h in Headers */,
-				221FEEDB132EC8BE0000097B /* r-utils.h in Headers */,
 				22867A16132FDABD0090D617 /* f2c.h in Headers */,
 				2210E32413304DDF004D9E56 /* fit.h in Headers */,
-				225FE9C313305E5D00C5E79D /* r-fit.h in Headers */,
+				22708BB113311B8E0055AD94 /* r-actors.h in Headers */,
+				22708BB313311B8E0055AD94 /* r-cursor.h in Headers */,
+				22708BB613311B8E0055AD94 /* r-design.h in Headers */,
+				22708BB813311B8E0055AD94 /* r-fit.h in Headers */,
+				22708BBB13311B8E0055AD94 /* r-loglik.h in Headers */,
+				22708BBD13311B8E0055AD94 /* r-messages.h in Headers */,
+				22708BBF13311B8E0055AD94 /* r-model.h in Headers */,
+				22708BC113311B8E0055AD94 /* r-utils.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -473,21 +473,21 @@
 				221FEEB4132EC8710000097B /* svector.c in Sources */,
 				221FEEB7132EC8710000097B /* vector.c in Sources */,
 				221FEEB9132EC8710000097B /* vrecip.c in Sources */,
-				221FEECC132EC8BE0000097B /* r-actors.c in Sources */,
-				221FEECE132EC8BE0000097B /* r-cursor.c in Sources */,
-				221FEED0132EC8BE0000097B /* r-design-udata.c in Sources */,
-				221FEED1132EC8BE0000097B /* r-design.c in Sources */,
-				221FEED3132EC8BE0000097B /* r-init.c in Sources */,
-				221FEED4132EC8BE0000097B /* r-loglik.c in Sources */,
-				221FEED6132EC8BE0000097B /* r-messages.c in Sources */,
-				221FEED8132EC8BE0000097B /* r-model.c in Sources */,
-				221FEEDA132EC8BE0000097B /* r-utils.c in Sources */,
 				22867A12132FDA830090D617 /* dcsrch.c in Sources */,
 				22867A13132FDA830090D617 /* dcstep.c in Sources */,
 				225DAD64132FE4B700696C9B /* s_cmp.c in Sources */,
 				225DAD65132FE4B700696C9B /* s_copy.c in Sources */,
 				2210E32313304DDF004D9E56 /* fit.c in Sources */,
-				225FE9C213305E5D00C5E79D /* r-fit.c in Sources */,
+				22708BB013311B8E0055AD94 /* r-actors.c in Sources */,
+				22708BB213311B8E0055AD94 /* r-cursor.c in Sources */,
+				22708BB413311B8E0055AD94 /* r-design-udata.c in Sources */,
+				22708BB513311B8E0055AD94 /* r-design.c in Sources */,
+				22708BB713311B8E0055AD94 /* r-fit.c in Sources */,
+				22708BB913311B8E0055AD94 /* r-init.c in Sources */,
+				22708BBA13311B8E0055AD94 /* r-loglik.c in Sources */,
+				22708BBC13311B8E0055AD94 /* r-messages.c in Sources */,
+				22708BBE13311B8E0055AD94 /* r-model.c in Sources */,
+				22708BC013311B8E0055AD94 /* r-utils.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
