@@ -112,6 +112,23 @@ iproc_matrix_set_all (iproc_matrix *matrix,
 }
 
 void
+iproc_matrix_set_identity (iproc_matrix *matrix)
+{
+    assert(matrix);
+    
+    int64_t m = iproc_matrix_nrow(matrix);
+    int64_t n = iproc_matrix_ncol(matrix);
+    int64_t mn = IPROC_MIN(m, n);
+    int64_t i;
+    
+    iproc_matrix_set_all(matrix, 0.0);
+    for (i = 0; i < mn; i++) {
+        iproc_matrix_set(matrix, i, i, 1.0);
+    }
+
+}
+
+void
 iproc_matrix_copy (iproc_matrix *dst_matrix,
                    iproc_matrix *matrix)
 {
@@ -393,4 +410,28 @@ iproc_matrix_matmul (double        alpha,
     F77_FUNC(dgemm)(ptransa, ptransb, &m, &n, &k,
                     &alpha, pa, &lda, pb, &ldb,
                     &beta, pc, &ldc);
+}
+
+void
+iproc_matrix_update1 (iproc_matrix *matrix,
+                      double        alpha,
+                      iproc_vector *x,
+                      iproc_vector *y)
+{
+    assert(matrix);
+    assert(x);
+    assert(y);
+    assert(iproc_matrix_nrow(matrix) == iproc_vector_dim(x));
+    assert(iproc_matrix_ncol(matrix) == iproc_vector_dim(y));
+
+    f77int  m      = (f77int)iproc_matrix_nrow(matrix);
+    f77int  n      = (f77int)iproc_matrix_ncol(matrix);
+    void   *px     = iproc_vector_ptr(x, 0);
+    f77int  incx   = 1;
+    void   *py     = iproc_vector_ptr(y, 0);
+    f77int  incy   = 1;
+    void   *pa     = iproc_matrix_ptr(matrix, 0, 0);
+    f77int  lda    = (f77int)iproc_matrix_lda(matrix);
+
+    F77_FUNC(dger)(&m, &n, &alpha, px, &incx, py, &incy, pa, &lda);
 }

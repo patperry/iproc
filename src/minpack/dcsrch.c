@@ -25,10 +25,10 @@
     /* Subroutine */ int s_copy(char *, char *, ftnlen, ftnlen);
 
     /* Local variables */
-    static doublereal fm, gm, fx, fy, gx, gy, fxm, fym, gxm, gym, stx, sty;
-    static integer stage;
-    static doublereal finit, ginit, width, ftest, gtest, stmin, stmax, width1;
-    static logical brackt;
+    doublereal fm, gm, fx, fy, gx, gy, fxm, fym, gxm, gym, stx, sty;
+    integer stage;
+    doublereal finit, ginit, width, ftest, gtest, stmin, stmax, width1;
+    logical brackt;
     extern /* Subroutine */ int dcstep_(doublereal *, doublereal *, 
 	    doublereal *, doublereal *, doublereal *, doublereal *, 
 	    doublereal *, doublereal *, doublereal *, logical *, doublereal *,

@@ -24,7 +24,7 @@
     double sqrt(doublereal);
 
     /* Local variables */
-    static doublereal p, q, r__, s, sgnd, stpc, stpf, stpq, gamma, theta;
+    doublereal p, q, r__, s, sgnd, stpc, stpf, stpq, gamma, theta;
 
 /*     ********** */
 

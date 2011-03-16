@@ -27,31 +27,67 @@ iproc_loglik_free (iproc_loglik *loglik)
     }
 }
 
-iproc_loglik *
-iproc_loglik_new (iproc_model *model)
+static iproc_loglik *
+iproc_loglik_new_empty (iproc_model *model)
 {
     iproc_loglik *loglik = iproc_malloc(sizeof(*loglik));
     iproc_design *design = iproc_model_design(model);
     int64_t nsender = iproc_design_nsender(design);
-
+    
     if (!loglik)
         return NULL;
-
+    
     loglik->sloglik_array = iproc_array_new(sizeof(iproc_sloglik *));
     loglik->model = iproc_model_ref(model);
     loglik->grad = iproc_vector_new(iproc_design_dim(design));
     loglik->grad_cached = 0;
     iproc_refcount_init(&loglik->refcount);
-
+    
     if (!(loglik->sloglik_array && loglik->grad)) {
         iproc_loglik_free(loglik);
         loglik = NULL;
     }
-
+    
     iproc_array_set_size(loglik->sloglik_array, nsender);
-
+    
     return loglik;
 }
+
+
+iproc_loglik *
+iproc_loglik_new (iproc_model    *model,
+                  iproc_messages *messages)
+{
+    assert(model);
+    assert(!messages || iproc_model_nsender(model) <= iproc_messages_max_from(messages));
+    assert(!messages || iproc_model_nreceiver(model) <= iproc_messages_max_to(messages));
+    
+    iproc_loglik *loglik = iproc_loglik_new_empty(model);
+    
+    if (!messages)
+        return loglik;
+    
+    iproc_message_iter *it = iproc_message_iter_new(messages);
+    
+    while (iproc_message_iter_next(it)) {
+        iproc_history *history = iproc_message_iter_history(it);
+        int64_t tie, ntie = iproc_message_iter_ntie(it);
+        
+        for (tie = 0; tie < ntie; tie++) {
+            iproc_message_iter_select(it, tie);
+            
+            int64_t from = iproc_message_iter_from(it);
+            int64_t *to = iproc_message_iter_to(it);
+            int64_t nto = iproc_message_iter_nto(it);
+            
+            iproc_loglik_insertm(loglik, history, from, to, nto);
+        }
+    }
+    
+    iproc_message_iter_unref(it);
+    return loglik;
+}
+
 
 iproc_loglik *
 iproc_loglik_ref (iproc_loglik *loglik)

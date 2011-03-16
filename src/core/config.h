@@ -6,8 +6,8 @@
 
 #define F77_FUNC    F77_CALL
 
-#define f77int      int
-#define F77_INT_MAX INT_MAX
+#define f77int      long int
+#define F77_INT_MAX LONG_MAX
 
 
 #endif /* _IPROC_CONFIG_H */

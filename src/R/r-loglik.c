@@ -70,31 +70,10 @@ Riproc_loglik_new (SEXP Rmodel,
     iproc_messages *messages = (Rmessages == NULL_USER_OBJECT
                                 ? NULL
                                 : Riproc_to_messages(Rmessages));
-    iproc_loglik *loglik = iproc_loglik_new(model);
+    iproc_loglik *loglik = iproc_loglik_new(model, messages);
     SEXP Rloglik;
     PROTECT(Rloglik = Riproc_from_loglik(loglik));
     iproc_loglik_unref(loglik);
-
-    if (messages) {
-        iproc_message_iter *cursor = iproc_message_iter_new(messages);
-
-        while (iproc_message_iter_next(cursor)) {
-            iproc_history *history = iproc_message_iter_history(cursor);
-            int64_t i, n = iproc_message_iter_ntie(cursor);
-
-            for (i = 0; i < n; i++) {
-                iproc_message_iter_select(cursor, i);
-                int64_t  msg_from = iproc_message_iter_from(cursor);
-                int64_t *msg_to = iproc_message_iter_to(cursor);
-                int64_t  msg_nto = iproc_message_iter_nto(cursor);
-                
-                iproc_loglik_insertm(loglik, history, msg_from, msg_to, msg_nto);
-            }
-        }
-        
-        iproc_message_iter_unref(cursor);
-    }
-
     UNPROTECT(1);
     return Rloglik;
 }

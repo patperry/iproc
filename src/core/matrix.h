@@ -36,6 +36,7 @@ void              iproc_matrix_copy                (iproc_matrix *dst,
                                                     iproc_matrix *src);
 void              iproc_matrix_set_all             (iproc_matrix *matrix,
                                                     double        value);
+void              iproc_matrix_set_identity        (iproc_matrix *matrix);
 
 int64_t           iproc_matrix_nrow                (iproc_matrix *a);
 int64_t           iproc_matrix_ncol                (iproc_matrix *a);
@@ -97,5 +98,10 @@ void              iproc_matrix_matmul              (double        alpha,
                                                     iproc_matrix *x,
                                                     double        beta,
                                                     iproc_matrix *y);
+
+void              iproc_matrix_update1             (iproc_matrix *matrix,
+                                                    double        alpha,
+                                                    iproc_vector *x,
+                                                    iproc_vector *y);
 
 #endif /* _IPROC_MATRIX_H */
