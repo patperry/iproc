@@ -54,7 +54,7 @@ iproc_fit_init (iproc_fit *fit)
     
     eval_objective(fit->loglik, fit->penalty, &fit->value, fit->grad);
     fit->value0 = NAN;
-    fit->step = 0.0;
+    fit->step = 1.0;
     
     return 1;
 }
@@ -67,8 +67,8 @@ iproc_fit_new (iproc_model    *model0,
     assert(model0);
     assert(messages);
     assert(penalty >= 0.0);
-    assert(iproc_model_nsender(model0) <= iproc_messages_max_from(messages));
-    assert(iproc_model_nreceiver(model0) <= iproc_messages_max_to(messages));
+    assert(iproc_messages_max_from(messages) < iproc_model_nsender(model0));
+    assert(iproc_messages_max_to(messages) < iproc_model_nreceiver(model0));
     
     iproc_fit *fit = iproc_malloc(sizeof(*fit));
     if (!fit)
@@ -133,15 +133,18 @@ linesearch (iproc_fit *fit)
     char task[task_len + 1];
     double stpmin = 0;
     double stpmax = f / (gtol * g);
-    double stp = IPROC_MIN(1.0, stpmax);
+    double stp = g == 0 ? 1.0 : IPROC_MIN(1.0, stpmax);
     f77int isave[2];
     double dsave[13];
+    
+    if (g == 0)
+        goto cleanup;
     
     strcpy(task, "START");
     dcsrch_(&stp, &f, &g, &ftol, &gtol, &xtol, task, &stpmin, &stpmax, isave,
             dsave, task_len);
     
-    while (strncmp(task, "FG", 2) == 0) {
+    while (strncmp(task, "FG", strlen("FG")) == 0) {
         iproc_loglik_unref(loglik);        
         iproc_model_unref(model);
 
@@ -165,7 +168,9 @@ linesearch (iproc_fit *fit)
     const char * xtol_msg = "WARNING: XTOL TEST SATISFIED";
     assert(!(strncmp(task, xtol_msg, strlen(xtol_msg))
              && strncmp(task, "CONV", strlen("CONV"))));
-            
+
+cleanup:
+    
     iproc_vector_unref(x);
     iproc_vector_unref(x0);
     
@@ -252,7 +257,31 @@ update_searchdir (iproc_fit *fit)
 void
 iproc_fit_step (iproc_fit *fit)
 {
-    update_searchdir(fit);
+    update_searchdir(fit);    
     linesearch(fit);
     update_hess(fit);
+}
+
+bool
+iproc_fit_converged (iproc_fit *fit,
+                     double     abs_tol,
+                     double     rel_tol)
+{
+    double f = fit->value;
+    double f0 = fit->value0;
+    double step = fit->step;
+    double g0 = iproc_vector_dot(fit->search_dir, fit->grad);
+    bool converged = false;
+    
+    if (fabs(f - f0) <= abs_tol
+        && step * fabs(g0) <= abs_tol) {
+        /* abs_tol test satisfied */
+        converged = true;
+    } else if (fabs(f - f0) <= rel_tol * fabs(f0)
+               && step * fabs(g0) <= rel_tol * fabs(f0)) {
+        /* rel_tol test satisfied */
+        converged = true;
+    }
+    
+    return converged;
 }
