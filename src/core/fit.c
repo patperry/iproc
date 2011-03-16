@@ -3,14 +3,13 @@
 #include <math.h>
 #include <string.h>
 #include "config.h"
-#include "f2c.h"
 #include "memory.h"
 #include "fit.h"
 
-int dcsrch_(doublereal *stp, doublereal *f, doublereal *g, 
-            doublereal *ftol, doublereal *gtol, doublereal *xtol, char *task, 
-            doublereal *stpmin, doublereal *stpmax, integer *isave, doublereal *
-            dsave, ftnlen task_len);
+int dcsrch_(double *stp, double *f, double *g, 
+            double *ftol, double *gtol, double *xtol, char *task, 
+            double *stpmin, double *stpmax, f77int *isave, double *
+            dsave, f77int task_len);
 
 
 

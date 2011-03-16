@@ -1,7 +1,7 @@
 #ifndef _IPROC_CONFIG_H
 #define _IPROC_CONFIG_H
 
-#include <stdint.h>
+#include <limits.h>
 #include <R.h>
 
 #define F77_FUNC    F77_CALL

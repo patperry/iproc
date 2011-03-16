@@ -1,9 +1,9 @@
-Package:     iproc
-Version:     1.0
-Date:        2011-02-01
+Package:     @PACKAGE_NAME@
+Version:     @PACKAGE_VERSION@
+Date:        @PACKAGE_DATE@
 Title:       Point Process Modeling of Directed Interactions
 Author:      Patrick O. Perry
-Maintainer:  Patrick O. Perry <patperry@gmail.com>
+Maintainer:  Patrick O. Perry <@PACKAGE_BUGREPORT@>
 Description: 
     Blah blah blah.
 License:     BSD
