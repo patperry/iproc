@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 #include <R_ext/Rdynload.h>
+#include <R_ext/Utils.h>
+
 #include "fit.h"
 #include "r-messages.h"
 #include "r-model.h"
@@ -41,9 +43,13 @@ Riproc_fit (SEXP Rmodel0,
     int it = 0;
     
     do {
+        R_CheckUserInterrupt();
         it++;
         iproc_fit_step(fit);
-        printf(".");
+        printf("%d\n", it);
+        printf("  step: %.8f\n", fit->step);
+        printf("  f: %.8f\n", fit->value);
+        printf("  Dec: %.8f\n", iproc_vector_dot(fit->search_dir, fit->grad));
         fflush(stdout);
     } while (!iproc_fit_converged(fit, IPROC_FIT_ABSTOL, IPROC_FIT_RELTOL));
     

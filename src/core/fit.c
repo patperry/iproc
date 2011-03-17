@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 #include "config.h"
 #include "memory.h"
@@ -22,21 +23,24 @@ eval_objective (iproc_loglik *loglik,
     iproc_model *model = loglik->model;
     iproc_vector *coefs = model->coefs;
     
+    double n = loglik->nrecv;
     double ll_value = iproc_loglik_value(loglik);
     iproc_vector *ll_grad = iproc_loglik_grad(loglik);
     
     double norm = iproc_vector_norm(coefs);
     double norm2 = norm * norm;
-    double value = -ll_value + 0.5 * penalty * norm2;
+    double value = -ll_value/n + 0.5 * (penalty / n) * norm2;
     *valuep = value;
     
+    printf("loglik: %.8f  n: %.0f  value: %.8f\n", ll_value, n, value);
+    
     iproc_vector_copy(grad, coefs);
-    iproc_vector_scale(grad, penalty);
-    iproc_vector_acc(grad, -1.0, ll_grad);
+    iproc_vector_scale(grad, penalty / n);
+    iproc_vector_acc(grad, -1.0/n, ll_grad);
 }
 
 
-static int
+static bool
 iproc_fit_init (iproc_fit *fit)
 {
     int64_t dim = iproc_model_dim(fit->model);
@@ -47,15 +51,14 @@ iproc_fit_init (iproc_fit *fit)
     fit->search_dir = iproc_vector_new(dim);
     fit->loglik = iproc_loglik_new(fit->model, fit->messages);
     
-    if (!(fit->inv_hess && fit->grad && fit->grad0 && fit->search_dir
-          && fit->loglik))
-        return 0;
+    if (!(fit->grad && fit->grad0 && fit->search_dir && fit->loglik))
+        return false;
     
     eval_objective(fit->loglik, fit->penalty, &fit->value, fit->grad);
     fit->value0 = NAN;
     fit->step = 1.0;
     
-    return 1;
+    return true;
 }
 
 iproc_fit *
@@ -131,12 +134,12 @@ linesearch (iproc_fit *fit)
     f77int task_len = 60;
     char task[task_len + 1];
     double stpmin = 0;
-    double stpmax = f / (gtol * g);
+    double stpmax = -f / (gtol * g);
     double stp = g == 0 ? 1.0 : IPROC_MIN(1.0, stpmax);
     f77int isave[2];
     double dsave[13];
     
-    if (g == 0)
+    if (f == 0 || g == 0)
         goto cleanup;
     
     strcpy(task, "START");
@@ -165,8 +168,10 @@ linesearch (iproc_fit *fit)
     }
 
     const char * xtol_msg = "WARNING: XTOL TEST SATISFIED";
-    assert(!(strncmp(task, xtol_msg, strlen(xtol_msg))
-             && strncmp(task, "CONV", strlen("CONV"))));
+    if (!(strncmp(task, "CONV", strlen("CONV")) == 0
+          || strncmp(task, xtol_msg, strlen(xtol_msg)) == 0)) {
+        printf("%s\n", task);
+    }
 
 cleanup:
     
@@ -223,6 +228,8 @@ update_hess (iproc_fit *fit)
         iproc_matrix_update1(H, scale1, s, s);
         iproc_matrix_update1(H, -rho, H_y, s);
         iproc_matrix_update1(H, -rho, s, H_y);
+
+        iproc_vector_unref(H_y);
     }
     
     iproc_vector_unref(y);
@@ -247,7 +254,7 @@ update_searchdir (iproc_fit *fit)
         if (scale != 0) {
             for (i = 0; i < n; i++) {
                 double s_i = iproc_vector_get(s, i);
-                iproc_vector_set(s, i, s_i / scale);
+                iproc_vector_set(s, i, -s_i / scale);
             }
         }
     }
@@ -256,6 +263,7 @@ update_searchdir (iproc_fit *fit)
 void
 iproc_fit_step (iproc_fit *fit)
 {
+    assert(fit);
     update_searchdir(fit);    
     linesearch(fit);
     update_hess(fit);
