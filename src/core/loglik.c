@@ -41,6 +41,8 @@ iproc_loglik_new_empty (iproc_model *model)
     loglik->model = iproc_model_ref(model);
     loglik->grad = iproc_vector_new(iproc_design_dim(design));
     loglik->grad_cached = false;
+    loglik->nsend = 0;
+    loglik->nrecv = 0;
     iproc_refcount_init(&loglik->refcount);
     
     if (!(loglik->sloglik_array && loglik->grad)) {
@@ -139,6 +141,8 @@ iproc_loglik_insert (iproc_loglik  *loglik,
 {
     iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
     iproc_sloglik_insert(sll, history, to);
+    loglik->nsend++;
+    loglik->nrecv++;
 }
 
 void
@@ -151,6 +155,8 @@ iproc_loglik_insertm  (iproc_loglik  *loglik,
     iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
     iproc_sloglik_insertm(sll, history, to, nto);
     loglik->grad_cached = false;
+    loglik->nsend += 1;
+    loglik->nrecv += nto;
 }
 
 double

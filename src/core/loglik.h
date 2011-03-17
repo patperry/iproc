@@ -16,6 +16,8 @@ struct _iproc_loglik {
     iproc_array   *sloglik_array;
     iproc_vector  *grad;
     bool           grad_cached;
+    int64_t        nsend;
+    int64_t        nrecv;
     iproc_refcount refcount;
 };
 
