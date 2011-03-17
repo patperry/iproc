@@ -61,8 +61,8 @@ iproc_loglik_new (iproc_model    *model,
                   iproc_messages *messages)
 {
     assert(model);
-    assert(!messages || iproc_model_nsender(model) <= iproc_messages_max_from(messages));
-    assert(!messages || iproc_model_nreceiver(model) <= iproc_messages_max_to(messages));
+    assert(!messages || iproc_messages_max_from(messages) < iproc_model_nsender(model));
+    assert(!messages || iproc_messages_max_to(messages) < iproc_model_nreceiver(model));
     
     iproc_loglik *loglik = iproc_loglik_new_empty(model);
     
