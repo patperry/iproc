@@ -85,12 +85,81 @@ libminpack_la_LIBADD = \
 dist_noinst_DATA = \
 	@RPACKAGE@
 
+rpkg_sources = \
+	interfaces/R/DESCRIPTION \
+	interfaces/R/LICENSE \
+	interfaces/R/NAMESPACE \
+	interfaces/R/data/enron.rda \
+	interfaces/R/inst/extdata/enron/employees.tsv \
+	interfaces/R/inst/extdata/enron/messages.tsv \
+	interfaces/R/inst/extdata/enron/recipients.tsv \
+	interfaces/R/inst/unitTests/common.loglik.R \
+	interfaces/R/inst/unitTests/common.loglik.all.R \
+	interfaces/R/inst/unitTests/common.loglik.groups.R \
+	interfaces/R/inst/unitTests/common.loglik.recip.R \
+	interfaces/R/inst/unitTests/common.model.R \
+	interfaces/R/inst/unitTests/common.model.all.R \
+	interfaces/R/inst/unitTests/common.model.groups.R \
+	interfaces/R/inst/unitTests/common.model.recip.R \
+	interfaces/R/inst/unitTests/runit.actors.R \
+	interfaces/R/inst/unitTests/runit.cursor.R \
+	interfaces/R/inst/unitTests/runit.design.all.R \
+	interfaces/R/inst/unitTests/runit.design.groups.R \
+	interfaces/R/inst/unitTests/runit.design.recip.R \
+	interfaces/R/inst/unitTests/runit.enron.R \
+	interfaces/R/inst/unitTests/runit.loglik.all.loops.R \
+	interfaces/R/inst/unitTests/runit.loglik.all.noloops.R \
+	interfaces/R/inst/unitTests/runit.loglik.groups.loops.R \
+	interfaces/R/inst/unitTests/runit.loglik.groups.noloops.R \
+	interfaces/R/inst/unitTests/runit.loglik.recip.loops.R \
+	interfaces/R/inst/unitTests/runit.loglik.recip.noloops.R \
+	interfaces/R/inst/unitTests/runit.messages.R \
+	interfaces/R/inst/unitTests/runit.model.all.loops.R \
+	interfaces/R/inst/unitTests/runit.model.all.noloops.R \
+	interfaces/R/inst/unitTests/runit.model.groups.loops.R \
+	interfaces/R/inst/unitTests/runit.model.groups.noloops.R \
+	interfaces/R/inst/unitTests/runit.model.recip.loops.R \
+	interfaces/R/inst/unitTests/runit.model.recip.noloops.R \
+	interfaces/R/R/actors.R \
+	interfaces/R/R/cursor.R \
+	interfaces/R/R/design.R \
+	interfaces/R/R/enron.R \
+	interfaces/R/R/fit.R \
+	interfaces/R/R/loglik.R \
+	interfaces/R/R/messages.R \
+	interfaces/R/R/methods.R \
+	interfaces/R/R/model.R \
+	interfaces/R/R/runit.R \
+	interfaces/R/R/utils.R \
+	interfaces/R/src/Makevars \
+	interfaces/R/src/Makevars.win \
+	interfaces/R/src/config.h \
+	interfaces/R/src/r-actors.c \
+	interfaces/R/src/r-actors.h \
+	interfaces/R/src/r-cursor.c \
+	interfaces/R/src/r-cursor.h \
+	interfaces/R/src/r-design-udata.c \
+	interfaces/R/src/r-design.c \
+	interfaces/R/src/r-design.h \
+	interfaces/R/src/r-fit.c \
+	interfaces/R/src/r-fit.h \
+	interfaces/R/src/r-init.c \
+	interfaces/R/src/r-loglik.c \
+	interfaces/R/src/r-loglik.h \
+	interfaces/R/src/r-messages.c \
+	interfaces/R/src/r-messages.h \
+	interfaces/R/src/r-model.c \
+	interfaces/R/src/r-model.h \
+	interfaces/R/src/r-utils.c \
+	interfaces/R/src/r-utils.h \
+	interfaces/R/tests/doRUnit.R
+
 rpkg_extra_sources = \
 	$(libcore_la_SOURCES) \
 	$(libf2c_la_SOURCES) \
 	$(libminpack_la_SOURCES)
 
-@RPACKAGE@: $(rpkg_extra_sources)
+@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
 	cp $(rpkg_extra_sources)  interfaces/R/src
 	R CMD build interfaces/R
 
