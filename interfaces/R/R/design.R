@@ -1,9 +1,9 @@
 
-iproc.design.default <- function(senders, receivers, data, data.receivers = data,
-                                 recip.intervals = NULL, data.senders = data, ...)
+iproc.design.default <- function(senders, receivers = senders, recip.intervals = NULL,
+                                 data.senders, data.receivers = data.senders, ...)
 {
     if (!inherits(senders, "actors")) {
-        if (missing(data) && missing(data.senders)) {
+        if (missing(data.senders)) {
             senders <- actors(senders)
         } else {
             senders <- actors(senders, data.senders)
@@ -11,7 +11,7 @@ iproc.design.default <- function(senders, receivers, data, data.receivers = data
     }
     
     if (!inherits(receivers, "actors")) {
-        if (missing(data) && missing(data.receivers)) {
+        if (missing(data.receivers)) {
             receivers <- actors(receivers)
         } else {
             receivers <- actors(receivers, data.receivers)

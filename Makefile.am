@@ -125,6 +125,7 @@ rpkg_sources = \
 	interfaces/R/R/design.R \
 	interfaces/R/R/enron.R \
 	interfaces/R/R/fit.R \
+	interfaces/R/R/iproc.R \
 	interfaces/R/R/loglik.R \
 	interfaces/R/R/messages.R \
 	interfaces/R/R/methods.R \

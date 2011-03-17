@@ -12,6 +12,11 @@ void Riproc_fit_init (DllInfo *info);
 
 SEXP Riproc_fit (SEXP Rmodel0,
                  SEXP Rmessages,
-                 SEXP Rpenalty);
+                 SEXP Rpenalty,
+                 SEXP Rreltol,
+                 SEXP Rabstol,
+                 SEXP Rmaxit,
+                 SEXP Rtrace,
+                 SEXP Rreport);
 
 #endif /* _RIPROC_FIT_H */

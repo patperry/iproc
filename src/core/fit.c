@@ -32,8 +32,6 @@ eval_objective (iproc_loglik *loglik,
     double value = -ll_value/n + 0.5 * (penalty / n) * norm2;
     *valuep = value;
     
-    printf("loglik: %.8f  n: %.0f  value: %.8f\n", ll_value, n, value);
-    
     iproc_vector_copy(grad, coefs);
     iproc_vector_scale(grad, penalty / n);
     iproc_vector_acc(grad, -1.0/n, ll_grad);
