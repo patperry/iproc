@@ -126,14 +126,14 @@ iproc_message_iter_reset (iproc_message_iter *it)
     it->message = NULL;
     it->offset = 0;
     it->ntie = 0;
-    it->finished = 0;
+    it->finished = false;
 }
 
-int
+bool
 iproc_message_iter_next (iproc_message_iter *it)
 {
     if (iproc_message_iter_finished(it))
-        return 0;
+        return false;
 
     int64_t offset = it->offset + it->ntie;
 
@@ -141,7 +141,7 @@ iproc_message_iter_next (iproc_message_iter *it)
     iproc_array *recipients = it->messages->recipients;
     iproc_history *history = it->history;
     int64_t n = iproc_array_size(messages);
-    int has_next = offset < n ? 1 : 0;
+    bool has_next = offset < n;
 
     if (has_next) {
         iproc_message *message = &(iproc_array_index(messages, iproc_message, offset));
@@ -163,27 +163,27 @@ iproc_message_iter_next (iproc_message_iter *it)
         it->ntie = ntie;
         it->message = message;
     } else {
-        it->finished = 1;
+        it->finished = true;
     }
     it->offset = offset;
 
     return has_next;
 }
 
-int
+bool
 iproc_message_iter_started (iproc_message_iter *it)
 {
     if (!it)
-        return 0;
+        return false;
 
     return it->message != NULL;
 }
 
-int
+bool
 iproc_message_iter_finished (iproc_message_iter *it)
 {
     if (!it)
-        return 1;
+        return true;
 
     return it->finished;
 }

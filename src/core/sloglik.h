@@ -1,6 +1,8 @@
 #ifndef _IPROC_SLOGLIK_H
 #define _IPROC_SLOGLIK_H
 
+#include <stdbool.h>
+
 #include "array.h"
 #include "history.h"
 #include "model.h"
@@ -20,7 +22,7 @@ struct _iproc_sloglik {
     iproc_svector *sum_active_probs;
     iproc_svector *sum_mean_var_diff;
     iproc_vector  *grad;
-    int            grad_cached;
+    bool           grad_cached;
     iproc_refcount refcount;
 };
 

@@ -1,6 +1,8 @@
 #ifndef _IPROC_LOGLIK_H
 #define _IPROC_LOGLIK_H
 
+#include <stdbool.h>
+
 #include "array.h"
 #include "messages.h"
 #include "model.h"
@@ -13,7 +15,7 @@ struct _iproc_loglik {
     iproc_model   *model;
     iproc_array   *sloglik_array;
     iproc_vector  *grad;
-    int            grad_cached;
+    bool           grad_cached;
     iproc_refcount refcount;
 };
 

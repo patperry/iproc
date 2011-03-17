@@ -40,7 +40,7 @@ iproc_loglik_new_empty (iproc_model *model)
     loglik->sloglik_array = iproc_array_new(sizeof(iproc_sloglik *));
     loglik->model = iproc_model_ref(model);
     loglik->grad = iproc_vector_new(iproc_design_dim(design));
-    loglik->grad_cached = 0;
+    loglik->grad_cached = false;
     iproc_refcount_init(&loglik->refcount);
     
     if (!(loglik->sloglik_array && loglik->grad)) {
@@ -150,7 +150,7 @@ iproc_loglik_insertm  (iproc_loglik  *loglik,
 {
     iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
     iproc_sloglik_insertm(sll, history, to, nto);
-    loglik->grad_cached = 0;
+    loglik->grad_cached = false;
 }
 
 double
@@ -202,7 +202,7 @@ iproc_loglik_grad (iproc_loglik *loglik)
     if (!loglik->grad_cached) {
         iproc_vector_set_all(loglik->grad, 0.0);
         iproc_vector_acc_loglik_grad_nocache(loglik->grad, 1.0, loglik);
-        loglik->grad_cached = 1;
+        loglik->grad_cached = true;
     }
     return loglik->grad;
 }

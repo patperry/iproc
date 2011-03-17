@@ -1,6 +1,7 @@
 #ifndef _IPROC_MESSAGES_H
 #define _IPROC_MESSAGES_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "array.h"
 #include "history.h"
@@ -33,7 +34,7 @@ struct _iproc_message_iter {
     int64_t         offset;
     int64_t         ntie;
     iproc_message  *message;
-    int             finished;
+    bool            finished;
     iproc_refcount  refcount;
 };
 
@@ -75,8 +76,8 @@ int64_t *            iproc_message_iter_to     (iproc_message_iter *it);
 iproc_history *      iproc_message_iter_history (iproc_message_iter *it);
 
 void                 iproc_message_iter_reset    (iproc_message_iter *it);
-int                  iproc_message_iter_next     (iproc_message_iter *it);
-int                  iproc_message_iter_started  (iproc_message_iter *it);
-int                  iproc_message_iter_finished (iproc_message_iter *it);
+bool                 iproc_message_iter_next     (iproc_message_iter *it);
+bool                 iproc_message_iter_started  (iproc_message_iter *it);
+bool                 iproc_message_iter_finished (iproc_message_iter *it);
 
 #endif /* _IPROC_MESSAGES_H */

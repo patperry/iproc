@@ -1,6 +1,7 @@
 #ifndef _IPROC_MODEL_H
 #define _IPROC_MODEL_H
 
+#include <stdbool.h>
 #include "refcount.h"
 #include "array.h"
 #include "design.h"
@@ -22,7 +23,7 @@ struct _iproc_group_model {
 struct _iproc_model {
     iproc_design  *design;
     iproc_vector  *coefs;
-    int            has_loops;
+    bool           has_loops;
     iproc_array   *group_models;
     iproc_array   *ctxs;
     iproc_refcount refcount;
@@ -39,15 +40,15 @@ struct _iproc_model_ctx {
     iproc_refcount     refcount;
 };
 
-iproc_model *       iproc_model_new                (iproc_design   *design,
+iproc_model *       iproc_model_new                (iproc_design *design,
                                                     iproc_vector *coefs,
-                                                    int           has_loops);
+                                                    bool          has_loops);
 iproc_model *       iproc_model_ref                (iproc_model  *model);
 void                iproc_model_unref              (iproc_model  *model);
 
 iproc_design *        iproc_model_design               (iproc_model *model);
 iproc_vector *      iproc_model_coefs              (iproc_model *model);
-int                 iproc_model_has_loops          (iproc_model *model);
+bool                iproc_model_has_loops          (iproc_model *model);
 int64_t             iproc_model_nsender            (iproc_model *model);
 int64_t             iproc_model_nreceiver          (iproc_model *model);
 int64_t             iproc_model_dim                (iproc_model *model);

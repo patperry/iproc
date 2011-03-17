@@ -39,7 +39,7 @@ iproc_sloglik_new (iproc_model *model,
     sll->nsend = 0;
     sll->nrecv = iproc_svector_new(n);
     sll->grad = iproc_vector_new(p);
-    sll->grad_cached = 0;
+    sll->grad_cached = false;
     sll->sum_obs_var_diff = iproc_svector_new(p);
     sll->value = 0.0;
     sll->suminvwt = 0.0;
@@ -194,7 +194,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     int64_t i;
     iproc_svector *wt = iproc_svector_new(nreceiver);
 
-    sll->grad_cached = 0;
+    sll->grad_cached = false;
 
     for (i = 0; i < n; i++) {
         assert(jrecv[i] >= 0);
@@ -347,7 +347,7 @@ iproc_sloglik_grad (iproc_sloglik *sll)
     if (!sll->grad_cached) {
         iproc_vector_set_all(sll->grad, 0.0);
         iproc_vector_acc_sloglik_grad_nocache(sll->grad, 1.0, sll);
-        sll->grad_cached = 1;
+        sll->grad_cached = true;
     }
     return sll->grad;
 }

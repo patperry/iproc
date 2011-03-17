@@ -12,7 +12,7 @@ static void
 compute_logprobs0 (iproc_design   *design,
                    int64_t       isend,
                    iproc_vector *coefs,
-                   int           has_loops,
+                   bool          has_loops,
                    iproc_vector *logprobs,
                    double       *logsumweight)
 {
@@ -154,9 +154,9 @@ iproc_model_free (iproc_model *model)
 }
 
 iproc_model *
-iproc_model_new (iproc_design   *design,
+iproc_model_new (iproc_design *design,
                  iproc_vector *coefs,
-                 int           has_loops)
+                 bool          has_loops)
 {
     assert(design);
     assert(coefs);
@@ -215,7 +215,7 @@ iproc_model_coefs (iproc_model *model)
     return model->coefs;
 }
 
-int
+bool
 iproc_model_has_loops (iproc_model *model)
 {
     assert(model);
