@@ -2,6 +2,8 @@
 #define _IPROC_FIT_H
 
 #include <stdbool.h>
+#include <float.h>
+#include <math.h>
 
 #include "design.h"
 #include "loglik.h"
@@ -10,8 +12,8 @@
 #include "model.h"
 #include "vector.h"
 
-#define IPROC_FIT_ABSTOL 1e-5
-#define IPROC_FIT_RELTOL 1e-5
+#define IPROC_FIT_ABSTOL sqrt(DOUBLE_EPS)
+#define IPROC_FIT_RELTOL DOUBLE_EPS
 
 
 typedef struct _iproc_fit iproc_fit;
