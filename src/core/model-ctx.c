@@ -215,6 +215,9 @@ iproc_model_ctx_set (iproc_model_ctx *ctx,
     assert(isend >= 0);
     assert(isend < iproc_model_nsender(ctx->model));
 
+    iproc_svector_clear(ctx->deta);
+    iproc_svector_clear(ctx->dp);
+    iproc_svector_clear(ctx->dxbar);
     iproc_design_ctx_unref(ctx->design_ctx);
 
     iproc_model *model = ctx->model;
