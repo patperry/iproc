@@ -126,7 +126,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
     // update log likelihood
     sll->f += scale1 * ((-lpbar) - sll->f);
 
-    /* update observed variable diffs */
+    // update observed variable diffs
     iproc_design_ctx_diff_muls(scale1 / n, IPROC_TRANS_TRANS, ctx->design_ctx, wt,
                                scale0, sll->dxobs);
     

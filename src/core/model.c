@@ -80,20 +80,6 @@ iproc_group_models_init (iproc_array  *group_models,
         group->xbar0 = iproc_vector_new(dim);
         iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->p0,
                                  0.0, group->xbar0);
-
-
-        /*
-        group->logprobs0 = iproc_vector_new(nreceiver);
-        compute_logprobs0(design, i, coefs, group->logprobs0, &group->logsumweight0);
-
-        group->probs0 = iproc_vector_new_copy(group->logprobs0);
-        iproc_vector_exp(group->probs0);
-        group->invsumweight0 = exp(-group->logsumweight0);
-
-        group->mean0 = iproc_vector_new(dim);
-        iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->probs0,
-                                 0.0, group->mean0);
-        */
     }
 }
 
@@ -113,12 +99,6 @@ iproc_group_models_deinit (iproc_array *group_models)
         iproc_vector_unref(group->xbar0);
         iproc_vector_unref(group->log_p0);
         iproc_vector_unref(group->p0);
-        
-        /*
-        iproc_vector_unref(group->logprobs0);
-        iproc_vector_unref(group->probs0);
-        iproc_vector_unref(group->mean0);
-         */
     }
 }
 
@@ -144,9 +124,6 @@ iproc_model_ctx_free_dealloc (iproc_model_ctx *ctx)
         iproc_svector_unref(ctx->dxbar);
         iproc_svector_unref(ctx->dp);
         iproc_svector_unref(ctx->deta);
-
-        // iproc_svector_unref(ctx->active_probs);
-        // iproc_svector_unref(ctx->active_logprobs);
         iproc_free(ctx);
     }
 }
