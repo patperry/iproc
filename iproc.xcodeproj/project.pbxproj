@@ -147,7 +147,6 @@
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
-		22E8B700132F13C400ED84FF /* interfaces */ = {isa = PBXFileReference; lastKnownFileType = folder; path = interfaces; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -241,7 +240,6 @@
 		2275BB84132EAC9D002D8876 = {
 			isa = PBXGroup;
 			children = (
-				22E8B700132F13C400ED84FF /* interfaces */,
 				221FEE68132EC83F0000097B /* Core */,
 				22867A14132FDA8E0090D617 /* Libf2c */,
 				22867A0E132FDA580090D617 /* Minpack */,

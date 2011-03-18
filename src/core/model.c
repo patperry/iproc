@@ -9,10 +9,9 @@
 #include "utils.h"
 
 static void
-compute_logprobs0 (iproc_design   *design,
+compute_logprobs0 (iproc_design *design,
                    int64_t       isend,
                    iproc_vector *coefs,
-                   bool          has_loops,
                    iproc_vector *logprobs,
                    double       *logsumweight)
 {
@@ -27,11 +26,7 @@ compute_logprobs0 (iproc_design   *design,
      * shouldn't be necessary in most (all?) real-world situations.
      */
     iproc_design_sender0_mul(1.0, IPROC_TRANS_NOTRANS, design, isend, coefs,
-                           0.0, logprobs);
-
-    if (!has_loops) {
-        iproc_vector_set(logprobs, isend, -INFINITY);
-    }
+                             0.0, logprobs);
 
     /* protect against overflow */
     double max = iproc_vector_max(logprobs);
@@ -48,7 +43,7 @@ compute_logprobs0 (iproc_design   *design,
 
 static void
 iproc_group_models_init (iproc_array  *group_models,
-                         iproc_design   *design,
+                         iproc_design *design,
                          iproc_vector *coefs)
 {
     int64_t i, nsender = iproc_design_nsender(design);
@@ -63,15 +58,33 @@ iproc_group_models_init (iproc_array  *group_models,
      * iproc_design_ctx_new(design, NULL, i).
      */
     for (i = 0; i < nsender; i++) {
-        int64_t k = iproc_actors_group(senders, i);
+        /* find the group of the sender */
+        int64_t g = iproc_actors_group(senders, i);
         iproc_group_model *group = &(iproc_array_index(group_models,
                                                        iproc_group_model,
-                                                       k));
-        if (group->logprobs0)
-            continue;
+                                                       g));
 
+        /* continue if the group is already initialized */
+        if (group->p0)
+            continue; 
+        
+        /* compute initial log(probs) */
+        group->log_p0 = iproc_vector_new(nreceiver);
+        compute_logprobs0(design, i, coefs, group->log_p0, &group->log_W0);
+        
+        /* compute initial probs */
+        group->p0 = iproc_vector_new_copy(group->log_p0);
+        iproc_vector_exp(group->p0);
+        
+        /* compute initial covariate mean */
+        group->xbar0 = iproc_vector_new(dim);
+        iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->p0,
+                                 0.0, group->xbar0);
+
+
+        /*
         group->logprobs0 = iproc_vector_new(nreceiver);
-        compute_logprobs0(design, i, coefs, 1, group->logprobs0, &group->logsumweight0);
+        compute_logprobs0(design, i, coefs, group->logprobs0, &group->logsumweight0);
 
         group->probs0 = iproc_vector_new_copy(group->logprobs0);
         iproc_vector_exp(group->probs0);
@@ -80,6 +93,7 @@ iproc_group_models_init (iproc_array  *group_models,
         group->mean0 = iproc_vector_new(dim);
         iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->probs0,
                                  0.0, group->mean0);
+        */
     }
 }
 
@@ -90,16 +104,21 @@ iproc_group_models_deinit (iproc_array *group_models)
     if (!group_models)
         return;
 
-    int64_t n = iproc_array_size(group_models);
-    int64_t i;
+    int64_t i, n = iproc_array_size(group_models);
 
     for (i = 0; i < n; i++) {
         iproc_group_model *group = &(iproc_array_index(group_models,
                                                        iproc_group_model,
                                                        i));
+        iproc_vector_unref(group->xbar0);
+        iproc_vector_unref(group->log_p0);
+        iproc_vector_unref(group->p0);
+        
+        /*
         iproc_vector_unref(group->logprobs0);
         iproc_vector_unref(group->probs0);
         iproc_vector_unref(group->mean0);
+         */
     }
 }
 
@@ -122,8 +141,12 @@ static void
 iproc_model_ctx_free_dealloc (iproc_model_ctx *ctx)
 {
     if (ctx) {
-        iproc_svector_unref(ctx->active_probs);
-        iproc_svector_unref(ctx->active_logprobs);
+        iproc_svector_unref(ctx->dxbar);
+        iproc_svector_unref(ctx->dp);
+        iproc_svector_unref(ctx->deta);
+
+        // iproc_svector_unref(ctx->active_probs);
+        // iproc_svector_unref(ctx->active_logprobs);
         iproc_free(ctx);
     }
 }
@@ -246,34 +269,6 @@ iproc_model_dim (iproc_model *model)
     return iproc_design_dim(design);
 }
 
-double
-iproc_model_invsumweight0 (iproc_model *model,
-                           int64_t      isend)
-{
-    assert(model);
-    assert(isend >= 0);
-    assert(isend < iproc_model_nsender(model));
-
-    iproc_group_model *group = iproc_model_send_group(model, isend);
-    assert(group);
-
-    return group->invsumweight0;
-}
-
-double
-iproc_model_logsumweight0 (iproc_model *model,
-                           int64_t      isend)
-{
-    assert(model);
-    assert(isend >= 0);
-    assert(isend < iproc_model_nsender(model));
-
-    iproc_group_model *group = iproc_model_send_group(model, isend);
-    assert(group);
-
-    return group->logsumweight0;
-}
-
 iproc_vector *
 iproc_model_logprobs0 (iproc_model *model,
                        int64_t      isend)
@@ -284,7 +279,7 @@ iproc_model_logprobs0 (iproc_model *model,
 
     iproc_group_model *group = iproc_model_send_group(model, isend);
     assert(group);
-    return group->logprobs0;
+    return group->log_p0;
 }
 
 iproc_vector *
@@ -297,7 +292,7 @@ iproc_model_probs0 (iproc_model *model,
 
     iproc_group_model *group = iproc_model_send_group(model, isend);
     assert(group);
-    return group->probs0;
+    return group->p0;
 }
 
 iproc_vector *
@@ -310,5 +305,5 @@ iproc_model_mean0 (iproc_model *model,
 
     iproc_group_model *group = iproc_model_send_group(model, isend);
     assert(group);
-    return group->mean0;
+    return group->xbar0;
 }
