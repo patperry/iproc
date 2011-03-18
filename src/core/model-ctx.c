@@ -21,11 +21,11 @@
  */
 static void
 compute_new_logprobs (iproc_design_ctx *ctx,
-                      iproc_vector   *coefs,
-                      int             has_loops,
-                      iproc_vector   *logprobs0,
-                      iproc_svector  *logprobs,
-                      double         *plogsumweight_diff)
+                      iproc_vector     *coefs,
+                      bool              has_loops,
+                      iproc_vector     *logprobs0,
+                      iproc_svector    *logprobs,
+                      double           *plogsumweight_diff)
 {
     assert(ctx);
     assert(coefs);
@@ -192,7 +192,7 @@ iproc_model_ctx_set (iproc_model_ctx *ctx,
     iproc_design *design = iproc_model_design(model);
     iproc_design_ctx *design_ctx = iproc_design_ctx_new(design, isend, h);
     iproc_vector *coefs = iproc_model_coefs(model);
-    int has_loops = iproc_model_has_loops(model);
+    bool has_loops = iproc_model_has_loops(model);
     iproc_group_model *group = iproc_model_send_group(model, isend);
 
     ctx->design_ctx = design_ctx;

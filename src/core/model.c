@@ -79,7 +79,7 @@ iproc_group_models_init (iproc_array  *group_models,
 
         group->mean0 = iproc_vector_new(dim);
         iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->probs0,
-                               0.0, group->mean0);
+                                 0.0, group->mean0);
     }
 }
 

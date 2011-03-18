@@ -31,7 +31,7 @@ struct _iproc_model {
 
 struct _iproc_model_ctx {
     iproc_model       *model;
-    iproc_design_ctx    *design_ctx;
+    iproc_design_ctx  *design_ctx;
     iproc_group_model *group;
     iproc_svector     *active_logprobs;
     iproc_svector     *active_probs;
@@ -46,7 +46,7 @@ iproc_model *       iproc_model_new                (iproc_design *design,
 iproc_model *       iproc_model_ref                (iproc_model  *model);
 void                iproc_model_unref              (iproc_model  *model);
 
-iproc_design *        iproc_model_design               (iproc_model *model);
+iproc_design *      iproc_model_design             (iproc_model *model);
 iproc_vector *      iproc_model_coefs              (iproc_model *model);
 bool                iproc_model_has_loops          (iproc_model *model);
 int64_t             iproc_model_nsender            (iproc_model *model);
@@ -87,6 +87,8 @@ void                iproc_model_ctx_get_probs      (iproc_model_ctx *ctx,
                                                     iproc_vector    *probs);
 void                iproc_model_ctx_get_logprobs   (iproc_model_ctx *ctx,
                                                     iproc_vector    *logprobs);
+void                iproc_model_ctx_get_mean       (iproc_model_ctx *ctx,
+                                                    iproc_vector    *mean);
 
 double              iproc_model_ctx_invsumweight       (iproc_model_ctx *ctx);
 double              iproc_model_ctx_logsumweight       (iproc_model_ctx *ctx);
