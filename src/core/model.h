@@ -117,14 +117,7 @@ struct _iproc_group_model {
     double        log_W0;
     iproc_vector *p0;
     iproc_vector *log_p0;
-    iproc_vector *xbar0;
-    
-    /*
-    double        invsumweight0;
-    double        logsumweight0;
-    iproc_vector *logprobs0;
-    iproc_vector *probs0;
-    iproc_vector *mean0; */
+    iproc_vector *xbar0;    
 };
 
 struct _iproc_model {
@@ -136,13 +129,6 @@ struct _iproc_model {
     iproc_refcount refcount;
 };
 
-/* We represent the probabilities as
- *   p[t] = gamma * p[0] + dp[t]
- * with
- *   probs0 := p[0]
- *   dprobs := dp[t]
- *   
- */
 struct _iproc_model_ctx {
     iproc_model       *model;
     iproc_design_ctx  *design_ctx;
@@ -154,11 +140,6 @@ struct _iproc_model_ctx {
     iproc_svector     *dp;
     iproc_svector     *dxbar;
     
-    /*
-    iproc_svector     *active_logprobs;
-    iproc_svector     *active_probs;
-    double             invsumweight_ratio;
-    double             logsumweight_diff;*/
     iproc_refcount     refcount;
 };
 
