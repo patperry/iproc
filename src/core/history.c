@@ -129,6 +129,13 @@ iproc_history_clear (iproc_history *history)
     iproc_history_clear_events(history->recv);
 }
 
+double
+iproc_hisotry_tcur (iproc_history *history)
+{
+    assert(history);
+    return history->tcur;
+}
+
 void
 iproc_history_advance_to (iproc_history *history,
                           double         t)
