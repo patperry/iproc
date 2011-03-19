@@ -10,14 +10,6 @@
 
 
 static void
-iproc_design_free0 (iproc_design *design)
-{
-    if (design->free_user_data) {
-        design->free_user_data(design->user_data);
-    }
-}
-
-static void
 iproc_design_clear_svectors (iproc_array *svectors)
 {
     if (svectors) {
@@ -88,9 +80,6 @@ iproc_design_free (iproc_design *design)
 {
 
     if (design) {
-        iproc_design_free0(design);
-        
-        
         iproc_design_free_svectors(design->svectors);        
         iproc_design_free_ctxs(design->ctxs);
         iproc_design_free_vars(design->vars);
@@ -99,6 +88,23 @@ iproc_design_free (iproc_design *design)
         iproc_free(design);
     }
 }
+
+void
+iproc_design_var_init  (iproc_design_var *var,
+                        int64_t           dim,
+                        void (*get_dxs) (iproc_design_var *,
+                                         iproc_design_ctx *ctx,
+                                         int64_t),
+                        void (*free)    (iproc_design_var *))
+{
+    assert(var);
+    assert(dim >= 0);
+
+    var->dim = dim;
+    var->get_dxs = get_dxs;
+    var->free = free;
+}
+
 
 iproc_design *
 iproc_design_new (iproc_actors *senders,
@@ -162,10 +168,7 @@ int64_t
 iproc_design_dim (iproc_design *design)
 {
     assert(design);
-    int64_t nstatic = iproc_design_nstatic(design);
-    int64_t ndynamic = iproc_design_ndynamic(design);
-    int64_t dim = nstatic + ndynamic;
-    return dim;
+    return design->dim;
 }
 
 void
@@ -338,33 +341,6 @@ iproc_design_muls0 (double          alpha,
 }
 
 
-////////////////////////////////
-
-
-iproc_design *     
-iproc_design_new0 (iproc_actors *senders,
-                   iproc_actors *receivers,
-                   int64_t       ndynamic,
-                   void         *user_data,
-                   void        (*get_sdesign_vars) (iproc_design_ctx *ctx),
-                   void        (*free_user_data)  (void *user_data))
-{
-    assert(ndynamic >= 0);
-    
-    iproc_design *design = iproc_design_new(senders, receivers);
-    
-    if (!design)
-        return NULL;
-    
-    design->nstatic = design->dim0;
-    design->ndynamic = ndynamic;
-    design->dim += ndynamic;
-    design->user_data = user_data;
-    design->get_sdesign_vars = get_sdesign_vars;
-    design->free_user_data = free_user_data;
-    
-    return design;
-}
 
 /////// make these static ?
 
@@ -390,7 +366,7 @@ int64_t
 iproc_design_ndynamic (iproc_design *design)
 {
     assert(design);
-    return design->ndynamic;
+    return design->dim - design->dim0;
 }
 
 int64_t

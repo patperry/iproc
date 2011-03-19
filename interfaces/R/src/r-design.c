@@ -3,6 +3,7 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
+#include "vrecip.h"
 #include "r-utils.h"
 #include "r-actors.h"
 #include "r-cursor.h"
@@ -22,6 +23,27 @@ static R_CallMethodDef callMethods[] = {
     { "Riproc_design_tmul",      (DL_FUNC) &Riproc_design_tmul,      4 },
     { NULL,                    NULL,                             0 }
 };
+
+
+
+static void
+append_recip (iproc_design *design,
+              SEXP          Rrecip_intervals)
+{
+    int n;
+    double *intvls;
+    
+    if (Rrecip_intervals == NULL_USER_OBJECT) {
+        n = 0;
+        intvls = NULL;
+    } else {
+        n = GET_LENGTH(Rrecip_intervals);
+        intvls = NUMERIC_POINTER(Rrecip_intervals);
+    }
+    
+    iproc_vrecip *v = iproc_vrecip_new(intvls, n);
+    iproc_design_append(design, &v->var); // design frees memory
+}
 
 
 void
@@ -72,11 +94,8 @@ Riproc_design_new (SEXP Rsenders,
 {
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
-    Riproc_design_udata *udata = Riproc_design_udata_new(Rrecip_intervals);
-    int64_t ndynamic = Riproc_design_udata_dim(udata);
-    iproc_design *design = iproc_design_new0(senders, receivers, ndynamic, udata,
-                                      Riproc_design_udata_get_sdesign_vars,
-                                      Riproc_design_udata_free);
+    iproc_design *design = iproc_design_new(senders, receivers);
+    append_recip(design, Rrecip_intervals);
     SEXP Rdesign;
 
     PROTECT(Rdesign = Riproc_from_design(design));

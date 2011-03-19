@@ -139,7 +139,6 @@ rpkg_sources = \
 	interfaces/R/src/r-actors.h \
 	interfaces/R/src/r-cursor.c \
 	interfaces/R/src/r-cursor.h \
-	interfaces/R/src/r-design-udata.c \
 	interfaces/R/src/r-design.c \
 	interfaces/R/src/r-design.h \
 	interfaces/R/src/r-fit.c \

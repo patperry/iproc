@@ -26,14 +26,14 @@ compare_int64 (void *px, void *py)
 
 
 static iproc_svector *
-iproc_sdesign_var_new_alloc (iproc_design *design)
+iproc_design_var_new_alloc (iproc_design *design)
 {
     return iproc_svector_new(design->dim);
 }
 
 // TODO : make static
-iproc_svector *
-iproc_sdesign_var_new (iproc_design *design)
+static iproc_svector *
+iproc_design_var_new (iproc_design *design)
 {
     assert(design);
     iproc_array *svectors = design->svectors;
@@ -44,14 +44,14 @@ iproc_sdesign_var_new (iproc_design *design)
         svector = iproc_array_index(svectors, iproc_svector *, n - 1);
         iproc_array_set_size(svectors, n - 1);
     } else {
-        svector = iproc_sdesign_var_new_alloc(design);
+        svector = iproc_design_var_new_alloc(design);
     }
     
     return svector;
 }
 
 // TODO : make static
-void
+static void
 iproc_sdesign_var_free (iproc_design  *design,
                         iproc_svector *svector)
 {
@@ -101,12 +101,25 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
         ctx->history = h;
     }
     ctx->isend = isend;
-    
     clear_dxs(ctx->design, ctx->dxs);
     
+    if (iproc_design_ndynamic(design) == 0)
+        return;
     
-    if (design->get_sdesign_vars)
-        design->get_sdesign_vars(ctx);
+    iproc_array *vars = design->vars;
+    int64_t i, n = iproc_array_size(vars);
+    int64_t offset = iproc_design_idynamic(design, 0);
+
+    for (i = 0; i < n; i++) {
+        iproc_design_var *var = iproc_array_index(vars,
+                                                  iproc_design_var *,
+                                                  i);
+        assert(var->get_dxs);
+        var->get_dxs(var, ctx, offset);
+        offset += var->dim;
+    }
+    
+    assert(offset == 1 + iproc_design_idynamic(design, iproc_design_ndynamic(design) - 1));
 }
 
 static void
@@ -226,7 +239,7 @@ iproc_design_ctx_dx (iproc_design_ctx *ctx,
     if (i < 0) {
         if (!null_ok) {
             i = ~i;
-            dx = iproc_sdesign_var_new(ctx->design);
+            dx = iproc_design_var_new(ctx->design);
             iproc_design_dx new_dx = { jrecv, dx };
             iproc_array_insert(dxs, i, &new_dx);
         }

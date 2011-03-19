@@ -72,9 +72,11 @@
  */
 
 typedef struct _iproc_design     iproc_design;
-typedef struct _iproc_design_ctx iproc_design_ctx;
 typedef struct _iproc_design_var iproc_design_var;
-typedef struct _iproc_design_dx  iproc_design_dx;
+typedef struct _iproc_design_ctx iproc_design_ctx;
+
+typedef struct _iproc_design_dx  iproc_design_dx; // private
+
 
 struct _iproc_design {
     iproc_actors  *senders;
@@ -86,23 +88,15 @@ struct _iproc_design {
     iproc_array   *ctxs;
     iproc_array   *svectors;
     iproc_refcount refcount;    
-
-    
-    
-    int64_t        nstatic;
-    int64_t        ndynamic;
-    void (*get_sdesign_vars) (iproc_design_ctx *ctx);
-    void (*free_user_data) (void *);
-    void *user_data;
 };
 
 /* dX[t,i] */
 struct _iproc_design_ctx {
-    iproc_design       *design;
-    iproc_history      *history;
-    int64_t             isend;
-    iproc_array        *dxs;
-    iproc_refcount      refcount;
+    iproc_design  *design;
+    iproc_history *history;
+    int64_t        isend;
+    iproc_array   *dxs;
+    iproc_refcount refcount;
 };
 
 /* dX{k}[t,i] */
@@ -119,6 +113,12 @@ struct _iproc_design_dx {
     iproc_svector *dx;
 };
 
+void               iproc_design_var_init  (iproc_design_var *var,
+                                           int64_t           dim,
+                                           void (*get_dxs) (iproc_design_var *,
+                                                            iproc_design_ctx *ctx,
+                                                            int64_t),
+                                           void (*free)    (iproc_design_var *));
 
 
 iproc_design *     iproc_design_new       (iproc_actors     *senders,
@@ -197,41 +197,18 @@ void               iproc_design_ctx_dmuls (double            alpha,
                                            iproc_svector    *y);
 
 
+int64_t          iproc_design_nsender     (iproc_design     *design);
+int64_t          iproc_design_nreceiver   (iproc_design     *design);
+iproc_actors *   iproc_design_senders     (iproc_design     *design);
+iproc_actors *   iproc_design_receivers   (iproc_design     *design);
+
+int64_t          iproc_design_nstatic     (iproc_design     *design);
+int64_t          iproc_design_istatic     (iproc_design     *design,
+                                           int64_t           i);
+int64_t          iproc_design_ndynamic    (iproc_design     *design);
+int64_t          iproc_design_idynamic    (iproc_design     *design,
+                                           int64_t           i);
 
 
-
-
-
-
-iproc_design *     iproc_design_new0           (iproc_actors   *senders,
-                                           iproc_actors   *receivers,
-                                           int64_t         ndynamic,
-                                           void           *user_data,
-                                           void          (*get_sdesign_vars) (iproc_design_ctx *ctx),
-                                           void          (*free_user_data)  (void *user_data));
-
-int64_t          iproc_design_nstatic       (iproc_design     *design);
-int64_t          iproc_design_istatic       (iproc_design     *design,
-                                           int64_t         i);
-int64_t          iproc_design_ndynamic      (iproc_design     *design);
-int64_t          iproc_design_idynamic      (iproc_design     *design,
-                                           int64_t         i);
-
-int64_t          iproc_design_nsender       (iproc_design     *design);
-int64_t          iproc_design_nreceiver     (iproc_design     *design);
-iproc_actors *   iproc_design_senders       (iproc_design     *design);
-iproc_actors *   iproc_design_receivers     (iproc_design     *design);
-
-
-
-//void             iproc_design_ctx_set     (iproc_design_ctx *ctx,
-//                                           int64_t           isend,
-//                                           iproc_history    *h);
-
-/* only call these functions if you retain a reference to design; retain the
- * reference until after you call iproc_sdesign_var_free */
-iproc_svector * iproc_sdesign_var_new  (iproc_design  *design);
-void            iproc_sdesign_var_free (iproc_design  *design,
-                                        iproc_svector *svector);
 
 #endif /* _IPROC_DESIGN_H */
