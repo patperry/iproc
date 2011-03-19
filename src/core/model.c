@@ -25,7 +25,7 @@ compute_logprobs0 (iproc_design *design,
      * multiplication, then unscaling after subtracting of the max value.  This
      * shouldn't be necessary in most (all?) real-world situations.
      */
-    iproc_design_sender0_mul(1.0, IPROC_TRANS_NOTRANS, design, isend, coefs,
+    iproc_design_mul0(1.0, IPROC_TRANS_NOTRANS, design, isend, coefs,
                              0.0, logprobs);
 
     /* protect against overflow */
@@ -78,7 +78,7 @@ iproc_group_models_init (iproc_array  *group_models,
         
         /* compute initial covariate mean */
         group->xbar0 = iproc_vector_new(dim);
-        iproc_design_sender0_mul(1.0, IPROC_TRANS_TRANS, design, i, group->p0,
+        iproc_design_mul0(1.0, IPROC_TRANS_TRANS, design, i, group->p0,
                                  0.0, group->xbar0);
     }
 }

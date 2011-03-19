@@ -44,11 +44,13 @@ Riproc_design_udata_dim (Riproc_design_udata *udata)
 void
 Riproc_design_udata_get_sdesign_vars (iproc_design_ctx *ctx)
 {
+    if (iproc_design_ndynamic(ctx->design) == 0)
+        return;
+
     Riproc_design_udata *udata = ctx->design->user_data;
     iproc_history *history = ctx->history;
     int64_t isend = ctx->isend;
-    iproc_array *dst = ctx->sdesign_vars;
-    int64_t offset = 0;
-
+    iproc_array *dst = ctx->dxs;
+    int64_t offset = iproc_design_idynamic(ctx->design, 0);
     iproc_vrecip_get(ctx->design, udata->recip, history, isend, dst, offset);
 }

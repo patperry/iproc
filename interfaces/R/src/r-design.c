@@ -74,7 +74,7 @@ Riproc_design_new (SEXP Rsenders,
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
     Riproc_design_udata *udata = Riproc_design_udata_new(Rrecip_intervals);
     int64_t ndynamic = Riproc_design_udata_dim(udata);
-    iproc_design *design = iproc_design_new(senders, receivers, ndynamic, udata,
+    iproc_design *design = iproc_design_new0(senders, receivers, ndynamic, udata,
                                       Riproc_design_udata_get_sdesign_vars,
                                       Riproc_design_udata_free);
     SEXP Rdesign;

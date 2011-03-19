@@ -97,8 +97,8 @@ static int
 compare_sdesign_var_jrecv (void *px,
                            void *py)
 {
-    int64_t x = ((iproc_sdesign_var *)px)->jrecv;
-    int64_t y = ((iproc_sdesign_var *)py)->jrecv;
+    int64_t x = ((iproc_design_dx *)px)->jrecv;
+    int64_t y = ((iproc_design_dx *)py)->jrecv;
 
     if (x < y) {
         return -1;
@@ -143,19 +143,19 @@ iproc_vrecip_get (iproc_design  *design,
             pos = ~pos;
         
         /* (jsend, [(pos, +1.0)]) */
-        iproc_svector *jdiff;
+        iproc_svector *dx;
         if (pos < nintvl) {
             int64_t k = iproc_array_bsearch(dst, &jsend, compare_sdesign_var_jrecv);
             
             if (k < 0) {
-                jdiff = iproc_sdesign_var_new(design);
-                iproc_sdesign_var new_sv = { jsend, jdiff };
-                iproc_array_insert(dst, ~k, &new_sv);
+                dx = iproc_sdesign_var_new(design);
+                iproc_design_dx new_dx = { jsend, dx };
+                iproc_array_insert(dst, ~k, &new_dx);
             } else {
-                jdiff = (iproc_array_index(dst, iproc_sdesign_var, k)).jdiff;
+                dx = (iproc_array_index(dst, iproc_design_dx, k)).dx;
             }
 
-            iproc_svector_inc(jdiff, offset + pos, 1.0);
+            iproc_svector_inc(dx, offset + pos, 1.0);
         }
     }
 

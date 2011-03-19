@@ -87,7 +87,7 @@
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };
 		221FEE6F132EC8710000097B /* design-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "design-ctx.c"; path = "src/core/design-ctx.c"; sourceTree = "<group>"; };
 		221FEE70132EC8710000097B /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/core/design.c; sourceTree = "<group>"; };
-		221FEE71132EC8710000097B /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/core/design.h; sourceTree = "<group>"; };
+		221FEE71132EC8710000097B /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/core/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221FEE72132EC8710000097B /* events.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = events.c; path = src/core/events.c; sourceTree = "<group>"; };
 		221FEE73132EC8710000097B /* events.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = events.h; path = src/core/events.h; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };

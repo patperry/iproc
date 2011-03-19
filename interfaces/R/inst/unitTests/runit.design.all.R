@@ -36,8 +36,8 @@ test.as.matrix <- function() {
         n <- n + 1
         for (i in from(it)) {
             checkEquals(as.matrix(design, sender = i, it),
-                        cbind(as.matrix(design.recip, sender = i, it),
-                              as.matrix(design.group, sender = i, it)))
+                        cbind(as.matrix(design.group, sender = i, it),
+                              as.matrix(design.recip, sender = i, it)))
         }
 
         if (n == max.advance)
