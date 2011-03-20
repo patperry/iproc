@@ -8,8 +8,8 @@
 #include "history.h"
 
 static void
-iproc_history_grow_events (iproc_array *array,
-                           int64_t      n)
+trace_array_grow (iproc_array *array,
+                  int64_t      n)
 {
     assert(array);
     int64_t nold = iproc_array_size(array);
@@ -20,49 +20,49 @@ iproc_history_grow_events (iproc_array *array,
 }
 
 static void
-iproc_history_clear_events (iproc_array *array)
+trace_array_clear (iproc_array *array)
 {
     assert(array);
     int64_t n = iproc_array_size(array);
     int64_t i;
-    iproc_history_events *he;
+    iproc_history_trace *ht;
 
     for (i = 0; i < n; i++) {
-        he = &(iproc_array_index(array, iproc_history_events, i));
-        he->tcur = -INFINITY;
+        ht = &(iproc_array_index(array, iproc_history_trace, i));
+        ht->tcur = -INFINITY;
 
-        if (he->events)
-            iproc_events_clear(he->events);
+        if (ht->trace)
+            iproc_trace_clear(ht->trace);
     }
 }
 
-static iproc_events *
-iproc_history_get (double       tcur,
-                   iproc_array *array,
-                   int64_t      i)
+static iproc_trace *
+trace_array_get (double       tcur,
+                 iproc_array *array,
+                 int64_t      i)
 {
     assert(array);
     assert(i >= 0);
 
-    iproc_history_grow_events(array, i + 1);
+    trace_array_grow(array, i + 1);
 
-    iproc_history_events *he = &(iproc_array_index(array,
-                                                   iproc_history_events,
-                                                   i));
-    iproc_events *e;
+    iproc_history_trace *ht = &iproc_array_index(array,
+                                                 iproc_history_trace,
+                                                 i);
+    iproc_trace *t;
 
-    if (!(he->events)) {
-        he->events = iproc_events_new(tcur);
+    if (!(ht->trace)) {
+        ht->trace = iproc_trace_new(tcur);
     }
 
-    e = he->events;
+    t = ht->trace;
 
-    if (he->tcur != tcur) {
-        iproc_events_advance_to(e, tcur);
-        he->tcur = tcur;
+    if (ht->tcur != tcur) {
+        iproc_trace_advance_to(t, tcur);
+        ht->tcur = tcur;
     }
 
-    return e;
+    return t;
 }
 
 static void
@@ -83,8 +83,8 @@ iproc_history_new ()
     if (!history) return NULL;
 
     history->tcur = -INFINITY;
-    history->send = iproc_array_new(sizeof(iproc_history_events));
-    history->recv = iproc_array_new(sizeof(iproc_history_events));
+    history->send = iproc_array_new(sizeof(iproc_history_trace));
+    history->recv = iproc_array_new(sizeof(iproc_history_trace));
     iproc_refcount_init(&history->refcount);
 
     if (!(history->send && history->recv)) {
@@ -125,12 +125,12 @@ iproc_history_clear (iproc_history *history)
 {
     assert(history);
     history->tcur = -INFINITY;
-    iproc_history_clear_events(history->send);
-    iproc_history_clear_events(history->recv);
+    trace_array_clear(history->send);
+    trace_array_clear(history->recv);
 }
 
 double
-iproc_hisotry_tcur (iproc_history *history)
+iproc_history_tcur (iproc_history *history)
 {
     assert(history);
     return history->tcur;
@@ -155,11 +155,11 @@ iproc_history_insert (iproc_history *history,
     assert(from >= 0);
     assert(to >= 0);
 
-    iproc_events *efrom = iproc_history_send(history, from);
-    iproc_events *eto   = iproc_history_recv(history, to);
+    iproc_trace *efrom = iproc_history_send(history, from);
+    iproc_trace *eto   = iproc_history_recv(history, to);
 
-    iproc_events_insert(efrom, to);
-    iproc_events_insert(eto, from);
+    iproc_trace_insert(efrom, to);
+    iproc_trace_insert(eto, from);
 }
 
 void
@@ -193,22 +193,22 @@ iproc_history_nrecv (iproc_history *history)
     return iproc_array_size(history->recv);
 }
 
-iproc_events *
+iproc_trace *
 iproc_history_send (iproc_history *history,
                     int64_t        i)
 {
     assert(history);
     assert(0 <= i);
 
-    return iproc_history_get(history->tcur, history->send, i);
+    return trace_array_get(history->tcur, history->send, i);
 }
 
-iproc_events *
+iproc_trace *
 iproc_history_recv (iproc_history *history,
                     int64_t        j)
 {
     assert(history);
     assert(0 <= j);
 
-    return iproc_history_get(history->tcur, history->recv, j);
+    return trace_array_get(history->tcur, history->recv, j);
 }

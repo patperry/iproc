@@ -2,7 +2,7 @@
 #define _IPROC_HISTORY_H
 
 #include "array.h"
-#include "events.h"
+#include "trace.h"
 #include "refcount.h"
 
 
@@ -22,11 +22,11 @@
  * function `iiproc_hiostyr_recv(h,j)` gets the events `recv[j]`.
  */
 
-typedef struct _iproc_history        iproc_history;
-typedef struct _iproc_history_events iproc_history_events;
+typedef struct _iproc_history       iproc_history;
+typedef struct _iproc_history_trace iproc_history_trace;
 
-struct _iproc_history_events {
-    iproc_events *events;
+struct _iproc_history_trace {
+    iproc_trace *trace;
     double        tcur;
 };
 
@@ -38,28 +38,28 @@ struct _iproc_history {
 };
 
 
-iproc_history * iproc_history_new     ();
-iproc_history * iproc_history_ref     (iproc_history *history);
-void            iproc_history_unref   (iproc_history *history);
-void            iproc_history_clear   (iproc_history *history);
+iproc_history * iproc_history_new        ();
+iproc_history * iproc_history_ref        (iproc_history *history);
+void            iproc_history_unref      (iproc_history *history);
+void            iproc_history_clear      (iproc_history *history);
 
-double          iproc_hisotry_tcur    (iproc_history *history);
+double          iproc_history_tcur       (iproc_history *history);
 void            iproc_history_advance_to (iproc_history *history,
                                           double         t);
-void            iproc_history_insert  (iproc_history *history,
-                                       int64_t        from,
-                                       int64_t        to);
-void            iproc_history_insertm (iproc_history *history,
-                                       int64_t        from,
-                                       int64_t       *to,
-                                       int64_t        nto);
+void            iproc_history_insert     (iproc_history *history,
+                                          int64_t        from,
+                                          int64_t        to);
+void            iproc_history_insertm    (iproc_history *history,
+                                          int64_t        from,
+                                          int64_t       *to,
+                                          int64_t        nto);
 
-int64_t         iproc_history_nsend   (iproc_history *history);
-int64_t         iproc_history_nrecv   (iproc_history *history);
-iproc_events *  iproc_history_send    (iproc_history *history,
-                                       int64_t        i);
-iproc_events *  iproc_history_recv    (iproc_history *history,
-                                       int64_t        j);
+int64_t         iproc_history_nsend      (iproc_history *history);
+int64_t         iproc_history_nrecv      (iproc_history *history);
+iproc_trace *  iproc_history_send       (iproc_history *history,
+                                          int64_t        i);
+iproc_trace *  iproc_history_recv       (iproc_history *history,
+                                          int64_t        j);
 
 
 #endif /* _IPROC_HISTORY_H */

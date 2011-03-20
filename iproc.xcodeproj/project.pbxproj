@@ -17,8 +17,6 @@
 		221FEE98132EC8710000097B /* design-ctx.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE6F132EC8710000097B /* design-ctx.c */; };
 		221FEE99132EC8710000097B /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE70132EC8710000097B /* design.c */; };
 		221FEE9A132EC8710000097B /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE71132EC8710000097B /* design.h */; };
-		221FEE9B132EC8710000097B /* events.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE72132EC8710000097B /* events.c */; };
-		221FEE9C132EC8710000097B /* events.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE73132EC8710000097B /* events.h */; };
 		221FEE9D132EC8710000097B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		221FEE9E132EC8710000097B /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE75132EC8710000097B /* hash.h */; };
 		221FEE9F132EC8710000097B /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE76132EC8710000097B /* history.c */; };
@@ -70,6 +68,8 @@
 		22708BBF13311B8E0055AD94 /* r-model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAD13311B8E0055AD94 /* r-model.h */; };
 		22708BC013311B8E0055AD94 /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAE13311B8E0055AD94 /* r-utils.c */; };
 		22708BC113311B8E0055AD94 /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAF13311B8E0055AD94 /* r-utils.h */; };
+		2283DE9B13357DC200E3048D /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 2283DE9913357DC200E3048D /* trace.c */; };
+		2283DE9C13357DC200E3048D /* trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 2283DE9A13357DC200E3048D /* trace.h */; };
 		22867A12132FDA830090D617 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A10132FDA830090D617 /* dcsrch.c */; };
 		22867A13132FDA830090D617 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A11132FDA830090D617 /* dcstep.c */; };
 		22867A16132FDABD0090D617 /* f2c.h in Headers */ = {isa = PBXBuildFile; fileRef = 22867A15132FDABD0090D617 /* f2c.h */; };
@@ -87,8 +87,6 @@
 		221FEE6F132EC8710000097B /* design-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "design-ctx.c"; path = "src/core/design-ctx.c"; sourceTree = "<group>"; };
 		221FEE70132EC8710000097B /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/core/design.c; sourceTree = "<group>"; };
 		221FEE71132EC8710000097B /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/core/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		221FEE72132EC8710000097B /* events.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = events.c; path = src/core/events.c; sourceTree = "<group>"; };
-		221FEE73132EC8710000097B /* events.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = events.h; path = src/core/events.h; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };
 		221FEE75132EC8710000097B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hash.h; path = src/core/hash.h; sourceTree = "<group>"; };
 		221FEE76132EC8710000097B /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/core/history.c; sourceTree = "<group>"; };
@@ -141,6 +139,8 @@
 		22708BAD13311B8E0055AD94 /* r-model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-model.h"; path = "interfaces/R/src/r-model.h"; sourceTree = "<group>"; };
 		22708BAE13311B8E0055AD94 /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "interfaces/R/src/r-utils.c"; sourceTree = "<group>"; };
 		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
+		2283DE9913357DC200E3048D /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/core/trace.c; sourceTree = "<group>"; };
+		2283DE9A13357DC200E3048D /* trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trace.h; path = src/core/trace.h; sourceTree = "<group>"; };
 		22867A10132FDA830090D617 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = src/minpack/dcsrch.c; sourceTree = "<group>"; };
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
@@ -171,8 +171,6 @@
 				221FEE6F132EC8710000097B /* design-ctx.c */,
 				221FEE70132EC8710000097B /* design.c */,
 				221FEE71132EC8710000097B /* design.h */,
-				221FEE72132EC8710000097B /* events.c */,
-				221FEE73132EC8710000097B /* events.h */,
 				2210E32113304DDF004D9E56 /* fit.c */,
 				2210E32213304DDF004D9E56 /* fit.h */,
 				221FEE74132EC8710000097B /* hash.c */,
@@ -200,6 +198,8 @@
 				221FEE8A132EC8710000097B /* sloglik.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
+				2283DE9913357DC200E3048D /* trace.c */,
+				2283DE9A13357DC200E3048D /* trace.h */,
 				221FEE8D132EC8710000097B /* utils.h */,
 				221FEE8E132EC8710000097B /* vector.c */,
 				221FEE8F132EC8710000097B /* vector.h */,
@@ -293,7 +293,6 @@
 				221FEE95132EC8710000097B /* array.h in Headers */,
 				221FEE96132EC8710000097B /* blas-private.h in Headers */,
 				221FEE9A132EC8710000097B /* design.h in Headers */,
-				221FEE9C132EC8710000097B /* events.h in Headers */,
 				221FEE9E132EC8710000097B /* hash.h in Headers */,
 				221FEEA0132EC8710000097B /* history.h in Headers */,
 				221FEEA2132EC8710000097B /* ieee754.h in Headers */,
@@ -320,6 +319,7 @@
 				22708BBF13311B8E0055AD94 /* r-model.h in Headers */,
 				22708BC113311B8E0055AD94 /* r-utils.h in Headers */,
 				22A2F8A2133158B000E97C79 /* config.h in Headers */,
+				2283DE9C13357DC200E3048D /* trace.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -377,7 +377,6 @@
 				221FEE94132EC8710000097B /* array.c in Sources */,
 				221FEE98132EC8710000097B /* design-ctx.c in Sources */,
 				221FEE99132EC8710000097B /* design.c in Sources */,
-				221FEE9B132EC8710000097B /* events.c in Sources */,
 				221FEE9D132EC8710000097B /* hash.c in Sources */,
 				221FEE9F132EC8710000097B /* history.c in Sources */,
 				221FEEA1132EC8710000097B /* ieee754.c in Sources */,
@@ -407,6 +406,7 @@
 				22708BBC13311B8E0055AD94 /* r-messages.c in Sources */,
 				22708BBE13311B8E0055AD94 /* r-model.c in Sources */,
 				22708BC013311B8E0055AD94 /* r-utils.c in Sources */,
+				2283DE9B13357DC200E3048D /* trace.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

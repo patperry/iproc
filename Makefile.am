@@ -22,8 +22,6 @@ libcore_la_SOURCES = \
 	src/core/design-ctx.c \
 	src/core/design.c \
 	src/core/design.h \
-	src/core/events.c \
-	src/core/events.h \
 	src/core/fit.c \
 	src/core/fit.h \
 	src/core/hash.c \
@@ -51,6 +49,8 @@ libcore_la_SOURCES = \
 	src/core/sloglik.h \
 	src/core/svector.c \
 	src/core/svector.h \
+	src/core/trace.c \
+	src/core/trace.h \
 	src/core/utils.h \
 	src/core/vector.c \
 	src/core/vector.h \
