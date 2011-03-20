@@ -68,7 +68,7 @@ design_var_get_dxs (iproc_design_var *var,
             continue;
         
         int64_t jsend = iproc_events_id(events);
-        double t = iproc_event_meta_time(meta);
+        double t = meta->time;
         double dt = tcur - t;
         int64_t pos = iproc_array_bsearch(intvls, &dt, compare_double);
         

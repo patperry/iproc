@@ -35,7 +35,7 @@ typedef struct _iproc_events     iproc_events;
 typedef struct _iproc_trace      iproc_trace;
 
 struct _iproc_event_meta {
-    double  t;
+    double  time;
     int64_t attr;
 };
 
@@ -56,33 +56,30 @@ struct _iproc_trace {
     iproc_refcount refcount;
 };
 
-iproc_trace *  iproc_trace_new        ();
-iproc_trace *  iproc_trace_ref        (iproc_trace *trace);
-void           iproc_trace_unref      (iproc_trace *trace);
+iproc_trace *      iproc_trace_new        ();
+iproc_trace *      iproc_trace_ref        (iproc_trace *trace);
+void               iproc_trace_unref      (iproc_trace *trace);
 
 
-void           iproc_trace_clear      (iproc_trace *trace);
+void               iproc_trace_clear      (iproc_trace *trace);
 
-void           iproc_trace_insert     (iproc_trace *trace,
-                                       int64_t       e);
-void           iproc_trace_advance_to (iproc_trace *trace,
-                                       double        t);
+void               iproc_trace_insert     (iproc_trace *trace,
+                                           int64_t      e);
+void               iproc_trace_advance_to (iproc_trace *trace,
+                                           double       time);
 
-double         iproc_trace_tcur       (iproc_trace *trace);
-int64_t        iproc_trace_size       (iproc_trace *trace);
-iproc_events * iproc_trace_get        (iproc_trace *trace,
-                                       int64_t      i);
-iproc_events * iproc_trace_lookup     (iproc_trace *trace,
-                                       int64_t      e);
+double             iproc_trace_tcur       (iproc_trace *trace);
+int64_t            iproc_trace_size       (iproc_trace *trace);
+iproc_events *     iproc_trace_get        (iproc_trace *trace,
+                                           int64_t      i);
+iproc_events *     iproc_trace_lookup     (iproc_trace *trace,
+                                           int64_t      e);
 
-int64_t            iproc_events_id   (iproc_events *events);
-int64_t            iproc_events_size (iproc_events *events);
-iproc_event_meta * iproc_events_get  (iproc_events *events,
-                                      int64_t       i);
-iproc_event_meta * iproc_events_last (iproc_events *events);
-
-#define            iproc_event_meta_time(meta) (meta->t)
-#define            iproc_event_meta_attr(meta) (meta->attr)
+int64_t            iproc_events_id        (iproc_events *events);
+int64_t            iproc_events_size      (iproc_events *events);
+iproc_event_meta * iproc_events_get       (iproc_events *events,
+                                           int64_t       i);
+iproc_event_meta * iproc_events_last      (iproc_events *events);
 
 
 #endif /* _IPROC_TRACE_H */

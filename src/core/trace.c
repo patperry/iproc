@@ -171,7 +171,7 @@ iproc_trace_insert (iproc_trace *trace,
     iproc_event event;
     
     event.e = e;
-    event.meta.t = iproc_trace_tcur(trace);
+    event.meta.time = iproc_trace_tcur(trace);
     event.meta.attr = IPROC_EVENT_ATTR_MISSING;
 
     iproc_array_append(trace->pending, &event);
