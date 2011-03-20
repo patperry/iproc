@@ -24,61 +24,87 @@ compare_int64 (void *px, void *py)
 }
 
 static void
-iproc_trace_clear_cur (iproc_trace *trace)
+iproc_trace_clear_pending (iproc_trace *trace)
 {
     assert(trace);
-    iproc_array_set_size(trace->cur, 0);
+    iproc_array_set_size(trace->pending, 0);
 }
 
 static int64_t
-iproc_trace_ncur (iproc_trace *trace)
+iproc_trace_npending (iproc_trace *trace)
 {
     assert(trace);
-    return iproc_array_size(trace->cur);
+    return iproc_array_size(trace->pending);
 }
 
-static int64_t
-iproc_trace_cur (iproc_trace *trace,
-                  int64_t       i)
+static iproc_event *
+iproc_trace_get_pending (iproc_trace *trace,
+                         int64_t      i)
 {
     assert(trace);
     assert(0 <= i);
-    assert(i < iproc_trace_ncur(trace));
+    assert(i < iproc_trace_npending(trace));
     
-    return iproc_array_index(trace->cur, int64_t, i);
+    return &iproc_array_index(trace->pending, iproc_event, i);
 }
 
-static int64_t
-iproc_trace_find_cur (iproc_trace *trace,
-                       int64_t       e)
+static void
+iproc_events_init (iproc_events *events,
+                   int64_t       e)
 {
-    assert(trace);
-    return iproc_array_lfind(trace->cur, &e, compare_int64);
+    assert(events);
+    events->e = e;
+    events->meta = iproc_array_new(sizeof(iproc_event_meta));
+}
+
+static void
+iproc_events_deinit (iproc_events *events)
+{
+    if (!events)
+        return;
+
+    iproc_array_unref(events->meta);
+}
+
+static void
+iproc_events_append (iproc_events     *events,
+                     iproc_event_meta *meta)
+{
+    assert(events);
+    assert(meta);
+    iproc_array_append(events->meta, meta);
+}
+
+static void
+iproc_events_array_deinit (iproc_array *events_array)
+{
+    if (!events_array)
+        return;
+    
+    int64_t i, n = iproc_array_size(events_array);
+    for (i = 0; i < n; i++) {
+        iproc_events *events = &iproc_array_index(events_array,
+                                                  iproc_events,
+                                                  i);
+        iproc_events_deinit(events);
+    }
 }
 
 static int64_t
 iproc_trace_find_index (iproc_trace *trace,
-                         int64_t       e)
+                        int64_t      e)
 {
     assert(trace);
-    
-    /* use that iproc_past_event inherits from iproc_event */
-    return iproc_array_bsearch(trace->past, &e, compare_int64);
-}
-
-static void
-iproc_trace_clear_past (iproc_trace *trace)
-{
-    assert(trace);
-    iproc_array_set_size(trace->past, 0);
+    return iproc_array_bsearch(trace->events, &e, compare_int64);
 }
 
 static void
 iproc_trace_free (iproc_trace *trace)
 {
     if (trace) {
-        iproc_array_unref(trace->cur);
-        iproc_array_unref(trace->past);
+        iproc_events_array_deinit(trace->events);
+        iproc_array_unref(trace->events);
+        iproc_array_unref(trace->pending);
         iproc_free(trace);
     }
 }
@@ -91,11 +117,11 @@ iproc_trace_new ()
     if (!trace) return NULL;
 
     trace->tcur = -INFINITY;
-    trace->cur  = iproc_array_new(sizeof(int64_t));
-    trace->past = iproc_array_new(sizeof(iproc_event));
+    trace->pending = iproc_array_new(sizeof(iproc_event));
+    trace->events = iproc_array_new(sizeof(iproc_events));
     iproc_refcount_init(&trace->refcount);
 
-    if (!(trace->cur && trace->past)) {
+    if (!(trace->pending && trace->events)) {
         iproc_trace_free(trace);
         trace = NULL;
     }
@@ -132,8 +158,8 @@ void
 iproc_trace_clear (iproc_trace *trace)
 {
     trace->tcur = -INFINITY;
-    iproc_trace_clear_cur(trace);
-    iproc_trace_clear_past(trace);
+    iproc_trace_clear_pending(trace);
+    iproc_array_set_size(trace->events, 0);
 }
 
 void
@@ -142,44 +168,53 @@ iproc_trace_insert (iproc_trace *trace,
 {
     assert(trace);
 
-    if (iproc_trace_find_cur(trace, e) < 0) {
-        iproc_array_append(trace->cur, &e);
-    }
+    iproc_event event;
+    
+    event.e = e;
+    event.meta.t = iproc_trace_tcur(trace);
+    event.meta.attr = IPROC_EVENT_ATTR_MISSING;
+
+    iproc_array_append(trace->pending, &event);
 }
 
 void
 iproc_trace_advance_to (iproc_trace *trace,
-                         double        t)
+                         double      t)
 {
     assert(trace);
-    assert(t >= trace->tcur);
-
-    if (t == trace->tcur)
-        return;
+    assert(t >= iproc_trace_tcur(trace));
 
     double t0 = trace->tcur;
-    int64_t e;
-    int64_t ic, ip;
-    int64_t nc = iproc_trace_ncur(trace);
-    iproc_array *past = trace->past;
+    
+    if (t == t0)
+        return;
 
-    /* Move current trace to past event set */
-    for (ic = 0; ic < nc; ic++) {
-        e = iproc_trace_cur(trace, ic);
-        ip = iproc_trace_find_index(trace, e);
+    iproc_array *events_array = trace->events;
+    int64_t i, n = iproc_trace_npending(trace);
 
-        /* If event doesn't already exist in past set, insert it */
-        if (ip < 0) {
-            iproc_event past_event = { e, t0 };
-            iproc_array_insert(past, ~ip, &past_event);
+    // Process all pending events
+    for (i = 0; i < n; i++) {
+        iproc_event *event = iproc_trace_get_pending(trace, i);
+        int64_t pos = iproc_trace_find_index(trace, event->e);
 
-        /* Set the time of the event to the old time */
-        } else {
-            iproc_array_index(past, iproc_event, ip).t = t0;
+        // If event doesn't already exist in events array, insert it
+        if (pos < 0) {
+            pos = ~pos;
+            
+            iproc_events new_events;
+            iproc_events_init(&new_events, event->e);
+            iproc_array_insert(events_array, pos, &new_events);
         }
+        
+        // Add the new meta-data
+        iproc_events *events = &iproc_array_index(events_array,
+                                                  iproc_events,
+                                                  pos);
+        
+        iproc_events_append(events, &event->meta);
     }
 
-    iproc_trace_clear_cur(trace);
+    iproc_trace_clear_pending(trace);
     trace->tcur = t;
 }
 
@@ -194,31 +229,71 @@ int64_t
 iproc_trace_size (iproc_trace *trace)
 {
     assert(trace);
-    return iproc_array_size(trace->past);
+    return iproc_array_size(trace->events);
 }
 
-iproc_event *
+iproc_events *
 iproc_trace_lookup (iproc_trace *trace,
-                     int64_t       e)
+                    int64_t      e)
 {
     assert(trace);
-    iproc_event *event = NULL;
+    iproc_events *events = NULL;
     int64_t i = iproc_trace_find_index(trace, e);
 
     if (i >= 0) {
-        event = &iproc_array_index(trace->past, iproc_event, i);
+        events = &iproc_array_index(trace->events, iproc_events, i);
     }
     
-    return event;
+    return events;
 }
 
-iproc_event *
+iproc_events *
 iproc_trace_get (iproc_trace *trace,
-                   int64_t       i)
+                 int64_t      i)
 {
     assert(trace);
     assert(0 <= i);
     assert(i < iproc_trace_size(trace));
 
-    return &iproc_array_index(trace->past, iproc_event, i);
+    return &iproc_array_index(trace->events, iproc_events, i);
+}
+
+int64_t
+iproc_events_id (iproc_events *events)
+{
+    assert(events);
+    return events->e;
+}
+
+int64_t
+iproc_events_size (iproc_events *events)
+{
+    assert(events);
+    return iproc_array_size(events->meta);
+}
+
+iproc_event_meta *
+iproc_events_get (iproc_events *events,
+                  int64_t       i)
+{
+    assert(events);
+    assert(i >= 0);
+    assert(i <= iproc_events_size(events));
+    
+    iproc_event_meta *meta = &iproc_array_index(events->meta,
+                                                iproc_event_meta,
+                                                i);
+    return meta;
+}
+
+iproc_event_meta *
+iproc_events_last (iproc_events *events)
+{
+    assert(events);
+    iproc_event_meta *meta = NULL;
+    int64_t n = iproc_events_size(events);
+    if (n > 0)
+        meta = iproc_events_get(events, n - 1);
+    
+    return meta;
 }

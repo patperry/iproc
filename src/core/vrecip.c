@@ -61,9 +61,15 @@ design_var_get_dxs (iproc_design_var *var,
     
     int64_t i, n = iproc_trace_size(trace);
     for (i = 0; i < n; i++) {
-        iproc_event *e = iproc_trace_get(trace, i);
-        int64_t jsend = e->event;
-        double dt = tcur - e->t;
+        iproc_events *events = iproc_trace_get(trace, i);
+        iproc_event_meta *meta = iproc_events_last(events);
+        
+        if (!meta)
+            continue;
+        
+        int64_t jsend = iproc_events_id(events);
+        double t = iproc_event_meta_time(meta);
+        double dt = tcur - t;
         int64_t pos = iproc_array_bsearch(intvls, &dt, compare_double);
         
         if (pos < 0)
