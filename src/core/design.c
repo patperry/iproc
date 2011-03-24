@@ -108,7 +108,8 @@ iproc_design_var_init  (iproc_design_var *var,
 
 iproc_design *
 iproc_design_new (iproc_actors *senders,
-                  iproc_actors *receivers)
+                  iproc_actors *receivers,
+                  bool          has_reffects)
 {
     assert(senders);
     assert(receivers);
@@ -118,15 +119,21 @@ iproc_design_new (iproc_actors *senders,
     if (!design)
         return NULL;
 
+    int64_t nreceivers = iproc_actors_size(receivers);
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
-    int64_t dim0 = p * q;
 
     design->senders = iproc_actors_ref(senders);
     design->receivers = iproc_actors_ref(receivers);
+    design->has_reffects = has_reffects;
     design->vars = iproc_array_new(sizeof(iproc_design_var *));
-    design->dim0 = dim0;
-    design->dim = dim0;
+    design->ireffects = 0;
+    design->nreffects = has_reffects ? nreceivers : 0;
+    design->istatic = design->ireffects + design->nreffects;
+    design->nstatic = p * q;
+    design->idynamic = design->istatic + design->nstatic;
+    design->ndynamic = 0;
+    design->dim = design->idynamic + design->ndynamic;
     design->ctxs = iproc_array_new(sizeof(iproc_design_ctx *));
     design->svectors = iproc_array_new(sizeof(iproc_svector *));
     iproc_refcount_init(&design->refcount);
@@ -183,48 +190,88 @@ iproc_design_append (iproc_design     *design,
     // the old svectors are invalid since the dimension has changed
     iproc_design_clear_svectors(design->svectors);
     iproc_array_append(design->vars, &var);
+    design->ndynamic += var->dim;
     design->dim += var->dim;
 }
 
-void
-iproc_design_mul0 (double        alpha,
-                   iproc_trans   trans,
-                   iproc_design *design,
-                   int64_t       isend,
-                   iproc_vector *x,
-                   double        beta,
-                   iproc_vector *y)
+
+static void
+iproc_design_mul0_reffects (double        alpha,
+                            iproc_trans   trans,
+                            iproc_design *design,
+                            iproc_vector *x,
+                            iproc_vector *y)
 {
-    assert(design);
-    assert(isend >= 0);
-    assert(isend < iproc_design_nsender(design));
-    assert(x);
-    assert(y);
-    assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_design_dim(design));
-    assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
-    assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_design_nreceiver(design));
-    assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_design_dim(design));
-
-    /* y := beta y */
-    if (beta == 0.0) {
-        iproc_vector_set_all(y, 0.0);
-    } else if (beta != 1.0) {
-        iproc_vector_scale(y, beta);
+    if (!design->has_reffects)
+        return;
+    
+    int64_t off = design->ireffects;
+    int64_t dim = design->nreffects;
+    
+    if (trans == IPROC_TRANS_NOTRANS) {
+        iproc_vector_view xsub = iproc_vector_subvector(x, off, dim);
+        iproc_vector_acc(y, alpha, &xsub.vector);
+    } else {
+        iproc_vector_view ysub = iproc_vector_subvector(y, off, dim);
+        iproc_vector_acc(&ysub.vector, alpha, x);
     }
+}
 
-    if (iproc_design_nstatic(design) == 0)
+static void
+iproc_design_muls0_reffects (double         alpha,
+                             iproc_trans    trans,
+                             iproc_design  *design,
+                             iproc_svector *x,
+                             iproc_vector  *y)
+{
+    if (!design->has_reffects)
+        return;
+
+    int64_t off = design->ireffects;
+    int64_t dim = design->nreffects;
+    int64_t end = off + dim;
+    
+    if (trans == IPROC_TRANS_NOTRANS) {
+        int64_t nnz = iproc_svector_nnz(x);
+        int64_t inz = iproc_svector_find_nz(x, off);
+        
+        if (inz < 0)
+            inz = ~inz;
+        
+        while (inz < nnz) {
+            int64_t i = iproc_svector_nz(x, inz);
+            if (i >= end)
+                break;
+            
+            double x_i = iproc_svector_nz_get(x, inz);
+            iproc_vector_inc(y, i, alpha * x_i);
+            
+            inz++;
+        }
+    } else {
+        iproc_vector_view ysub = iproc_vector_subvector(y, off, dim);
+        iproc_vector_sacc(&ysub.vector, alpha, x);
+    }
+}
+
+
+static void
+iproc_design_mul0_static (double        alpha,
+                          iproc_trans   trans,
+                          iproc_design *design,
+                          int64_t       isend,
+                          iproc_vector *x,
+                          iproc_vector *y)
+{
+    if (design->nstatic == 0)
         return;
 
     iproc_actors *senders = iproc_design_senders(design);
     iproc_actors *receivers = iproc_design_receivers(design);
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = iproc_design_istatic(design, 0);
-    int64_t nstatic = iproc_design_nstatic(design);
+    int64_t ix_begin = design->istatic;
+    int64_t nstatic = design->nstatic;
     iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
 
@@ -254,45 +301,23 @@ iproc_design_mul0 (double        alpha,
 }
 
 
-void
-iproc_design_muls0 (double          alpha,
-                         iproc_trans     trans,
-                         iproc_design     *design,
-                         int64_t         isend,
-                         iproc_svector  *x,
-                         double          beta,
-                         iproc_vector   *y)
+static void
+iproc_design_muls0_static (double         alpha,
+                           iproc_trans    trans,
+                           iproc_design  *design,
+                           int64_t        isend,
+                           iproc_svector *x,
+                           iproc_vector  *y)
 {
-    assert(design);
-    assert(isend >= 0);
-    assert(isend < iproc_design_nsender(design));
-    assert(x);
-    assert(y);
-    assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_design_dim(design));
-    assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
-    assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_svector_dim(x) == iproc_design_nreceiver(design));
-    assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_design_dim(design));
-
-    /* y := beta y */
-    if (beta == 0.0) {
-        iproc_vector_set_all(y, 0.0);
-    } else if (beta != 1.0) {
-        iproc_vector_scale(y, beta);
-    }
-
-    if (iproc_design_nstatic(design) == 0)
+    if (design->nstatic == 0)
         return;
 
     iproc_actors *senders = iproc_design_senders(design);
     iproc_actors *receivers = iproc_design_receivers(design);
     int64_t p = iproc_actors_dim(senders);
     int64_t q = iproc_actors_dim(receivers);
-    int64_t ix_begin = iproc_design_istatic(design, 0);
-    int64_t nstatic = iproc_design_nstatic(design);
+    int64_t ix_begin = design->istatic;
+    int64_t nstatic = design->nstatic;
     int64_t ix_end = ix_begin + nstatic;
     iproc_vector *s = iproc_actors_get(senders, isend);
     iproc_vector *z = iproc_vector_new(q);
@@ -341,45 +366,77 @@ iproc_design_muls0 (double          alpha,
 }
 
 
+void
+iproc_design_mul0 (double        alpha,
+                   iproc_trans   trans,
+                   iproc_design *design,
+                   int64_t       isend,
+                   iproc_vector *x,
+                   double        beta,
+                   iproc_vector *y)
+{
+    assert(design);
+    assert(isend >= 0);
+    assert(isend < iproc_design_nsender(design));
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_design_dim(design));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(x) == iproc_design_nreceiver(design));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_design_dim(design));
+    
+    /* y := beta y */
+    if (beta == 0.0) {
+        iproc_vector_set_all(y, 0.0);
+    } else if (beta != 1.0) {
+        iproc_vector_scale(y, beta);
+    }
+    
+    iproc_design_mul0_reffects(alpha, trans, design, x, y);
+    iproc_design_mul0_static(alpha, trans, design, isend, x, y);
+}
+
+
+void
+iproc_design_muls0 (double         alpha,
+                    iproc_trans    trans,
+                    iproc_design  *design,
+                    int64_t        isend,
+                    iproc_svector *x,
+                    double         beta,
+                    iproc_vector  *y)
+{
+    assert(design);
+    assert(isend >= 0);
+    assert(isend < iproc_design_nsender(design));
+    assert(x);
+    assert(y);
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_design_dim(design));
+    assert(trans != IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_design_nreceiver(design));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_svector_dim(x) == iproc_design_nreceiver(design));
+    assert(trans == IPROC_TRANS_NOTRANS
+           || iproc_vector_dim(y) == iproc_design_dim(design));
+    
+    /* y := beta y */
+    if (beta == 0.0) {
+        iproc_vector_set_all(y, 0.0);
+    } else if (beta != 1.0) {
+        iproc_vector_scale(y, beta);
+    }
+    
+    iproc_design_muls0_reffects(alpha, trans, design, x, y);
+    iproc_design_muls0_static(alpha, trans, design, isend, x, y);
+}
+
 
 /////// make these static ?
-
-int64_t
-iproc_design_nstatic (iproc_design *design)
-{
-    assert(design);
-    return design->dim0;
-}
-
-int64_t
-iproc_design_istatic (iproc_design *design,
-                      int64_t     i)
-{
-    assert(design);
-    assert(i >= 0);
-    assert(i < iproc_design_nstatic(design));
-    
-    return i;
-}
-
-int64_t
-iproc_design_ndynamic (iproc_design *design)
-{
-    assert(design);
-    return design->dim - design->dim0;
-}
-
-int64_t
-iproc_design_idynamic (iproc_design *design,
-                       int64_t       i)
-{
-    assert(design);
-    assert(i >= 0);
-    assert(i < iproc_design_ndynamic(design));
-    
-    int64_t idynamic = i + design->dim0;
-    return idynamic;
-}
 
 int64_t
 iproc_design_nsender (iproc_design *design)

@@ -1,5 +1,6 @@
 
-iproc.design.default <- function(senders, receivers = senders, recip.intervals = NULL,
+iproc.design.default <- function(senders, receivers = senders, receiver.effects = FALSE,
+                                 recip.intervals = NULL,
                                  data.senders, data.receivers = data.senders, ...)
 {
     if (!inherits(senders, "actors")) {
@@ -18,6 +19,8 @@ iproc.design.default <- function(senders, receivers = senders, recip.intervals =
         }
     }
 
+    receiver.effects <- as.logical(receiver.effects)
+    
     recip.intervals.orig <- as.numeric(recip.intervals)
     if (any(is.na(recip.intervals.orig) | (recip.intervals.orig <= 0)))
         stop("'recip.intervals' contains a nonpositive or NA value")
@@ -26,7 +29,7 @@ iproc.design.default <- function(senders, receivers = senders, recip.intervals =
     if (!identical(recip.intervals, recip.intervals.orig))
         stop("'recip.intervals' not unique and sorted in ascending order")
 
-    design <- .Call("Riproc_design_new", senders, receivers, recip.intervals)
+    design <- .Call("Riproc_design_new", senders, receivers, receiver.effects, recip.intervals)
     attr(design, "class") <- "iproc.design"
     attr(design, "attributes.senders") <- attributes(senders)
     attr(design, "attributes.receivers") <- attributes(receivers)

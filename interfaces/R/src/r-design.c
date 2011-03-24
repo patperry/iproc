@@ -13,7 +13,7 @@
 static SEXP Riproc_design_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-    { "Riproc_design_new",       (DL_FUNC) &Riproc_design_new,       3 },
+    { "Riproc_design_new",       (DL_FUNC) &Riproc_design_new,       4 },
     { "Riproc_design_dim",       (DL_FUNC) &Riproc_design_dim,       1 },
     { "Riproc_design_nreceiver", (DL_FUNC) &Riproc_design_nreceiver, 1 },
     { "Riproc_design_nsender",   (DL_FUNC) &Riproc_design_nsender,   1 },
@@ -89,12 +89,19 @@ Riproc_from_design (iproc_design *design)
 
 SEXP
 Riproc_design_new (SEXP Rsenders,
-                 SEXP Rreceivers,
-                 SEXP Rrecip_intervals)
+                   SEXP Rreceivers,
+                   SEXP Rreceiver_effects,
+                   SEXP Rrecip_intervals)
 {
     iproc_actors *senders = Riproc_to_actors(Rsenders);
     iproc_actors *receivers = Riproc_to_actors(Rreceivers);
-    iproc_design *design = iproc_design_new(senders, receivers);
+    Rboolean receiver_effects = LOGICAL_VALUE(Rreceiver_effects);
+    
+    if (receiver_effects == NA_LOGICAL) {
+        error("'receiver.effects' value is NA");
+    }
+    
+    iproc_design *design = iproc_design_new(senders, receivers, receiver_effects);
     append_recip(design, Rrecip_intervals);
     SEXP Rdesign;
 

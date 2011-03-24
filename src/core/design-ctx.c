@@ -24,7 +24,6 @@ compare_int64 (void *px, void *py)
     }
 }
 
-
 static iproc_svector *
 iproc_design_var_new_alloc (iproc_design *design)
 {
@@ -103,12 +102,12 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
     ctx->isend = isend;
     clear_dxs(ctx->design, ctx->dxs);
     
-    if (iproc_design_ndynamic(design) == 0)
+    if (design->ndynamic == 0)
         return;
     
     iproc_array *vars = design->vars;
     int64_t i, n = iproc_array_size(vars);
-    int64_t offset = iproc_design_idynamic(design, 0);
+    int64_t offset = design->idynamic;
 
     for (i = 0; i < n; i++) {
         iproc_design_var *var = iproc_array_index(vars,
@@ -119,7 +118,7 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
         offset += var->dim;
     }
     
-    assert(offset == 1 + iproc_design_idynamic(design, iproc_design_ndynamic(design) - 1));
+    assert(offset == design->idynamic + design->ndynamic);
 }
 
 static void
@@ -367,7 +366,7 @@ iproc_design_ctx_dmul (double          alpha,
         return;
 
     iproc_design *design = ctx->design;
-    int64_t ndynamic = iproc_design_ndynamic(design);
+    int64_t ndynamic = design->ndynamic;
 
     if (ndynamic == 0)
         return;
@@ -441,12 +440,12 @@ iproc_design_ctx_dmuls (double          alpha,
         return;
 
     iproc_design *design = ctx->design;
-    int64_t ndynamic = iproc_design_ndynamic(design);
+    int64_t ndynamic = design->ndynamic;
 
     if (ndynamic == 0)
         return;
     
-    int64_t ix_begin = iproc_design_idynamic(design, 0);
+    int64_t ix_begin = design->idynamic;
     int64_t ix_end = ix_begin + ndynamic;
     iproc_array *dxs = ctx->dxs;
 

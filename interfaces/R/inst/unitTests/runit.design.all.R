@@ -14,7 +14,8 @@ max.advance <- NULL
     senders <<- a
     receivers <<- a
     recip.intervals <<- 3600 * 2^seq(-6, 14)
-    design <<- iproc.design(senders, receivers, recip.intervals = recip.intervals)
+    design <<- iproc.design(senders, receivers, receiver.effects = TRUE,
+                            recip.intervals = recip.intervals)
     design.group <<- iproc.design(senders, receivers)
     design.recip <<- iproc.design(a0, a0, recip.intervals = recip.intervals)
 
@@ -27,7 +28,7 @@ max.advance <- NULL
 }
 
 test.dim <- function() {
-    checkEquals(ncol(design), ncol(design.group) + ncol(design.recip))
+    checkEquals(ncol(design), nrow(receivers) + ncol(design.group) + ncol(design.recip))
 }
 
 test.as.matrix <- function() {
@@ -36,7 +37,8 @@ test.as.matrix <- function() {
         n <- n + 1
         for (i in from(it)) {
             checkEquals(as.matrix(design, sender = i, it),
-                        cbind(as.matrix(design.group, sender = i, it),
+                        cbind(diag(1, nrow(receivers)),
+                              as.matrix(design.group, sender = i, it),
                               as.matrix(design.recip, sender = i, it)))
         }
 

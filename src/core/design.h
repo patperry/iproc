@@ -81,8 +81,11 @@ typedef struct _iproc_design_dx  iproc_design_dx; // private
 struct _iproc_design {
     iproc_actors  *senders;
     iproc_actors  *receivers;
+    bool           has_reffects;
     iproc_array   *vars;
-    int64_t        dim0;
+    int64_t        ireffects, nreffects;
+    int64_t        istatic,   nstatic;
+    int64_t        idynamic,  ndynamic;
     int64_t        dim;
     
     iproc_array   *ctxs;
@@ -122,7 +125,8 @@ void               iproc_design_var_init  (iproc_design_var *var,
 
 
 iproc_design *     iproc_design_new       (iproc_actors     *senders,
-                                           iproc_actors     *receivers);
+                                           iproc_actors     *receivers,
+                                           bool              has_reffects);
 iproc_design *     iproc_design_ref       (iproc_design     *design);
 void               iproc_design_unref     (iproc_design     *design);
 
@@ -201,13 +205,6 @@ int64_t          iproc_design_nsender     (iproc_design     *design);
 int64_t          iproc_design_nreceiver   (iproc_design     *design);
 iproc_actors *   iproc_design_senders     (iproc_design     *design);
 iproc_actors *   iproc_design_receivers   (iproc_design     *design);
-
-int64_t          iproc_design_nstatic     (iproc_design     *design);
-int64_t          iproc_design_istatic     (iproc_design     *design,
-                                           int64_t           i);
-int64_t          iproc_design_ndynamic    (iproc_design     *design);
-int64_t          iproc_design_idynamic    (iproc_design     *design,
-                                           int64_t           i);
 
 
 

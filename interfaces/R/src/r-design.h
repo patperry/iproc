@@ -12,6 +12,7 @@ void         Riproc_design_init      (DllInfo *info);
 /* External functions */
 SEXP         Riproc_design_new       (SEXP Rsenders,
                                       SEXP Rreceivers,
+                                      SEXP Rreceiver_effects,
                                       SEXP Rrecip_intervals);
 SEXP         Riproc_design_dim       (SEXP Rdesign);
 SEXP         Riproc_design_nsender   (SEXP Rdesign);
