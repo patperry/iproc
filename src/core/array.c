@@ -73,13 +73,12 @@ iproc_array_free (iproc_array *array)
     }
 }
 
-iproc_array *
+void
 iproc_array_ref (iproc_array *array)
 {
     if (array) {
         iproc_refcount_get(&array->refcount);
     }
-    return array;
 }
 
 static void
@@ -148,6 +147,13 @@ iproc_array_set (iproc_array *array,
     size_t elem_size = iproc_array_elem_size(array);
     void *dst = &(iproc_array_index(array, char, i * elem_size));
     memcpy(dst, pe, elem_size);
+}
+
+bool
+iproc_array_empty (iproc_array *array)
+{
+    assert(array);
+    return (iproc_array_size(array) == 0);
 }
 
 ssize_t

@@ -1,6 +1,7 @@
 #ifndef _IPROC_ARRAY_H
 #define _IPROC_ARRAY_H
 
+#include <stdbool.h>
 #include <sys/types.h>
 #include "refcount.h"
 
@@ -16,7 +17,7 @@ struct _iproc_array {
 
 iproc_array * iproc_array_new       (size_t       elem_size);
 iproc_array * iproc_array_new_copy  (iproc_array *array);
-iproc_array * iproc_array_ref       (iproc_array *array);
+void          iproc_array_ref       (iproc_array *array);
 void          iproc_array_unref     (iproc_array *array);
 
 
@@ -24,7 +25,7 @@ size_t        iproc_array_elem_size (iproc_array *array);
 void          iproc_array_set_size  (iproc_array *array,
                                      ssize_t      n);
 
-
+bool          iproc_array_empty     (iproc_array *array);
 ssize_t       iproc_array_size      (iproc_array *array);
 
 /* Grow the array if necessary, padding it with zeroes */
