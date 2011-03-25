@@ -3,37 +3,13 @@
 #endif
 
 #include <assert.h>
+#include "compare.h"
 #include "memory.h"
 #include "actors.h"
 
-static int
-compare_group_bucket (void *x1,
-                      void *x2)
-{
-    iproc_group_bucket *bucket1 = x1;
-    iproc_group_bucket *bucket2 = x2;
-    size_t traits_hash1 = bucket1->traits_hash;
-    size_t traits_hash2 = bucket2->traits_hash;
+#define group_bucket_compare iproc_size_compare
+#define group_compare        iproc_vector_ptr_compare
 
-    if (traits_hash1 < traits_hash2) {
-        return -1;
-    } else if (traits_hash1 > traits_hash2) {
-        return +1;
-    } else {
-        return 0;
-    }
-}
-
-static int
-compare_group (void *x1,
-               void *x2)
-{
-    iproc_group *group1 = x1;
-    iproc_group *group2 = x2;
-    iproc_vector *traits1 = group1->traits;
-    iproc_vector *traits2 = group2->traits;
-    return iproc_vector_compare(traits1, traits2);
-}
 
 static int64_t
 iproc_actors_insert_group (iproc_actors *actors,
@@ -45,7 +21,7 @@ iproc_actors_insert_group (iproc_actors *actors,
     /* first, find the right bucket */
     size_t traits_hash = iproc_vector_hash(traits);
     int64_t i = iproc_array_bsearch(actors->group_buckets, &traits_hash,
-                                    compare_group_bucket);
+                                    group_bucket_compare);
 
     if (i < 0) { /* insert a new bucket if necessary */
         i = ~i;
@@ -60,7 +36,7 @@ iproc_actors_insert_group (iproc_actors *actors,
 
     /* now, find the right group  */
     int64_t j = iproc_array_bsearch(bucket->groups, &traits,
-                                    compare_group);
+                                    group_compare);
 
     if (j < 0) { /* insert a new group if necessary */
         j = ~j;

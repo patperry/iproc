@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "blas-private.h"
+#include "compare.h"
 #include "hash.h"
 #include "ieee754.h"
 #include "memory.h"
@@ -605,9 +606,10 @@ iproc_vector_identical (iproc_vector *vector1,
 }
 
 int
-iproc_vector_compare (iproc_vector *vector1,
-                      iproc_vector *vector2)
+iproc_vector_compare (void *x1, void *x2)
 {
+    iproc_vector *vector1 = x1;
+    iproc_vector *vector2 = x2;
     int64_t n1 = iproc_vector_dim(vector1);
     int64_t n2 = iproc_vector_dim(vector2);
 
@@ -617,20 +619,30 @@ iproc_vector_compare (iproc_vector *vector1,
         return +1;
     }
 
-    /* compare using uint64_t instead of double to avoid dealing with NaN comparisons;
-     * this relies on IEEE doubles being 8 bytes and lexicographically ordered, and
-     * uint64_t having the same endianness as double */
-    uint64_t *p1 = (uint64_t *)iproc_vector_ptr(vector1, 0);
-    uint64_t *p2 = (uint64_t *)iproc_vector_ptr(vector2, 0);
+    double *p1 = iproc_vector_ptr(vector1, 0);
+    double *p2 = iproc_vector_ptr(vector2, 0);
     int64_t i, n = n1;
 
     for (i = 0; i < n; i++) {
-        if (p1[i] < p2[i]) {
-            return -1;
-        } else if (p1[i] > p2[i]) {
-            return +1;
-        }
+        int cmp = iproc_double_compare(p1 + i, p2 + i);
+        if (cmp != 0)
+            return cmp;
     }
 
     return 0;
 }
+
+int
+iproc_vector_ptr_compare (void *px1, void *px2)
+{
+    iproc_vector **pvector1 = px1;
+    iproc_vector **pvector2 = px2;
+    
+    if (!pvector1)
+        return pvector2 ? 0 : -1;
+    if (!pvector2)
+        return +1;
+    
+    return iproc_vector_compare(*pvector1, *pvector2);
+}
+

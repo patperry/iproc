@@ -84,7 +84,8 @@ void              iproc_vector_printf        (iproc_vector *vector);
 size_t            iproc_vector_hash          (iproc_vector *vector);
 int               iproc_vector_identical     (iproc_vector *vector1,
                                               iproc_vector *vector2);
-int               iproc_vector_compare       (iproc_vector *vector1,
-                                              iproc_vector *vector2);
+int               iproc_vector_compare       (void *x1,  void *x2);
+int               iproc_vector_ptr_compare   (void *px1, void *px2);
+
 
 #endif /* _IPROC_VECTOR_H */

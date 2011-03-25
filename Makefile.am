@@ -19,6 +19,7 @@ libcore_la_SOURCES = \
 	src/core/array.c \
 	src/core/array.h \
 	src/core/blas-private.h \
+	src/core/compare.h \
 	src/core/design-ctx.c \
 	src/core/design.c \
 	src/core/design.h \

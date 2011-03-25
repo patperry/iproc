@@ -6,23 +6,10 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "blas-private.h"
+#include "compare.h"
 #include "memory.h"
 #include "svector.h"
 
-static int
-compare_int64 (void *px, void *py)
-{
-    int64_t x = *(int64_t *)px;
-    int64_t y = *(int64_t *)py;
-
-    if (x < y) {
-        return -1;
-    } else if (x > y) {
-        return +1;
-    } else {
-        return 0;
-    }
-}
 
 int64_t
 iproc_svector_find_nz (iproc_svector *svector, int64_t i)
@@ -30,7 +17,7 @@ iproc_svector_find_nz (iproc_svector *svector, int64_t i)
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
-    int64_t ix = iproc_array_bsearch(svector->index, &i, compare_int64);
+    int64_t ix = iproc_array_bsearch(svector->index, &i, iproc_int64_compare);
     return ix;
 }
 

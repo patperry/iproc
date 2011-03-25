@@ -5,24 +5,10 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include "compare.h"
 #include "memory.h"
 #include "design.h"
 
-
-static int
-compare_int64 (void *px, void *py)
-{
-    int64_t x = *(int64_t *)px;
-    int64_t y = *(int64_t *)py;
-    
-    if (x < y) {
-        return -1;
-    } else if (x > y) {
-        return +1;
-    } else {
-        return 0;
-    }
-}
 
 static iproc_svector *
 iproc_design_var_new_alloc (iproc_design *design)
@@ -233,7 +219,7 @@ iproc_design_ctx_dx (iproc_design_ctx *ctx,
     iproc_array *dxs = ctx->dxs;
     iproc_svector *dx = NULL;
     
-    int64_t i = iproc_array_bsearch(dxs, &jrecv, compare_int64);
+    int64_t i = iproc_array_bsearch(dxs, &jrecv, iproc_int64_compare);
     
     if (i < 0) {
         if (!null_ok) {

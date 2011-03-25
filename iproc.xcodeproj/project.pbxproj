@@ -49,6 +49,7 @@
 		221FEEBA132EC8710000097B /* vrecip.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE91132EC8710000097B /* vrecip.h */; };
 		221FEEE0132ECAAE0000097B /* R.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEDC132EC91A0000097B /* R.framework */; };
 		221FEEE9132ED2B40000097B /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEE8132ED2B40000097B /* vecLib.framework */; };
+		225973FF133CE9AD0022B52E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		225DAD64132FE4B700696C9B /* s_cmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD62132FE4B700696C9B /* s_cmp.c */; };
 		225DAD65132FE4B700696C9B /* s_copy.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD63132FE4B700696C9B /* s_copy.c */; };
 		22708BB013311B8E0055AD94 /* r-actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708B9E13311B8E0055AD94 /* r-actors.c */; };
@@ -120,6 +121,7 @@
 		221FEEDC132EC91A0000097B /* R.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = R.framework; path = Library/Frameworks/R.framework; sourceTree = SDKROOT; };
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		224D0557132EC113007F5646 /* libRiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libRiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		225973FD133CE9AD0022B52E /* compare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compare.h; path = src/core/compare.h; sourceTree = "<group>"; };
 		225DAD62132FE4B700696C9B /* s_cmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_cmp.c; path = src/libf2c/s_cmp.c; sourceTree = "<group>"; };
 		225DAD63132FE4B700696C9B /* s_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_copy.c; path = src/libf2c/s_copy.c; sourceTree = "<group>"; };
 		22708B9E13311B8E0055AD94 /* r-actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-actors.c"; path = "interfaces/R/src/r-actors.c"; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 				221FEE6B132EC8710000097B /* array.c */,
 				221FEE6C132EC8710000097B /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
+				225973FD133CE9AD0022B52E /* compare.h */,
 				221FEE6F132EC8710000097B /* design-ctx.c */,
 				221FEE70132EC8710000097B /* design.c */,
 				221FEE71132EC8710000097B /* design.h */,
@@ -320,6 +323,7 @@
 				22708BC113311B8E0055AD94 /* r-utils.h in Headers */,
 				22A2F8A2133158B000E97C79 /* config.h in Headers */,
 				2283DE9C13357DC200E3048D /* trace.h in Headers */,
+				225973FF133CE9AD0022B52E /* compare.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

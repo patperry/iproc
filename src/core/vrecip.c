@@ -4,27 +4,13 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include "compare.h"
 #include "memory.h"
 #include "design.h"
 #include "utils.h"
 #include "vrecip.h"
 
 
-static int
-compare_double (void *px,
-                void *py)
-{
-    double x = *((double *)px);
-    double y = *((double *)py);
-    
-    if (x < y) {
-        return -1;
-    } else if (x > y) {
-        return +1;
-    } else {
-        return 0;
-    }
-}
 
 static void
 iproc_vrecip_free (iproc_vrecip *v)
@@ -70,7 +56,7 @@ design_var_get_dxs (iproc_design_var *var,
         int64_t jsend = iproc_events_id(events);
         double t = meta->time;
         double dt = tcur - t;
-        int64_t pos = iproc_array_bsearch(intvls, &dt, compare_double);
+        int64_t pos = iproc_array_bsearch(intvls, &dt, iproc_double_compare);
         
         if (pos < 0)
             pos = ~pos;

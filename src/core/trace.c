@@ -5,23 +5,10 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include "compare.h"
 #include "trace.h"
 #include "memory.h"
 
-static int
-compare_int64 (void *px, void *py)
-{
-    int64_t x = *(int64_t *)px;
-    int64_t y = *(int64_t *)py;
-
-    if (x < y) {
-        return -1;
-    } else if (x > y) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
 
 static void
 iproc_trace_clear_pending (iproc_trace *trace)
@@ -95,7 +82,7 @@ iproc_trace_find_index (iproc_trace *trace,
                         int64_t      e)
 {
     assert(trace);
-    return iproc_array_bsearch(trace->events, &e, compare_int64);
+    return iproc_array_bsearch(trace->events, &e, iproc_int64_compare);
 }
 
 static void
