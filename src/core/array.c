@@ -14,14 +14,14 @@ iproc_array_grow (iproc_array *array)
     assert(array);
     assert(array->n_max > 0);
 
-    int64_t n_max = 2 * (array->n_max);
+    ssize_t n_max = 2 * (array->n_max);
     size_t elem_size = iproc_array_elem_size(array);
     array->data = iproc_realloc(array->data, n_max * elem_size);
     array->n_max = n_max;
 }
 
 static void
-iproc_array_reserve (iproc_array *array, int64_t n)
+iproc_array_reserve (iproc_array *array, ssize_t n)
 {
     assert(array);
 
@@ -54,7 +54,7 @@ iproc_array_new_copy (iproc_array *array)
 
     size_t elem_size = iproc_array_elem_size(array);
     iproc_array *copy = iproc_array_new(elem_size);
-    int64_t n = iproc_array_size(array);
+    ssize_t n = iproc_array_size(array);
 
     iproc_array_set_size(copy, n);
     void *src = &(iproc_array_index(array, char, 0));
@@ -107,7 +107,7 @@ iproc_array_elem_size (iproc_array *array)
 
 void
 iproc_array_set_size (iproc_array *array,
-                      int64_t      n)
+                      ssize_t      n)
 {
     assert(array);
     assert(n >= 0);
@@ -117,7 +117,7 @@ iproc_array_set_size (iproc_array *array,
         return;
     }
 
-    int64_t nold = iproc_array_size(array);
+    ssize_t nold = iproc_array_size(array);
     size_t elem_size = iproc_array_elem_size(array);
 
     if (n > nold) {
@@ -133,14 +133,14 @@ iproc_array_set_size (iproc_array *array,
 
 void
 iproc_array_set (iproc_array *array,
-                 int64_t      i,
+                 ssize_t      i,
                  void        *pe)
 {
     assert(array);
     assert(i >= 0);
     assert(pe);
 
-    int64_t nold = iproc_array_size(array);
+    ssize_t nold = iproc_array_size(array);
     if (i >= nold) {
         iproc_array_set_size(array, i + 1);
     }
@@ -150,7 +150,7 @@ iproc_array_set (iproc_array *array,
     memcpy(dst, pe, elem_size);
 }
 
-int64_t
+ssize_t
 iproc_array_size (iproc_array *array)
 {
     if (!array)
@@ -164,7 +164,7 @@ iproc_array_append (iproc_array *array,
 {
     assert(array);
     assert(pe);
-    int64_t n = iproc_array_size(array);
+    ssize_t n = iproc_array_size(array);
     iproc_array_insert(array, n, pe);
 }
 
@@ -179,15 +179,15 @@ iproc_array_prepend (iproc_array *array,
 
 void
 iproc_array_insert (iproc_array *array,
-                    int64_t      i,
+                    ssize_t      i,
                     void        *pe)
 {
     assert(array);
     assert(pe);
     assert(i >= 0);
-    int64_t n = iproc_array_size(array);
+    ssize_t n = iproc_array_size(array);
     size_t elem_size = iproc_array_elem_size(array);
-    int64_t nnew = (i < n) ? (n + 1) : (i + 1);
+    ssize_t nnew = (i < n) ? (n + 1) : (i + 1);
     void *dst;
 
     iproc_array_set_size(array, nnew);
@@ -204,13 +204,13 @@ iproc_array_insert (iproc_array *array,
 
 void
 iproc_array_remove (iproc_array *array,
-                    int64_t      i)
+                    ssize_t      i)
 {
     assert(array);
     assert(0 <= i);
     assert(i < iproc_array_size(array));
 
-    int64_t n = iproc_array_size(array);
+    ssize_t n = iproc_array_size(array);
     size_t elem_size = iproc_array_elem_size(array);
     void *ptr = &(iproc_array_index(array, char, i * elem_size));
 
@@ -219,7 +219,7 @@ iproc_array_remove (iproc_array *array,
     iproc_array_set_size(array, n - 1);
 }
 
-int64_t
+ssize_t
 iproc_array_lfind (iproc_array *array,
                    void        *value,
                    int        (*compare) (void *, void *))
@@ -230,8 +230,8 @@ iproc_array_lfind (iproc_array *array,
 
     char *ptr = &(iproc_array_index(array, char, 0));
     size_t elem_size = iproc_array_elem_size(array);
-    int64_t n = iproc_array_size(array);
-    int64_t i;
+    ssize_t n = iproc_array_size(array);
+    ssize_t i;
 
     for (i = 0; i < n; ptr += elem_size, i++) {
         if (compare(value, ptr) == 0)
@@ -241,7 +241,7 @@ iproc_array_lfind (iproc_array *array,
     return ~i;
 }
 
-int64_t
+ssize_t
 iproc_array_bsearch (iproc_array *array,
                      void        *value,
                      int        (*compare) (void *, void *))
@@ -252,9 +252,9 @@ iproc_array_bsearch (iproc_array *array,
 
     size_t  elem_size = iproc_array_elem_size(array);
     void   *base = &(iproc_array_index(array, char, 0));
-    int64_t begin = 0;
-    int64_t end = iproc_array_size(array);
-    int64_t i;
+    ssize_t begin = 0;
+    ssize_t end = iproc_array_size(array);
+    ssize_t i;
     void *ptr;
     int cmp;
 
