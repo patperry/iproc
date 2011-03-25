@@ -3,63 +3,67 @@ ACLOCAL_AMFLAGS = -I m4 --install
 lib_LTLIBRARIES = \
 	libiproc.la
 
-libiproc_la_SOURCES =
-
-libiproc_la_LIBADD = \
-	libcore.la
-
 noinst_LTLIBRARIES = \
 	libcore.la \
 	libf2c.la \
 	libminpack.la
 
+libiproc_la_SOURCES = \
+	src/actors.c \
+	src/actors.h \
+	src/design-ctx.c \
+	src/design.c \
+	src/design.h \
+	src/fit.c \
+	src/fit.h \
+	src/history.c \
+	src/history.h \
+	src/loglik.c \
+	src/loglik.h \
+	src/message-iter.c \
+	src/messages.c \
+	src/messages.h \
+	src/model-ctx.c \
+	src/model.c \
+	src/model.h \
+	src/sloglik.c \
+	src/sloglik.h \
+	src/trace.c \
+	src/trace.h \
+	src/vrecip.c \
+	src/vrecip.h
+
+libiproc_la_CPPFLAGS = \
+	-I./src/core \
+	$(AM_CPPFLAGS)
+
+libiproc_la_LIBADD = \
+	libcore.la \
+	libminpack.la
+
 libcore_la_SOURCES = \
-	src/core/actors.c \
-	src/core/actors.h \
 	src/core/array.c \
 	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
-	src/core/design-ctx.c \
-	src/core/design.c \
-	src/core/design.h \
-	src/core/fit.c \
-	src/core/fit.h \
 	src/core/hash.c \
 	src/core/hash.h \
-	src/core/history.c \
-	src/core/history.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
-	src/core/loglik.c \
-	src/core/loglik.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/matrix.c \
 	src/core/matrix.h \
 	src/core/memory.h \
-	src/core/message-iter.c \
-	src/core/messages.c \
-	src/core/messages.h \
-	src/core/model-ctx.c \
-	src/core/model.c \
-	src/core/model.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
-	src/core/sloglik.c \
-	src/core/sloglik.h \
 	src/core/svector.c \
 	src/core/svector.h \
-	src/core/trace.c \
-	src/core/trace.h \
 	src/core/utils.h \
 	src/core/vector.c \
-	src/core/vector.h \
-	src/core/vrecip.c \
-	src/core/vrecip.h
+	src/core/vector.h
 
 libcore_la_LIBADD = \
-	libminpack.la \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) \
 	$(LIBS) \
@@ -156,6 +160,7 @@ rpkg_sources = \
 	interfaces/R/tests/doRUnit.R
 
 rpkg_extra_sources = \
+	$(libiproc_la_SOURCES) \
 	$(libcore_la_SOURCES) \
 	$(libf2c_la_SOURCES) \
 	$(libminpack_la_SOURCES)
