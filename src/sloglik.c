@@ -128,7 +128,7 @@ iproc_sloglik_insertm (iproc_sloglik *sll,
 
     // update observed variable diffs
     iproc_design_ctx_dmuls(scale1 / n, IPROC_TRANS_TRANS, ctx->design_ctx, wt,
-                               scale0, sll->dxobs);
+                           scale0, sll->dxobs);
     
     sll->gamma += scale1 * (ctx->gamma - sll->gamma);
     

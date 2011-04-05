@@ -60,15 +60,17 @@
  *
  *         A. `dim` : the number of columns in dX{k}[t,i];
  *
- *         B. `get_dx(t, i, dX, offset, udata)` : a function that
- *            copies the rows of dX{k}[t,i] into dX[:,offset:(offset+dim)];
+ *         B. `get_dxs(dX{k}, ctx[t,i], offset)` : a function that
+ *            copies the rows of dX{k}[t,i] into
+ *            ctx->dxs[:,offset:(offset+dim-1)];
  *
- *         C. `free_udata` : a funciton to free the extra client data;
+ *         C. `free(dX{k})` : a funciton to free the memory associated
+ *            with dX{k}
  *
- *         D. `udata` : the extra client data.
  *
- * The matrix dX{k}[t,i] is represented as an array of { j, dx[t,i,j] }
- * pairs, where dx[t,i,j] is a sparse vector.
+ * In context ctx, the matrix dX[t,i] is represented as an array of
+ * { j, dx[t,i,j] } pairs called ctx->dxs, where dx[t,i,j] is
+ * a sparse vector.
  */
 
 typedef struct _iproc_design     iproc_design;
