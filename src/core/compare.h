@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 typedef int (*iproc_compare_fn) (void *px, void *py);
 
@@ -42,6 +43,21 @@ iproc_size_compare (void *px, void *py)
 {
     size_t x = *(size_t *)px;
     size_t y = *(size_t *)py;
+    
+    if (x < y) {
+        return -1;
+    } else if (x > y) {
+        return +1;
+    } else {
+        return 0;
+    }
+}
+
+static inline int
+iproc_ssize_compare (void *px, void *py)
+{
+    ssize_t x = *(ssize_t *)px;
+    ssize_t y = *(ssize_t *)py;
     
     if (x < y) {
         return -1;
