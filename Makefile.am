@@ -171,8 +171,8 @@ rpkg_extra_sources = \
 	cp $(rpkg_extra_sources)  interfaces/R/src
 	R CMD build interfaces/R
 
-TESTS_ENVIRONMENT = R CMD check --no-codoc --no-examples --no-manual --no-multiarch
-TESTS = @RPACKAGE@
+check-local:
+	R CMD check --no-codoc --no-examples --no-manual --no-multiarch @RPACKAGE@
 
 clean-local:
 	rm -rf iproc.Rcheck
