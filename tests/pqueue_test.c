@@ -65,6 +65,26 @@ sorted5_setup (void **state)
 }
 
 static void
+unsorted7_setup_fixture (void **state)
+{
+    print_message("Pqueue with 7 unsorted elements\n");
+    print_message("-------------------------------\n");    
+}
+
+static void
+unsorted7_setup (void **state)
+{
+    static ssize_t sorted7_elts[]   = { 7, 6, 5, 4, 3, 2, 1 };
+    ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
+    
+    pqueue = iproc_pqueue_new(sizeof(ssize_t), iproc_ssize_compare);
+    elts = sorted7_elts;
+    size = 7;
+    iproc_pqueue_push_array(pqueue, unsorted7_elts, size);
+    
+}
+
+static void
 teardown (void **state)
 {
     iproc_pqueue_unref(pqueue);
@@ -134,6 +154,33 @@ test_push_max_plus_one (void **state)
     assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), max + 1);
 }
 
+static void
+test_push_existing (void **state)
+{
+    ssize_t i, j;
+    ssize_t top;
+    
+    for (i = 0; i < size; i++) {
+        iproc_pqueue *pq = iproc_pqueue_new_copy(pqueue);
+        ssize_t elt = elts[i];
+        
+        iproc_pqueue_push(pq, &elt);
+        
+        assert_int_equal(iproc_pqueue_size(pq), size + 1);
+
+        for (j = 0; j < size + 1; j++) {
+            iproc_pqueue_pop(pq, &top);
+            if (j <= i) {
+                assert_int_equal(top, elts[j]);
+            } else {
+                assert_int_equal(top, elts[j-1]);
+            }
+        }
+        
+        iproc_pqueue_unref(pq);
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -149,6 +196,7 @@ main(int argc, char **argv)
         unit_test_setup_teardown(test_push_max,           singleton_setup, teardown),
         unit_test_setup_teardown(test_push_max_minus_one, singleton_setup, teardown),
         unit_test_setup_teardown(test_push_max_plus_one,  singleton_setup, teardown),
+        unit_test_setup_teardown(test_push_existing,      singleton_setup, teardown),
         unit_test_teardown(singleton_suite, teardown_fixture),
         
         unit_test_setup(sorted5_suite, sorted5_setup_fixture),
@@ -158,7 +206,19 @@ main(int argc, char **argv)
         unit_test_setup_teardown(test_push_max,           sorted5_setup, teardown),
         unit_test_setup_teardown(test_push_max_minus_one, sorted5_setup, teardown),
         unit_test_setup_teardown(test_push_max_plus_one,  sorted5_setup, teardown),
-        unit_test_teardown(sorted5_suite, teardown_fixture)
+        unit_test_setup_teardown(test_push_existing,      sorted5_setup, teardown),
+        unit_test_teardown(sorted5_suite, teardown_fixture),
+
+        unit_test_setup(unsorted7_suite, unsorted7_setup_fixture),
+        unit_test_setup_teardown(test_size,               unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_min,           unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_min_minus_one, unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_max,           unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_max_minus_one, unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_max_plus_one,  unsorted7_setup, teardown),
+        unit_test_setup_teardown(test_push_existing,      unsorted7_setup, teardown),        
+        unit_test_teardown(unsorted7_suite, teardown_fixture),
+
     };
     return run_tests(tests);
 }

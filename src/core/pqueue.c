@@ -3,6 +3,7 @@
 #endif
 
 #include <assert.h>
+#include <string.h>
 
 #include "memory.h"
 #include "pqueue.h"
@@ -34,6 +35,21 @@ iproc_pqueue_new (size_t            eltsize,
     return pqueue;
 }
 
+iproc_pqueue *
+iproc_pqueue_new_copy (iproc_pqueue *pqueue)
+{
+    assert(pqueue);
+    
+    iproc_pqueue *result = iproc_malloc(sizeof(*result));
+    if (!result)
+        return NULL;
+    
+    result->array = iproc_array_new_copy(pqueue->array);
+    result->compare = pqueue->compare;
+    iproc_refcount_init(&result->refcount);
+
+    return result;
+}
 
 void
 iproc_pqueue_ref (iproc_pqueue *pqueue)
@@ -123,7 +139,7 @@ iproc_pqueue_push_array (iproc_pqueue *pqueue,
                          ssize_t       n)
 {
     assert(pqueue);
-    assert(n == 0 || elts);
+    assert(elts || n == 0);
     assert(n >= 0);
     
     size_t elem_size = pqueue->array->elem_size;
@@ -136,13 +152,19 @@ iproc_pqueue_push_array (iproc_pqueue *pqueue,
 
 
 void
-iproc_pqueue_pop (iproc_pqueue *pqueue)
+iproc_pqueue_pop (iproc_pqueue *pqueue,
+                  void         *eltp)
 {
     assert(pqueue);
     assert(!iproc_pqueue_empty(pqueue));
+    assert(eltp);
     
     iproc_array *array = pqueue->array;
     ssize_t n = iproc_array_size(array) - 1;
+    size_t elem_size = iproc_array_elem_size(pqueue->array);
+    
+    // copy the top element
+    memcpy(eltp, iproc_pqueue_top(pqueue), elem_size);
     
     if (n == 0)
         goto resize;
@@ -185,4 +207,22 @@ iproc_pqueue_pop (iproc_pqueue *pqueue)
     
 resize:
     iproc_array_set_size(array, n);
+}
+
+void
+iproc_pqueue_pop_array (iproc_pqueue *pqueue,
+                        void         *elts,
+                        ssize_t       n)
+{
+    assert(pqueue);
+    assert(elts || n == 0);
+    assert(n >= 0);
+    assert(n <= iproc_pqueue_size(pqueue));
+    
+    size_t elem_size = iproc_array_elem_size(pqueue->array);
+    void *end = elts + n * elem_size;
+    
+    for (; elts < end; elts += elem_size) {
+        iproc_pqueue_pop(pqueue, elts);
+    }
 }

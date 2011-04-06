@@ -18,6 +18,7 @@ struct _iproc_pqueue {
 
 iproc_pqueue * iproc_pqueue_new        (size_t            eltsize,
                                         iproc_compare_fn  compare);
+iproc_pqueue * iproc_pqueue_new_copy   (iproc_pqueue *pqueue);
 void           iproc_pqueue_ref        (iproc_pqueue *pqueue);
 void           iproc_pqueue_unref      (iproc_pqueue *pqueue);
 
@@ -30,7 +31,11 @@ void           iproc_pqueue_push       (iproc_pqueue *pqueue,
 void           iproc_pqueue_push_array (iproc_pqueue *pqueue,
                                         void         *elts,
                                         ssize_t       n);
-void           iproc_pqueue_pop        (iproc_pqueue *pqueue);
+void           iproc_pqueue_pop        (iproc_pqueue *pqueue,
+                                        void         *eltp);
+void           iproc_pqueue_pop_array  (iproc_pqueue *pqueue,
+                                        void         *elts,
+                                        ssize_t       n);
 
 
 
