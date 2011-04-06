@@ -117,6 +117,23 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
     iproc_array_set(array, icur, eltp);
 }
 
+void
+iproc_pqueue_push_array (iproc_pqueue *pqueue,
+                         void         *elts,
+                         ssize_t       n)
+{
+    assert(pqueue);
+    assert(n == 0 || elts);
+    assert(n >= 0);
+    
+    size_t elem_size = pqueue->array->elem_size;
+    void *end = elts + n * elem_size;
+    
+    for (; elts < end; elts += elem_size) {
+        iproc_pqueue_push(pqueue, elts);
+    }
+}
+
 
 void
 iproc_pqueue_pop (iproc_pqueue *pqueue)

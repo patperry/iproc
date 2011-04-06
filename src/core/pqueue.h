@@ -16,18 +16,21 @@ struct _iproc_pqueue {
     iproc_refcount   refcount;
 };
 
-iproc_pqueue * iproc_pqueue_new    (size_t            eltsize,
-                                    iproc_compare_fn  compare);
-void           iproc_pqueue_ref    (iproc_pqueue     *pqueue);
-void           iproc_pqueue_unref  (iproc_pqueue     *pqueue);
+iproc_pqueue * iproc_pqueue_new        (size_t            eltsize,
+                                        iproc_compare_fn  compare);
+void           iproc_pqueue_ref        (iproc_pqueue *pqueue);
+void           iproc_pqueue_unref      (iproc_pqueue *pqueue);
 
 
-bool           iproc_pqueue_empty  (iproc_pqueue     *pqueue);
-ssize_t        iproc_pqueue_size   (iproc_pqueue     *pqueue);
-void *         iproc_pqueue_top    (iproc_pqueue     *pqueue);
-void           iproc_pqueue_push   (iproc_pqueue     *pqueue,
-                                    void             *eltp);
-void           iproc_pqueue_pop    (iproc_pqueue     *pqueue);
+bool           iproc_pqueue_empty      (iproc_pqueue *pqueue);
+ssize_t        iproc_pqueue_size       (iproc_pqueue *pqueue);
+void *         iproc_pqueue_top        (iproc_pqueue *pqueue);
+void           iproc_pqueue_push       (iproc_pqueue *pqueue,
+                                        void         *eltp);
+void           iproc_pqueue_push_array (iproc_pqueue *pqueue,
+                                        void         *elts,
+                                        ssize_t       n);
+void           iproc_pqueue_pop        (iproc_pqueue *pqueue);
 
 
 
