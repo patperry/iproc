@@ -171,6 +171,30 @@ rpkg_extra_sources = \
 	cp $(rpkg_extra_sources)  interfaces/R/src
 	R CMD build interfaces/R
 
+check_LTLIBRARIES = \
+	tests/libcmockery.la
+
+tests_libcmockery_la_SOURCES = \
+	tests/cmockery/cmockery.c \
+	tests/cmockery/cmockery.h
+
+tests_libcmockery_la_CPPFLAGS = \
+	-Itests/cmockery \
+	$(AM_CPPFLAGS)
+
+cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
+cmockery_ldadd    = tests/libcmockery.la
+
+check_PROGRAMS = # empty
+
+## # example:
+## check_PROGRAMS += tests/run_tests
+## tests_run_tests_CPPFLAGS = $(cmockery_cppflags)
+## tests_run_tests_LDADD    = $(cmockery_ldadd)
+
+TESTS = \
+	$(check_PROGRAMS)
+
 check-local:
 	R CMD check --no-codoc --no-examples --no-manual --no-multiarch @RPACKAGE@
 
