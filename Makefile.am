@@ -187,10 +187,9 @@ cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
 
-## # example:
-## check_PROGRAMS += tests/run_tests
-## tests_run_tests_CPPFLAGS = $(cmockery_cppflags)
-## tests_run_tests_LDADD    = $(cmockery_ldadd)
+check_PROGRAMS += tests/pqueue_test
+tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_pqueue_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 TESTS = \
 	$(check_PROGRAMS)
