@@ -18,7 +18,10 @@ AC_CHECK_LIBM
 AX_CHECK_BLAS
 AX_CHECK_LAPACK
 
-# Checks for structures
+# Checks for header files
+
+# Checks for typedefs, structures, and compiler characteristics
+AC_C_INLINE
 AC_HEADER_STDBOOL
 AC_TYPE_SSIZE_T
 AC_CHECK_SIZEOF([size_t], , [#include <stddef.h> #include <stdio.h>])
@@ -30,10 +33,9 @@ AH_TOP([#include <limits.h>])
 AC_DEFINE([f77int],      [long int])
 AC_DEFINE([F77_INT_MAX], [LONG_MAX])
 
-# Checks for compiler characteristics
 # Checks for library functions
 # Checks for system services
 
-AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile interfaces/R/DESCRIPTION])
 AC_OUTPUT

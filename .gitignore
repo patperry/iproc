@@ -10,9 +10,12 @@
 /aclocal.m4
 /autom4te.cache
 /build-aux
+/config.h
+/config.h.in
 /config.status
 /configure
 /libtool
+/stamp-h1
 /interfaces/R/DESCRIPTION
 /interfaces/R/src/*.c
 /interfaces/R/src/*.h
@@ -22,8 +25,5 @@
 /m4/ltsugar.m4
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
-/src/stamp-h1
-/src/config.h
-/src/config.h.in
 /tests/darray_test
 /tests/pqueue_test
