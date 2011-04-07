@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		221C5FDB134DB9BC0008B25B /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FDA134DB9BC0008B25B /* port.h */; };
 		221FEE96132EC8710000097B /* blas-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE6D132EC8710000097B /* blas-private.h */; };
 		221FEE9D132EC8710000097B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		221FEE9E132EC8710000097B /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE75132EC8710000097B /* hash.h */; };
@@ -133,6 +134,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		221C5FDA134DB9BC0008B25B /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = src/core/port.h; sourceTree = "<group>"; };
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };
 		221FEE75132EC8710000097B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hash.h; path = src/core/hash.h; sourceTree = "<group>"; };
@@ -267,6 +269,7 @@
 				22597400133D081A0022B52E /* matrix.c */,
 				22597401133D081A0022B52E /* matrix.h */,
 				221FEE80132EC8710000097B /* memory.h */,
+				221C5FDA134DB9BC0008B25B /* port.h */,
 				22597433133D0BD20022B52E /* pqueue.c */,
 				22597434133D0BD20022B52E /* pqueue.h */,
 				221FEE87132EC8710000097B /* refcount.c */,
@@ -447,6 +450,7 @@
 				22597432133D0AFB0022B52E /* vrecip.h in Headers */,
 				22597436133D0BD30022B52E /* pqueue.h in Headers */,
 				2223CD11134D76F8004FA7F9 /* darray.h in Headers */,
+				221C5FDB134DB9BC0008B25B /* port.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -802,6 +806,7 @@
 				2223CD2E134D8C4E004FA7F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		224D0558132EC113007F5646 /* Build configuration list for PBXNativeTarget "Riproc" */ = {
 			isa = XCConfigurationList;

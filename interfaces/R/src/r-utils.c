@@ -1,3 +1,4 @@
+#include "port.h"
 
 #include <R.h>
 #include <Rinternals.h>

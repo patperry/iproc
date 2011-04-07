@@ -1,12 +1,10 @@
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include "port.h"
 
 #include <assert.h>
 #include <stddef.h>
-#include <string.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "darray.h"
+
 
 #define INITIAL_CAPACITY 1
 
@@ -15,7 +13,7 @@ struct darray * _darray_new (size_t elt_size)
 {
     assert(elt_size > 0);
     
-    struct darray *a = iproc_malloc(sizeof(*a));
+    struct darray *a = malloc(sizeof(*a));
     
     if (!a)
         return NULL;
@@ -23,7 +21,7 @@ struct darray * _darray_new (size_t elt_size)
     a->elt_size = elt_size;
     a->size = 0;
     a->capacity = INITIAL_CAPACITY;
-    a->data = iproc_malloc(a->capacity * elt_size);
+    a->data = malloc(a->capacity * elt_size);
     
     return a;
 }
@@ -45,8 +43,8 @@ struct darray * darray_new_copy (const struct darray *a)
 void darray_free (struct darray *a)
 {
     if (a) {
-        iproc_free(a->data);
-        iproc_free(a);
+        free(a->data);
+        free(a);
     }
 }
 
@@ -227,7 +225,7 @@ static void darray_grow (struct darray *a)
     size_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
     
     if (n != n0) {
-        a->data = iproc_realloc(a->data, n * a->elt_size);
+        a->data = realloc(a->data, n * a->elt_size);
         a->capacity = n;
     }
 }

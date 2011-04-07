@@ -1,18 +1,17 @@
 #ifndef _DARRAY_H
 #define _DARRAY_H
 
-#include <stdbool.h>   // bool
-#include <stddef.h>    // size_t
+/* define SSIZE_MAX, ssize_t, and bool before including this file */
+
+#include <stddef.h>    // sizeof, size_t
 #include <string.h>    // memcpy
-#include <sys/types.h> // ssize_t
-#include <limits.h>    // SSIZE_MAX
 
 
 struct darray {
-    void          *data;
-    size_t         elt_size;    
-    ssize_t        size;
-    ssize_t        capacity;
+    void    *data;
+    size_t   elt_size;    
+    ssize_t  size;
+    ssize_t  capacity;
 };
 
 /* create, destroy */

@@ -19,6 +19,10 @@ AX_CHECK_BLAS
 AX_CHECK_LAPACK
 
 # Checks for structures
+AC_HEADER_STDBOOL
+AC_TYPE_SSIZE_T
+AC_CHECK_SIZEOF([size_t], , [#include <stddef.h> #include <stdio.h>])
+
 ## HACK: not portable
 AH_TEMPLATE([f77int], [Define to appropriate type for Fortran integer])
 AH_TEMPLATE([F77_INT_MAX], [Define to maximum Fortran integer])
