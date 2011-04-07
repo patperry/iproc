@@ -16,8 +16,8 @@ iproc_pqueue_free (iproc_pqueue *pqueue)
 }
 
 iproc_pqueue *
-iproc_pqueue_new (size_t            eltsize,
-                  iproc_compare_fn  compare)
+iproc_pqueue_new (size_t     eltsize,
+                  compare_fn compare)
 {
     assert(eltsize > 0);
     assert(compare);
@@ -107,7 +107,7 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
     
     struct darray *array = pqueue->array;
     size_t elt_size = darray_elt_size(array);
-    iproc_compare_fn compare = pqueue->compare;
+    compare_fn compare = pqueue->compare;
     ssize_t icur = darray_size(array);
 
     // make space for the new element;
@@ -168,7 +168,7 @@ iproc_pqueue_pop (iproc_pqueue *pqueue,
         goto resize;
     
     // swap the last element in the tree with the root, then heapify
-    iproc_compare_fn compare = pqueue->compare;
+    compare_fn compare = pqueue->compare;
     void *cur = &darray_index(array, char, n * elt_size);
     ssize_t icur = 0;
     

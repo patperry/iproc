@@ -11,13 +11,13 @@
 typedef struct _iproc_pqueue iproc_pqueue;
 
 struct _iproc_pqueue {
-    struct darray   *array;
-    iproc_compare_fn compare;
-    iproc_refcount   refcount;
+    struct darray *array;
+    compare_fn     compare;
+    iproc_refcount refcount;
 };
 
-iproc_pqueue * iproc_pqueue_new        (size_t            eltsize,
-                                        iproc_compare_fn  compare);
+iproc_pqueue * iproc_pqueue_new        (size_t      eltsize,
+                                        compare_fn  compare);
 iproc_pqueue * iproc_pqueue_new_copy   (iproc_pqueue *pqueue);
 void           iproc_pqueue_ref        (iproc_pqueue *pqueue);
 void           iproc_pqueue_unref      (iproc_pqueue *pqueue);

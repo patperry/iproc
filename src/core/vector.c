@@ -621,7 +621,7 @@ iproc_vector_compare (const void *x1, const void *x2)
     int64_t i, n = n1;
 
     for (i = 0; i < n; i++) {
-        int cmp = iproc_double_compare(p1 + i, p2 + i);
+        int cmp = double_compare(p1 + i, p2 + i);
         if (cmp != 0)
             return cmp;
     }

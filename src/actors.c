@@ -5,7 +5,7 @@
 #include "memory.h"
 #include "actors.h"
 
-#define group_bucket_compare iproc_size_compare
+#define group_bucket_compare size_compare
 #define group_compare        iproc_vector_ptr_compare
 
 

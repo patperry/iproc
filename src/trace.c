@@ -80,7 +80,7 @@ iproc_trace_find_index (iproc_trace *trace,
                         int64_t      e)
 {
     assert(trace);
-    return darray_bsearch(trace->events, &e, iproc_int64_compare);
+    return darray_bsearch(trace->events, &e, int64_compare);
 }
 
 static void

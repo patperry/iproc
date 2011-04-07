@@ -15,7 +15,7 @@ iproc_svector_find_nz (iproc_svector *svector, int64_t i)
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
-    ssize_t ix = darray_bsearch(svector->index, &i, iproc_int64_compare);
+    ssize_t ix = darray_bsearch(svector->index, &i, int64_compare);
     return ix;
 }
 
