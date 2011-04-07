@@ -11,7 +11,7 @@
 typedef struct _iproc_pqueue iproc_pqueue;
 
 struct _iproc_pqueue {
-    struct darray *array;
+    struct darray  array;
     compare_fn     compare;
     iproc_refcount refcount;
 };
@@ -25,15 +25,17 @@ void           iproc_pqueue_unref      (iproc_pqueue *pqueue);
 
 bool           iproc_pqueue_empty      (iproc_pqueue *pqueue);
 ssize_t        iproc_pqueue_size       (iproc_pqueue *pqueue);
-void *         iproc_pqueue_top        (iproc_pqueue *pqueue);
-void           iproc_pqueue_push       (iproc_pqueue *pqueue,
-                                        void         *eltp);
-void           iproc_pqueue_push_array (iproc_pqueue *pqueue,
-                                        void         *elts,
+const void *   iproc_pqueue_top        (iproc_pqueue *pqueue);
+void *         iproc_pqueue_get_top    (iproc_pqueue *pqueue,
+                                        void         *dst);
+
+void *         iproc_pqueue_push       (iproc_pqueue *pqueue,
+                                        const void   *eltp);
+void *         iproc_pqueue_push_array (iproc_pqueue *pqueue,
+                                        const void   *elts,
                                         ssize_t       n);
-void           iproc_pqueue_pop        (iproc_pqueue *pqueue,
-                                        void         *eltp);
-void           iproc_pqueue_pop_array  (iproc_pqueue *pqueue,
+void           iproc_pqueue_pop        (iproc_pqueue *pqueue);
+void *         iproc_pqueue_pop_array  (iproc_pqueue *pqueue,
                                         void         *elts,
                                         ssize_t       n);
 

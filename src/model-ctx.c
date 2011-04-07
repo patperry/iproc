@@ -30,7 +30,7 @@ compute_weight_changes (iproc_design_ctx *ctx,
     
     /* compute the scale for the weight differences */
     double lwmax = iproc_vector_max(&deta_nz.vector);
-    double logscale = IPROC_MAX(0.0, lwmax);
+    double logscale = MAX(0.0, lwmax);
     double invscale = exp(-logscale);
     
     iproc_logsumexp pos, neg;
@@ -102,7 +102,7 @@ compute_active_probs (iproc_vector  *log_p0,
         int64_t jrecv = iproc_svector_nz(p_active, i);
         double lp0_j = iproc_vector_get(log_p0, jrecv);
         double deta_j = iproc_vector_get(&p_active_nz.vector, i);
-        double lp_j = IPROC_MIN(0.0, log_gamma + lp0_j + deta_j);
+        double lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
         iproc_vector_set(&p_active_nz.vector, i, lp_j);
     }
     
@@ -133,7 +133,7 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
         iproc_design_ctx_unref(ctx->design_ctx);
 
         iproc_model *model = ctx->model;
-        darray_push_back(model->ctxs, &ctx);
+        darray_push_back(&model->ctxs, &ctx);
         iproc_model_unref(model);
     }
 }
@@ -184,7 +184,7 @@ iproc_model_ctx_new (iproc_model     *model,
     assert(isend < iproc_model_nsender(model));
 
     iproc_model_ctx *ctx;
-    struct darray *ctxs = model->ctxs;
+    struct darray *ctxs = &model->ctxs;
     int64_t n = darray_size(ctxs);
     
     if (n > 0) {
@@ -307,7 +307,7 @@ iproc_model_ctx_logprob (iproc_model_ctx *ctx,
     double log_p0 = iproc_vector_get(ctx->group->log_p0, jrecv);
     double deta = iproc_svector_get(ctx->deta, jrecv);
     double log_p = log_gamma + log_p0 + deta;
-    return IPROC_MIN(log_p, 0.0);
+    return MIN(log_p, 0.0);
 }
 
 void

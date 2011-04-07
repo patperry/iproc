@@ -67,8 +67,8 @@ static void
 iproc_history_free (iproc_history *history)
 {
     if (history) {
-        darray_free(history->send);
-        darray_free(history->recv);
+        darray_deinit(&history->send);
+        darray_deinit(&history->recv);
         iproc_free(history);
     }
 }
@@ -76,21 +76,18 @@ iproc_history_free (iproc_history *history)
 iproc_history *
 iproc_history_new ()
 {
-    iproc_history *history = iproc_malloc(sizeof(*history));
+    iproc_history *history = iproc_calloc(1, sizeof(*history));
 
-    if (!history) return NULL;
-
-    history->tcur = -INFINITY;
-    history->send = darray_new(iproc_history_trace);
-    history->recv = darray_new(iproc_history_trace);
-    iproc_refcount_init(&history->refcount);
-
-    if (!(history->send && history->recv)) {
-        iproc_history_free(history);
-        history = NULL;
+    if (history
+        && darray_init(&history->send, iproc_history_trace)
+        && darray_init(&history->recv, iproc_history_trace)
+        && iproc_refcount_init(&history->refcount)) {
+        history->tcur = -INFINITY;
+        return history;
     }
-
-    return history;
+    
+    iproc_history_free(history);
+    return NULL;
 }
 
 iproc_history *
@@ -123,8 +120,8 @@ iproc_history_clear (iproc_history *history)
 {
     assert(history);
     history->tcur = -INFINITY;
-    trace_array_clear(history->send);
-    trace_array_clear(history->recv);
+    trace_array_clear(&history->send);
+    trace_array_clear(&history->recv);
 }
 
 double
@@ -181,14 +178,14 @@ int64_t
 iproc_history_nsend (iproc_history *history)
 {
     assert(history);
-    return darray_size(history->send);
+    return darray_size(&history->send);
 }
 
 int64_t
 iproc_history_nrecv (iproc_history *history)
 {
     assert(history);
-    return darray_size(history->recv);
+    return darray_size(&history->recv);
 }
 
 iproc_trace *
@@ -198,7 +195,7 @@ iproc_history_send (iproc_history *history,
     assert(history);
     assert(0 <= i);
 
-    return trace_array_get(history->tcur, history->send, i);
+    return trace_array_get(history->tcur, &history->send, i);
 }
 
 iproc_trace *
@@ -208,5 +205,5 @@ iproc_history_recv (iproc_history *history,
     assert(history);
     assert(0 <= j);
 
-    return trace_array_get(history->tcur, history->recv, j);
+    return trace_array_get(history->tcur, &history->recv, j);
 }

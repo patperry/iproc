@@ -124,8 +124,8 @@ struct _iproc_model {
     iproc_design  *design;
     iproc_vector  *coefs;
     bool           has_loops;
-    struct darray *group_models;
-    struct darray *ctxs;
+    struct darray  group_models;
+    struct darray  ctxs;
     iproc_refcount refcount;
 };
 

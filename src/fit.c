@@ -134,7 +134,7 @@ linesearch (iproc_fit *fit)
     char task[task_len + 1];
     double stpmin = 0;
     double stpmax = -f / (gtol * g);
-    double stp = g == 0 ? 1.0 : IPROC_MIN(1.0, stpmax);
+    double stp = g == 0 ? 1.0 : MIN(1.0, stpmax);
     f77int isave[2];
     double dsave[13];
     

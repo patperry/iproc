@@ -10,7 +10,7 @@ typedef struct _iproc_vrecip iproc_vrecip;
 
 struct _iproc_vrecip {
     iproc_design_var var;
-    struct darray   *intvls;
+    struct darray    intvls;
     iproc_refcount   refcount;
 };
 

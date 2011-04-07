@@ -45,14 +45,14 @@ struct _iproc_event {
 };
 
 struct _iproc_events {
-    int64_t      e;
-    struct darray *meta;
+    int64_t       e;
+    struct darray meta;
 };
 
 struct _iproc_trace {
     double         tcur;
-    struct darray   *pending;
-    struct darray   *events;
+    struct darray  pending;
+    struct darray  events;
     iproc_refcount refcount;
 };
 

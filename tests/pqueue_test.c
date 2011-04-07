@@ -23,7 +23,7 @@ empty_setup (void **state)
 {
     static ssize_t empty_elts[] = { };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), iproc_ssize_compare);
+    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
     size = 0;
     elts = empty_elts;
 }
@@ -40,7 +40,7 @@ singleton_setup (void **state)
 {
     static ssize_t singleton_elts[] = { 1234 };
 
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), iproc_ssize_compare);
+    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
     elts = singleton_elts;
     size = 1;
     iproc_pqueue_push_array(pqueue, elts, size);
@@ -58,7 +58,7 @@ sorted5_setup (void **state)
 {
     static ssize_t sorted5_elts[] = { 5, 4, 3, 2, 1 };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), iproc_ssize_compare);
+    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
     elts = sorted5_elts;
     size = 5;
     iproc_pqueue_push_array(pqueue, elts, size);
@@ -78,7 +78,7 @@ unsorted7_setup (void **state)
     static ssize_t sorted7_elts[]   = { 7, 6, 5, 4, 3, 2, 1 };
     ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), iproc_ssize_compare);
+    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
     elts = sorted7_elts;
     size = 7;
     iproc_pqueue_push_array(pqueue, unsorted7_elts, size);
@@ -170,7 +170,7 @@ test_push_existing (void **state)
         assert_int_equal(iproc_pqueue_size(pq), size + 1);
 
         for (j = 0; j < size + 1; j++) {
-            iproc_pqueue_pop(pq, &top);
+            iproc_pqueue_pop_array(pq, &top, 1);
             if (j <= i) {
                 assert_int_equal(top, elts[j]);
             } else {

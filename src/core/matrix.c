@@ -5,7 +5,7 @@
 #include <strings.h>
 #include "blas-private.h"
 #include "memory.h"
-#include "utils.h"
+#include "util.h"
 #include "matrix.h"
 
 
@@ -28,7 +28,7 @@ iproc_matrix_new (int64_t nrow, int64_t ncol)
     matrix->data = iproc_malloc(nrow * ncol * sizeof(matrix->data[0]));
     matrix->nrow = nrow;
     matrix->ncol = ncol;
-    matrix->lda = IPROC_MAX(1, nrow);
+    matrix->lda = MAX(1, nrow);
     iproc_refcount_init(&matrix->refcount);
 
     if (!(matrix->data)) {
@@ -120,7 +120,7 @@ iproc_matrix_set_identity (iproc_matrix *matrix)
     
     int64_t m = iproc_matrix_nrow(matrix);
     int64_t n = iproc_matrix_ncol(matrix);
-    int64_t mn = IPROC_MIN(m, n);
+    int64_t mn = MIN(m, n);
     int64_t i;
     
     iproc_matrix_set_all(matrix, 0.0);
@@ -312,7 +312,7 @@ iproc_matrix_view_array (double *data,
                          int64_t ncol)
 {
     assert(data);
-    int64_t lda = IPROC_MAX(1, nrow);
+    int64_t lda = MAX(1, nrow);
     return iproc_matrix_view_array_with_lda(data, nrow, ncol, lda);
 }
 
@@ -322,7 +322,7 @@ iproc_matrix_view_array_with_lda (double *data,
                                   int64_t ncol,
                                   int64_t lda)
 {
-    assert(lda >= IPROC_MAX(1, nrow));
+    assert(lda >= MAX(1, nrow));
 
     iproc_matrix_view view = {{ data, nrow, ncol, lda, {0} }};
     return view;

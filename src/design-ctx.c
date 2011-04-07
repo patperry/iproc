@@ -19,7 +19,7 @@ static iproc_svector *
 iproc_design_var_new (iproc_design *design)
 {
     assert(design);
-    struct darray *svectors = design->svectors;
+    struct darray *svectors = &design->svectors;
     int64_t n = darray_size(svectors);
     iproc_svector *svector;
     
@@ -39,7 +39,7 @@ iproc_sdesign_var_free (iproc_design  *design,
                         iproc_svector *svector)
 {
     assert(design);
-    struct darray *svectors = design->svectors;
+    struct darray *svectors = &design->svectors;
     
     if (!svector)
         return;
@@ -84,12 +84,12 @@ iproc_design_ctx_set (iproc_design_ctx *ctx,
         ctx->history = h;
     }
     ctx->isend = isend;
-    clear_dxs(ctx->design, ctx->dxs);
+    clear_dxs(ctx->design, &ctx->dxs);
     
     if (design->ndynamic == 0)
         return;
     
-    struct darray *vars = design->vars;
+    struct darray *vars = &design->vars;
     int64_t i, n = darray_size(vars);
     int64_t offset = design->idynamic;
 
@@ -111,10 +111,10 @@ iproc_design_ctx_free (iproc_design_ctx *ctx)
     if (ctx) {
         iproc_history_unref(ctx->history);
         ctx->history = NULL;
-        clear_dxs(ctx->design, ctx->dxs);
+        clear_dxs(ctx->design, &ctx->dxs);
 
         iproc_design *design = ctx->design;
-        darray_push_back(design->ctxs, &ctx);
+        darray_push_back(&design->ctxs, &ctx);
         iproc_design_unref(design);
     }
  
@@ -130,7 +130,7 @@ iproc_design_ctx_new_alloc (iproc_design  *design,
     assert(0 <= isend);
     assert(isend < iproc_design_nsender(design));
 
-    iproc_design_ctx *ctx = iproc_malloc(sizeof(*ctx));
+    iproc_design_ctx *ctx = iproc_calloc(1, sizeof(*ctx));
 
     if (!ctx)
         return NULL;
@@ -138,10 +138,9 @@ iproc_design_ctx_new_alloc (iproc_design  *design,
     ctx->design = iproc_design_ref(design);
     ctx->history = NULL;
     ctx->isend = -1;
-    ctx->dxs = darray_new(iproc_design_dx);
     iproc_refcount_init(&ctx->refcount);
 
-    if (!ctx->dxs) {
+    if (!darray_init(&ctx->dxs, iproc_design_dx)) {
         iproc_design_ctx_free(ctx);
         ctx = NULL;
     } else {
@@ -161,7 +160,7 @@ iproc_design_ctx_new (iproc_design  *design,
     assert(isend < iproc_design_nsender(design));
 
     iproc_design_ctx *ctx;
-    struct darray *ctxs = design->ctxs;
+    struct darray *ctxs = &design->ctxs;
     int64_t n = darray_size(ctxs);
     
     if (n > 0) {
@@ -214,7 +213,7 @@ iproc_design_ctx_dx (iproc_design_ctx *ctx,
     assert(jrecv >= 0);
     assert(jrecv < iproc_design_nreceiver(ctx->design));
     
-    struct darray *dxs = ctx->dxs;
+    struct darray *dxs = &ctx->dxs;
     iproc_svector *dx = NULL;
     
     int64_t i = darray_bsearch(dxs, &jrecv, int64_compare);
@@ -238,7 +237,7 @@ int64_t
 iproc_design_ctx_nnz (iproc_design_ctx *ctx)
 {
     assert(ctx);
-    return darray_size(ctx->dxs);
+    return darray_size(&ctx->dxs);
 }
 
 
@@ -251,7 +250,7 @@ iproc_design_ctx_nz (iproc_design_ctx *ctx,
     assert(inz < iproc_design_ctx_nnz(ctx));
     assert(jrecv);
     
-    iproc_design_dx dx = darray_index(ctx->dxs,
+    iproc_design_dx dx = darray_index(&ctx->dxs,
                                       iproc_design_dx,
                                       inz);
     *jrecv = dx.jrecv;
@@ -355,7 +354,7 @@ iproc_design_ctx_dmul (double          alpha,
     if (ndynamic == 0)
         return;
     
-    struct darray *dxs = ctx->dxs;
+    struct darray *dxs = &ctx->dxs;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         int64_t i, n = darray_size(dxs);
@@ -431,7 +430,7 @@ iproc_design_ctx_dmuls (double          alpha,
     
     int64_t ix_begin = design->idynamic;
     int64_t ix_end = ix_begin + ndynamic;
-    struct darray *dxs = ctx->dxs;
+    struct darray *dxs = &ctx->dxs;
 
     if (trans == IPROC_TRANS_NOTRANS) {
         int64_t i, n = darray_size(dxs);

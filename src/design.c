@@ -24,11 +24,11 @@ iproc_design_clear_svectors (struct darray *svectors)
 
 
 static void
-iproc_design_free_svectors (struct darray *svectors)
+iproc_design_svectors_deinit (struct darray *svectors)
 {
     if (svectors) {
         iproc_design_clear_svectors(svectors);
-        darray_free(svectors);
+        darray_deinit(svectors);
     }
 }
 
@@ -36,14 +36,14 @@ static void
 iproc_design_ctx_free_dealloc (iproc_design_ctx *ctx)
 {
     if (ctx) {
-        assert(darray_size(ctx->dxs) == 0);
-        darray_free(ctx->dxs);
+        assert(darray_size(&ctx->dxs) == 0);
+        darray_deinit(&ctx->dxs);
         iproc_free(ctx);
     }
 }
 
 static void
-iproc_design_free_ctxs (struct darray *ctxs)
+iproc_design_ctxs_deinit (struct darray *ctxs)
 {
     if (ctxs) {
         int64_t i, n = darray_size(ctxs);
@@ -53,12 +53,12 @@ iproc_design_free_ctxs (struct darray *ctxs)
                                                  i);
             iproc_design_ctx_free_dealloc(ctx);
         }
-        darray_free(ctxs);
+        darray_deinit(ctxs);
     }
 }
 
 static void
-iproc_design_free_vars (struct darray *vars)
+iproc_design_vars_deinit (struct darray *vars)
 {
     if (vars) {
         int64_t i, n = darray_size(vars);
@@ -69,7 +69,7 @@ iproc_design_free_vars (struct darray *vars)
             if (var->free)
                 var->free(var);
         }
-        darray_free(vars);
+        darray_deinit(vars);
     }
 }
 
@@ -78,9 +78,9 @@ iproc_design_free (iproc_design *design)
 {
 
     if (design) {
-        iproc_design_free_svectors(design->svectors);        
-        iproc_design_free_ctxs(design->ctxs);
-        iproc_design_free_vars(design->vars);
+        iproc_design_svectors_deinit(&design->svectors);        
+        iproc_design_ctxs_deinit(&design->ctxs);
+        iproc_design_vars_deinit(&design->vars);
         iproc_actors_unref(design->receivers);
         iproc_actors_unref(design->senders);
         iproc_free(design);
@@ -112,7 +112,7 @@ iproc_design_new (iproc_actors *senders,
     assert(senders);
     assert(receivers);
 
-    iproc_design *design = iproc_malloc(sizeof(*design));
+    iproc_design *design = iproc_calloc(1, sizeof(*design));
     
     if (!design)
         return NULL;
@@ -124,7 +124,6 @@ iproc_design_new (iproc_actors *senders,
     design->senders = iproc_actors_ref(senders);
     design->receivers = iproc_actors_ref(receivers);
     design->has_reffects = has_reffects;
-    design->vars = darray_new(iproc_design_var *);
     design->ireffects = 0;
     design->nreffects = has_reffects ? nreceivers : 0;
     design->istatic = design->ireffects + design->nreffects;
@@ -132,11 +131,11 @@ iproc_design_new (iproc_actors *senders,
     design->idynamic = design->istatic + design->nstatic;
     design->ndynamic = 0;
     design->dim = design->idynamic + design->ndynamic;
-    design->ctxs = darray_new(iproc_design_ctx *);
-    design->svectors = darray_new(iproc_svector *);
     iproc_refcount_init(&design->refcount);
 
-    if (!(design->vars && design->ctxs && design->svectors)) {
+    if (!(darray_init(&design->vars, iproc_design_var *)
+          && darray_init(&design->ctxs, iproc_design_ctx *)
+          && darray_init(&design->svectors, iproc_svector *))) {
         iproc_design_free(design);
         design = NULL;
     }
@@ -186,8 +185,8 @@ iproc_design_append (iproc_design     *design,
     assert(var->get_dxs);
 
     // the old svectors are invalid since the dimension has changed
-    iproc_design_clear_svectors(design->svectors);
-    darray_push_back(design->vars, &var);
+    iproc_design_clear_svectors(&design->svectors);
+    darray_push_back(&design->vars, &var);
     design->ndynamic += var->dim;
     design->dim += var->dim;
 }

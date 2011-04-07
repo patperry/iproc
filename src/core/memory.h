@@ -5,6 +5,7 @@
 #include <string.h>
 
 #define iproc_malloc  malloc
+#define iproc_calloc  calloc
 #define iproc_realloc realloc
 #define iproc_free    free
 

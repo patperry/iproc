@@ -32,8 +32,8 @@ struct _iproc_history_trace {
 
 struct _iproc_history {
     double         tcur;
-    struct darray  *send;
-    struct darray  *recv;
+    struct darray  send;
+    struct darray  recv;
     iproc_refcount refcount;
 };
 

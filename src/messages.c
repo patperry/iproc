@@ -9,8 +9,8 @@ static void
 iproc_messages_free (iproc_messages *msgs)
 {
     if (msgs) {
-        darray_free(msgs->array);
-        darray_free(msgs->recipients);
+        darray_deinit(&msgs->array);
+        darray_deinit(&msgs->recipients);
         iproc_free(msgs);
     }
 }
@@ -18,19 +18,18 @@ iproc_messages_free (iproc_messages *msgs)
 iproc_messages *
 iproc_messages_new ()
 {
-    iproc_messages *msgs = iproc_malloc(sizeof(*msgs));
+    iproc_messages *msgs = iproc_calloc(1, sizeof(*msgs));
     if (!msgs)
         return NULL;
 
     msgs->tcur = -INFINITY;
-    msgs->array = darray_new(iproc_message);
-    msgs->recipients = darray_new(int64_t);
     msgs->max_to = -1;
     msgs->max_from = -1;
     msgs->max_nto = 0;
     iproc_refcount_init(&msgs->refcount);
 
-    if (!(msgs->array && msgs->recipients)) {
+    if (!(darray_init(&msgs->array, iproc_message)
+          && darray_init(&msgs->recipients, int64_t))) {
         iproc_messages_free(msgs);
         msgs = NULL;
     }
@@ -66,7 +65,7 @@ int64_t
 iproc_messages_size (iproc_messages *msgs)
 {
     assert(msgs);
-    return darray_size(msgs->array);
+    return darray_size(&msgs->array);
 }
 
 void
@@ -101,8 +100,8 @@ iproc_messages_insertm (iproc_messages *msgs,
     assert(to || nto == 0);
 
     double time = msgs->tcur;
-    struct darray *array = msgs->array;
-    struct darray *recipients = msgs->recipients;
+    struct darray *array = &msgs->array;
+    struct darray *recipients = &msgs->recipients;
 
     int64_t ito = darray_size(recipients);
     iproc_message m = { time, from, ito, nto };

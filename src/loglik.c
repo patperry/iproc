@@ -10,7 +10,7 @@ static void
 iproc_loglik_free (iproc_loglik *loglik)
 {
     if (loglik) {
-        struct darray *array = loglik->sloglik_array;
+        struct darray *array = &loglik->sloglik_array;
         int64_t i, n = darray_size(array);
         
         for (i = 0; i < n; i++) {
@@ -18,7 +18,7 @@ iproc_loglik_free (iproc_loglik *loglik)
             iproc_sloglik_unref(sll);
         }
 
-        darray_free(array);
+        darray_deinit(array);
         iproc_model_unref(loglik->model);
         iproc_vector_unref(loglik->grad);
         iproc_free(loglik);
@@ -28,14 +28,13 @@ iproc_loglik_free (iproc_loglik *loglik)
 static iproc_loglik *
 iproc_loglik_new_empty (iproc_model *model)
 {
-    iproc_loglik *loglik = iproc_malloc(sizeof(*loglik));
+    iproc_loglik *loglik = iproc_calloc(1, sizeof(*loglik));
     iproc_design *design = iproc_model_design(model);
     int64_t nsender = iproc_design_nsender(design);
     
     if (!loglik)
         return NULL;
     
-    loglik->sloglik_array = darray_new(iproc_sloglik *);
     loglik->model = iproc_model_ref(model);
     loglik->grad = iproc_vector_new(iproc_design_dim(design));
     loglik->grad_cached = false;
@@ -43,12 +42,13 @@ iproc_loglik_new_empty (iproc_model *model)
     loglik->nrecv = 0;
     iproc_refcount_init(&loglik->refcount);
     
-    if (!(loglik->sloglik_array && loglik->grad)) {
+    if (!(darray_init(&loglik->sloglik_array, iproc_sloglik *)
+          && loglik->grad)) {
         iproc_loglik_free(loglik);
         loglik = NULL;
     }
     
-    darray_resize(loglik->sloglik_array, nsender);
+    darray_resize(&loglik->sloglik_array, nsender);
     
     return loglik;
 }
@@ -118,7 +118,7 @@ static iproc_sloglik *
 iproc_loglik_sloglik (iproc_loglik *loglik,
                       int64_t       isend)
 {
-    struct darray *array = loglik->sloglik_array;
+    struct darray *array = &loglik->sloglik_array;
     iproc_sloglik *sll = darray_index(array, iproc_sloglik *, isend);
 
     if (!sll) {
@@ -163,7 +163,7 @@ iproc_loglik_value (iproc_loglik *loglik)
     if (!loglik)
         return 0.0;
 
-    struct darray *array = loglik->sloglik_array;
+    struct darray *array = &loglik->sloglik_array;
     int64_t i, n = darray_size(array);
     iproc_sloglik *sll;
     double value = 0.0;
@@ -182,7 +182,7 @@ iproc_vector_acc_loglik_grad_nocache (iproc_vector *dst_vector,
                                       double        scale,
                                       iproc_loglik *loglik)
 {
-    struct darray *array = loglik->sloglik_array;
+    struct darray *array = &loglik->sloglik_array;
     int64_t nsend = darray_size(array);
     int64_t i;
     iproc_sloglik *sll;

@@ -22,14 +22,14 @@ struct _iproc_group {
 };
 
 struct _iproc_group_bucket {
-    size_t         traits_hash; /* traits_hash must be the first member */
-    struct darray *groups;
+    size_t        traits_hash; /* traits_hash must be the first member */
+    struct darray groups;
 };
 
 struct _iproc_actors {
-    struct darray *group_ids;
-    struct darray *group_traits;
-    struct darray *group_buckets;
+    struct darray group_ids;
+    struct darray group_traits;
+    struct darray group_buckets;
     iproc_refcount refcount;
 };
 

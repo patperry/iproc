@@ -10,7 +10,7 @@ static void
 iproc_pqueue_free (iproc_pqueue *pqueue)
 {
     if (pqueue) {
-        darray_free(pqueue->array);
+        darray_deinit(&pqueue->array);
         iproc_free(pqueue);
     }
 }
@@ -26,7 +26,7 @@ iproc_pqueue_new (size_t     eltsize,
     if (!pqueue)
         return NULL;
     
-    pqueue->array = _darray_new(eltsize);
+    _darray_init(&pqueue->array, eltsize);
     pqueue->compare = compare;
     iproc_refcount_init(&pqueue->refcount);
     
@@ -42,7 +42,7 @@ iproc_pqueue_new_copy (iproc_pqueue *pqueue)
     if (!result)
         return NULL;
     
-    result->array = darray_new_copy(pqueue->array);
+    darray_init_copy(&result->array, &pqueue->array);
     result->compare = pqueue->compare;
     iproc_refcount_init(&result->refcount);
 
@@ -78,35 +78,44 @@ bool
 iproc_pqueue_empty (iproc_pqueue *pqueue)
 {
     assert(pqueue);
-    return darray_empty(pqueue->array);
+    return darray_empty(&pqueue->array);
 }
 
 ssize_t
 iproc_pqueue_size (iproc_pqueue *pqueue)
 {
     assert(pqueue);
-    return darray_size(pqueue->array);
+    return darray_size(&pqueue->array);
 }
 
 
-void *
+const void *
 iproc_pqueue_top (iproc_pqueue *pqueue)
 {
     assert(pqueue);
     assert(!iproc_pqueue_empty(pqueue));
     
-    return darray_begin(pqueue->array);
+    return darray_begin(&pqueue->array);
 }
 
-void
+void *
+iproc_pqueue_get_top (iproc_pqueue *pqueue, void *dst)
+{
+    assert(pqueue);
+    assert(!iproc_pqueue_empty(pqueue));
+    assert(dst);
+    
+    return darray_get(&pqueue->array, 0, dst);
+}
+
+void *
 iproc_pqueue_push (iproc_pqueue *pqueue,
-                   void         *eltp)
+                   const void   *eltp)
 {
     assert(pqueue);
     assert(eltp);
     
-    struct darray *array = pqueue->array;
-    size_t elt_size = darray_elt_size(array);
+    struct darray *array = &pqueue->array;
     compare_fn compare = pqueue->compare;
     ssize_t icur = darray_size(array);
 
@@ -116,7 +125,7 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
     // while current element has a parent:
     while (icur > 0) {
         ssize_t iparent = (icur - 1) >> 1;
-        void *parent = &darray_index(array, char, iparent * elt_size);
+        void *parent = darray_ptr(array, iparent);
         
         // if cur <= parent, heap condition is satisfied
         if (compare(eltp, parent) <= 0)
@@ -128,48 +137,43 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
     }
     
     // actually copy new element
-    darray_set(array, icur, eltp);
+    return darray_set(array, icur, eltp);
 }
 
-void
+void *
 iproc_pqueue_push_array (iproc_pqueue *pqueue,
-                         void         *elts,
+                         const void   *elts,
                          ssize_t       n)
 {
     assert(pqueue);
     assert(elts || n == 0);
     assert(n >= 0);
     
-    size_t elem_size = darray_elt_size(pqueue->array);
-    void *end = elts + n * elem_size;
+    ssize_t i;
     
-    for (; elts < end; elts += elem_size) {
-        iproc_pqueue_push(pqueue, elts);
+    for (i = 0; i < n; i++) {
+        elts = iproc_pqueue_push(pqueue, elts);
     }
+
+    return (void *)elts;
 }
 
 
 void
-iproc_pqueue_pop (iproc_pqueue *pqueue,
-                  void         *eltp)
+iproc_pqueue_pop (iproc_pqueue *pqueue)
 {
     assert(pqueue);
     assert(!iproc_pqueue_empty(pqueue));
-    assert(eltp);
     
-    struct darray *array = pqueue->array;
+    struct darray *array = &pqueue->array;
     ssize_t n = darray_size(array) - 1;
-    size_t elt_size = darray_elt_size(pqueue->array);
-    
-    // copy the top element
-    memcpy(eltp, iproc_pqueue_top(pqueue), elt_size);
     
     if (n == 0)
-        goto resize;
+        goto out;
     
     // swap the last element in the tree with the root, then heapify
     compare_fn compare = pqueue->compare;
-    void *cur = &darray_index(array, char, n * elt_size);
+    void *cur = darray_ptr(array, n);
     ssize_t icur = 0;
     
     // while current element has at least one child
@@ -177,8 +181,8 @@ iproc_pqueue_pop (iproc_pqueue *pqueue,
         ssize_t ileft = (icur << 1) + 1;
         ssize_t iright = (icur << 1) + 2;
         ssize_t imax;
-        void *left = &darray_index(array, char, ileft * elt_size);
-        void *right = &darray_index(array, char, iright * elt_size);
+        void *left = darray_ptr(array, ileft);
+        void *right = darray_ptr(array, iright);
         void *max;
 
         // find the child with highest priority
@@ -202,11 +206,11 @@ iproc_pqueue_pop (iproc_pqueue *pqueue,
     // actually do the copy
     darray_set(array, icur, cur);
     
-resize:
+out:
     darray_resize(array, n);
 }
 
-void
+void *
 iproc_pqueue_pop_array (iproc_pqueue *pqueue,
                         void         *elts,
                         ssize_t       n)
@@ -216,10 +220,12 @@ iproc_pqueue_pop_array (iproc_pqueue *pqueue,
     assert(n >= 0);
     assert(n <= iproc_pqueue_size(pqueue));
     
-    size_t elt_size = darray_elt_size(pqueue->array);
-    void *end = elts + n * elt_size;
+    size_t i;
     
-    for (; elts < end; elts += elt_size) {
-        iproc_pqueue_pop(pqueue, elts);
+    for (i = 0; i < n; i++) {
+        elts = iproc_pqueue_get_top(pqueue, elts);
+        iproc_pqueue_pop(pqueue);
     }
+
+    return elts;
 }

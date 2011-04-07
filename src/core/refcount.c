@@ -5,11 +5,12 @@
 #include <assert.h>
 #include "refcount.h"
 
-void
+iproc_refcount *
 iproc_refcount_init (iproc_refcount *refcount)
 {
     assert(refcount);
     iproc_refcount_set(refcount, 1);
+    return refcount;
 }
 
 void

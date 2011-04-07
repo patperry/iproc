@@ -4,7 +4,7 @@
 #include <math.h>
 #include "memory.h"
 #include "model.h"
-#include "utils.h"
+#include "util.h"
 
 static void
 compute_logprobs0 (iproc_design *design,
@@ -98,6 +98,8 @@ iproc_group_models_deinit (struct darray *group_models)
         iproc_vector_unref(group->log_p0);
         iproc_vector_unref(group->p0);
     }
+    
+    darray_deinit(group_models);
 }
 
 iproc_group_model *
@@ -108,7 +110,7 @@ iproc_model_send_group (iproc_model *model,
     assert(isend >= 0);
     assert(isend < iproc_model_nsender(model));
 
-    struct darray *group_models = model->group_models;
+    struct darray *group_models = &model->group_models;
     iproc_design *design = iproc_model_design(model);
     iproc_actors *senders = iproc_design_senders(design);
     int64_t g = iproc_actors_group(senders, isend);
@@ -130,23 +132,20 @@ static void
 iproc_model_free (iproc_model *model)
 {
     if (model) {
-        if (model->ctxs) {
-            int64_t i, n = darray_size(model->ctxs);
+        int64_t i, n = darray_size(&model->ctxs);
 
-            for (i = 0; i < n; i++) {
-                iproc_model_ctx *ctx = darray_index(model->ctxs,
-                                                         iproc_model_ctx *,
-                                                         i);
-                iproc_model_ctx_free_dealloc(ctx);
-            }
-
-            darray_free(model->ctxs);
+        for (i = 0; i < n; i++) {
+            iproc_model_ctx *ctx = darray_index(&model->ctxs,
+                                                iproc_model_ctx *,
+                                                i);
+            iproc_model_ctx_free_dealloc(ctx);
         }
+        darray_deinit(&model->ctxs);
 
         iproc_vector_unref(model->coefs);
         iproc_design_unref(model->design);
-        iproc_group_models_deinit(model->group_models);
-        darray_free(model->group_models);
+        iproc_group_models_deinit(&model->group_models);
+
         iproc_free(model);
     }
 }
@@ -166,9 +165,9 @@ iproc_model_new (iproc_design *design,
     model->design = iproc_design_ref(design);
     model->coefs = iproc_vector_new_copy(coefs);
     model->has_loops = has_loops;
-    model->group_models = darray_new(iproc_group_model);
-    iproc_group_models_init(model->group_models, design, coefs);
-    model->ctxs = darray_new(iproc_model_ctx *);
+    darray_init(&model->group_models, iproc_group_model);
+    iproc_group_models_init(&model->group_models, design, coefs);
+    darray_init(&model->ctxs, iproc_model_ctx *);
     iproc_refcount_init(&model->refcount);
 
     return model;

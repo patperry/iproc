@@ -116,7 +116,7 @@ Riproc_messages_new (SEXP Rtime,
     if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rto) == n))
         error("'time', 'from', and 'to' do not have same lengths");
 
-    struct darray *to_buf = darray_new(sizeof(int64_t));
+    struct darray to_buf;
     double tcur = -INFINITY;
     double msg_time;
     int msg_from, msg_nto;
@@ -125,12 +125,14 @@ Riproc_messages_new (SEXP Rtime,
     iproc_messages *msgs = iproc_messages_new();
     SEXP Rmsgs, Rmsg_to;
 
+    darray_init(&to_buf, int64_t);
+    
     for (i = 0; i < n; i++) {
         msg_time = time[i];
         msg_from = from[i] - 1;
         Rmsg_to = VECTOR_ELT(Rto, i);
-        msg_to = copy_sexp_to_int64(to_buf, Rmsg_to);
-        msg_nto = (int)darray_size(to_buf);
+        msg_to = copy_sexp_to_int64(&to_buf, Rmsg_to);
+        msg_nto = (int)darray_size(&to_buf);
 
         if (msg_time < tcur)
             error("'time' values must be sorted in increasing order");
@@ -145,7 +147,7 @@ Riproc_messages_new (SEXP Rtime,
     
     PROTECT(Rmsgs = Riproc_from_messages(msgs));
     iproc_messages_unref(msgs);
-    darray_free(to_buf);
+    darray_deinit(&to_buf);
 
     UNPROTECT(1);
     return Rmsgs;

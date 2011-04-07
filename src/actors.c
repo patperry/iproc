@@ -18,46 +18,47 @@ iproc_actors_insert_group (iproc_actors *actors,
 
     /* first, find the right bucket */
     size_t traits_hash = iproc_vector_hash(traits);
-    ssize_t i = darray_bsearch(actors->group_buckets, &traits_hash,
+    ssize_t i = darray_bsearch(&actors->group_buckets, &traits_hash,
                                group_bucket_compare);
 
     if (i < 0) { /* insert a new bucket if necessary */
         i = ~i;
-        struct darray *new_groups = darray_new(iproc_group);
-        iproc_group_bucket new_bucket = { traits_hash, new_groups };
-        darray_insert(actors->group_buckets, i, &new_bucket);
+        iproc_group_bucket new_bucket;
+        new_bucket.traits_hash = traits_hash;
+        darray_init(&new_bucket.groups, iproc_group);
+        darray_insert(&actors->group_buckets, i, &new_bucket);
     }
     
-    iproc_group_bucket *bucket = &darray_index(actors->group_buckets,
+    iproc_group_bucket *bucket = &darray_index(&actors->group_buckets,
                                                iproc_group_bucket,
                                                i);
 
     /* now, find the right group  */
-    ssize_t j = darray_bsearch(bucket->groups, &traits, group_compare);
+    ssize_t j = darray_bsearch(&bucket->groups, &traits, group_compare);
 
     if (j < 0) { /* insert a new group if necessary */
         j = ~j;
         iproc_vector *new_traits = iproc_vector_new_copy(traits);
-        int64_t new_id = darray_size(actors->group_traits);
-        darray_push_back(actors->group_traits, &new_traits);
+        int64_t new_id = darray_size(&actors->group_traits);
+        darray_push_back(&actors->group_traits, &new_traits);
         iproc_group new_group = { iproc_vector_ref(new_traits), new_id };
 
-        darray_insert(bucket->groups, j, &new_group);
+        darray_insert(&bucket->groups, j, &new_group);
     }
     
     /* lastly return the id */
-    iproc_group *group = &darray_index(bucket->groups, iproc_group, j);
+    iproc_group *group = &darray_index(&bucket->groups, iproc_group, j);
     return group->id;
 }
 
 static void
-iproc_actors_group_ids_free (struct darray *group_ids)
+iproc_actors_group_ids_deinit (struct darray *group_ids)
 {
-    darray_free(group_ids);
+    darray_deinit(group_ids);
 }
 
 static void
-iproc_actors_group_traits_free (struct darray *group_traits)
+iproc_actors_group_traits_deinit (struct darray *group_traits)
 {
     int64_t i, n;
     iproc_vector *x;
@@ -68,7 +69,7 @@ iproc_actors_group_traits_free (struct darray *group_traits)
             x = darray_index(group_traits, iproc_vector *, i);
             iproc_vector_unref(x);
         }
-        darray_free(group_traits);
+        darray_deinit(group_traits);
     }
 }
 
@@ -77,12 +78,12 @@ iproc_actors_group_bucket_deinit (iproc_group_bucket *bucket)
 {
     if (!bucket)
         return;
-    struct darray *groups = bucket->groups;
-    iproc_actors_group_traits_free(groups);
+    struct darray *groups = &bucket->groups;
+    iproc_actors_group_traits_deinit(groups);
 }
 
 static void
-iproc_actors_group_buckets_free (struct darray *group_buckets)
+iproc_actors_group_buckets_deinit (struct darray *group_buckets)
 {
     int64_t i, n;
     iproc_group_bucket *bucket;
@@ -93,7 +94,7 @@ iproc_actors_group_buckets_free (struct darray *group_buckets)
             bucket = &darray_index(group_buckets, iproc_group_bucket, i);
             iproc_actors_group_bucket_deinit(bucket);
         }
-        darray_free(group_buckets);
+        darray_deinit(group_buckets);
     }
 }
 
@@ -102,9 +103,9 @@ static void
 iproc_actors_free (iproc_actors *actors)
 {
     if (actors) {
-        iproc_actors_group_buckets_free(actors->group_buckets);
-        iproc_actors_group_traits_free(actors->group_traits);
-        iproc_actors_group_ids_free(actors->group_ids);
+        iproc_actors_group_buckets_deinit(&actors->group_buckets);
+        iproc_actors_group_traits_deinit(&actors->group_traits);
+        iproc_actors_group_ids_deinit(&actors->group_ids);
         iproc_free(actors);
     }
 }
@@ -117,25 +118,23 @@ iproc_actors_new (int64_t      size,
 {
     assert(0 <= size);
     assert(traits0);
-    iproc_actors *actors = iproc_malloc(sizeof(*actors));
-    if (!actors) return NULL;
+    iproc_actors *actors = iproc_calloc(1, sizeof(*actors));
 
-    actors->group_ids = darray_new(int64_t);
-    actors->group_traits = darray_new(iproc_vector *);
-    actors->group_buckets = darray_new(iproc_group_bucket);
-    iproc_refcount_init(&actors->refcount);
-
-    if (!(actors->group_ids && actors->group_traits && actors->group_buckets)) {
-        iproc_actors_free(actors);
-        actors = NULL;
+    if (actors
+        && darray_init(&actors->group_ids, int64_t)
+        && darray_init(&actors->group_traits, iproc_vector *)
+        && darray_init(&actors->group_buckets, iproc_group_bucket)) {
+        iproc_refcount_init(&actors->refcount);
+        
+        /* We rely on array_set_size clearing the tail to zeros. */
+        darray_resize(&actors->group_ids, size);
+        iproc_actors_insert_group(actors, traits0);
+        
+        return actors;
     }
 
-    /* We rely on array_set_size clearing the tail to zeros. */
-    darray_resize(actors->group_ids, size);
-
-    iproc_actors_insert_group(actors, traits0);
-
-    return actors;
+    iproc_actors_free(actors);
+    return NULL;
 }
 
 
@@ -170,7 +169,7 @@ int64_t
 iproc_actors_size (iproc_actors *actors)
 {
     assert(actors);
-    return darray_size(actors->group_ids);
+    return darray_size(&actors->group_ids);
 }
 
 int64_t
@@ -194,7 +193,7 @@ iproc_actors_set (iproc_actors *actors,
     assert(iproc_vector_dim(traits) == iproc_actors_dim(actors));
 
     int64_t group_id = iproc_actors_insert_group(actors, traits);
-    darray_index(actors->group_ids, int64_t, actor_id) = group_id;
+    darray_index(&actors->group_ids, int64_t, actor_id) = group_id;
 }
 
 
@@ -215,7 +214,7 @@ int64_t
 iproc_actors_ngroup (iproc_actors *actors)
 {
     assert(actors);
-    return darray_size(actors->group_traits);
+    return darray_size(&actors->group_traits);
 }
 
 int64_t
@@ -226,7 +225,7 @@ iproc_actors_group (iproc_actors *actors,
     assert(0 <= actor_id);
     assert(actor_id < iproc_actors_size(actors));
 
-    struct darray *group_ids = actors->group_ids;
+    struct darray *group_ids = &actors->group_ids;
     int64_t g = darray_index(group_ids, int64_t, actor_id);
     return g;
 }
@@ -240,7 +239,7 @@ iproc_actors_group_traits (iproc_actors *actors,
     assert(0 <= group_id);
     assert(group_id < iproc_actors_ngroup(actors));
 
-    iproc_vector *x = darray_index(actors->group_traits,
+    iproc_vector *x = darray_index(&actors->group_traits,
                                    iproc_vector *,
                                    group_id);
     return x;

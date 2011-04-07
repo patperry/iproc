@@ -20,8 +20,8 @@ struct _iproc_message {
 
 struct _iproc_messages {
     double tcur;
-    struct darray *array;
-    struct darray *recipients;
+    struct darray  array;
+    struct darray  recipients;
     iproc_refcount refcount;
     int64_t max_from;
     int64_t max_to;

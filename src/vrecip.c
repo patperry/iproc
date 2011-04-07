@@ -5,7 +5,7 @@
 #include "compare.h"
 #include "memory.h"
 #include "design.h"
-#include "utils.h"
+#include "util.h"
 #include "vrecip.h"
 
 
@@ -14,7 +14,7 @@ static void
 iproc_vrecip_free (iproc_vrecip *v)
 {
     if (v) {
-        darray_free(v->intvls);
+        darray_deinit(&v->intvls);
         iproc_free(v);
     }
 }
@@ -32,7 +32,7 @@ design_var_get_dxs (iproc_design_var *var,
                     int64_t           offset)
 {
     iproc_vrecip *v = container_of(var, iproc_vrecip, var);
-    struct darray *intvls = v->intvls;
+    struct darray *intvls = &v->intvls;
     int64_t nintvl = darray_size(intvls);
     iproc_history *history = ctx->history;
     int64_t isend = ctx->isend;
@@ -74,16 +74,15 @@ iproc_vrecip_new (double       *intvls,
     assert(n >= 0);
     assert(n == 0 || intvls);
 
-    iproc_vrecip *v = iproc_malloc(sizeof(*v));
+    iproc_vrecip *v = iproc_calloc(1, sizeof(*v));
 
     if (!v)
         return NULL;
     
     iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
-    v->intvls = darray_new(double);
     iproc_refcount_init(&v->refcount);
 
-    if (!v->intvls) {
+    if (!darray_init(&v->intvls, double)) {
         iproc_vrecip_free(v);
         v = NULL;
     } else {
@@ -92,7 +91,7 @@ iproc_vrecip_new (double       *intvls,
             assert(intvls[i] > 0.0);
             assert(i == 0 || intvls[i] > intvls[i-1]);
 
-            darray_push_back(v->intvls, intvls + i);
+            darray_push_back(&v->intvls, intvls + i);
         }
     }
 

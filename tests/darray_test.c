@@ -7,7 +7,7 @@
 #include "darray.h"
 
 
-static struct darray *darray;
+static struct darray darray;
 static ssize_t size;
 static ssize_t * elts; // elements sorted in decending order
 
@@ -23,7 +23,7 @@ empty_setup (void **state)
 {
     static ssize_t empty_elts[] = { };
     
-    darray = darray_new(ssize_t);
+    darray_init(&darray, ssize_t);
     size = 0;
     elts = empty_elts;
 }
@@ -40,10 +40,10 @@ singleton_setup (void **state)
 {
     static ssize_t singleton_elts[] = { 1234 };
 
-    darray = darray_new(ssize_t);
+    darray_init(&darray, ssize_t);
     elts = singleton_elts;
     size = 1;
-    darray_assign_array(darray, singleton_elts, size);
+    darray_assign_array(&darray, singleton_elts, size);
 }
 
 /*
@@ -90,7 +90,7 @@ unsorted7_setup (void **state)
 static void
 teardown (void **state)
 {
-    darray_free(darray);
+    darray_deinit(&darray);
 }
 
 static void
@@ -102,7 +102,7 @@ teardown_fixture (void **state)
 static void
 test_size (void **state)
 {
-    assert_int_equal(darray_size(darray), size);
+    assert_int_equal(darray_size(&darray), size);
 }
 
 static void
@@ -112,22 +112,24 @@ test_insert (void **state)
     ssize_t val = 31337;
     
     for (i = 0; i <= size; i++) {
-        struct darray *a = darray_new_copy(darray);
+        struct darray a;
         
-        darray_insert(a, i, &val);
+        darray_init_copy(&a, &darray);
         
-        assert_int_equal(darray_size(a), size + 1);
+        darray_insert(&a, i, &val);
+        
+        assert_int_equal(darray_size(&a), size + 1);
         for (j = 0; j <= size; j++) {
             if (j < i) {
-                assert_int_equal(darray_index(a, ssize_t, j), elts[j]);
+                assert_int_equal(darray_index(&a, ssize_t, j), elts[j]);
             } else if (j == i) {
-                assert_int_equal(darray_index(a, ssize_t, j), val);
+                assert_int_equal(darray_index(&a, ssize_t, j), val);
             } else {
-                assert_int_equal(darray_index(a, ssize_t, j), elts[j-1]);
+                assert_int_equal(darray_index(&a, ssize_t, j), elts[j-1]);
             }
         }
         
-        darray_free(a);
+        darray_deinit(&a);
     }
 }
 

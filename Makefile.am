@@ -42,6 +42,8 @@ libiproc_la_LIBADD = \
 	libminpack.la
 
 libcore_la_SOURCES = \
+	src/core/array.c \
+	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
 	src/core/darray.c \
@@ -62,7 +64,7 @@ libcore_la_SOURCES = \
 	src/core/refcount.h \
 	src/core/svector.c \
 	src/core/svector.h \
-	src/core/utils.h \
+	src/core/util.h \
 	src/core/vector.c \
 	src/core/vector.h
 
