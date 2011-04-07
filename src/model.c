@@ -42,7 +42,7 @@ compute_logprobs0 (iproc_design *design,
 
 
 static void
-iproc_group_models_init (iproc_array  *group_models,
+iproc_group_models_init (struct darray  *group_models,
                          iproc_design *design,
                          iproc_vector *coefs)
 {
@@ -51,7 +51,7 @@ iproc_group_models_init (iproc_array  *group_models,
     int64_t dim = iproc_design_dim(design);
     iproc_actors *senders = iproc_design_senders(design);
 
-    iproc_array_set_size(group_models, iproc_actors_ngroup(senders));
+    darray_resize(group_models, iproc_actors_ngroup(senders));
 
     /* We have to loop over all senders, not over all groups, because we
      * need a representative sender for each group when we call
@@ -60,7 +60,7 @@ iproc_group_models_init (iproc_array  *group_models,
     for (i = 0; i < nsender; i++) {
         /* find the group of the sender */
         int64_t g = iproc_actors_group(senders, i);
-        iproc_group_model *group = &(iproc_array_index(group_models,
+        iproc_group_model *group = &(darray_index(group_models,
                                                        iproc_group_model,
                                                        g));
 
@@ -85,15 +85,15 @@ iproc_group_models_init (iproc_array  *group_models,
 
 
 static void
-iproc_group_models_deinit (iproc_array *group_models)
+iproc_group_models_deinit (struct darray *group_models)
 {
     if (!group_models)
         return;
 
-    int64_t i, n = iproc_array_size(group_models);
+    int64_t i, n = darray_size(group_models);
 
     for (i = 0; i < n; i++) {
-        iproc_group_model *group = &(iproc_array_index(group_models,
+        iproc_group_model *group = &(darray_index(group_models,
                                                        iproc_group_model,
                                                        i));
         iproc_vector_unref(group->xbar0);
@@ -110,11 +110,11 @@ iproc_model_send_group (iproc_model *model,
     assert(isend >= 0);
     assert(isend < iproc_model_nsender(model));
 
-    iproc_array *group_models = model->group_models;
+    struct darray *group_models = model->group_models;
     iproc_design *design = iproc_model_design(model);
     iproc_actors *senders = iproc_design_senders(design);
     int64_t g = iproc_actors_group(senders, isend);
-    return &(iproc_array_index(group_models, iproc_group_model, g));
+    return &(darray_index(group_models, iproc_group_model, g));
 }
 
 static void
@@ -133,22 +133,22 @@ iproc_model_free (iproc_model *model)
 {
     if (model) {
         if (model->ctxs) {
-            int64_t i, n = iproc_array_size(model->ctxs);
+            int64_t i, n = darray_size(model->ctxs);
 
             for (i = 0; i < n; i++) {
-                iproc_model_ctx *ctx = iproc_array_index(model->ctxs,
+                iproc_model_ctx *ctx = darray_index(model->ctxs,
                                                          iproc_model_ctx *,
                                                          i);
                 iproc_model_ctx_free_dealloc(ctx);
             }
 
-            iproc_array_unref(model->ctxs);
+            darray_free(model->ctxs);
         }
 
         iproc_vector_unref(model->coefs);
         iproc_design_unref(model->design);
         iproc_group_models_deinit(model->group_models);
-        iproc_array_unref(model->group_models);
+        darray_free(model->group_models);
         iproc_free(model);
     }
 }
@@ -168,9 +168,9 @@ iproc_model_new (iproc_design *design,
     model->design = iproc_design_ref(design);
     model->coefs = iproc_vector_new_copy(coefs);
     model->has_loops = has_loops;
-    model->group_models = iproc_array_new(sizeof(iproc_group_model));
+    model->group_models = darray_new(iproc_group_model);
     iproc_group_models_init(model->group_models, design, coefs);
-    model->ctxs = iproc_array_new(sizeof(iproc_model_ctx *));
+    model->ctxs = darray_new(iproc_model_ctx *);
     iproc_refcount_init(&model->refcount);
 
     return model;

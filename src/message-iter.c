@@ -84,7 +84,7 @@ iproc_message_iter_select (iproc_message_iter *it,
     assert(tie < iproc_message_iter_ntie(it));
 
     int64_t i = it->offset + tie;
-    it->message = &(iproc_array_index(it->messages->array, iproc_message, i));
+    it->message = &(darray_index(it->messages->array, iproc_message, i));
 }
 
 int64_t
@@ -112,7 +112,7 @@ iproc_message_iter_to (iproc_message_iter *it)
     assert(!iproc_message_iter_finished(it));
 
     int64_t ito = it->message->ito;
-    int64_t *to = &(iproc_array_index(it->messages->recipients, int64_t, ito));
+    int64_t *to = &(darray_index(it->messages->recipients, int64_t, ito));
     return to;
 }
 
@@ -137,14 +137,14 @@ iproc_message_iter_next (iproc_message_iter *it)
 
     int64_t offset = it->offset + it->ntie;
 
-    iproc_array *messages = it->messages->array;
-    iproc_array *recipients = it->messages->recipients;
+    struct darray *messages = it->messages->array;
+    struct darray *recipients = it->messages->recipients;
     iproc_history *history = it->history;
-    int64_t n = iproc_array_size(messages);
+    int64_t n = darray_size(messages);
     bool has_next = offset < n;
 
     if (has_next) {
-        iproc_message *message = &(iproc_array_index(messages, iproc_message, offset));
+        iproc_message *message = &(darray_index(messages, iproc_message, offset));
         double time = message[0].time;
         int64_t ntie_max = n - offset;
         int64_t ntie = 0;
@@ -154,7 +154,7 @@ iproc_message_iter_next (iproc_message_iter *it)
         while (ntie < ntie_max && message[ntie].time == time) {
             int64_t  msg_from = message[ntie].from;
             int64_t  msg_ito = message[ntie].ito;
-            int64_t *msg_to = &(iproc_array_index(recipients, int64_t, msg_ito));
+            int64_t *msg_to = &(darray_index(recipients, int64_t, msg_ito));
             int64_t  msg_nto = message[ntie].nto;
 
             iproc_history_insertm(history, msg_from, msg_to, msg_nto);

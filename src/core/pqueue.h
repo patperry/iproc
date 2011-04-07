@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "array.h"
+#include "darray.h"
 #include "compare.h"
 #include "refcount.h"
 
 typedef struct _iproc_pqueue iproc_pqueue;
 
 struct _iproc_pqueue {
-    iproc_array     *array;
+    struct darray   *array;
     iproc_compare_fn compare;
     iproc_refcount   refcount;
 };

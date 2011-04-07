@@ -42,10 +42,10 @@ libiproc_la_LIBADD = \
 	libminpack.la
 
 libcore_la_SOURCES = \
-	src/core/array.c \
-	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
+	src/core/darray.c \
+	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
 	src/core/ieee754.c \
@@ -186,6 +186,10 @@ cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
 cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
+
+check_PROGRAMS += tests/darray_test
+tests_darray_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_darray_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/pqueue_test
 tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)

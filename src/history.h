@@ -1,7 +1,7 @@
 #ifndef _IPROC_HISTORY_H
 #define _IPROC_HISTORY_H
 
-#include "array.h"
+#include "darray.h"
 #include "trace.h"
 #include "refcount.h"
 
@@ -32,8 +32,8 @@ struct _iproc_history_trace {
 
 struct _iproc_history {
     double         tcur;
-    iproc_array   *send;
-    iproc_array   *recv;
+    struct darray  *send;
+    struct darray  *recv;
     iproc_refcount refcount;
 };
 

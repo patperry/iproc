@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "array.h"
+#include "darray.h"
 #include "history.h"
 #include "refcount.h"
 
@@ -20,8 +20,8 @@ struct _iproc_message {
 
 struct _iproc_messages {
     double tcur;
-    iproc_array *array;
-    iproc_array *recipients;
+    struct darray *array;
+    struct darray *recipients;
     iproc_refcount refcount;
     int64_t max_from;
     int64_t max_to;

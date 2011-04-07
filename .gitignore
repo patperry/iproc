@@ -25,4 +25,5 @@
 /src/stamp-h1
 /src/config.h
 /src/config.h.in
+/tests/darray_test
 /tests/pqueue_test

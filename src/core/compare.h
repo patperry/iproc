@@ -5,14 +5,14 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-typedef int (*iproc_compare_fn) (void *px, void *py);
+typedef int (*iproc_compare_fn) (const void *px, const void *py);
 
 
 static inline int
-iproc_int64_compare (void *px, void *py)
+iproc_int64_compare (const void *px, const void *py)
 {
-    int64_t x = *(int64_t *)px;
-    int64_t y = *(int64_t *)py;
+    int64_t x = *(const int64_t *)px;
+    int64_t y = *(const int64_t *)py;
     
     if (x < y) {
         return -1;
@@ -24,10 +24,10 @@ iproc_int64_compare (void *px, void *py)
 }
 
 static inline int
-iproc_uint64_compare (void *px, void *py)
+iproc_uint64_compare (const void *px, const void *py)
 {
-    uint64_t x = *(int64_t *)px;
-    uint64_t y = *(int64_t *)py;
+    uint64_t x = *(const int64_t *)px;
+    uint64_t y = *(const int64_t *)py;
     
     if (x < y) {
         return -1;
@@ -39,10 +39,10 @@ iproc_uint64_compare (void *px, void *py)
 }
 
 static inline int
-iproc_size_compare (void *px, void *py)
+iproc_size_compare (const void *px, const void *py)
 {
-    size_t x = *(size_t *)px;
-    size_t y = *(size_t *)py;
+    size_t x = *(const size_t *)px;
+    size_t y = *(const size_t *)py;
     
     if (x < y) {
         return -1;
@@ -54,10 +54,10 @@ iproc_size_compare (void *px, void *py)
 }
 
 static inline int
-iproc_ssize_compare (void *px, void *py)
+iproc_ssize_compare (const void *px, const void *py)
 {
-    ssize_t x = *(ssize_t *)px;
-    ssize_t y = *(ssize_t *)py;
+    ssize_t x = *(const ssize_t *)px;
+    ssize_t y = *(const ssize_t *)py;
     
     if (x < y) {
         return -1;

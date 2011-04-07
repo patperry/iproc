@@ -5,7 +5,7 @@
 
 #include <assert.h>
 #include <stdint.h>
-#include "array.h"
+#include "darray.h"
 #include "r-utils.h"
 #include "r-messages.h"
 
@@ -71,23 +71,23 @@ Riproc_from_messages (iproc_messages *msgs)
 
 
 static int64_t *
-copy_sexp_to_int64 (iproc_array *dst, SEXP Rsrc)
+copy_sexp_to_int64 (struct darray *dst, SEXP Rsrc)
 {
     int i, n = GET_LENGTH(Rsrc);
     int *src = INTEGER_POINTER(Rsrc);
     int s;
 
-    iproc_array_set_size(dst, n);
+    darray_resize(dst, n);
 
     for (i = 0; i < n; i++) {
         s = src[i];
         if (s <= 0)
             error("'to' values must be positive");
 
-        iproc_array_index(dst, int64_t, i) = s - 1;
+        darray_index(dst, int64_t, i) = s - 1;
     }
 
-    return &(iproc_array_index(dst, int64_t, 0));
+    return &(darray_index(dst, int64_t, 0));
 }
 
 static void
@@ -114,7 +114,7 @@ Riproc_messages_new (SEXP Rtime,
     if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rto) == n))
         error("'time', 'from', and 'to' do not have same lengths");
 
-    iproc_array *to_buf = iproc_array_new(sizeof(int64_t));
+    struct darray *to_buf = darray_new(sizeof(int64_t));
     double tcur = -INFINITY;
     double msg_time;
     int msg_from, msg_nto;
@@ -128,7 +128,7 @@ Riproc_messages_new (SEXP Rtime,
         msg_from = from[i] - 1;
         Rmsg_to = VECTOR_ELT(Rto, i);
         msg_to = copy_sexp_to_int64(to_buf, Rmsg_to);
-        msg_nto = (int)iproc_array_size(to_buf);
+        msg_nto = (int)darray_size(to_buf);
 
         if (msg_time < tcur)
             error("'time' values must be sorted in increasing order");
@@ -143,7 +143,7 @@ Riproc_messages_new (SEXP Rtime,
     
     PROTECT(Rmsgs = Riproc_from_messages(msgs));
     iproc_messages_unref(msgs);
-    iproc_array_unref(to_buf);
+    darray_free(to_buf);
 
     UNPROTECT(1);
     return Rmsgs;

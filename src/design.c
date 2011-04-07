@@ -10,27 +10,27 @@
 
 
 static void
-iproc_design_clear_svectors (iproc_array *svectors)
+iproc_design_clear_svectors (struct darray *svectors)
 {
     if (svectors) {
-        int64_t i, n = iproc_array_size(svectors);
+        int64_t i, n = darray_size(svectors);
         for (i = 0; i < n; i++) {
-            iproc_svector *x = iproc_array_index(svectors,
-                                                 iproc_svector *,
-                                                 i);
+            iproc_svector *x = darray_index(svectors,
+                                            iproc_svector *,
+                                            i);
             iproc_svector_unref(x);
         }
-        iproc_array_set_size(svectors, 0);
+        darray_resize(svectors, 0);
     }
 }
 
 
 static void
-iproc_design_free_svectors (iproc_array *svectors)
+iproc_design_free_svectors (struct darray *svectors)
 {
     if (svectors) {
         iproc_design_clear_svectors(svectors);
-        iproc_array_unref(svectors);
+        darray_free(svectors);
     }
 }
 
@@ -38,40 +38,40 @@ static void
 iproc_design_ctx_free_dealloc (iproc_design_ctx *ctx)
 {
     if (ctx) {
-        assert(iproc_array_size(ctx->dxs) == 0);
-        iproc_array_unref(ctx->dxs);
+        assert(darray_size(ctx->dxs) == 0);
+        darray_free(ctx->dxs);
         iproc_free(ctx);
     }
 }
 
 static void
-iproc_design_free_ctxs (iproc_array *ctxs)
+iproc_design_free_ctxs (struct darray *ctxs)
 {
     if (ctxs) {
-        int64_t i, n = iproc_array_size(ctxs);
+        int64_t i, n = darray_size(ctxs);
         for (i = 0; i < n; i++) {
-            iproc_design_ctx *ctx = iproc_array_index(ctxs,
-                                                      iproc_design_ctx *,
-                                                      i);
+            iproc_design_ctx *ctx = darray_index(ctxs,
+                                                 iproc_design_ctx *,
+                                                 i);
             iproc_design_ctx_free_dealloc(ctx);
         }
-        iproc_array_unref(ctxs);
+        darray_free(ctxs);
     }
 }
 
 static void
-iproc_design_free_vars (iproc_array *vars)
+iproc_design_free_vars (struct darray *vars)
 {
     if (vars) {
-        int64_t i, n = iproc_array_size(vars);
+        int64_t i, n = darray_size(vars);
         for (i = 0; i < n; i++) {
-            iproc_design_var *var = iproc_array_index(vars,
-                                                      iproc_design_var *,
-                                                      i);
+            iproc_design_var *var = darray_index(vars,
+                                                 iproc_design_var *,
+                                                 i);
             if (var->free)
                 var->free(var);
         }
-        iproc_array_unref(vars);
+        darray_free(vars);
     }
 }
 
@@ -126,7 +126,7 @@ iproc_design_new (iproc_actors *senders,
     design->senders = iproc_actors_ref(senders);
     design->receivers = iproc_actors_ref(receivers);
     design->has_reffects = has_reffects;
-    design->vars = iproc_array_new(sizeof(iproc_design_var *));
+    design->vars = darray_new(iproc_design_var *);
     design->ireffects = 0;
     design->nreffects = has_reffects ? nreceivers : 0;
     design->istatic = design->ireffects + design->nreffects;
@@ -134,8 +134,8 @@ iproc_design_new (iproc_actors *senders,
     design->idynamic = design->istatic + design->nstatic;
     design->ndynamic = 0;
     design->dim = design->idynamic + design->ndynamic;
-    design->ctxs = iproc_array_new(sizeof(iproc_design_ctx *));
-    design->svectors = iproc_array_new(sizeof(iproc_svector *));
+    design->ctxs = darray_new(iproc_design_ctx *);
+    design->svectors = darray_new(iproc_svector *);
     iproc_refcount_init(&design->refcount);
 
     if (!(design->vars && design->ctxs && design->svectors)) {
@@ -189,7 +189,7 @@ iproc_design_append (iproc_design     *design,
 
     // the old svectors are invalid since the dimension has changed
     iproc_design_clear_svectors(design->svectors);
-    iproc_array_append(design->vars, &var);
+    darray_push_back(design->vars, &var);
     design->ndynamic += var->dim;
     design->dim += var->dim;
 }

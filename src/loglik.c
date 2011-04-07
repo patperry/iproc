@@ -12,15 +12,15 @@ static void
 iproc_loglik_free (iproc_loglik *loglik)
 {
     if (loglik) {
-        iproc_array *array = loglik->sloglik_array;
-        int64_t i, n = iproc_array_size(array);
+        struct darray *array = loglik->sloglik_array;
+        int64_t i, n = darray_size(array);
         
         for (i = 0; i < n; i++) {
-            iproc_sloglik *sll = iproc_array_index(array, iproc_sloglik *, i);
+            iproc_sloglik *sll = darray_index(array, iproc_sloglik *, i);
             iproc_sloglik_unref(sll);
         }
 
-        iproc_array_unref(array);
+        darray_free(array);
         iproc_model_unref(loglik->model);
         iproc_vector_unref(loglik->grad);
         iproc_free(loglik);
@@ -37,7 +37,7 @@ iproc_loglik_new_empty (iproc_model *model)
     if (!loglik)
         return NULL;
     
-    loglik->sloglik_array = iproc_array_new(sizeof(iproc_sloglik *));
+    loglik->sloglik_array = darray_new(iproc_sloglik *);
     loglik->model = iproc_model_ref(model);
     loglik->grad = iproc_vector_new(iproc_design_dim(design));
     loglik->grad_cached = false;
@@ -50,7 +50,7 @@ iproc_loglik_new_empty (iproc_model *model)
         loglik = NULL;
     }
     
-    iproc_array_set_size(loglik->sloglik_array, nsender);
+    darray_resize(loglik->sloglik_array, nsender);
     
     return loglik;
 }
@@ -120,13 +120,13 @@ static iproc_sloglik *
 iproc_loglik_sloglik (iproc_loglik *loglik,
                       int64_t       isend)
 {
-    iproc_array *array = loglik->sloglik_array;
-    iproc_sloglik *sll = iproc_array_index(array, iproc_sloglik *, isend);
+    struct darray *array = loglik->sloglik_array;
+    iproc_sloglik *sll = darray_index(array, iproc_sloglik *, isend);
 
     if (!sll) {
         iproc_model *model = loglik->model;
         sll = iproc_sloglik_new(model, isend);
-        iproc_array_index(array, iproc_sloglik *, isend) = sll;
+        darray_index(array, iproc_sloglik *, isend) = sll;
     }
 
     return sll;
@@ -165,13 +165,13 @@ iproc_loglik_value (iproc_loglik *loglik)
     if (!loglik)
         return 0.0;
 
-    iproc_array *array = loglik->sloglik_array;
-    int64_t i, n = iproc_array_size(array);
+    struct darray *array = loglik->sloglik_array;
+    int64_t i, n = darray_size(array);
     iproc_sloglik *sll;
     double value = 0.0;
     
     for (i = 0; i < n; i++) {
-        sll = iproc_array_index(array, iproc_sloglik *, i);
+        sll = darray_index(array, iproc_sloglik *, i);
         value += iproc_sloglik_value(sll);
     }
     
@@ -184,13 +184,13 @@ iproc_vector_acc_loglik_grad_nocache (iproc_vector *dst_vector,
                                       double        scale,
                                       iproc_loglik *loglik)
 {
-    iproc_array *array = loglik->sloglik_array;
-    int64_t nsend = iproc_array_size(array);
+    struct darray *array = loglik->sloglik_array;
+    int64_t nsend = darray_size(array);
     int64_t i;
     iproc_sloglik *sll;
     
     for (i = 0; i < nsend; i++) {
-        sll = iproc_array_index(array, iproc_sloglik *, i);
+        sll = darray_index(array, iproc_sloglik *, i);
         if (sll) {
             iproc_vector *g = iproc_sloglik_grad(sll);
             iproc_vector_acc(dst_vector, scale, g);

@@ -2,7 +2,7 @@
 #define _IPROC_VRECIP
 
 #include <stdint.h>
-#include "array.h"
+#include "darray.h"
 #include "design.h"
 #include "refcount.h"
 
@@ -10,7 +10,7 @@ typedef struct _iproc_vrecip iproc_vrecip;
 
 struct _iproc_vrecip {
     iproc_design_var var;
-    iproc_array     *intvls;
+    struct darray   *intvls;
     iproc_refcount   refcount;
 };
 

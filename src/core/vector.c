@@ -80,7 +80,7 @@ iproc_vector_unref (iproc_vector *vector)
 }
 
 int64_t
-iproc_vector_dim (iproc_vector *vector)
+iproc_vector_dim (const iproc_vector *vector)
 {
     if (!vector)
         return 0;
@@ -157,7 +157,7 @@ iproc_vector_inc (iproc_vector *vector,
 }
 
 double *
-iproc_vector_ptr (iproc_vector *vector,
+iproc_vector_ptr (const iproc_vector *vector,
                   int64_t       index)
 {
     assert(vector);
@@ -606,10 +606,10 @@ iproc_vector_identical (iproc_vector *vector1,
 }
 
 int
-iproc_vector_compare (void *x1, void *x2)
+iproc_vector_compare (const void *x1, const void *x2)
 {
-    iproc_vector *vector1 = x1;
-    iproc_vector *vector2 = x2;
+    const iproc_vector *vector1 = x1;
+    const iproc_vector *vector2 = x2;
     int64_t n1 = iproc_vector_dim(vector1);
     int64_t n2 = iproc_vector_dim(vector2);
 
@@ -633,10 +633,10 @@ iproc_vector_compare (void *x1, void *x2)
 }
 
 int
-iproc_vector_ptr_compare (void *px1, void *px2)
+iproc_vector_ptr_compare (const void *px1, const void *px2)
 {
-    iproc_vector **pvector1 = px1;
-    iproc_vector **pvector2 = px2;
+    iproc_vector * const *pvector1 = px1;
+    iproc_vector * const *pvector2 = px2;
     
     if (!pvector1)
         return pvector2 ? 0 : -1;

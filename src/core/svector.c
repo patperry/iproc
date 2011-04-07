@@ -17,7 +17,7 @@ iproc_svector_find_nz (iproc_svector *svector, int64_t i)
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
-    int64_t ix = iproc_array_bsearch(svector->index, &i, iproc_int64_compare);
+    ssize_t ix = darray_bsearch(svector->index, &i, iproc_int64_compare);
     return ix;
 }
 
@@ -25,8 +25,8 @@ static void
 iproc_svector_free (iproc_svector *svector)
 {
     if (svector) {
-        iproc_array_unref(svector->index);
-        iproc_array_unref(svector->value);
+        darray_free(svector->index);
+        darray_free(svector->value);
         iproc_free(svector);
     }
 }
@@ -43,8 +43,8 @@ iproc_svector_new (int64_t dim)
     if (!svector) return NULL;
 
     svector->dim = dim;
-    svector->index = iproc_array_new(sizeof(int64_t));
-    svector->value = iproc_array_new(sizeof(double));
+    svector->index = darray_new(int64_t);
+    svector->value = darray_new(double);
     iproc_refcount_init(&svector->refcount);
 
     if (!(svector->index && svector->value)) {
@@ -87,8 +87,8 @@ iproc_svector_new_copy (iproc_svector *svector)
     int64_t dim = iproc_svector_dim(svector);
     iproc_svector *copy = iproc_malloc(sizeof(*copy));
     copy->dim = dim;
-    copy->index = iproc_array_new_copy(svector->index);
-    copy->value = iproc_array_new_copy(svector->value);
+    copy->index = darray_new_copy(svector->index);
+    copy->value = darray_new_copy(svector->value);
     iproc_refcount_init(&copy->refcount);
     return copy;
 }
@@ -97,8 +97,8 @@ void
 iproc_svector_clear (iproc_svector *svector)
 {
     assert(svector);
-    iproc_array_set_size(svector->index, 0);
-    iproc_array_set_size(svector->value, 0);
+    darray_clear(svector->index);
+    darray_clear(svector->value);
 }
 
 
@@ -140,10 +140,10 @@ iproc_svector_set (iproc_svector *svector,
 
     if (ix < 0) {
         ix = ~ix;
-        iproc_array_insert(svector->index, ix, &i);
-        iproc_array_insert(svector->value, ix, &value);
+        darray_insert(svector->index, ix, &i);
+        darray_insert(svector->value, ix, &value);
     } else {
-        iproc_array_index(svector->value, double, ix) = value;
+        darray_index(svector->value, double, ix) = value;
     }
 }
 
@@ -160,10 +160,10 @@ iproc_svector_inc (iproc_svector *svector,
 
     if (ix < 0) {
         ix = ~ix;
-        iproc_array_insert(svector->index, ix, &i);
-        iproc_array_insert(svector->value, ix, &value);
+        darray_insert(svector->index, ix, &i);
+        darray_insert(svector->value, ix, &value);
     } else {
-        iproc_array_index(svector->value, double, ix) += value;
+        darray_index(svector->value, double, ix) += value;
     }
 }
 
@@ -176,7 +176,7 @@ iproc_svector_scale (iproc_svector *svector,
     f77int   n     = (f77int)iproc_svector_nnz(svector);
     double   alpha = scale;
     f77int   incx  = 1;
-    double  *px    = &(iproc_array_index(svector->value, double, 0));
+    double  *px    = darray_begin(svector->value);
 
     F77_FUNC(dscal)(&n, &alpha, px, &incx);
 }
@@ -185,7 +185,7 @@ int64_t
 iproc_svector_nnz (iproc_svector *svector)
 {
     assert(svector);
-    return iproc_array_size(svector->index);
+    return darray_size(svector->index);
 }
 
 int64_t
@@ -195,7 +195,7 @@ iproc_svector_nz (iproc_svector *svector,
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_nnz(svector));
-    return iproc_array_index(svector->index, int64_t, i);
+    return darray_index(svector->index, int64_t, i);
 }
 
 double
@@ -205,7 +205,7 @@ iproc_svector_nz_get (iproc_svector *svector,
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_nnz(svector));
-    return iproc_array_index(svector->value, double, i);
+    return darray_index(svector->value, double, i);
 }
 
 void
@@ -216,7 +216,7 @@ iproc_svector_nz_set (iproc_svector *svector,
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_nnz(svector));
-    iproc_array_index(svector->value, double, i) = value;
+    darray_index(svector->value, double, i) = value;
 }
 
 void
@@ -227,7 +227,7 @@ iproc_svector_nz_inc (iproc_svector *svector,
     assert(svector);
     assert(0 <= i);
     assert(i < iproc_svector_nnz(svector));
-    iproc_array_index(svector->value, double, i) += inc;
+    darray_index(svector->value, double, i) += inc;
 }
 
 iproc_vector_view
@@ -236,7 +236,7 @@ iproc_svector_view_nz (iproc_svector *svector)
     assert(svector);
 
     int64_t  nnz = iproc_svector_nnz(svector);
-    double  *px  = &(iproc_array_index(svector->value, double, 0));
+    double  *px  = &darray_index(svector->value, double, 0);
     return iproc_vector_view_array(px, nnz);
 }
 
@@ -364,13 +364,13 @@ iproc_svector_copy (iproc_svector *dst_svector,
 
     int64_t nnz = iproc_svector_nnz(src_svector);
 
-    iproc_array_set_size(dst_svector->index, nnz);
-    int64_t *idst = &iproc_array_index(dst_svector->index, int64_t, 0);
-    int64_t *isrc = &iproc_array_index(src_svector->index, int64_t, 0);
+    darray_resize(dst_svector->index, nnz);
+    int64_t *idst = &darray_index(dst_svector->index, int64_t, 0);
+    int64_t *isrc = &darray_index(src_svector->index, int64_t, 0);
     memcpy(idst, isrc, nnz * sizeof(int64_t));
 
-    iproc_array_set_size(dst_svector->value, nnz);
-    double *vdst = &iproc_array_index(dst_svector->value, double, 0);
-    double *vsrc = &iproc_array_index(src_svector->value, double, 0);
+    darray_resize(dst_svector->value, nnz);
+    double *vdst = &darray_index(dst_svector->value, double, 0);
+    double *vsrc = &darray_index(src_svector->value, double, 0);
     memcpy(vdst, vsrc, nnz * sizeof(double));
 }

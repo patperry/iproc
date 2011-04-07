@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "actors.h"
 #include "history.h"
+#include "darray.h"
 #include "matrix.h"
 #include "refcount.h"
 #include "svector.h"
@@ -84,14 +85,14 @@ struct _iproc_design {
     iproc_actors  *senders;
     iproc_actors  *receivers;
     bool           has_reffects;
-    iproc_array   *vars;
+    struct darray   *vars;
     int64_t        ireffects, nreffects;
     int64_t        istatic,   nstatic;
     int64_t        idynamic,  ndynamic;
     int64_t        dim;
     
-    iproc_array   *ctxs;
-    iproc_array   *svectors;
+    struct darray   *ctxs;
+    struct darray   *svectors;
     iproc_refcount refcount;    
 };
 
@@ -100,7 +101,7 @@ struct _iproc_design_ctx {
     iproc_design  *design;
     iproc_history *history;
     int64_t        isend;
-    iproc_array   *dxs;
+    struct darray   *dxs;
     iproc_refcount refcount;
 };
 

@@ -135,7 +135,7 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
         iproc_design_ctx_unref(ctx->design_ctx);
 
         iproc_model *model = ctx->model;
-        iproc_array_append(model->ctxs, &ctx);
+        darray_push_back(model->ctxs, &ctx);
         iproc_model_unref(model);
     }
 }
@@ -186,12 +186,12 @@ iproc_model_ctx_new (iproc_model     *model,
     assert(isend < iproc_model_nsender(model));
 
     iproc_model_ctx *ctx;
-    iproc_array *ctxs = model->ctxs;
-    int64_t n = iproc_array_size(ctxs);
+    struct darray *ctxs = model->ctxs;
+    int64_t n = darray_size(ctxs);
     
     if (n > 0) {
-        ctx = iproc_array_index(ctxs, iproc_model_ctx *, n - 1);
-        iproc_array_set_size(ctxs, n - 1);
+        ctx = darray_index(ctxs, iproc_model_ctx *, n - 1);
+        darray_resize(ctxs, n - 1);
         iproc_model_ref(model);
         iproc_refcount_init(&ctx->refcount);
         iproc_model_ctx_set(ctx, isend, h);

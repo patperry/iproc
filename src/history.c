@@ -8,27 +8,27 @@
 #include "history.h"
 
 static void
-trace_array_grow (iproc_array *array,
+trace_array_grow (struct darray *array,
                   int64_t      n)
 {
     assert(array);
-    int64_t nold = iproc_array_size(array);
+    int64_t nold = darray_size(array);
 
     if (n > nold) {
-        iproc_array_set_size(array, n);
+        darray_resize(array, n);
     }
 }
 
 static void
-trace_array_clear (iproc_array *array)
+trace_array_clear (struct darray *array)
 {
     assert(array);
-    int64_t n = iproc_array_size(array);
+    int64_t n = darray_size(array);
     int64_t i;
     iproc_history_trace *ht;
 
     for (i = 0; i < n; i++) {
-        ht = &(iproc_array_index(array, iproc_history_trace, i));
+        ht = &(darray_index(array, iproc_history_trace, i));
         ht->tcur = -INFINITY;
 
         if (ht->trace)
@@ -38,7 +38,7 @@ trace_array_clear (iproc_array *array)
 
 static iproc_trace *
 trace_array_get (double       tcur,
-                 iproc_array *array,
+                 struct darray *array,
                  int64_t      i)
 {
     assert(array);
@@ -46,7 +46,7 @@ trace_array_get (double       tcur,
 
     trace_array_grow(array, i + 1);
 
-    iproc_history_trace *ht = &iproc_array_index(array,
+    iproc_history_trace *ht = &darray_index(array,
                                                  iproc_history_trace,
                                                  i);
     iproc_trace *t;
@@ -69,8 +69,8 @@ static void
 iproc_history_free (iproc_history *history)
 {
     if (history) {
-        iproc_array_unref(history->send);
-        iproc_array_unref(history->recv);
+        darray_free(history->send);
+        darray_free(history->recv);
         iproc_free(history);
     }
 }
@@ -83,8 +83,8 @@ iproc_history_new ()
     if (!history) return NULL;
 
     history->tcur = -INFINITY;
-    history->send = iproc_array_new(sizeof(iproc_history_trace));
-    history->recv = iproc_array_new(sizeof(iproc_history_trace));
+    history->send = darray_new(iproc_history_trace);
+    history->recv = darray_new(iproc_history_trace);
     iproc_refcount_init(&history->refcount);
 
     if (!(history->send && history->recv)) {
@@ -183,14 +183,14 @@ int64_t
 iproc_history_nsend (iproc_history *history)
 {
     assert(history);
-    return iproc_array_size(history->send);
+    return darray_size(history->send);
 }
 
 int64_t
 iproc_history_nrecv (iproc_history *history)
 {
     assert(history);
-    return iproc_array_size(history->recv);
+    return darray_size(history->recv);
 }
 
 iproc_trace *

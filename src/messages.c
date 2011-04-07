@@ -11,8 +11,8 @@ static void
 iproc_messages_free (iproc_messages *msgs)
 {
     if (msgs) {
-        iproc_array_unref(msgs->array);
-        iproc_array_unref(msgs->recipients);
+        darray_free(msgs->array);
+        darray_free(msgs->recipients);
         iproc_free(msgs);
     }
 }
@@ -25,8 +25,8 @@ iproc_messages_new ()
         return NULL;
 
     msgs->tcur = -INFINITY;
-    msgs->array = iproc_array_new(sizeof(iproc_message));
-    msgs->recipients = iproc_array_new(sizeof(int64_t));
+    msgs->array = darray_new(iproc_message);
+    msgs->recipients = darray_new(int64_t);
     msgs->max_to = -1;
     msgs->max_from = -1;
     msgs->max_nto = 0;
@@ -68,7 +68,7 @@ int64_t
 iproc_messages_size (iproc_messages *msgs)
 {
     assert(msgs);
-    return iproc_array_size(msgs->array);
+    return darray_size(msgs->array);
 }
 
 void
@@ -103,17 +103,17 @@ iproc_messages_insertm (iproc_messages *msgs,
     assert(to || nto == 0);
 
     double time = msgs->tcur;
-    iproc_array *array = msgs->array;
-    iproc_array *recipients = msgs->recipients;
+    struct darray *array = msgs->array;
+    struct darray *recipients = msgs->recipients;
 
-    int64_t ito = iproc_array_size(recipients);
+    int64_t ito = darray_size(recipients);
     iproc_message m = { time, from, ito, nto };
     int64_t i;
 
     for (i = 0; i < nto; i++) {
         assert(to[i] >= 0);
 
-        iproc_array_append(recipients, to + i);
+        darray_push_back(recipients, to + i);
         if (to[i] > msgs->max_to)
             msgs->max_to = to[i];
     }
@@ -123,7 +123,7 @@ iproc_messages_insertm (iproc_messages *msgs,
     if (nto > msgs->max_nto)
         msgs->max_nto = nto;
 
-    iproc_array_append(array, &m);
+    darray_push_back(array, &m);
 }
 
 int64_t

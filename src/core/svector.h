@@ -2,17 +2,17 @@
 #define _IPROC_SVECTOR_H
 
 #include <stdint.h>
-#include "array.h"
+#include "darray.h"
 #include "refcount.h"
 #include "vector.h"
 
 typedef struct _iproc_svector iproc_svector;
 
 struct _iproc_svector {
-    int64_t        dim;
-    iproc_array   *index;
-    iproc_array   *value;
-    iproc_refcount refcount;
+    int64_t         dim;
+    struct darray  *index;
+    struct darray  *value;
+    iproc_refcount  refcount;
 };
 
 iproc_svector *   iproc_svector_new      (int64_t        dim);

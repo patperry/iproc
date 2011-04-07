@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "array.h"
+#include "darray.h"
 #include "matrix.h"
 #include "refcount.h"
 #include "svector.h"
@@ -22,14 +22,14 @@ struct _iproc_group {
 };
 
 struct _iproc_group_bucket {
-    size_t       traits_hash; /* traits_hash must be the first member */
-    iproc_array *groups;
+    size_t         traits_hash; /* traits_hash must be the first member */
+    struct darray *groups;
 };
 
 struct _iproc_actors {
-    iproc_array   *group_ids;
-    iproc_array   *group_traits;
-    iproc_array   *group_buckets;
+    struct darray *group_ids;
+    struct darray *group_traits;
+    struct darray *group_buckets;
     iproc_refcount refcount;
 };
 

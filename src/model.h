@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "refcount.h"
-#include "array.h"
+#include "darray.h"
 #include "design.h"
 #include "vector.h"
 
@@ -124,8 +124,8 @@ struct _iproc_model {
     iproc_design  *design;
     iproc_vector  *coefs;
     bool           has_loops;
-    iproc_array   *group_models;
-    iproc_array   *ctxs;
+    struct darray *group_models;
+    struct darray *ctxs;
     iproc_refcount refcount;
 };
 

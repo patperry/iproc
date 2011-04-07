@@ -16,7 +16,7 @@ static void
 iproc_vrecip_free (iproc_vrecip *v)
 {
     if (v) {
-        iproc_array_unref(v->intvls);
+        darray_free(v->intvls);
         iproc_free(v);
     }
 }
@@ -34,8 +34,8 @@ design_var_get_dxs (iproc_design_var *var,
                     int64_t           offset)
 {
     iproc_vrecip *v = container_of(var, iproc_vrecip, var);
-    iproc_array *intvls = v->intvls;
-    int64_t nintvl = iproc_array_size(intvls);
+    struct darray *intvls = v->intvls;
+    int64_t nintvl = darray_size(intvls);
     iproc_history *history = ctx->history;
     int64_t isend = ctx->isend;
 
@@ -56,7 +56,7 @@ design_var_get_dxs (iproc_design_var *var,
         int64_t jsend = iproc_events_id(events);
         double t = meta->time;
         double dt = tcur - t;
-        int64_t pos = iproc_array_bsearch(intvls, &dt, iproc_double_compare);
+        ssize_t pos = darray_bsearch(intvls, &dt, iproc_double_compare);
         
         if (pos < 0)
             pos = ~pos;
@@ -82,7 +82,7 @@ iproc_vrecip_new (double       *intvls,
         return NULL;
     
     iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
-    v->intvls = iproc_array_new(sizeof(double));
+    v->intvls = darray_new(double);
     iproc_refcount_init(&v->refcount);
 
     if (!v->intvls) {
@@ -94,7 +94,7 @@ iproc_vrecip_new (double       *intvls,
             assert(intvls[i] > 0.0);
             assert(i == 0 || intvls[i] > intvls[i-1]);
 
-            iproc_array_append(v->intvls, intvls + i);
+            darray_push_back(v->intvls, intvls + i);
         }
     }
 

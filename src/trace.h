@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "array.h"
+#include "darray.h"
 #include "refcount.h"
 
 /* A trace is like a mini-history.  The two main uses for a trace are
@@ -46,13 +46,13 @@ struct _iproc_event {
 
 struct _iproc_events {
     int64_t      e;
-    iproc_array *meta;
+    struct darray *meta;
 };
 
 struct _iproc_trace {
     double         tcur;
-    iproc_array   *pending;
-    iproc_array   *events;
+    struct darray   *pending;
+    struct darray   *events;
     iproc_refcount refcount;
 };
 

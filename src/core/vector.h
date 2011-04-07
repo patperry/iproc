@@ -23,7 +23,7 @@ iproc_vector *    iproc_vector_new           (int64_t       dim);
 iproc_vector *    iproc_vector_new_copy      (iproc_vector *vector);
 iproc_vector *    iproc_vector_ref           (iproc_vector *vector);
 void              iproc_vector_unref         (iproc_vector *vector);
-int64_t           iproc_vector_dim           (iproc_vector *vector);
+int64_t           iproc_vector_dim           (const iproc_vector *vector);
 void              iproc_vector_set_all       (iproc_vector *vector,
                                               double        value);
 void              iproc_vector_set_basis     (iproc_vector *vector,
@@ -36,7 +36,7 @@ void              iproc_vector_set           (iproc_vector *vector,
 void              iproc_vector_inc           (iproc_vector *vector,
                                               int64_t       index,
                                               double        value);
-double *          iproc_vector_ptr           (iproc_vector *vector,
+double *          iproc_vector_ptr           (const iproc_vector *vector,
                                               int64_t       index);
 iproc_vector_view iproc_vector_subvector     (iproc_vector *vector,
                                               int64_t       index,
@@ -84,8 +84,8 @@ void              iproc_vector_printf        (iproc_vector *vector);
 size_t            iproc_vector_hash          (iproc_vector *vector);
 int               iproc_vector_identical     (iproc_vector *vector1,
                                               iproc_vector *vector2);
-int               iproc_vector_compare       (void *x1,  void *x2);
-int               iproc_vector_ptr_compare   (void *px1, void *px2);
+int               iproc_vector_compare       (const void *x1,  const void *x2);
+int               iproc_vector_ptr_compare   (const void *px1, const void *px2);
 
 
 #endif /* _IPROC_VECTOR_H */

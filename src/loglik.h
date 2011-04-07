@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "array.h"
+#include "darray.h"
 #include "messages.h"
 #include "model.h"
 #include "refcount.h"
@@ -13,7 +13,7 @@ typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
     iproc_model   *model;
-    iproc_array   *sloglik_array;
+    struct darray *sloglik_array;
     iproc_vector  *grad;
     bool           grad_cached;
     int64_t        nsend;
