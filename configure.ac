@@ -22,6 +22,7 @@ AX_CHECK_LAPACK
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_INLINE
+AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
 AC_TYPE_SSIZE_T
 AC_CHECK_SIZEOF([size_t], , [#include <stddef.h> #include <stdio.h>])

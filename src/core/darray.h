@@ -1,7 +1,8 @@
 #ifndef _DARRAY_H
 #define _DARRAY_H
 
-/* define SSIZE_MAX, ssize_t, and bool before including this file */
+/* define SSIZE_MAX, ssize_t, bool and assert before including this file */
+
 
 #include <stddef.h>    // sizeof, size_t
 #include <string.h>    // memcpy
@@ -123,13 +124,28 @@ size_t  darray_elt_size (const struct darray *a) { return array_elt_size(&a->arr
 ssize_t darray_max_size (const struct darray *a) { return array_max_size(&a->array); }
 
 
-void * darray_get (const struct darray *a, ssize_t i, void *dst) { return array_get(&a->array, i, dst); }
-void * darray_set (struct darray *a, ssize_t i, const void *src) { return array_set(&a->array, i, src); }
+void * darray_get (const struct darray *a, ssize_t i, void *dst)
+{
+    assert(0 <= i && i < darray_size(a));
+    return array_get(&a->array, i, dst);
+}
 
 
-void * darray_begin (const struct darray *a)            { return array_begin(&a->array); }
-void * darray_end   (const struct darray *a)            { return array_ptr(&a->array, a->size); }
-void * darray_ptr   (const struct darray *a, ssize_t i) { return array_ptr(&a->array, i); }
+void * darray_set (struct darray *a, ssize_t i, const void *src)
+{
+    assert(0 <= i && i < darray_size(a));
+    return array_set(&a->array, i, src);
+}
+
+
+void * darray_begin (const struct darray *a) { return array_begin(&a->array); }
+void * darray_end   (const struct darray *a) { return array_ptr(&a->array, a->size); }
+
+void * darray_ptr (const struct darray *a, ssize_t i)
+{
+    assert(0 <= i && i <= darray_size(a));
+    return array_ptr(&a->array, i);
+}
 
 
 #endif /* _DARRAY_H */

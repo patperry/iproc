@@ -1,12 +1,12 @@
 #include "port.h"
+#include <assert.h>
+#include <stdint.h>
 
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
-#include <assert.h>
-#include <stdint.h>
 #include "darray.h"
 #include "r-utils.h"
 #include "r-messages.h"

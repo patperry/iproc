@@ -1,4 +1,6 @@
 #include "port.h"
+
+#include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -7,7 +9,7 @@
 #include "pqueue.h"
 
 
-static iproc_pqueue *pqueue = NULL;
+static struct pqueue pqueue;
 static ssize_t size;
 static ssize_t * elts; // elements sorted in decending order
 
@@ -23,7 +25,7 @@ empty_setup (void **state)
 {
     static ssize_t empty_elts[] = { };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
+    pqueue_init(&pqueue, ssize_t, ssize_compare);
     size = 0;
     elts = empty_elts;
 }
@@ -40,10 +42,10 @@ singleton_setup (void **state)
 {
     static ssize_t singleton_elts[] = { 1234 };
 
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
+    pqueue_init(&pqueue, ssize_t, ssize_compare);
     elts = singleton_elts;
     size = 1;
-    iproc_pqueue_push_array(pqueue, elts, size);
+    pqueue_push_array(&pqueue, elts, size);
 }
 
 static void
@@ -58,10 +60,10 @@ sorted5_setup (void **state)
 {
     static ssize_t sorted5_elts[] = { 5, 4, 3, 2, 1 };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
+    pqueue_init(&pqueue, ssize_t, ssize_compare);
     elts = sorted5_elts;
     size = 5;
-    iproc_pqueue_push_array(pqueue, elts, size);
+    pqueue_push_array(&pqueue, elts, size);
 
 }
 
@@ -78,17 +80,17 @@ unsorted7_setup (void **state)
     static ssize_t sorted7_elts[]   = { 7, 6, 5, 4, 3, 2, 1 };
     ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
     
-    pqueue = iproc_pqueue_new(sizeof(ssize_t), ssize_compare);
+    pqueue_init(&pqueue, ssize_t, ssize_compare);
     elts = sorted7_elts;
     size = 7;
-    iproc_pqueue_push_array(pqueue, unsorted7_elts, size);
+    pqueue_push_array(&pqueue, unsorted7_elts, size);
     
 }
 
 static void
 teardown (void **state)
 {
-    iproc_pqueue_unref(pqueue);
+    pqueue_deinit(&pqueue);
 }
 
 static void
@@ -102,7 +104,7 @@ teardown_fixture (void **state)
 static void
 test_size (void **state)
 {
-    assert_int_equal(iproc_pqueue_size(pqueue), size);
+    assert_int_equal(pqueue_size(&pqueue), size);
 }
 
 static void
@@ -110,9 +112,9 @@ test_push_min_minus_one (void **state)
 {
     ssize_t min = elts[size - 1];
     ssize_t min_minus_one = min - 1;
-    iproc_pqueue_push(pqueue, &min_minus_one);
-    assert_int_equal(iproc_pqueue_size(pqueue), size + 1);
-    assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), elts[0]);
+    pqueue_push(&pqueue, &min_minus_one);
+    assert_int_equal(pqueue_size(&pqueue), size + 1);
+    assert_int_equal(pqueue_top(&pqueue, ssize_t), elts[0]);
 }
 
 static void
@@ -120,9 +122,9 @@ test_push_min (void **state)
 {
     ssize_t min = elts[size - 1];
     ssize_t elt = min;
-    iproc_pqueue_push(pqueue, &elt);
-    assert_int_equal(iproc_pqueue_size(pqueue), size + 1);
-    assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), elts[0]);
+    pqueue_push(&pqueue, &elt);
+    assert_int_equal(pqueue_size(&pqueue), size + 1);
+    assert_int_equal(pqueue_top(&pqueue, ssize_t), elts[0]);
 }
 
 static void
@@ -130,9 +132,9 @@ test_push_max_minus_one (void **state)
 {
     ssize_t max = elts[0];
     ssize_t max_minus_one = max - 1;
-    iproc_pqueue_push(pqueue, &max_minus_one);
-    assert_int_equal(iproc_pqueue_size(pqueue), size + 1);
-    assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), max);
+    pqueue_push(&pqueue, &max_minus_one);
+    assert_int_equal(pqueue_size(&pqueue), size + 1);
+    assert_int_equal(pqueue_top(&pqueue, ssize_t), max);
 }
 
 static void
@@ -140,9 +142,9 @@ test_push_max (void **state)
 {
     ssize_t max = elts[0];
     ssize_t elt = max;
-    iproc_pqueue_push(pqueue, &elt);
-    assert_int_equal(iproc_pqueue_size(pqueue), size + 1);
-    assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), max);
+    pqueue_push(&pqueue, &elt);
+    assert_int_equal(pqueue_size(&pqueue), size + 1);
+    assert_int_equal(pqueue_top(&pqueue, ssize_t), max);
 }
 
 static void
@@ -150,9 +152,9 @@ test_push_max_plus_one (void **state)
 {
     ssize_t max = (size ? elts[0] : 0);
     ssize_t max_plus_one = max + 1;
-    iproc_pqueue_push(pqueue, &max_plus_one);
-    assert_int_equal(iproc_pqueue_size(pqueue), size + 1);
-    assert_int_equal(*(ssize_t *)iproc_pqueue_top(pqueue), max + 1);
+    pqueue_push(&pqueue, &max_plus_one);
+    assert_int_equal(pqueue_size(&pqueue), size + 1);
+    assert_int_equal(pqueue_top(&pqueue, ssize_t), max + 1);
 }
 
 static void
@@ -160,17 +162,19 @@ test_push_existing (void **state)
 {
     ssize_t i, j;
     ssize_t top;
+    struct pqueue pq;
+    ssize_t elt;
     
     for (i = 0; i < size; i++) {
-        iproc_pqueue *pq = iproc_pqueue_new_copy(pqueue);
-        ssize_t elt = elts[i];
+        pqueue_init_copy(&pq, &pqueue);
+        elt = elts[i];
         
-        iproc_pqueue_push(pq, &elt);
+        pqueue_push(&pq, &elt);
         
-        assert_int_equal(iproc_pqueue_size(pq), size + 1);
+        assert_int_equal(pqueue_size(&pq), size + 1);
 
         for (j = 0; j < size + 1; j++) {
-            iproc_pqueue_pop_array(pq, &top, 1);
+            pqueue_pop_array(&pq, &top, 1);
             if (j <= i) {
                 assert_int_equal(top, elts[j]);
             } else {
@@ -178,7 +182,7 @@ test_push_existing (void **state)
             }
         }
         
-        iproc_pqueue_unref(pq);
+        pqueue_deinit(&pq);
     }
 }
 

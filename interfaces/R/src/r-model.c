@@ -1,4 +1,5 @@
 #include "port.h"
+#include <assert.h>
 
 #include <R.h>
 #include <Rinternals.h>

@@ -1,6 +1,9 @@
 #ifndef _ARRAY_H
 #define _ARRAY_H
 
+/* define SSIZE_MAX, ssize_t, bool and assert before including this file */
+
+
 #include <stddef.h>    // sizeof, size_t
 #include <string.h>    // memcpy
 #include "compare.h"
@@ -107,6 +110,7 @@ bool    array_owner     (const struct array *a) { return a->owner; }
 
 void * array_get (const struct array *a, ssize_t i, void *dst)
 {
+    assert(0 <= i && i < array_size(a));
     memcpy(dst, array_ptr(a, i), array_elt_size(a));
     return (void *)dst + array_elt_size(a);
 }
@@ -114,6 +118,7 @@ void * array_get (const struct array *a, ssize_t i, void *dst)
 
 void * array_set (struct array *a, ssize_t i, const void *src)
 {
+    assert(0 <= i && i < array_size(a));
     memcpy(array_ptr(a, i), src, array_elt_size(a));
     return (void *)src + array_elt_size(a);
 }
@@ -133,6 +138,7 @@ void * array_end (const struct array *a)
 
 void * array_ptr (const struct array *a, ssize_t i)
 {
+    assert(0 <= i && i <= array_size(a));
     return a->data + i * a->elt_size;
     
 }

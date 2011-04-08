@@ -1,8 +1,10 @@
 #include "port.h"
+#include <assert.h>
 
 #include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+
 #include "r-actors.h"
 #include "r-cursor.h"
 #include "r-design.h"

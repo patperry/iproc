@@ -1,122 +1,73 @@
 #include "port.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "memory.h"
 #include "pqueue.h"
 
-static void
-iproc_pqueue_free (iproc_pqueue *pqueue)
+struct pqueue * _pqueue_init (struct pqueue *q, compare_fn compar,
+                              size_t elt_size)
 {
-    if (pqueue) {
-        darray_deinit(&pqueue->array);
-        iproc_free(pqueue);
+    assert(compar);    
+    assert(elt_size > 0);
+
+    
+    if (_darray_init(&q->array, elt_size)) {
+        q->compare = compar;
+        return q;
     }
+    
+    return NULL;
 }
 
-iproc_pqueue *
-iproc_pqueue_new (size_t     eltsize,
-                  compare_fn compare)
-{
-    assert(eltsize > 0);
-    assert(compare);
-    
-    iproc_pqueue *pqueue = iproc_malloc(sizeof(*pqueue));
-    if (!pqueue)
-        return NULL;
-    
-    _darray_init(&pqueue->array, eltsize);
-    pqueue->compare = compare;
-    iproc_refcount_init(&pqueue->refcount);
-    
-    return pqueue;
-}
 
-iproc_pqueue *
-iproc_pqueue_new_copy (iproc_pqueue *pqueue)
+struct pqueue * pqueue_init_copy (struct pqueue *q, const struct pqueue *src)
 {
-    assert(pqueue);
+    assert(q);
+    assert(src);
     
-    iproc_pqueue *result = iproc_malloc(sizeof(*result));
-    if (!result)
-        return NULL;
-    
-    darray_init_copy(&result->array, &pqueue->array);
-    result->compare = pqueue->compare;
-    iproc_refcount_init(&result->refcount);
-
-    return result;
-}
-
-void
-iproc_pqueue_ref (iproc_pqueue *pqueue)
-{
-    if (pqueue) {
-        iproc_refcount_get(&pqueue->refcount);
+    if (darray_init_copy(&q->array, &src->array)) {
+        q->compare = src->compare;
+        return q;
     }
+
+    return NULL;
 }
 
 
-static void
-iproc_pqueue_release (iproc_refcount *refcount)
+void pqueue_deinit (struct pqueue *q)
 {
-    iproc_pqueue *pqueue = container_of(refcount, iproc_pqueue, refcount);
-    iproc_pqueue_free(pqueue);
+    assert(q);
+    darray_deinit(&q->array);
 }
 
-void
-iproc_pqueue_unref (iproc_pqueue *pqueue)
+
+void pqueue_assign_copy (struct pqueue *q, const struct pqueue *src)
 {
-    if (!pqueue)
-        return;
+    assert(q);
+    assert(src);
     
-    iproc_refcount_put(&pqueue->refcount, iproc_pqueue_release);
-}
-
-bool
-iproc_pqueue_empty (iproc_pqueue *pqueue)
-{
-    assert(pqueue);
-    return darray_empty(&pqueue->array);
-}
-
-ssize_t
-iproc_pqueue_size (iproc_pqueue *pqueue)
-{
-    assert(pqueue);
-    return darray_size(&pqueue->array);
+    darray_assign_copy(&q->array, &src->array);
+    q->compare = src->compare;
 }
 
 
-const void *
-iproc_pqueue_top (iproc_pqueue *pqueue)
+void * pqueue_copy_to (const struct pqueue *q, void *dst)
 {
-    assert(pqueue);
-    assert(!iproc_pqueue_empty(pqueue));
-    
-    return darray_begin(&pqueue->array);
-}
-
-void *
-iproc_pqueue_get_top (iproc_pqueue *pqueue, void *dst)
-{
-    assert(pqueue);
-    assert(!iproc_pqueue_empty(pqueue));
+    assert(q);
     assert(dst);
-    
-    return darray_get(&pqueue->array, 0, dst);
+    return darray_copy_to(&q->array, dst);
 }
 
-void *
-iproc_pqueue_push (iproc_pqueue *pqueue,
-                   const void   *eltp)
+
+void * pqueue_push (struct pqueue *q, const void *val)
 {
-    assert(pqueue);
-    assert(eltp);
+    assert(q);
+    assert(val);
     
-    struct darray *array = &pqueue->array;
-    compare_fn compare = pqueue->compare;
+    struct darray *array = &q->array;
+    compare_fn compare = q->compare;
     ssize_t icur = darray_size(array);
 
     // make space for the new element;
@@ -128,7 +79,7 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
         void *parent = darray_ptr(array, iparent);
         
         // if cur <= parent, heap condition is satisfied
-        if (compare(eltp, parent) <= 0)
+        if (compare(val, parent) <= 0)
             break;
         
         // otherwise, swap(cur,parent)
@@ -137,42 +88,39 @@ iproc_pqueue_push (iproc_pqueue *pqueue,
     }
     
     // actually copy new element
-    return darray_set(array, icur, eltp);
+    return darray_set(array, icur, val);
 }
 
-void *
-iproc_pqueue_push_array (iproc_pqueue *pqueue,
-                         const void   *elts,
-                         ssize_t       n)
+
+void * pqueue_push_array (struct pqueue *q, const void *src, ssize_t n)
 {
-    assert(pqueue);
-    assert(elts || n == 0);
+    assert(q);
+    assert(src || n == 0);
     assert(n >= 0);
     
     ssize_t i;
     
     for (i = 0; i < n; i++) {
-        elts = iproc_pqueue_push(pqueue, elts);
+        src = pqueue_push(q, src);
     }
 
-    return (void *)elts;
+    return (void *)src;
 }
 
 
-void
-iproc_pqueue_pop (iproc_pqueue *pqueue)
+void pqueue_pop (struct pqueue *q)
 {
-    assert(pqueue);
-    assert(!iproc_pqueue_empty(pqueue));
+    assert(q);
+    assert(!pqueue_empty(q));
     
-    struct darray *array = &pqueue->array;
+    struct darray *array = &q->array;
     ssize_t n = darray_size(array) - 1;
     
     if (n == 0)
         goto out;
     
     // swap the last element in the tree with the root, then heapify
-    compare_fn compare = pqueue->compare;
+    compare_fn compare = q->compare;
     void *cur = darray_ptr(array, n);
     ssize_t icur = 0;
     
@@ -210,22 +158,20 @@ out:
     darray_resize(array, n);
 }
 
-void *
-iproc_pqueue_pop_array (iproc_pqueue *pqueue,
-                        void         *elts,
-                        ssize_t       n)
+
+void * pqueue_pop_array (struct pqueue *q, void *dst, ssize_t n)
 {
-    assert(pqueue);
-    assert(elts || n == 0);
+    assert(q);
+    assert(dst || n == 0);
     assert(n >= 0);
-    assert(n <= iproc_pqueue_size(pqueue));
+    assert(n <= pqueue_size(q));
     
     size_t i;
     
     for (i = 0; i < n; i++) {
-        elts = iproc_pqueue_get_top(pqueue, elts);
-        iproc_pqueue_pop(pqueue);
+        dst = pqueue_get_top(q, dst);
+        pqueue_pop(q);
     }
 
-    return elts;
+    return dst;
 }

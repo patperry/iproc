@@ -264,8 +264,8 @@ void darray_resize_with (struct darray *a, ssize_t n, const void *val)
         void *dst, *end;
         
         darray_reserve(a, n);
-        dst = darray_ptr(a, n0);
-        end = darray_ptr(a, n);
+        dst = array_ptr(&a->array, n0);
+        end = array_ptr(&a->array, n);
         
         for (; dst < end; dst += elt_size) {
             memcpy(dst, val, elt_size);

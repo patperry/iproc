@@ -1,4 +1,5 @@
 #include "port.h"
+#include <assert.h>
 
 #include "r-messages.h"
 #include "r-utils.h"
