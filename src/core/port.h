@@ -1,7 +1,10 @@
 #ifndef _PORT_H
 #define _PORT_H
 
-/* Portabiliy types and macros */
+/* Portabiliy types and macros
+ *
+ * This file should be included in all ".c" files.
+ */
 
 
 #ifdef HAVE_CONFIG_H

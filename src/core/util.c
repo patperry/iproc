@@ -4,7 +4,31 @@
 #include <string.h>
 #include "util.h"
 
-void * copy_to (const void *src, ssize_t size, void *dst, size_t elt_size)
+void * memory_fill (void *begin, ssize_t size, const void *val,
+                    ssize_t elt_size)
+{
+    assert(begin || size == 0);
+    assert(elt_size > 0);
+    
+    size_t nbytes = size * elt_size;
+    void *end = begin + nbytes;
+    void *dst;
+
+    if (!val) {
+        memset(begin, 0, nbytes);
+    } else {
+        assert(!(begin <= val && val < end));
+
+        for (dst = begin; dst < end; dst += elt_size) {
+            memcpy(dst, val, elt_size);
+        }
+    }
+    
+    return end;
+}
+
+
+void * memory_copy_to (const void *src, ssize_t size, void *dst, size_t elt_size)
 {
     assert(src || size == 0);
     assert(size >= 0);
@@ -17,8 +41,8 @@ void * copy_to (const void *src, ssize_t size, void *dst, size_t elt_size)
 }
 
 
-ssize_t find_index (const void *begin, ssize_t size, const void *key,
-                    compare_fn compar, size_t elt_size)
+ssize_t forward_search (const void *begin, ssize_t size, const void *key,
+                        compare_fn compar, size_t elt_size)
 {
     assert(size >= 0);
     assert(compar);    
@@ -36,8 +60,8 @@ ssize_t find_index (const void *begin, ssize_t size, const void *key,
 }
 
 
-ssize_t find_last_index (const void *begin, ssize_t size, const void *key,
-                         compare_fn compar, size_t elt_size)
+ssize_t reverse_search (const void *begin, ssize_t size, const void *key,
+                        compare_fn compar, size_t elt_size)
 {
     assert(size >= 0);
     assert(compar);    

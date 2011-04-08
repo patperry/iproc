@@ -98,32 +98,19 @@ struct array * array_resize (struct array *a, ssize_t n)
 }
 
 
-void * array_assign (struct array *a, const void *val)
-{
-    assert(a);
-    assert(val);
-    
-    ssize_t n = array_size(a);
-    ssize_t i;
-    
-    for (i = 0; i < n; i++) {
-        array_set(a, i, val);
-    }
-    
-    return (void *)val + a->elt_size;
-}
 
 
-void * array_assign_array (struct array *a, const void *ptr)
+struct array * array_assign_array (struct array *a, const void *ptr)
 {
     assert(a);
     assert(ptr || array_size(a) == 0);
 
-    return copy_to(ptr, array_size(a), array_begin(a), array_elt_size(a));
+    memory_copy_to(ptr, array_size(a), array_begin(a), array_elt_size(a));
+    return a;
 }
 
 
-void array_assign_copy (struct array *a, const struct array *src)
+struct array * array_assign_copy (struct array *a, const struct array *src)
 {
     assert(a);
     assert(src);
@@ -131,6 +118,7 @@ void array_assign_copy (struct array *a, const struct array *src)
     assert(array_size(a) == array_size(src));
     
     array_copy_to(src, array_begin(a));
+    return a;
 }
 
 
@@ -139,28 +127,45 @@ void * array_copy_to (const struct array *a, void *dst)
     assert(a);
     assert(dst || array_size(a) == 0);
     
-    return copy_to(array_begin(a), array_size(a), dst, array_elt_size(a));
+    return memory_copy_to(array_begin(a), array_size(a), dst, array_elt_size(a));
 }
 
 
-ssize_t array_find_index (const struct array *a, const void *key,
+void array_fill (struct array *a, const void *val)
+{
+    assert(a);
+    array_fill_range(a, 0, array_size(a), val);
+}
+
+
+void array_fill_range (struct array *a, ssize_t i, ssize_t n, const void *val)
+{
+    assert(a);
+    assert(n >= 0);
+    assert(0 <= i && i <= array_size(a) - n);
+
+    memory_fill(array_ptr(a, i), n, val, array_elt_size(a));
+}
+
+
+ssize_t array_search (const struct array *a, const void *key,
                           compare_fn compar)
 {
     assert(a);
     assert(compar);
     
-    return find_index(array_begin(a), array_size(a), key, compar,
+    return forward_search(array_begin(a), array_size(a), key, compar,
                       array_elt_size(a));
 }
 
 
-ssize_t array_find_last_index (const struct array *a, const void *key,
+ssize_t array_reverse_search (const struct array *a, const void *key,
                                compare_fn compar)
 {
     assert(a);
     assert(compar);
     
-    return find_last_index(array_begin(a), array_size(a), key, compar,
+    return reverse_search(array_begin(a), array_size(a), key, compar,
                            array_elt_size(a));
 }
 

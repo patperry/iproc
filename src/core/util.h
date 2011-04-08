@@ -1,6 +1,11 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+/* Utility macros and functions.
+ *
+ * Define ssize_t before including this file.
+ */
+
 #include <stddef.h>
 #include "compare.h"
 
@@ -15,17 +20,22 @@
             (type *)( (char *)__mptr - offsetof(type,member) );})
 
 
-void *                copy_to         (const void *src,
+void *                memory_fill     (void         *begin,
+                                       ssize_t       size,
+                                       const void   *val,
+                                       ssize_t       elt_size);
+
+void *                memory_copy_to  (const void *src,
                                        ssize_t     size,
                                        void       *dst,
                                        size_t      elt_size);
 
-ssize_t               find_index      (const void *begin,
+ssize_t               forward_search  (const void *begin,
                                        ssize_t     size,
                                        const void *key,
                                        compare_fn  compar,                                       
                                        size_t      elt_size);
-ssize_t               find_last_index (const void *begin,
+ssize_t               reverse_search (const void *begin,
                                        ssize_t     size,
                                        const void *key,
                                        compare_fn  compar,                                       

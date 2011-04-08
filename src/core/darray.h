@@ -1,8 +1,10 @@
 #ifndef _DARRAY_H
 #define _DARRAY_H
 
-/* define SSIZE_MAX, ssize_t, bool and assert before including this file */
-
+/* Dynamic Array type
+ *
+ * Define SSIZE_MAX, ssize_t, bool and assert before including this file.
+ */
 
 #include <stddef.h>    // sizeof, size_t
 #include <string.h>    // memcpy
@@ -21,27 +23,41 @@ struct darray *       darray_init_copy    (struct darray       *a,
 void                  darray_deinit       (struct darray *a);
 
 
-/* assignment, copy */
-void *                darray_assign       (struct darray       *a,
-                                           ssize_t              n,
-                                           const void          *val);
-void *                darray_assign_array (struct darray       *a,
-                                           const void          *ptr,
-                                           ssize_t              n);
-void                  darray_assign_copy  (struct darray       *a,
-                                           const struct darray *src);
-void *                darray_copy_to      (const struct darray *a,
-                                           void                *dst);
-
+/* assign, copy, fill */
+struct darray *       darray_assign        (struct darray       *a,
+                                            const void          *ptr,
+                                            ssize_t              n);
+struct darray *       darray_assign_repeat (struct darray       *a,
+                                            ssize_t              n,
+                                            const void          *val);
+struct darray *       darray_assign_copy   (struct darray       *a,
+                                            const struct darray *src);
+void *                darray_copy_to       (const struct darray *a,
+                                            void                *dst);
+void                  darray_fill          (struct darray *a,
+                                            const void   *val);
+void                  darray_fill_range    (struct darray *a,
+                                            ssize_t       i,
+                                            ssize_t       n,
+                                            const void   *src);
 
 /* index */
 #define               darray_index(a,t,i) array_index((&(a)->array),t,i)
-static        void *  darray_get (const struct darray *a,
-                                  ssize_t              i,
-                                  void                *dst);
-static inline void *  darray_set (struct darray       *a,
-                                  ssize_t              i,
-                                  const void          *src);
+static inline void    darray_get       (const struct darray *a,
+                                        ssize_t              i,
+                                        void                *dst);
+static inline void *  darray_get_range (const struct darray *a,
+                                        ssize_t              i,
+                                        ssize_t              n,
+                                        void                *dst);
+static inline void    darray_set       (struct darray       *a,
+                                        ssize_t              i,
+                                        const void          *src);
+static inline void *  darray_set_range (struct darray       *a,
+                                        ssize_t              i,
+                                        ssize_t              n,
+                                        const void          *src);
+
 
 /* informative */
 #define               darray_front(a,t)       (darray_index(a, t, 0))
@@ -60,18 +76,19 @@ static inline ssize_t darray_max_size (const struct darray *a);
 
 
 /* standard operations */
-void *                darray_insert       (struct darray *a,
-                                           ssize_t        i,
-                                           const void    *val);
-void *                darray_insert_many  (struct darray *a,
-                                           ssize_t        i,
-                                           ssize_t        n,
-                                           const void    *val);
-void *                darray_insert_array (struct darray *a,
-                                           ssize_t        i,
-                                           const void    *ptr,
-                                           ssize_t        n);
-void *                darray_push_back    (struct darray *a,
+void                  darray_insert          (struct darray *a,
+                                              ssize_t        i,
+                                              const void    *val);
+void *                darray_insert_all      (struct darray *a,
+                                              ssize_t        i,
+                                              const void    *ptr,
+                                              ssize_t        n);
+void                  darray_insert_repeat (struct darray *a,
+                                              ssize_t        i,
+                                              ssize_t        n,
+                                              const void    *val);
+
+void                  darray_push_back    (struct darray *a,
                                            const void    *val);
 void                  darray_erase        (struct darray *a,
                                            ssize_t        i);
@@ -98,15 +115,15 @@ static inline void *  darray_ptr   (const struct darray *a,
                                     ssize_t              i);
 
 /* searching */
-ssize_t               darray_find_index      (const struct darray *a,
-                                              const void          *key,
-                                              compare_fn           compar);
-ssize_t               darray_find_last_index (const struct darray *a,
-                                              const void          *key,
-                                              compare_fn           compar);
-ssize_t               darray_binary_search   (const struct darray *a,
-                                              const void          *key,
-                                              compare_fn           compar);
+ssize_t               darray_search         (const struct darray *a,
+                                             const void          *key,
+                                             compare_fn           compar);
+ssize_t               darray_reverse_search (const struct darray *a,
+                                             const void          *key,
+                                             compare_fn           compar);
+ssize_t               darray_binary_search  (const struct darray *a,
+                                             const void          *key,
+                                             compare_fn           compar);
 
 
 
@@ -124,17 +141,33 @@ size_t  darray_elt_size (const struct darray *a) { return array_elt_size(&a->arr
 ssize_t darray_max_size (const struct darray *a) { return array_max_size(&a->array); }
 
 
-void * darray_get (const struct darray *a, ssize_t i, void *dst)
+void darray_get (const struct darray *a, ssize_t i, void *dst)
 {
     assert(0 <= i && i < darray_size(a));
-    return array_get(&a->array, i, dst);
+    array_get(&a->array, i, dst);
 }
 
 
-void * darray_set (struct darray *a, ssize_t i, const void *src)
+void * darray_get_range (const struct darray *a, ssize_t i, ssize_t n,
+                         void *dst)
+{
+    assert(0 <= i && i <= darray_size(a) - n);
+    return array_get_range(&a->array, i, n, dst);
+}
+
+
+void darray_set (struct darray *a, ssize_t i, const void *src)
 {
     assert(0 <= i && i < darray_size(a));
-    return array_set(&a->array, i, src);
+    array_set(&a->array, i, src);
+}
+
+
+void * darray_set_range (struct darray *a, ssize_t i, ssize_t n,
+                         const void *src)
+{
+    assert(0 <= i && i <= darray_size(a) - n);
+    return array_set_range(&a->array, i, n, src);
 }
 
 

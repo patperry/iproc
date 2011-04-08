@@ -1,8 +1,10 @@
 #ifndef _ARRAY_H
 #define _ARRAY_H
 
-/* define SSIZE_MAX, ssize_t, bool and assert before including this file */
-
+/* Generic Array type.
+ *
+ * Define SSIZE_MAX, ssize_t, bool and assert before including this file.
+ */
 
 #include <stddef.h>    // sizeof, size_t
 #include <string.h>    // memcpy
@@ -28,25 +30,39 @@ struct array *        array_init_slice        (struct array       *a,
 void                  array_deinit            (struct array *a);
 
 
-/* assignment, copy */
-void *                array_assign            (struct array       *a,
-                                               const void         *val);
-void *                array_assign_array      (struct array       *a,
-                                               const void         *ptr);
-void                  array_assign_copy       (struct array       *a,
-                                               const struct array *src);
-void *                array_copy_to           (const struct array *a,
-                                               void               *dst);
-
+/* assign, copy, fill */
+struct array *        array_assign_copy (struct array       *a,
+                                         const struct array *src);
+void *                array_copy_to     (const struct array *a,
+                                         void               *dst);
+void                  array_fill        (struct array *a,
+                                         const void   *val);
+void                  array_fill_range  (struct array *a,
+                                         ssize_t       i,
+                                         ssize_t       n,
+                                         const void   *src);
 
 /* index */
-#define               array_index(a,t,i)  (((t *)((a)->data))[(i)])
-static inline void *  array_get (const struct array *a,
-                                 ssize_t             i,
-                                 void               *dst);
-static inline void *  array_set (struct array *a,
-                                 ssize_t       i,
-                                 const void   *src);
+#ifdef NDEBUG
+# define              array_index(a,t,i)  (((t *)((a)->data))[(i)])
+#else
+# define              array_index(a,t,i)  (*((t *)array_ptr(a, i)))
+#endif
+static inline void    array_get        (const struct array *a,
+                                        ssize_t             i,
+                                        void               *dst);
+static inline void *  array_get_range  (const struct array *a,
+                                        ssize_t             i,
+                                        ssize_t             n,
+                                        void               *dst);
+static inline void    array_set        (struct array *a,
+                                        ssize_t       i,
+                                        const void   *src);
+static inline void *  array_set_range  (struct array *a,
+                                        ssize_t       i,
+                                        ssize_t       n,
+                                        const void   *src);
+
 
 /* informative */
 #define               array_front(a,t)       (array_index(a, t, 0))
@@ -62,11 +78,16 @@ static inline bool    array_empty    (const struct array *a);
 static inline size_t  array_elt_size (const struct array *a);
 static inline ssize_t array_max_size (const struct array *a);
 static inline bool    array_owner    (const struct array *a);
+static inline bool    array_overlaps (const struct array *a,
+                                      ssize_t             i,
+                                      ssize_t             n,
+                                      const void         *ptr,
+                                      ssize_t             nel);
 
 
 /* size modification */
-struct array *        array_resize            (struct array *a,
-                                               ssize_t       n);
+struct array *        array_resize (struct array *a,
+                                    ssize_t       n);
 
 /* iteration */
 static inline void *  array_begin (const struct array *a);
@@ -76,15 +97,15 @@ static inline void *  array_ptr   (const struct array *a,
 
 
 /* searching */
-ssize_t               array_find_index      (const struct array *a,
-                                             const void         *key,
-                                             compare_fn          compar);
-ssize_t               array_find_last_index (const struct array *a,
-                                             const void         *key,
-                                             compare_fn          compar);
-ssize_t               array_binary_search   (const struct array *a,
-                                             const void         *key,
-                                             compare_fn          compar);
+ssize_t               array_search         (const struct array *a,
+                                            const void         *key,
+                                            compare_fn          compar);
+ssize_t               array_reverse_search (const struct array *a,
+                                            const void         *key,
+                                            compare_fn          compar);
+ssize_t               array_binary_search  (const struct array *a,
+                                            const void         *key,
+                                            compare_fn          compar);
 
 
 /* private functions */
@@ -107,20 +128,61 @@ ssize_t array_max_size  (const struct array *a) { return SSIZE_MAX / a->elt_size
 bool    array_owner     (const struct array *a) { return a->owner; }
 
 
+bool array_overlaps (const struct array *a, ssize_t i, ssize_t n,
+                     const void *ptr, ssize_t nel)
+{
+    assert(a);
+    assert(n >= 0);
+    assert(0 <= i && i <= array_size(a) - n);
+    assert(0 <= nel && nel < array_max_size(a));
 
-void * array_get (const struct array *a, ssize_t i, void *dst)
+    const void *begin1 = array_ptr(a, i);
+    const void *end1 = array_ptr(a, i + n);
+    const void *begin2 = ptr;
+    const void *end2 = begin2 + nel * array_elt_size(a);
+    
+    return ((begin1 <= begin2 && begin2 < end1)
+            || (begin2 <= begin1 && begin1 < end2));
+}
+
+void array_get (const struct array *a, ssize_t i, void *dst)
 {
     assert(0 <= i && i < array_size(a));
-    memcpy(dst, array_ptr(a, i), array_elt_size(a));
-    return (void *)dst + array_elt_size(a);
+    assert(!array_overlaps(a, i, 1, dst, 1));
+
+    array_get_range(a, i, 1, dst);
 }
 
 
-void * array_set (struct array *a, ssize_t i, const void *src)
+void * array_get_range (const struct array *a, ssize_t i, ssize_t n, void *dst)
+{
+    assert(n >= 0);
+    assert(0 <= i && i <= array_size(a) - n);
+    assert(!array_overlaps(a, i, n, dst, n));
+
+    size_t nbytes = n * array_elt_size(a);
+    memcpy(dst, array_ptr(a, i), nbytes);
+    return (void *)dst + nbytes;
+}
+
+void array_set (struct array *a, ssize_t i, const void *src)
 {
     assert(0 <= i && i < array_size(a));
-    memcpy(array_ptr(a, i), src, array_elt_size(a));
-    return (void *)src + array_elt_size(a);
+    assert(!array_overlaps(a, i, 1, src, 1));
+
+    array_set_range(a, i, 1, src);
+}
+
+
+void * array_set_range (struct array *a, ssize_t i, ssize_t n, const void *src)
+{
+    assert(n >= 0);
+    assert(0 <= i && i <= array_size(a) - n);
+    assert(!array_overlaps(a, i, n, src, n));
+
+    size_t nbytes = n * array_elt_size(a);
+    memcpy(array_ptr(a, i), src, nbytes);
+    return (void *)src + nbytes;
 }
 
 

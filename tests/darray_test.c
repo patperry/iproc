@@ -1,4 +1,5 @@
 #include "port.h"
+#include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -43,7 +44,7 @@ singleton_setup (void **state)
     darray_init(&darray, ssize_t);
     elts = singleton_elts;
     size = 1;
-    darray_assign_array(&darray, singleton_elts, size);
+    darray_assign(&darray, singleton_elts, size);
 }
 
 /*

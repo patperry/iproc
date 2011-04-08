@@ -61,7 +61,7 @@ void * pqueue_copy_to (const struct pqueue *q, void *dst)
 }
 
 
-void * pqueue_push (struct pqueue *q, const void *val)
+void pqueue_push (struct pqueue *q, const void *val)
 {
     assert(q);
     assert(val);
@@ -88,7 +88,7 @@ void * pqueue_push (struct pqueue *q, const void *val)
     }
     
     // actually copy new element
-    return darray_set(array, icur, val);
+    darray_set(array, icur, val);
 }
 
 
@@ -98,10 +98,11 @@ void * pqueue_push_array (struct pqueue *q, const void *src, ssize_t n)
     assert(src || n == 0);
     assert(n >= 0);
     
-    ssize_t i;
+    size_t elt_size = pqueue_elt_size(q);
+    const void *end = src + n * elt_size;
     
-    for (i = 0; i < n; i++) {
-        src = pqueue_push(q, src);
+    for (; src < end; src += elt_size) {
+        pqueue_push(q, src);
     }
 
     return (void *)src;
@@ -166,10 +167,11 @@ void * pqueue_pop_array (struct pqueue *q, void *dst, ssize_t n)
     assert(n >= 0);
     assert(n <= pqueue_size(q));
     
-    size_t i;
+    size_t elt_size = pqueue_elt_size(q);
+    void *end = dst + n * elt_size;
     
-    for (i = 0; i < n; i++) {
-        dst = pqueue_get_top(q, dst);
+    for (; dst < end; dst += elt_size) {
+        pqueue_get_top(q, dst);
         pqueue_pop(q);
     }
 
