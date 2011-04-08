@@ -54,7 +54,9 @@ design_var_get_dxs (iproc_design_var *var,
         int64_t jsend = iproc_events_id(events);
         double t = meta->time;
         double dt = tcur - t;
-        ssize_t pos = darray_bsearch(intvls, &dt, double_compare);
+        ssize_t pos = darray_binary_search(intvls,
+                                           0, darray_size(intvls),
+                                           &dt, double_compare);
         
         if (pos < 0)
             pos = ~pos;

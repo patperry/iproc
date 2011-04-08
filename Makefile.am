@@ -65,6 +65,7 @@ libcore_la_SOURCES = \
 	src/core/svector.c \
 	src/core/svector.h \
 	src/core/util.h \
+	src/core/util.c \
 	src/core/vector.c \
 	src/core/vector.h
 

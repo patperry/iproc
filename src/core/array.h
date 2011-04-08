@@ -9,7 +9,7 @@
 struct array {
     void    *data;
     ssize_t  size;
-    ssize_t  elt_size;
+    size_t   elt_size;
     bool     owner;
 };
 
@@ -30,12 +30,7 @@ bool                  array_realloc           (struct array *a,
 
 /* assignment, swap */
 void *                array_assign            (struct array *a,
-                                               ssize_t       n,
                                                const void   *val);
-void *                array_assign_with       (struct array *a,
-                                               ssize_t       n,
-                                               const void   *val,
-                                               const void   *val0);
 void *                array_assign_array      (struct array *a,
                                                const void   *ptr,
                                                ssize_t       n);
@@ -73,6 +68,7 @@ static inline void *  array_set (struct array *a,
 
 static inline ssize_t array_size     (const struct array *a);
 static inline bool    array_empty    (const struct array *a);
+static inline size_t  array_elt_size (const struct array *a);
 static inline ssize_t array_max_size (const struct array *a);
 static inline bool    array_owner    (const struct array *a);
 
@@ -85,32 +81,39 @@ static inline void *  array_ptr   (const struct array *a,
 
 
 /* searching */
-ssize_t               array_lfind   (const struct array *a,
-                                     const void         *key,
-                                     compare_fn          compar);
-ssize_t               array_bsearch (const struct array *a,
-                                     const void         *key,
-                                     compare_fn          compar);
+ssize_t               array_find_index      (const struct array *a,
+                                             ssize_t             i,
+                                             ssize_t             n,
+                                             const void         *key,
+                                             compare_fn          compar);
+ssize_t               array_find_last_index (const struct array *a,
+                                             ssize_t             i,
+                                             ssize_t             n,
+                                             const void         *key,
+                                             compare_fn          compar);
+ssize_t               array_binary_search   (const struct array *a,
+                                             ssize_t             i,
+                                             ssize_t             n,
+                                             const void         *key,
+                                             compare_fn          compar);
 
 
 /* private functions */
 struct array *        _array_new       (ssize_t size,
-                                        ssize_t elt_size);
+                                        size_t  elt_size);
 struct array *        _array_init      (struct array *a,
                                         ssize_t       size,
-                                        ssize_t       elt_size);
+                                        size_t        elt_size);
 struct array *        _array_init_view (struct array *a,
                                         const void   *data,
                                         ssize_t       size,
-                                        ssize_t       elt_size);
-
-static inline ssize_t _array_elt_size (const struct array *a);
+                                        size_t        elt_size);
 
 
 /* inline function defs */
-ssize_t _array_elt_size (const struct array *a) { return a->elt_size; }
 ssize_t array_size      (const struct array *a) { return a->size; }
 bool    array_empty     (const struct array *a) { return a->size == 0; }
+size_t  array_elt_size (const struct array *a)  { return a->elt_size; }
 ssize_t array_max_size  (const struct array *a) { return SSIZE_MAX / a->elt_size; }
 bool    array_owner     (const struct array *a) { return a->owner; }
 
@@ -118,15 +121,15 @@ bool    array_owner     (const struct array *a) { return a->owner; }
 
 void * array_get (const struct array *a, ssize_t i, void *dst)
 {
-    memcpy(dst, array_ptr(a, i), _array_elt_size(a));
-    return (void *)dst + _array_elt_size(a);
+    memcpy(dst, array_ptr(a, i), array_elt_size(a));
+    return (void *)dst + array_elt_size(a);
 }
 
 
 void * array_set (struct array *a, ssize_t i, const void *src)
 {
-    memcpy(array_ptr(a, i), src, _array_elt_size(a));
-    return (void *)src + _array_elt_size(a);
+    memcpy(array_ptr(a, i), src, array_elt_size(a));
+    return (void *)src + array_elt_size(a);
 }
 
 

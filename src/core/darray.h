@@ -44,13 +44,20 @@ static inline void *  darray_set (struct darray       *a,
                                   const void          *src);
 
 /* informative */
-#define               darray_front(a,t)                        (darray_index(a,t,0))
-#define               darray_back(a,t)                         (darray_index(a,t,(a)->size - 1))
+#define               darray_front(a,t)       (darray_index(a, t, 0))
+#define               darray_get_front(a,dst) (darray_get(a, 0, dst))
+#define               darray_set_front(a,src) (darray_set(a, 0, src))
+
+#define               darray_back(a,t)        (darray_index(a, t, (a)->size - 1))
+#define               darray_get_back(a,dst)  (darray_get(a, (a)->size - 1, dst))
+#define               darray_set_back(a,src)  (darray_set(a, (a)->size - 1, src))
 
 static inline ssize_t darray_size     (const struct darray *a);
 static inline bool    darray_empty    (const struct darray *a);
 static inline ssize_t darray_capacity (const struct darray *a);
+static inline size_t  darray_elt_size (const struct darray *a);
 static inline ssize_t darray_max_size (const struct darray *a);
+
 
 /* standard operations */
 void *                darray_insert       (struct darray *a,
@@ -91,27 +98,36 @@ static inline void *  darray_ptr   (const struct darray *a,
                                     ssize_t              i);
 
 /* searching */
-ssize_t               darray_lfind   (const struct darray *a,
-                                      const void          *key,
-                                      int        (*compar) (const void *, const void *));
-ssize_t               darray_bsearch (const struct darray *a,
-                                      const void           *key,
-                                      int        (*compar) (const void *, const void *));
+ssize_t               darray_find_index      (const struct darray *a,
+                                              ssize_t              i,
+                                              ssize_t              n,
+                                              const void          *key,
+                                              compare_fn           compar);
+ssize_t               darray_find_last_index (const struct darray *a,
+                                              ssize_t              i,
+                                              ssize_t              n,
+                                              const void          *key,
+                                              compare_fn           compar);
+ssize_t               darray_binary_search   (const struct darray *a,
+                                              ssize_t              i,
+                                              ssize_t              n,
+                                              const void          *key,
+                                              compare_fn           compar);
 
 
 
 /* private functions */
 struct darray *       _darray_init     (struct darray *a,
                                         size_t         elt_size);
-static inline ssize_t _darray_elt_size (const struct darray *a);
+
 
 
 /* inline function definitions */
-ssize_t darray_size      (const struct darray *a) { return a->size; }
-bool    darray_empty     (const struct darray *a) { return a->size == 0; }
-ssize_t darray_capacity  (const struct darray *a) { return array_size(&a->array); }
-ssize_t darray_max_size  (const struct darray *a) { return array_max_size(&a->array); }
-ssize_t _darray_elt_size (const struct darray *a) { return _array_elt_size(&a->array); }
+ssize_t darray_size     (const struct darray *a) { return a->size; }
+bool    darray_empty    (const struct darray *a) { return a->size == 0; }
+ssize_t darray_capacity (const struct darray *a) { return array_size(&a->array); }
+size_t  darray_elt_size (const struct darray *a) { return array_elt_size(&a->array); }
+ssize_t darray_max_size (const struct darray *a) { return array_max_size(&a->array); }
 
 
 void * darray_get (const struct darray *a, ssize_t i, void *dst) { return array_get(&a->array, i, dst); }

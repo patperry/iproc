@@ -7,7 +7,7 @@
 #include "array.h"
 
 
-struct array * _array_init (struct array *a, ssize_t size, ssize_t elt_size)
+struct array * _array_init (struct array *a, ssize_t size, size_t elt_size)
 {
     assert(a);
     assert(size >= 0);
@@ -26,7 +26,7 @@ struct array * _array_init (struct array *a, ssize_t size, ssize_t elt_size)
 }
 
 struct array * _array_init_view (struct array *a, const void *data,
-                                 ssize_t size, ssize_t elt_size)
+                                 ssize_t size, size_t elt_size)
 {
     assert(a);
     assert(data || size == 0);
@@ -61,7 +61,7 @@ struct array * array_init_copy (struct array *a, const struct array *src)
     assert(a);
     assert(src);
     
-    if (_array_init(a, array_size(src), _array_elt_size(src))) {
+    if (_array_init(a, array_size(src), array_elt_size(src))) {
         array_copy(src, a);
         return a;
     }
@@ -97,40 +97,16 @@ bool array_realloc (struct array *a, ssize_t n)
 }
 
 
-
-void * array_assign (struct array *a, ssize_t n, const void *val)
+void * array_assign (struct array *a, const void *val)
 {
     assert(a);
-    assert(n >= 0);
-    assert(val || n == 0);
-
-    char val0[a->elt_size];
+    assert(val);
     
-    if (n < a->size)
-        memset(val0, 0, a->elt_size);
-
-    return array_assign_with(a, n, val, val0);
-}
-
-
-void * array_assign_with (struct array *a, ssize_t n, const void *val,
-                          const void *val0)
-{
-    assert(a);
-    assert(n >= 0);
-    assert(val || n == 0);
-    assert(val0 || n >= array_size(a));
-    
-    ssize_t size = a->size;
-    ssize_t nsize = MIN(size, n);
+    ssize_t n = array_size(a);
     ssize_t i;
     
-    for (i = 0; i < nsize; i++) {
+    for (i = 0; i < n; i++) {
         array_set(a, i, val);
-    }
-    
-    for(; i < size; i++) {
-        array_set(a, i, val0);
     }
     
     return (void *)val + a->elt_size;
@@ -211,54 +187,61 @@ void array_swap (struct array *a, struct array *b)
 }
 
 
-ssize_t array_lfind (const struct array *a, const void *key,
-                    compare_fn compar)
+ssize_t array_find_index (const struct array *a, ssize_t i, ssize_t n,
+                          const void *key, compare_fn compar)
 {
     assert(a);
-    assert(key);
-    assert(compar);
+    assert(i >= 0);
+    assert(i <= array_size(a) - n);
+    assert(n >= 0);
+
+    ssize_t ix = find_index(array_ptr(a, i), n, key, compar, array_elt_size(a));
     
-    char *ptr = array_begin(a);
-    size_t elt_size = _array_elt_size(a);
-    ssize_t n = array_size(a);
-    ssize_t i;
-    
-    for (i = 0; i < n; ptr += elt_size, i++) {
-        if (compar(key, ptr) == 0)
-            return i;
+    if (i != 0 && ix >= 0) {
+        ix += i;
     }
     
-    return ~i;
+    return ix;
 }
 
-ssize_t array_bsearch (const struct array *a, const void *key,
-                       compare_fn compar)
+
+ssize_t array_find_last_index (const struct array *a, ssize_t i, ssize_t n,
+                               const void *key, compare_fn compar)
 {
     assert(a);
-    assert(key);
-    assert(compar);
+    assert(i >= 0);
+    assert(i <= array_size(a) - n);
+    assert(n >= 0);
     
-    size_t elt_size = _array_elt_size(a);
-    void   *base = array_begin(a);
-    ssize_t begin = 0;
-    ssize_t end = array_size(a);
-    ssize_t i;
-    void *ptr;
-    int cmp;
+    ssize_t ix = find_last_index(array_ptr(a, i), n, key, compar,
+                                 array_elt_size(a));
     
-    while (begin < end) {
-        i = begin + ((end - begin) >> 1);
-        ptr = base + i * elt_size;
-        cmp = compar(key, ptr);
-        
-        if (cmp < 0) {         // value < array[i]
-            end = i;
-        } else if (cmp > 0) {  // value > array[i]
-            begin = i + 1;
-        } else {               // value == array[i]
-            return i;
+    if (i != 0 && ix >= 0) {
+        ix += i;
+    }
+    
+    return ix;
+}
+
+
+ssize_t array_binary_search (const struct array *a, ssize_t i, ssize_t n,
+                             const void *key, compare_fn compar)
+{
+    assert(a);
+    assert(i >= 0);
+    assert(i <= array_size(a) - n);
+    assert(n >= 0);
+    
+    ssize_t ix = binary_search(array_ptr(a, i), n, key, compar,
+                               array_elt_size(a));
+    
+    if (i != 0) {
+        if (ix >= 0) {
+            ix += i;
+        } else {
+            ix = ~(~ix + i);
         }
     }
     
-    return ~end;               // begin == end, not found
+    return ix;
 }
