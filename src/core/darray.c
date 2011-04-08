@@ -131,9 +131,8 @@ void darray_insert (struct darray *a, ssize_t i, const void *val)
     assert(darray_size(a) <= darray_max_size(a) - 1);
     assert(i >= 0);
     assert(i <= darray_size(a));
-    assert(val);
 
-    darray_insert_all(a, i, val, 1);
+    darray_insert_repeat(a, i, 1, val);
 }
 
 
@@ -143,25 +142,16 @@ void darray_insert_repeat (struct darray *a, ssize_t i, ssize_t n,
     assert(a);
     assert(i >= 0);
     assert(i <= darray_size(a));
-    assert(val || n == 0);
     assert(n >= 0);
     assert(n <= darray_max_size(a) - darray_size(a));
     
-    size_t elt_size = darray_elt_size(a);
-    void *dst, *end;
-    
     darray_insert_space(a, i, n);
-    dst = darray_ptr(a, i);
-    end = dst + i * elt_size;
-
-    for (; dst < end; dst += elt_size) {
-        memcpy(dst, val, elt_size);
-    }
+    array_fill_range(&a->array, i, n, val);
 }
 
 
 void * darray_insert_all (struct darray *a, ssize_t i, const void *ptr,
-                            ssize_t n)
+                          ssize_t n)
 {
     assert(a);
     assert(i >= 0);
@@ -170,15 +160,8 @@ void * darray_insert_all (struct darray *a, ssize_t i, const void *ptr,
     assert(n >= 0);
     assert(n <= darray_max_size(a) - darray_size(a));
 
-    void *dst;
-    size_t len = n * darray_elt_size(a);
-    
     darray_insert_space(a, i, n);
-    dst = darray_ptr(a, i);
-
-    memcpy(dst, ptr, len);
-    
-    return (void *)ptr + len;
+    return array_set_range(&a->array, i, n, ptr);
 }
 
 void darray_push_back (struct darray *a, const void *val)
@@ -258,12 +241,8 @@ void darray_resize (struct darray *a, ssize_t n)
     assert(a);
     assert(n >= 0);
     assert(n <= darray_max_size(a));
-    
-    size_t elt_size = darray_elt_size(a);
-    char val[elt_size];
-    memset(val, 0, elt_size);
-    
-    darray_resize_with(a, n, val);
+        
+    darray_resize_with(a, n, NULL);
 }
 
 
@@ -272,25 +251,17 @@ void darray_resize_with (struct darray *a, ssize_t n, const void *val)
     assert(a);
     assert(n >= 0);
     assert(n <= darray_max_size(a));
-    assert(val);
 
     ssize_t n0 = a->size;
     
     if (n > n0) {
-        size_t elt_size = darray_elt_size(a);
-        void *dst, *end;
-        
         darray_reserve(a, n);
-        dst = array_ptr(&a->array, n0);
-        end = array_ptr(&a->array, n);
-        
-        for (; dst < end; dst += elt_size) {
-            memcpy(dst, val, elt_size);
-        }
+        array_fill_range(&a->array, n0, n - n0, val);
     }
 
     a->size = n;
 }
+
 
 ssize_t darray_search (const struct darray *a, const void *key,
                            compare_fn compar)
@@ -299,7 +270,7 @@ ssize_t darray_search (const struct darray *a, const void *key,
     assert(compar);
     
     return forward_search(darray_begin(a), darray_size(a), key, compar,
-                      darray_elt_size(a));
+                          darray_elt_size(a));
 }
 
 
@@ -310,7 +281,7 @@ ssize_t darray_reverse_search (const struct darray *a, const void *key,
     assert(compar);
     
     return reverse_search(darray_begin(a), darray_size(a), key, compar,
-                           darray_elt_size(a));
+                          darray_elt_size(a));
 }
 
 

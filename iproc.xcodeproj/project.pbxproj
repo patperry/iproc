@@ -11,8 +11,8 @@
 		221C5FED134E230D0008B25B /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* array.c */; };
 		221C5FEE134E230D0008B25B /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FEC134E230D0008B25B /* array.h */; };
 		221C5FF1134EB7E60008B25B /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FF0134EB7E50008B25B /* util.c */; };
-		221C5FFF134F74E80008B25B /* sarray.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FFD134F74E00008B25B /* sarray.c */; };
-		221C6000134F74E80008B25B /* sarray.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FFE134F74E30008B25B /* sarray.h */; };
+		221C600E134FADCD0008B25B /* sarray.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C600C134FADCD0008B25B /* sarray.c */; };
+		221C600F134FADCD0008B25B /* sarray.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C600D134FADCD0008B25B /* sarray.h */; };
 		221FEE96132EC8710000097B /* blas-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE6D132EC8710000097B /* blas-private.h */; };
 		221FEE9D132EC8710000097B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		221FEE9E132EC8710000097B /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE75132EC8710000097B /* hash.h */; };
@@ -143,8 +143,8 @@
 		221C5FEB134E230D0008B25B /* array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array.c; path = src/core/array.c; sourceTree = "<group>"; };
 		221C5FEC134E230D0008B25B /* array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array.h; path = src/core/array.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221C5FF0134EB7E50008B25B /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = src/core/util.c; sourceTree = "<group>"; };
-		221C5FFD134F74E00008B25B /* sarray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sarray.c; path = src/core/sarray.c; sourceTree = "<group>"; };
-		221C5FFE134F74E30008B25B /* sarray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sarray.h; path = src/core/sarray.h; sourceTree = "<group>"; };
+		221C600C134FADCD0008B25B /* sarray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sarray.c; path = src/core/sarray.c; sourceTree = "<group>"; };
+		221C600D134FADCD0008B25B /* sarray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sarray.h; path = src/core/sarray.h; sourceTree = "<group>"; };
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };
 		221FEE75132EC8710000097B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hash.h; path = src/core/hash.h; sourceTree = "<group>"; };
@@ -273,8 +273,8 @@
 				221C5FDA134DB9BC0008B25B /* port.h */,
 				22597433133D0BD20022B52E /* pqueue.c */,
 				22597434133D0BD20022B52E /* pqueue.h */,
-				221C5FFD134F74E00008B25B /* sarray.c */,
-				221C5FFE134F74E30008B25B /* sarray.h */,
+				221C600C134FADCD0008B25B /* sarray.c */,
+				221C600D134FADCD0008B25B /* sarray.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
@@ -467,7 +467,7 @@
 				2223CD11134D76F8004FA7F9 /* darray.h in Headers */,
 				221C5FDB134DB9BC0008B25B /* port.h in Headers */,
 				221C5FEE134E230D0008B25B /* array.h in Headers */,
-				221C6000134F74E80008B25B /* sarray.h in Headers */,
+				221C600F134FADCD0008B25B /* sarray.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -631,7 +631,7 @@
 				2223CD10134D76F8004FA7F9 /* darray.c in Sources */,
 				221C5FED134E230D0008B25B /* array.c in Sources */,
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
-				221C5FFF134F74E80008B25B /* sarray.c in Sources */,
+				221C600E134FADCD0008B25B /* sarray.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -703,6 +703,10 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					DEBUG,
+					HAVE_SYS_TYPES_H,
+				);
 				HEADER_SEARCH_PATHS = (
 					interfaces/R/src,
 					/Library/Frameworks/R.framework/Resources/include,
@@ -725,6 +729,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_SYS_TYPES_H;
 				HEADER_SEARCH_PATHS = (
 					interfaces/R/src,
 					/Library/Frameworks/R.framework/Resources/include,

@@ -62,6 +62,8 @@ libcore_la_SOURCES = \
 	src/core/pqueue.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
+	src/core/sarray.c \
+	src/core/sarray.h \
 	src/core/svector.c \
 	src/core/svector.h \
 	src/core/util.h \
