@@ -83,7 +83,6 @@ iproc_trace_find_index (iproc_trace *trace,
 {
     assert(trace);
     return darray_binary_search(&trace->events,
-                                0, darray_size(&trace->events),
                                 &e, int64_compare);
 }
 

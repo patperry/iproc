@@ -16,37 +16,25 @@ struct array {
 /* create, destroy */
 #define               array_init(a,t,n)           _array_init(a, n, sizeof(t))
 #define               array_init_view(a,t,ptr,n)  _array_init_view(a,ptr,n,sizeof(t))
-struct array *        array_init_copy         (struct array *a, const struct array *src);
-struct array *        array_init_slice        (struct array *a,
+struct array *        array_init_copy         (struct array *a,
+                                               const struct array *src);
+struct array *        array_init_slice        (struct array       *a,
                                                const struct array *parent,
                                                ssize_t             i,
                                                ssize_t             n);
 void                  array_deinit            (struct array *a);
-bool                  array_realloc           (struct array *a,
-                                               ssize_t       n);
 
 
+/* assignment, copy */
+void *                array_assign            (struct array       *a,
+                                               const void         *val);
+void *                array_assign_array      (struct array       *a,
+                                               const void         *ptr);
+void                  array_assign_copy       (struct array       *a,
+                                               const struct array *src);
+void *                array_copy_to           (const struct array *a,
+                                               void               *dst);
 
-
-/* assignment, swap */
-void *                array_assign            (struct array *a,
-                                               const void   *val);
-void *                array_assign_array      (struct array *a,
-                                               const void   *ptr,
-                                               ssize_t       n);
-void *                array_assign_array_with (struct array *a,
-                                               const void   *ptr,
-                                               ssize_t       n,
-                                               const void   *val0);
-
-void                  array_copy              (const struct array *a,
-                                               struct array       *dst);
-void                  array_copy_with         (const struct array *a,
-                                               struct array       *dst,
-                                               const void         *val0);
-
-void                  array_swap              (struct array       *a,
-                                               struct array       *b);
 
 /* index */
 #define               array_index(a,t,i)  (((t *)((a)->data))[(i)])
@@ -73,6 +61,10 @@ static inline ssize_t array_max_size (const struct array *a);
 static inline bool    array_owner    (const struct array *a);
 
 
+/* size modification */
+struct array *        array_resize            (struct array *a,
+                                               ssize_t       n);
+
 /* iteration */
 static inline void *  array_begin (const struct array *a);
 static inline void *  array_end   (const struct array *a);
@@ -82,18 +74,12 @@ static inline void *  array_ptr   (const struct array *a,
 
 /* searching */
 ssize_t               array_find_index      (const struct array *a,
-                                             ssize_t             i,
-                                             ssize_t             n,
                                              const void         *key,
                                              compare_fn          compar);
 ssize_t               array_find_last_index (const struct array *a,
-                                             ssize_t             i,
-                                             ssize_t             n,
                                              const void         *key,
                                              compare_fn          compar);
 ssize_t               array_binary_search   (const struct array *a,
-                                             ssize_t             i,
-                                             ssize_t             n,
                                              const void         *key,
                                              compare_fn          compar);
 
@@ -113,7 +99,7 @@ struct array *        _array_init_view (struct array *a,
 /* inline function defs */
 ssize_t array_size      (const struct array *a) { return a->size; }
 bool    array_empty     (const struct array *a) { return a->size == 0; }
-size_t  array_elt_size (const struct array *a)  { return a->elt_size; }
+size_t  array_elt_size  (const struct array *a) { return a->elt_size; }
 ssize_t array_max_size  (const struct array *a) { return SSIZE_MAX / a->elt_size; }
 bool    array_owner     (const struct array *a) { return a->owner; }
 

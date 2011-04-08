@@ -20,18 +20,17 @@ struct darray *       darray_init_copy    (struct darray       *a,
 void                  darray_deinit       (struct darray *a);
 
 
-/* assignment, swap */
+/* assignment, copy */
 void *                darray_assign       (struct darray       *a,
                                            ssize_t              n,
                                            const void          *val);
 void *                darray_assign_array (struct darray       *a,
                                            const void          *ptr,
                                            ssize_t              n);
-void                  darray_copy         (const struct darray *a,
-                                           struct darray       *dst);
-void                  darray_swap         (struct darray       *a,
-                                           struct darray       *b);
-                                           
+void                  darray_assign_copy  (struct darray       *a,
+                                           const struct darray *src);
+void *                darray_copy_to      (const struct darray *a,
+                                           void                *dst);
 
 
 /* index */
@@ -99,18 +98,12 @@ static inline void *  darray_ptr   (const struct darray *a,
 
 /* searching */
 ssize_t               darray_find_index      (const struct darray *a,
-                                              ssize_t              i,
-                                              ssize_t              n,
                                               const void          *key,
                                               compare_fn           compar);
 ssize_t               darray_find_last_index (const struct darray *a,
-                                              ssize_t              i,
-                                              ssize_t              n,
                                               const void          *key,
                                               compare_fn           compar);
 ssize_t               darray_binary_search   (const struct darray *a,
-                                              ssize_t              i,
-                                              ssize_t              n,
                                               const void          *key,
                                               compare_fn           compar);
 

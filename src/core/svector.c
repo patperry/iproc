@@ -16,7 +16,6 @@ iproc_svector_find_nz (iproc_svector *svector, int64_t i)
     assert(0 <= i);
     assert(i < iproc_svector_dim(svector));
     ssize_t ix = darray_binary_search(&svector->index,
-                                      0, darray_size(&svector->index),
                                       &i,
                                       int64_compare);
     return ix;

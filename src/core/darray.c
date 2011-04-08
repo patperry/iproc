@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "util.h"
 #include "darray.h"
 
 
@@ -30,7 +31,7 @@ struct darray * darray_init_copy (struct darray *a,
     assert(src);
     
     if (_darray_init(a, darray_elt_size(src))) {
-        darray_copy(src, a);
+        darray_assign_copy(a, src);
         return a;
     }
     
@@ -71,26 +72,21 @@ void * darray_assign_array (struct darray *a, const void *ptr, ssize_t n)
 }
 
 
-void darray_copy (const struct darray *a, struct darray *dst)
+void darray_assign_copy (struct darray *a, const struct darray *src)
 {
     assert(a);
-    assert(dst);
-
-    const void *ptr = darray_begin(a);
-    ssize_t n = darray_size(a);
-
-    darray_assign_array(dst, ptr, n);
+    assert(src);
+    
+    darray_assign_array(a, darray_begin(src), darray_size(src));
 }
 
 
-void darray_swap (struct darray *a, struct darray *b)
+void * darray_copy_to (const struct darray *a, void *dst)
 {
     assert(a);
-    assert(b);
-
-    struct darray tmp = *a;
-    *a = *b;
-    *b = tmp;
+    assert(dst || darray_size(a) == 0);
+    
+    return copy_to(darray_begin(a), darray_size(a), dst, darray_elt_size(a));
 }
 
 
@@ -226,7 +222,7 @@ static void darray_grow (struct darray *a)
     size_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
     
     if (n != n0) {
-        array_realloc(&a->array, n);
+        array_resize(&a->array, n);
     }
 }
 
@@ -279,39 +275,35 @@ void darray_resize_with (struct darray *a, ssize_t n, const void *val)
     a->size = n;
 }
 
-
-ssize_t darray_find_index (const struct darray *a, ssize_t i, ssize_t n,
-                           const void *key, compare_fn compar)
+ssize_t darray_find_index (const struct darray *a, const void *key,
+                           compare_fn compar)
 {
     assert(a);
-    assert(i >= 0);
-    assert(i <= darray_size(a) - n);
-    assert(n >= 0);
-
-    return array_find_index(&a->array, i, n, key, compar);
+    assert(compar);
+    
+    return find_index(darray_begin(a), darray_size(a), key, compar,
+                      darray_elt_size(a));
 }
 
 
-ssize_t darray_find_last_index (const struct darray *a, ssize_t i, ssize_t n,
-                                const void *key, compare_fn compar)
+ssize_t darray_find_last_index (const struct darray *a, const void *key,
+                                compare_fn compar)
 {
     assert(a);
-    assert(i >= 0);
-    assert(i <= darray_size(a) - n);
-    assert(n >= 0);
-
-    return array_find_last_index(&a->array, i, n, key, compar);
+    assert(compar);
+    
+    return find_last_index(darray_begin(a), darray_size(a), key, compar,
+                           darray_elt_size(a));
 }
 
 
-ssize_t darray_binary_search (const struct darray *a, ssize_t i, ssize_t n,
-                              const void *key, compare_fn compar)
+ssize_t darray_binary_search (const struct darray *a, const void *key,
+                              compare_fn compar)
+
 {
     assert(a);
-    assert(i >= 0);
-    assert(i <= darray_size(a) - n);
-    assert(n >= 0);
-
-    return array_binary_search(&a->array, i, n, key, compar);
+    assert(compar);
+    
+    return binary_search(darray_begin(a), darray_size(a), key, compar,
+                         darray_elt_size(a));
 }
-

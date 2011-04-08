@@ -62,7 +62,7 @@ struct array * array_init_copy (struct array *a, const struct array *src)
     assert(src);
     
     if (_array_init(a, array_size(src), array_elt_size(src))) {
-        array_copy(src, a);
+        array_assign_copy(a, src);
         return a;
     }
     
@@ -79,7 +79,7 @@ void array_deinit (struct array *a)
 }
 
 
-bool array_realloc (struct array *a, ssize_t n)
+struct array * array_resize (struct array *a, ssize_t n)
 {
     assert(a);
     assert(array_owner(a));
@@ -91,9 +91,10 @@ bool array_realloc (struct array *a, ssize_t n)
     if (data) {
         a->data = data;
         a->size = n;
+        return a;
     }
     
-    return (data != NULL);
+    return NULL;
 }
 
 
@@ -113,135 +114,64 @@ void * array_assign (struct array *a, const void *val)
 }
 
 
-void * array_assign_array (struct array *a, const void *ptr, ssize_t n)
+void * array_assign_array (struct array *a, const void *ptr)
 {
     assert(a);
-    assert(n >= 0);
-    assert(ptr || n == 0);
+    assert(ptr || array_size(a) == 0);
 
-    char val0[a->elt_size];
-    
-    if (n < a->size)
-        memset(val0, 0, a->elt_size);
-    
-    return array_assign_array_with(a, ptr, n, val0);
+    return copy_to(ptr, array_size(a), array_begin(a), array_elt_size(a));
 }
 
 
-void * array_assign_array_with (struct array *a, const void *ptr, ssize_t n,
-                               const void *val0)
+void array_assign_copy (struct array *a, const struct array *src)
 {
     assert(a);
-    assert(n >= 0);
-    assert(ptr || n == 0);
-    assert(val0 || n >= array_size(a));
+    assert(src);
+    assert(array_elt_size(a) == array_elt_size(src));
+    assert(array_size(a) == array_size(src));
     
-    ssize_t size = a->size;
-    ssize_t nsize = MIN(size, n);
-    ssize_t nbytes = nsize * a->elt_size;
-    ssize_t i;
-    
-    memcpy(array_begin(a), ptr, nbytes);
-    
-    for (i = nsize; i < size; i++) {
-        array_set(a, i, val0);
-    }
-    
-    return (void *)ptr + nbytes;
+    array_copy_to(src, array_begin(a));
 }
 
 
-void array_copy (const struct array *a, struct array *dst)
+void * array_copy_to (const struct array *a, void *dst)
 {
     assert(a);
-    assert(dst);
+    assert(dst || array_size(a) == 0);
     
-    array_assign_array(dst, array_begin(a), array_size(a));
-}
-
-void array_copy_with (const struct array *a, struct array *dst,
-                      const void *val0)
-{
-    assert(a);
-    assert(dst);
-    assert(val0 || array_size(a) >= array_size(dst));
-    
-    array_assign_array_with(dst, array_begin(a), array_size(a), val0);
+    return copy_to(array_begin(a), array_size(a), dst, array_elt_size(a));
 }
 
 
-void array_swap (struct array *a, struct array *b)
+ssize_t array_find_index (const struct array *a, const void *key,
+                          compare_fn compar)
 {
     assert(a);
-    assert(b);
-    assert(array_size(a) == array_size(b));
+    assert(compar);
     
-    ssize_t i, n = array_size(a);
-    char tmp[a->elt_size];
-    
-    for (i = 0; i < n; i++) {
-        array_get(a, i, tmp);             // tmp  := a[i]
-        array_set(a, i, array_ptr(b, i)); // a[i] := b[i]
-        array_set(b, i, tmp);             // b[i] := tmp
-    }
+    return find_index(array_begin(a), array_size(a), key, compar,
+                      array_elt_size(a));
 }
 
 
-ssize_t array_find_index (const struct array *a, ssize_t i, ssize_t n,
-                          const void *key, compare_fn compar)
+ssize_t array_find_last_index (const struct array *a, const void *key,
+                               compare_fn compar)
 {
     assert(a);
-    assert(i >= 0);
-    assert(i <= array_size(a) - n);
-    assert(n >= 0);
-
-    ssize_t ix = find_index(array_ptr(a, i), n, key, compar, array_elt_size(a));
+    assert(compar);
     
-    if (i != 0 && ix >= 0) {
-        ix += i;
-    }
-    
-    return ix;
+    return find_last_index(array_begin(a), array_size(a), key, compar,
+                           array_elt_size(a));
 }
 
 
-ssize_t array_find_last_index (const struct array *a, ssize_t i, ssize_t n,
-                               const void *key, compare_fn compar)
+ssize_t array_binary_search (const struct array *a, const void *key,
+                             compare_fn compar)
+                             
 {
     assert(a);
-    assert(i >= 0);
-    assert(i <= array_size(a) - n);
-    assert(n >= 0);
-    
-    ssize_t ix = find_last_index(array_ptr(a, i), n, key, compar,
-                                 array_elt_size(a));
-    
-    if (i != 0 && ix >= 0) {
-        ix += i;
-    }
-    
-    return ix;
-}
+    assert(compar);
 
-
-ssize_t array_binary_search (const struct array *a, ssize_t i, ssize_t n,
-                             const void *key, compare_fn compar)
-{
-    assert(a);
-    assert(i >= 0);
-    assert(i <= array_size(a) - n);
-    assert(n >= 0);
-    
-    ssize_t ix = binary_search(array_ptr(a, i), n, key, compar,
-                               array_elt_size(a));
-    
-    if (i != 0) {
-        if (ix >= 0) {
-            ix += i;
-        } else {
-            ix = ~(~ix + i);
-        }
-    }
-    
-    return ix;
+    return binary_search(array_begin(a), array_size(a), key, compar,
+                         array_elt_size(a));
 }

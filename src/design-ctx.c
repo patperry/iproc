@@ -216,8 +216,7 @@ iproc_design_ctx_dx (iproc_design_ctx *ctx,
     struct darray *dxs = &ctx->dxs;
     iproc_svector *dx = NULL;
     
-    int64_t i = darray_binary_search(dxs, 0, darray_size(dxs),
-                                     &jrecv, int64_compare);
+    int64_t i = darray_binary_search(dxs, &jrecv, int64_compare);
     
     if (i < 0) {
         if (!null_ok) {

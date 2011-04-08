@@ -19,7 +19,6 @@ iproc_actors_insert_group (iproc_actors *actors,
     /* first, find the right bucket */
     size_t traits_hash = iproc_vector_hash(traits);
     ssize_t i = darray_binary_search(&actors->group_buckets,
-                                     0, darray_size(&actors->group_buckets),
                                      &traits_hash,
                                      group_bucket_compare);
 
@@ -37,7 +36,6 @@ iproc_actors_insert_group (iproc_actors *actors,
 
     /* now, find the right group  */
     ssize_t j = darray_binary_search(&bucket->groups,
-                                     0, darray_size(&bucket->groups),
                                      &traits,
                                      group_compare);
 

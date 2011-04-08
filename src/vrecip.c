@@ -55,7 +55,6 @@ design_var_get_dxs (iproc_design_var *var,
         double t = meta->time;
         double dt = tcur - t;
         ssize_t pos = darray_binary_search(intvls,
-                                           0, darray_size(intvls),
                                            &dt, double_compare);
         
         if (pos < 0)
