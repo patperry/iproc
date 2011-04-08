@@ -20,7 +20,7 @@ iproc_loglik_free (iproc_loglik *loglik)
 
         darray_deinit(array);
         iproc_model_unref(loglik->model);
-        iproc_vector_unref(loglik->grad);
+        iproc_vector_free(loglik->grad);
         iproc_free(loglik);
     }
 }

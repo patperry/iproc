@@ -26,13 +26,12 @@ iproc_vector_new (int64_t dim)
     vector = iproc_malloc(sizeof(iproc_vector));
     vector->pdata = iproc_malloc(size);
     vector->dim = dim;
-    iproc_refcount_init(&vector->refcount);
 
     return vector;
 }
 
 iproc_vector *
-iproc_vector_new_copy (iproc_vector *vector)
+iproc_vector_new_copy (const iproc_vector *vector)
 {
     assert(vector);
     int64_t n = iproc_vector_dim(vector);
@@ -42,38 +41,19 @@ iproc_vector_new_copy (iproc_vector *vector)
 }
 
 static void
-iproc_vector_free (iproc_vector *vector)
+iproc_vector_deinit (iproc_vector *vector)
 {
-    if (vector) {
-        iproc_free(vector->pdata);
-        iproc_free(vector);
-    }
-}
-
-iproc_vector *
-iproc_vector_ref (iproc_vector *vector)
-{
-    if (vector) {
-        iproc_refcount_get(&vector->refcount);
-    }
-
-    return vector;
-}
-
-static void
-iproc_vector_release (iproc_refcount *refcount)
-{
-    iproc_vector *vector = container_of(refcount, iproc_vector, refcount);
-    iproc_vector_free(vector);
+    assert(vector);
+    iproc_free(vector->pdata);
 }
 
 void
-iproc_vector_unref (iproc_vector *vector)
+iproc_vector_free (iproc_vector *vector)
 {
-    if (!vector)
-        return;
-
-    iproc_refcount_put(&vector->refcount, iproc_vector_release);
+    if (vector) {
+        iproc_vector_deinit(vector);
+        iproc_free(vector);
+    }
 }
 
 int64_t
@@ -188,14 +168,14 @@ iproc_vector_view_array (double  *array,
     assert(dim >= 0);
     assert(array || dim == 0);
 
-    iproc_vector_view view = {{ array, dim, {0} }};
+    iproc_vector_view view = {{ array, dim }};
     return view;
 }
 
 
 void
 iproc_vector_copy (iproc_vector *dst_vector,
-                   iproc_vector *vector)
+                   const iproc_vector *vector)
 {
     assert(dst_vector);
     assert(vector);

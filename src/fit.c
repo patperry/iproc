@@ -95,9 +95,9 @@ iproc_fit_free (iproc_fit *fit)
 {
     if (fit) {
         iproc_loglik_unref(fit->loglik);
-        iproc_vector_unref(fit->search_dir);
-        iproc_vector_unref(fit->grad0);
-        iproc_vector_unref(fit->grad);
+        iproc_vector_free(fit->search_dir);
+        iproc_vector_free(fit->grad0);
+        iproc_vector_free(fit->grad);
         iproc_matrix_unref(fit->inv_hess);
         iproc_messages_unref(fit->messages);        
         iproc_model_unref(fit->model);
@@ -117,7 +117,7 @@ linesearch (iproc_fit *fit)
     int has_loops = model->has_loops;
     iproc_loglik *loglik = fit->loglik;
     
-    iproc_vector *x0 = iproc_vector_ref(model->coefs);
+    const iproc_vector *x0 = model->coefs;
     iproc_vector *x = iproc_vector_new_copy(x0);
     iproc_vector *search_dir = fit->search_dir;
     iproc_vector *grad0 = fit->grad; /* swap grad0 and grad */
@@ -174,8 +174,7 @@ linesearch (iproc_fit *fit)
 
 cleanup:
     
-    iproc_vector_unref(x);
-    iproc_vector_unref(x0);
+    iproc_vector_free(x);
     
     fit->step = stp;
     fit->value = value;
@@ -228,11 +227,11 @@ update_hess (iproc_fit *fit)
         iproc_matrix_update1(H, -rho, H_y, s);
         iproc_matrix_update1(H, -rho, s, H_y);
 
-        iproc_vector_unref(H_y);
+        iproc_vector_free(H_y);
     }
     
-    iproc_vector_unref(y);
-    iproc_vector_unref(s);
+    iproc_vector_free(y);
+    iproc_vector_free(s);
 }
 
 static void

@@ -9,9 +9,8 @@
 #define group_compare        iproc_vector_ptr_compare
 
 
-static int64_t
-iproc_actors_insert_group (iproc_actors *actors,
-                           iproc_vector *traits)
+static ssize_t
+iproc_actors_insert_group (iproc_actors *actors, iproc_vector *traits)
 {
     assert(actors);
     assert(traits);
@@ -44,7 +43,7 @@ iproc_actors_insert_group (iproc_actors *actors,
         iproc_vector *new_traits = iproc_vector_new_copy(traits);
         int64_t new_id = darray_size(&actors->group_traits);
         darray_push_back(&actors->group_traits, &new_traits);
-        iproc_group new_group = { iproc_vector_ref(new_traits), new_id };
+        iproc_group new_group = { new_traits, new_id };
 
         darray_insert(&bucket->groups, j, &new_group);
     }
@@ -54,51 +53,52 @@ iproc_actors_insert_group (iproc_actors *actors,
     return group->id;
 }
 
-static void
-iproc_actors_group_ids_deinit (struct darray *group_ids)
-{
-    darray_deinit(group_ids);
-}
 
 static void
-iproc_actors_group_traits_deinit (struct darray *group_traits)
+iproc_actors_group_deinit (iproc_group *group)
 {
-    int64_t i, n;
-    iproc_vector *x;
-
-    if (group_traits) {
-        n = darray_size(group_traits);
-        for (i = 0; i < n; i++) {
-            x = darray_index(group_traits, iproc_vector *, i);
-            iproc_vector_unref(x);
-        }
-        darray_deinit(group_traits);
-    }
+    iproc_vector_free(group->traits);
 }
+
 
 static void
 iproc_actors_group_bucket_deinit (iproc_group_bucket *bucket)
 {
-    if (!bucket)
-        return;
+    ssize_t i, n;
     struct darray *groups = &bucket->groups;
-    iproc_actors_group_traits_deinit(groups);
+    iproc_group *group;
+    
+    n = darray_size(groups);
+    for (i = 0; i < n; i++) {
+        group = &darray_index(groups, iproc_group, i);
+        iproc_actors_group_deinit(group);
+    }
+    
+    darray_deinit(groups);
 }
+
 
 static void
 iproc_actors_group_buckets_deinit (struct darray *group_buckets)
 {
-    int64_t i, n;
+    ssize_t i, n;
     iproc_group_bucket *bucket;
 
-    if (group_buckets) {
-        n = darray_size(group_buckets);
-        for (i = 0; i < n; i++) {
-            bucket = &darray_index(group_buckets, iproc_group_bucket, i);
-            iproc_actors_group_bucket_deinit(bucket);
-        }
-        darray_deinit(group_buckets);
+    n = darray_size(group_buckets);
+    for (i = 0; i < n; i++) {
+        bucket = &darray_index(group_buckets, iproc_group_bucket, i);
+        iproc_actors_group_bucket_deinit(bucket);
     }
+    darray_deinit(group_buckets);
+}
+
+
+static void
+iproc_actors_deinit (iproc_actors *actors)
+{
+    iproc_actors_group_buckets_deinit(&actors->group_buckets);
+    darray_deinit(&actors->group_traits);
+    darray_deinit(&actors->group_ids);
 }
 
 
@@ -106,9 +106,7 @@ static void
 iproc_actors_free (iproc_actors *actors)
 {
     if (actors) {
-        iproc_actors_group_buckets_deinit(&actors->group_buckets);
-        iproc_actors_group_traits_deinit(&actors->group_traits);
-        iproc_actors_group_ids_deinit(&actors->group_ids);
+        iproc_actors_deinit(actors);
         iproc_free(actors);
     }
 }

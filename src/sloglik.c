@@ -15,7 +15,7 @@ iproc_sloglik_free (iproc_sloglik *sll)
         iproc_svector_unref(sll->dp);
         iproc_svector_unref(sll->dxobs);
         iproc_svector_unref(sll->nrecv);
-        iproc_vector_unref(sll->grad);
+        iproc_vector_free(sll->grad);
         iproc_model_unref(sll->model);
         iproc_free(sll);
     }

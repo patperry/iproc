@@ -294,7 +294,7 @@ iproc_design_mul0_static (double        alpha,
                             1.0, &ymat.matrix);
     }
 
-    iproc_vector_unref(z);
+    iproc_vector_free(z);
 }
 
 
@@ -359,7 +359,7 @@ iproc_design_muls0_static (double         alpha,
                             1.0, &ymat.matrix);
     }
 
-    iproc_vector_unref(z);
+    iproc_vector_free(z);
 }
 
 

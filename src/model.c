@@ -94,9 +94,9 @@ iproc_group_models_deinit (struct darray *group_models)
         iproc_group_model *group = &(darray_index(group_models,
                                                        iproc_group_model,
                                                        i));
-        iproc_vector_unref(group->xbar0);
-        iproc_vector_unref(group->log_p0);
-        iproc_vector_unref(group->p0);
+        iproc_vector_free(group->xbar0);
+        iproc_vector_free(group->log_p0);
+        iproc_vector_free(group->p0);
     }
     
     darray_deinit(group_models);
@@ -142,7 +142,7 @@ iproc_model_free (iproc_model *model)
         }
         darray_deinit(&model->ctxs);
 
-        iproc_vector_unref(model->coefs);
+        iproc_vector_free(model->coefs);
         iproc_design_unref(model->design);
         iproc_group_models_deinit(&model->group_models);
 
