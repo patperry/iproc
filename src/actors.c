@@ -6,7 +6,12 @@
 #include "actors.h"
 
 #define group_bucket_compare size_compare
-#define group_compare        vector_ptr_compare
+
+static int group_compare (const void *x, const void *y)
+{
+    return vector_compare(((iproc_group *)x)->traits,
+                          ((iproc_group *)y)->traits);
+}
 
 
 static ssize_t
