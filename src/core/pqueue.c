@@ -45,13 +45,15 @@ void pqueue_deinit (struct pqueue *q)
 
 struct pqueue * pqueue_assign_copy (struct pqueue *q, const struct pqueue *src)
 {
-    if (!q) return NULL;
-    if (!src) return NULL;
+    assert(q);
+    assert(src);
 
-    darray_assign_copy(&q->array, &src->array);
-    q->compare = src->compare;
+    if (darray_assign_copy(&q->array, &src->array)) {
+        q->compare = src->compare;
+        return q;
+    }
 
-    return q;
+    return NULL;
 }
 
 
@@ -63,7 +65,7 @@ void * pqueue_copy_to (const struct pqueue *q, void *dst)
 }
 
 
-void pqueue_push (struct pqueue *q, const void *val)
+void * pqueue_push (struct pqueue *q, const void *val)
 {
     assert(q);
     assert(val);
@@ -72,7 +74,10 @@ void pqueue_push (struct pqueue *q, const void *val)
     compare_fn compare = q->compare;
     ssize_t icur = darray_size(array);
 
-    // make space for the new element;
+    // make space for the new element
+    if (!darray_reserve(array, icur + 1))
+        return NULL;
+
     darray_resize(array, icur + 1);
     
     // while current element has a parent:
@@ -91,6 +96,8 @@ void pqueue_push (struct pqueue *q, const void *val)
     
     // actually copy new element
     darray_set(array, icur, val);
+
+    return (void *)val + pqueue_elt_size(q);
 }
 
 
@@ -99,6 +106,10 @@ void * pqueue_push_array (struct pqueue *q, const void *src, ssize_t n)
     assert(q);
     assert(src || n == 0);
     assert(n >= 0);
+    
+    // make space for the new elements
+    if (!darray_reserve(&q->array, pqueue_size(q) + n))
+        return NULL;
     
     size_t elt_size = pqueue_elt_size(q);
     const void *end = src + n * elt_size;

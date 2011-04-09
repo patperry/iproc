@@ -76,19 +76,19 @@ static inline ssize_t darray_max_size (const struct darray *a);
 
 
 /* standard operations */
-void                  darray_insert          (struct darray *a,
-                                              ssize_t        i,
-                                              const void    *val);
-void *                darray_insert_all      (struct darray *a,
-                                              ssize_t        i,
-                                              const void    *ptr,
-                                              ssize_t        n);
-void                  darray_insert_repeat (struct darray *a,
-                                              ssize_t        i,
-                                              ssize_t        n,
-                                              const void    *val);
+void *                darray_insert        (struct darray *a,
+                                            ssize_t        i,
+                                            const void    *val);
+void *                darray_insert_all    (struct darray *a,
+                                            ssize_t        i,
+                                            const void    *ptr,
+                                            ssize_t        n);
+void *                darray_insert_repeat (struct darray *a,
+                                            ssize_t        i,
+                                            ssize_t        n,
+                                            const void    *val);
 
-void                  darray_push_back    (struct darray *a,
+void *                darray_push_back    (struct darray *a,
                                            const void    *val);
 void                  darray_erase        (struct darray *a,
                                            ssize_t        i);
@@ -100,11 +100,11 @@ void                  darray_clear        (struct darray *a);
 
 
 /* allocation/size modification */
-void                  darray_reserve     (struct darray *a,
+struct darray *       darray_reserve     (struct darray *a,
                                           ssize_t        n);
-void                  darray_resize      (struct darray *a,
+struct darray *       darray_resize      (struct darray *a,
                                           ssize_t        n);
-void                  darray_resize_with (struct darray *a,
+struct darray *       darray_resize_with (struct darray *a,
                                           ssize_t        n,
                                           const void    *val);
 

@@ -34,7 +34,7 @@ static inline ssize_t      pqueue_max_size (const struct pqueue *q);
 static inline size_t       pqueue_elt_size (const struct pqueue *q);
 
 /* operations */
-void   pqueue_push       (struct pqueue *q, const void *val);
+void * pqueue_push       (struct pqueue *q, const void *val);
 void * pqueue_push_array (struct pqueue *q, const void *src, ssize_t n);
 void   pqueue_pop        (struct pqueue *q);
 void * pqueue_pop_array  (struct pqueue *q, void *dst, ssize_t n);
