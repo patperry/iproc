@@ -4,8 +4,7 @@
 #include <string.h>
 #include "util.h"
 
-void * memory_fill (void *begin, ssize_t size, const void *val,
-                    ssize_t elt_size)
+void * memory_fill (void *begin, ssize_t size, const void *val, size_t elt_size)
 {
     assert(begin || size == 0);
     assert(elt_size > 0);
@@ -38,6 +37,39 @@ void * memory_copy_to (const void *src, ssize_t size, void *dst, size_t elt_size
     size_t nbytes = size * elt_size;
     memmove(dst, src, nbytes); // not memcpy; be careful of aliasing
     return dst + elt_size;
+}
+
+
+void memory_swap (void *val1, void *val2, size_t elt_size)
+{
+    assert(val1);
+    assert(val2);
+    assert(elt_size > 0);
+    assert(val1 != val2);
+    
+    char tmp[elt_size];
+
+    memcpy(tmp,  val1, elt_size);
+    memcpy(val1, val2, elt_size);
+    memcpy(val2, tmp,  elt_size);
+}
+
+
+void * memory_reverse (void *begin, ssize_t size, size_t elt_size)
+{
+    assert(begin || size == 0);
+    assert(size >= 0);
+    assert(elt_size > 0);
+    
+    ssize_t n = size;
+    ssize_t i;
+    
+    for (i = 0; i < n / 2; i++) {
+        memory_swap(begin + i * elt_size, begin + (n - i - 1) * elt_size,
+                    elt_size);
+    }
+    
+    return begin + n * elt_size;
 }
 
 

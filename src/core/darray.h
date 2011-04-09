@@ -125,6 +125,9 @@ ssize_t               darray_binary_search  (const struct darray *a,
                                              const void          *key,
                                              compare_fn           compar);
 
+/* swap, reverse */
+void                  darray_swap    (struct darray *a, ssize_t i, ssize_t j);
+void                  darray_reverse (struct darray *a);
 
 
 /* private functions */

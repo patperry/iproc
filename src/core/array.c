@@ -79,6 +79,24 @@ void array_deinit (struct array *a)
 }
 
 
+void array_swap (struct array *a, ssize_t i, ssize_t j)
+{
+    assert(a);
+    assert(0 <= i && i < array_size(a));
+    assert(0 <= j && j < array_size(a));
+    assert(i != j);
+    
+    memory_swap(array_ptr(a, i), array_ptr(a, j), array_elt_size(a));
+}
+
+
+void array_reverse (struct array *a)
+{
+    assert(a);
+    memory_reverse(array_begin(a), array_size(a), array_elt_size(a));
+}
+
+
 struct array * array_resize (struct array *a, ssize_t n)
 {
     assert(a);

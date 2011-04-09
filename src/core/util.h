@@ -20,14 +20,21 @@
             (type *)( (char *)__mptr - offsetof(type,member) );})
 
 
-void *                memory_fill     (void         *begin,
-                                       ssize_t       size,
-                                       const void   *val,
-                                       ssize_t       elt_size);
+void *                memory_fill     (void       *begin,
+                                       ssize_t     size,
+                                       const void *val,
+                                       size_t      elt_size);
 
 void *                memory_copy_to  (const void *src,
                                        ssize_t     size,
                                        void       *dst,
+                                       size_t      elt_size);
+
+void                  memory_swap     (void       *val1,
+                                       void       *val2,
+                                       size_t      elt_size);
+void *                memory_reverse  (void       *begin,
+                                       ssize_t     size,
                                        size_t      elt_size);
 
 ssize_t               forward_search  (const void *begin,

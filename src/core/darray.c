@@ -294,3 +294,21 @@ ssize_t darray_binary_search (const struct darray *a, const void *key,
     return binary_search(darray_begin(a), darray_size(a), key, compar,
                          darray_elt_size(a));
 }
+
+void darray_swap (struct darray *a, ssize_t i, ssize_t j)
+{
+    assert(a);
+    assert(0 <= i && i < darray_size(a));
+    assert(0 <= j && j < darray_size(a));
+    assert(i != j);
+    
+    memory_swap(darray_ptr(a, i), darray_ptr(a, j), darray_elt_size(a));
+}
+
+
+void darray_reverse (struct darray *a)
+{
+    assert(a);
+    memory_reverse(darray_begin(a), darray_size(a), darray_elt_size(a));
+}
+

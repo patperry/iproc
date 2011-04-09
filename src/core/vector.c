@@ -173,57 +173,6 @@ vector_copy (struct vector *dst_vector,
 }
 
 
-void
-vector_swap (struct vector *vector1,
-                   struct vector *vector2)
-{
-    assert(vector1);
-    assert(vector2);
-    assert(vector_size(vector1) == vector_size(vector2));
-
-    f77int  n    = (f77int)vector_size(vector1);
-    double *px   = vector_ptr(vector1, 0);
-    f77int  incx = 1;
-    double *py   = vector_ptr(vector2, 0);
-    f77int  incy = 1;
-
-    F77_FUNC(dswap)(&n, px, &incx, py, &incy);
-}
-
-
-void
-vector_swap_elems (struct vector *v,
-                         ssize_t       i1,
-                         ssize_t       i2)
-{
-    assert(v);
-    assert(0 <= i1 && i1 < vector_size(v));
-    assert(0 <= i2 && i2 < vector_size(v));
-
-    double e1, e2;
-
-    if (i1 != i2) {
-        e1 = vector_index(v, i1);
-        e2 = vector_index(v, i2);
-        vector_index(v, i2) = e1;
-        vector_index(v, i1) = e2;
-    }
-}
-
-
-void
-vector_reverse (struct vector *vector)
-{
-    assert(vector);
-
-    ssize_t n = vector_size(vector);
-    ssize_t i;
-
-    for (i = 0; i < n / 2; i++) {
-        vector_swap_elems(vector, i, n - 1 - i);
-    }
-}
-
 
 void
 vector_scale (struct vector *vector,

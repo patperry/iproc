@@ -84,6 +84,10 @@ static inline bool    array_overlaps (const struct array *a,
                                       const void         *ptr,
                                       ssize_t             nel);
 
+/* operations */
+void                  array_swap    (struct array *a, ssize_t i, ssize_t j);
+void                  array_reverse (struct array *a);
+
 
 /* size modification */
 struct array *        array_resize (struct array *a,

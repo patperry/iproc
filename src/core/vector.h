@@ -57,12 +57,6 @@ iproc_vector_view iproc_vector_view_array    (double       *array,
                                               ssize_t       dim);
 void              vector_copy          (struct vector *dst_vector,
                                               const struct vector *vector);
-void              vector_swap          (struct vector *vector1,
-                                              struct vector *vector2);
-void              vector_swap_elems    (struct vector *vector,
-                                              ssize_t       i,
-                                              ssize_t       j);
-void              vector_reverse       (struct vector *vector);
 void              vector_scale         (struct vector *vector,
                                               double        scale);
 void              vector_shift         (struct vector *vector,
