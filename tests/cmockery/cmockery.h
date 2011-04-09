@@ -51,6 +51,10 @@
 #define cast_to_largest_integral_type(value) \
     ((LargestIntegralType)((unsigned)(value)))
 
+// Perform a cast to a logical value
+#define cast_to_bool(value) \
+    ((value) ? 1 : 0)
+
 // Retrieves a return value for the current function.
 #define mock() _mock(__func__, __FILE__, __LINE__)
 
@@ -173,10 +177,10 @@
                     cast_to_largest_integral_type(parameter))
 
 // Assert that the given expression is true.
-#define assert_true(c) _assert_true(cast_to_largest_integral_type(c), #c, \
+#define assert_true(c) _assert_true(cast_to_bool(c), #c, \
                                     __FILE__, __LINE__)
 // Assert that the given expression is false.
-#define assert_false(c) _assert_true(!(cast_to_largest_integral_type(c)), #c, \
+#define assert_false(c) _assert_true(!(cast_to_bool(c)), #c, \
                                      __FILE__, __LINE__)
 
 // Assert that the two given integers are equal, otherwise fail.
