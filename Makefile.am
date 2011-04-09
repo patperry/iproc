@@ -174,7 +174,7 @@ rpkg_extra_sources = \
 	$(libminpack_la_SOURCES)
 
 @RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
-	cp $(rpkg_extra_sources)  interfaces/R/src
+	$(AM_V_GEN)cp $(rpkg_extra_sources)  interfaces/R/src
 	R CMD build interfaces/R
 
 check_LTLIBRARIES = \
