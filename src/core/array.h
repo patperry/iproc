@@ -89,10 +89,6 @@ void                  array_swap    (struct array *a, ssize_t i, ssize_t j);
 void                  array_reverse (struct array *a);
 
 
-/* size modification */
-struct array *        array_resize (struct array *a,
-                                    ssize_t       n);
-
 /* iteration */
 static inline void *  array_begin (const struct array *a);
 static inline void *  array_end   (const struct array *a);
@@ -113,8 +109,6 @@ ssize_t               array_binary_search  (const struct array *a,
 
 
 /* private functions */
-struct array *        _array_new       (ssize_t size,
-                                        size_t  elt_size);
 struct array *        _array_init      (struct array *a,
                                         ssize_t       size,
                                         size_t        elt_size);
@@ -122,6 +116,11 @@ struct array *        _array_init_view (struct array *a,
                                         const void   *data,
                                         ssize_t       size,
                                         size_t        elt_size);
+struct array *        _array_reinit    (struct array *a,
+                                        ssize_t       n,
+                                        size_t        elt_size);
+
+
 
 
 /* inline function defs */

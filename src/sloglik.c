@@ -170,7 +170,7 @@ acc_grad_nocache (struct vector  *dst_vector,
     iproc_group_model *group = iproc_model_send_group(sll->model, sll->isend);
 
     // sum{gamma[t,i]} * xbar[0,i]
-    vector_acc(dst_vector, scale * sll->gamma, group->xbar0);
+    vector_axpy(scale * sll->gamma, group->xbar0, dst_vector);
     
     // (X[0,i])^T * sum{dP[t,i]}
     iproc_design_muls0(scale, IPROC_TRANS_TRANS,

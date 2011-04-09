@@ -191,7 +191,7 @@ iproc_vector_acc_loglik_grad_nocache (struct vector *dst_vector,
         sll = darray_index(array, iproc_sloglik *, i);
         if (sll) {
             struct vector *g = iproc_sloglik_grad(sll);
-            vector_acc(dst_vector, scale, g);
+            vector_axpy(scale, g, dst_vector);
         }
     }
 }

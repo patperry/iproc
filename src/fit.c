@@ -33,9 +33,9 @@ eval_objective (iproc_loglik *loglik,
     double value = -ll_value/n + 0.5 * (penalty / n) * norm2;
     *valuep = value;
     
-    vector_copy(grad, coefs);
+    vector_assign_copy(grad, coefs);
     vector_scale(grad, penalty / n);
-    vector_acc(grad, -1.0/n, ll_grad);
+    vector_axpy(-1.0/n, ll_grad, grad);
 }
 
 
@@ -150,8 +150,8 @@ linesearch (iproc_fit *fit)
         iproc_model_unref(model);
 
         /* Take a step and create a new model */
-        vector_copy(x, x0);
-        vector_acc(x, stp, search_dir);
+        vector_assign_copy(x, x0);
+        vector_axpy(stp, search_dir, x);
         model = iproc_model_new(design, x, has_loops);
         
         /* Update the loglik, value, and gradient */
@@ -192,7 +192,7 @@ update_hess (iproc_fit *fit)
     vector_scale(s, fit->step);
 
     struct vector *y = vector_new_copy(fit->grad);
-    vector_acc(y, -1.0, fit->grad0);
+    vector_axpy(-1.0, fit->grad0, y);
 
     double s_y = vector_dot(s, y);
     
@@ -245,7 +245,7 @@ update_searchdir (iproc_fit *fit)
         iproc_matrix_mul(-1.0, IPROC_TRANS_NOTRANS, fit->inv_hess, fit->grad,
                          +0.0, s);
     } else {
-        vector_copy(s, fit->grad);
+        vector_assign_copy(s, fit->grad);
         double scale = vector_norm(s);
         int64_t i, n = vector_size(s);
 

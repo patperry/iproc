@@ -67,7 +67,7 @@ Riproc_vector_new_copy (struct vector *vector)
 
     PROTECT(Rvector = NEW_NUMERIC(n));
     iproc_vector_view view = Riproc_vector_view_sexp(Rvector);
-    vector_copy(&view.vector, vector);
+    vector_assign_copy(&view.vector, vector);
     UNPROTECT(1);
     return Rvector;
 }

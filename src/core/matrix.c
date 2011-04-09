@@ -76,21 +76,21 @@ iproc_matrix_unref (iproc_matrix *matrix)
 }
 
 int64_t
-iproc_matrix_nrow (iproc_matrix *matrix)
+iproc_matrix_nrow (const iproc_matrix *matrix)
 {
     assert(matrix);
     return matrix->nrow;
 }
 
 int64_t
-iproc_matrix_ncol (iproc_matrix *matrix)
+iproc_matrix_ncol (const iproc_matrix *matrix)
 {
     assert(matrix);
     return matrix->ncol;
 }
 
 int64_t
-iproc_matrix_lda (iproc_matrix *matrix)
+iproc_matrix_lda (const iproc_matrix *matrix)
 {
     assert(matrix);
     return matrix->lda;
@@ -187,13 +187,13 @@ iproc_matrix_set (iproc_matrix *a, int64_t i, int64_t j,
 }
 
 double *
-iproc_matrix_ptr (iproc_matrix *a, int64_t i, int64_t j)
+iproc_matrix_ptr (const iproc_matrix *a, int64_t i, int64_t j)
 {
     assert(a);
     assert(0 <= i && i <= iproc_matrix_nrow(a));
     assert(0 <= j && j <= iproc_matrix_ncol(a));
 
-    return a->data + (i + j * (iproc_matrix_lda(a)));
+    return (double *)(a->data + (i + j * (iproc_matrix_lda(a))));
 }
 
 void
@@ -246,12 +246,13 @@ iproc_matrix_scale (iproc_matrix *matrix,
 {
     assert(matrix);
 
+    struct vector col;
     int64_t n = iproc_matrix_ncol(matrix);
     int64_t j;
 
     for (j = 0; j < n; j++) {
-        iproc_vector_view col = iproc_matrix_col(matrix, j);
-        vector_scale(&col.vector, scale);
+        vector_init_matrix_col(&col, matrix, j);
+        vector_scale(&col, scale);
     }
 }
 
@@ -263,24 +264,27 @@ iproc_matrix_scale_rows (iproc_matrix *matrix,
     assert(scale);
     assert(iproc_matrix_nrow(matrix) == vector_size(scale));
 
+    struct vector col;
     int64_t n = iproc_matrix_ncol(matrix);
     int64_t j;
 
     for (j = 0; j < n; j++) {
-        iproc_vector_view col = iproc_matrix_col(matrix, j);
-        vector_mul(&col.vector, scale);
+        vector_init_matrix_col(&col, matrix, j);
+        vector_mul(&col, scale);
     }
 }
 
-iproc_vector_view
-iproc_matrix_col (iproc_matrix *matrix,
-                  int64_t       j)
+struct vector * vector_init_matrix_col (struct vector *v, const iproc_matrix *a,
+                                        ssize_t j)
 {
-    assert(0 <= j && j < iproc_matrix_ncol(matrix));
-    int64_t dim = iproc_matrix_nrow(matrix);
-    double *data = iproc_matrix_ptr(matrix, 0, j);
-    return iproc_vector_view_array(data, dim);
+    assert(0 <= j && j < iproc_matrix_ncol(a));
+    ssize_t m = iproc_matrix_nrow(a);
+    double *ptr = iproc_matrix_ptr(a, 0, j);
+
+    return vector_init_view(v, ptr, m);
+    
 }
+
 
 iproc_matrix_view
 iproc_matrix_submatrix (iproc_matrix *matrix,

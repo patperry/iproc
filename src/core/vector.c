@@ -59,7 +59,7 @@ struct vector * vector_init_copy (struct vector *v, const struct vector *src)
     assert(src);
     
     if (vector_init(v, vector_size(src))) {
-        vector_copy(v, src);
+        vector_assign_copy(v, src);
         return v;
     }
     
@@ -109,6 +109,25 @@ void vector_free (struct vector *v)
 }
 
 
+struct vector * vector_assign_copy (struct vector *v, const struct vector *src)
+{
+    assert(v);
+    assert(src);
+    assert(vector_size(v) == vector_size(src));
+    
+    vector_copy_to(src, vector_begin(v));
+    return v;
+}
+
+
+double * vector_copy_to (const struct vector *v, double *dst)
+{
+    assert(v);
+    assert(dst || vector_size(v) == 0);
+    
+    return array_copy_to(&v->array, dst);
+}
+
 
 void
 vector_fill (struct vector *vector,
@@ -155,23 +174,6 @@ iproc_vector_view_array (double  *ptr, ssize_t n)
 }
 
 
-void
-vector_copy (struct vector *dst_vector,
-                   const struct vector *vector)
-{
-    assert(dst_vector);
-    assert(vector);
-    assert(vector_size(dst_vector) == vector_size(vector));
-
-    f77int  n    = (f77int)vector_size(dst_vector);
-    double *px   = vector_ptr(vector, 0);
-    f77int  incx = 1;
-    double *py   = vector_ptr(dst_vector, 0);
-    f77int  incy = 1;
-
-    F77_FUNC(dcopy)(&n, px, &incx, py, &incy);
-}
-
 
 
 void
@@ -205,33 +207,27 @@ vector_shift (struct vector *vector,
 }
 
 
-void
-vector_add (struct vector *dst_vector,
-                  struct vector *vector)
+void vector_add (struct vector *dst_vector, const struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
     assert(vector_size(dst_vector) == vector_size(vector));
 
-    vector_acc(dst_vector, 1, vector);
+    vector_axpy(1.0, vector, dst_vector);
 }
 
 
-void
-vector_sub (struct vector *dst_vector,
-                  struct vector *vector)
+void vector_sub (struct vector *dst_vector, const struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
     assert(vector_size(dst_vector) == vector_size(vector));
 
-    vector_acc(dst_vector, -1, vector);
+    vector_axpy(-1.0, vector, dst_vector);
 }
 
 
-void
-vector_mul (struct vector *dst_vector,
-                  struct vector *vector)
+void vector_mul (struct vector *dst_vector, const struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
@@ -248,9 +244,7 @@ vector_mul (struct vector *dst_vector,
 }
 
 
-void
-vector_div (struct vector *dst_vector,
-                  struct vector *vector)
+void vector_div (struct vector *dst_vector, const struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
@@ -267,20 +261,16 @@ vector_div (struct vector *dst_vector,
 }
 
 
-void
-vector_acc (struct vector *dst_vector,
-                  double        scale,
-                  struct vector *vector)
+void vector_axpy (double alpha, const struct vector *x, struct vector *y)
 {
-    assert(dst_vector);
-    assert(vector);
-    assert(vector_size(dst_vector) == vector_size(vector));
+    assert(x);
+    assert(y);
+    assert(vector_size(x) == vector_size(y));
 
-    f77int  n     = (f77int)vector_size(dst_vector);
-    double  alpha = scale;
-    double *px    = vector_ptr(vector, 0);
+    f77int  n     = (f77int)vector_size(y);
+    double *px    = vector_begin(x);
     f77int  incx  = 1;
-    double *py    = vector_ptr(dst_vector, 0);
+    double *py    = vector_begin(y);
     f77int  incy  = 1;
 
     F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
@@ -288,8 +278,8 @@ vector_acc (struct vector *dst_vector,
 
 
 double
-vector_dot (struct vector *vector1,
-                  struct vector *vector2)
+vector_dot (const struct vector *vector1,
+            const struct vector *vector2)
 {
     assert(vector1);
     assert(vector2);
@@ -307,7 +297,7 @@ vector_dot (struct vector *vector1,
 
 
 double
-vector_norm (struct vector *vector)
+vector_norm (const struct vector *vector)
 {
     assert(vector);
 
@@ -321,7 +311,7 @@ vector_norm (struct vector *vector)
 
 
 double
-vector_sum_abs (struct vector *vector)
+vector_norm1 (const struct vector *vector)
 {
     assert(vector);
 
@@ -335,7 +325,7 @@ vector_sum_abs (struct vector *vector)
 
 
 double
-vector_max_abs (struct vector *vector)
+vector_max_abs (const struct vector *vector)
 {
     assert(vector);
 
@@ -354,7 +344,7 @@ vector_max_abs (struct vector *vector)
 
 
 ssize_t
-vector_max_abs_index (struct vector *vector)
+vector_max_abs_index (const struct vector *vector)
 {
     assert(vector);
     if (!(vector_size(vector) > 0)) return -1;
@@ -370,7 +360,7 @@ vector_max_abs_index (struct vector *vector)
 }
 
 ssize_t
-vector_max_index (struct vector *vector)
+vector_max_index (const struct vector *vector)
 {
     assert(vector);
     assert(vector_size(vector) > 0);
@@ -401,7 +391,7 @@ vector_max_index (struct vector *vector)
 }
 
 double
-vector_max (struct vector *vector)
+vector_max (const struct vector *vector)
 {
     assert(vector);
     if (vector_size(vector) == 0) {
@@ -427,7 +417,7 @@ vector_exp (struct vector *vector)
 }
 
 double 
-vector_log_sum_exp (struct vector *vector)
+vector_log_sum_exp (const struct vector *vector)
 {
     assert(vector);
     ssize_t n = vector_size(vector);
@@ -451,7 +441,7 @@ vector_log_sum_exp (struct vector *vector)
 }
 
 void
-vector_printf (struct vector *v)
+vector_printf (const struct vector *v)
 {
     printf("\nvector {");
     printf("\n  dim: %"SSIZE_FMT"", vector_size(v));
@@ -469,7 +459,7 @@ vector_printf (struct vector *v)
 }
 
 size_t
-vector_hash (struct vector *vector)
+vector_hash (const struct vector *vector)
 {
     if (!vector)
         return 0;
@@ -486,9 +476,9 @@ vector_hash (struct vector *vector)
     return seed;
 }
 
-int
-vector_identical (struct vector *vector1,
-                        struct vector *vector2)
+bool
+vector_identical (const struct vector *vector1,
+                  const struct vector *vector2)
 {
     if (vector1 == vector2)
         return 1;
@@ -510,8 +500,7 @@ vector_identical (struct vector *vector1,
     return 1;
 }
 
-int
-vector_compare (const void *x1, const void *x2)
+int vector_compare (const void *x1, const void *x2)
 {
     const struct vector *vector1 = x1;
     const struct vector *vector2 = x2;
@@ -537,8 +526,7 @@ vector_compare (const void *x1, const void *x2)
     return 0;
 }
 
-int
-vector_ptr_compare (const void *px1, const void *px2)
+int vector_ptr_compare (const void *px1, const void *px2)
 {
     struct vector * const *pvector1 = px1;
     struct vector * const *pvector2 = px2;

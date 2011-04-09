@@ -289,7 +289,7 @@ iproc_actors_mul (double        alpha,
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
             entry = vector_index(x, i);
-            vector_acc(y, alpha * entry, row);
+            vector_axpy(alpha * entry, row, y);
         }
     }
 }
@@ -339,7 +339,7 @@ iproc_actors_muls (double         alpha,
             i = iproc_svector_nz(x, inz);
             row = iproc_actors_get(actors, i);
             entry = iproc_svector_nz_get(x, inz);
-            vector_acc(y, alpha * entry, row);
+            vector_axpy(alpha * entry, row, y);
         }
     }
 }
@@ -375,9 +375,12 @@ iproc_actors_matmul (double        alpha,
         iproc_matrix_scale(y, beta);
     }
 
+    struct vector xcol;
+    struct vector ycol;
+    
     for (j = 0; j < m; j++) {
-        iproc_vector_view xcol = iproc_matrix_col(x, j);
-        iproc_vector_view ycol = iproc_matrix_col(y, j);
-        iproc_actors_mul(alpha, trans, actors, &xcol.vector, 1.0, &ycol.vector);
+        vector_init_matrix_col(&xcol, x, j);
+        vector_init_matrix_col(&ycol, y, j);
+        iproc_actors_mul(alpha, trans, actors, &xcol, 1.0, &ycol);
     }
 }

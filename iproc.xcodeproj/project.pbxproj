@@ -277,6 +277,8 @@
 				221C600D134FADCD0008B25B /* sarray.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
+				221FEE8E132EC8710000097B /* vector.c */,
+				221FEE8F132EC8710000097B /* vector.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
 				221FEE74132EC8710000097B /* hash.c */,
 				221FEE75132EC8710000097B /* hash.h */,
@@ -292,8 +294,6 @@
 				221FEE88132EC8710000097B /* refcount.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
-				221FEE8E132EC8710000097B /* vector.c */,
-				221FEE8F132EC8710000097B /* vector.h */,
 			);
 			name = Core;
 			sourceTree = "<group>";

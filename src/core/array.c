@@ -69,6 +69,28 @@ struct array * array_init_copy (struct array *a, const struct array *src)
 }
 
 
+struct array * _array_reinit (struct array *a, ssize_t n, size_t elt_size)
+{
+    assert(a);
+    assert(n >= 0);
+    assert(elt_size > 0);
+
+    size_t nbytes = n * a->elt_size;
+    void *olddata = array_owner(a) ? a->data : NULL;
+    void *data = realloc(olddata, nbytes);
+    
+    if (data) {
+        a->data = data;
+        a->size = n;
+        a->elt_size = elt_size;
+        
+        return a;
+    }
+    
+    return NULL;
+}
+
+
 void array_deinit (struct array *a)
 {
     assert(a);
@@ -95,26 +117,6 @@ void array_reverse (struct array *a)
     assert(a);
     memory_reverse(array_begin(a), array_size(a), array_elt_size(a));
 }
-
-
-struct array * array_resize (struct array *a, ssize_t n)
-{
-    assert(a);
-    assert(array_owner(a));
-    assert(n >= 0);
-    
-    size_t nbytes = n * a->elt_size;
-    void *data = realloc(a->data, nbytes);
-    
-    if (data) {
-        a->data = data;
-        a->size = n;
-        return a;
-    }
-    
-    return NULL;
-}
-
 
 
 struct array * array_assign_array (struct array *a, const void *ptr)

@@ -82,14 +82,17 @@ Riproc_actors_new (SEXP Rtraits_t)
     if (!(n > 0))
         error("must specify at least one actor");
 
-    iproc_vector_view traits0 = iproc_matrix_col(&traits_t.matrix, 0);
-    iproc_actors *actors = iproc_actors_new(n, &traits0.vector);
+    struct vector traits0;
+    vector_init_matrix_col(&traits0, &traits_t.matrix, 0);
+
+    iproc_actors *actors = iproc_actors_new(n, &traits0);
+    struct vector traits;
     int i;
     SEXP Ractors;
 
     for (i = 0; i < n; i++) {
-        iproc_vector_view traits = iproc_matrix_col(&traits_t.matrix, i);
-        iproc_actors_set(actors, i, &traits.vector);
+        vector_init_matrix_col(&traits, &traits_t.matrix, i);
+        iproc_actors_set(actors, i, &traits);
     }
 
     PROTECT(Ractors = Riproc_from_actors(actors));
@@ -135,16 +138,19 @@ Riproc_actors_traits (SEXP Ractors,
 
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
     iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
-
+    struct vector dst;
+    const struct vector *src;
+    
     for (i = 0; i < n; i++) {
         int id = INTEGER(Ractor_ids)[i] - 1;
         if (!(0 <= id && id < size))
             error("actor id out of range");
 
-        iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        struct vector *src = iproc_actors_get(actors, id);
+        
+        vector_init_matrix_col(&dst, &xt.matrix, i);
+        src = iproc_actors_get(actors, id);
 
-        vector_copy(&dst.vector, src);
+        vector_assign_copy(&dst, src);
     }
 
     UNPROTECT(1);
@@ -190,15 +196,18 @@ Riproc_actors_group_traits (SEXP Ractors,
     PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
     iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
 
+    struct vector dst;
+    const struct vector *src;
+    
     for (i = 0; i < n; i++) {
         int id = INTEGER(Rgroup_ids)[i] - 1;
         if (!(0 <= id && id < ngroup))
             error("group id out of range");
 
-        iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        struct vector *src = iproc_actors_group_traits(actors, id);
+        vector_init_matrix_col(&dst, &xt.matrix, i);
+        src = iproc_actors_group_traits(actors, id);
 
-        vector_copy(&dst.vector, src);
+        vector_assign_copy(&dst, src);
     }
 
     UNPROTECT(1);
@@ -223,12 +232,14 @@ Riproc_actors_mul (SEXP Ractors,
 
     PROTECT(Rresult = allocMatrix(REALSXP, size, ncol));
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
-
+    struct vector col;
+    struct vector dst;
+    
     int j;
     for (j = 0; j < ncol; j++) {
-        iproc_vector_view col = iproc_matrix_col(&view.matrix, j);
-        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
-        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col.vector, 0.0, &dst.vector);
+        vector_init_matrix_col(&col, &view.matrix, j);
+        vector_init_matrix_col(&dst, &result.matrix, j);
+        iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col, 0.0, &dst);
     }
 
     UNPROTECT(1);
@@ -252,12 +263,14 @@ Riproc_actors_tmul (SEXP Ractors,
 
     PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+    struct vector col;
+    struct vector dst;
 
     int j;
     for (j = 0; j < ncol; j++) {
-        iproc_vector_view col = iproc_matrix_col(&view.matrix, j);
-        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
-        iproc_actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col.vector, 0.0, &dst.vector);
+        vector_init_matrix_col(&col, &view.matrix, j);
+        vector_init_matrix_col(&dst, &result.matrix, j);
+        iproc_actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col, 0.0, &dst);
     }
 
     UNPROTECT(1);

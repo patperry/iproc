@@ -184,12 +184,14 @@ Riproc_design_mul (SEXP Rdesign,
     PROTECT(Rresult = allocMatrix(REALSXP, nreceiver, ncol));
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
     iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
-
+    struct vector col;
+    struct vector dst;
+    
     int j;
     for (j = 0; j < ncol; j++) {
-        iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
-        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
-        iproc_design_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, &col.vector, 0.0, &dst.vector);
+        vector_init_matrix_col(&col, &x.matrix, j);
+        vector_init_matrix_col(&dst, &result.matrix, j);
+        iproc_design_ctx_mul(1.0, IPROC_TRANS_NOTRANS, ctx, &col, 0.0, &dst);
     }
 
     iproc_design_ctx_unref(ctx);
@@ -226,12 +228,14 @@ Riproc_design_tmul (SEXP Rdesign,
     PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
     iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
     iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
-
+    struct vector col;
+    struct vector dst;
+    
     int j;
     for (j = 0; j < ncol; j++) {
-        iproc_vector_view col = iproc_matrix_col(&x.matrix, j);
-        iproc_vector_view dst = iproc_matrix_col(&result.matrix, j);
-        iproc_design_ctx_mul(1.0, IPROC_TRANS_TRANS, ctx, &col.vector, 0.0, &dst.vector);
+        vector_init_matrix_col(&col, &x.matrix, j);
+        vector_init_matrix_col(&dst, &result.matrix, j);
+        iproc_design_ctx_mul(1.0, IPROC_TRANS_TRANS, ctx, &col, 0.0, &dst);
     }
 
     iproc_design_ctx_unref(ctx);

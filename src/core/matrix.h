@@ -38,9 +38,9 @@ void              iproc_matrix_set_all             (iproc_matrix *matrix,
                                                     double        value);
 void              iproc_matrix_set_identity        (iproc_matrix *matrix);
 
-int64_t           iproc_matrix_nrow                (iproc_matrix *a);
-int64_t           iproc_matrix_ncol                (iproc_matrix *a);
-int64_t           iproc_matrix_lda                 (iproc_matrix *a);
+int64_t           iproc_matrix_nrow                (const iproc_matrix *a);
+int64_t           iproc_matrix_ncol                (const iproc_matrix *a);
+int64_t           iproc_matrix_lda                 (const iproc_matrix *a);
 
 double            iproc_matrix_get                 (iproc_matrix *a,
                                                     int64_t       i,
@@ -49,7 +49,7 @@ void              iproc_matrix_set                 (iproc_matrix *a,
                                                     int64_t       i,
                                                     int64_t       j,
                                                     double        val);
-double *          iproc_matrix_ptr                 (iproc_matrix *a,
+double *          iproc_matrix_ptr                 (const iproc_matrix *a,
                                                     int64_t       i,
                                                     int64_t       j);
 
@@ -65,8 +65,10 @@ void              iproc_matrix_scale               (iproc_matrix *matrix,
 void              iproc_matrix_scale_rows          (iproc_matrix *matrix,
                                                     struct vector *scale);
 
-iproc_vector_view iproc_matrix_col                 (iproc_matrix *a,
-                                                    int64_t       j);
+
+struct vector *   vector_init_matrix_col           (struct vector      *v,
+                                                    const iproc_matrix *a,
+                                                    ssize_t             j);
 iproc_matrix_view iproc_matrix_cols                (iproc_matrix *matrix,
                                                     int64_t       j,
                                                     int64_t       n);

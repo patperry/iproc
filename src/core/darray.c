@@ -221,7 +221,7 @@ static void darray_grow (struct darray *a)
     size_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
     
     if (n != n0) {
-        array_resize(&a->array, n);
+        _array_reinit(&a->array, n, darray_elt_size(a));
     }
 }
 

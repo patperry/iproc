@@ -163,6 +163,7 @@ Riproc_model_log_probs (SEXP Rmodel,
 
     PROTECT(Rprobst = allocMatrix(REALSXP, nreceiver, n));
     iproc_matrix_view probst = Riproc_matrix_view_sexp(Rprobst);
+    struct vector dst;
 
     for (i = 0; i < n; i++) {
         int isend = INTEGER(Risend)[i] - 1;
@@ -170,9 +171,9 @@ Riproc_model_log_probs (SEXP Rmodel,
             error("invalid sender");
 
         iproc_model_ctx *ctx = iproc_model_ctx_new(model, isend, history);
-        iproc_vector_view dst = iproc_matrix_col(&probst.matrix, i);
+        vector_init_matrix_col(&dst, &probst.matrix, i);
         
-        iproc_model_ctx_get_logprobs(ctx, &dst.vector);
+        iproc_model_ctx_get_logprobs(ctx, &dst);
         iproc_model_ctx_unref(ctx);
     }
 

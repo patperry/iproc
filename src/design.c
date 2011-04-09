@@ -207,10 +207,10 @@ iproc_design_mul0_reffects (double        alpha,
     
     if (trans == IPROC_TRANS_NOTRANS) {
         iproc_vector_view xsub = vector_slice(x, off, dim);
-        vector_acc(y, alpha, &xsub.vector);
+        vector_axpy(alpha, &xsub.vector, y);
     } else {
         iproc_vector_view ysub = vector_slice(y, off, dim);
-        vector_acc(&ysub.vector, alpha, x);
+        vector_axpy(alpha, x, &ysub.vector);
     }
 }
 
