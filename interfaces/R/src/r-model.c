@@ -78,7 +78,7 @@ Riproc_model_new (SEXP Rdesign,
     iproc_vector_view coefs = Riproc_vector_view_sexp(Rcoefs);
     Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
-    if (iproc_design_dim(design) != vector_dim(&coefs.vector))
+    if (iproc_design_dim(design) != vector_size(&coefs.vector))
         error("design and coefs have different dimensions");
     if (has_loops == NA_LOGICAL)
         error("has.loops is be NA");

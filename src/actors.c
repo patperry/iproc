@@ -178,7 +178,7 @@ iproc_actors_dim (iproc_actors *actors)
 {
     assert(actors);
     struct vector *x0 = iproc_actors_group_traits(actors, 0);
-    int64_t n = vector_dim(x0);
+    int64_t n = vector_size(x0);
     return n;
 }
 
@@ -191,7 +191,7 @@ iproc_actors_set (iproc_actors *actors,
     assert(0 <= actor_id);
     assert(actor_id < iproc_actors_size(actors));
     assert(traits);
-    assert(vector_dim(traits) == iproc_actors_dim(actors));
+    assert(vector_size(traits) == iproc_actors_dim(actors));
 
     int64_t group_id = iproc_actors_insert_group(actors, traits);
     darray_index(&actors->group_ids, int64_t, actor_id) = group_id;
@@ -259,13 +259,13 @@ iproc_actors_mul (double        alpha,
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_actors_dim(actors));
+           || vector_size(x) == iproc_actors_dim(actors));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_actors_size(actors));
+           || vector_size(y) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_actors_size(actors));
+           || vector_size(x) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_actors_dim(actors));
+           || vector_size(y) == iproc_actors_dim(actors));
 
     int64_t n = iproc_actors_size(actors);
     int64_t i;
@@ -283,12 +283,12 @@ iproc_actors_mul (double        alpha,
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
             dot = vector_dot(row, x);
-            vector_inc(y, i, alpha * dot);
+            vector_index(y, i) += alpha * dot;
         }
     } else {
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
-            entry = vector_get(x, i);
+            entry = vector_index(x, i);
             vector_acc(y, alpha * entry, row);
         }
     }
@@ -309,11 +309,11 @@ iproc_actors_muls (double         alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_actors_dim(actors));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_actors_size(actors));
+           || vector_size(y) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_actors_dim(actors));
+           || vector_size(y) == iproc_actors_dim(actors));
 
     int64_t n = iproc_actors_size(actors);
     int64_t i;
@@ -331,7 +331,7 @@ iproc_actors_muls (double         alpha,
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
             dot = iproc_vector_sdot(row, x);
-            vector_inc(y, i, alpha * dot);
+            vector_index(y, i) += alpha * dot;
         }
     } else {
         int64_t inz, nnz = iproc_svector_nnz(x);

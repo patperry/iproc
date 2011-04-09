@@ -270,17 +270,17 @@ iproc_design_ctx_mul (double            alpha,
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_dim(ctx->design));
+           || vector_size(x) == iproc_design_dim(ctx->design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_nreceiver(ctx->design));
+           || vector_size(y) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_nreceiver(ctx->design));
+           || vector_size(x) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_dim(ctx->design));
+           || vector_size(y) == iproc_design_dim(ctx->design));
 
     iproc_design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
     
-    iproc_svector *diffprod = iproc_svector_new(vector_dim(y));
+    iproc_svector *diffprod = iproc_svector_new(vector_size(y));
     iproc_design_ctx_dmul(alpha, trans, ctx, x, 0.0, diffprod);
     iproc_vector_sacc(y, 1.0, diffprod);
     iproc_svector_unref(diffprod);
@@ -301,15 +301,15 @@ iproc_design_ctx_muls (double          alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_design_dim(ctx->design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_nreceiver(ctx->design));
+           || vector_size(y) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_dim(ctx->design));
+           || vector_size(y) == iproc_design_dim(ctx->design));
 
     iproc_design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
     
-    iproc_svector *diffprod = iproc_svector_new(vector_dim(y));
+    iproc_svector *diffprod = iproc_svector_new(vector_size(y));
     iproc_design_ctx_dmuls(alpha, trans, ctx, x, 0.0, diffprod);
     iproc_vector_sacc(y, 1.0, diffprod);
     iproc_svector_unref(diffprod);
@@ -329,11 +329,11 @@ iproc_design_ctx_dmul (double          alpha,
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_dim(ctx->design));
+           || vector_size(x) == iproc_design_dim(ctx->design));
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_nreceiver(ctx->design));
+           || vector_size(x) == iproc_design_nreceiver(ctx->design));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(y) == iproc_design_dim(ctx->design));
 
@@ -377,7 +377,7 @@ iproc_design_ctx_dmul (double          alpha,
                                                 i);
             int64_t jrecv = sv->jrecv;
             iproc_svector *dx = sv->dx;
-            double xjrecv = vector_get(x, jrecv);
+            double xjrecv = vector_index(x, jrecv);
 
             
             if (xjrecv == 0.0)

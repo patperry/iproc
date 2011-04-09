@@ -28,22 +28,28 @@ struct vector * vector_new_copy (const struct vector *v);
 void            vector_free     (struct vector *v);
 
 
+/* index */
+#define vector_index(v,i) array_index(&(v)->array, double, i)
 
-ssize_t           vector_dim           (const struct vector *v);
+
+/* informative */
+static inline ssize_t vector_size (const struct vector *v);
+
+
+/* operations */
+
+
+/* iteration */
+static inline double * vector_begin (const struct vector *v);
+static inline double * vector_ptr   (const struct vector *v, ssize_t i);
+static inline double * vector_end   (const struct vector *v);
+
+
 void              vector_fill       (struct vector *vector,
                                               double        value);
 void              vector_set_basis     (struct vector *vector,
                                               ssize_t       index);
-double            vector_get           (struct vector *vector,
-                                              ssize_t       index);
-void              vector_set           (struct vector *vector,
-                                              ssize_t       index,
-                                              double        value);
-void              vector_inc           (struct vector *vector,
-                                              ssize_t       index,
-                                              double        value);
-double *          vector_ptr           (const struct vector *vector,
-                                              ssize_t       index);
+
 iproc_vector_view vector_slice     (struct vector *vector,
                                               ssize_t       index,
                                               ssize_t       dim);
@@ -54,8 +60,8 @@ void              vector_copy          (struct vector *dst_vector,
 void              vector_swap          (struct vector *vector1,
                                               struct vector *vector2);
 void              vector_swap_elems    (struct vector *vector,
-                                              ssize_t       index1,
-                                              ssize_t       index2);
+                                              ssize_t       i,
+                                              ssize_t       j);
 void              vector_reverse       (struct vector *vector);
 void              vector_scale         (struct vector *vector,
                                               double        scale);
@@ -92,6 +98,17 @@ int               vector_identical     (struct vector *vector1,
                                               struct vector *vector2);
 int               vector_compare       (const void *x1,  const void *x2);
 int               vector_ptr_compare   (const void *px1, const void *px2);
+
+
+/* inline function definitions */
+ssize_t vector_size   (const struct vector *v) { return array_size(&v->array); }
+double * vector_begin (const struct vector *v) { return vector_ptr(v, 0); }
+double * vector_ptr   (const struct vector *v, ssize_t i) { return &vector_index(v, i); }
+double * vector_end   (const struct vector *v) { return vector_ptr(v, vector_size(v)); }
+
+
+
+
 
 
 #endif /* _VECTOR_H */

@@ -62,7 +62,7 @@ Riproc_sexp2ptr (SEXP     s,
 SEXP
 Riproc_vector_new_copy (struct vector *vector)
 {
-    int n = (int)vector_dim(vector);
+    int n = (int)vector_size(vector);
     SEXP Rvector;
 
     PROTECT(Rvector = NEW_NUMERIC(n));

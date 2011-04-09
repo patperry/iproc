@@ -261,7 +261,7 @@ iproc_matrix_scale_rows (iproc_matrix *matrix,
 {
     assert(matrix);
     assert(scale);
-    assert(iproc_matrix_nrow(matrix) == vector_dim(scale));
+    assert(iproc_matrix_nrow(matrix) == vector_size(scale));
 
     int64_t n = iproc_matrix_ncol(matrix);
     int64_t j;
@@ -334,7 +334,7 @@ iproc_matrix_view_vector (struct vector *vector,
                           int64_t       ncol)
 {
     assert(vector);
-    assert(vector_dim(vector) == nrow * ncol);
+    assert(vector_size(vector) == nrow * ncol);
     double *data = vector_ptr(vector, 0);
     return iproc_matrix_view_array(data, nrow, ncol);
 }
@@ -352,13 +352,13 @@ iproc_matrix_mul (double        alpha,
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_matrix_ncol(matrix));
+           || vector_size(x) == iproc_matrix_ncol(matrix));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_matrix_nrow(matrix));
+           || vector_size(y) == iproc_matrix_nrow(matrix));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_matrix_nrow(matrix));
+           || vector_size(x) == iproc_matrix_nrow(matrix));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_matrix_ncol(matrix));
+           || vector_size(y) == iproc_matrix_ncol(matrix));
 
     char    *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
     f77int   m      = (f77int)iproc_matrix_nrow(matrix);
@@ -423,8 +423,8 @@ iproc_matrix_update1 (iproc_matrix *matrix,
     assert(matrix);
     assert(x);
     assert(y);
-    assert(iproc_matrix_nrow(matrix) == vector_dim(x));
-    assert(iproc_matrix_ncol(matrix) == vector_dim(y));
+    assert(iproc_matrix_nrow(matrix) == vector_size(x));
+    assert(iproc_matrix_ncol(matrix) == vector_size(y));
 
     f77int  m      = (f77int)iproc_matrix_nrow(matrix);
     f77int  n      = (f77int)iproc_matrix_ncol(matrix);

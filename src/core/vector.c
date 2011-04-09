@@ -47,7 +47,7 @@ struct vector * vector_init_slice (struct vector *v,
     assert(v);
     assert(parent);
     assert(n >= 0);
-    assert(0 <= i && i <= vector_dim(parent) - n);
+    assert(0 <= i && i <= vector_size(parent) - n);
     
     return vector_init_view(v, vector_ptr(parent, i), n);
 }
@@ -58,7 +58,7 @@ struct vector * vector_init_copy (struct vector *v, const struct vector *src)
     assert(v);
     assert(src);
     
-    if (vector_init(v, vector_dim(src))) {
+    if (vector_init(v, vector_size(src))) {
         vector_copy(v, src);
         return v;
     }
@@ -109,14 +109,6 @@ void vector_free (struct vector *v)
 }
 
 
-ssize_t
-vector_dim (const struct vector *v)
-{
-    if (!v)
-        return 0;
-    return array_size(&v->array);
-}
-
 
 void
 vector_fill (struct vector *vector,
@@ -124,7 +116,7 @@ vector_fill (struct vector *vector,
 {
     assert(vector);
 
-    ssize_t n   = vector_dim(vector);
+    ssize_t n   = vector_size(vector);
     double *ptr = vector_ptr(vector, 0);
     double *end = vector_ptr(vector, n);
 
@@ -135,65 +127,15 @@ vector_fill (struct vector *vector,
 
 
 void
-vector_set_basis (struct vector *vector,
-                        ssize_t       index)
-{
-    assert(vector);
-    assert(vector_dim(vector) > 0);
-    assert(0 <= index);
-    assert(index < vector_dim(vector));
-
-    vector_fill(vector, 0);
-    vector_set(vector, index, 1);
-}
-
-
-double
-vector_get (struct vector *vector,
-                  ssize_t       index)
-{
-    assert(vector);
-    assert(0 <= index);
-    assert(index < vector_dim(vector));
-
-    double *ptr = vector_ptr(vector, index);
-    return *ptr;
-}
-
-
-void
-vector_set (struct vector *vector,
-                  ssize_t       index,
-                  double        value)
-{
-    assert(vector);
-    assert(0 <= index);
-    assert(index < vector_dim(vector));
-
-    double *ptr = vector_ptr(vector, index);
-    *ptr = value;
-}
-
-void
-vector_inc (struct vector *vector,
-                  ssize_t       index,
-                  double        value)
-{
-    assert(vector);
-    assert(0 <= index);
-    assert(index < vector_dim(vector));
-
-    double *ptr = vector_ptr(vector, index);
-    *ptr += value;
-}
-
-double *
-vector_ptr (const struct vector *v, ssize_t i)
+vector_set_basis (struct vector *v, ssize_t i)
 {
     assert(v);
-    return &array_index(&v->array, double, i);
-}
+    assert(vector_size(v) > 0);
+    assert(0 <= i && i < vector_size(v));
 
+    vector_fill(v, 0.0);
+    vector_index(v, i) = 1.0;
+}
 
 iproc_vector_view
 vector_slice (struct vector *v, ssize_t i, ssize_t n)
@@ -219,9 +161,9 @@ vector_copy (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
-    f77int  n    = (f77int)vector_dim(dst_vector);
+    f77int  n    = (f77int)vector_size(dst_vector);
     double *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
     double *py   = vector_ptr(dst_vector, 0);
@@ -237,9 +179,9 @@ vector_swap (struct vector *vector1,
 {
     assert(vector1);
     assert(vector2);
-    assert(vector_dim(vector1) == vector_dim(vector2));
+    assert(vector_size(vector1) == vector_size(vector2));
 
-    f77int  n    = (f77int)vector_dim(vector1);
+    f77int  n    = (f77int)vector_size(vector1);
     double *px   = vector_ptr(vector1, 0);
     f77int  incx = 1;
     double *py   = vector_ptr(vector2, 0);
@@ -250,23 +192,21 @@ vector_swap (struct vector *vector1,
 
 
 void
-vector_swap_elems (struct vector *vector,
-                         ssize_t       index1,
-                         ssize_t       index2)
+vector_swap_elems (struct vector *v,
+                         ssize_t       i1,
+                         ssize_t       i2)
 {
-    assert(vector);
-    assert(0 <= index1);
-    assert(index1 < vector_dim(vector));
-    assert(0 <= index2);
-    assert(index2 < vector_dim(vector));
+    assert(v);
+    assert(0 <= i1 && i1 < vector_size(v));
+    assert(0 <= i2 && i2 < vector_size(v));
 
     double e1, e2;
 
-    if (index1 != index2) {
-        e1 = vector_get(vector, index1);
-        e2 = vector_get(vector, index2);
-        vector_set(vector, index2, e1);
-        vector_set(vector, index1, e2);
+    if (i1 != i2) {
+        e1 = vector_index(v, i1);
+        e2 = vector_index(v, i2);
+        vector_index(v, i2) = e1;
+        vector_index(v, i1) = e2;
     }
 }
 
@@ -276,7 +216,7 @@ vector_reverse (struct vector *vector)
 {
     assert(vector);
 
-    ssize_t n = vector_dim(vector);
+    ssize_t n = vector_size(vector);
     ssize_t i;
 
     for (i = 0; i < n / 2; i++) {
@@ -291,7 +231,7 @@ vector_scale (struct vector *vector,
 {
     assert(vector);
 
-    f77int  n     = (f77int)vector_dim(vector);
+    f77int  n     = (f77int)vector_size(vector);
     double  alpha = scale;
     void   *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -306,7 +246,7 @@ vector_shift (struct vector *vector,
 {
     assert(vector);
 
-    ssize_t n   = vector_dim(vector);
+    ssize_t n   = vector_size(vector);
     double *ptr = vector_ptr(vector, 0);
     double *end = vector_ptr(vector, n);
 
@@ -322,7 +262,7 @@ vector_add (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
     vector_acc(dst_vector, 1, vector);
 }
@@ -334,7 +274,7 @@ vector_sub (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
     vector_acc(dst_vector, -1, vector);
 }
@@ -346,9 +286,9 @@ vector_mul (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
-    f77int  n     = (f77int)vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_size(dst_vector);
     f77int  k     = 0;
     double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -365,9 +305,9 @@ vector_div (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
-    f77int  n     = (f77int)vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_size(dst_vector);
     f77int  k     = 0;
     double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -385,9 +325,9 @@ vector_acc (struct vector *dst_vector,
 {
     assert(dst_vector);
     assert(vector);
-    assert(vector_dim(dst_vector) == vector_dim(vector));
+    assert(vector_size(dst_vector) == vector_size(vector));
 
-    f77int  n     = (f77int)vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_size(dst_vector);
     double  alpha = scale;
     double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
@@ -404,9 +344,9 @@ vector_dot (struct vector *vector1,
 {
     assert(vector1);
     assert(vector2);
-    assert(vector_dim(vector1) == vector_dim(vector2));
+    assert(vector_size(vector1) == vector_size(vector2));
 
-    f77int  n    = (f77int)vector_dim(vector1);
+    f77int  n    = (f77int)vector_size(vector1);
     double *px   = vector_ptr(vector1, 0);
     f77int  incx = 1;
     double *py   = vector_ptr(vector2, 0);
@@ -422,7 +362,7 @@ vector_norm (struct vector *vector)
 {
     assert(vector);
 
-    f77int  n    = (f77int)vector_dim(vector);
+    f77int  n    = (f77int)vector_size(vector);
     void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
@@ -436,7 +376,7 @@ vector_sum_abs (struct vector *vector)
 {
     assert(vector);
 
-    f77int  n    = (f77int)vector_dim(vector);
+    f77int  n    = (f77int)vector_size(vector);
     void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
@@ -454,9 +394,9 @@ vector_max_abs (struct vector *vector)
     double e;
     ssize_t i;
 
-    if (vector_dim(vector) > 0) {
+    if (vector_size(vector) > 0) {
         i = vector_max_abs_index(vector);
-        e = vector_get(vector, i);
+        e = vector_index(vector, i);
         max_abs = fabs(e);
     }
 
@@ -468,9 +408,9 @@ ssize_t
 vector_max_abs_index (struct vector *vector)
 {
     assert(vector);
-    if (!(vector_dim(vector) > 0)) return -1;
+    if (!(vector_size(vector) > 0)) return -1;
 
-    f77int  n    = (f77int)vector_dim(vector);
+    f77int  n    = (f77int)vector_size(vector);
     void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
@@ -484,15 +424,15 @@ ssize_t
 vector_max_index (struct vector *vector)
 {
     assert(vector);
-    assert(vector_dim(vector) > 0);
+    assert(vector_size(vector) > 0);
 
-    ssize_t n = vector_dim(vector);
+    ssize_t n = vector_size(vector);
     ssize_t i, imax;
     double x, max = NAN;
 
     /* Find the first non-NaN entry of the vector */
     for (imax = 0; imax < n && isnan(max); imax++) {
-        max = vector_get(vector, imax);
+        max = vector_index(vector, imax);
     }
 
     /* If all of the entries are NaN, define imax as 0. */
@@ -501,7 +441,7 @@ vector_max_index (struct vector *vector)
 
     /* Otherwise, search for the largest entry in the tail of the vector */
     for (i = imax + 1; i < n; i++) {
-        x = vector_get(vector, i);
+        x = vector_index(vector, i);
         if (x > max) {
             max = x;
             imax = i;
@@ -515,11 +455,11 @@ double
 vector_max (struct vector *vector)
 {
     assert(vector);
-    if (vector_dim(vector) == 0) {
+    if (vector_size(vector) == 0) {
         return -INFINITY;
     } else {
         ssize_t i = vector_max_index(vector);
-        return vector_get(vector, i);
+        return vector_index(vector, i);
     }
 }
 
@@ -527,13 +467,13 @@ void
 vector_exp (struct vector *vector)
 {
     assert(vector);
-    ssize_t n = vector_dim(vector);
+    ssize_t n = vector_size(vector);
     ssize_t i;
     double x;
 
     for (i = 0; i < n; i++) {
-        x = vector_get(vector, i);
-        vector_set(vector, i, exp(x));
+        x = vector_index(vector, i);
+        vector_index(vector, i) = exp(x);
     }
 }
 
@@ -541,13 +481,13 @@ double
 vector_log_sum_exp (struct vector *vector)
 {
     assert(vector);
-    ssize_t n = vector_dim(vector);
+    ssize_t n = vector_size(vector);
 
     if (n == 0)
         return -INFINITY;
 
     ssize_t imax = vector_max_index(vector);
-    double max = vector_get(vector, imax);
+    double max = vector_index(vector, imax);
     double summ1 = 0.0;
     ssize_t i;
 
@@ -555,26 +495,25 @@ vector_log_sum_exp (struct vector *vector)
         if (i == imax)
             continue;
 
-        summ1 += exp(vector_get(vector, i) - max);
+        summ1 += exp(vector_index(vector, i) - max);
     }
 
     return max + log1p(summ1);
 }
 
 void
-vector_printf (struct vector *vector)
+vector_printf (struct vector *v)
 {
     printf("\nvector {");
-    printf("\n  dim: %"SSIZE_FMT"", vector_dim(vector));
+    printf("\n  dim: %"SSIZE_FMT"", vector_size(v));
     printf("\n   nz: {");
 
-    ssize_t i, n = vector_dim(vector);
+    ssize_t i, n = vector_size(v);
     for (i = 0; i < n; i++) {
-        if (vector_get(vector, i) == 0.0)
+        if (vector_index(v, i) == 0.0)
             continue;
 
-        printf("\n         %"SSIZE_FMT", %.8f", i,
-               vector_get(vector, i));
+        printf("\n         %"SSIZE_FMT", %.8f", i, vector_index(v, i));
     }
     printf("\n       }");
     printf("\n}\n");
@@ -587,10 +526,10 @@ vector_hash (struct vector *vector)
         return 0;
 
     size_t seed = 0;
-    ssize_t i, n = vector_dim(vector);
+    ssize_t i, n = vector_size(vector);
 
     for (i = 0; i < n; i++) {
-        double v = vector_get(vector, i);
+        double v = vector_index(vector, i);
         size_t hash_value = iproc_hash_double(v);
         seed = iproc_hash_combine(seed, hash_value);
     }
@@ -605,15 +544,15 @@ vector_identical (struct vector *vector1,
     if (vector1 == vector2)
         return 1;
 
-    ssize_t n = vector_dim(vector1);
+    ssize_t n = vector_size(vector1);
 
-    if (vector_dim(vector2) != n)
+    if (vector_size(vector2) != n)
         return 0;
 
     ssize_t i;
     for (i = 0; i < n; i++) {
-        double x1 = vector_get(vector1, i);
-        double x2 = vector_get(vector2, i);
+        double x1 = vector_index(vector1, i);
+        double x2 = vector_index(vector2, i);
 
         if (!iproc_identical(x1, x2))
             return 0;
@@ -627,8 +566,8 @@ vector_compare (const void *x1, const void *x2)
 {
     const struct vector *vector1 = x1;
     const struct vector *vector2 = x2;
-    ssize_t n1 = vector_dim(vector1);
-    ssize_t n2 = vector_dim(vector2);
+    ssize_t n1 = vector_size(vector1);
+    ssize_t n2 = vector_size(vector2);
 
     if (n1 < n2) {
         return -1;

@@ -157,7 +157,7 @@ iproc_model_new (iproc_design *design,
 {
     assert(design);
     assert(coefs);
-    assert(iproc_design_dim(design) == vector_dim(coefs));
+    assert(iproc_design_dim(design) == vector_size(coefs));
     assert(iproc_design_nreceiver(design) > 0);
     assert(!has_loops || iproc_design_nreceiver(design) > 1);
 

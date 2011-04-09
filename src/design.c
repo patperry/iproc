@@ -241,7 +241,7 @@ iproc_design_muls0_reffects (double         alpha,
                 break;
             
             double x_i = iproc_svector_nz_get(x, inz);
-            vector_inc(y, i, alpha * x_i);
+            vector_index(y, i) += alpha * x_i;
             
             inz++;
         }
@@ -339,8 +339,8 @@ iproc_design_muls0_static (double         alpha,
             int64_t i = ij.rem;  /* ix % p */
             int64_t j = ij.quot; /* ix / p */
             double x_ij = iproc_svector_nz_get(x, inz);
-            double s_i = vector_get(s, i);
-            vector_inc(z, j, x_ij * s_i);
+            double s_i = vector_index(s, i);
+            vector_index(z, j) += x_ij * s_i;
         }
         vector_scale(z, alpha);
                              
@@ -378,13 +378,13 @@ iproc_design_mul0 (double        alpha,
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_dim(design));
+           || vector_size(x) == iproc_design_dim(design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_nreceiver(design));
+           || vector_size(y) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(x) == iproc_design_nreceiver(design));
+           || vector_size(x) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_dim(design));
+           || vector_size(y) == iproc_design_dim(design));
     
     /* y := beta y */
     if (beta == 0.0) {
@@ -415,11 +415,11 @@ iproc_design_muls0 (double         alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_design_dim(design));
     assert(trans != IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_nreceiver(design));
+           || vector_size(y) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_design_nreceiver(design));
     assert(trans == IPROC_TRANS_NOTRANS
-           || vector_dim(y) == iproc_design_dim(design));
+           || vector_size(y) == iproc_design_dim(design));
     
     /* y := beta y */
     if (beta == 0.0) {

@@ -247,14 +247,14 @@ iproc_vector_sdot (struct vector  *vector,
 {
     assert(vector);
     assert(svector);
-    assert(vector_dim(vector) == iproc_svector_dim(svector));
+    assert(vector_size(vector) == iproc_svector_dim(svector));
 
     int64_t i, ix, n = iproc_svector_nnz(svector);
     double e1, e2, dot = 0.0;
 
     for (i = 0; i < n; i++) {
         ix = iproc_svector_nz(svector, i);
-        e1 = vector_get(vector, ix);
+        e1 = vector_index(vector, ix);
         e2 = iproc_svector_nz_get(svector, i);
         dot += e1 * e2;
     }
@@ -268,7 +268,7 @@ iproc_vector_sacc (struct vector  *dst_vector,
 {
     assert(dst_vector);
     assert(svector);
-    assert(vector_dim(dst_vector) == iproc_svector_dim(svector));
+    assert(vector_size(dst_vector) == iproc_svector_dim(svector));
 
     int64_t i, ix, n = iproc_svector_nnz(svector);
     double e;
@@ -276,7 +276,7 @@ iproc_vector_sacc (struct vector  *dst_vector,
     for (i = 0; i < n; i++) {
         e = iproc_svector_nz_get(svector, i);
         ix = iproc_svector_nz(svector, i);
-        vector_inc(dst_vector, ix, scale * e);
+        vector_index(dst_vector, ix) += scale * e;
     }
 }
 
