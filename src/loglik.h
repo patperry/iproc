@@ -14,7 +14,7 @@ typedef struct _iproc_loglik iproc_loglik;
 struct _iproc_loglik {
     iproc_model   *model;
     struct darray  sloglik_array;
-    iproc_vector  *grad;
+    struct vector  *grad;
     bool           grad_cached;
     int64_t        nsend;
     int64_t        nrecv;
@@ -38,6 +38,6 @@ void           iproc_loglik_insertm         (iproc_loglik   *loglik,
                                              int64_t         nto);
 
 double         iproc_loglik_value           (iproc_loglik  *loglik);
-iproc_vector * iproc_loglik_grad            (iproc_loglik  *loglik);
+struct vector * iproc_loglik_grad            (iproc_loglik  *loglik);
 
 #endif /* _IPROC_LOGLIK_H */

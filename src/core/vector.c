@@ -12,67 +12,121 @@
 #include "memory.h"
 #include "vector.h"
 
-
-iproc_vector *
-iproc_vector_new (int64_t dim)
+struct vector * vector_init (struct vector *v, ssize_t n)
 {
-    iproc_vector *vector = NULL;
-    size_t        size   = dim * sizeof(double);
+    assert(v);
+    assert(n >= 0);
+    assert(n <= F77_INT_MAX);
+    assert(n <= SSIZE_MAX / sizeof(double));
 
-    if (!(dim >= 0)) return NULL;
-    if (!(dim <= F77_INT_MAX)) return NULL;
-    if (!(dim <= SIZE_MAX / sizeof(double))) return NULL;
-
-    vector = iproc_malloc(sizeof(iproc_vector));
-    vector->pdata = iproc_malloc(size);
-    vector->dim = dim;
-
-    return vector;
+    if (array_init(&v->array, double, n)) {
+        return v;
+    }
+    
+    return NULL;
 }
 
-iproc_vector *
-iproc_vector_new_copy (const iproc_vector *vector)
+
+struct vector * vector_init_view (struct vector *v, double *ptr, ssize_t n)
 {
-    assert(vector);
-    int64_t n = iproc_vector_dim(vector);
-    iproc_vector *copy = iproc_vector_new(n);
-    iproc_vector_copy(copy, vector);
-    return copy;
+    assert(v);
+    assert(ptr || n == 0);
+    assert(n >= 0);
+    
+    if (array_init_view(&v->array, double, ptr, n)) {
+        return v;
+    }
+
+    return NULL;
 }
 
-static void
-iproc_vector_deinit (iproc_vector *vector)
+struct vector * vector_init_slice (struct vector *v,
+                                   const struct vector *parent,
+                                   ssize_t i, ssize_t n)
 {
-    assert(vector);
-    iproc_free(vector->pdata);
+    assert(v);
+    assert(parent);
+    assert(n >= 0);
+    assert(0 <= i && i <= vector_dim(parent) - n);
+    
+    return vector_init_view(v, vector_ptr(parent, i), n);
 }
 
-void
-iproc_vector_free (iproc_vector *vector)
+
+struct vector * vector_init_copy (struct vector *v, const struct vector *src)
 {
-    if (vector) {
-        iproc_vector_deinit(vector);
-        iproc_free(vector);
+    assert(v);
+    assert(src);
+    
+    if (vector_init(v, vector_dim(src))) {
+        vector_copy(v, src);
+        return v;
+    }
+    
+    return NULL;
+}
+
+
+struct vector * vector_new (ssize_t n)
+{
+    struct vector *v = malloc(sizeof(*v));
+    
+    if (vector_init(v, n)) {
+        return v;
+    }
+    
+    free(v);
+    return NULL;
+}
+
+
+struct vector * vector_new_copy (const struct vector *src)
+{
+    struct vector *v = malloc(sizeof(*v));
+    
+    if (vector_init_copy(v, src)) {
+        return v;
+    }
+    
+    free(v);
+    return NULL;
+}
+
+
+void vector_deinit (struct vector *v)
+{
+    assert(v);
+    array_deinit(&v->array);
+}
+
+
+void vector_free (struct vector *v)
+{
+    if (v) {
+        vector_deinit(v);
+        free(v);
     }
 }
 
-int64_t
-iproc_vector_dim (const iproc_vector *vector)
+
+ssize_t
+vector_dim (const struct vector *v)
 {
-    if (!vector)
+    if (!v)
         return 0;
-    return vector->dim;
+    return array_size(&v->array);
 }
 
+
 void
-iproc_vector_set_all (iproc_vector *vector,
+vector_fill (struct vector *vector,
                       double        value)
 {
     assert(vector);
 
-    int64_t n   = iproc_vector_dim(vector);
-    double *ptr = iproc_vector_ptr(vector, 0);
-    double *end = iproc_vector_ptr(vector, n);
+    ssize_t n   = vector_dim(vector);
+    double *ptr = vector_ptr(vector, 0);
+    double *end = vector_ptr(vector, n);
 
     while (ptr != end) {
         *ptr++ = value;
@@ -81,110 +135,96 @@ iproc_vector_set_all (iproc_vector *vector,
 
 
 void
-iproc_vector_set_basis (iproc_vector *vector,
-                        int64_t       index)
+vector_set_basis (struct vector *vector,
+                        ssize_t       index)
 {
     assert(vector);
-    assert(iproc_vector_dim(vector) > 0);
+    assert(vector_dim(vector) > 0);
     assert(0 <= index);
-    assert(index < iproc_vector_dim(vector));
+    assert(index < vector_dim(vector));
 
-    iproc_vector_set_all(vector, 0);
-    iproc_vector_set(vector, index, 1);
+    vector_fill(vector, 0);
+    vector_set(vector, index, 1);
 }
 
 
 double
-iproc_vector_get (iproc_vector *vector,
-                  int64_t       index)
+vector_get (struct vector *vector,
+                  ssize_t       index)
 {
     assert(vector);
     assert(0 <= index);
-    assert(index < iproc_vector_dim(vector));
+    assert(index < vector_dim(vector));
 
-    double *ptr = iproc_vector_ptr(vector, index);
+    double *ptr = vector_ptr(vector, index);
     return *ptr;
 }
 
 
 void
-iproc_vector_set (iproc_vector *vector,
-                  int64_t       index,
+vector_set (struct vector *vector,
+                  ssize_t       index,
                   double        value)
 {
     assert(vector);
     assert(0 <= index);
-    assert(index < iproc_vector_dim(vector));
+    assert(index < vector_dim(vector));
 
-    double *ptr = iproc_vector_ptr(vector, index);
+    double *ptr = vector_ptr(vector, index);
     *ptr = value;
 }
 
 void
-iproc_vector_inc (iproc_vector *vector,
-                  int64_t       index,
+vector_inc (struct vector *vector,
+                  ssize_t       index,
                   double        value)
 {
     assert(vector);
     assert(0 <= index);
-    assert(index < iproc_vector_dim(vector));
+    assert(index < vector_dim(vector));
 
-    double *ptr = iproc_vector_ptr(vector, index);
+    double *ptr = vector_ptr(vector, index);
     *ptr += value;
 }
 
 double *
-iproc_vector_ptr (const iproc_vector *vector,
-                  int64_t       index)
+vector_ptr (const struct vector *v, ssize_t i)
 {
-    assert(vector);
-
-    double *ptr = vector->pdata + index;
-    return ptr;
+    assert(v);
+    return &array_index(&v->array, double, i);
 }
 
 
 iproc_vector_view
-iproc_vector_subvector (iproc_vector *vector,
-                        int64_t       index,
-                        int64_t       dim)
+vector_slice (struct vector *v, ssize_t i, ssize_t n)
 {
-    assert(vector);
-    assert(0 <= index);
-    assert(index <= iproc_vector_dim(vector));
-    assert(0 <= dim);
-    assert(dim <= iproc_vector_dim(vector) - index);
-
-    double *ptr = iproc_vector_ptr(vector, index);
-    iproc_vector_view view = iproc_vector_view_array(ptr, dim);
+    iproc_vector_view view;
+    vector_init_slice(&view.vector, v, i, n);
     return view;
 }
 
 
 iproc_vector_view
-iproc_vector_view_array (double  *array,
-                         int64_t  dim)
+iproc_vector_view_array (double  *ptr, ssize_t n)
 {
-    assert(dim >= 0);
-    assert(array || dim == 0);
-
-    iproc_vector_view view = {{ array, dim }};
+    iproc_vector_view view;
+    vector_init_view(&view.vector, ptr, n);
     return view;
 }
 
 
 void
-iproc_vector_copy (iproc_vector *dst_vector,
-                   const iproc_vector *vector)
+vector_copy (struct vector *dst_vector,
+                   const struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    f77int  n    = (f77int)iproc_vector_dim(dst_vector);
-    double *px   = iproc_vector_ptr(vector, 0);
+    f77int  n    = (f77int)vector_dim(dst_vector);
+    double *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
-    double *py   = iproc_vector_ptr(dst_vector, 0);
+    double *py   = vector_ptr(dst_vector, 0);
     f77int  incy = 1;
 
     F77_FUNC(dcopy)(&n, px, &incx, py, &incy);
@@ -192,17 +232,17 @@ iproc_vector_copy (iproc_vector *dst_vector,
 
 
 void
-iproc_vector_swap (iproc_vector *vector1,
-                   iproc_vector *vector2)
+vector_swap (struct vector *vector1,
+                   struct vector *vector2)
 {
     assert(vector1);
     assert(vector2);
-    assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
+    assert(vector_dim(vector1) == vector_dim(vector2));
 
-    f77int  n    = (f77int)iproc_vector_dim(vector1);
-    double *px   = iproc_vector_ptr(vector1, 0);
+    f77int  n    = (f77int)vector_dim(vector1);
+    double *px   = vector_ptr(vector1, 0);
     f77int  incx = 1;
-    double *py   = iproc_vector_ptr(vector2, 0);
+    double *py   = vector_ptr(vector2, 0);
     f77int  incy = 1;
 
     F77_FUNC(dswap)(&n, px, &incx, py, &incy);
@@ -210,50 +250,50 @@ iproc_vector_swap (iproc_vector *vector1,
 
 
 void
-iproc_vector_swap_elems (iproc_vector *vector,
-                         int64_t       index1,
-                         int64_t       index2)
+vector_swap_elems (struct vector *vector,
+                         ssize_t       index1,
+                         ssize_t       index2)
 {
     assert(vector);
     assert(0 <= index1);
-    assert(index1 < iproc_vector_dim(vector));
+    assert(index1 < vector_dim(vector));
     assert(0 <= index2);
-    assert(index2 < iproc_vector_dim(vector));
+    assert(index2 < vector_dim(vector));
 
     double e1, e2;
 
     if (index1 != index2) {
-        e1 = iproc_vector_get(vector, index1);
-        e2 = iproc_vector_get(vector, index2);
-        iproc_vector_set(vector, index2, e1);
-        iproc_vector_set(vector, index1, e2);
+        e1 = vector_get(vector, index1);
+        e2 = vector_get(vector, index2);
+        vector_set(vector, index2, e1);
+        vector_set(vector, index1, e2);
     }
 }
 
 
 void
-iproc_vector_reverse (iproc_vector *vector)
+vector_reverse (struct vector *vector)
 {
     assert(vector);
 
-    int64_t n = iproc_vector_dim(vector);
-    int64_t i;
+    ssize_t n = vector_dim(vector);
+    ssize_t i;
 
     for (i = 0; i < n / 2; i++) {
-        iproc_vector_swap_elems(vector, i, n - 1 - i);
+        vector_swap_elems(vector, i, n - 1 - i);
     }
 }
 
 
 void
-iproc_vector_scale (iproc_vector *vector,
+vector_scale (struct vector *vector,
                     double        scale)
 {
     assert(vector);
 
-    f77int  n     = (f77int)iproc_vector_dim(vector);
+    f77int  n     = (f77int)vector_dim(vector);
     double  alpha = scale;
-    void   *px    = iproc_vector_ptr(vector, 0);
+    void   *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
 
     F77_FUNC(dscal)(&n, &alpha, px, &incx);
@@ -261,14 +301,14 @@ iproc_vector_scale (iproc_vector *vector,
 
 
 void
-iproc_vector_shift (iproc_vector *vector,
+vector_shift (struct vector *vector,
                     double        shift)
 {
     assert(vector);
 
-    int64_t n   = iproc_vector_dim(vector);
-    double *ptr = iproc_vector_ptr(vector, 0);
-    double *end = iproc_vector_ptr(vector, n);
+    ssize_t n   = vector_dim(vector);
+    double *ptr = vector_ptr(vector, 0);
+    double *end = vector_ptr(vector, n);
 
     while (ptr != end) {
         *ptr++ += shift;
@@ -277,42 +317,42 @@ iproc_vector_shift (iproc_vector *vector,
 
 
 void
-iproc_vector_add (iproc_vector *dst_vector,
-                  iproc_vector *vector)
+vector_add (struct vector *dst_vector,
+                  struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    iproc_vector_acc(dst_vector, 1, vector);
+    vector_acc(dst_vector, 1, vector);
 }
 
 
 void
-iproc_vector_sub (iproc_vector *dst_vector,
-                  iproc_vector *vector)
+vector_sub (struct vector *dst_vector,
+                  struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    iproc_vector_acc(dst_vector, -1, vector);
+    vector_acc(dst_vector, -1, vector);
 }
 
 
 void
-iproc_vector_mul (iproc_vector *dst_vector,
-                  iproc_vector *vector)
+vector_mul (struct vector *dst_vector,
+                  struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_dim(dst_vector);
     f77int  k     = 0;
-    double *px    = iproc_vector_ptr(vector, 0);
+    double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
-    double *py    = iproc_vector_ptr(dst_vector, 0);
+    double *py    = vector_ptr(dst_vector, 0);
     f77int  incy  = 1;
 
     F77_FUNC(dtbmv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
@@ -320,18 +360,18 @@ iproc_vector_mul (iproc_vector *dst_vector,
 
 
 void
-iproc_vector_div (iproc_vector *dst_vector,
-                  iproc_vector *vector)
+vector_div (struct vector *dst_vector,
+                  struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_dim(dst_vector);
     f77int  k     = 0;
-    double *px    = iproc_vector_ptr(vector, 0);
+    double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
-    double *py    = iproc_vector_ptr(dst_vector, 0);
+    double *py    = vector_ptr(dst_vector, 0);
     f77int  incy  = 1;
 
     F77_FUNC(dtbsv)("U", "N", "N", &n, &k, px, &incx, py, &incy);
@@ -339,19 +379,19 @@ iproc_vector_div (iproc_vector *dst_vector,
 
 
 void
-iproc_vector_acc (iproc_vector *dst_vector,
+vector_acc (struct vector *dst_vector,
                   double        scale,
-                  iproc_vector *vector)
+                  struct vector *vector)
 {
     assert(dst_vector);
     assert(vector);
-    assert(iproc_vector_dim(dst_vector) == iproc_vector_dim(vector));
+    assert(vector_dim(dst_vector) == vector_dim(vector));
 
-    f77int  n     = (f77int)iproc_vector_dim(dst_vector);
+    f77int  n     = (f77int)vector_dim(dst_vector);
     double  alpha = scale;
-    double *px    = iproc_vector_ptr(vector, 0);
+    double *px    = vector_ptr(vector, 0);
     f77int  incx  = 1;
-    double *py    = iproc_vector_ptr(dst_vector, 0);
+    double *py    = vector_ptr(dst_vector, 0);
     f77int  incy  = 1;
 
     F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
@@ -359,17 +399,17 @@ iproc_vector_acc (iproc_vector *dst_vector,
 
 
 double
-iproc_vector_dot (iproc_vector *vector1,
-                  iproc_vector *vector2)
+vector_dot (struct vector *vector1,
+                  struct vector *vector2)
 {
     assert(vector1);
     assert(vector2);
-    assert(iproc_vector_dim(vector1) == iproc_vector_dim(vector2));
+    assert(vector_dim(vector1) == vector_dim(vector2));
 
-    f77int  n    = (f77int)iproc_vector_dim(vector1);
-    double *px   = iproc_vector_ptr(vector1, 0);
+    f77int  n    = (f77int)vector_dim(vector1);
+    double *px   = vector_ptr(vector1, 0);
     f77int  incx = 1;
-    double *py   = iproc_vector_ptr(vector2, 0);
+    double *py   = vector_ptr(vector2, 0);
     f77int  incy = 1;
 
     double dot = F77_FUNC(ddot)(&n, px, &incx, py, &incy);
@@ -378,12 +418,12 @@ iproc_vector_dot (iproc_vector *vector1,
 
 
 double
-iproc_vector_norm (iproc_vector *vector)
+vector_norm (struct vector *vector)
 {
     assert(vector);
 
-    f77int  n    = (f77int)iproc_vector_dim(vector);
-    void   *px   = iproc_vector_ptr(vector, 0);
+    f77int  n    = (f77int)vector_dim(vector);
+    void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
     double norm = F77_FUNC(dnrm2)(&n, px, &incx);
@@ -392,12 +432,12 @@ iproc_vector_norm (iproc_vector *vector)
 
 
 double
-iproc_vector_sum_abs (iproc_vector *vector)
+vector_sum_abs (struct vector *vector)
 {
     assert(vector);
 
-    f77int  n    = (f77int)iproc_vector_dim(vector);
-    void   *px   = iproc_vector_ptr(vector, 0);
+    f77int  n    = (f77int)vector_dim(vector);
+    void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
     double sum_abs = F77_FUNC(dasum)(&n, px, &incx);
@@ -406,17 +446,17 @@ iproc_vector_sum_abs (iproc_vector *vector)
 
 
 double
-iproc_vector_max_abs (iproc_vector *vector)
+vector_max_abs (struct vector *vector)
 {
     assert(vector);
 
     double max_abs = 0;
     double e;
-    int64_t i;
+    ssize_t i;
 
-    if (iproc_vector_dim(vector) > 0) {
-        i = iproc_vector_max_abs_index(vector);
-        e = iproc_vector_get(vector, i);
+    if (vector_dim(vector) > 0) {
+        i = vector_max_abs_index(vector);
+        e = vector_get(vector, i);
         max_abs = fabs(e);
     }
 
@@ -424,35 +464,35 @@ iproc_vector_max_abs (iproc_vector *vector)
 }
 
 
-int64_t
-iproc_vector_max_abs_index (iproc_vector *vector)
+ssize_t
+vector_max_abs_index (struct vector *vector)
 {
     assert(vector);
-    if (!(iproc_vector_dim(vector) > 0)) return -1;
+    if (!(vector_dim(vector) > 0)) return -1;
 
-    f77int  n    = (f77int)iproc_vector_dim(vector);
-    void   *px   = iproc_vector_ptr(vector, 0);
+    f77int  n    = (f77int)vector_dim(vector);
+    void   *px   = vector_ptr(vector, 0);
     f77int  incx = 1;
 
     f77int  index1 = F77_FUNC(idamax)(&n, px, &incx);
                                       
-    int64_t index  = index1 - 1;
+    ssize_t index  = index1 - 1;
     return index;
 }
 
-int64_t
-iproc_vector_max_index (iproc_vector *vector)
+ssize_t
+vector_max_index (struct vector *vector)
 {
     assert(vector);
-    assert(iproc_vector_dim(vector) > 0);
+    assert(vector_dim(vector) > 0);
 
-    int64_t n = iproc_vector_dim(vector);
-    int64_t i, imax;
+    ssize_t n = vector_dim(vector);
+    ssize_t i, imax;
     double x, max = NAN;
 
     /* Find the first non-NaN entry of the vector */
     for (imax = 0; imax < n && isnan(max); imax++) {
-        max = iproc_vector_get(vector, imax);
+        max = vector_get(vector, imax);
     }
 
     /* If all of the entries are NaN, define imax as 0. */
@@ -461,7 +501,7 @@ iproc_vector_max_index (iproc_vector *vector)
 
     /* Otherwise, search for the largest entry in the tail of the vector */
     for (i = imax + 1; i < n; i++) {
-        x = iproc_vector_get(vector, i);
+        x = vector_get(vector, i);
         if (x > max) {
             max = x;
             imax = i;
@@ -472,85 +512,85 @@ iproc_vector_max_index (iproc_vector *vector)
 }
 
 double
-iproc_vector_max (iproc_vector *vector)
+vector_max (struct vector *vector)
 {
     assert(vector);
-    if (iproc_vector_dim(vector) == 0) {
+    if (vector_dim(vector) == 0) {
         return -INFINITY;
     } else {
-        int64_t i = iproc_vector_max_index(vector);
-        return iproc_vector_get(vector, i);
+        ssize_t i = vector_max_index(vector);
+        return vector_get(vector, i);
     }
 }
 
 void
-iproc_vector_exp (iproc_vector *vector)
+vector_exp (struct vector *vector)
 {
     assert(vector);
-    int64_t n = iproc_vector_dim(vector);
-    int64_t i;
+    ssize_t n = vector_dim(vector);
+    ssize_t i;
     double x;
 
     for (i = 0; i < n; i++) {
-        x = iproc_vector_get(vector, i);
-        iproc_vector_set(vector, i, exp(x));
+        x = vector_get(vector, i);
+        vector_set(vector, i, exp(x));
     }
 }
 
 double 
-iproc_vector_log_sum_exp (iproc_vector *vector)
+vector_log_sum_exp (struct vector *vector)
 {
     assert(vector);
-    int64_t n = iproc_vector_dim(vector);
+    ssize_t n = vector_dim(vector);
 
     if (n == 0)
         return -INFINITY;
 
-    int64_t imax = iproc_vector_max_index(vector);
-    double max = iproc_vector_get(vector, imax);
+    ssize_t imax = vector_max_index(vector);
+    double max = vector_get(vector, imax);
     double summ1 = 0.0;
-    int64_t i;
+    ssize_t i;
 
     for (i = 0; i < n; i++) {
         if (i == imax)
             continue;
 
-        summ1 += exp(iproc_vector_get(vector, i) - max);
+        summ1 += exp(vector_get(vector, i) - max);
     }
 
     return max + log1p(summ1);
 }
 
 void
-iproc_vector_printf (iproc_vector *vector)
+vector_printf (struct vector *vector)
 {
     printf("\nvector {");
-    printf("\n  dim: %"PRId64"", iproc_vector_dim(vector));
+    printf("\n  dim: %"SSIZE_FMT"", vector_dim(vector));
     printf("\n   nz: {");
 
-    int64_t i, n = iproc_vector_dim(vector);
+    ssize_t i, n = vector_dim(vector);
     for (i = 0; i < n; i++) {
-        if (iproc_vector_get(vector, i) == 0.0)
+        if (vector_get(vector, i) == 0.0)
             continue;
 
-        printf("\n         %"PRId64", %.8f", i,
-               iproc_vector_get(vector, i));
+        printf("\n         %"SSIZE_FMT", %.8f", i,
+               vector_get(vector, i));
     }
     printf("\n       }");
     printf("\n}\n");
 }
 
 size_t
-iproc_vector_hash (iproc_vector *vector)
+vector_hash (struct vector *vector)
 {
     if (!vector)
         return 0;
 
     size_t seed = 0;
-    int64_t i, n = iproc_vector_dim(vector);
+    ssize_t i, n = vector_dim(vector);
 
     for (i = 0; i < n; i++) {
-        double v = iproc_vector_get(vector, i);
+        double v = vector_get(vector, i);
         size_t hash_value = iproc_hash_double(v);
         seed = iproc_hash_combine(seed, hash_value);
     }
@@ -559,21 +599,21 @@ iproc_vector_hash (iproc_vector *vector)
 }
 
 int
-iproc_vector_identical (iproc_vector *vector1,
-                        iproc_vector *vector2)
+vector_identical (struct vector *vector1,
+                        struct vector *vector2)
 {
     if (vector1 == vector2)
         return 1;
 
-    int64_t n = iproc_vector_dim(vector1);
+    ssize_t n = vector_dim(vector1);
 
-    if (iproc_vector_dim(vector2) != n)
+    if (vector_dim(vector2) != n)
         return 0;
 
-    int64_t i;
+    ssize_t i;
     for (i = 0; i < n; i++) {
-        double x1 = iproc_vector_get(vector1, i);
-        double x2 = iproc_vector_get(vector2, i);
+        double x1 = vector_get(vector1, i);
+        double x2 = vector_get(vector2, i);
 
         if (!iproc_identical(x1, x2))
             return 0;
@@ -583,12 +623,12 @@ iproc_vector_identical (iproc_vector *vector1,
 }
 
 int
-iproc_vector_compare (const void *x1, const void *x2)
+vector_compare (const void *x1, const void *x2)
 {
-    const iproc_vector *vector1 = x1;
-    const iproc_vector *vector2 = x2;
-    int64_t n1 = iproc_vector_dim(vector1);
-    int64_t n2 = iproc_vector_dim(vector2);
+    const struct vector *vector1 = x1;
+    const struct vector *vector2 = x2;
+    ssize_t n1 = vector_dim(vector1);
+    ssize_t n2 = vector_dim(vector2);
 
     if (n1 < n2) {
         return -1;
@@ -596,9 +636,9 @@ iproc_vector_compare (const void *x1, const void *x2)
         return +1;
     }
 
-    double *p1 = iproc_vector_ptr(vector1, 0);
-    double *p2 = iproc_vector_ptr(vector2, 0);
-    int64_t i, n = n1;
+    double *p1 = vector_ptr(vector1, 0);
+    double *p2 = vector_ptr(vector2, 0);
+    ssize_t i, n = n1;
 
     for (i = 0; i < n; i++) {
         int cmp = double_compare(p1 + i, p2 + i);
@@ -610,16 +650,16 @@ iproc_vector_compare (const void *x1, const void *x2)
 }
 
 int
-iproc_vector_ptr_compare (const void *px1, const void *px2)
+vector_ptr_compare (const void *px1, const void *px2)
 {
-    iproc_vector * const *pvector1 = px1;
-    iproc_vector * const *pvector2 = px2;
+    struct vector * const *pvector1 = px1;
+    struct vector * const *pvector2 = px2;
     
     if (!pvector1)
         return pvector2 ? 0 : -1;
     if (!pvector2)
         return +1;
     
-    return iproc_vector_compare(*pvector1, *pvector2);
+    return vector_compare(*pvector1, *pvector2);
 }
 

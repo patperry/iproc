@@ -40,5 +40,18 @@ typedef bool _Bool;
 # define SSIZE_MAX  (~ (-1L << (SIZEOF_SIZE_T * CHAR_BIT - 1)))
 #endif
 
+#ifndef SSIZE_FMT
+# if SIZEOF_SIZE_T == SIZEOF_LONG
+#  define SSIZE_FMT "ld"
+# elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#  define SSIZE_FMT "lld"
+# elif SIZEOF_SIZE_T == SIZEOF_INT
+#  define SSIZE_FMT "d"
+# else
+#  error "No support for sizeof(ssize_t) > sizeof(long long); \
+define SSIZE_FMT in config.h"
+# endif
+#endif
+
 
 #endif /* _PORT_H */

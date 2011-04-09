@@ -63,7 +63,7 @@ void              iproc_matrix_acc                 (iproc_matrix *dst_matrix,
 void              iproc_matrix_scale               (iproc_matrix *matrix,
                                                     double        scale);
 void              iproc_matrix_scale_rows          (iproc_matrix *matrix,
-                                                    iproc_vector *scale);
+                                                    struct vector *scale);
 
 iproc_vector_view iproc_matrix_col                 (iproc_matrix *a,
                                                     int64_t       j);
@@ -82,16 +82,16 @@ iproc_matrix_view iproc_matrix_view_array_with_lda (double       *data,
                                                     int64_t       nrow,
                                                     int64_t       ncol,
                                                     int64_t       lda);
-iproc_matrix_view iproc_matrix_view_vector         (iproc_vector *vector,
+iproc_matrix_view iproc_matrix_view_vector         (struct vector *vector,
                                                     int64_t       nrow,
                                                     int64_t       ncol);
 
 void              iproc_matrix_mul                 (double        alpha,
                                                     iproc_trans   trans,
                                                     iproc_matrix *matrix,
-                                                    iproc_vector *x,
+                                                    struct vector *x,
                                                     double        beta,
-                                                    iproc_vector *y);
+                                                    struct vector *y);
 void              iproc_matrix_matmul              (double        alpha,
                                                     iproc_trans   trans,
                                                     iproc_matrix *matrix,
@@ -101,7 +101,7 @@ void              iproc_matrix_matmul              (double        alpha,
 
 void              iproc_matrix_update1             (iproc_matrix *matrix,
                                                     double        alpha,
-                                                    iproc_vector *x,
-                                                    iproc_vector *y);
+                                                    struct vector *x,
+                                                    struct vector *y);
 
 #endif /* _IPROC_MATRIX_H */

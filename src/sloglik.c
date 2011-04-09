@@ -15,7 +15,7 @@ iproc_sloglik_free (iproc_sloglik *sll)
         iproc_svector_unref(sll->dp);
         iproc_svector_unref(sll->dxobs);
         iproc_svector_unref(sll->nrecv);
-        iproc_vector_free(sll->grad);
+        vector_free(sll->grad);
         iproc_model_unref(sll->model);
         iproc_free(sll);
     }
@@ -36,7 +36,7 @@ iproc_sloglik_new (iproc_model *model,
     sll->isend = isend;
 
     sll->f = 0.0;
-    sll->grad = iproc_vector_new(p);
+    sll->grad = vector_new(p);
     sll->grad_cached = false;
     
     sll->nsend = 0;
@@ -160,7 +160,7 @@ iproc_sloglik_value (iproc_sloglik *sll)
  *             [ (X[0,i])^T n[i] + sum{dx[t,i,j]} ]
  */
 static void
-acc_grad_nocache (iproc_vector  *dst_vector,
+acc_grad_nocache (struct vector  *dst_vector,
                   double         scale,
                   iproc_sloglik *sll)
 {
@@ -170,7 +170,7 @@ acc_grad_nocache (iproc_vector  *dst_vector,
     iproc_group_model *group = iproc_model_send_group(sll->model, sll->isend);
 
     // sum{gamma[t,i]} * xbar[0,i]
-    iproc_vector_acc(dst_vector, scale * sll->gamma, group->xbar0);
+    vector_acc(dst_vector, scale * sll->gamma, group->xbar0);
     
     // (X[0,i])^T * sum{dP[t,i]}
     iproc_design_muls0(scale, IPROC_TRANS_TRANS,
@@ -190,14 +190,14 @@ acc_grad_nocache (iproc_vector  *dst_vector,
 }
 
 
-iproc_vector *
+struct vector *
 iproc_sloglik_grad (iproc_sloglik *sll)
 {
     if (!sll)
         return NULL;
 
     if (!sll->grad_cached) {
-        iproc_vector_set_all(sll->grad, 0.0);
+        vector_fill(sll->grad, 0.0);
         acc_grad_nocache(sll->grad, (-sll->nsend) * 1.0, sll);
         sll->grad_cached = true;
     }

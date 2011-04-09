@@ -31,8 +31,7 @@ struct darray * darray_init_copy (struct darray *a,
     assert(src);
     
     if (_darray_init(a, darray_elt_size(src))) {
-        darray_assign_copy(a, src);
-        return a;
+        return darray_assign_copy(a, src);
     }
     
     return NULL;

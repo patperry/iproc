@@ -1,88 +1,97 @@
-#ifndef _IPROC_VECTOR_H
-#define _IPROC_VECTOR_H
+#ifndef _VECTOR_H
+#define _VECTOR_H
 
 #include <stddef.h>
-#include <stdint.h>
+#include "array.h"
 
-typedef struct _iproc_vector      iproc_vector;
 typedef struct _iproc_vector_view iproc_vector_view;
 
-struct _iproc_vector {
-    double        *pdata;
-    int64_t        dim;
+struct vector {
+    struct array array;
 };
 
 struct _iproc_vector_view {
-    iproc_vector vector;
+    struct vector vector;
 };
 
+/* create, destroy */
+struct vector * vector_init       (struct vector *v, ssize_t n);
+struct vector * vector_init_view  (struct vector *v, double *ptr, ssize_t n);
+struct vector * vector_init_slice (struct vector *v,
+                                   const struct vector *parent,
+                                   ssize_t i, ssize_t n);
+struct vector * vector_init_copy (struct vector *v, const struct vector *src);
+void            vector_deinit    (struct vector *v);
 
-iproc_vector *    iproc_vector_new           (int64_t       dim);
-iproc_vector *    iproc_vector_new_copy      (const iproc_vector *vector);
-void              iproc_vector_free          (iproc_vector *vector);
-int64_t           iproc_vector_dim           (const iproc_vector *vector);
-void              iproc_vector_set_all       (iproc_vector *vector,
+struct vector * vector_new      (ssize_t n);
+struct vector * vector_new_copy (const struct vector *v);
+void            vector_free     (struct vector *v);
+
+
+
+ssize_t           vector_dim           (const struct vector *v);
+void              vector_fill       (struct vector *vector,
                                               double        value);
-void              iproc_vector_set_basis     (iproc_vector *vector,
-                                              int64_t       index);
-double            iproc_vector_get           (iproc_vector *vector,
-                                              int64_t       index);
-void              iproc_vector_set           (iproc_vector *vector,
-                                              int64_t       index,
+void              vector_set_basis     (struct vector *vector,
+                                              ssize_t       index);
+double            vector_get           (struct vector *vector,
+                                              ssize_t       index);
+void              vector_set           (struct vector *vector,
+                                              ssize_t       index,
                                               double        value);
-void              iproc_vector_inc           (iproc_vector *vector,
-                                              int64_t       index,
+void              vector_inc           (struct vector *vector,
+                                              ssize_t       index,
                                               double        value);
-double *          iproc_vector_ptr           (const iproc_vector *vector,
-                                              int64_t       index);
-iproc_vector_view iproc_vector_subvector     (iproc_vector *vector,
-                                              int64_t       index,
-                                              int64_t       dim);
+double *          vector_ptr           (const struct vector *vector,
+                                              ssize_t       index);
+iproc_vector_view vector_slice     (struct vector *vector,
+                                              ssize_t       index,
+                                              ssize_t       dim);
 iproc_vector_view iproc_vector_view_array    (double       *array,
-                                              int64_t       dim);
-void              iproc_vector_copy          (iproc_vector *dst_vector,
-                                              const iproc_vector *vector);
-void              iproc_vector_swap          (iproc_vector *vector1,
-                                              iproc_vector *vector2);
-void              iproc_vector_swap_elems    (iproc_vector *vector,
-                                              int64_t       index1,
-                                              int64_t       index2);
-void              iproc_vector_reverse       (iproc_vector *vector);
-void              iproc_vector_scale         (iproc_vector *vector,
+                                              ssize_t       dim);
+void              vector_copy          (struct vector *dst_vector,
+                                              const struct vector *vector);
+void              vector_swap          (struct vector *vector1,
+                                              struct vector *vector2);
+void              vector_swap_elems    (struct vector *vector,
+                                              ssize_t       index1,
+                                              ssize_t       index2);
+void              vector_reverse       (struct vector *vector);
+void              vector_scale         (struct vector *vector,
                                               double        scale);
-void              iproc_vector_shift         (iproc_vector *vector,
+void              vector_shift         (struct vector *vector,
                                               double        shift);
-void              iproc_vector_add           (iproc_vector *dst_vector,
-                                              iproc_vector *vector);
-void              iproc_vector_sub           (iproc_vector *dst_vector,
-                                              iproc_vector *vector);
-void              iproc_vector_mul           (iproc_vector *dst_vector,
-                                              iproc_vector *vector);
-void              iproc_vector_div           (iproc_vector *dst_vector,
-                                              iproc_vector *vector);
-void              iproc_vector_acc           (iproc_vector *dst_vector,
+void              vector_add           (struct vector *dst_vector,
+                                              struct vector *vector);
+void              vector_sub           (struct vector *dst_vector,
+                                              struct vector *vector);
+void              vector_mul           (struct vector *dst_vector,
+                                              struct vector *vector);
+void              vector_div           (struct vector *dst_vector,
+                                              struct vector *vector);
+void              vector_acc           (struct vector *dst_vector,
                                               double        scale,
-                                              iproc_vector *vector);
-double            iproc_vector_dot           (iproc_vector *vector1,
-                                              iproc_vector *vector2);
-double            iproc_vector_norm          (iproc_vector *vector);
+                                              struct vector *vector);
+double            vector_dot           (struct vector *vector1,
+                                              struct vector *vector2);
+double            vector_norm          (struct vector *vector);
 
-double            iproc_vector_sum_abs       (iproc_vector *vector);
-double            iproc_vector_max_abs       (iproc_vector *vector);
-int64_t           iproc_vector_max_abs_index (iproc_vector *vector);
-double            iproc_vector_max           (iproc_vector *vector);
-int64_t           iproc_vector_max_index     (iproc_vector *vector);
-double            iproc_vector_log_sum_exp   (iproc_vector *vector);
+double            vector_sum_abs       (struct vector *vector);
+double            vector_max_abs       (struct vector *vector);
+ssize_t           vector_max_abs_index (struct vector *vector);
+double            vector_max           (struct vector *vector);
+ssize_t           vector_max_index     (struct vector *vector);
+double            vector_log_sum_exp   (struct vector *vector);
 
-void              iproc_vector_exp           (iproc_vector *vector);
+void              vector_exp           (struct vector *vector);
 
-void              iproc_vector_printf        (iproc_vector *vector);
+void              vector_printf        (struct vector *vector);
 
-size_t            iproc_vector_hash          (iproc_vector *vector);
-int               iproc_vector_identical     (iproc_vector *vector1,
-                                              iproc_vector *vector2);
-int               iproc_vector_compare       (const void *x1,  const void *x2);
-int               iproc_vector_ptr_compare   (const void *px1, const void *px2);
+size_t            vector_hash          (struct vector *vector);
+int               vector_identical     (struct vector *vector1,
+                                              struct vector *vector2);
+int               vector_compare       (const void *x1,  const void *x2);
+int               vector_ptr_compare   (const void *px1, const void *px2);
 
 
-#endif /* _IPROC_VECTOR_H */
+#endif /* _VECTOR_H */

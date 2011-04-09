@@ -51,9 +51,9 @@ iproc_vector_view iproc_svector_view_nz  (iproc_svector *svector);
 int64_t           iproc_svector_find_nz  (iproc_svector *svector,
                                           int64_t        i);
 
-double            iproc_vector_sdot      (iproc_vector  *vector,
+double            iproc_vector_sdot      (struct vector  *vector,
                                           iproc_svector *svector);
-void              iproc_vector_sacc      (iproc_vector  *dst_vector,
+void              iproc_vector_sacc      (struct vector  *dst_vector,
                                           double         scale,
                                           iproc_svector *svector);
 

@@ -9,9 +9,9 @@
 struct pqueue * _pqueue_init (struct pqueue *q, compare_fn compar,
                               size_t elt_size)
 {
-    assert(compar);    
+    assert(q);
+    assert(compar);
     assert(elt_size > 0);
-
     
     if (_darray_init(&q->array, elt_size)) {
         q->compare = compar;
@@ -43,13 +43,15 @@ void pqueue_deinit (struct pqueue *q)
 }
 
 
-void pqueue_assign_copy (struct pqueue *q, const struct pqueue *src)
+struct pqueue * pqueue_assign_copy (struct pqueue *q, const struct pqueue *src)
 {
-    assert(q);
-    assert(src);
-    
+    if (!q) return NULL;
+    if (!src) return NULL;
+
     darray_assign_copy(&q->array, &src->array);
     q->compare = src->compare;
+
+    return q;
 }
 
 

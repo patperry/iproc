@@ -24,8 +24,15 @@ AX_CHECK_LAPACK
 AC_C_INLINE
 AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
+
 AC_TYPE_SSIZE_T
-AC_CHECK_SIZEOF([size_t], , [#include <stddef.h> #include <stdio.h>])
+
+AC_CHECK_SIZEOF([size_t])
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long])
+AC_CHECK_SIZEOF([long long])
+
+
 
 ## HACK: not portable
 AH_TEMPLATE([f77int], [Define to appropriate type for Fortran integer])

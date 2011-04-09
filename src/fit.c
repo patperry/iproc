@@ -19,23 +19,23 @@ static void
 eval_objective (iproc_loglik *loglik,
                 double        penalty,
                 double       *valuep,
-                iproc_vector *grad)
+                struct vector *grad)
 {
     iproc_model *model = loglik->model;
-    iproc_vector *coefs = model->coefs;
+    struct vector *coefs = model->coefs;
     
     double n = loglik->nrecv;
     double ll_value = iproc_loglik_value(loglik);
-    iproc_vector *ll_grad = iproc_loglik_grad(loglik);
+    struct vector *ll_grad = iproc_loglik_grad(loglik);
     
-    double norm = iproc_vector_norm(coefs);
+    double norm = vector_norm(coefs);
     double norm2 = norm * norm;
     double value = -ll_value/n + 0.5 * (penalty / n) * norm2;
     *valuep = value;
     
-    iproc_vector_copy(grad, coefs);
-    iproc_vector_scale(grad, penalty / n);
-    iproc_vector_acc(grad, -1.0/n, ll_grad);
+    vector_copy(grad, coefs);
+    vector_scale(grad, penalty / n);
+    vector_acc(grad, -1.0/n, ll_grad);
 }
 
 
@@ -45,9 +45,9 @@ iproc_fit_init (iproc_fit *fit)
     int64_t dim = iproc_model_dim(fit->model);
 
     fit->inv_hess = NULL;
-    fit->grad = iproc_vector_new(dim);
-    fit->grad0 = iproc_vector_new(dim);
-    fit->search_dir = iproc_vector_new(dim);
+    fit->grad = vector_new(dim);
+    fit->grad0 = vector_new(dim);
+    fit->search_dir = vector_new(dim);
     fit->loglik = iproc_loglik_new(fit->model, fit->messages);
     
     if (!(fit->grad && fit->grad0 && fit->search_dir && fit->loglik))
@@ -95,9 +95,9 @@ iproc_fit_free (iproc_fit *fit)
 {
     if (fit) {
         iproc_loglik_unref(fit->loglik);
-        iproc_vector_free(fit->search_dir);
-        iproc_vector_free(fit->grad0);
-        iproc_vector_free(fit->grad);
+        vector_free(fit->search_dir);
+        vector_free(fit->grad0);
+        vector_free(fit->grad);
         iproc_matrix_unref(fit->inv_hess);
         iproc_messages_unref(fit->messages);        
         iproc_model_unref(fit->model);
@@ -117,16 +117,16 @@ linesearch (iproc_fit *fit)
     int has_loops = model->has_loops;
     iproc_loglik *loglik = fit->loglik;
     
-    const iproc_vector *x0 = model->coefs;
-    iproc_vector *x = iproc_vector_new_copy(x0);
-    iproc_vector *search_dir = fit->search_dir;
-    iproc_vector *grad0 = fit->grad; /* swap grad0 and grad */
-    iproc_vector *grad = fit->grad0;
+    const struct vector *x0 = model->coefs;
+    struct vector *x = vector_new_copy(x0);
+    struct vector *search_dir = fit->search_dir;
+    struct vector *grad0 = fit->grad; /* swap grad0 and grad */
+    struct vector *grad = fit->grad0;
     double value0 = fit->value;
     double value;
     
     double f = value0;
-    double g = iproc_vector_dot(grad0, search_dir);
+    double g = vector_dot(grad0, search_dir);
     double ftol = 1e-4;
     double gtol = 0.9;
     double xtol = 0.1;
@@ -150,8 +150,8 @@ linesearch (iproc_fit *fit)
         iproc_model_unref(model);
 
         /* Take a step and create a new model */
-        iproc_vector_copy(x, x0);
-        iproc_vector_acc(x, stp, search_dir);
+        vector_copy(x, x0);
+        vector_acc(x, stp, search_dir);
         model = iproc_model_new(design, x, has_loops);
         
         /* Update the loglik, value, and gradient */
@@ -159,7 +159,7 @@ linesearch (iproc_fit *fit)
         eval_objective(loglik, penalty, &value, grad);
         
         f = value;
-        g = iproc_vector_dot(grad, search_dir);
+        g = vector_dot(grad, search_dir);
         
         dcsrch_(&stp, &f, &g, &ftol, &gtol, &xtol, task, &stpmin, &stpmax,
                 isave, dsave, task_len);
@@ -174,7 +174,7 @@ linesearch (iproc_fit *fit)
 
 cleanup:
     
-    iproc_vector_free(x);
+    vector_free(x);
     
     fit->step = stp;
     fit->value = value;
@@ -188,13 +188,13 @@ cleanup:
 static void
 update_hess (iproc_fit *fit)
 {
-    iproc_vector *s = iproc_vector_new_copy(fit->search_dir);
-    iproc_vector_scale(s, fit->step);
+    struct vector *s = vector_new_copy(fit->search_dir);
+    vector_scale(s, fit->step);
 
-    iproc_vector *y = iproc_vector_new_copy(fit->grad);
-    iproc_vector_acc(y, -1.0, fit->grad0);
+    struct vector *y = vector_new_copy(fit->grad);
+    vector_acc(y, -1.0, fit->grad0);
 
-    double s_y = iproc_vector_dot(s, y);
+    double s_y = vector_dot(s, y);
     
     iproc_matrix *H = fit->inv_hess;
     
@@ -202,11 +202,11 @@ update_hess (iproc_fit *fit)
         double scale = 1.0;
         
         if (s_y > 0) {
-            double s_s = iproc_vector_dot(s, s);
+            double s_s = vector_dot(s, s);
             scale = s_y / s_s;
         }
 
-        int64_t i, n = iproc_vector_dim(y);
+        int64_t i, n = vector_dim(y);
         H = iproc_matrix_new(n, n);
         iproc_matrix_set_all(H, 0.0);
         
@@ -216,10 +216,10 @@ update_hess (iproc_fit *fit)
         
         fit->inv_hess = H;
     } else {
-        iproc_vector *H_y = iproc_vector_new(iproc_vector_dim(y));
+        struct vector *H_y = vector_new(vector_dim(y));
         iproc_matrix_mul(1.0, IPROC_TRANS_NOTRANS, H, y, 0.0, H_y);
     
-        double y_H_y = iproc_vector_dot(H_y, y);
+        double y_H_y = vector_dot(H_y, y);
         double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
         double rho = 1.0 / s_y;
     
@@ -227,11 +227,11 @@ update_hess (iproc_fit *fit)
         iproc_matrix_update1(H, -rho, H_y, s);
         iproc_matrix_update1(H, -rho, s, H_y);
 
-        iproc_vector_free(H_y);
+        vector_free(H_y);
     }
     
-    iproc_vector_free(y);
-    iproc_vector_free(s);
+    vector_free(y);
+    vector_free(s);
 }
 
 static void
@@ -239,20 +239,20 @@ update_searchdir (iproc_fit *fit)
 {
     assert(fit);
     
-    iproc_vector *s = fit->search_dir;
+    struct vector *s = fit->search_dir;
     
     if (fit->inv_hess) {
         iproc_matrix_mul(-1.0, IPROC_TRANS_NOTRANS, fit->inv_hess, fit->grad,
                          +0.0, s);
     } else {
-        iproc_vector_copy(s, fit->grad);
-        double scale = iproc_vector_norm(s);
-        int64_t i, n = iproc_vector_dim(s);
+        vector_copy(s, fit->grad);
+        double scale = vector_norm(s);
+        int64_t i, n = vector_dim(s);
 
         if (scale != 0) {
             for (i = 0; i < n; i++) {
-                double s_i = iproc_vector_get(s, i);
-                iproc_vector_set(s, i, -s_i / scale);
+                double s_i = vector_get(s, i);
+                vector_set(s, i, -s_i / scale);
             }
         }
     }
@@ -275,7 +275,7 @@ iproc_fit_converged (iproc_fit *fit,
     double f = fit->value;
     double f0 = fit->value0;
     double step = fit->step;
-    double g0 = iproc_vector_dot(fit->search_dir, fit->grad);
+    double g0 = vector_dot(fit->search_dir, fit->grad);
     bool converged = false;
     
     if (fabs(f - f0) <= abs_tol

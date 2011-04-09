@@ -25,13 +25,14 @@ struct array * _array_init (struct array *a, ssize_t size, size_t elt_size)
     return a;
 }
 
+
 struct array * _array_init_view (struct array *a, const void *data,
                                  ssize_t size, size_t elt_size)
 {
     assert(a);
     assert(data || size == 0);
-    assert(size >= 0);
     assert(elt_size > 0);
+    assert(size <= SSIZE_MAX / elt_size);
 
     a->data = (void *)data;
     a->size = size;
@@ -47,9 +48,8 @@ struct array * array_init_slice (struct array *a, const struct array *parent,
 {
     assert(a);
     assert(parent);
-    assert(i >= 0);
     assert(n >= 0);
-    assert(i <= array_size(parent) - n);
+    assert(0 <= i && i <= array_size(parent) - n);
     
     return _array_init_view(a, array_ptr(parent, i), n, parent->elt_size);
 }
@@ -62,8 +62,7 @@ struct array * array_init_copy (struct array *a, const struct array *src)
     assert(src);
     
     if (_array_init(a, array_size(src), array_elt_size(src))) {
-        array_assign_copy(a, src);
-        return a;
+        return array_assign_copy(a, src);
     }
     
     return NULL;
@@ -74,8 +73,9 @@ void array_deinit (struct array *a)
 {
     assert(a);
     
-    if (array_owner(a))
+    if (array_owner(a)) {
         free(a->data);
+    }
 }
 
 
@@ -96,7 +96,6 @@ struct array * array_resize (struct array *a, ssize_t n)
     
     return NULL;
 }
-
 
 
 

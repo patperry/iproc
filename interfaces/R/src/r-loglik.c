@@ -113,6 +113,6 @@ SEXP
 Riproc_loglik_grad  (SEXP Rloglik)
 {
     iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-    iproc_vector *grad = iproc_loglik_grad(loglik);
+    struct vector *grad = iproc_loglik_grad(loglik);
     return Riproc_vector_new_copy(grad);
 }

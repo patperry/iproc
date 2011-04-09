@@ -25,7 +25,7 @@ SEXP
 Riproc_hash_numeric (SEXP x)
 {
     iproc_vector_view view = Riproc_vector_view_sexp(x);
-    size_t hash = iproc_vector_hash(&view.vector);
+    size_t hash = vector_hash(&view.vector);
     int int_hash = (int)(hash % INT_MAX);
     return ScalarInteger(int_hash);
 }
@@ -60,14 +60,14 @@ Riproc_sexp2ptr (SEXP     s,
 }
 
 SEXP
-Riproc_vector_new_copy (iproc_vector *vector)
+Riproc_vector_new_copy (struct vector *vector)
 {
-    int n = (int)iproc_vector_dim(vector);
+    int n = (int)vector_dim(vector);
     SEXP Rvector;
 
     PROTECT(Rvector = NEW_NUMERIC(n));
     iproc_vector_view view = Riproc_vector_view_sexp(Rvector);
-    iproc_vector_copy(&view.vector, vector);
+    vector_copy(&view.vector, vector);
     UNPROTECT(1);
     return Rvector;
 }

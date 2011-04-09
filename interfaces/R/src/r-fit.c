@@ -74,7 +74,7 @@ Riproc_fit (SEXP Rmodel0,
             const char * msg = penalty == 0 ? "" : "(penalized) ";
             int64_t n = fit->loglik->nrecv;
             double dev = 2 * fit->value * n;
-            double dec = -1 * iproc_vector_dot(fit->search_dir, fit->grad) * n;
+            double dec = -1 * vector_dot(fit->search_dir, fit->grad) * n;
             Rprintf("iter %d deviance %s%.6f decrement %.6f\n",
                     it, msg, dev, dec);
         }

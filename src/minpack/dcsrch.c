@@ -327,8 +327,8 @@
     *stp = min(*stp,*stpmax);
 /*     If further progress is not possible, let stp be the best */
 /*     point obtained during the search. */
-    if (brackt && (*stp <= stmin || *stp >= stmax) || brackt && stmax - stmin 
-	    <= *xtol * stmax) {
+    if ((brackt && (*stp <= stmin || *stp >= stmax))
+        || (brackt && stmax - stmin <= *xtol * stmax)) {
 	*stp = stx;
     }
 /*     Obtain another function and derivative. */

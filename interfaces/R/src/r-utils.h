@@ -24,7 +24,7 @@ void *            Riproc_sexp2ptr         (SEXP     s,
 Rboolean          Riproc_sexpisptr        (SEXP     s,
                                            SEXP     tag);
 
-SEXP              Riproc_vector_new_copy  (iproc_vector *vector);
+SEXP              Riproc_vector_new_copy  (struct vector *vector);
 SEXP              Riproc_matrix_new_copy  (iproc_matrix *matrix);
 
 iproc_vector_view Riproc_vector_view_sexp (SEXP Rvector);

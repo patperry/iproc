@@ -242,19 +242,19 @@ iproc_svector_view_nz (iproc_svector *svector)
 }
 
 double
-iproc_vector_sdot (iproc_vector  *vector,
+iproc_vector_sdot (struct vector  *vector,
                    iproc_svector *svector)
 {
     assert(vector);
     assert(svector);
-    assert(iproc_vector_dim(vector) == iproc_svector_dim(svector));
+    assert(vector_dim(vector) == iproc_svector_dim(svector));
 
     int64_t i, ix, n = iproc_svector_nnz(svector);
     double e1, e2, dot = 0.0;
 
     for (i = 0; i < n; i++) {
         ix = iproc_svector_nz(svector, i);
-        e1 = iproc_vector_get(vector, ix);
+        e1 = vector_get(vector, ix);
         e2 = iproc_svector_nz_get(svector, i);
         dot += e1 * e2;
     }
@@ -262,13 +262,13 @@ iproc_vector_sdot (iproc_vector  *vector,
 }
 
 void
-iproc_vector_sacc (iproc_vector  *dst_vector,
+iproc_vector_sacc (struct vector  *dst_vector,
                    double         scale,
                    iproc_svector *svector)
 {
     assert(dst_vector);
     assert(svector);
-    assert(iproc_vector_dim(dst_vector) == iproc_svector_dim(svector));
+    assert(vector_dim(dst_vector) == iproc_svector_dim(svector));
 
     int64_t i, ix, n = iproc_svector_nnz(svector);
     double e;
@@ -276,7 +276,7 @@ iproc_vector_sacc (iproc_vector  *dst_vector,
     for (i = 0; i < n; i++) {
         e = iproc_svector_nz_get(svector, i);
         ix = iproc_svector_nz(svector, i);
-        iproc_vector_inc(dst_vector, ix, scale * e);
+        vector_inc(dst_vector, ix, scale * e);
     }
 }
 

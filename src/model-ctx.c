@@ -13,8 +13,8 @@
 static void
 compute_weight_changes (iproc_design_ctx *ctx,
                         bool              has_loops,
-                        iproc_vector     *coefs,
-                        iproc_vector     *log_p0,
+                        struct vector     *coefs,
+                        struct vector     *log_p0,
                         iproc_svector    *deta,
                         double           *gamma,
                         double           *log_gamma)
@@ -29,7 +29,7 @@ compute_weight_changes (iproc_design_ctx *ctx,
     iproc_vector_view deta_nz = iproc_svector_view_nz(deta);
     
     /* compute the scale for the weight differences */
-    double lwmax = iproc_vector_max(&deta_nz.vector);
+    double lwmax = vector_max(&deta_nz.vector);
     double logscale = MAX(0.0, lwmax);
     double invscale = exp(-logscale);
     
@@ -43,8 +43,8 @@ compute_weight_changes (iproc_design_ctx *ctx,
     /* compute the log sums of the positive and negative differences in weights */
     for (i = 0; i < nnz; i++) {
         int64_t jrecv = iproc_svector_nz(deta, i);
-        double lp0 = iproc_vector_get(log_p0, jrecv);
-        double dlw = iproc_vector_get(&deta_nz.vector, i);
+        double lp0 = vector_get(log_p0, jrecv);
+        double dlw = vector_get(&deta_nz.vector, i);
         double log_abs_dw;
         
         /* When w > w0:
@@ -89,7 +89,7 @@ compute_weight_changes (iproc_design_ctx *ctx,
  * sparsity pattern.
  */
 static void
-compute_active_probs (iproc_vector  *log_p0,
+compute_active_probs (struct vector  *log_p0,
                       double         log_gamma,
                       iproc_svector *deta,
                       iproc_svector *p_active)
@@ -100,17 +100,17 @@ compute_active_probs (iproc_vector  *log_p0,
     
     for (i = 0; i < nnz; i++) {
         int64_t jrecv = iproc_svector_nz(p_active, i);
-        double lp0_j = iproc_vector_get(log_p0, jrecv);
-        double deta_j = iproc_vector_get(&p_active_nz.vector, i);
+        double lp0_j = vector_get(log_p0, jrecv);
+        double deta_j = vector_get(&p_active_nz.vector, i);
         double lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
-        iproc_vector_set(&p_active_nz.vector, i, lp_j);
+        vector_set(&p_active_nz.vector, i, lp_j);
     }
     
-    iproc_vector_exp(&p_active_nz.vector);
+    vector_exp(&p_active_nz.vector);
 }
 
 static void
-compute_prob_diffs(iproc_vector  *p0,
+compute_prob_diffs(struct vector  *p0,
                    double         gamma,
                    iproc_svector *p_active)
 {
@@ -119,10 +119,10 @@ compute_prob_diffs(iproc_vector  *p0,
     
     for (i = 0; i < nnz; i++) {
         int64_t jrecv = iproc_svector_nz(p_active, i);
-        double p0_j = iproc_vector_get(p0, jrecv);
-        double p_j = iproc_vector_get(&p_active_nz.vector, i);
+        double p0_j = vector_get(p0, jrecv);
+        double p_j = vector_get(&p_active_nz.vector, i);
         double dp_j = p_j - gamma * p0_j;
-        iproc_vector_set(&p_active_nz.vector, i, dp_j);
+        vector_set(&p_active_nz.vector, i, dp_j);
     }
 }
 
@@ -221,7 +221,7 @@ iproc_model_ctx_set (iproc_model_ctx *ctx,
     iproc_model *model = ctx->model;
     iproc_design *design = iproc_model_design(model);
     iproc_design_ctx *design_ctx = iproc_design_ctx_new(design, isend, h);
-    iproc_vector *coefs = iproc_model_coefs(model);
+    struct vector *coefs = iproc_model_coefs(model);
     bool has_loops = iproc_model_has_loops(model);
     iproc_group_model *group = iproc_model_send_group(model, isend);
 
@@ -304,7 +304,7 @@ iproc_model_ctx_logprob (iproc_model_ctx *ctx,
      */
     
     double log_gamma = ctx->log_gamma;
-    double log_p0 = iproc_vector_get(ctx->group->log_p0, jrecv);
+    double log_p0 = vector_get(ctx->group->log_p0, jrecv);
     double deta = iproc_svector_get(ctx->deta, jrecv);
     double log_p = log_gamma + log_p0 + deta;
     return MIN(log_p, 0.0);
@@ -312,28 +312,28 @@ iproc_model_ctx_logprob (iproc_model_ctx *ctx,
 
 void
 iproc_model_ctx_get_probs (iproc_model_ctx *ctx,
-                           iproc_vector    *probs)
+                           struct vector    *probs)
 {
     assert(ctx);
     assert(probs);
-    assert(iproc_model_ctx_nreceiver(ctx) == iproc_vector_dim(probs));
+    assert(iproc_model_ctx_nreceiver(ctx) == vector_dim(probs));
 
     iproc_model_ctx_get_logprobs(ctx, probs);
-    iproc_vector_exp(probs);
+    vector_exp(probs);
 }
 
 void
 iproc_model_ctx_get_logprobs (iproc_model_ctx *ctx,
-                              iproc_vector    *logprobs)
+                              struct vector    *logprobs)
 {
     assert(ctx);
     assert(logprobs);
-    assert(iproc_model_ctx_nreceiver(ctx) == iproc_vector_dim(logprobs));
+    assert(iproc_model_ctx_nreceiver(ctx) == vector_dim(logprobs));
 
     int64_t j, n = iproc_model_ctx_nreceiver(ctx);
 
     for (j = 0; j < n; j++) {
         double lp = iproc_model_ctx_logprob(ctx, j);
-        iproc_vector_set(logprobs, j, lp);
+        vector_set(logprobs, j, lp);
     }
 }

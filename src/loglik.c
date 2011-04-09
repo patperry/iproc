@@ -20,7 +20,7 @@ iproc_loglik_free (iproc_loglik *loglik)
 
         darray_deinit(array);
         iproc_model_unref(loglik->model);
-        iproc_vector_free(loglik->grad);
+        vector_free(loglik->grad);
         iproc_free(loglik);
     }
 }
@@ -36,7 +36,7 @@ iproc_loglik_new_empty (iproc_model *model)
         return NULL;
     
     loglik->model = iproc_model_ref(model);
-    loglik->grad = iproc_vector_new(iproc_design_dim(design));
+    loglik->grad = vector_new(iproc_design_dim(design));
     loglik->grad_cached = false;
     loglik->nsend = 0;
     loglik->nrecv = 0;
@@ -178,7 +178,7 @@ iproc_loglik_value (iproc_loglik *loglik)
 
 
 static void
-iproc_vector_acc_loglik_grad_nocache (iproc_vector *dst_vector,
+iproc_vector_acc_loglik_grad_nocache (struct vector *dst_vector,
                                       double        scale,
                                       iproc_loglik *loglik)
 {
@@ -190,21 +190,21 @@ iproc_vector_acc_loglik_grad_nocache (iproc_vector *dst_vector,
     for (i = 0; i < nsend; i++) {
         sll = darray_index(array, iproc_sloglik *, i);
         if (sll) {
-            iproc_vector *g = iproc_sloglik_grad(sll);
-            iproc_vector_acc(dst_vector, scale, g);
+            struct vector *g = iproc_sloglik_grad(sll);
+            vector_acc(dst_vector, scale, g);
         }
     }
 }
 
 
-iproc_vector *
+struct vector *
 iproc_loglik_grad (iproc_loglik *loglik)
 {
     if (!loglik)
         return NULL;
 
     if (!loglik->grad_cached) {
-        iproc_vector_set_all(loglik->grad, 0.0);
+        vector_fill(loglik->grad, 0.0);
         iproc_vector_acc_loglik_grad_nocache(loglik->grad, 1.0, loglik);
         loglik->grad_cached = true;
     }

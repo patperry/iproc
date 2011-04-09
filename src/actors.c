@@ -6,17 +6,17 @@
 #include "actors.h"
 
 #define group_bucket_compare size_compare
-#define group_compare        iproc_vector_ptr_compare
+#define group_compare        vector_ptr_compare
 
 
 static ssize_t
-iproc_actors_insert_group (iproc_actors *actors, iproc_vector *traits)
+iproc_actors_insert_group (iproc_actors *actors, struct vector *traits)
 {
     assert(actors);
     assert(traits);
 
     /* first, find the right bucket */
-    size_t traits_hash = iproc_vector_hash(traits);
+    size_t traits_hash = vector_hash(traits);
     ssize_t i = darray_binary_search(&actors->group_buckets,
                                      &traits_hash,
                                      group_bucket_compare);
@@ -40,7 +40,7 @@ iproc_actors_insert_group (iproc_actors *actors, iproc_vector *traits)
 
     if (j < 0) { /* insert a new group if necessary */
         j = ~j;
-        iproc_vector *new_traits = iproc_vector_new_copy(traits);
+        struct vector *new_traits = vector_new_copy(traits);
         int64_t new_id = darray_size(&actors->group_traits);
         darray_push_back(&actors->group_traits, &new_traits);
         iproc_group new_group = { new_traits, new_id };
@@ -57,7 +57,7 @@ iproc_actors_insert_group (iproc_actors *actors, iproc_vector *traits)
 static void
 iproc_actors_group_deinit (iproc_group *group)
 {
-    iproc_vector_free(group->traits);
+    vector_free(group->traits);
 }
 
 
@@ -115,7 +115,7 @@ iproc_actors_free (iproc_actors *actors)
 
 iproc_actors *
 iproc_actors_new (int64_t      size,
-                  iproc_vector *traits0)
+                  struct vector *traits0)
 {
     assert(0 <= size);
     assert(traits0);
@@ -123,7 +123,7 @@ iproc_actors_new (int64_t      size,
 
     if (actors
         && darray_init(&actors->group_ids, int64_t)
-        && darray_init(&actors->group_traits, iproc_vector *)
+        && darray_init(&actors->group_traits, struct vector *)
         && darray_init(&actors->group_buckets, iproc_group_bucket)) {
         iproc_refcount_init(&actors->refcount);
         
@@ -177,28 +177,28 @@ int64_t
 iproc_actors_dim (iproc_actors *actors)
 {
     assert(actors);
-    iproc_vector *x0 = iproc_actors_group_traits(actors, 0);
-    int64_t n = iproc_vector_dim(x0);
+    struct vector *x0 = iproc_actors_group_traits(actors, 0);
+    int64_t n = vector_dim(x0);
     return n;
 }
 
 void
 iproc_actors_set (iproc_actors *actors,
                   int64_t       actor_id,
-                  iproc_vector *traits)
+                  struct vector *traits)
 {
     assert(actors);
     assert(0 <= actor_id);
     assert(actor_id < iproc_actors_size(actors));
     assert(traits);
-    assert(iproc_vector_dim(traits) == iproc_actors_dim(actors));
+    assert(vector_dim(traits) == iproc_actors_dim(actors));
 
     int64_t group_id = iproc_actors_insert_group(actors, traits);
     darray_index(&actors->group_ids, int64_t, actor_id) = group_id;
 }
 
 
-iproc_vector *
+struct vector *
 iproc_actors_get (iproc_actors *actors,
                   int64_t       actor_id)
 {
@@ -207,7 +207,7 @@ iproc_actors_get (iproc_actors *actors,
     assert(actor_id < iproc_actors_size(actors));
 
     int64_t g = iproc_actors_group(actors, actor_id);
-    iproc_vector *x = iproc_actors_group_traits(actors, g);
+    struct vector *x = iproc_actors_group_traits(actors, g);
     return x;
 }
 
@@ -232,7 +232,7 @@ iproc_actors_group (iproc_actors *actors,
 }
 
 
-iproc_vector *
+struct vector *
 iproc_actors_group_traits (iproc_actors *actors,
                            int64_t       group_id)
 {
@@ -240,8 +240,8 @@ iproc_actors_group_traits (iproc_actors *actors,
     assert(0 <= group_id);
     assert(group_id < iproc_actors_ngroup(actors));
 
-    iproc_vector *x = darray_index(&actors->group_traits,
-                                   iproc_vector *,
+    struct vector *x = darray_index(&actors->group_traits,
+                                   struct vector *,
                                    group_id);
     return x;
 }
@@ -251,45 +251,45 @@ void
 iproc_actors_mul (double        alpha,
                   iproc_trans   trans,
                   iproc_actors *actors,
-                  iproc_vector *x,
+                  struct vector *x,
                   double        beta,
-                  iproc_vector *y)
+                  struct vector *y)
 {
     assert(actors);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_actors_dim(actors));
+           || vector_dim(x) == iproc_actors_dim(actors));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_actors_size(actors));
+           || vector_dim(y) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_actors_size(actors));
+           || vector_dim(x) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_actors_dim(actors));
+           || vector_dim(y) == iproc_actors_dim(actors));
 
     int64_t n = iproc_actors_size(actors);
     int64_t i;
-    iproc_vector *row;
+    struct vector *row;
     double dot, entry;
 
     if (beta == 0) {
-        iproc_vector_set_all(y, 0.0);
+        vector_fill(y, 0.0);
     } else if (beta != 1) {
-        iproc_vector_scale(y, beta);
+        vector_scale(y, beta);
     }
 
     /* NOTE: this could be more efficient by using info about actor groups */
     if (trans == IPROC_TRANS_NOTRANS) {
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
-            dot = iproc_vector_dot(row, x);
-            iproc_vector_inc(y, i, alpha * dot);
+            dot = vector_dot(row, x);
+            vector_inc(y, i, alpha * dot);
         }
     } else {
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
-            entry = iproc_vector_get(x, i);
-            iproc_vector_acc(y, alpha * entry, row);
+            entry = vector_get(x, i);
+            vector_acc(y, alpha * entry, row);
         }
     }
 }
@@ -301,7 +301,7 @@ iproc_actors_muls (double         alpha,
                    iproc_actors  *actors,
                    iproc_svector *x,
                    double         beta,
-                   iproc_vector  *y)
+                   struct vector  *y)
 {
     assert(actors);
     assert(x);
@@ -309,21 +309,21 @@ iproc_actors_muls (double         alpha,
     assert(trans != IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_actors_dim(actors));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_actors_size(actors));
+           || vector_dim(y) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
            || iproc_svector_dim(x) == iproc_actors_size(actors));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_actors_dim(actors));
+           || vector_dim(y) == iproc_actors_dim(actors));
 
     int64_t n = iproc_actors_size(actors);
     int64_t i;
-    iproc_vector *row;
+    struct vector *row;
     double dot, entry;
 
     if (beta == 0) {
-        iproc_vector_set_all(y, 0.0);
+        vector_fill(y, 0.0);
     } else if (beta != 1) {
-        iproc_vector_scale(y, beta);
+        vector_scale(y, beta);
     }
 
     /* NOTE: this could be more efficient by using info about actor groups */
@@ -331,7 +331,7 @@ iproc_actors_muls (double         alpha,
         for (i = 0; i < n; i++) {
             row = iproc_actors_get(actors, i);
             dot = iproc_vector_sdot(row, x);
-            iproc_vector_inc(y, i, alpha * dot);
+            vector_inc(y, i, alpha * dot);
         }
     } else {
         int64_t inz, nnz = iproc_svector_nnz(x);
@@ -339,7 +339,7 @@ iproc_actors_muls (double         alpha,
             i = iproc_svector_nz(x, inz);
             row = iproc_actors_get(actors, i);
             entry = iproc_svector_nz_get(x, inz);
-            iproc_vector_acc(y, alpha * entry, row);
+            vector_acc(y, alpha * entry, row);
         }
     }
 }

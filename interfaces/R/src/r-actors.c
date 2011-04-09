@@ -142,9 +142,9 @@ Riproc_actors_traits (SEXP Ractors,
             error("actor id out of range");
 
         iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        iproc_vector *src = iproc_actors_get(actors, id);
+        struct vector *src = iproc_actors_get(actors, id);
 
-        iproc_vector_copy(&dst.vector, src);
+        vector_copy(&dst.vector, src);
     }
 
     UNPROTECT(1);
@@ -196,9 +196,9 @@ Riproc_actors_group_traits (SEXP Ractors,
             error("group id out of range");
 
         iproc_vector_view dst = iproc_matrix_col(&xt.matrix, i);
-        iproc_vector *src = iproc_actors_group_traits(actors, id);
+        struct vector *src = iproc_actors_group_traits(actors, id);
 
-        iproc_vector_copy(&dst.vector, src);
+        vector_copy(&dst.vector, src);
     }
 
     UNPROTECT(1);

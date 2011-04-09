@@ -251,24 +251,24 @@ iproc_matrix_scale (iproc_matrix *matrix,
 
     for (j = 0; j < n; j++) {
         iproc_vector_view col = iproc_matrix_col(matrix, j);
-        iproc_vector_scale(&col.vector, scale);
+        vector_scale(&col.vector, scale);
     }
 }
 
 void
 iproc_matrix_scale_rows (iproc_matrix *matrix,
-                         iproc_vector *scale)
+                         struct vector *scale)
 {
     assert(matrix);
     assert(scale);
-    assert(iproc_matrix_nrow(matrix) == iproc_vector_dim(scale));
+    assert(iproc_matrix_nrow(matrix) == vector_dim(scale));
 
     int64_t n = iproc_matrix_ncol(matrix);
     int64_t j;
 
     for (j = 0; j < n; j++) {
         iproc_vector_view col = iproc_matrix_col(matrix, j);
-        iproc_vector_mul(&col.vector, scale);
+        vector_mul(&col.vector, scale);
     }
 }
 
@@ -329,13 +329,13 @@ iproc_matrix_view_array_with_lda (double *data,
 }
 
 iproc_matrix_view
-iproc_matrix_view_vector (iproc_vector *vector,
+iproc_matrix_view_vector (struct vector *vector,
                           int64_t       nrow,
                           int64_t       ncol)
 {
     assert(vector);
-    assert(iproc_vector_dim(vector) == nrow * ncol);
-    double *data = iproc_vector_ptr(vector, 0);
+    assert(vector_dim(vector) == nrow * ncol);
+    double *data = vector_ptr(vector, 0);
     return iproc_matrix_view_array(data, nrow, ncol);
 }
 
@@ -344,30 +344,30 @@ void
 iproc_matrix_mul (double        alpha,
                   iproc_trans   trans,
                   iproc_matrix *matrix,
-                  iproc_vector *x,
+                  struct vector *x,
                   double        beta,
-                  iproc_vector *y)
+                  struct vector *y)
 {
     assert(matrix);
     assert(x);
     assert(y);
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_matrix_ncol(matrix));
+           || vector_dim(x) == iproc_matrix_ncol(matrix));
     assert(trans != IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_matrix_nrow(matrix));
+           || vector_dim(y) == iproc_matrix_nrow(matrix));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(x) == iproc_matrix_nrow(matrix));
+           || vector_dim(x) == iproc_matrix_nrow(matrix));
     assert(trans == IPROC_TRANS_NOTRANS
-           || iproc_vector_dim(y) == iproc_matrix_ncol(matrix));
+           || vector_dim(y) == iproc_matrix_ncol(matrix));
 
     char    *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
     f77int   m      = (f77int)iproc_matrix_nrow(matrix);
     f77int   n      = (f77int)iproc_matrix_ncol(matrix);
     void    *pa     = iproc_matrix_ptr(matrix, 0, 0);
     f77int   lda    = (f77int)iproc_matrix_lda(matrix);
-    void    *px     = iproc_vector_ptr(x, 0);
+    void    *px     = vector_ptr(x, 0);
     f77int   incx   = 1;
-    void    *py     = iproc_vector_ptr(y, 0);
+    void    *py     = vector_ptr(y, 0);
     f77int   incy   = 1;
 
     F77_FUNC(dgemv)(ptrans, &m,  &n, &alpha, pa, &lda, 
@@ -417,20 +417,20 @@ iproc_matrix_matmul (double        alpha,
 void
 iproc_matrix_update1 (iproc_matrix *matrix,
                       double        alpha,
-                      iproc_vector *x,
-                      iproc_vector *y)
+                      struct vector *x,
+                      struct vector *y)
 {
     assert(matrix);
     assert(x);
     assert(y);
-    assert(iproc_matrix_nrow(matrix) == iproc_vector_dim(x));
-    assert(iproc_matrix_ncol(matrix) == iproc_vector_dim(y));
+    assert(iproc_matrix_nrow(matrix) == vector_dim(x));
+    assert(iproc_matrix_ncol(matrix) == vector_dim(y));
 
     f77int  m      = (f77int)iproc_matrix_nrow(matrix);
     f77int  n      = (f77int)iproc_matrix_ncol(matrix);
-    void   *px     = iproc_vector_ptr(x, 0);
+    void   *px     = vector_ptr(x, 0);
     f77int  incx   = 1;
-    void   *py     = iproc_vector_ptr(y, 0);
+    void   *py     = vector_ptr(y, 0);
     f77int  incy   = 1;
     void   *pa     = iproc_matrix_ptr(matrix, 0, 0);
     f77int  lda    = (f77int)iproc_matrix_lda(matrix);

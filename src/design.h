@@ -144,16 +144,16 @@ void               iproc_design_mul0      (double            alpha,
                                            iproc_trans       trans,
                                            iproc_design     *design,
                                            int64_t           isend,
-                                           iproc_vector     *x,
+                                           struct vector     *x,
                                            double            beta,
-                                           iproc_vector     *y);
+                                           struct vector     *y);
 void               iproc_design_muls0     (double            alpha,
                                            iproc_trans       trans,
                                            iproc_design     *design,
                                            int64_t           isend,
                                            iproc_svector    *x,
                                            double            beta,
-                                           iproc_vector     *y);
+                                           struct vector     *y);
 
 
 iproc_design_ctx * iproc_design_ctx_new   (iproc_design     *design,
@@ -166,15 +166,15 @@ void               iproc_design_ctx_unref (iproc_design_ctx *ctx);
 void               iproc_design_ctx_mul   (double            alpha,
                                            iproc_trans       trans,
                                            iproc_design_ctx *ctx,
-                                           iproc_vector     *x,
+                                           struct vector     *x,
                                            double            beta,
-                                           iproc_vector     *y);
+                                           struct vector     *y);
 void               iproc_design_ctx_muls  (double            alpha,
                                            iproc_trans       trans,
                                            iproc_design_ctx *ctx,
                                            iproc_svector    *x,
                                            double            beta,
-                                           iproc_vector     *y);
+                                           struct vector     *y);
 
 
 iproc_svector *    iproc_design_ctx_dx    (iproc_design_ctx *ctx,
@@ -193,7 +193,7 @@ iproc_svector *    iproc_design_ctx_nz    (iproc_design_ctx *ctx,
 void               iproc_design_ctx_dmul  (double            alpha,
                                            iproc_trans       trans,
                                            iproc_design_ctx *ctx,
-                                           iproc_vector     *x,
+                                           struct vector     *x,
                                            double            beta,
                                            iproc_svector    *y);
 void               iproc_design_ctx_dmuls (double            alpha,

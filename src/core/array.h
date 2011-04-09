@@ -21,12 +21,12 @@ struct array {
 /* create, destroy */
 #define               array_init(a,t,n)           _array_init(a, n, sizeof(t))
 #define               array_init_view(a,t,ptr,n)  _array_init_view(a,ptr,n,sizeof(t))
-struct array *        array_init_copy         (struct array *a,
-                                               const struct array *src);
 struct array *        array_init_slice        (struct array       *a,
                                                const struct array *parent,
                                                ssize_t             i,
                                                ssize_t             n);
+struct array *        array_init_copy         (struct array *a,
+                                               const struct array *src);
 void                  array_deinit            (struct array *a);
 
 

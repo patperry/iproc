@@ -22,7 +22,7 @@ struct pqueue * pqueue_init_copy (struct pqueue *q, const struct pqueue *src);
 void            pqueue_deinit    (struct pqueue *q);
 
 /* assignment, copy */
-void   pqueue_assign_copy (struct pqueue *q, const struct pqueue *src);
+struct pqueue * pqueue_assign_copy (struct pqueue *q, const struct pqueue *src);
 void * pqueue_copy_to     (const struct pqueue *q, void *dst);
 
 /* informative */

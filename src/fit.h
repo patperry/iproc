@@ -25,10 +25,10 @@ struct _iproc_fit {
     iproc_loglik *loglik;
     double        value;
     double        value0;
-    iproc_vector *grad;
-    iproc_vector *grad0;
+    struct vector *grad;
+    struct vector *grad0;
     iproc_matrix *inv_hess;
-    iproc_vector *search_dir;
+    struct vector *search_dir;
     double        step;
 };
 

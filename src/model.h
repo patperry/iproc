@@ -115,14 +115,14 @@ typedef struct _iproc_model_ctx   iproc_model_ctx;
  */
 struct _iproc_group_model {
     double        log_W0;
-    iproc_vector *p0;
-    iproc_vector *log_p0;
-    iproc_vector *xbar0;    
+    struct vector *p0;
+    struct vector *log_p0;
+    struct vector *xbar0;    
 };
 
 struct _iproc_model {
     iproc_design  *design;
-    iproc_vector  *coefs;
+    struct vector  *coefs;
     bool           has_loops;
     struct darray  group_models;
     struct darray  ctxs;
@@ -144,13 +144,13 @@ struct _iproc_model_ctx {
 };
 
 iproc_model *       iproc_model_new                (iproc_design *design,
-                                                    iproc_vector *coefs,
+                                                    struct vector *coefs,
                                                     bool          has_loops);
 iproc_model *       iproc_model_ref                (iproc_model  *model);
 void                iproc_model_unref              (iproc_model  *model);
 
 iproc_design *      iproc_model_design             (iproc_model *model);
-iproc_vector *      iproc_model_coefs              (iproc_model *model);
+struct vector *      iproc_model_coefs              (iproc_model *model);
 bool                iproc_model_has_loops          (iproc_model *model);
 int64_t             iproc_model_nsender            (iproc_model *model);
 int64_t             iproc_model_nreceiver          (iproc_model *model);
@@ -160,11 +160,11 @@ int64_t             iproc_model_dim                (iproc_model *model);
 /* Initial probability, and expectations, without adjustment for self-loops. */
 iproc_group_model * iproc_model_send_group         (iproc_model *model,
                                                     int64_t      isend);
-iproc_vector *      iproc_model_logprobs0          (iproc_model *model,
+struct vector *      iproc_model_logprobs0          (iproc_model *model,
                                                     int64_t      isend);
-iproc_vector *      iproc_model_probs0             (iproc_model *model,
+struct vector *      iproc_model_probs0             (iproc_model *model,
                                                     int64_t      isend);
-iproc_vector *      iproc_model_mean0              (iproc_model *model,
+struct vector *      iproc_model_mean0              (iproc_model *model,
                                                     int64_t      isend);
 
 
@@ -184,13 +184,13 @@ double              iproc_model_ctx_prob           (iproc_model_ctx *ctx,
 double              iproc_model_ctx_logprob        (iproc_model_ctx *ctx,
                                                     int64_t          jrecv);
 void                iproc_model_ctx_get_probs      (iproc_model_ctx *ctx,
-                                                    iproc_vector    *probs);
+                                                    struct vector    *probs);
 void                iproc_model_ctx_get_logprobs   (iproc_model_ctx *ctx,
-                                                    iproc_vector    *logprobs);
+                                                    struct vector    *logprobs);
 
 
 /*
-void                iproc_vector_acc_diffmean (iproc_vector    *dst_vector,
+void                iproc_vector_acc_diffmean (struct vector    *dst_vector,
                                                double           scale,
                                                iproc_model_ctx *ctx);
 */

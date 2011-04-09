@@ -59,7 +59,7 @@ struct _iproc_sloglik {
     int64_t        isend;
     
     double         f;
-    iproc_vector  *grad;
+    struct vector  *grad;
     bool           grad_cached;
     
 
@@ -86,6 +86,6 @@ void            iproc_sloglik_insertm         (iproc_sloglik *sll,
                                                int64_t        n);
 
 double          iproc_sloglik_value           (iproc_sloglik *sll);
-iproc_vector *  iproc_sloglik_grad            (iproc_sloglik *sll);
+struct vector *  iproc_sloglik_grad            (iproc_sloglik *sll);
 
 #endif /* _IPROC_LOGLIK_H */
