@@ -53,5 +53,6 @@ ssize_t               binary_search   (const void *begin,
                                        compare_fn  compar,
                                        size_t      elt_size);                                     
 
+typedef void (*destroy_fn) (void *val);
 
 #endif /* _UTIL_H */
