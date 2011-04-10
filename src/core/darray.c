@@ -293,24 +293,23 @@ struct darray * darray_resize_with (struct darray *a, ssize_t n, const void *val
 }
 
 
-ssize_t darray_search (const struct darray *a, const void *key,
-                           compare_fn compar)
+ssize_t darray_search (const struct darray *a, const void *key, equal_fn equal)
 {
     assert(a);
-    assert(compar);
+    assert(equal);
     
-    return forward_search(darray_begin(a), darray_size(a), key, compar,
+    return forward_search(darray_begin(a), darray_size(a), key, equal,
                           darray_elt_size(a));
 }
 
 
 ssize_t darray_reverse_search (const struct darray *a, const void *key,
-                                compare_fn compar)
+                               equal_fn equal)
 {
     assert(a);
-    assert(compar);
+    assert(equal);
     
-    return reverse_search(darray_begin(a), darray_size(a), key, compar,
+    return reverse_search(darray_begin(a), darray_size(a), key, equal,
                           darray_elt_size(a));
 }
 

@@ -167,25 +167,24 @@ void array_fill_range (struct array *a, ssize_t i, ssize_t n, const void *val)
 }
 
 
-ssize_t array_search (const struct array *a, const void *key,
-                          compare_fn compar)
+ssize_t array_search (const struct array *a, const void *key, equal_fn equal)
 {
     assert(a);
-    assert(compar);
+    assert(equal);
     
-    return forward_search(array_begin(a), array_size(a), key, compar,
-                      array_elt_size(a));
+    return forward_search(array_begin(a), array_size(a), key, equal,
+                          array_elt_size(a));
 }
 
 
 ssize_t array_reverse_search (const struct array *a, const void *key,
-                               compare_fn compar)
+                              equal_fn equal)
 {
     assert(a);
-    assert(compar);
+    assert(equal);
     
-    return reverse_search(array_begin(a), array_size(a), key, compar,
-                           array_elt_size(a));
+    return reverse_search(array_begin(a), array_size(a), key, equal,
+                          array_elt_size(a));
 }
 
 

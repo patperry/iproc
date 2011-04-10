@@ -99,10 +99,10 @@ static inline void *  array_ptr   (const struct array *a,
 /* searching */
 ssize_t               array_search         (const struct array *a,
                                             const void         *key,
-                                            compare_fn          compar);
+                                            equal_fn            equal);
 ssize_t               array_reverse_search (const struct array *a,
                                             const void         *key,
-                                            compare_fn          compar);
+                                            equal_fn            equal);
 ssize_t               array_binary_search  (const struct array *a,
                                             const void         *key,
                                             compare_fn          compar);

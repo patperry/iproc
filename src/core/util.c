@@ -74,17 +74,17 @@ void * memory_reverse (void *begin, ssize_t size, size_t elt_size)
 
 
 ssize_t forward_search (const void *begin, ssize_t size, const void *key,
-                        compare_fn compar, size_t elt_size)
+                        equal_fn equal, size_t elt_size)
 {
     assert(size >= 0);
-    assert(compar);    
+    assert(equal);    
     assert(elt_size > 0);
     
     const void *end = begin + size * elt_size;
     const void *ptr;
     
     for (ptr = begin; ptr < end; ptr += elt_size) {
-        if (compar(ptr, key) == 0)
+        if (equal(ptr, key))
             return (ptr - begin) / elt_size;
     }
 
@@ -93,10 +93,10 @@ ssize_t forward_search (const void *begin, ssize_t size, const void *key,
 
 
 ssize_t reverse_search (const void *begin, ssize_t size, const void *key,
-                        compare_fn compar, size_t elt_size)
+                        equal_fn equal, size_t elt_size)
 {
     assert(size >= 0);
-    assert(compar);    
+    assert(equal);    
     assert(elt_size > 0);
     
     const void *end = begin + size * elt_size;
@@ -104,7 +104,7 @@ ssize_t reverse_search (const void *begin, ssize_t size, const void *key,
     
     for (ptr = end; ptr > begin;) {
         ptr -= elt_size;
-        if (compar(ptr, key) == 0)
+        if (equal(ptr, key))
             return (ptr - begin) / elt_size;
     }
     

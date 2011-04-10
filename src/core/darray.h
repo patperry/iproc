@@ -117,10 +117,10 @@ static inline void *  darray_ptr   (const struct darray *a,
 /* searching */
 ssize_t               darray_search         (const struct darray *a,
                                              const void          *key,
-                                             compare_fn           compar);
+                                             equal_fn             equal);
 ssize_t               darray_reverse_search (const struct darray *a,
                                              const void          *key,
-                                             compare_fn           compar);
+                                             equal_fn             equal);
 ssize_t               darray_binary_search  (const struct darray *a,
                                              const void          *key,
                                              compare_fn           compar);
