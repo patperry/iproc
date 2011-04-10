@@ -31,14 +31,14 @@ typedef int  (*compare_fn) (const void *px, const void *py);
         }
 
 #define DEFINE_COMPARE_AND_EQUAL_FN(compare_name, equal_name, t) \
-        DEFINE_COMPARE_FN(compare_name, t); \
-        DEFINE_EQUAL_FN(equal_name, t);
+        DEFINE_COMPARE_FN(compare_name, t) \
+        DEFINE_EQUAL_FN(equal_name, t)
 
 
-DEFINE_COMPARE_AND_EQUAL_FN(int64_compare,  int64_equal,  int64_t);
-DEFINE_COMPARE_AND_EQUAL_FN(uint64_compare, uint64_equal, uint64_t);
-DEFINE_COMPARE_AND_EQUAL_FN(size_compare,   size_equal,   size_t);
-DEFINE_COMPARE_AND_EQUAL_FN(ssize_compare,  ssize_equal,  ssize_t);
+DEFINE_COMPARE_AND_EQUAL_FN(int64_compare,  int64_equal,  int64_t)
+DEFINE_COMPARE_AND_EQUAL_FN(uint64_compare, uint64_equal, uint64_t)
+DEFINE_COMPARE_AND_EQUAL_FN(size_compare,   size_equal,   size_t)
+DEFINE_COMPARE_AND_EQUAL_FN(ssize_compare,  ssize_equal,  ssize_t)
 
 
 /* compare using uint64_t instead of double to avoid dealing with NaN
