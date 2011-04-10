@@ -56,6 +56,7 @@ libcore_la_SOURCES = \
 	src/core/ieee754.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
+	src/core/macconfig.h \
 	src/core/matrix.c \
 	src/core/matrix.h \
 	src/core/memory.h \
@@ -77,7 +78,8 @@ libcore_la_LIBADD = \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) \
 	$(LIBS) \
-	$(FLIBS)
+	$(FLIBS) \
+	$(LTLIBOBJS)
 
 libf2c_la_SOURCES = \
 	src/libf2c/f2c.h \

@@ -26,9 +26,13 @@ AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
 
 AC_TYPE_INTPTR_T
+AC_TYPE_INTMAX_T
 AC_TYPE_SSIZE_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
 
 AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([intmax_t])
 AC_CHECK_SIZEOF([long])
 AC_CHECK_SIZEOF([long long])
 AC_CHECK_SIZEOF([size_t])
@@ -43,6 +47,9 @@ AC_DEFINE([f77int],      [long int])
 AC_DEFINE([F77_INT_MAX], [LONG_MAX])
 
 # Checks for library functions
+AC_CONFIG_LIBOBJ_DIR([lib])
+AC_REPLACE_FUNCS([imaxabs])
+
 # Checks for system services
 
 AC_CONFIG_HEADERS([config.h])
