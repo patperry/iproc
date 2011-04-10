@@ -50,6 +50,8 @@ libcore_la_SOURCES = \
 	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
+	src/core/hashset.c \
+	src/core/hashset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
 	src/core/logsumexp.c \
