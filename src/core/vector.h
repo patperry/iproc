@@ -30,7 +30,7 @@ void            vector_set_basis   (struct vector *v, ssize_t i);
 
 
 /* hash, compare */
-size_t            vector_hash          (const struct vector *v);
+uint32_t          vector_hash          (const void *v);
 bool              vector_identical     (const struct vector *v1,
                                         const struct vector *v2);
 int               vector_compare       (const void *v1,  const void *v2);

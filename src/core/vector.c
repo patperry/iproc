@@ -458,20 +458,22 @@ vector_printf (const struct vector *v)
     printf("\n}\n");
 }
 
-size_t
-vector_hash (const struct vector *vector)
+uint32_t vector_hash (const void *v)
 {
+    const struct vector *vector = v;
     if (!vector)
         return 0;
 
-    size_t seed = 0;
+    uint32_t seed = 0;
     ssize_t i, n = vector_size(vector);
 
     for (i = 0; i < n; i++) {
-        double v = vector_index(vector, i);
-        size_t hash_value = iproc_hash_double(v);
-        seed = iproc_hash_combine(seed, hash_value);
+        double x = vector_index(vector, i);
+        uint32_t hash_value = double_hash(&x);
+        hash_combine(&seed, hash_value);
     }
+
+    hash_finalize(&seed);
 
     return seed;
 }

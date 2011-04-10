@@ -14,15 +14,14 @@
 # include "macconfig.h"
 #endif
 
-
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#endif
 #ifdef HAVE_STDBOOL_H
 # include <stdbool.h>
 #endif
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
 #endif
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h> /* ssize_t */
@@ -30,7 +29,6 @@
 
 
 #include <limits.h>
-
 
 
 /* http://www.gnu.org/software/autoconf/manual/autoconf.html#index-HAVE_005fSTDBOOL_005fH-624 */
@@ -62,6 +60,15 @@ typedef long long intptr_t;
 #else
 # error "Need a typedef for intptr_t in config.h"
 #endif /* HAVE_UINTPTR_T */
+
+
+#ifdef HAVE_INTTYPES_H
+/* imaxabs already defined */
+#elif  HAVE_IMAXABS
+/* imaxabs already defined */
+#else
+intmax_t imaxabs (intmax_t i);
+#endif
 
 
 /* http://www.mail-archive.com/bug-gnulib@gnu.org/msg02492.html */
