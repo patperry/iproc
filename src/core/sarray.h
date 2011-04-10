@@ -52,13 +52,13 @@ void * sarray_gather  (struct sarray *a, const void *src);
 
 
 /* iteration */
-static void * sarray_begin (const struct sarray *a);
-static void * sarray_end   (const struct sarray *a);
-static void * sarray_ptr   (const struct sarray *a, ssize_t i);
+static inline void * sarray_begin (const struct sarray *a);
+static inline void * sarray_end   (const struct sarray *a);
+static inline void * sarray_ptr   (const struct sarray *a, ssize_t i);
 
-static const ssize_t * sarray_pattern_begin (const struct sarray *a);
-static const ssize_t * sarray_pattern_end   (const struct sarray *a);
-static const ssize_t * sarray_pattern_ptr   (const struct sarray *a, ssize_t i);
+static inline const ssize_t * sarray_pattern_begin (const struct sarray *a);
+static inline const ssize_t * sarray_pattern_end   (const struct sarray *a);
+static inline const ssize_t * sarray_pattern_ptr   (const struct sarray *a, ssize_t i);
 
 
 /* private functions */
