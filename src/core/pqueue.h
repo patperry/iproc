@@ -27,7 +27,7 @@ void * pqueue_copy_to     (const struct pqueue *q, void *dst);
 
 /* informative */
 #define                    pqueue_top(q,t) (*((t const * const)_pqueue_top(q)))
-static inline void         pqueue_get_top  (const struct pqueue *q, void *dst);
+static inline void *       pqueue_get_top  (const struct pqueue *q, void *dst);
 static inline bool         pqueue_empty    (const struct pqueue *q);
 static inline ssize_t      pqueue_size     (const struct pqueue *q);
 static inline ssize_t      pqueue_max_size (const struct pqueue *q);
@@ -37,7 +37,7 @@ static inline size_t       pqueue_elt_size (const struct pqueue *q);
 void * pqueue_push       (struct pqueue *q, const void *val);
 void * pqueue_push_array (struct pqueue *q, const void *src, ssize_t n);
 void   pqueue_pop        (struct pqueue *q);
-void * pqueue_pop_array  (struct pqueue *q, void *dst, ssize_t n);
+void   pqueue_pop_array  (struct pqueue *q, void *dst, ssize_t n);
 
 
 
@@ -60,7 +60,7 @@ const void * _pqueue_top (const struct pqueue *q)
     return darray_begin(&q->array);
 }
 
-void pqueue_get_top (const struct pqueue *q, void *dst)
+void * pqueue_get_top (const struct pqueue *q, void *dst)
 {
     assert(!pqueue_empty(q));
     return darray_get(&q->array, 0, dst);

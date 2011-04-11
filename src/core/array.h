@@ -21,17 +21,17 @@ struct array {
 /* create, destroy */
 #define               array_init(a,t,n)           _array_init(a, n, sizeof(t))
 #define               array_init_view(a,t,ptr,n)  _array_init_view(a,ptr,n,sizeof(t))
-struct array *        array_init_slice        (struct array       *a,
+bool                  array_init_slice        (struct array       *a,
                                                const struct array *parent,
                                                ssize_t             i,
                                                ssize_t             n);
-struct array *        array_init_copy         (struct array *a,
+bool                  array_init_copy         (struct array *a,
                                                const struct array *src);
 void                  array_deinit            (struct array *a);
 
 
 /* assign, copy, fill */
-struct array *        array_assign_copy (struct array       *a,
+bool                  array_assign_copy (struct array       *a,
                                          const struct array *src);
 void *                array_copy_to     (const struct array *a,
                                          void               *dst);
@@ -48,7 +48,7 @@ void                  array_fill_range  (struct array *a,
 #else
 # define              array_index(a,t,i)  (*((t *)array_ptr(a, i)))
 #endif
-static inline void    array_get        (const struct array *a,
+static inline void *  array_get        (const struct array *a,
                                         ssize_t             i,
                                         void               *dst);
 static inline void *  array_get_range  (const struct array *a,
@@ -58,7 +58,7 @@ static inline void *  array_get_range  (const struct array *a,
 static inline void    array_set        (struct array *a,
                                         ssize_t       i,
                                         const void   *src);
-static inline void *  array_set_range  (struct array *a,
+static inline void    array_set_range  (struct array *a,
                                         ssize_t       i,
                                         ssize_t       n,
                                         const void   *src);
@@ -120,14 +120,14 @@ void                  array_sort            (struct array       *a,
 
 
 /* private functions */
-struct array *        _array_init      (struct array *a,
+bool                  _array_init      (struct array *a,
                                         ssize_t       size,
                                         size_t        elt_size);
-struct array *        _array_init_view (struct array *a,
+bool                  _array_init_view (struct array *a,
                                         const void   *data,
                                         ssize_t       size,
                                         size_t        elt_size);
-struct array *        _array_reinit    (struct array *a,
+bool                  _array_reinit    (struct array *a,
                                         ssize_t       n,
                                         size_t        elt_size);
 
@@ -159,12 +159,12 @@ bool array_overlaps (const struct array *a, ssize_t i, ssize_t n,
             || (begin2 <= begin1 && begin1 < end2));
 }
 
-void array_get (const struct array *a, ssize_t i, void *dst)
+void * array_get (const struct array *a, ssize_t i, void *dst)
 {
     assert(0 <= i && i < array_size(a));
     assert(!array_overlaps(a, i, 1, dst, 1));
 
-    array_get_range(a, i, 1, dst);
+    return array_get_range(a, i, 1, dst);
 }
 
 
@@ -188,7 +188,7 @@ void array_set (struct array *a, ssize_t i, const void *src)
 }
 
 
-void * array_set_range (struct array *a, ssize_t i, ssize_t n, const void *src)
+void array_set_range (struct array *a, ssize_t i, ssize_t n, const void *src)
 {
     assert(n >= 0);
     assert(0 <= i && i <= array_size(a) - n);
@@ -196,7 +196,6 @@ void * array_set_range (struct array *a, ssize_t i, ssize_t n, const void *src)
 
     size_t nbytes = n * array_elt_size(a);
     memcpy(array_ptr(a, i), src, nbytes);
-    return (void *)src + nbytes;
 }
 
 

@@ -7,7 +7,7 @@
 #include "array.h"
 
 
-struct array * _array_init (struct array *a, ssize_t size, size_t elt_size)
+bool _array_init (struct array *a, ssize_t size, size_t elt_size)
 {
     assert(a);
     assert(size >= 0);
@@ -26,8 +26,8 @@ struct array * _array_init (struct array *a, ssize_t size, size_t elt_size)
 }
 
 
-struct array * _array_init_view (struct array *a, const void *data,
-                                 ssize_t size, size_t elt_size)
+bool _array_init_view (struct array *a, const void *data,
+                       ssize_t size, size_t elt_size)
 {
     assert(a);
     assert(data || size == 0);
@@ -43,8 +43,8 @@ struct array * _array_init_view (struct array *a, const void *data,
 }
 
 
-struct array * array_init_slice (struct array *a, const struct array *parent,
-                                 ssize_t i, ssize_t n)
+bool array_init_slice (struct array *a, const struct array *parent,
+                       ssize_t i, ssize_t n)
 {
     assert(a);
     assert(parent);
@@ -56,7 +56,7 @@ struct array * array_init_slice (struct array *a, const struct array *parent,
 
 
 
-struct array * array_init_copy (struct array *a, const struct array *src)
+bool array_init_copy (struct array *a, const struct array *src)
 {
     assert(a);
     assert(src);
@@ -72,7 +72,7 @@ struct array * array_init_copy (struct array *a, const struct array *src)
 }
 
 
-struct array * _array_reinit (struct array *a, ssize_t n, size_t elt_size)
+bool _array_reinit (struct array *a, ssize_t n, size_t elt_size)
 {
     assert(a);
     assert(n >= 0);
@@ -132,7 +132,7 @@ struct array * array_assign_array (struct array *a, const void *ptr)
 }
 
 
-struct array * array_assign_copy (struct array *a, const struct array *src)
+bool array_assign_copy (struct array *a, const struct array *src)
 {
     assert(a);
     assert(src);

@@ -18,19 +18,19 @@ struct darray {
 
 /* create, destroy */
 #define               darray_init(a,t)    (_darray_init(a,sizeof(t)))
-struct darray *       darray_init_copy    (struct darray       *a,
+bool                  darray_init_copy    (struct darray       *a,
                                            const struct darray *src);
 void                  darray_deinit       (struct darray *a);
 
 
 /* assign, copy, fill */
-struct darray *       darray_assign        (struct darray       *a,
+bool                  darray_assign        (struct darray       *a,
                                             const void          *ptr,
                                             ssize_t              n);
-struct darray *       darray_assign_repeat (struct darray       *a,
+bool                  darray_assign_repeat (struct darray       *a,
                                             ssize_t              n,
                                             const void          *val);
-struct darray *       darray_assign_copy   (struct darray       *a,
+bool                  darray_assign_copy   (struct darray       *a,
                                             const struct darray *src);
 void *                darray_copy_to       (const struct darray *a,
                                             void                *dst);
@@ -43,7 +43,7 @@ void                  darray_fill_range    (struct darray *a,
 
 /* index */
 #define               darray_index(a,t,i) array_index((&(a)->array),t,i)
-static inline void    darray_get       (const struct darray *a,
+static inline void *  darray_get       (const struct darray *a,
                                         ssize_t              i,
                                         void                *dst);
 static inline void *  darray_get_range (const struct darray *a,
@@ -53,7 +53,7 @@ static inline void *  darray_get_range (const struct darray *a,
 static inline void    darray_set       (struct darray       *a,
                                         ssize_t              i,
                                         const void          *src);
-static inline void *  darray_set_range (struct darray       *a,
+static inline void    darray_set_range (struct darray       *a,
                                         ssize_t              i,
                                         ssize_t              n,
                                         const void          *src);
@@ -76,6 +76,8 @@ static inline ssize_t darray_max_size (const struct darray *a);
 
 
 /* standard operations */
+
+// insert operations return pionters to the newly created space
 void *                darray_insert        (struct darray *a,
                                             ssize_t        i,
                                             const void    *val);
@@ -100,11 +102,11 @@ void                  darray_clear        (struct darray *a);
 
 
 /* allocation/size modification */
-struct darray *       darray_reserve     (struct darray *a,
+bool                  darray_reserve     (struct darray *a,
                                           ssize_t        n);
-struct darray *       darray_resize      (struct darray *a,
+bool                  darray_resize      (struct darray *a,
                                           ssize_t        n);
-struct darray *       darray_resize_with (struct darray *a,
+bool                  darray_resize_with (struct darray *a,
                                           ssize_t        n,
                                           const void    *val);
 
@@ -155,10 +157,10 @@ size_t  darray_elt_size (const struct darray *a) { return array_elt_size(&a->arr
 ssize_t darray_max_size (const struct darray *a) { return array_max_size(&a->array); }
 
 
-void darray_get (const struct darray *a, ssize_t i, void *dst)
+void * darray_get (const struct darray *a, ssize_t i, void *dst)
 {
     assert(0 <= i && i < darray_size(a));
-    array_get(&a->array, i, dst);
+    return array_get(&a->array, i, dst);
 }
 
 
@@ -177,8 +179,8 @@ void darray_set (struct darray *a, ssize_t i, const void *src)
 }
 
 
-void * darray_set_range (struct darray *a, ssize_t i, ssize_t n,
-                         const void *src)
+void darray_set_range (struct darray *a, ssize_t i, ssize_t n,
+                       const void *src)
 {
     assert(0 <= i && i <= darray_size(a) - n);
     return array_set_range(&a->array, i, n, src);

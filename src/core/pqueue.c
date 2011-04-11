@@ -173,7 +173,7 @@ out:
 }
 
 
-void * pqueue_pop_array (struct pqueue *q, void *dst, ssize_t n)
+void pqueue_pop_array (struct pqueue *q, void *dst, ssize_t n)
 {
     assert(q);
     assert(dst || n == 0);
@@ -187,6 +187,4 @@ void * pqueue_pop_array (struct pqueue *q, void *dst, ssize_t n)
         pqueue_get_top(q, dst);
         pqueue_pop(q);
     }
-
-    return dst;
 }
