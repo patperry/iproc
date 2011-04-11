@@ -14,13 +14,13 @@ struct array * _array_init (struct array *a, ssize_t size, size_t elt_size)
     assert(elt_size > 0);
     assert(size <= SSIZE_MAX / elt_size);
     
-    a->data = malloc(size * elt_size);
+    a->data = size ? malloc(size * elt_size) : NULL;
     a->size = size;
     a->elt_size = elt_size;
     a->owner = true;
     
-    if (!a->data)
-        a = NULL;
+    if (size > 0 && !a->data)
+        return NULL;
     
     return a;
 }
