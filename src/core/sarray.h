@@ -44,7 +44,7 @@ static inline size_t  sarray_elt_size  (const struct sarray *a);
 /* operations */
 void * sarray_find      (const struct sarray *a, ssize_t i);
 void * sarray_find_with (const struct sarray *a, ssize_t i, const void *val0);
-void   sarray_replace   (struct sarray *a, ssize_t i, void *src);
+void * sarray_replace   (struct sarray *a, ssize_t i, void *src);
 void   sarray_remove    (struct sarray *a, ssize_t i);
 
 void * sarray_scatter (const struct sarray *a, void *dst);

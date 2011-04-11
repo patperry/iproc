@@ -128,7 +128,7 @@ void * sarray_find_with (const struct sarray *a, ssize_t i, const void *val0)
 }
 
 
-void sarray_replace (struct sarray *a, ssize_t i, void *src)
+void * sarray_replace (struct sarray *a, ssize_t i, void *src)
 {
     assert(a);
     assert(i >= 0);
@@ -138,15 +138,26 @@ void sarray_replace (struct sarray *a, ssize_t i, void *src)
     if (index >= 0) { // key already exists
         if (src) {
             darray_set(&a->array, index, src);
+            goto success;
         } else {
             darray_erase(&a->array, index);
             darray_erase(&a->pattern, index);
         }
     } else if (src) { // key doesn't exist, src is non-NULL
         index = ~index;
-        darray_insert(&a->array, index, src);
-        darray_insert(&a->pattern, index, &i);
+        if (darray_insert(&a->pattern, index, &i)) {
+            if (darray_insert(&a->array, index, src)) {
+                goto success;
+            }
+            darray_erase(&a->pattern, index);
+        }
+
     }
+    
+    return NULL;
+
+success:
+    return src + sarray_elt_size(a);
 }
 
 
