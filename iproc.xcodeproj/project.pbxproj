@@ -14,6 +14,8 @@
 		221C601513511ADA0008B25B /* macconfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601413511AD80008B25B /* macconfig.h */; };
 		221C601C1352B8700008B25B /* intset.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C601A1352B8580008B25B /* intset.c */; };
 		221C601D1352B8700008B25B /* intset.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601B1352B85D0008B25B /* intset.h */; };
+		221C60201352D3820008B25B /* intmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C601E1352D36D0008B25B /* intmap.c */; };
+		221C60211352D3820008B25B /* intmap.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601F1352D3720008B25B /* intmap.h */; };
 		221FEE96132EC8710000097B /* blas-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE6D132EC8710000097B /* blas-private.h */; };
 		221FEE9D132EC8710000097B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		221FEE9E132EC8710000097B /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE75132EC8710000097B /* hash.h */; };
@@ -147,6 +149,8 @@
 		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
 		221C601A1352B8580008B25B /* intset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intset.c; path = src/core/intset.c; sourceTree = "<group>"; };
 		221C601B1352B85D0008B25B /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = src/core/intset.h; sourceTree = "<group>"; };
+		221C601E1352D36D0008B25B /* intmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intmap.c; path = src/core/intmap.c; sourceTree = "<group>"; };
+		221C601F1352D3720008B25B /* intmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intmap.h; path = src/core/intmap.h; sourceTree = "<group>"; };
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };
 		221FEE75132EC8710000097B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hash.h; path = src/core/hash.h; sourceTree = "<group>"; };
@@ -268,6 +272,8 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				221C601E1352D36D0008B25B /* intmap.c */,
+				221C601F1352D3720008B25B /* intmap.h */,
 				221C601A1352B8580008B25B /* intset.c */,
 				221C601B1352B85D0008B25B /* intset.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
@@ -472,6 +478,7 @@
 				221C5FEE134E230D0008B25B /* array.h in Headers */,
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
 				221C601D1352B8700008B25B /* intset.h in Headers */,
+				221C60211352D3820008B25B /* intmap.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,6 +643,7 @@
 				221C5FED134E230D0008B25B /* array.c in Sources */,
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C601C1352B8700008B25B /* intset.c in Sources */,
+				221C60201352D3820008B25B /* intmap.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

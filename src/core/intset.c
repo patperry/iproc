@@ -106,12 +106,38 @@ intptr_t * intset_copy_to (const struct intset *s, intptr_t *dst)
 }
 
 
+struct intset * intset_reserve (struct intset *s, ssize_t n)
+{
+    assert(s);
+    assert(n >= 0);
+    
+    if (darray_reserve(&s->values, n)) {
+        return s;
+    }
+    
+    return NULL;
+}
+
+
 bool intset_contains (const struct intset *s, intptr_t val)
 {
     assert(s);
     
     struct intset_pos pos;
     return intset_find(s, val, &pos);
+}
+
+
+ssize_t intset_index (const struct intset *s, intptr_t val)
+{
+    assert(s);
+    
+    struct intset_pos pos;
+    if (intset_find(s, val, &pos)) {
+        return pos.index;
+    }
+    
+    return -1;
 }
 
 

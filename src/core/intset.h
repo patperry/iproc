@@ -26,6 +26,7 @@ struct intset * intset_assign_sorted (struct intset *s, const intptr_t *ptr, ssi
 struct intset * intset_assign_copy   (struct intset *s, const struct intset *src);
 intptr_t *      intset_copy_to       (const struct intset *s, intptr_t *dst);
 void            intset_clear         (struct intset *s);
+struct intset * intset_reserve       (struct intset *s, ssize_t n);
 
 
 /* informative */
@@ -36,8 +37,8 @@ static inline intptr_t intset_min      (const struct intset *s);
 static inline intptr_t intset_max      (const struct intset *s);
 static inline intptr_t intset_at       (const struct intset *s, ssize_t i);
 
-bool     intset_contains   (const struct intset *s, intptr_t val);
-ssize_t  intset_find_index (const struct intset *s, intptr_t val);
+bool     intset_contains (const struct intset *s, intptr_t val);
+ssize_t  intset_index    (const struct intset *s, intptr_t val);
 
 
 /* modification */
