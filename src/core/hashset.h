@@ -17,7 +17,7 @@ struct hashset {
     struct sarray         buckets;
     struct hashset_bucket empty_bucket;
     hash_fn               hash;
-    equal_fn              equal;
+    equals_fn              equal;
     destroy_fn            destroy;
 };
 
@@ -53,12 +53,12 @@ void         hashset_clear       (struct hashset *s);
 /* private functions */
 struct hashset * _hashset_init              (struct hashset *s,
                                              hash_fn         hash,
-                                             equal_fn        equal,
+                                             equals_fn        equal,
                                              size_t          elt_size);
 
 struct hashset * _hashset_init_with_destroy (struct hashset *s,
                                              hash_fn         hash,
-                                             equal_fn        equal,
+                                             equals_fn        equal,
                                              destroy_fn      destroy,
                                              size_t          elt_size);
 

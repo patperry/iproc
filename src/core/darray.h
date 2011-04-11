@@ -117,22 +117,24 @@ static inline void *  darray_ptr   (const struct darray *a,
 /* searching, sorting */
 bool                  darray_contains       (const struct darray *a,
                                              const void          *key,
-                                             equal_fn             equal);
+                                             equals_fn             equal);
 void *                darray_find           (const struct darray *a,
                                              const void          *key,
-                                             equal_fn             equal);
+                                             equals_fn             equal);
 ssize_t               darray_find_index     (const struct darray *a,
                                              const void          *key,
-                                             equal_fn             equal);
+                                             equals_fn             equal);
 void *                darray_find_last      (const struct darray *a,
                                              const void          *key,
-                                             equal_fn             equal);
+                                             equals_fn             equal);
 ssize_t               darray_find_last_index (const struct darray *a,
                                              const void          *key,
-                                             equal_fn             equal);
+                                             equals_fn             equal);
 ssize_t               darray_binary_search  (const struct darray *a,
                                              const void          *key,
                                              compare_fn           compar);
+void                  darray_sort           (struct darray       *a,
+                                             compare_fn           compar);                                             
 
 /* swap, reverse */
 void                  darray_swap    (struct darray *a, ssize_t i, ssize_t j);

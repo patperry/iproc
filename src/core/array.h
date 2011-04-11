@@ -99,21 +99,23 @@ static inline void *  array_ptr   (const struct array *a,
 /* searching, sorting */
 bool                  array_contains        (const struct array *a,
                                              const void         *key,
-                                             equal_fn            equal);
+                                             equals_fn            equal);
 void *                array_find            (const struct array *a,
                                              const void         *key,
-                                             equal_fn            equal);
+                                             equals_fn            equal);
 ssize_t               array_find_index      (const struct array *a,
                                              const void         *key,
-                                             equal_fn            equal);
+                                             equals_fn            equal);
 void *                array_find_last       (const struct array *a,
                                              const void         *key,
-                                             equal_fn            equal);
+                                             equals_fn            equal);
 ssize_t               array_find_last_index (const struct array *a,
                                              const void         *key,
-                                             equal_fn            equal);
+                                             equals_fn            equal);
 ssize_t               array_binary_search   (const struct array *a,
                                              const void         *key,
+                                             compare_fn          compar);
+void                  array_sort            (struct array       *a,
                                              compare_fn          compar);
 
 

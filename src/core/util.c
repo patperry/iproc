@@ -74,7 +74,7 @@ void * memory_reverse (void *begin, ssize_t size, size_t elt_size)
 
 
 void * forward_find (const void *begin, ssize_t size, const void *key,
-                     equal_fn equal, size_t elt_size)
+                     equals_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    
@@ -93,7 +93,7 @@ void * forward_find (const void *begin, ssize_t size, const void *key,
 
 
 ssize_t forward_find_index (const void *begin, ssize_t size, const void *key,
-                            equal_fn equal, size_t elt_size)
+                            equals_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    
@@ -110,7 +110,7 @@ ssize_t forward_find_index (const void *begin, ssize_t size, const void *key,
 
 
 void * reverse_find (const void *begin, ssize_t size, const void *key,
-                     equal_fn equal, size_t elt_size)
+                     equals_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    
@@ -130,7 +130,7 @@ void * reverse_find (const void *begin, ssize_t size, const void *key,
 
 
 ssize_t reverse_find_index (const void *begin, ssize_t size, const void *key,
-                            equal_fn equal, size_t elt_size)
+                            equals_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    

@@ -62,7 +62,10 @@ struct array * array_init_copy (struct array *a, const struct array *src)
     assert(src);
     
     if (_array_init(a, array_size(src), array_elt_size(src))) {
-        return array_assign_copy(a, src);
+        if (array_assign_copy(a, src)) {
+            return a;
+        }
+        array_deinit(a);
     }
     
     return NULL;
@@ -167,7 +170,7 @@ void array_fill_range (struct array *a, ssize_t i, ssize_t n, const void *val)
 }
 
 
-bool array_contains (const struct array *a, const void *key, equal_fn equal)
+bool array_contains (const struct array *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -175,7 +178,7 @@ bool array_contains (const struct array *a, const void *key, equal_fn equal)
 }
 
 
-void * array_find (const struct array *a, const void *key, equal_fn equal)
+void * array_find (const struct array *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -185,7 +188,7 @@ void * array_find (const struct array *a, const void *key, equal_fn equal)
 }
 
 
-ssize_t array_find_index (const struct array *a, const void *key, equal_fn equal)
+ssize_t array_find_index (const struct array *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -196,7 +199,7 @@ ssize_t array_find_index (const struct array *a, const void *key, equal_fn equal
 
 
 ssize_t array_find_last_index (const struct array *a, const void *key,
-                              equal_fn equal)
+                              equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -216,3 +219,13 @@ ssize_t array_binary_search (const struct array *a, const void *key,
     return binary_search(array_begin(a), array_size(a), key, compar,
                          array_elt_size(a));
 }
+
+
+void array_sort (struct array *a, compare_fn compar)
+{
+    assert(a);
+    assert(compar);
+    
+    qsort(array_begin(a), array_size(a), array_elt_size(a), compar);
+}
+

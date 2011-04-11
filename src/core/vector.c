@@ -59,8 +59,10 @@ struct vector * vector_init_copy (struct vector *v, const struct vector *src)
     assert(src);
     
     if (vector_init(v, vector_size(src))) {
-        vector_assign_copy(v, src);
-        return v;
+        if (vector_assign_copy(v, src)) {
+            return v;
+        }
+        vector_deinit(v);
     }
     
     return NULL;

@@ -31,7 +31,10 @@ struct darray * darray_init_copy (struct darray *a,
     assert(src);
     
     if (_darray_init(a, darray_elt_size(src))) {
-        return darray_assign_copy(a, src);
+        if (darray_assign_copy(a, src)) {
+            return a;
+        }
+        darray_deinit(a);
     }
     
     return NULL;
@@ -293,7 +296,7 @@ struct darray * darray_resize_with (struct darray *a, ssize_t n, const void *val
 }
 
 
-bool darray_contains (const struct darray *a, const void *key, equal_fn equal)
+bool darray_contains (const struct darray *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -302,7 +305,7 @@ bool darray_contains (const struct darray *a, const void *key, equal_fn equal)
 }
 
 
-void * darray_find (const struct darray *a, const void *key, equal_fn equal)
+void * darray_find (const struct darray *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -313,7 +316,7 @@ void * darray_find (const struct darray *a, const void *key, equal_fn equal)
 }
 
 
-ssize_t darray_find_index (const struct darray *a, const void *key, equal_fn equal)
+ssize_t darray_find_index (const struct darray *a, const void *key, equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -324,7 +327,7 @@ ssize_t darray_find_index (const struct darray *a, const void *key, equal_fn equ
 
 
 void * darray_find_last (const struct darray *a, const void *key,
-                         equal_fn equal)
+                         equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -335,7 +338,7 @@ void * darray_find_last (const struct darray *a, const void *key,
 
 
 ssize_t darray_find_last_index (const struct darray *a, const void *key,
-                               equal_fn equal)
+                               equals_fn equal)
 {
     assert(a);
     assert(equal);
@@ -354,6 +357,15 @@ ssize_t darray_binary_search (const struct darray *a, const void *key,
     
     return binary_search(darray_begin(a), darray_size(a), key, compar,
                          darray_elt_size(a));
+}
+
+
+void darray_sort (struct darray *a, compare_fn compar)
+{
+    assert(a);
+    assert(compar);
+    
+    qsort(darray_begin(a), darray_size(a), darray_elt_size(a), compar);
 }
 
 

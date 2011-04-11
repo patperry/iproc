@@ -40,22 +40,22 @@ void *                memory_reverse  (void       *begin,
 void *                forward_find       (const void *begin,
                                           ssize_t     size,
                                           const void *key,
-                                          equal_fn    equal,                                       
+                                          equals_fn    equal,                                       
                                           size_t      elt_size);
 ssize_t               forward_find_index (const void *begin,
                                           ssize_t     size,
                                           const void *key,
-                                          equal_fn    equal,                                       
+                                          equals_fn    equal,                                       
                                           size_t      elt_size);
 void *                reverse_find       (const void *begin,
                                           ssize_t     size,
                                           const void *key,
-                                          equal_fn    equal,                                       
+                                          equals_fn    equal,                                       
                                           size_t      elt_size);
 ssize_t               reverse_find_index (const void *begin,
                                           ssize_t     size,
                                           const void *key,
-                                          equal_fn    equal,                                       
+                                          equals_fn    equal,                                       
                                           size_t      elt_size);
 void *                sorted_find        (const void *begin,
                                           ssize_t     size,
@@ -66,7 +66,7 @@ ssize_t               binary_search      (const void *begin,
                                           ssize_t     size,
                                           const void *key,
                                           compare_fn  compar,
-                                          size_t      elt_size);                                     
+                                          size_t      elt_size);
 
 typedef void (*destroy_fn) (void *val);
 

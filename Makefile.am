@@ -50,8 +50,8 @@ libcore_la_SOURCES = \
 	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
-	src/core/hashset.c \
-	src/core/hashset.h \
+	src/core/intset.c \
+	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
 	src/core/logsumexp.c \
@@ -65,8 +65,6 @@ libcore_la_SOURCES = \
 	src/core/pqueue.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
-	src/core/sarray.c \
-	src/core/sarray.h \
 	src/core/svector.c \
 	src/core/svector.h \
 	src/core/util.h \

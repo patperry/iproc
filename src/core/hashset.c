@@ -45,7 +45,7 @@ static void hashset_bucket_deinit (const struct hashset *s,
 }
 
 
-struct hashset * _hashset_init (struct hashset *s, hash_fn hash, equal_fn equal,
+struct hashset * _hashset_init (struct hashset *s, hash_fn hash, equals_fn equal,
                                 size_t elt_size)
 {
     assert(s);
@@ -58,7 +58,7 @@ struct hashset * _hashset_init (struct hashset *s, hash_fn hash, equal_fn equal,
 
 
 struct hashset * _hashset_init_with_destroy (struct hashset *s, hash_fn hash,
-                                             equal_fn equal, destroy_fn destroy,
+                                             equals_fn equal, destroy_fn destroy,
                                              size_t elt_size)
 {
     assert(s);
@@ -138,7 +138,7 @@ const void * hashset_find_with (const struct hashset *s, const void *key,
     const struct hashset_bucket *b = sarray_find(&s->buckets, index);
 
     if (b) {
-        ssize_t pos = darray_search(&b->values, key, s->equal);
+        ssize_t pos = darray_find_index(&b->values, key, s->equal);
         if (pos >= 0) {
             return darray_ptr(&b->values, pos);
         }
@@ -158,7 +158,7 @@ void * hashset_add (struct hashset *s, const void *val)
                                                   struct hashset_bucket,
                                                   index,
                                                   &s->empty_bucket);
-    ssize_t pos = darray_search(&b->values, val, s->equal);
+    ssize_t pos = darray_find_index(&b->values, val, s->equal);
     if (pos >= 0) {
         if (s->destroy) {
             s->destroy(darray_ptr(&b->values, pos));
@@ -196,7 +196,7 @@ void hashset_remove (struct hashset *s, const void *key)
     ssize_t pos;
     
     if ((b = sarray_find(&s->buckets, index))
-        && ((pos = darray_search(&b->values, key, s->equal)) >= 0)) {
+        && ((pos = darray_find_index(&b->values, key, s->equal)) >= 0)) {
         
         if (s->destroy)
             s->destroy(darray_ptr(&b->values, pos));

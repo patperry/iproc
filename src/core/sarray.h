@@ -3,6 +3,8 @@
 
 /* Sparse Array type
  *
+ * Supports O(log n) insert and delete
+ *
  * Define SSIZE_MAX, ssize_t, bool and assert before including this file.
  */
 
@@ -11,10 +13,48 @@
 #include "darray.h"
 
 
-struct sarray {
-    struct darray array;
-    struct darray pattern;
+struct intmap {
+    struct darray keys;    
+    struct darray values;
 };
+
+struct intmap {
+    intptr_t key;
+    ssize_t  index;
+};
+
+void * sarray_lookup (const struct sarray *a, ssize_t key, struct sarray_pos *pos);
+
+static inline bool sarray_pos_exists (const struct sarray_pos *pos)
+{
+    assert(pos);
+    return (pos->index >= 0);
+}
+
+static inline bool sarray_pos_key (const struct sarray_pos *pos)
+{
+    assert(pos);
+    return pos->key;
+}
+
+void * sarray_insert (struct sarray *a, struct sarray_pos *pos, const void *val);
+
+
+#ifdef NDEBUG
+# define sarray_index(a,t,pos) \
+         darray_index(&(a)->values, t, (pos)->index)
+#else
+# define sarray_index(a,t,pos) \
+         (*(t *)_sarray_index(a, pos))
+#endif
+
+
+static inline void * _sarray_index (struct sarray *a, const struct sarray_pos *pos)
+{
+    assert(sarray_pos_exists(pos));
+    return darray_ptr(&a->values, pos->index);
+}
+
 
 /* create, destroy */
 #define               sarray_init(a,t)    (_sarray_init(a,sizeof(t)))
@@ -56,9 +96,9 @@ static inline void * sarray_begin (const struct sarray *a);
 static inline void * sarray_end   (const struct sarray *a);
 static inline void * sarray_ptr   (const struct sarray *a, ssize_t i);
 
-static inline const ssize_t * sarray_pattern_begin (const struct sarray *a);
-static inline const ssize_t * sarray_pattern_end   (const struct sarray *a);
-static inline const ssize_t * sarray_pattern_ptr   (const struct sarray *a, ssize_t i);
+static inline const ssize_t * sarray_keys_begin (const struct sarray *a);
+static inline const ssize_t * sarray_keys_end   (const struct sarray *a);
+static inline const ssize_t * sarray_keys_ptr   (const struct sarray *a, ssize_t i);
 
 
 /* private functions */
@@ -68,18 +108,18 @@ void * _sarray_index_with (struct sarray *a, ssize_t i, const void *val0);
 
 
 /* inline function definitions */
-ssize_t sarray_size     (const struct sarray *a) { return darray_size(&a->array); }
-bool    sarray_empty    (const struct sarray *a) { return darray_empty(&a->array); }
-ssize_t sarray_max_size (const struct sarray *a) { return darray_max_size(&a->array); }
-size_t  sarray_elt_size (const struct sarray *a) { return darray_elt_size(&a->array); }
+ssize_t sarray_size     (const struct sarray *a) { return darray_size(&a->values); }
+bool    sarray_empty    (const struct sarray *a) { return darray_empty(&a->values); }
+ssize_t sarray_max_size (const struct sarray *a) { return darray_max_size(&a->values); }
+size_t  sarray_elt_size (const struct sarray *a) { return darray_elt_size(&a->values); }
 
-void * sarray_begin (const struct sarray *a) { return darray_begin(&a->array); }
-void * sarray_end   (const struct sarray *a) { return darray_end(&a->array); }
-void * sarray_ptr   (const struct sarray *a, ssize_t i) { return darray_ptr(&a->array, i); }
+void * sarray_begin (const struct sarray *a) { return darray_begin(&a->values); }
+void * sarray_end   (const struct sarray *a) { return darray_end(&a->values); }
+void * sarray_ptr   (const struct sarray *a, ssize_t i) { return darray_ptr(&a->values, i); }
 
-const ssize_t * sarray_pattern_begin (const struct sarray *a) { return darray_begin(&a->pattern); }
-const ssize_t * sarray_pattern_end   (const struct sarray *a) { return darray_end(&a->pattern); }
-const ssize_t * sarray_pattern_ptr   (const struct sarray *a, ssize_t i) { return darray_ptr(&a->pattern, i); }
+const ssize_t * sarray_keys_begin (const struct sarray *a) { return darray_begin(&a->keys); }
+const ssize_t * sarray_keys_end   (const struct sarray *a) { return darray_end(&a->keys); }
+const ssize_t * sarray_keys_ptr   (const struct sarray *a, ssize_t i) { return darray_ptr(&a->keys, i); }
 
 
 
