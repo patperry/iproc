@@ -73,8 +73,8 @@ void * memory_reverse (void *begin, ssize_t size, size_t elt_size)
 }
 
 
-ssize_t forward_search (const void *begin, ssize_t size, const void *key,
-                        equal_fn equal, size_t elt_size)
+void * forward_find (const void *begin, ssize_t size, const void *key,
+                     equal_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    
@@ -85,15 +85,32 @@ ssize_t forward_search (const void *begin, ssize_t size, const void *key,
     
     for (ptr = begin; ptr < end; ptr += elt_size) {
         if (equal(ptr, key))
-            return (ptr - begin) / elt_size;
+            return (void *)ptr;
     }
+    
+    return NULL;
+}
 
+
+ssize_t forward_find_index (const void *begin, ssize_t size, const void *key,
+                            equal_fn equal, size_t elt_size)
+{
+    assert(size >= 0);
+    assert(equal);    
+    assert(elt_size > 0);
+    
+    const void *ptr = forward_find(begin, size, key, equal, elt_size);
+
+    if (ptr) {
+        return (ptr - begin) / elt_size;
+    }
+    
     return -1;
 }
 
 
-ssize_t reverse_search (const void *begin, ssize_t size, const void *key,
-                        equal_fn equal, size_t elt_size)
+void * reverse_find (const void *begin, ssize_t size, const void *key,
+                     equal_fn equal, size_t elt_size)
 {
     assert(size >= 0);
     assert(equal);    
@@ -105,10 +122,44 @@ ssize_t reverse_search (const void *begin, ssize_t size, const void *key,
     for (ptr = end; ptr > begin;) {
         ptr -= elt_size;
         if (equal(ptr, key))
-            return (ptr - begin) / elt_size;
+            return (void *)ptr;
+    }
+    
+    return NULL;
+}
+
+
+ssize_t reverse_find_index (const void *begin, ssize_t size, const void *key,
+                            equal_fn equal, size_t elt_size)
+{
+    assert(size >= 0);
+    assert(equal);    
+    assert(elt_size > 0);
+    
+    const void *ptr = reverse_find(begin, size, key, equal, elt_size);
+    
+    if (ptr) {
+        return (ptr - begin) / elt_size;
     }
     
     return -1;
+}
+
+
+void * sorted_find (const void *begin, ssize_t size, const void *key,
+                    compare_fn compar, size_t elt_size)
+{
+    assert(size >= 0);
+    assert(compar);
+    assert(elt_size > 0);    
+
+    ssize_t i = binary_search(begin, size, key, compar, elt_size);
+    
+    if (i >= 0) {
+        return (void *)begin + i * elt_size;
+    }
+    
+    return NULL;
 }
 
 

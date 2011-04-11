@@ -114,11 +114,20 @@ static inline void *  darray_end   (const struct darray *a);
 static inline void *  darray_ptr   (const struct darray *a,
                                     ssize_t              i);
 
-/* searching */
-ssize_t               darray_search         (const struct darray *a,
+/* searching, sorting */
+bool                  darray_contains       (const struct darray *a,
                                              const void          *key,
                                              equal_fn             equal);
-ssize_t               darray_reverse_search (const struct darray *a,
+void *                darray_find           (const struct darray *a,
+                                             const void          *key,
+                                             equal_fn             equal);
+ssize_t               darray_find_index     (const struct darray *a,
+                                             const void          *key,
+                                             equal_fn             equal);
+void *                darray_find_last      (const struct darray *a,
+                                             const void          *key,
+                                             equal_fn             equal);
+ssize_t               darray_find_last_index (const struct darray *a,
                                              const void          *key,
                                              equal_fn             equal);
 ssize_t               darray_binary_search  (const struct darray *a,

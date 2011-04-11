@@ -293,23 +293,54 @@ struct darray * darray_resize_with (struct darray *a, ssize_t n, const void *val
 }
 
 
-ssize_t darray_search (const struct darray *a, const void *key, equal_fn equal)
+bool darray_contains (const struct darray *a, const void *key, equal_fn equal)
+{
+    assert(a);
+    assert(equal);
+
+    return darray_find(a, key, equal);
+}
+
+
+void * darray_find (const struct darray *a, const void *key, equal_fn equal)
 {
     assert(a);
     assert(equal);
     
-    return forward_search(darray_begin(a), darray_size(a), key, equal,
+    return forward_find(darray_begin(a), darray_size(a), key, equal,
+                        darray_elt_size(a));
+    
+}
+
+
+ssize_t darray_find_index (const struct darray *a, const void *key, equal_fn equal)
+{
+    assert(a);
+    assert(equal);
+    
+    return forward_find_index(darray_begin(a), darray_size(a), key, equal,
                           darray_elt_size(a));
 }
 
 
-ssize_t darray_reverse_search (const struct darray *a, const void *key,
+void * darray_find_last (const struct darray *a, const void *key,
+                         equal_fn equal)
+{
+    assert(a);
+    assert(equal);
+    
+    return reverse_find(darray_begin(a), darray_size(a), key, equal,
+                        darray_elt_size(a));
+}
+
+
+ssize_t darray_find_last_index (const struct darray *a, const void *key,
                                equal_fn equal)
 {
     assert(a);
     assert(equal);
     
-    return reverse_search(darray_begin(a), darray_size(a), key, equal,
+    return reverse_find_index(darray_begin(a), darray_size(a), key, equal,
                           darray_elt_size(a));
 }
 
@@ -324,6 +355,7 @@ ssize_t darray_binary_search (const struct darray *a, const void *key,
     return binary_search(darray_begin(a), darray_size(a), key, compar,
                          darray_elt_size(a));
 }
+
 
 void darray_swap (struct darray *a, ssize_t i, ssize_t j)
 {
