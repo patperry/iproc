@@ -15,7 +15,7 @@ struct darray * _darray_init (struct darray *a, size_t elt_size)
     assert(a);
     assert(elt_size > 0);
     
-    if (_array_init(&a->array, INITIAL_CAPACITY, elt_size)) {
+    if (_array_init(&a->array, 0, elt_size)) {
         a->size = 0;
         return a;
     }
@@ -239,7 +239,7 @@ static struct darray * darray_grow (struct darray *a)
 
     size_t nmax = darray_max_size(a);
     size_t n0 = darray_capacity(a);
-    size_t inc = (n0 >> 1) + 1;
+    size_t inc = n0 ? (n0 >> 1) + 1 : INITIAL_CAPACITY;
     size_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
     
     if (n != n0 && _array_reinit(&a->array, n, darray_elt_size(a))) {
