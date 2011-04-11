@@ -14,6 +14,8 @@
 		221C600E134FADCD0008B25B /* sarray.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C600C134FADCD0008B25B /* sarray.c */; };
 		221C600F134FADCD0008B25B /* sarray.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C600D134FADCD0008B25B /* sarray.h */; };
 		221C601513511ADA0008B25B /* macconfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601413511AD80008B25B /* macconfig.h */; };
+		221C60181351FF8F0008B25B /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C60161351FF7C0008B25B /* hashset.c */; };
+		221C60191351FF8F0008B25B /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C60171351FF800008B25B /* hashset.h */; };
 		221FEE96132EC8710000097B /* blas-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE6D132EC8710000097B /* blas-private.h */; };
 		221FEE9D132EC8710000097B /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		221FEE9E132EC8710000097B /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE75132EC8710000097B /* hash.h */; };
@@ -147,6 +149,8 @@
 		221C600C134FADCD0008B25B /* sarray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sarray.c; path = src/core/sarray.c; sourceTree = "<group>"; };
 		221C600D134FADCD0008B25B /* sarray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sarray.h; path = src/core/sarray.h; sourceTree = "<group>"; };
 		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
+		221C60161351FF7C0008B25B /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
+		221C60171351FF800008B25B /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };
 		221FEE74132EC8710000097B /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = src/core/hash.c; sourceTree = "<group>"; };
 		221FEE75132EC8710000097B /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hash.h; path = src/core/hash.h; sourceTree = "<group>"; };
@@ -268,8 +272,11 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				221C60161351FF7C0008B25B /* hashset.c */,
+				221C60171351FF800008B25B /* hashset.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
+				225973FD133CE9AD0022B52E /* compare.h */,
 				2223CD0E134D76F8004FA7F9 /* darray.c */,
 				2223CD0F134D76F8004FA7F9 /* darray.h */,
 				221C601413511AD80008B25B /* macconfig.h */,
@@ -287,7 +294,6 @@
 				221FEE75132EC8710000097B /* hash.h */,
 				221FEE78132EC8710000097B /* ieee754.c */,
 				221FEE79132EC8710000097B /* ieee754.h */,
-				225973FD133CE9AD0022B52E /* compare.h */,
 				221FEE7C132EC8710000097B /* logsumexp.c */,
 				221FEE7D132EC8710000097B /* logsumexp.h */,
 				22597400133D081A0022B52E /* matrix.c */,
@@ -472,6 +478,7 @@
 				221C5FEE134E230D0008B25B /* array.h in Headers */,
 				221C600F134FADCD0008B25B /* sarray.h in Headers */,
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
+				221C60191351FF8F0008B25B /* hashset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,6 +643,7 @@
 				221C5FED134E230D0008B25B /* array.c in Sources */,
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C600E134FADCD0008B25B /* sarray.c in Sources */,
+				221C60181351FF8F0008B25B /* hashset.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
