@@ -88,7 +88,7 @@ bool _hashset_init (struct hashset *s, hash_fn hash, equals_fn equals,
     return NULL;
 }
 
-/*
+
 bool hashset_init_copy (struct hashset *s, const struct hashset *src)
 {
     assert(s);
@@ -102,7 +102,7 @@ bool hashset_init_copy (struct hashset *s, const struct hashset *src)
     }
     return NULL;
 }
- */
+
 
 
 static void hashset_deinit_nodes (struct trashstack *nodes)
@@ -146,25 +146,103 @@ void hashset_clear (struct hashset *s)
 }
 
 
-// assume worst case: each added value is a collision
-bool hashset_reserve (struct hashset *s, ssize_t n)
+static bool hashset_reserve_nodes (struct hashset *s, ssize_t n)
 {
-    assert(s);
-    assert(n >= 0);
-    
-    if (!intmap_reserve(&s->buckets, n))
-        return false;
-    
     ssize_t i, n0 = trashstack_size(&s->nodes);
-        
+    
     for (i = n0; i < n; i++) {
         struct hashset_node *node = malloc(sizeof(*node));
         if (!node)
             return false;
         trashstack_push(&s->nodes, node);
     }
-
+    
     return true;
+}
+
+
+// assume worst case: each added value is a collision
+bool hashset_reserve (struct hashset *s, ssize_t n)
+{
+    assert(s);
+    assert(n >= 0);
+    
+    if (intmap_reserve(&s->buckets, n)) {
+        return hashset_reserve_nodes(s, n);
+    }
+    return NULL;
+}
+
+
+ssize_t hashset_collisions (const struct hashset *s)
+{
+    const struct hashset_bucket *bucket = intmap_vals_begin(&s->buckets);
+    ssize_t i, n = intmap_size(&s->buckets);
+    const struct hashset_node *node;
+    
+    ssize_t size = 0;
+    
+    for (i = 0; i < n; i++) {
+        SLIST_FOREACH(node, &bucket->collisions, nodes) {
+            size++;
+        }
+    }
+
+    return size;
+}
+
+
+ssize_t hashset_size (const struct hashset *s)
+{
+    assert(s);
+    return hashset_buckets(s) + hashset_collisions(s);
+}
+
+
+bool hashset_assign_copy (struct hashset *s, const struct hashset *src)
+{
+    ssize_t bsrc = hashset_buckets(src);
+    ssize_t csrc = hashset_collisions(src);
+    ssize_t cdst = hashset_collisions(s);
+    struct hashset_it it;
+    
+    if (intmap_reserve(&s->buckets, bsrc)
+        && hashset_reserve_nodes(s, MAX(0, cdst - csrc))
+        && hashset_it_init(src, &it)) {
+
+        hashset_clear(s);
+
+        while (hashset_it_advance(src, &it)) {
+            hashset_add(s, _hashset_it_current(src, &it));
+        }
+
+        hashset_it_deinit(src, &it);
+        return true;
+    }
+    return false;
+}
+
+
+void * hashset_copy_to (const struct hashset *s, void *dst)
+{
+    assert(s);
+    assert(dst || hashset_empty(s));
+
+    size_t elt_size = hashset_elt_size(s);
+    struct hashset_it it;
+    
+    if (hashset_it_init(s, &it)) {
+        
+        while (hashset_it_advance(s, &it)) {
+            memcpy(dst, _hashset_it_current(s, &it), elt_size);
+            dst += elt_size;
+        }
+        
+        hashset_it_deinit(s, &it);
+        return dst;
+    }
+
+    return NULL; /* never happens; hashset_it_init always succeeds */
 }
 
 
@@ -429,7 +507,7 @@ out:
 }
 
 
-void * _hashset_it_current (const struct hashset *s, const struct hashset_it *it)
+const void * _hashset_it_current (const struct hashset *s, const struct hashset_it *it)
 {
     assert(s);
     assert(it);

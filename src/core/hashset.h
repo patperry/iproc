@@ -45,16 +45,18 @@ void hashset_deinit (struct hashset *s);
 
 
 /* assign, copy, clear */
-// bool                  hashset_assign_copy (struct hashset       *s,
-//                                           const struct hashset *src);
-// void *                hashset_copy_to     (const struct hashset *s,
-//                                            void                 *dst);
+bool                  hashset_assign_copy (struct hashset       *s,
+                                           const struct hashset *src);
+void *                hashset_copy_to     (const struct hashset *s,
+                                           void                 *dst);
 void                  hashset_clear       (struct hashset *s);
 bool                  hashset_reserve     (struct hashset *s, ssize_t n);
 
 
 /* informative */
-              size_t   hashset_size     (const struct hashset *s);
+ssize_t  hashset_size       (const struct hashset *s);
+ssize_t  hashset_collisions (const struct hashset *s);
+static inline ssize_t  hashset_buckets  (const struct hashset *s);
 static inline bool     hashset_empty    (const struct hashset *s);
 static inline ssize_t  hashset_max_size (const struct hashset *s);
 static inline size_t   hashset_elt_size (const struct hashset *s);
@@ -94,17 +96,19 @@ bool   hashset_it_init    (const struct hashset *s, struct hashset_it *it);
 void   hashset_it_deinit  (const struct hashset *s, struct hashset_it *it);
 void   hashset_it_reset   (const struct hashset *s, struct hashset_it *it);
 bool   hashset_it_advance (const struct hashset *s, struct hashset_it *it);
-void * hashset_it_current (const struct hashset *s, const struct hashset_it *it);
+#define hashset_it_current(s, type, it) \
+        (*((const type *)_hashset_it_current(s, it)))
 
 
 
 /* private functions */
 bool _hashset_init (struct hashset *s, hash_fn hash, equals_fn equals,
                     size_t elt_size, size_t elt_offset);
-
+const void * _hashset_it_current (const struct hashset *s, const struct hashset_it *it);
 
 
 /* inline function definitions */
+ssize_t hashset_buckets  (const struct hashset *s) { return intmap_size(&s->buckets); }
 bool    hashset_empty    (const struct hashset *s) { return intmap_empty(&s->buckets); }
 size_t  hashset_elt_size (const struct hashset *s) { return s->elt_size; }
 ssize_t hashset_max_size (const struct hashset *s) { return intmap_max_size(&s->buckets); }
@@ -112,21 +116,15 @@ ssize_t hashset_max_size (const struct hashset *s) { return intmap_max_size(&s->
 
 static inline uint32_t hashset_hash (const struct hashset *s, const void *val)
 {
-    if (s->hash) {
-        return s->hash(val);
-    } else {
-        return memory_hash(val, hashset_elt_size(s));
-    }
+    // if (!s->hash) { return memory_hash(val, hashset_elt_size(s)); }
+    return s->hash(val);
 }
 
 
 static inline int hashset_equals (const struct hashset *s, const void *val1, const void *val2)
 {
-    if (s->equals) {
-        return s->equals(val1, val2);
-    } else {
-        return (memcmp(val1, val2, hashset_elt_size(s)) == 0);
-    }
+    // if (!s->equals) { return (memcmp(val1, val2, hashset_elt_size(s)) == 0); }
+    return s->equals(val1, val2);
 }
 
 
