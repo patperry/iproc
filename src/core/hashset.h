@@ -20,12 +20,18 @@ struct hashset {
     struct        trashstack nodes;
 };
 
-
+// a position in a hash set
 struct hashset_pos {
     struct intmap_pos      key;
     struct hashset_bucket *bucket;
     union { struct hashset_node   *n;
             struct hashset_bucket *b; } node;
+};
+
+// a hash set iterator
+struct hashset_it {
+    struct hashset_bucket *bucket, *end;
+    struct hashset_node   *node;
 };
 
 
@@ -39,10 +45,10 @@ void hashset_deinit (struct hashset *s);
 
 
 /* assign, copy, clear */
-// TODO: bool                  hashset_assign_copy (struct hashset       *s,
-//                                            const struct hashset  *src);
-// TODO: void *                hashset_copy_to     (const struct hashset *s,
-//                                            void                  *dst);
+// bool                  hashset_assign_copy (struct hashset       *s,
+//                                           const struct hashset *src);
+// void *                hashset_copy_to     (const struct hashset *s,
+//                                            void                 *dst);
 void                  hashset_clear       (struct hashset *s);
 bool                  hashset_reserve     (struct hashset *s, ssize_t n);
 
@@ -82,10 +88,19 @@ void * hashset_replace (struct hashset *s, struct hashset_pos *pos, const void *
 // remove storage location; valid when hashset_find returns non-NULL
 void   hashset_erase  (struct hashset *s, struct hashset_pos *pos);
 
+
+/* iteration */
+bool   hashset_it_init    (const struct hashset *s, struct hashset_it *it);
+void   hashset_it_deinit  (const struct hashset *s, struct hashset_it *it);
+void   hashset_it_reset   (const struct hashset *s, struct hashset_it *it);
+bool   hashset_it_advance (const struct hashset *s, struct hashset_it *it);
+void * hashset_it_current (const struct hashset *s, const struct hashset_it *it);
+
+
+
 /* private functions */
 bool _hashset_init (struct hashset *s, hash_fn hash, equals_fn equals,
                     size_t elt_size, size_t elt_offset);
-
 
 
 

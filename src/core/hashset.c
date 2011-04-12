@@ -4,6 +4,7 @@
 #include <sys/queue.h>
 #include "hashset.h"
 
+
 struct hashset_node {
     SLIST_ENTRY(hashset_node) nodes;
 };
@@ -364,4 +365,91 @@ void hashset_erase (struct hashset *s, struct hashset_pos *pos)
     }
 }
 
+
+bool hashset_it_init (const struct hashset *s, struct hashset_it *it)
+{
+    assert(s);
+    assert(it);
+
+    it->end = intmap_vals_end(&s->buckets);    
+    hashset_it_reset(s, it);
+    return it;
+}
+
+
+void hashset_it_deinit (const struct hashset *s, struct hashset_it *it)
+{
+    assert(s);
+    assert(it);
+}
+
+
+/*                   bucket  node
+ * init:             -       -
+ * bucket start:     +       -
+ * bucket collision: +       +
+ * end:              end     ?
+ */
+bool hashset_it_advance (const struct hashset *s, struct hashset_it *it)
+{
+    bool has_next = true;
+    
+    // at end of collection
+    if (it->bucket == it->end) {
+        has_next = false;
+        goto out;
+    }
+    
+    // advance to next bucket if:
+    //   (1) at init
+    //   (2) at bucket start and there are no collisions
+    //   (3) at last collision
+    if ((!it->bucket && !it->node)
+        || (it->bucket && !it->node && SLIST_EMPTY(&it->bucket->collisions))
+        || (it->bucket && it->node && !SLIST_NEXT(it->node, nodes))) {
+        
+        it->bucket++;
+        it->node = NULL;
+        
+        if (it->bucket == it->end)
+            has_next = false;
+
+    // advance to first collision if at bucket start
+    } else if (it->bucket && !it->node && !SLIST_EMPTY(&it->bucket->collisions)) {
+        it->node = SLIST_FIRST(&it->bucket->collisions);
+        has_next = true;
+
+    // otherwise, advance to next collision        
+    } else {
+        it->node = SLIST_NEXT(it->node, nodes);
+    }
+    
+out:
+    return has_next;
+}
+
+
+void * _hashset_it_current (const struct hashset *s, const struct hashset_it *it)
+{
+    assert(s);
+    assert(it);
+    assert(it->bucket);
+    assert(it->bucket < it->end);
+
+    if (!it->node) {
+        return bucket_val(s, it->bucket);
+    } else {
+        return node_val(s, it->node);
+    }
+}
+
+
+void hashset_it_reset (const struct hashset *s, struct hashset_it *it)
+{
+    assert(s);
+    assert(it);
+
+    it->bucket = NULL;
+    it->node   = NULL;
+}
 
