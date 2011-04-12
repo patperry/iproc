@@ -91,18 +91,18 @@ struct _iproc_design {
     int64_t        idynamic,  ndynamic;
     int64_t        dim;
     
-    struct darray  ctxs;
-    struct darray  svectors;
-    iproc_refcount refcount;    
+    struct darray   ctxs;
+    struct darray   svectors;
+    struct refcount refcount;    
 };
 
 /* dX[t,i] */
 struct _iproc_design_ctx {
-    iproc_design  *design;
-    iproc_history *history;
-    int64_t        isend;
-    struct darray  dxs;
-    iproc_refcount refcount;
+    iproc_design   *design;
+    iproc_history  *history;
+    int64_t         isend;
+    struct darray   dxs;
+    struct refcount refcount;
 };
 
 /* dX{k}[t,i] */

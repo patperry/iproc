@@ -104,7 +104,7 @@ iproc_trace_new ()
     if (!trace) return NULL;
 
     trace->tcur = -INFINITY;
-    iproc_refcount_init(&trace->refcount);
+    refcount_init(&trace->refcount);
 
     if (!(darray_init(&trace->pending, iproc_event)
           && darray_init(&trace->events, iproc_events))) {
@@ -119,13 +119,13 @@ iproc_trace *
 iproc_trace_ref (iproc_trace *trace)
 {
     if (trace) {
-        iproc_refcount_get(&trace->refcount);
+        refcount_get(&trace->refcount);
     }
     return trace;
 }
 
 static void
-iproc_trace_release (iproc_refcount *refcount)
+iproc_trace_release (struct refcount *refcount)
 {
     iproc_trace *trace = container_of(refcount, iproc_trace, refcount);
     iproc_trace_free(trace);
@@ -137,7 +137,7 @@ iproc_trace_unref (iproc_trace *trace)
     if (!trace)
         return;
 
-    iproc_refcount_put(&trace->refcount, iproc_trace_release);
+    refcount_put(&trace->refcount, iproc_trace_release);
 }
 
 void

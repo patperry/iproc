@@ -131,7 +131,7 @@ iproc_design_new (iproc_actors *senders,
     design->idynamic = design->istatic + design->nstatic;
     design->ndynamic = 0;
     design->dim = design->idynamic + design->ndynamic;
-    iproc_refcount_init(&design->refcount);
+    refcount_init(&design->refcount);
 
     if (!(darray_init(&design->vars, iproc_design_var *)
           && darray_init(&design->ctxs, iproc_design_ctx *)
@@ -147,13 +147,13 @@ iproc_design *
 iproc_design_ref (iproc_design *design)
 {
     if (design) {
-        iproc_refcount_get(&design->refcount);
+        refcount_get(&design->refcount);
     }
     return design;
 }
 
 static void
-iproc_design_release (iproc_refcount *refcount)
+iproc_design_release (struct refcount *refcount)
 {
     iproc_design *design = container_of(refcount, iproc_design, refcount);
     iproc_design_free(design);
@@ -165,7 +165,7 @@ iproc_design_unref (iproc_design *design)
     if (!design)
         return;
 
-    iproc_refcount_put(&design->refcount, iproc_design_release);
+    refcount_put(&design->refcount, iproc_design_release);
 }
 
 int64_t

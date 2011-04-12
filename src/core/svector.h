@@ -9,10 +9,10 @@
 typedef struct _iproc_svector iproc_svector;
 
 struct _iproc_svector {
-    int64_t        dim;
-    struct darray  index;
-    struct darray  value;
-    iproc_refcount refcount;
+    int64_t         dim;
+    struct darray   index;
+    struct darray   value;
+    struct refcount refcount;
 };
 
 iproc_svector *   iproc_svector_new      (int64_t        dim);

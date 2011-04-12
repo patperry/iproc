@@ -41,7 +41,7 @@ iproc_svector_new (int64_t dim)
     if (svector
         && darray_init(&svector->index, int64_t)
         && darray_init(&svector->value, double)
-        && iproc_refcount_init(&svector->refcount)) {
+        && refcount_init(&svector->refcount)) {
         svector->dim = dim;
         return svector;
     }
@@ -54,13 +54,13 @@ iproc_svector *
 iproc_svector_ref (iproc_svector *svector)
 {
     if (svector) {
-        iproc_refcount_get(&svector->refcount);
+        refcount_get(&svector->refcount);
     }
     return svector;
 }
 
 static void
-iproc_svector_release (iproc_refcount *refcount)
+iproc_svector_release (struct refcount *refcount)
 {
     iproc_svector *svector = container_of(refcount, iproc_svector, refcount);
     iproc_svector_free(svector);
@@ -72,7 +72,7 @@ iproc_svector_unref (iproc_svector *svector)
     if (!svector)
         return;
 
-    iproc_refcount_put(&svector->refcount, iproc_svector_release);
+    refcount_put(&svector->refcount, iproc_svector_release);
 }
 
 iproc_svector *
@@ -85,7 +85,7 @@ iproc_svector_new_copy (const iproc_svector *svector)
     if (copy
         && darray_init_copy(&copy->index, &svector->index)
         && darray_init_copy(&copy->value, &svector->value)
-        && iproc_refcount_init(&copy->refcount)) {
+        && refcount_init(&copy->refcount)) {
         copy->dim = dim;
         return copy;
     }

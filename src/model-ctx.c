@@ -162,7 +162,7 @@ iproc_model_ctx_new_alloc (iproc_model     *model,
     ctx->dp = iproc_svector_new(nreceiver);
     ctx->dxbar = iproc_svector_new(dim);
     
-    iproc_refcount_init(&ctx->refcount);
+    refcount_init(&ctx->refcount);
     
     if (!(ctx->deta && ctx->dp && ctx->dxbar)) {
         iproc_model_ctx_free(ctx);
@@ -191,7 +191,7 @@ iproc_model_ctx_new (iproc_model     *model,
         ctx = darray_index(ctxs, iproc_model_ctx *, n - 1);
         darray_resize(ctxs, n - 1);
         iproc_model_ref(model);
-        iproc_refcount_init(&ctx->refcount);
+        refcount_init(&ctx->refcount);
         iproc_model_ctx_set(ctx, isend, h);
         assert(ctx->model == model);
     } else {
@@ -241,13 +241,13 @@ iproc_model_ctx *
 iproc_model_ctx_ref (iproc_model_ctx *ctx)
 {
     if (ctx) {
-        iproc_refcount_get(&ctx->refcount);
+        refcount_get(&ctx->refcount);
     }
     return ctx;
 }
 
 static void
-iproc_model_ctx_release (iproc_refcount *refcount)
+iproc_model_ctx_release (struct refcount *refcount)
 {
     iproc_model_ctx *ctx = container_of(refcount, iproc_model_ctx, refcount);
     iproc_model_ctx_free(ctx);
@@ -257,7 +257,7 @@ void
 iproc_model_ctx_unref (iproc_model_ctx *ctx)
 {
     if (ctx) {
-        iproc_refcount_put(&ctx->refcount, iproc_model_ctx_release);
+        refcount_put(&ctx->refcount, iproc_model_ctx_release);
     }
 }
 

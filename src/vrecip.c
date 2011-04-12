@@ -81,7 +81,7 @@ iproc_vrecip_new (double       *intvls,
         return NULL;
     
     iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
-    iproc_refcount_init(&v->refcount);
+    refcount_init(&v->refcount);
 
     if (!darray_init(&v->intvls, double)) {
         iproc_vrecip_free(v);
@@ -103,14 +103,14 @@ iproc_vrecip *
 iproc_vrecip_ref (iproc_vrecip *v)
 {
     if (v) {
-        iproc_refcount_get(&v->refcount);
+        refcount_get(&v->refcount);
     }
 
     return v;
 }
 
 static void
-iproc_vrecip_release (iproc_refcount *refcount)
+iproc_vrecip_release (struct refcount *refcount)
 {
     iproc_vrecip *v = container_of(refcount, iproc_vrecip, refcount);
     iproc_vrecip_free(v);
@@ -120,6 +120,6 @@ void
 iproc_vrecip_unref (iproc_vrecip *v)
 {
     if (v) {
-        iproc_refcount_put(&v->refcount, iproc_vrecip_release);
+        refcount_put(&v->refcount, iproc_vrecip_release);
     }
 }

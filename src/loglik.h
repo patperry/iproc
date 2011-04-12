@@ -12,13 +12,13 @@
 typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
-    iproc_model   *model;
-    struct darray  sloglik_array;
+    iproc_model    *model;
+    struct darray   sloglik_array;
     struct vector  *grad;
-    bool           grad_cached;
-    int64_t        nsend;
-    int64_t        nrecv;
-    iproc_refcount refcount;
+    bool            grad_cached;
+    int64_t         nsend;
+    int64_t         nrecv;
+    struct refcount refcount;
 };
 
 

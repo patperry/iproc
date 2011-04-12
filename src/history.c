@@ -81,7 +81,7 @@ iproc_history_new ()
     if (history
         && darray_init(&history->send, iproc_history_trace)
         && darray_init(&history->recv, iproc_history_trace)
-        && iproc_refcount_init(&history->refcount)) {
+        && refcount_init(&history->refcount)) {
         history->tcur = -INFINITY;
         return history;
     }
@@ -94,13 +94,13 @@ iproc_history *
 iproc_history_ref (iproc_history *history)
 {
     if (history) {
-        iproc_refcount_get(&history->refcount);
+        refcount_get(&history->refcount);
     }
     return history;
 }
 
 static void
-iproc_history_release (iproc_refcount *refcount)
+iproc_history_release (struct refcount *refcount)
 {
     iproc_history *history = container_of(refcount, iproc_history, refcount);
     iproc_history_free(history);
@@ -112,7 +112,7 @@ iproc_history_unref (iproc_history *history)
     if (!history)
         return;
 
-    iproc_refcount_put(&history->refcount, iproc_history_release);
+    refcount_put(&history->refcount, iproc_history_release);
 }
 
 void

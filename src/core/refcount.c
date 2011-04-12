@@ -1,19 +1,17 @@
 #include "port.h"
-
 #include <assert.h>
 #include "refcount.h"
 
-iproc_refcount *
-iproc_refcount_init (iproc_refcount *refcount)
+
+bool refcount_init (struct refcount *refcount)
 {
     assert(refcount);
-    iproc_refcount_set(refcount, 1);
+    refcount_set(refcount, 1);
     return refcount;
 }
 
-void
-iproc_refcount_set (iproc_refcount *refcount,
-                    int             count)
+
+void refcount_set (struct refcount *refcount, int count)
 {
     assert(refcount);
     assert(count > 0);
@@ -21,25 +19,25 @@ iproc_refcount_set (iproc_refcount *refcount,
 }
 
 
-void
-iproc_refcount_get (iproc_refcount *refcount)
+void refcount_get (struct refcount *refcount)
 {
     assert(refcount);
-    (refcount->count)++;
+    refcount->count++;
 }
 
-int
-iproc_refcount_put (iproc_refcount *refcount,
-                    void (*release) (iproc_refcount *refcount))
+
+bool refcount_put (struct refcount *refcount,
+                   void (*release) (struct refcount *refcount))
 {
     assert(refcount);
-    assert(release);
+    // assert(refcount->count != 0);    
 
-    (refcount->count)--;
+    refcount->count--;
     if (refcount->count == 0) {
-        release(refcount);
-        return 1;
+        if (release)
+            release(refcount);
+        return true;
     } else {
-        return 0;
+        return false;
     }
 }

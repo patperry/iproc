@@ -24,7 +24,7 @@ iproc_message_iter_new (iproc_messages *msgs)
 
     it->messages = iproc_messages_ref(msgs);
     it->history = iproc_history_new();
-    iproc_refcount_init(&it->refcount);
+    refcount_init(&it->refcount);
     iproc_message_iter_reset(it);
 
     return it;
@@ -34,14 +34,14 @@ iproc_message_iter *
 iproc_message_iter_ref (iproc_message_iter *it)
 {
     if (it) {
-        iproc_refcount_get(&it->refcount);
+        refcount_get(&it->refcount);
     }
     
     return it;
 }
 
 static void
-iproc_message_iter_release (iproc_refcount *refcount)
+iproc_message_iter_release (struct refcount *refcount)
 {
     iproc_message_iter *it = container_of(refcount, iproc_message_iter, refcount);
     iproc_message_iter_free(it);
@@ -51,7 +51,7 @@ void
 iproc_message_iter_unref (iproc_message_iter *it)
 {
     if (it) {
-        iproc_refcount_put(&it->refcount, iproc_message_iter_release);
+        refcount_put(&it->refcount, iproc_message_iter_release);
     }
 }
 

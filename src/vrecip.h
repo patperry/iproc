@@ -11,7 +11,7 @@ typedef struct _iproc_vrecip iproc_vrecip;
 struct _iproc_vrecip {
     iproc_design_var var;
     struct darray    intvls;
-    iproc_refcount   refcount;
+    struct refcount  refcount;
 };
 
 iproc_vrecip * iproc_vrecip_new   (double        *intvls,

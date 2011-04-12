@@ -168,7 +168,7 @@ iproc_model_new (iproc_design *design,
     darray_init(&model->group_models, iproc_group_model);
     iproc_group_models_init(&model->group_models, design, coefs);
     darray_init(&model->ctxs, iproc_model_ctx *);
-    iproc_refcount_init(&model->refcount);
+    refcount_init(&model->refcount);
 
     return model;
 }
@@ -177,13 +177,13 @@ iproc_model *
 iproc_model_ref (iproc_model *model)
 {
     if (model) {
-        iproc_refcount_get(&model->refcount);
+        refcount_get(&model->refcount);
     }
     return model;
 }
 
 static void
-iproc_model_release (iproc_refcount *refcount)
+iproc_model_release (struct refcount *refcount)
 {
     iproc_model *model = container_of(refcount, iproc_model, refcount);
     iproc_model_free(model);
@@ -195,7 +195,7 @@ iproc_model_unref (iproc_model *model)
     if (!model)
         return;
 
-    iproc_refcount_put(&model->refcount, iproc_model_release);
+    refcount_put(&model->refcount, iproc_model_release);
 }
 
 iproc_design *

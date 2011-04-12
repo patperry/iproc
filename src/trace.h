@@ -50,10 +50,10 @@ struct _iproc_events {
 };
 
 struct _iproc_trace {
-    double         tcur;
-    struct darray  pending;
-    struct darray  events;
-    iproc_refcount refcount;
+    double          tcur;
+    struct darray   pending;
+    struct darray   events;
+    struct refcount refcount;
 };
 
 iproc_trace *      iproc_trace_new        ();

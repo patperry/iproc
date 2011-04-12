@@ -53,7 +53,7 @@
 typedef struct _iproc_sloglik iproc_sloglik;
 
 struct _iproc_sloglik {
-    iproc_refcount refcount;
+    struct refcount refcount;
     
     iproc_model   *model;
     int64_t        isend;

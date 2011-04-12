@@ -48,7 +48,7 @@ iproc_sloglik_new (iproc_model *model,
     sll->dxbar = iproc_svector_new(p);
     
     
-    iproc_refcount_init(&sll->refcount);
+    refcount_init(&sll->refcount);
 
     if (!(sll->grad && sll->nrecv && sll->dxobs && sll->dxbar)) {
         iproc_sloglik_free(sll);
@@ -62,13 +62,13 @@ iproc_sloglik *
 iproc_sloglik_ref (iproc_sloglik *sll)
 {
     if (sll) {
-        iproc_refcount_get(&sll->refcount);
+        refcount_get(&sll->refcount);
     }
     return sll;
 }
 
 static void
-iproc_sloglik_release (iproc_refcount *refcount)
+iproc_sloglik_release (struct refcount *refcount)
 {
     iproc_sloglik *sll = container_of(refcount, iproc_sloglik, refcount);
     iproc_sloglik_free(sll);
@@ -78,7 +78,7 @@ void
 iproc_sloglik_unref (iproc_sloglik *sll)
 {
     if (sll) {
-        iproc_refcount_put(&sll->refcount, iproc_sloglik_release);
+        refcount_put(&sll->refcount, iproc_sloglik_release);
     }
 }
 

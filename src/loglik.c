@@ -40,7 +40,7 @@ iproc_loglik_new_empty (iproc_model *model)
     loglik->grad_cached = false;
     loglik->nsend = 0;
     loglik->nrecv = 0;
-    iproc_refcount_init(&loglik->refcount);
+    refcount_init(&loglik->refcount);
     
     if (!(darray_init(&loglik->sloglik_array, iproc_sloglik *)
           && loglik->grad)) {
@@ -93,14 +93,14 @@ iproc_loglik *
 iproc_loglik_ref (iproc_loglik *loglik)
 {
     if (loglik) {
-        iproc_refcount_get(&loglik->refcount);
+        refcount_get(&loglik->refcount);
     }
 
     return loglik;
 }
 
 static void
-iproc_loglik_release (iproc_refcount *refcount)
+iproc_loglik_release (struct refcount *refcount)
 {
     iproc_loglik *loglik = container_of(refcount, iproc_loglik, refcount);
     iproc_loglik_free(loglik);
@@ -110,7 +110,7 @@ void
 iproc_loglik_unref (iproc_loglik *loglik)
 {
     if (loglik) {
-        iproc_refcount_put(&loglik->refcount, iproc_loglik_release);
+        refcount_put(&loglik->refcount, iproc_loglik_release);
     }
 }
 

@@ -26,7 +26,7 @@ iproc_messages_new ()
     msgs->max_to = -1;
     msgs->max_from = -1;
     msgs->max_nto = 0;
-    iproc_refcount_init(&msgs->refcount);
+    refcount_init(&msgs->refcount);
 
     if (!(darray_init(&msgs->array, iproc_message)
           && darray_init(&msgs->recipients, int64_t))) {
@@ -41,13 +41,13 @@ iproc_messages *
 iproc_messages_ref (iproc_messages *msgs)
 {
     if (msgs) {
-        iproc_refcount_get(&msgs->refcount);
+        refcount_get(&msgs->refcount);
     }
     return msgs;
 }
 
 static void
-iproc_messages_release (iproc_refcount *refcount)
+iproc_messages_release (struct refcount *refcount)
 {
     iproc_messages *msgs = container_of(refcount, iproc_messages, refcount);
     iproc_messages_free(msgs);
@@ -57,7 +57,7 @@ void
 iproc_messages_unref (iproc_messages *msgs)
 {
     if (msgs) {
-        iproc_refcount_put(&msgs->refcount, iproc_messages_release);
+        refcount_put(&msgs->refcount, iproc_messages_release);
     }
 }
 

@@ -121,12 +121,12 @@ struct _iproc_group_model {
 };
 
 struct _iproc_model {
-    iproc_design  *design;
+    iproc_design   *design;
     struct vector  *coefs;
-    bool           has_loops;
-    struct darray  group_models;
-    struct darray  ctxs;
-    iproc_refcount refcount;
+    bool            has_loops;
+    struct darray   group_models;
+    struct darray   ctxs;
+    struct refcount refcount;
 };
 
 struct _iproc_model_ctx {
@@ -140,7 +140,7 @@ struct _iproc_model_ctx {
     iproc_svector     *dp;
     iproc_svector     *dxbar;
     
-    iproc_refcount     refcount;
+    struct refcount    refcount;
 };
 
 iproc_model *       iproc_model_new                (iproc_design *design,

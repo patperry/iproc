@@ -11,6 +11,24 @@
 #include "svector.h"
 #include "vector.h"
 
+/*
+struct actor {
+    struct cohort *cohort;
+};
+
+struct cohort {
+    struct vector traits;
+    struct intset actors;
+};
+
+struct _iproc_actors {
+    struct darray  actors;
+    struct hashset cohorts;
+    iproc_refcount refcount;
+};
+*/
+
+
 
 typedef struct _iproc_actors       iproc_actors;
 typedef struct _iproc_group        iproc_group;
@@ -27,10 +45,10 @@ struct _iproc_group_bucket {
 };
 
 struct _iproc_actors {
-    struct darray group_ids;
-    struct darray group_traits;
-    struct darray group_buckets;
-    iproc_refcount refcount;
+    struct darray   group_ids;
+    struct darray   group_traits;
+    struct darray   group_buckets;
+    struct refcount refcount;
 };
 
 /* makes a copy of traits0 */

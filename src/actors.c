@@ -130,7 +130,7 @@ iproc_actors_new (int64_t      size,
         && darray_init(&actors->group_ids, int64_t)
         && darray_init(&actors->group_traits, struct vector *)
         && darray_init(&actors->group_buckets, iproc_group_bucket)) {
-        iproc_refcount_init(&actors->refcount);
+        refcount_init(&actors->refcount);
         
         /* We rely on array_set_size clearing the tail to zeros. */
         darray_resize(&actors->group_ids, size);
@@ -149,13 +149,13 @@ iproc_actors *
 iproc_actors_ref (iproc_actors *actors)
 {
     if (actors) {
-        iproc_refcount_get(&actors->refcount);
+        refcount_get(&actors->refcount);
     }
     return actors;
 }
 
 static void
-iproc_actors_release (iproc_refcount *refcount)
+iproc_actors_release (struct refcount *refcount)
 {
     iproc_actors *actors = container_of(refcount, iproc_actors, refcount);
     iproc_actors_free(actors);
@@ -167,7 +167,7 @@ iproc_actors_unref (iproc_actors *actors)
     if (!actors)
         return;
 
-    iproc_refcount_put(&actors->refcount, iproc_actors_release);
+    refcount_put(&actors->refcount, iproc_actors_release);
 }
 
 

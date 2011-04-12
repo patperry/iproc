@@ -29,7 +29,7 @@ iproc_matrix_new (int64_t nrow, int64_t ncol)
     matrix->nrow = nrow;
     matrix->ncol = ncol;
     matrix->lda = MAX(1, nrow);
-    iproc_refcount_init(&matrix->refcount);
+    refcount_init(&matrix->refcount);
 
     if (!(matrix->data)) {
         iproc_matrix_free(matrix);
@@ -54,13 +54,13 @@ iproc_matrix *
 iproc_matrix_ref (iproc_matrix *matrix)
 {
     if (matrix) {
-        iproc_refcount_get(&matrix->refcount);
+        refcount_get(&matrix->refcount);
     }
     return matrix;
 }
 
 static void
-iproc_matrix_release (iproc_refcount *refcount)
+iproc_matrix_release (struct refcount *refcount)
 {
     iproc_matrix *matrix = container_of(refcount, iproc_matrix, refcount);
     iproc_matrix_free(matrix);
@@ -72,7 +72,7 @@ iproc_matrix_unref (iproc_matrix *matrix)
     if (!matrix)
         return;
 
-    iproc_refcount_put(&matrix->refcount, iproc_matrix_release);
+    refcount_put(&matrix->refcount, iproc_matrix_release);
 }
 
 int64_t
