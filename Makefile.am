@@ -11,6 +11,8 @@ noinst_LTLIBRARIES = \
 libiproc_la_SOURCES = \
 	src/actors.c \
 	src/actors.h \
+	src/cohort.c \
+	src/cohort.h \
 	src/design-ctx.c \
 	src/design.c \
 	src/design.h \

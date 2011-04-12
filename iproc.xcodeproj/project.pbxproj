@@ -97,6 +97,8 @@
 		22867A13132FDA830090D617 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A11132FDA830090D617 /* dcstep.c */; };
 		22867A16132FDABD0090D617 /* f2c.h in Headers */ = {isa = PBXBuildFile; fileRef = 22867A15132FDABD0090D617 /* f2c.h */; };
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
+		22C67AA61354FCC8006A81E8 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
+		22C67AA71354FCC8006A81E8 /* cohort.h in Headers */ = {isa = PBXBuildFile; fileRef = 22C67AA51354FCC7006A81E8 /* cohort.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -235,6 +237,8 @@
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
+		22C67AA41354FCC6006A81E8 /* cohort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cohort.c; path = src/cohort.c; sourceTree = "<group>"; };
+		22C67AA51354FCC7006A81E8 /* cohort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cohort.h; path = src/cohort.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -346,6 +350,8 @@
 			children = (
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
+				22C67AA41354FCC6006A81E8 /* cohort.c */,
+				22C67AA51354FCC7006A81E8 /* cohort.h */,
 				22597407133D0AFB0022B52E /* design-ctx.c */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
@@ -490,6 +496,7 @@
 				221C60211352D3820008B25B /* intmap.h in Headers */,
 				2223C7A51353475100601F58 /* hashset.h in Headers */,
 				2223C7A7135364A200601F58 /* trashstack.h in Headers */,
+				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -656,6 +663,7 @@
 				221C601C1352B8700008B25B /* intset.c in Sources */,
 				221C60201352D3820008B25B /* intmap.c in Sources */,
 				2223C7A41353475100601F58 /* hashset.c in Sources */,
+				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
