@@ -183,7 +183,7 @@
 		22597400133D081A0022B52E /* matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = matrix.c; path = src/core/matrix.c; sourceTree = "<group>"; };
 		22597401133D081A0022B52E /* matrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = matrix.h; path = src/core/matrix.h; sourceTree = "<group>"; };
 		22597405133D0AFB0022B52E /* actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actors.c; path = src/actors.c; sourceTree = "<group>"; };
-		22597406133D0AFB0022B52E /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = src/actors.h; sourceTree = "<group>"; };
+		22597406133D0AFB0022B52E /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = src/actors.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597407133D0AFB0022B52E /* design-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "design-ctx.c"; path = "src/design-ctx.c"; sourceTree = "<group>"; };
 		22597408133D0AFB0022B52E /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
 		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; };
@@ -295,6 +295,8 @@
 				221C5FDA134DB9BC0008B25B /* port.h */,
 				22597433133D0BD20022B52E /* pqueue.c */,
 				22597434133D0BD20022B52E /* pqueue.h */,
+				221FEE87132EC8710000097B /* refcount.c */,
+				221FEE88132EC8710000097B /* refcount.h */,
 				2223C7A6135364A200601F58 /* trashstack.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
@@ -308,8 +310,6 @@
 				22597400133D081A0022B52E /* matrix.c */,
 				22597401133D081A0022B52E /* matrix.h */,
 				221FEE80132EC8710000097B /* memory.h */,
-				221FEE87132EC8710000097B /* refcount.c */,
-				221FEE88132EC8710000097B /* refcount.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
 			);

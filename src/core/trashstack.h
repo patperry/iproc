@@ -1,6 +1,9 @@
 #ifndef _TRASHSTACK_H
 #define _TRASHSTACK_H
 
+#include <sys/queue.h>
+
+
 struct trashstack {
     SLIST_HEAD(trashstack_head, trashstack_node) head;
 };
@@ -37,7 +40,7 @@ static inline ssize_t trashstack_size (const struct trashstack *s)
     return n;
 }
 
-void * trashstack_pop (struct trashstack *s)
+static inline void * trashstack_pop (struct trashstack *s)
 {
     void *node = NULL;
     
@@ -49,7 +52,7 @@ void * trashstack_pop (struct trashstack *s)
     return node;
 }
 
-void trashstack_push (struct trashstack *s, void *val)
+static inline void trashstack_push (struct trashstack *s, void *val)
 {
     struct trashstack_node *node = val;
     SLIST_INSERT_HEAD(&s->head, node, nodes);

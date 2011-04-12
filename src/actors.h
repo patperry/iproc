@@ -3,13 +3,16 @@
 
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include "darray.h"
-#include "matrix.h"
+#include "hashset.h"
 #include "refcount.h"
+
+#include "matrix.h"
 #include "svector.h"
 #include "vector.h"
+
+typedef struct _iproc_actors iproc_actors;
 
 /*
 struct actor {
@@ -22,29 +25,28 @@ struct cohort {
 };
 
 struct _iproc_actors {
-    struct darray  actors;
-    struct hashset cohorts;
-    iproc_refcount refcount;
+    struct hashset  cohorts;
+    struct darray   actors;
+    ssize_t         dim; 
+    struct refcount refcount;
 };
 */
 
 
-
-typedef struct _iproc_actors       iproc_actors;
-typedef struct _iproc_group        iproc_group;
-typedef struct _iproc_group_bucket iproc_group_bucket;
-
+typedef struct _iproc_group iproc_group;
 struct _iproc_group {
     struct vector *traits;     /* traits must be the first member */
     int64_t       id;
 };
 
+typedef struct _iproc_group_bucket iproc_group_bucket;
 struct _iproc_group_bucket {
     size_t        traits_hash; /* traits_hash must be the first member */
     struct darray groups;
 };
 
 struct _iproc_actors {
+    ssize_t         dim;
     struct darray   group_ids;
     struct darray   group_traits;
     struct darray   group_buckets;
@@ -52,22 +54,19 @@ struct _iproc_actors {
 };
 
 /* makes a copy of traits0 */
-iproc_actors * iproc_actors_new          (int64_t       size,
-                                          struct vector *traits0);
-iproc_actors * iproc_actors_ref          (iproc_actors *actors);
-void           iproc_actors_unref        (iproc_actors *actors);
+iproc_actors * iproc_actors_new   (ssize_t dim);
+iproc_actors * iproc_actors_ref   (iproc_actors *actors);
+void           iproc_actors_unref (iproc_actors *actors);
 
 
-int64_t        iproc_actors_size         (iproc_actors *actors);
-int64_t        iproc_actors_dim          (iproc_actors *actors);
+ssize_t        iproc_actors_size  (const iproc_actors *actors);
+ssize_t        iproc_actors_dim   (const iproc_actors *actors);
 
 /* makes a copy of traits */
-void           iproc_actors_set          (iproc_actors *actors,
-                                          int64_t       actor_id,
-                                          struct vector *traits);
+ssize_t         iproc_actors_add  (iproc_actors *actors,
+                                   const struct vector *traits);
 struct vector * iproc_actors_get          (iproc_actors *actors,
                                           int64_t       actor_id);
-
 
 int64_t        iproc_actors_ngroup       (iproc_actors *actors);
 int64_t        iproc_actors_group        (iproc_actors *actors,

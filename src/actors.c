@@ -7,6 +7,9 @@
 
 #define group_bucket_compare size_compare
 
+static bool iproc_actors_reserve (iproc_actors *actors, ssize_t size);
+
+
 static int group_compare (const void *x, const void *y)
 {
     return vector_compare(((iproc_group *)x)->traits,
@@ -15,7 +18,7 @@ static int group_compare (const void *x, const void *y)
 
 
 static ssize_t
-iproc_actors_insert_group (iproc_actors *actors, struct vector *traits)
+iproc_actors_insert_group (iproc_actors *actors, const struct vector *traits)
 {
     assert(actors);
     assert(traits);
@@ -119,27 +122,27 @@ iproc_actors_free (iproc_actors *actors)
 
 
 iproc_actors *
-iproc_actors_new (int64_t      size,
-                  struct vector *traits0)
+iproc_actors_new (ssize_t dim)
 {
-    assert(0 <= size);
-    assert(traits0);
-    iproc_actors *actors = iproc_calloc(1, sizeof(*actors));
+    assert(dim >= 0);
+    iproc_actors *actors = malloc(sizeof(*actors));
 
-    if (actors
-        && darray_init(&actors->group_ids, int64_t)
-        && darray_init(&actors->group_traits, struct vector *)
-        && darray_init(&actors->group_buckets, iproc_group_bucket)) {
-        refcount_init(&actors->refcount);
-        
-        /* We rely on array_set_size clearing the tail to zeros. */
-        darray_resize(&actors->group_ids, size);
-        iproc_actors_insert_group(actors, traits0);
-        
-        return actors;
+    if (actors) {
+        if (darray_init(&actors->group_ids, int64_t)) {
+            if (darray_init(&actors->group_traits, struct vector *)) {
+                if (darray_init(&actors->group_buckets, iproc_group_bucket)) {
+                    if (refcount_init(&actors->refcount)) {
+                        actors->dim = dim;
+                        return actors;
+                    }
+                    darray_deinit(&actors->group_buckets);
+                }
+                darray_deinit(&actors->group_traits);
+            }
+            darray_deinit(&actors->group_ids);
+        }
+        free(actors);
     }
-
-    iproc_actors_free(actors);
     return NULL;
 }
 
@@ -171,35 +174,43 @@ iproc_actors_unref (iproc_actors *actors)
 }
 
 
-int64_t
-iproc_actors_size (iproc_actors *actors)
+ssize_t iproc_actors_size (const iproc_actors *actors)
 {
     assert(actors);
     return darray_size(&actors->group_ids);
 }
 
-int64_t
-iproc_actors_dim (iproc_actors *actors)
+ssize_t iproc_actors_dim (const iproc_actors *actors)
 {
     assert(actors);
-    struct vector *x0 = iproc_actors_group_traits(actors, 0);
-    int64_t n = vector_size(x0);
-    return n;
+    return actors->dim;
 }
 
-void
-iproc_actors_set (iproc_actors *actors,
-                  int64_t       actor_id,
-                  struct vector *traits)
+bool iproc_actors_reserve (iproc_actors *actors, ssize_t size)
 {
     assert(actors);
-    assert(0 <= actor_id);
-    assert(actor_id < iproc_actors_size(actors));
-    assert(traits);
+    assert(size >= 0);
+    
+    return darray_reserve(&actors->group_ids, size);
+}
+
+
+ssize_t iproc_actors_add (iproc_actors *actors, const struct vector *traits)
+{
+    assert(actors);
     assert(vector_size(traits) == iproc_actors_dim(actors));
 
-    int64_t group_id = iproc_actors_insert_group(actors, traits);
-    darray_index(&actors->group_ids, int64_t, actor_id) = group_id;
+    ssize_t id = -1;
+    
+    if (iproc_actors_reserve(actors, iproc_actors_size(actors) + 1)) {
+        id = iproc_actors_size(actors);
+    
+        int64_t group_id = iproc_actors_insert_group(actors, traits);
+    
+        darray_push_back(&actors->group_ids, &group_id);
+    }
+        
+    return id;
 }
 
 
