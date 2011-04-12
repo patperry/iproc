@@ -29,7 +29,7 @@ void intmap_deinit    (struct intmap *m);
 
 
 /* assign, copy, clear */
-bool                  intmap_assign_copy  (struct intmap       *a,
+bool                  intmap_assign_copy  (struct intmap       *m,
                                            const struct intmap *src);
 void *                intmap_copy_vals_to (const struct intmap *m,
                                            void                *dst);
@@ -63,19 +63,19 @@ void intmap_remove     (struct intmap *m, intptr_t key);
 void intmap_remove_all (struct intmap *m, const intptr_t *keys, ssize_t n);
 
 /* iteration */
-static inline void * intset_vals_begin (const struct intmap *m);
-static inline void * intset_vals_end   (const struct intmap *m);
-static inline void * intset_vals_ptr   (const struct intmap *m, ssize_t i);
+static inline void * intmap_vals_begin (const struct intmap *m);
+static inline void * intmap_vals_end   (const struct intmap *m);
+static inline void * intmap_vals_ptr   (const struct intmap *m, ssize_t i);
 
-static inline const intptr_t * intset_keys_begin (const struct intmap *m);
-static inline const intptr_t * intset_keys_end   (const struct intmap *m);
-static inline const intptr_t * intset_keys_ptr   (const struct intmap *m, ssize_t i);
+static inline const intptr_t * intmap_keys_begin (const struct intmap *m);
+static inline const intptr_t * intmap_keys_end   (const struct intmap *m);
+static inline const intptr_t * intmap_keys_ptr   (const struct intmap *m, ssize_t i);
 
 
 /* position-based operations */
-void * intmap_find (const struct intmap *m, intptr_t key, struct intmap_pos *pos);
-bool intmap_insert (      struct intmap *m, const struct intmap_pos *pos, const void *val);
-void intmap_erase  (      struct intmap *m, const struct intmap_pos *pos);
+void * intmap_find   (const struct intmap *m, intptr_t key, struct intmap_pos *pos);
+void * intmap_insert (      struct intmap *m, const struct intmap_pos *pos, const void *val);
+void   intmap_erase  (      struct intmap *m, const struct intmap_pos *pos);
 
 
 /* private functions */

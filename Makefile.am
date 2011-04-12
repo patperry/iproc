@@ -50,6 +50,8 @@ libcore_la_SOURCES = \
 	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
+	src/core/hashset.c \
+	src/core/hashset.h \
 	src/core/intmap.c \
 	src/core/intmap.h \
 	src/core/intset.c \
@@ -69,6 +71,7 @@ libcore_la_SOURCES = \
 	src/core/refcount.h \
 	src/core/svector.c \
 	src/core/svector.h \
+	src/core/trashstack.h \
 	src/core/util.h \
 	src/core/util.c \
 	src/core/vector.c \

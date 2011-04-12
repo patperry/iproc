@@ -205,18 +205,16 @@ void * intmap_find (const struct intmap *m, intptr_t key, struct intmap_pos *pos
 }
 
 
-bool intmap_insert (struct intmap *m, const struct intmap_pos *pos, const void *val)
+void * intmap_insert (struct intmap *m, const struct intmap_pos *pos, const void *val)
 {
     assert(m);
     assert(pos);
-    assert(val);
     
     if (!intmap_reserve(m, intmap_size(m) + 1))
-        return false;
+        return NULL;
     
     intset_insert(&m->keys, &pos->key);
-    darray_insert(&m->vals, pos->key.index, val);
-    return true;
+    return darray_insert(&m->vals, pos->key.index, val);
 }
 
 
