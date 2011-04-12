@@ -131,7 +131,6 @@ iproc_model_ctx_free (iproc_model_ctx *ctx)
 {
     if (ctx) {
         iproc_design_ctx_unref(ctx->design_ctx);
-
         iproc_model *model = ctx->model;
         darray_push_back(&model->ctxs, &ctx);
         iproc_model_unref(model);
@@ -192,6 +191,7 @@ iproc_model_ctx_new (iproc_model     *model,
         darray_resize(ctxs, n - 1);
         iproc_model_ref(model);
         refcount_init(&ctx->refcount);
+        ctx->design_ctx = NULL;
         iproc_model_ctx_set(ctx, isend, h);
         assert(ctx->model == model);
     } else {
@@ -216,7 +216,7 @@ iproc_model_ctx_set (iproc_model_ctx *ctx,
     iproc_svector_clear(ctx->deta);
     iproc_svector_clear(ctx->dp);
     iproc_svector_clear(ctx->dxbar);
-    iproc_design_ctx_unref(ctx->design_ctx);
+    if (ctx->design_ctx) iproc_design_ctx_unref(ctx->design_ctx);
 
     iproc_model *model = ctx->model;
     iproc_design *design = iproc_model_design(model);

@@ -15,14 +15,20 @@ void refcount_set (struct refcount *refcount, int count)
 {
     assert(refcount);
     assert(count > 0);
+    assert(count <= REFCOUNT_MAX);
     refcount->count = count;
 }
 
 
-void refcount_get (struct refcount *refcount)
+bool refcount_get (struct refcount *refcount)
 {
     assert(refcount);
+    
+    if (refcount->count == REFCOUNT_MAX)
+        return false;
+    
     refcount->count++;
+    return true;
 }
 
 
@@ -30,7 +36,7 @@ bool refcount_put (struct refcount *refcount,
                    void (*release) (struct refcount *refcount))
 {
     assert(refcount);
-    // assert(refcount->count != 0);    
+    assert(refcount->count > 0);    
 
     refcount->count--;
     if (refcount->count == 0) {
