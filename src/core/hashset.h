@@ -40,7 +40,7 @@ struct hashset_it {
         _hashset_init(set, hash, equal, sizeof(type), \
             offsetof(struct { struct node *next; type t; }, t)
 
-// TODO: bool hashset_init_copy (struct hashset *s, const struct hashset *src);
+bool hashset_init_copy (struct hashset *s, const struct hashset *src);
 void hashset_deinit (struct hashset *s);
 
 
