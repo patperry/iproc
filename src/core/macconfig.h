@@ -12,7 +12,6 @@
 
 #if defined(__APPLE__)
 
-
 # undef HAVE_INTTYPES_H
 # undef HAVE_STDBOOL_H
 # undef HAVE_STDINT_H
@@ -33,13 +32,10 @@
 # undef DOUBLE_IS_BIG_ENDIAN_IEEE754
 # undef DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 
-
-
 # define HAVE_INTTYPES_H   1
 # define HAVE_STDBOOL_H    1
 # define HAVE_STDINT_H     1
 # define HAVE_SYS_TYPES_H  1
-
 
 # define HAVE__BOOL    1
 # define HAVE_INTPTR_T 1
@@ -60,14 +56,12 @@
 #  define SIZEOF_INTPTR_T         4
 # endif
 
-
 # ifdef __BIG_ENDIAN__
 #  define WORDS_BIGENDIAN 1
 #  define DOUBLE_IS_BIG_ENDIAN_IEEE754
 # else
 #  define DOUBLE_IS_LITTLE_ENDIAN_IEEE754
 # endif
-
 
 #endif /* defined(__APPLE__) */
 

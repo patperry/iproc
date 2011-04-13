@@ -53,39 +53,34 @@
 typedef struct _iproc_sloglik iproc_sloglik;
 
 struct _iproc_sloglik {
-    struct refcount refcount;
-    
-    iproc_model   *model;
-    int64_t        isend;
-    
-    double         f;
-    struct vector  *grad;
-    bool           grad_cached;
-    
+	struct refcount refcount;
 
-    int64_t        nsend;
-    iproc_svector *nrecv;
-    iproc_svector *dxobs;
-    
-    double         gamma;
-    iproc_svector *dp;
-    iproc_svector *dxbar;
+	iproc_model *model;
+	int64_t isend;
+
+	double f;
+	struct vector *grad;
+	bool grad_cached;
+
+	int64_t nsend;
+	iproc_svector *nrecv;
+	iproc_svector *dxobs;
+
+	double gamma;
+	iproc_svector *dp;
+	iproc_svector *dxbar;
 };
 
-iproc_sloglik * iproc_sloglik_new             (iproc_model   *model,
-                                               int64_t        isend);
-iproc_sloglik * iproc_sloglik_ref             (iproc_sloglik *sll);
-void            iproc_sloglik_unref           (iproc_sloglik *sll);
+iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend);
+iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
+void iproc_sloglik_unref(iproc_sloglik * sll);
 
-void            iproc_sloglik_insert          (iproc_sloglik *sll,
-                                               iproc_history *history,
-                                               int64_t        jrecv);
-void            iproc_sloglik_insertm         (iproc_sloglik *sll,
-                                               iproc_history *history,
-                                               int64_t       *jrecv,
-                                               int64_t        n);
+void iproc_sloglik_insert(iproc_sloglik * sll,
+			  iproc_history * history, int64_t jrecv);
+void iproc_sloglik_insertm(iproc_sloglik * sll,
+			   iproc_history * history, int64_t * jrecv, int64_t n);
 
-double          iproc_sloglik_value           (iproc_sloglik *sll);
-struct vector *  iproc_sloglik_grad            (iproc_sloglik *sll);
+double iproc_sloglik_value(iproc_sloglik * sll);
+struct vector *iproc_sloglik_grad(iproc_sloglik * sll);
 
 #endif /* _IPROC_LOGLIK_H */

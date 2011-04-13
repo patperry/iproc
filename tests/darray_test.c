@@ -7,44 +7,39 @@
 
 #include "darray.h"
 
-
 static struct darray darray;
 static ssize_t size;
-static ssize_t * elts; // elements sorted in decending order
+static ssize_t *elts;		// elements sorted in decending order
 
-static void
-empty_setup_fixture (void **state)
+static void empty_setup_fixture(void **state)
 {
-    print_message("empty darray\n");
-    print_message("------------\n");
+	print_message("empty darray\n");
+	print_message("------------\n");
 }
 
-static void
-empty_setup (void **state)
+static void empty_setup(void **state)
 {
-    static ssize_t empty_elts[] = { };
-    
-    darray_init(&darray, ssize_t);
-    size = 0;
-    elts = empty_elts;
+	static ssize_t empty_elts[] = { };
+
+	darray_init(&darray, ssize_t);
+	size = 0;
+	elts = empty_elts;
 }
 
-static void
-singleton_setup_fixture (void **state)
+static void singleton_setup_fixture(void **state)
 {
-    print_message("singleton darray\n");
-    print_message("----------------\n");    
+	print_message("singleton darray\n");
+	print_message("----------------\n");
 }
 
-static void
-singleton_setup (void **state)
+static void singleton_setup(void **state)
 {
-    static ssize_t singleton_elts[] = { 1234 };
+	static ssize_t singleton_elts[] = { 1234 };
 
-    darray_init(&darray, ssize_t);
-    elts = singleton_elts;
-    size = 1;
-    darray_assign(&darray, singleton_elts, size);
+	darray_init(&darray, ssize_t);
+	elts = singleton_elts;
+	size = 1;
+	darray_assign(&darray, singleton_elts, size);
 }
 
 /*
@@ -88,50 +83,49 @@ unsorted7_setup (void **state)
 }
 */
 
-static void
-teardown (void **state)
+static void teardown(void **state)
 {
-    darray_deinit(&darray);
+	darray_deinit(&darray);
 }
 
-static void
-teardown_fixture (void **state)
+static void teardown_fixture(void **state)
 {
-    print_message("\n\n");
+	print_message("\n\n");
 }
 
-static void
-test_size (void **state)
+static void test_size(void **state)
 {
-    assert_int_equal(darray_size(&darray), size);
+	assert_int_equal(darray_size(&darray), size);
 }
 
-static void
-test_insert (void **state)
+static void test_insert(void **state)
 {
-    ssize_t i, j;
-    ssize_t val = 31337;
-    
-    for (i = 0; i <= size; i++) {
-        struct darray a;
-        
-        darray_init_copy(&a, &darray);
-        
-        darray_insert(&a, i, &val);
-        
-        assert_int_equal(darray_size(&a), size + 1);
-        for (j = 0; j <= size; j++) {
-            if (j < i) {
-                assert_int_equal(darray_index(&a, ssize_t, j), elts[j]);
-            } else if (j == i) {
-                assert_int_equal(darray_index(&a, ssize_t, j), val);
-            } else {
-                assert_int_equal(darray_index(&a, ssize_t, j), elts[j-1]);
-            }
-        }
-        
-        darray_deinit(&a);
-    }
+	ssize_t i, j;
+	ssize_t val = 31337;
+
+	for (i = 0; i <= size; i++) {
+		struct darray a;
+
+		darray_init_copy(&a, &darray);
+
+		darray_insert(&a, i, &val);
+
+		assert_int_equal(darray_size(&a), size + 1);
+		for (j = 0; j <= size; j++) {
+			if (j < i) {
+				assert_int_equal(darray_index(&a, ssize_t, j),
+						 elts[j]);
+			} else if (j == i) {
+				assert_int_equal(darray_index(&a, ssize_t, j),
+						 val);
+			} else {
+				assert_int_equal(darray_index(&a, ssize_t, j),
+						 elts[j - 1]);
+			}
+		}
+
+		darray_deinit(&a);
+	}
 }
 
 /*
@@ -212,51 +206,50 @@ test_push_existing (void **state)
     }
 }
 */
- 
-int
-main(int argc, char **argv)
+
+int main(int argc, char **argv)
 {
-    UnitTest tests[] = {
-        unit_test_setup(empty_suite, empty_setup_fixture),
-        unit_test_setup_teardown(test_size, empty_setup, teardown),
-        unit_test_setup_teardown(test_insert, empty_setup, teardown),
-        unit_test_teardown(empty_suite, teardown_fixture),
+	UnitTest tests[] = {
+		unit_test_setup(empty_suite, empty_setup_fixture),
+		unit_test_setup_teardown(test_size, empty_setup, teardown),
+		unit_test_setup_teardown(test_insert, empty_setup, teardown),
+		unit_test_teardown(empty_suite, teardown_fixture),
 
+		unit_test_setup(singleton_suite, singleton_setup_fixture),
+		unit_test_setup_teardown(test_size, singleton_setup, teardown),
+		unit_test_setup_teardown(test_insert, singleton_setup,
+					 teardown),
+		/*        
+		   unit_test_setup_teardown(test_push_min,           singleton_setup, teardown),
+		   unit_test_setup_teardown(test_push_min_minus_one, singleton_setup, teardown),
+		   unit_test_setup_teardown(test_push_max,           singleton_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_minus_one, singleton_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_plus_one,  singleton_setup, teardown),
+		   unit_test_setup_teardown(test_push_existing,      singleton_setup, teardown),
+		 */
+		unit_test_teardown(singleton_suite, teardown_fixture),
 
-        unit_test_setup(singleton_suite, singleton_setup_fixture),
-        unit_test_setup_teardown(test_size,               singleton_setup, teardown),
-        unit_test_setup_teardown(test_insert,             singleton_setup, teardown),
-        /*        
-        unit_test_setup_teardown(test_push_min,           singleton_setup, teardown),
-        unit_test_setup_teardown(test_push_min_minus_one, singleton_setup, teardown),
-        unit_test_setup_teardown(test_push_max,           singleton_setup, teardown),
-        unit_test_setup_teardown(test_push_max_minus_one, singleton_setup, teardown),
-        unit_test_setup_teardown(test_push_max_plus_one,  singleton_setup, teardown),
-        unit_test_setup_teardown(test_push_existing,      singleton_setup, teardown),
-         */
-        unit_test_teardown(singleton_suite, teardown_fixture),
-        
-         /*
-        unit_test_setup(sorted5_suite, sorted5_setup_fixture),
-        unit_test_setup_teardown(test_size,               sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_min,           sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_min_minus_one, sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_max,           sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_max_minus_one, sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_max_plus_one,  sorted5_setup, teardown),
-        unit_test_setup_teardown(test_push_existing,      sorted5_setup, teardown),
-        unit_test_teardown(sorted5_suite, teardown_fixture),
+		/*
+		   unit_test_setup(sorted5_suite, sorted5_setup_fixture),
+		   unit_test_setup_teardown(test_size,               sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_min,           sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_min_minus_one, sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_max,           sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_minus_one, sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_plus_one,  sorted5_setup, teardown),
+		   unit_test_setup_teardown(test_push_existing,      sorted5_setup, teardown),
+		   unit_test_teardown(sorted5_suite, teardown_fixture),
 
-        unit_test_setup(unsorted7_suite, unsorted7_setup_fixture),
-        unit_test_setup_teardown(test_size,               unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_min,           unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_min_minus_one, unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_max,           unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_max_minus_one, unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_max_plus_one,  unsorted7_setup, teardown),
-        unit_test_setup_teardown(test_push_existing,      unsorted7_setup, teardown),        
-        unit_test_teardown(unsorted7_suite, teardown_fixture),
-         */
-    };
-    return run_tests(tests);
+		   unit_test_setup(unsorted7_suite, unsorted7_setup_fixture),
+		   unit_test_setup_teardown(test_size,               unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_min,           unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_min_minus_one, unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_max,           unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_minus_one, unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_max_plus_one,  unsorted7_setup, teardown),
+		   unit_test_setup_teardown(test_push_existing,      unsorted7_setup, teardown),        
+		   unit_test_teardown(unsorted7_suite, teardown_fixture),
+		 */
+	};
+	return run_tests(tests);
 }

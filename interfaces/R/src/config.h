@@ -9,5 +9,4 @@
 #define f77int      long int
 #define F77_INT_MAX LONG_MAX
 
-
 #endif /* _IPROC_CONFIG_H */

@@ -8,118 +8,109 @@
 #include "util.h"
 #include "vrecip.h"
 
-
-
-static void
-iproc_vrecip_free (iproc_vrecip *v)
+static void iproc_vrecip_free(iproc_vrecip * v)
 {
-    if (v) {
-        darray_deinit(&v->intvls);
-        iproc_free(v);
-    }
+	if (v) {
+		darray_deinit(&v->intvls);
+		iproc_free(v);
+	}
+}
+
+static void design_var_free(iproc_design_var * var)
+{
+	iproc_vrecip *v = container_of(var, iproc_vrecip, var);
+	iproc_vrecip_unref(v);
 }
 
 static void
-design_var_free (iproc_design_var *var)
+design_var_get_dxs(iproc_design_var * var,
+		   iproc_design_ctx * ctx, int64_t offset)
 {
-    iproc_vrecip *v = container_of(var, iproc_vrecip, var);
-    iproc_vrecip_unref(v);
+	iproc_vrecip *v = container_of(var, iproc_vrecip, var);
+	struct darray *intvls = &v->intvls;
+	int64_t nintvl = darray_size(intvls);
+	iproc_history *history = ctx->history;
+	int64_t isend = ctx->isend;
+
+	if (!history || nintvl == 0)
+		return;
+
+	double tcur = iproc_history_tcur(history);
+	iproc_trace *trace = iproc_history_recv(history, isend);
+
+	int64_t i, n = iproc_trace_size(trace);
+	for (i = 0; i < n; i++) {
+		iproc_events *events = iproc_trace_get(trace, i);
+		iproc_event_meta *meta = iproc_events_last(events);
+
+		if (!meta)
+			continue;
+
+		int64_t jsend = iproc_events_id(events);
+		double t = meta->time;
+		double dt = tcur - t;
+		ssize_t pos = darray_binary_search(intvls,
+						   &dt, double_compare);
+
+		if (pos < 0)
+			pos = ~pos;
+
+		if (pos < nintvl) {
+			/* (jsend, [(pos, +1.0)]) */
+			iproc_svector *dx =
+			    iproc_design_ctx_dx(ctx, jsend, false);
+			iproc_svector_inc(dx, offset + pos, 1.0);
+		}
+	}
 }
 
-static void
-design_var_get_dxs (iproc_design_var *var,
-                    iproc_design_ctx *ctx,
-                    int64_t           offset)
+iproc_vrecip *iproc_vrecip_new(double *intvls, int64_t n)
 {
-    iproc_vrecip *v = container_of(var, iproc_vrecip, var);
-    struct darray *intvls = &v->intvls;
-    int64_t nintvl = darray_size(intvls);
-    iproc_history *history = ctx->history;
-    int64_t isend = ctx->isend;
+	assert(n >= 0);
+	assert(n == 0 || intvls);
 
-    if (!history || nintvl == 0)
-        return;
-    
-    double tcur = iproc_history_tcur(history);
-    iproc_trace *trace = iproc_history_recv(history, isend);
-    
-    int64_t i, n = iproc_trace_size(trace);
-    for (i = 0; i < n; i++) {
-        iproc_events *events = iproc_trace_get(trace, i);
-        iproc_event_meta *meta = iproc_events_last(events);
-        
-        if (!meta)
-            continue;
-        
-        int64_t jsend = iproc_events_id(events);
-        double t = meta->time;
-        double dt = tcur - t;
-        ssize_t pos = darray_binary_search(intvls,
-                                           &dt, double_compare);
-        
-        if (pos < 0)
-            pos = ~pos;
+	iproc_vrecip *v = iproc_calloc(1, sizeof(*v));
 
-        if (pos < nintvl) {
-            /* (jsend, [(pos, +1.0)]) */
-            iproc_svector *dx = iproc_design_ctx_dx(ctx, jsend, false);
-            iproc_svector_inc(dx, offset + pos, 1.0);
-        }
-    }
+	if (!v)
+		return NULL;
+
+	iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
+	refcount_init(&v->refcount);
+
+	if (!darray_init(&v->intvls, double)) {
+		iproc_vrecip_free(v);
+		v = NULL;
+	} else {
+		int64_t i;
+		for (i = 0; i < n; i++) {
+			assert(intvls[i] > 0.0);
+			assert(i == 0 || intvls[i] > intvls[i - 1]);
+
+			darray_push_back(&v->intvls, intvls + i);
+		}
+	}
+
+	return v;
 }
 
-iproc_vrecip *
-iproc_vrecip_new (double       *intvls,
-                  int64_t       n)
+iproc_vrecip *iproc_vrecip_ref(iproc_vrecip * v)
 {
-    assert(n >= 0);
-    assert(n == 0 || intvls);
+	if (v) {
+		refcount_get(&v->refcount);
+	}
 
-    iproc_vrecip *v = iproc_calloc(1, sizeof(*v));
-
-    if (!v)
-        return NULL;
-    
-    iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
-    refcount_init(&v->refcount);
-
-    if (!darray_init(&v->intvls, double)) {
-        iproc_vrecip_free(v);
-        v = NULL;
-    } else {
-        int64_t i;
-        for (i = 0; i < n; i++) {
-            assert(intvls[i] > 0.0);
-            assert(i == 0 || intvls[i] > intvls[i-1]);
-
-            darray_push_back(&v->intvls, intvls + i);
-        }
-    }
-
-    return v;
+	return v;
 }
 
-iproc_vrecip *
-iproc_vrecip_ref (iproc_vrecip *v)
+static void iproc_vrecip_release(struct refcount *refcount)
 {
-    if (v) {
-        refcount_get(&v->refcount);
-    }
-
-    return v;
+	iproc_vrecip *v = container_of(refcount, iproc_vrecip, refcount);
+	iproc_vrecip_free(v);
 }
 
-static void
-iproc_vrecip_release (struct refcount *refcount)
+void iproc_vrecip_unref(iproc_vrecip * v)
 {
-    iproc_vrecip *v = container_of(refcount, iproc_vrecip, refcount);
-    iproc_vrecip_free(v);
-}
-
-void
-iproc_vrecip_unref (iproc_vrecip *v)
-{
-    if (v) {
-        refcount_put(&v->refcount, iproc_vrecip_release);
-    }
+	if (v) {
+		refcount_put(&v->refcount, iproc_vrecip_release);
+	}
 }
