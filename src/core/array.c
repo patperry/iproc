@@ -86,6 +86,7 @@ bool _array_reinit (struct array *a, ssize_t n, size_t elt_size)
         a->data = data;
         a->size = n;
         a->elt_size = elt_size;
+        a->owner = true;
         
         return a;
     }
