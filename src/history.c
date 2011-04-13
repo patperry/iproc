@@ -34,6 +34,21 @@ trace_array_clear (struct darray *array)
     }
 }
 
+static void
+trace_array_deinit (struct darray *array)
+{
+    ssize_t n = darray_size(array);
+    ssize_t i;
+    
+    for (i = 0; i < n; i++) {
+        iproc_history_trace *ht = &darray_index(array, iproc_history_trace, i);
+        if (ht->trace)
+            iproc_trace_unref(ht->trace);
+    }
+    
+    darray_deinit(array);
+}
+
 static iproc_trace *
 trace_array_get (double       tcur,
                  struct darray *array,
@@ -67,8 +82,8 @@ static void
 iproc_history_free (iproc_history *history)
 {
     if (history) {
-        darray_deinit(&history->send);
-        darray_deinit(&history->recv);
+        trace_array_deinit(&history->send);
+        trace_array_deinit(&history->recv);
         iproc_free(history);
     }
 }
