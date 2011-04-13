@@ -184,11 +184,10 @@ iproc_model_ctx_new (iproc_model     *model,
 
     iproc_model_ctx *ctx;
     struct darray *ctxs = &model->ctxs;
-    int64_t n = darray_size(ctxs);
     
-    if (n > 0) {
-        ctx = darray_index(ctxs, iproc_model_ctx *, n - 1);
-        darray_resize(ctxs, n - 1);
+    if (!darray_empty(ctxs)) {
+        ctx = darray_back(ctxs, iproc_model_ctx *);
+        darray_pop_back(ctxs);
         iproc_model_ref(model);
         refcount_init(&ctx->refcount);
         ctx->design_ctx = NULL;
