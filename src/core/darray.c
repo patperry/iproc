@@ -7,7 +7,40 @@
 #include "darray.h"
 
 
-#define INITIAL_CAPACITY 1
+#define INITIAL_CAPACITY   1
+#define MIN_CAPACITY_DELTA 4
+
+// 0, 1, 5, 11, 20, 34, 55, 86, 133, 203, 308, ...
+static bool darray_grow (struct darray *a)
+{
+    assert(a);
+
+    ssize_t nmax = darray_max_size(a);
+    ssize_t n0 = darray_capacity(a);
+    ssize_t inc = n0 ? (n0 >> 1) + MIN_CAPACITY_DELTA // grow by roughly 1.5
+                     : INITIAL_CAPACITY;
+    ssize_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
+
+    if (n != n0 && darray_reserve(a, n)) {
+        return a;
+    }
+
+    return NULL;
+}
+
+
+static bool darray_reserve_insert (struct darray *a, ssize_t delta)
+{
+    assert(a);
+    assert(delta >= 0);
+
+    do {
+        if (darray_size(a) <= darray_capacity(a) - delta)
+            return true;
+    } while (darray_grow(a));
+
+    return false;
+}
 
 
 struct darray * _darray_init (struct darray *a, size_t elt_size)
@@ -123,7 +156,8 @@ static void * darray_insert_space (struct darray *a, ssize_t i, ssize_t n)
 
     void *src, *dst;
     
-    if (darray_resize_with(a, size, NULL)) {
+    if (darray_reserve_insert(a, n)) {
+        darray_resize_with(a, size, NULL);
         src = darray_ptr(a, i); // compute dst after resize in case of realloc
         dst = darray_ptr(a, i + n);
         memmove(dst, src, tail_size);
@@ -235,34 +269,16 @@ void darray_clear (struct darray *a)
 }
 
 
-static bool darray_grow (struct darray *a)
-{
-    assert(a);
-
-    size_t nmax = darray_max_size(a);
-    size_t n0 = darray_capacity(a);
-    size_t inc = n0 ? (n0 >> 1) + 1 : INITIAL_CAPACITY;
-    size_t n = (n0 <= nmax - inc) ? n0 + inc : nmax;
-    
-    if (n != n0 && _array_reinit(&a->array, n, darray_elt_size(a))) {
-        return a;
-    }
-    
-    return NULL;
-}
-
-
 bool darray_reserve (struct darray *a, ssize_t n)
 {
     assert(a);
     assert(n <= darray_max_size(a));
     
-    while (darray_capacity(a) < n) {
-        if (!darray_grow(a))
-            return NULL;
+    if (darray_capacity(a) >= n
+        || _array_reinit(&a->array, n, darray_elt_size(a))) {
+        return true;
     }
-    
-    return a;
+    return false;
 }
 
 
