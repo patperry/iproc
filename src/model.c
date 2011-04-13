@@ -11,7 +11,7 @@ compute_logprobs0 (iproc_design *design,
                    int64_t       isend,
                    struct vector *coefs,
                    struct vector *logprobs,
-                   double       *logsumweight)
+                   double        *logsumweight)
 {
     assert(design);
     assert(coefs);
@@ -49,6 +49,7 @@ iproc_group_models_init (struct darray  *group_models,
     int64_t dim = iproc_design_dim(design);
     iproc_actors *senders = iproc_design_senders(design);
 
+    darray_init(group_models, iproc_group_model);
     darray_resize(group_models, iproc_actors_ngroup(senders));
 
     /* We have to loop over all senders, not over all groups, because we
@@ -141,11 +142,9 @@ iproc_model_free (iproc_model *model)
             iproc_model_ctx_free_dealloc(ctx);
         }
         darray_deinit(&model->ctxs);
-
+        iproc_group_models_deinit(&model->group_models);
         vector_free(model->coefs);
         iproc_design_unref(model->design);
-        iproc_group_models_deinit(&model->group_models);
-
         iproc_free(model);
     }
 }
@@ -153,7 +152,7 @@ iproc_model_free (iproc_model *model)
 iproc_model *
 iproc_model_new (iproc_design *design,
                  struct vector *coefs,
-                 bool          has_loops)
+                 bool           has_loops)
 {
     assert(design);
     assert(coefs);
@@ -165,7 +164,6 @@ iproc_model_new (iproc_design *design,
     model->design = iproc_design_ref(design);
     model->coefs = vector_new_copy(coefs);
     model->has_loops = has_loops;
-    darray_init(&model->group_models, iproc_group_model);
     iproc_group_models_init(&model->group_models, design, coefs);
     darray_init(&model->ctxs, iproc_model_ctx *);
     refcount_init(&model->refcount);
