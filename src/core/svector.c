@@ -25,8 +25,8 @@ static void
 iproc_svector_free (iproc_svector *svector)
 {
     if (svector) {
-        darray_deinit(&svector->index);
         darray_deinit(&svector->value);
+        darray_deinit(&svector->index);
         iproc_free(svector);
     }
 }

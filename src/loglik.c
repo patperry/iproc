@@ -19,8 +19,8 @@ iproc_loglik_free (iproc_loglik *loglik)
         }
 
         darray_deinit(array);
-        iproc_model_unref(loglik->model);
         vector_free(loglik->grad);
+        iproc_model_unref(loglik->model);
         iproc_free(loglik);
     }
 }
