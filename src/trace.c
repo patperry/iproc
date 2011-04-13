@@ -143,8 +143,16 @@ iproc_trace_unref (iproc_trace *trace)
 void
 iproc_trace_clear (iproc_trace *trace)
 {
+    ssize_t i, n;
+    
     trace->tcur = -INFINITY;
     iproc_trace_clear_pending(trace);
+    
+    n = darray_size(&trace->events);
+    for (i = 0; i < n; i++) {
+        iproc_events_deinit(&darray_index(&trace->events, iproc_events, i));
+    }
+    
     darray_clear(&trace->events);
 }
 
