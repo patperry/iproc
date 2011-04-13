@@ -45,15 +45,18 @@ iproc_fit_init (iproc_fit *fit)
     int64_t dim = iproc_model_dim(fit->model);
 
     fit->inv_hess = NULL;
-    fit->grad = vector_new(dim);
+    fit->x0 = vector_new(dim);
+    fit->x = vector_new(dim);
     fit->grad0 = vector_new(dim);
+    fit->grad = vector_new(dim);
     fit->search_dir = vector_new(dim);
     fit->loglik = iproc_loglik_new(fit->model, fit->messages);
     
-    if (!(fit->grad && fit->grad0 && fit->search_dir && fit->loglik))
+    if (!(fit->x0 && fit->x && fit->grad0 && fit->grad && fit->search_dir && fit->loglik))
         return false;
     
     eval_objective(fit->loglik, fit->penalty, &fit->value, fit->grad);
+    vector_assign_copy(fit->x, fit->model->coefs);
     fit->value0 = NAN;
     fit->step = 1.0;
     
@@ -81,7 +84,6 @@ iproc_fit_new (iproc_model    *model0,
     fit->penalty = penalty;
     fit->loglik = NULL;
 
-
     if (!iproc_fit_init(fit)) {
         iproc_fit_free(fit);
         fit = NULL;
@@ -96,8 +98,10 @@ iproc_fit_free (iproc_fit *fit)
     if (fit) {
         iproc_loglik_unref(fit->loglik);
         vector_free(fit->search_dir);
-        vector_free(fit->grad0);
         vector_free(fit->grad);
+        vector_free(fit->grad0);
+        vector_free(fit->x);
+        vector_free(fit->x0);
         iproc_matrix_unref(fit->inv_hess);
         iproc_messages_unref(fit->messages);        
         iproc_model_unref(fit->model);
@@ -105,23 +109,22 @@ iproc_fit_free (iproc_fit *fit)
     }
 }
 
-static void
-linesearch (iproc_fit *fit)
+static void linesearch (iproc_fit *fit)
 {
     assert(fit);
 
     iproc_model *model = fit->model;
     iproc_messages *messages = fit->messages;
     double penalty = fit->penalty;
-    iproc_design *design = model->design;
+    iproc_design *design = iproc_design_ref(model->design);
     int has_loops = model->has_loops;
     iproc_loglik *loglik = fit->loglik;
     
-    const struct vector *x0 = model->coefs;
-    struct vector *x = vector_new_copy(x0);
     struct vector *search_dir = fit->search_dir;
     struct vector *grad0 = fit->grad; /* swap grad0 and grad */
     struct vector *grad = fit->grad0;
+    struct vector *x0 = fit->x;       /* swap x0 and x */
+    struct vector *x = fit->x0;
     double value0 = fit->value;
     double value;
     
@@ -146,15 +149,15 @@ linesearch (iproc_fit *fit)
             dsave, task_len);
     
     while (strncmp(task, "FG", strlen("FG")) == 0) {
-        iproc_loglik_unref(loglik);        
-        iproc_model_unref(model);
-
         /* Take a step and create a new model */
         vector_assign_copy(x, x0);
         vector_axpy(stp, search_dir, x);
+
+        iproc_model_unref(model);
         model = iproc_model_new(design, x, has_loops);
         
         /* Update the loglik, value, and gradient */
+        iproc_loglik_unref(loglik);        
         loglik = iproc_loglik_new(model, messages);
         eval_objective(loglik, penalty, &value, grad);
         
@@ -163,7 +166,6 @@ linesearch (iproc_fit *fit)
         
         dcsrch_(&stp, &f, &g, &ftol, &gtol, &xtol, task, &stpmin, &stpmax,
                 isave, dsave, task_len);
-
     }
 
     const char * xtol_msg = "WARNING: XTOL TEST SATISFIED";
@@ -173,10 +175,11 @@ linesearch (iproc_fit *fit)
     }
 
 cleanup:
-    
-    vector_free(x);
+    iproc_design_unref(design);
     
     fit->step = stp;
+    fit->x = x;
+    fit->x0 = x0;
     fit->value = value;
     fit->value0 = value0;
     fit->grad = grad;
