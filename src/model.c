@@ -7,9 +7,9 @@
 #include "util.h"
 
 static void
-compute_logprobs0(iproc_design * design,
+compute_logprobs0(const iproc_design * design,
 		  int64_t isend,
-		  struct vector *coefs,
+		  const struct vector *coefs,
 		  struct vector *logprobs, double *logsumweight)
 {
 	assert(design);
@@ -37,66 +37,86 @@ compute_logprobs0(iproc_design * design,
 	*logsumweight = log_sum_exp + max;
 }
 
-static void
-iproc_group_models_init(struct darray *group_models,
-			iproc_design * design, struct vector *coefs)
+static bool cohort_model_init (struct cohort_model *cm,
+			       const struct design *design,
+			       ssize_t isend,
+			       const struct vector *coefs)
 {
-	int64_t i, nsender = iproc_design_nsender(design);
-	int64_t nreceiver = iproc_design_nreceiver(design);
-	int64_t dim = iproc_design_dim(design);
-	iproc_actors *senders = iproc_design_senders(design);
+	ssize_t nreceiver = iproc_design_nreceiver(design);
+	ssize_t dim = iproc_design_dim(design);
 
-	darray_init(group_models, iproc_group_model);
-	darray_resize(group_models, iproc_actors_ngroup(senders));
+	/* compute initial log(probs) */
+	cm->log_p0 = vector_new(nreceiver);
+	compute_logprobs0(design, isend, coefs, cm->log_p0,
+			  &cm->log_W0);
+	
+	/* compute initial probs */
+	cm->p0 = vector_new_copy(cm->log_p0);
+	vector_exp(cm->p0);
+	
+	/* compute initial covariate mean */
+	cm->xbar0 = vector_new(dim);
+	iproc_design_mul0(1.0, IPROC_TRANS_TRANS, design, isend, cm->p0,
+			  0.0, cm->xbar0);
+	
+	return true;
+}
 
-	/* We have to loop over all senders, not over all groups, because we
+static void cohort_model_deinit (struct cohort_model *cm)
+{
+	assert(cm);
+	vector_free(cm->xbar0);
+	vector_free(cm->log_p0);
+	vector_free(cm->p0);
+	
+}
+
+
+static void cohort_models_init(struct darray *cohort_models,
+			       const iproc_design * design,
+			       const struct vector *coefs)
+{
+	ssize_t i, nsender = iproc_design_nsender(design);
+	const iproc_actors *senders = iproc_design_senders(design);
+
+	darray_init(cohort_models, iproc_group_model);
+	darray_resize(cohort_models, iproc_actors_ngroup(senders));
+
+	/* We have to loop over all senders, not over all cohorts, because we
 	 * need a representative sender for each group when we call
 	 * iproc_design_ctx_new(design, NULL, i).
 	 */
 	for (i = 0; i < nsender; i++) {
-		/* find the group of the sender */
-		int64_t g = iproc_actors_group(senders, i);
-		iproc_group_model *group = &(darray_index(group_models,
-							  iproc_group_model,
-							  g));
+		/* find the cohort of the sender */
+		intptr_t c = iproc_actors_group(senders, i);
+		struct cohort_model *cm = &(darray_index(cohort_models,
+							 struct cohort_model,
+							 c));
 
 		/* continue if the group is already initialized */
-		if (group->p0)
+		if (cm->p0)
 			continue;
 
-		/* compute initial log(probs) */
-		group->log_p0 = vector_new(nreceiver);
-		compute_logprobs0(design, i, coefs, group->log_p0,
-				  &group->log_W0);
-
-		/* compute initial probs */
-		group->p0 = vector_new_copy(group->log_p0);
-		vector_exp(group->p0);
-
-		/* compute initial covariate mean */
-		group->xbar0 = vector_new(dim);
-		iproc_design_mul0(1.0, IPROC_TRANS_TRANS, design, i, group->p0,
-				  0.0, group->xbar0);
+		cohort_model_init(cm, design, i, coefs);
 	}
 }
 
-static void iproc_group_models_deinit(struct darray *group_models)
+
+static void cohort_models_deinit(struct darray *cohort_models)
 {
-	if (!group_models)
+	if (!cohort_models)
 		return;
 
-	int64_t i, n = darray_size(group_models);
+	int64_t i, n = darray_size(cohort_models);
 
 	for (i = 0; i < n; i++) {
-		iproc_group_model *group = &(darray_index(group_models,
-							  iproc_group_model,
+		struct cohort_model *cm = &(darray_index(cohort_models,
+							  struct cohort_model,
 							  i));
-		vector_free(group->xbar0);
-		vector_free(group->log_p0);
-		vector_free(group->p0);
+		cohort_model_deinit(cm);
 	}
 
-	darray_deinit(group_models);
+	darray_deinit(cohort_models);
 }
 
 iproc_group_model *iproc_model_send_group(iproc_model * model, int64_t isend)
@@ -106,8 +126,8 @@ iproc_group_model *iproc_model_send_group(iproc_model * model, int64_t isend)
 	assert(isend < iproc_model_nsender(model));
 
 	struct darray *group_models = &model->group_models;
-	iproc_design *design = iproc_model_design(model);
-	iproc_actors *senders = iproc_design_senders(design);
+	const iproc_design *design = iproc_model_design(model);
+	const iproc_actors *senders = iproc_design_senders(design);
 	int64_t g = iproc_actors_group(senders, isend);
 	return &(darray_index(group_models, iproc_group_model, g));
 }
@@ -134,7 +154,7 @@ static void iproc_model_free(iproc_model * model)
 			iproc_model_ctx_free_dealloc(ctx);
 		}
 		darray_deinit(&model->ctxs);
-		iproc_group_models_deinit(&model->group_models);
+		cohort_models_deinit(&model->group_models);
 		vector_free(model->coefs);
 		iproc_design_unref(model->design);
 		iproc_free(model);
@@ -154,7 +174,7 @@ iproc_model *iproc_model_new(iproc_design * design,
 	model->design = iproc_design_ref(design);
 	model->coefs = vector_new_copy(coefs);
 	model->has_loops = has_loops;
-	iproc_group_models_init(&model->group_models, design, coefs);
+	cohort_models_init(&model->group_models, design, coefs);
 	darray_init(&model->ctxs, iproc_model_ctx *);
 	refcount_init(&model->refcount);
 

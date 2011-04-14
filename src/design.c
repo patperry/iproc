@@ -154,7 +154,7 @@ void iproc_design_unref(iproc_design * design)
 	refcount_put(&design->refcount, iproc_design_release);
 }
 
-int64_t iproc_design_dim(iproc_design * design)
+int64_t iproc_design_dim(const iproc_design * design)
 {
 	assert(design);
 	return design->dim;
@@ -177,8 +177,8 @@ void iproc_design_append(iproc_design * design, iproc_design_var * var)
 static void
 iproc_design_mul0_reffects(double alpha,
 			   iproc_trans trans,
-			   iproc_design * design,
-			   struct vector *x, struct vector *y)
+			   const iproc_design * design,
+			   const struct vector *x, struct vector *y)
 {
 	if (!design->has_reffects)
 		return;
@@ -198,8 +198,8 @@ iproc_design_mul0_reffects(double alpha,
 static void
 iproc_design_muls0_reffects(double alpha,
 			    iproc_trans trans,
-			    iproc_design * design,
-			    iproc_svector * x, struct vector *y)
+			    const iproc_design * design,
+			    const iproc_svector * x, struct vector *y)
 {
 	if (!design->has_reffects)
 		return;
@@ -234,19 +234,20 @@ iproc_design_muls0_reffects(double alpha,
 static void
 iproc_design_mul0_static(double alpha,
 			 iproc_trans trans,
-			 iproc_design * design,
-			 int64_t isend, struct vector *x, struct vector *y)
+			 const iproc_design * design,
+			 int64_t isend, const struct vector *x,
+			 struct vector *y)
 {
 	if (design->nstatic == 0)
 		return;
 
-	iproc_actors *senders = iproc_design_senders(design);
-	iproc_actors *receivers = iproc_design_receivers(design);
+	const iproc_actors *senders = iproc_design_senders(design);
+	const iproc_actors *receivers = iproc_design_receivers(design);
 	int64_t p = iproc_actors_dim(senders);
 	int64_t q = iproc_actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
 	int64_t nstatic = design->nstatic;
-	struct vector *s = iproc_actors_get(senders, isend);
+	const struct vector *s = iproc_actors_get(senders, isend);
 	struct vector *z = vector_new(q);
 
 	if (trans == IPROC_TRANS_NOTRANS) {
@@ -282,20 +283,21 @@ iproc_design_mul0_static(double alpha,
 static void
 iproc_design_muls0_static(double alpha,
 			  iproc_trans trans,
-			  iproc_design * design,
-			  int64_t isend, iproc_svector * x, struct vector *y)
+			  const iproc_design * design,
+			  int64_t isend, const iproc_svector * x,
+			  struct vector *y)
 {
 	if (design->nstatic == 0)
 		return;
 
-	iproc_actors *senders = iproc_design_senders(design);
-	iproc_actors *receivers = iproc_design_receivers(design);
+	const iproc_actors *senders = iproc_design_senders(design);
+	const iproc_actors *receivers = iproc_design_receivers(design);
 	int64_t p = iproc_actors_dim(senders);
 	int64_t q = iproc_actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
 	int64_t nstatic = design->nstatic;
 	int64_t ix_end = ix_begin + nstatic;
-	struct vector *s = iproc_actors_get(senders, isend);
+	const struct vector *s = iproc_actors_get(senders, isend);
 	struct vector *z = vector_new(q);
 
 	if (trans == IPROC_TRANS_NOTRANS) {
@@ -347,9 +349,9 @@ iproc_design_muls0_static(double alpha,
 void
 iproc_design_mul0(double alpha,
 		  iproc_trans trans,
-		  iproc_design * design,
+		  const iproc_design * design,
 		  int64_t isend,
-		  struct vector *x, double beta, struct vector *y)
+		  const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);
@@ -379,9 +381,9 @@ iproc_design_mul0(double alpha,
 void
 iproc_design_muls0(double alpha,
 		   iproc_trans trans,
-		   iproc_design * design,
+		   const iproc_design * design,
 		   int64_t isend,
-		   iproc_svector * x, double beta, struct vector *y)
+		   const iproc_svector * x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);
@@ -410,30 +412,28 @@ iproc_design_muls0(double alpha,
 
 /////// make these static ?
 
-int64_t iproc_design_nsender(iproc_design * design)
+int64_t iproc_design_nsender(const iproc_design * design)
 {
 	assert(design);
-	iproc_actors *senders = iproc_design_senders(design);
+	const iproc_actors *senders = iproc_design_senders(design);
 	return iproc_actors_size(senders);
 }
 
-int64_t iproc_design_nreceiver(iproc_design * design)
+int64_t iproc_design_nreceiver(const iproc_design * design)
 {
 	assert(design);
-	iproc_actors *receivers = iproc_design_receivers(design);
+	const iproc_actors *receivers = iproc_design_receivers(design);
 	return iproc_actors_size(receivers);
 }
 
-iproc_actors *iproc_design_senders(iproc_design * design)
+iproc_actors *iproc_design_senders(const iproc_design * design)
 {
 	assert(design);
-	iproc_actors *senders = design->senders;
-	return senders;
+	return design->senders;
 }
 
-iproc_actors *iproc_design_receivers(iproc_design * design)
+iproc_actors *iproc_design_receivers(const iproc_design * design)
 {
 	assert(design);
-	iproc_actors *receivers = design->receivers;
-	return receivers;
+	return design->receivers;
 }

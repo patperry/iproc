@@ -193,36 +193,35 @@ ssize_t iproc_actors_add(iproc_actors * actors, const struct vector * traits)
 	return id;
 }
 
-struct vector *iproc_actors_get(iproc_actors * actors, int64_t actor_id)
+const struct vector *iproc_actors_get(const iproc_actors * actors, int64_t actor_id)
 {
 	assert(actors);
 	assert(0 <= actor_id);
 	assert(actor_id < iproc_actors_size(actors));
 
 	int64_t g = iproc_actors_group(actors, actor_id);
-	struct vector *x = iproc_actors_group_traits(actors, g);
-	return x;
+	return iproc_actors_group_traits(actors, g);
 }
 
-int64_t iproc_actors_ngroup(iproc_actors * actors)
+int64_t iproc_actors_ngroup(const const iproc_actors * actors)
 {
 	assert(actors);
 	return darray_size(&actors->group_traits);
 }
 
-int64_t iproc_actors_group(iproc_actors * actors, int64_t actor_id)
+int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id)
 {
 	assert(actors);
 	assert(0 <= actor_id);
 	assert(actor_id < iproc_actors_size(actors));
 
-	struct darray *group_ids = &actors->group_ids;
+	const struct darray *group_ids = &actors->group_ids;
 	int64_t g = darray_index(group_ids, int64_t, actor_id);
 	return g;
 }
 
-struct vector *iproc_actors_group_traits(iproc_actors * actors,
-					 int64_t group_id)
+const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
+					       int64_t group_id)
 {
 	assert(actors);
 	assert(0 <= group_id);
@@ -237,8 +236,8 @@ struct vector *iproc_actors_group_traits(iproc_actors * actors,
 void
 iproc_actors_mul(double alpha,
 		 iproc_trans trans,
-		 iproc_actors * actors,
-		 struct vector *x, double beta, struct vector *y)
+		 const iproc_actors * actors,
+		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(actors);
 	assert(x);
@@ -254,7 +253,7 @@ iproc_actors_mul(double alpha,
 
 	int64_t n = iproc_actors_size(actors);
 	int64_t i;
-	struct vector *row;
+	const struct vector *row;
 	double dot, entry;
 
 	if (beta == 0) {
@@ -282,8 +281,8 @@ iproc_actors_mul(double alpha,
 void
 iproc_actors_muls(double alpha,
 		  iproc_trans trans,
-		  iproc_actors * actors,
-		  iproc_svector * x, double beta, struct vector *y)
+		  const iproc_actors * actors,
+		  const iproc_svector * x, double beta, struct vector *y)
 {
 	assert(actors);
 	assert(x);
@@ -299,7 +298,7 @@ iproc_actors_muls(double alpha,
 
 	int64_t n = iproc_actors_size(actors);
 	int64_t i;
-	struct vector *row;
+	const struct vector *row;
 	double dot, entry;
 
 	if (beta == 0) {
@@ -329,8 +328,8 @@ iproc_actors_muls(double alpha,
 void
 iproc_actors_matmul(double alpha,
 		    iproc_trans trans,
-		    iproc_actors * actors,
-		    iproc_matrix * x, double beta, iproc_matrix * y)
+		    const iproc_actors * actors,
+		    const iproc_matrix * x, double beta, iproc_matrix * y)
 {
 	assert(actors);
 	assert(x);

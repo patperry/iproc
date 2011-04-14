@@ -200,7 +200,7 @@
 		22597412133D0AFB0022B52E /* messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = messages.h; path = src/messages.h; sourceTree = "<group>"; };
 		22597413133D0AFB0022B52E /* model-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "model-ctx.c"; path = "src/model-ctx.c"; sourceTree = "<group>"; };
 		22597414133D0AFB0022B52E /* model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model.c; path = src/model.c; sourceTree = "<group>"; };
-		22597415133D0AFB0022B52E /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = src/model.h; sourceTree = "<group>"; };
+		22597415133D0AFB0022B52E /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = src/model.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597416133D0AFB0022B52E /* sloglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sloglik.c; path = src/sloglik.c; sourceTree = "<group>"; };
 		22597417133D0AFB0022B52E /* sloglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sloglik.h; path = src/sloglik.h; sourceTree = "<group>"; };
 		22597418133D0AFB0022B52E /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };

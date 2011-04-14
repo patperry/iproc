@@ -37,7 +37,7 @@ iproc_matrix *iproc_matrix_new(int64_t nrow, int64_t ncol)
 	return matrix;
 }
 
-iproc_matrix *iproc_matrix_new_copy(iproc_matrix * matrix)
+iproc_matrix *iproc_matrix_new_copy(const iproc_matrix * matrix)
 {
 	assert(matrix);
 	int64_t m = iproc_matrix_nrow(matrix);
@@ -118,7 +118,7 @@ void iproc_matrix_set_identity(iproc_matrix * matrix)
 
 }
 
-void iproc_matrix_copy(iproc_matrix * dst_matrix, iproc_matrix * matrix)
+void iproc_matrix_copy(iproc_matrix * dst_matrix, const iproc_matrix * matrix)
 {
 	assert(dst_matrix);
 	assert(matrix);
@@ -148,7 +148,7 @@ void iproc_matrix_copy(iproc_matrix * dst_matrix, iproc_matrix * matrix)
 	}
 }
 
-double iproc_matrix_get(iproc_matrix * a, int64_t i, int64_t j)
+double iproc_matrix_get(const iproc_matrix * a, int64_t i, int64_t j)
 {
 	assert(a);
 	assert(0 <= i && i < iproc_matrix_nrow(a));
@@ -177,18 +177,18 @@ double *iproc_matrix_ptr(const iproc_matrix * a, int64_t i, int64_t j)
 	return (double *)(a->data + (i + j * (iproc_matrix_lda(a))));
 }
 
-void iproc_matrix_add(iproc_matrix * dst_matrix, iproc_matrix * matrix)
+void iproc_matrix_add(iproc_matrix * dst_matrix, const iproc_matrix * matrix)
 {
 	iproc_matrix_acc(dst_matrix, +1.0, matrix);
 }
 
-void iproc_matrix_sub(iproc_matrix * dst_matrix, iproc_matrix * matrix)
+void iproc_matrix_sub(iproc_matrix * dst_matrix, const iproc_matrix * matrix)
 {
 	iproc_matrix_acc(dst_matrix, -1.0, matrix);
 }
 
-void
-iproc_matrix_acc(iproc_matrix * dst_matrix, double scale, iproc_matrix * matrix)
+void iproc_matrix_acc(iproc_matrix * dst_matrix, double scale,
+		      const iproc_matrix * matrix)
 {
 	assert(dst_matrix);
 	assert(matrix);
@@ -230,7 +230,7 @@ void iproc_matrix_scale(iproc_matrix * matrix, double scale)
 	}
 }
 
-void iproc_matrix_scale_rows(iproc_matrix * matrix, struct vector *scale)
+void iproc_matrix_scale_rows(iproc_matrix * matrix, const struct vector *scale)
 {
 	assert(matrix);
 	assert(scale);
@@ -258,7 +258,7 @@ struct vector *vector_init_matrix_col(struct vector *v, const iproc_matrix * a,
 }
 
 iproc_matrix_view
-iproc_matrix_submatrix(iproc_matrix * matrix,
+iproc_matrix_submatrix(const iproc_matrix * matrix,
 		       int64_t i, int64_t j, int64_t nrow, int64_t ncol)
 {
 	int64_t lda = iproc_matrix_lda(matrix);
@@ -266,7 +266,7 @@ iproc_matrix_submatrix(iproc_matrix * matrix,
 	return iproc_matrix_view_array_with_lda(data, nrow, ncol, lda);
 }
 
-iproc_matrix_view iproc_matrix_cols(iproc_matrix * matrix, int64_t j, int64_t n)
+iproc_matrix_view iproc_matrix_cols(const iproc_matrix * matrix, int64_t j, int64_t n)
 {
 	assert(matrix);
 	assert(j + n <= iproc_matrix_ncol(matrix));
@@ -276,7 +276,7 @@ iproc_matrix_view iproc_matrix_cols(iproc_matrix * matrix, int64_t j, int64_t n)
 }
 
 iproc_matrix_view
-iproc_matrix_view_array(double *data, int64_t nrow, int64_t ncol)
+iproc_matrix_view_array(const double *data, int64_t nrow, int64_t ncol)
 {
 	assert(data);
 	int64_t lda = MAX(1, nrow);
@@ -284,17 +284,17 @@ iproc_matrix_view_array(double *data, int64_t nrow, int64_t ncol)
 }
 
 iproc_matrix_view
-iproc_matrix_view_array_with_lda(double *data,
+iproc_matrix_view_array_with_lda(const double *data,
 				 int64_t nrow, int64_t ncol, int64_t lda)
 {
 	assert(lda >= MAX(1, nrow));
 
-	iproc_matrix_view view = { {data, nrow, ncol, lda, {0}} };
+	iproc_matrix_view view = { {(double *)data, nrow, ncol, lda, {0}} };
 	return view;
 }
 
 iproc_matrix_view
-iproc_matrix_view_vector(struct vector * vector, int64_t nrow, int64_t ncol)
+iproc_matrix_view_vector(const struct vector * vector, int64_t nrow, int64_t ncol)
 {
 	assert(vector);
 	assert(vector_size(vector) == nrow * ncol);
@@ -305,8 +305,8 @@ iproc_matrix_view_vector(struct vector * vector, int64_t nrow, int64_t ncol)
 void
 iproc_matrix_mul(double alpha,
 		 iproc_trans trans,
-		 iproc_matrix * matrix,
-		 struct vector *x, double beta, struct vector *y)
+		 const iproc_matrix * matrix,
+		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(matrix);
 	assert(x);
@@ -337,8 +337,8 @@ iproc_matrix_mul(double alpha,
 void
 iproc_matrix_matmul(double alpha,
 		    iproc_trans trans,
-		    iproc_matrix * matrix,
-		    iproc_matrix * x, double beta, iproc_matrix * y)
+		    const iproc_matrix * matrix,
+		    const iproc_matrix * x, double beta, iproc_matrix * y)
 {
 	assert(matrix);
 	assert(x);
@@ -373,7 +373,8 @@ iproc_matrix_matmul(double alpha,
 
 void
 iproc_matrix_update1(iproc_matrix * matrix,
-		     double alpha, struct vector *x, struct vector *y)
+		     double alpha, const struct vector *x,
+		     const struct vector *y)
 {
 	assert(matrix);
 	assert(x);

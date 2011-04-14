@@ -290,8 +290,8 @@ iproc_design_ctx_muls(double alpha,
 void
 iproc_design_ctx_dmul(double alpha,
 		      iproc_trans trans,
-		      iproc_design_ctx * ctx,
-		      struct vector *x, double beta, iproc_svector * y)
+		      const iproc_design_ctx * ctx,
+		      const struct vector *x, double beta, iproc_svector * y)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -322,7 +322,7 @@ iproc_design_ctx_dmul(double alpha,
 	if (ndynamic == 0)
 		return;
 
-	struct darray *dxs = &ctx->dxs;
+	const struct darray *dxs = &ctx->dxs;
 
 	if (trans == IPROC_TRANS_NOTRANS) {
 		int64_t i, n = darray_size(dxs);
@@ -360,8 +360,8 @@ iproc_design_ctx_dmul(double alpha,
 void
 iproc_design_ctx_dmuls(double alpha,
 		       iproc_trans trans,
-		       iproc_design_ctx * ctx,
-		       iproc_svector * x, double beta, iproc_svector * y)
+		       const iproc_design_ctx * ctx,
+		       const iproc_svector * x, double beta, iproc_svector * y)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -394,7 +394,7 @@ iproc_design_ctx_dmuls(double alpha,
 
 	int64_t ix_begin = design->idynamic;
 	int64_t ix_end = ix_begin + ndynamic;
-	struct darray *dxs = &ctx->dxs;
+	const struct darray *dxs = &ctx->dxs;
 
 	if (trans == IPROC_TRANS_NOTRANS) {
 		int64_t i, n = darray_size(dxs);

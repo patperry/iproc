@@ -8,7 +8,7 @@
 #include "memory.h"
 #include "svector.h"
 
-int64_t iproc_svector_find_nz(iproc_svector * svector, int64_t i)
+int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);
 	assert(0 <= i);
@@ -98,7 +98,7 @@ int64_t iproc_svector_dim(const iproc_svector * svector)
 	return svector->dim;
 }
 
-double iproc_svector_get(iproc_svector * svector, int64_t i)
+double iproc_svector_get(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);
 	assert(0 <= i);
@@ -160,13 +160,13 @@ void iproc_svector_scale(iproc_svector * svector, double scale)
 	F77_FUNC(dscal) (&n, &alpha, px, &incx);
 }
 
-int64_t iproc_svector_nnz(iproc_svector * svector)
+int64_t iproc_svector_nnz(const iproc_svector * svector)
 {
 	assert(svector);
 	return darray_size(&svector->index);
 }
 
-int64_t iproc_svector_nz(iproc_svector * svector, int64_t i)
+int64_t iproc_svector_nz(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);
 	assert(0 <= i);
@@ -174,7 +174,7 @@ int64_t iproc_svector_nz(iproc_svector * svector, int64_t i)
 	return darray_index(&svector->index, int64_t, i);
 }
 
-double iproc_svector_nz_get(iproc_svector * svector, int64_t i)
+double iproc_svector_nz_get(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);
 	assert(0 <= i);
@@ -198,7 +198,7 @@ void iproc_svector_nz_inc(iproc_svector * svector, int64_t i, double inc)
 	darray_index(&svector->value, double, i) += inc;
 }
 
-iproc_vector_view iproc_svector_view_nz(iproc_svector * svector)
+iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector)
 {
 	assert(svector);
 
@@ -207,7 +207,8 @@ iproc_vector_view iproc_svector_view_nz(iproc_svector * svector)
 	return iproc_vector_view_array(px, nnz);
 }
 
-double iproc_vector_sdot(struct vector *vector, iproc_svector * svector)
+double iproc_vector_sdot(const struct vector *vector,
+			 const iproc_svector * svector)
 {
 	assert(vector);
 	assert(svector);
@@ -227,7 +228,7 @@ double iproc_vector_sdot(struct vector *vector, iproc_svector * svector)
 
 void
 iproc_vector_sacc(struct vector *dst_vector,
-		  double scale, iproc_svector * svector)
+		  double scale, const iproc_svector * svector)
 {
 	assert(dst_vector);
 	assert(svector);
@@ -243,7 +244,8 @@ iproc_vector_sacc(struct vector *dst_vector,
 	}
 }
 
-double iproc_svector_sdot(iproc_svector * svector1, iproc_svector * svector2)
+double iproc_svector_sdot(const iproc_svector * svector1,
+			  const iproc_svector * svector2)
 {
 	assert(svector1);
 	assert(svector2);
@@ -282,7 +284,7 @@ double iproc_svector_sdot(iproc_svector * svector1, iproc_svector * svector2)
 
 void
 iproc_svector_sacc(iproc_svector * dst_svector,
-		   double scale, iproc_svector * svector)
+		   double scale, const iproc_svector * svector)
 {
 	assert(dst_svector);
 	assert(svector);
@@ -296,7 +298,7 @@ iproc_svector_sacc(iproc_svector * dst_svector,
 	}
 }
 
-void iproc_svector_printf(iproc_svector * svector)
+void iproc_svector_printf(const iproc_svector * svector)
 {
 	printf("\nsvector {");
 	printf("\n  dim: %" PRId64 "", iproc_svector_dim(svector));
@@ -313,7 +315,8 @@ void iproc_svector_printf(iproc_svector * svector)
 }
 
 void
-iproc_svector_copy(iproc_svector * dst_svector, iproc_svector * src_svector)
+iproc_svector_copy(iproc_svector * dst_svector,
+		   const iproc_svector * src_svector)
 {
 	assert(dst_svector);
 	assert(src_svector);

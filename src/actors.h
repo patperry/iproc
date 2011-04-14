@@ -61,25 +61,25 @@ ssize_t iproc_actors_dim(const iproc_actors * actors);
 
 /* makes a copy of traits */
 ssize_t iproc_actors_add(iproc_actors * actors, const struct vector *traits);
-struct vector *iproc_actors_get(iproc_actors * actors, int64_t actor_id);
+const struct vector *iproc_actors_get(const iproc_actors * actors, int64_t actor_id);
 
-int64_t iproc_actors_ngroup(iproc_actors * actors);
-int64_t iproc_actors_group(iproc_actors * actors, int64_t actor_id);
-struct vector *iproc_actors_group_traits(iproc_actors * actors,
-					 int64_t group_id);
+int64_t iproc_actors_ngroup(const iproc_actors * actors);
+int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id);
+const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
+					       int64_t group_id);
 
 void iproc_actors_mul(double alpha,
 		      iproc_trans trans,
-		      iproc_actors * actors,
-		      struct vector *x, double beta, struct vector *y);
+		      const iproc_actors * actors,
+		      const struct vector *x, double beta, struct vector *y);
 void iproc_actors_muls(double alpha,
 		       iproc_trans trans,
-		       iproc_actors * actors,
-		       iproc_svector * x, double beta, struct vector *y);
+		       const iproc_actors * actors,
+		       const iproc_svector * x, double beta, struct vector *y);
 
 void iproc_actors_matmul(double alpha,
 			 iproc_trans trans,
-			 iproc_actors * actors,
-			 iproc_matrix * x, double beta, iproc_matrix * y);
+			 const iproc_actors * actors,
+			 const iproc_matrix * x, double beta, iproc_matrix * y);
 
 #endif /* _IPROC_ACTORS_H */

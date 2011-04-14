@@ -10,7 +10,7 @@ struct vector {
 
 /* create, destroy */
 struct vector *vector_init(struct vector *v, ssize_t n);
-struct vector *vector_init_view(struct vector *v, double *ptr, ssize_t n);
+struct vector *vector_init_view(struct vector *v, const double *ptr, ssize_t n);
 struct vector *vector_init_slice(struct vector *v,
 				 const struct vector *parent,
 				 ssize_t i, ssize_t n);
@@ -78,9 +78,9 @@ struct _iproc_vector_view {
 	struct vector vector;
 };
 
-iproc_vector_view vector_slice(struct vector *vector,
+iproc_vector_view vector_slice(const struct vector *vector,
 			       ssize_t index, ssize_t dim);
-iproc_vector_view iproc_vector_view_array(double *array, ssize_t dim);
+iproc_vector_view iproc_vector_view_array(const double *array, ssize_t dim);
 
 /* inline function definitions */
 ssize_t vector_size(const struct vector *v)

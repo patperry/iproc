@@ -26,7 +26,7 @@ struct vector *vector_init(struct vector *v, ssize_t n)
 	return NULL;
 }
 
-struct vector *vector_init_view(struct vector *v, double *ptr, ssize_t n)
+struct vector *vector_init_view(struct vector *v, const double *ptr, ssize_t n)
 {
 	assert(v);
 	assert(ptr || n == 0);
@@ -145,14 +145,14 @@ void vector_set_basis(struct vector *v, ssize_t i)
 	vector_index(v, i) = 1.0;
 }
 
-iproc_vector_view vector_slice(struct vector *v, ssize_t i, ssize_t n)
+iproc_vector_view vector_slice(const struct vector *v, ssize_t i, ssize_t n)
 {
 	iproc_vector_view view;
 	vector_init_slice(&view.vector, v, i, n);
 	return view;
 }
 
-iproc_vector_view iproc_vector_view_array(double *ptr, ssize_t n)
+iproc_vector_view iproc_vector_view_array(const double *ptr, ssize_t n)
 {
 	iproc_vector_view view;
 	vector_init_view(&view.vector, ptr, n);

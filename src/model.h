@@ -100,7 +100,7 @@
  *         xbar[t,i] = gamma * xbar[0,i] + (X[0,i])^T * dP[t,i] + dxbar[t,i].
  */
 
-typedef struct _iproc_group_model iproc_group_model;
+typedef struct cohort_model iproc_group_model;
 typedef struct _iproc_model iproc_model;
 typedef struct _iproc_model_ctx iproc_model_ctx;
 
@@ -113,7 +113,7 @@ typedef struct _iproc_model_ctx iproc_model_ctx;
  * all senders in the same group share the same values of
  * w[0,i,j], W[0,i,j], p[0,i,j], and xbar[0,i].
  */
-struct _iproc_group_model {
+struct cohort_model {
 	double log_W0;
 	struct vector *p0;
 	struct vector *log_p0;
