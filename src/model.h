@@ -124,7 +124,7 @@ struct _iproc_model {
 	iproc_design *design;
 	struct vector *coefs;
 	bool has_loops;
-	struct darray group_models;
+	struct intmap cohort_models;
 	struct darray ctxs;
 	struct refcount refcount;
 };

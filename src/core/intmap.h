@@ -19,6 +19,7 @@ struct intmap_pos {
 	struct intset_pos key;
 };
 
+
 /* create, destroy */
 #define intmap_init(m,t) \
         _intmap_init(m,sizeof(t))
