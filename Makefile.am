@@ -210,6 +210,11 @@ check_PROGRAMS += tests/pqueue_test
 tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_pqueue_test_LDADD    = libcore.la $(cmockery_ldadd)
 
+check_PROGRAMS += tests/intmap_test
+tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
+
+
 TESTS = \
 	$(check_PROGRAMS)
 
