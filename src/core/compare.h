@@ -33,10 +33,10 @@ typedef int (*compare_fn) (const void *px, const void *py);
         DEFINE_EQUALS_FN(equal_name, t)
 
 DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
-    DEFINE_COMPARE_AND_EQUALS_FN(uint64_compare, uint64_equals, uint64_t)
-    DEFINE_COMPARE_AND_EQUALS_FN(size_compare, size_equals, size_t)
-    DEFINE_COMPARE_AND_EQUALS_FN(ssize_compare, ssize_equals, ssize_t)
-    DEFINE_COMPARE_AND_EQUALS_FN(intptr_compare, intptr_equals, intptr_t)
+DEFINE_COMPARE_AND_EQUALS_FN(uint64_compare, uint64_equals, uint64_t)
+DEFINE_COMPARE_AND_EQUALS_FN(size_compare, size_equals, size_t)
+DEFINE_COMPARE_AND_EQUALS_FN(ssize_compare, ssize_equals, ssize_t)
+DEFINE_COMPARE_AND_EQUALS_FN(intptr_compare, intptr_equals, intptr_t)
 
 /* compare using uint64_t instead of double to avoid dealing with NaN
  * comparisons; this relies on IEEE doubles being 8 bytes and lexicographically

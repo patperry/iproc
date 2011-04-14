@@ -45,13 +45,13 @@ static inline void array_set_range(struct array *a,
 				   ssize_t i, ssize_t n, const void *src);
 
 /* informative */
-#define array_front(a,t)       (array_index(a, t, 0))
-#define array_get_front(a,dst) (array_get(a, 0, dst))
-#define array_set_front(a,src) (array_set(a, 0, src))
+#define array_front(a,t)        (array_index(a, t, 0))
+#define array_get_front(a,dst)  (array_get(a, 0, dst))
+#define array_set_front(a,src)  (array_set(a, 0, src))
 
-#define array_back(a,t)        (array_index(a, t, (a)->size - 1))
-#define array_get_back(a,dst)  (array_get(a, (a)->size - 1, dst))
-#define array_set_back(a,src)  (array_set(a, (a)->size - 1, src))
+#define array_back(a,t)         (array_index(a, t, (a)->size - 1))
+#define array_get_back(a,dst)   (array_get(a, (a)->size - 1, dst))
+#define array_set_back(a,src)   (array_set(a, (a)->size - 1, src))
 
 static inline ssize_t array_size(const struct array *a);
 static inline bool array_empty(const struct array *a);
