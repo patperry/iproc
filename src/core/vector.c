@@ -438,8 +438,11 @@ uint32_t vector_hash(const void *v)
 }
 
 bool
-vector_identical(const struct vector * vector1, const struct vector * vector2)
+vector_equals(const void *v1, const void *v2)
 {
+	const struct vector *vector1 = v1;
+	const struct vector *vector2 = v2;
+	
 	if (vector1 == vector2)
 		return 1;
 

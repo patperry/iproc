@@ -73,8 +73,8 @@ static void iproc_design_free(iproc_design * design)
 		iproc_design_svectors_deinit(&design->svectors);
 		iproc_design_ctxs_deinit(&design->ctxs);
 		iproc_design_vars_deinit(&design->vars);
-		iproc_actors_unref(design->receivers);
-		iproc_actors_unref(design->senders);
+		actors_free(design->receivers);
+		actors_free(design->senders);
 		iproc_free(design);
 	}
 }
@@ -106,12 +106,12 @@ iproc_design *iproc_design_new(iproc_actors * senders,
 	if (!design)
 		return NULL;
 
-	int64_t nreceivers = iproc_actors_size(receivers);
-	int64_t p = iproc_actors_dim(senders);
-	int64_t q = iproc_actors_dim(receivers);
+	int64_t nreceivers = actors_size(receivers);
+	int64_t p = actors_dim(senders);
+	int64_t q = actors_dim(receivers);
 
-	design->senders = iproc_actors_ref(senders);
-	design->receivers = iproc_actors_ref(receivers);
+	design->senders = actors_ref(senders);
+	design->receivers = actors_ref(receivers);
 	design->has_reffects = has_reffects;
 	design->ireffects = 0;
 	design->nreffects = has_reffects ? nreceivers : 0;
@@ -243,11 +243,11 @@ iproc_design_mul0_static(double alpha,
 
 	const iproc_actors *senders = iproc_design_senders(design);
 	const iproc_actors *receivers = iproc_design_receivers(design);
-	int64_t p = iproc_actors_dim(senders);
-	int64_t q = iproc_actors_dim(receivers);
+	int64_t p = actors_dim(senders);
+	int64_t q = actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
 	int64_t nstatic = design->nstatic;
-	const struct vector *s = iproc_actors_get(senders, isend);
+	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_new(q);
 
 	if (trans == IPROC_TRANS_NOTRANS) {
@@ -260,11 +260,11 @@ iproc_design_mul0_static(double alpha,
 				 z);
 
 		/* y := y + R z */
-		iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
 				 y);
 	} else {
 		/* z := alpha t(R) x */
-		iproc_actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
+		actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
 				 z);
 
 		/* y := y + s \otimes z */
@@ -292,12 +292,12 @@ iproc_design_muls0_static(double alpha,
 
 	const iproc_actors *senders = iproc_design_senders(design);
 	const iproc_actors *receivers = iproc_design_receivers(design);
-	int64_t p = iproc_actors_dim(senders);
-	int64_t q = iproc_actors_dim(receivers);
+	int64_t p = actors_dim(senders);
+	int64_t q = actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
 	int64_t nstatic = design->nstatic;
 	int64_t ix_end = ix_begin + nstatic;
-	const struct vector *s = iproc_actors_get(senders, isend);
+	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_new(q);
 
 	if (trans == IPROC_TRANS_NOTRANS) {
@@ -326,11 +326,11 @@ iproc_design_muls0_static(double alpha,
 		vector_scale(z, alpha);
 
 		/* y := y + R z */
-		iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
 				 y);
 	} else {
 		/* z := alpha t(R) x */
-		iproc_actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
+		actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
 				  z);
 
 		/* y := y + s \otimes z */
@@ -416,14 +416,14 @@ int64_t iproc_design_nsender(const iproc_design * design)
 {
 	assert(design);
 	const iproc_actors *senders = iproc_design_senders(design);
-	return iproc_actors_size(senders);
+	return actors_size(senders);
 }
 
 int64_t iproc_design_nreceiver(const iproc_design * design)
 {
 	assert(design);
 	const iproc_actors *receivers = iproc_design_receivers(design);
-	return iproc_actors_size(receivers);
+	return actors_size(receivers);
 }
 
 iproc_actors *iproc_design_senders(const iproc_design * design)

@@ -45,7 +45,6 @@ static void test_size(void **state)
 	assert_int_equal(intmap_size(&map), size);
 }
 
-
 int main(int argc, char **argv)
 {
 	UnitTest tests[] = {

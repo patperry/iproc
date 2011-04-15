@@ -36,14 +36,14 @@ void Riproc_actors_init(DllInfo * info)
 static void Riproc_actors_free(SEXP Ractors)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
-	iproc_actors_unref(actors);
+	actors_free(actors);
 }
 
 SEXP Riproc_from_actors(iproc_actors * actors)
 {
 	SEXP Ractors, class;
 
-	iproc_actors_ref(actors);
+	actors_ref(actors);
 
 	/* store the actors pointer in an external pointer */
 	PROTECT(Ractors =
@@ -80,7 +80,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	vector_init_matrix_col(&traits0, &traits_t.matrix, 0);
 	ssize_t dim = vector_size(&traits0);
 
-	iproc_actors *actors = iproc_actors_new(dim);
+	iproc_actors *actors = actors_alloc(dim);
 
 	if (!actors)
 		error("could not allocate new actors object");
@@ -91,8 +91,8 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 
 	for (i = 0; i < n; i++) {
 		vector_init_matrix_col(&traits, &traits_t.matrix, i);
-		if (iproc_actors_add(actors, &traits) != i) {
-			iproc_actors_unref(actors);
+		if (actors_add(actors, &traits) != i) {
+			actors_free(actors);
 			error
 			    ("could not allocate space for %d actors with dim %d",
 			     n, dim);
@@ -100,7 +100,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	}
 
 	PROTECT(Ractors = Riproc_from_actors(actors));
-	iproc_actors_unref(actors);
+	actors_free(actors);
 	UNPROTECT(1);
 	return Ractors;
 }
@@ -115,22 +115,22 @@ SEXP Riproc_actors_ngroup(SEXP Ractors)
 SEXP Riproc_actors_size(SEXP Ractors)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int size = (int)iproc_actors_size(actors);
+	int size = (int)actors_size(actors);
 	return ScalarInteger(size);
 }
 
 SEXP Riproc_actors_dim(SEXP Ractors)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int dim = (int)iproc_actors_dim(actors);
+	int dim = (int)actors_dim(actors);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int size = (int)iproc_actors_size(actors);
-	int dim = (int)iproc_actors_dim(actors);
+	int size = (int)actors_size(actors);
+	int dim = (int)actors_dim(actors);
 	int i, n = GET_LENGTH(Ractor_ids);
 	SEXP Rxt;
 
@@ -145,7 +145,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 			error("actor id out of range");
 
 		vector_init_matrix_col(&dst, &xt.matrix, i);
-		src = iproc_actors_get(actors, id);
+		src = actors_traits(actors, id);
 
 		vector_assign_copy(&dst, src);
 	}
@@ -157,7 +157,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 SEXP Riproc_actors_group(SEXP Ractors, SEXP Ractor_ids)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int size = (int)iproc_actors_size(actors);
+	int size = (int)actors_size(actors);
 	int i, n = GET_LENGTH(Ractor_ids);
 	SEXP Rgroup_ids;
 
@@ -180,7 +180,7 @@ SEXP Riproc_actors_group_traits(SEXP Ractors, SEXP Rgroup_ids)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
 	int ngroup = (int)iproc_actors_ngroup(actors);
-	int dim = (int)iproc_actors_dim(actors);
+	int dim = (int)actors_dim(actors);
 	int i, n = GET_LENGTH(Rgroup_ids);
 	SEXP Rxt;
 
@@ -209,8 +209,8 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
-	int dim = (int)iproc_actors_dim(actors);
-	int size = (int)iproc_actors_size(actors);
+	int dim = (int)actors_dim(actors);
+	int size = (int)actors_size(actors);
 	int nrow = (int)iproc_matrix_nrow(&view.matrix);
 	int ncol = (int)iproc_matrix_ncol(&view.matrix);
 	SEXP Rresult;
@@ -227,7 +227,7 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &view.matrix, j);
 		vector_init_matrix_col(&dst, &result.matrix, j);
-		iproc_actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col, 0.0,
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col, 0.0,
 				 &dst);
 	}
 
@@ -239,8 +239,8 @@ SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
-	int dim = (int)iproc_actors_dim(actors);
-	int size = (int)iproc_actors_size(actors);
+	int dim = (int)actors_dim(actors);
+	int size = (int)actors_size(actors);
 	int nrow = (int)iproc_matrix_nrow(&view.matrix);
 	int ncol = (int)iproc_matrix_ncol(&view.matrix);
 	SEXP Rresult;
@@ -257,7 +257,7 @@ SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &view.matrix, j);
 		vector_init_matrix_col(&dst, &result.matrix, j);
-		iproc_actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col, 0.0,
+		actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col, 0.0,
 				 &dst);
 	}
 

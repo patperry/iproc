@@ -11,6 +11,7 @@ struct refcount {
 };
 
 bool refcount_init(struct refcount *refcount);
+void refcount_deinit (struct refcount *refcount);
 void refcount_set(struct refcount *refcount, int count);
 bool refcount_get(struct refcount *refcount);
 bool refcount_put(struct refcount *refcount,

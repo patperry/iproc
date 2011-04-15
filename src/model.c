@@ -71,16 +71,44 @@ static void cohort_model_deinit (struct cohort_model *cm)
 	
 }
 
+static void cohort_models_deinit(struct intmap *cohort_models)
+{
+	struct cohort_model *cm = intmap_vals_begin(cohort_models);
+	struct cohort_model *end = intmap_vals_end(cohort_models);
+	
+	for (; cm < end; cm++) {
+		cohort_model_deinit(cm);
+	}
+	
+	intmap_deinit(cohort_models);
+}
+
+static bool insert_cohort_model (struct intmap *cohort_models,
+				 const struct design *design,
+				 ssize_t isend,
+				 const struct vector *coefs)
+{
+	const iproc_actors *senders = iproc_design_senders(design);
+	intptr_t c = iproc_actors_group(senders, isend);
+	struct intmap_pos pos;
+	struct cohort_model *cm;
+
+	if (intmap_find(cohort_models, c, &pos))
+		return true;
+	
+	if ((cm = intmap_insert(cohort_models, &pos, NULL))) {
+		if (cohort_model_init(cm, design, isend, coefs))
+			return true;
+		intmap_erase(cohort_models, &pos);
+	}
+	return false;
+}
 
 static bool cohort_models_init(struct intmap *cohort_models,
 			       const iproc_design * design,
 			       const struct vector *coefs)
 {
 	ssize_t i, nsender = iproc_design_nsender(design);
-	const iproc_actors *senders = iproc_design_senders(design);
-	struct intmap_pos pos;
-	struct cohort_model *cm;
-	intptr_t c;
 
 	if (!intmap_init(cohort_models, struct cohort_model))
 		return false;
@@ -90,25 +118,13 @@ static bool cohort_models_init(struct intmap *cohort_models,
 	 * iproc_design_ctx_new(design, NULL, i).
 	 */
 	for (i = 0; i < nsender; i++) {
-		c = iproc_actors_group(senders, i);
-		if (!intmap_find(cohort_models, c, &pos)) {
-			cm = intmap_insert(cohort_models, &pos, NULL);
-			cohort_model_init(cm, design, i, coefs);
-		}
+		if (!insert_cohort_model(cohort_models, design, i, coefs))
+			goto fail;
 	}
 	return true;
-}
-
-static void cohort_models_deinit(struct intmap *cohort_models)
-{
-	struct cohort_model *cm = intmap_vals_begin(cohort_models);
-	struct cohort_model *end = intmap_vals_end(cohort_models);
-	
-	for (; cm < end; cm++) {
-		cohort_model_deinit(cm);
-	}
-
-	intmap_deinit(cohort_models);
+fail:
+	cohort_models_deinit(cohort_models);
+	return false;
 }
 
 struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)

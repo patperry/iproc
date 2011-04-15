@@ -6,7 +6,12 @@ bool refcount_init(struct refcount *refcount)
 {
 	assert(refcount);
 	refcount_set(refcount, 1);
-	return refcount;
+	return true;
+}
+
+void refcount_deinit (struct refcount *refcount)
+{
+	assert(refcount);
 }
 
 void refcount_set(struct refcount *refcount, int count)

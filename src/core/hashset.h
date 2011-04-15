@@ -38,7 +38,7 @@ struct hashset_it {
 /* create, destroy */
 #define hashset_init(set, type, hash, equal) \
         _hashset_init(set, hash, equal, sizeof(type), \
-            offsetof(struct { struct node *next; type t; }, t)
+		      offsetof(struct { struct node *next; type t; }, t))
 
 bool hashset_init_copy(struct hashset *s, const struct hashset *src);
 void hashset_deinit(struct hashset *s);
