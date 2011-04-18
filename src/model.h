@@ -5,6 +5,7 @@
 #include "refcount.h"
 #include "darray.h"
 #include "design.h"
+#include "intmap.h"
 #include "vector.h"
 
 /* I. Model

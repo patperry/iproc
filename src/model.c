@@ -62,7 +62,21 @@ static bool cohort_model_init (struct cohort_model *cm,
 	return true;
 }
 
-static void cohort_model_deinit (struct cohort_model *cm)
+static struct cohort_model * cohort_model_alloc(const struct design *design,
+						ssize_t isend,
+						const struct vector *coefs)
+{
+	struct cohort_model *cm;
+	
+	if ((cm = malloc(sizeof(*cm)))) {
+		if (cohort_model_init(cm, design, isend, coefs))
+			return cm;
+		free(cm);
+	}
+	return NULL;
+}
+
+static void cohort_model_deinit(struct cohort_model *cm)
 {
 	assert(cm);
 	vector_free(cm->xbar0);
@@ -71,15 +85,25 @@ static void cohort_model_deinit (struct cohort_model *cm)
 	
 }
 
+static void cohort_model_free(struct cohort_model *cm)
+{
+	if (cm) {
+		cohort_model_deinit(cm);
+		free(cm);
+	}
+}
+
 static void cohort_models_deinit(struct intmap *cohort_models)
 {
-	struct cohort_model *cm = intmap_vals_begin(cohort_models);
-	struct cohort_model *end = intmap_vals_end(cohort_models);
+	struct intmap_iter it;
+	struct cohort_model *cm;
 	
-	for (; cm < end; cm++) {
+	intmap_iter_init(cohort_models, &it);
+	while (intmap_iter_advance(cohort_models, &it)) {
+		cm = intmap_iter_current(cohort_models, &it).val;
 		cohort_model_deinit(cm);
 	}
-	
+	intmap_iter_deinit(cohort_models, &it);
 	intmap_deinit(cohort_models);
 }
 
@@ -96,10 +120,12 @@ static bool insert_cohort_model (struct intmap *cohort_models,
 	if (intmap_find(cohort_models, c, &pos))
 		return true;
 	
-	if ((cm = intmap_insert(cohort_models, &pos, NULL))) {
-		if (cohort_model_init(cm, design, isend, coefs))
+	if ((cm = cohort_model_alloc(design, isend, coefs))) {
+		if (intmap_insert(cohort_models, &pos, cm)) {
 			return true;
-		intmap_erase(cohort_models, &pos);
+		}
+		
+		cohort_model_free(cm);
 	}
 	return false;
 }
@@ -110,7 +136,7 @@ static bool cohort_models_init(struct intmap *cohort_models,
 {
 	ssize_t i, nsender = iproc_design_nsender(design);
 
-	if (!intmap_init(cohort_models, struct cohort_model))
+	if (!intmap_init(cohort_models))
 		return false;
 
 	/* We have to loop over all senders, not over all cohorts, because we

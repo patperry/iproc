@@ -52,8 +52,6 @@ libcore_la_SOURCES = \
 	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
-	src/core/hashset.c \
-	src/core/hashset.h \
 	src/core/intmap.c \
 	src/core/intmap.h \
 	src/core/intset.c \

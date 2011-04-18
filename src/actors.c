@@ -113,9 +113,9 @@ static bool actors_init (struct actors *actors, ssize_t dim)
 	ok = darray_init(&actors->actors, struct actor);
 	if (!ok) goto fail_actors;
 	
-	ok = hashset_init(&actors->cohorts, struct cohort *, cohortp_traits_hash,
+	/*ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
 			  cohortp_traits_equals);
-	if (!ok) goto fail_cohorts;
+	if (!ok) goto fail_cohorts; */
 	
 	ok = darray_init(&actors->group_ids, int64_t);
 	if (!ok) goto fail_group_ids;
@@ -140,8 +140,8 @@ fail_group_traits:
 	darray_deinit(&actors->group_traits);
 fail_group_ids:
 	darray_deinit(&actors->group_ids);
-fail_cohorts:
-	hashset_deinit(&actors->cohorts);
+/*fail_cohorts:
+	hashset_deinit(&actors->cohorts); */
 fail_actors:
 	darray_deinit(&actors->actors);
 	return false;
@@ -212,7 +212,7 @@ bool iproc_actors_reserve(iproc_actors * actors, ssize_t size)
 	return darray_reserve(&actors->group_ids, size);
 }
 
-static ssize_t actors_add_old(iproc_actors * actors, const struct vector * traits)
+ssize_t actors_add(iproc_actors * actors, const struct vector * traits)
 {
 	assert(actors);
 	assert(vector_size(traits) == actors_dim(actors));
@@ -230,6 +230,7 @@ static ssize_t actors_add_old(iproc_actors * actors, const struct vector * trait
 	return id;
 }
 
+/*
 static struct cohort * actors_get_cohort(struct actors *actors,
 					 const struct vector *traits)
 {
@@ -252,8 +253,9 @@ static struct cohort * actors_get_cohort(struct actors *actors,
 	}
 	return NULL;
 }
+ */
 
-
+/*
 ssize_t actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);
@@ -283,7 +285,8 @@ success:
 	
 	return actors_add_old(actors, traits);
 }
-
+*/
+ 
 const struct vector *actors_traits(const iproc_actors * actors, ssize_t actor_id)
 {
 	assert(actors);

@@ -12,6 +12,10 @@ struct cohort {
 	struct intset members;
 };
 
+struct cohort_iter {
+	struct intset_iter members_it;
+};
+
 /* create, destroy */
 struct cohort *cohort_new(const struct vector *x);	// copies x
 void cohort_free(struct cohort *c);
@@ -23,52 +27,18 @@ static inline ssize_t cohort_dim(const struct cohort *c);
 static inline const struct vector *cohort_traits(const struct cohort *c);
 
 /* size/query */
-static inline bool cohort_empty(const struct cohort *c);
-static inline ssize_t cohort_size(const struct cohort *c);
-static inline ssize_t cohort_at(const struct cohort *c, ssize_t i);
-static inline bool cohort_contains(const struct cohort *c, ssize_t id);
+bool cohort_empty(const struct cohort *c);
+ssize_t cohort_size(const struct cohort *c);
+bool cohort_contains(const struct cohort *c, ssize_t id);
 
 /* modification */
 bool cohort_add(struct cohort *c, ssize_t id);
 void cohort_remove(struct cohort *c, ssize_t id);
 
-/* inline function definitions */
-ssize_t cohort_dim(const struct cohort *c)
-{
-	assert(c);
-	return vector_size(cohort_traits(c));
-}
-
-const struct vector *cohort_traits(const struct cohort *c)
-{
-	assert(c);
-	return &c->traits;
-}
-
-bool cohort_empty(const struct cohort * c)
-{
-	assert(c);
-	return intset_empty(&c->members);
-}
-
-ssize_t cohort_size(const struct cohort * c)
-{
-	assert(c);
-	return intset_size(&c->members);
-}
-
-bool cohort_contains(const struct cohort * c, ssize_t id)
-{
-	assert(c);
-	assert(id >= 0);
-	return intset_contains(&c->members, id);
-}
-
-ssize_t cohort_at(const struct cohort * c, ssize_t i)
-{
-	assert(c);
-	assert(0 <= i && i < cohort_size(c));
-	return intset_at(&c->members, i);
-}
+/* iteration */
+void cohort_iter_init(const struct cohort *c, struct cohort_iter *it);
+void cohort_iter_deinit(const struct cohort *c, struct cohort_iter *it);
+bool cohort_iter_advance(const struct cohort *c, struct cohort_iter *it);
+ssize_t cohort_iter_current(const struct cohort *c, const struct cohort_iter *it);
 
 #endif /* _COHORT */

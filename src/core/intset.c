@@ -2,8 +2,11 @@
 #include <assert.h>
 #include "intset.h"
 
-/* create, destroy */
-struct intset *intset_init(struct intset *s)
+static intptr_t intset_at(const struct intset *s, ssize_t index);
+static ssize_t intset_index(const struct intset *s, intptr_t val);
+
+
+bool intset_init(struct intset *s)
 {
 	assert(s);
 
@@ -13,7 +16,7 @@ struct intset *intset_init(struct intset *s)
 	return NULL;
 }
 
-struct intset *intset_init_copy(struct intset *s, const struct intset *src)
+bool intset_init_copy(struct intset *s, const struct intset *src)
 {
 	assert(s);
 	assert(src);
@@ -34,7 +37,7 @@ void intset_deinit(struct intset *s)
 	darray_deinit(&s->values);
 }
 
-struct intset *intset_assign(struct intset *s, const intptr_t * ptr, ssize_t n)
+bool intset_assign(struct intset *s, const intptr_t * ptr, ssize_t n)
 {
 	assert(s);
 	assert(ptr || n == 0);
@@ -47,8 +50,8 @@ struct intset *intset_assign(struct intset *s, const intptr_t * ptr, ssize_t n)
 	return NULL;
 }
 
-struct intset *intset_assign_sorted(struct intset *s, const intptr_t * ptr,
-				    ssize_t n)
+bool intset_assign_sorted(struct intset *s, const intptr_t * ptr,
+			  ssize_t n)
 {
 	assert(s);
 	assert(ptr || n == 0);
@@ -81,7 +84,7 @@ success:
 	return s;
 }
 
-struct intset *intset_assign_copy(struct intset *s, const struct intset *src)
+bool intset_assign_copy(struct intset *s, const struct intset *src)
 {
 	assert(s);
 	assert(src);
@@ -92,27 +95,59 @@ struct intset *intset_assign_copy(struct intset *s, const struct intset *src)
 	return NULL;
 }
 
-intptr_t *intset_copy_to(const struct intset * s, intptr_t * dst)
+intptr_t *intset_copy_to(const struct intset *s, intptr_t *dst)
 {
 	assert(s);
-	assert(dst || intset_size(s) == 0);
+	assert(dst || intset_empty(s));
 
-	return darray_copy_to(&s->values, dst);
-}
-
-struct intset *intset_reserve(struct intset *s, ssize_t n)
-{
-	assert(s);
-	assert(n >= 0);
-
-	if (darray_reserve(&s->values, n)) {
-		return s;
+	struct intset_iter it;
+	intset_iter_init(s, &it);
+	while (intset_iter_advance(s, &it)) {
+		*dst++ = intset_iter_current(s, &it);
 	}
-
-	return NULL;
+	intset_iter_deinit(s, &it);
+	return dst;
 }
 
-bool intset_contains(const struct intset * s, intptr_t val)
+void intset_clear(struct intset *s)
+{
+	assert(s);
+	darray_clear(&s->values);
+}
+
+bool intset_empty(const struct intset *s)
+{
+	assert(s);
+	return darray_empty(&s->values);
+}
+
+ssize_t intset_size(const struct intset *s)
+{
+	assert(s);
+	return darray_size(&s->values);
+}
+
+ssize_t intset_max_size(const struct intset *s)
+{
+	assert(s);
+	return darray_max_size(&s->values);
+}
+
+intptr_t intset_min(const struct intset *s)
+{
+	assert(s);
+	assert(!intset_empty(s));
+	return darray_front(&s->values, intptr_t);
+}
+
+intptr_t intset_max(const struct intset *s)
+{
+	assert(s);
+	assert(!intset_empty(s));
+	return darray_back(&s->values, intptr_t);
+}
+
+bool intset_contains(const struct intset *s, intptr_t val)
 {
 	assert(s);
 
@@ -120,19 +155,7 @@ bool intset_contains(const struct intset * s, intptr_t val)
 	return intset_find(s, val, &pos);
 }
 
-ssize_t intset_index(const struct intset * s, intptr_t val)
-{
-	assert(s);
-
-	struct intset_pos pos;
-	if (intset_find(s, val, &pos)) {
-		return pos.index;
-	}
-
-	return -1;
-}
-
-bool intset_add(struct intset * s, intptr_t val)
+bool intset_add(struct intset *s, intptr_t val)
 {
 	assert(s);
 	struct intset_pos pos;
@@ -143,19 +166,23 @@ bool intset_add(struct intset * s, intptr_t val)
 	return true;		// already in set
 }
 
-intptr_t *intset_add_all(struct intset * s, intptr_t * ptr, ssize_t n)
+bool intset_add_all(struct intset *s, const intptr_t *vals, ssize_t n)
 {
 	assert(s);
-	assert(ptr || n == 0);
+	assert(vals || n == 0);
 	assert(n >= 0);
 
 	ssize_t i;
 	for (i = 0; i < n; i++) {
-		if (!intset_add(s, ptr[i]))
-			break;
+		if (!intset_add(s, vals[i]))
+			goto rollback;
 	}
-
-	return ptr + i;
+	return true;
+rollback:
+	for (; i > 0; i--) {
+		intset_remove(s, vals[i-1]);
+	}
+	return false;
 }
 
 void intset_remove(struct intset *s, intptr_t val)
@@ -168,22 +195,16 @@ void intset_remove(struct intset *s, intptr_t val)
 	}
 }
 
-void intset_remove_all(struct intset *s, intptr_t * ptr, ssize_t n)
+void intset_remove_all(struct intset *s, const intptr_t *vals, ssize_t n)
 {
 	assert(s);
-	assert(ptr || n == 0);
+	assert(vals || n == 0);
 	assert(n >= 0);
 
 	ssize_t i;
 	for (i = 0; i < n; i++) {
-		intset_remove(s, ptr[i]);
+		intset_remove(s, vals[i]);
 	}
-}
-
-void intset_clear(struct intset *s)
-{
-	assert(s);
-	darray_clear(&s->values);
 }
 
 bool intset_find(const struct intset *s, intptr_t val, struct intset_pos *pos)
@@ -203,7 +224,7 @@ bool intset_find(const struct intset *s, intptr_t val, struct intset_pos *pos)
 	}
 }
 
-bool intset_insert(struct intset * s, const struct intset_pos * pos)
+bool intset_insert(struct intset * s, const struct intset_pos *pos)
 {
 	assert(s);
 	assert(pos);
@@ -222,4 +243,60 @@ void intset_erase(struct intset *s, const struct intset_pos *pos)
 	assert(intset_at(s, pos->index) == pos->value);
 
 	darray_erase(&s->values, pos->index);
+}
+
+void intset_iter_init(const struct intset *s, struct intset_iter *it)
+{
+	assert(s);
+	assert(it);
+	intset_iter_reset(s, it);
+}
+
+void intset_iter_deinit(const struct intset *s, struct intset_iter *it)
+{
+	assert(s);
+	assert(it);
+}
+
+void intset_iter_reset(const struct intset *s, struct intset_iter *it)
+{
+	assert(s);
+	assert(it);
+	it->index = -1;
+}
+
+bool intset_iter_advance(const struct intset *s, struct intset_iter *it)
+{
+	assert(s);
+	assert(it);
+	it->index++;
+	return it->index < intset_size(s);
+}
+
+intptr_t intset_iter_current(const struct intset *s, const struct intset_iter *it)
+{
+	assert(s);
+	assert(it);
+	return intset_at(s, it->index);
+}
+
+intptr_t intset_at(const struct intset *s, ssize_t index)
+{
+	assert(s);
+	assert(index >= 0);
+	assert(index < intset_size(s));
+
+	return darray_index(&s->values, intptr_t, index);
+}
+
+ssize_t intset_index(const struct intset *s, intptr_t val)
+{
+	assert(s);
+	
+	struct intset_pos pos;
+	if (intset_find(s, val, &pos)) {
+		return pos.index;
+	}
+	
+	return -1;
 }

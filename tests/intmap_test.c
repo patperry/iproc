@@ -29,7 +29,7 @@ static void empty_setup(void **state)
 	static intptr_t empty_keys[] = { };
 	static int empty_vals[] = { };
 
-	intmap_init(&map, int);
+	intmap_init(&map);
 	keys = empty_keys;
 	vals = empty_vals;
 	size = 0;
