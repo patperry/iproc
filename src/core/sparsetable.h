@@ -17,6 +17,7 @@ struct sparsegroup {
 	void *group;				// (small) array of values
 	uint16_t num_buckets;			// limits GROUP_SIZE to 64K
 	uint8_t bitmap[(SPARSETABLE_GROUP_SIZE-1)/8 + 1];	// fancy math is so we round up
+	uint8_t deleted[(SPARSETABLE_GROUP_SIZE-1)/8 + 1];	// indicates if a position was ever deleted
 };
 
 struct sparsegroup_pos {
@@ -95,6 +96,8 @@ void sparsetable_replace(struct sparsetable *t,
 			 const void *val);
 void sparsetable_erase(struct sparsetable *t,
 		       const struct sparsetable_pos *pos);
+bool sparsetable_deleted(const struct sparsetable *t,
+			 const struct sparsetable_pos *pos);
 
 /* iteration */
 void sparsetable_iter_init(const struct sparsetable *t,
