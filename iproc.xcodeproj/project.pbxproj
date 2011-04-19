@@ -33,8 +33,6 @@
 		221FEEB8132EC8710000097B /* vector.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8F132EC8710000097B /* vector.h */; };
 		221FEEE0132ECAAE0000097B /* R.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEDC132EC91A0000097B /* R.framework */; };
 		221FEEE9132ED2B40000097B /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEE8132ED2B40000097B /* vecLib.framework */; };
-		2223C7A41353475100601F58 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223C7A21353475100601F58 /* hashset.c */; };
-		2223C7A51353475100601F58 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223C7A31353475100601F58 /* hashset.h */; };
 		2223C7A7135364A200601F58 /* trashstack.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223C7A6135364A200601F58 /* trashstack.h */; };
 		2223CD10134D76F8004FA7F9 /* darray.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* darray.c */; };
 		2223CD11134D76F8004FA7F9 /* darray.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* darray.h */; };
@@ -175,8 +173,6 @@
 		221FEE8F132EC8710000097B /* vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vector.h; path = src/core/vector.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221FEEDC132EC91A0000097B /* R.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = R.framework; path = Library/Frameworks/R.framework; sourceTree = SDKROOT; };
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
-		2223C7A21353475100601F58 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
-		2223C7A31353475100601F58 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
 		2223C7A6135364A200601F58 /* trashstack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trashstack.h; path = src/core/trashstack.h; sourceTree = "<group>"; };
 		2223CD0E134D76F8004FA7F9 /* darray.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = darray.c; path = src/core/darray.c; sourceTree = "<group>"; };
 		2223CD0F134D76F8004FA7F9 /* darray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = darray.h; path = src/core/darray.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
@@ -295,8 +291,6 @@
 				2223CD0F134D76F8004FA7F9 /* darray.h */,
 				221FEE74132EC8710000097B /* hash.c */,
 				221FEE75132EC8710000097B /* hash.h */,
-				2223C7A21353475100601F58 /* hashset.c */,
-				2223C7A31353475100601F58 /* hashset.h */,
 				221C601E1352D36D0008B25B /* intmap.c */,
 				221C601F1352D3720008B25B /* intmap.h */,
 				221C601A1352B8580008B25B /* intset.c */,
@@ -500,7 +494,6 @@
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
 				221C601D1352B8700008B25B /* intset.h in Headers */,
 				221C60211352D3820008B25B /* intmap.h in Headers */,
-				2223C7A51353475100601F58 /* hashset.h in Headers */,
 				2223C7A7135364A200601F58 /* trashstack.h in Headers */,
 				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
 				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
@@ -669,7 +662,6 @@
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C601C1352B8700008B25B /* intset.c in Sources */,
 				221C60201352D3820008B25B /* intmap.c in Sources */,
-				2223C7A41353475100601F58 /* hashset.c in Sources */,
 				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
 				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
 			);
