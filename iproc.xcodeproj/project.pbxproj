@@ -99,6 +99,8 @@
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
 		22C67AA61354FCC8006A81E8 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
 		22C67AA71354FCC8006A81E8 /* cohort.h in Headers */ = {isa = PBXBuildFile; fileRef = 22C67AA51354FCC7006A81E8 /* cohort.h */; };
+		22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
+		22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D6FA7C135D02A70082D129 /* sparsetable.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -239,6 +241,8 @@
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
 		22C67AA41354FCC6006A81E8 /* cohort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cohort.c; path = src/cohort.c; sourceTree = "<group>"; };
 		22C67AA51354FCC7006A81E8 /* cohort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cohort.h; path = src/cohort.h; sourceTree = "<group>"; };
+		22D6FA7B135D02A70082D129 /* sparsetable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sparsetable.c; path = src/core/sparsetable.c; sourceTree = "<group>"; };
+		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -282,6 +286,8 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				22D6FA7B135D02A70082D129 /* sparsetable.c */,
+				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
@@ -497,6 +503,7 @@
 				2223C7A51353475100601F58 /* hashset.h in Headers */,
 				2223C7A7135364A200601F58 /* trashstack.h in Headers */,
 				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
+				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -664,6 +671,7 @@
 				221C60201352D3820008B25B /* intmap.c in Sources */,
 				2223C7A41353475100601F58 /* hashset.c in Sources */,
 				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
+				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
