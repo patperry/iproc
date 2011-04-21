@@ -74,8 +74,8 @@
 		222FC45013607C7900E64FC9 /* s_copy.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD63132FE4B700696C9B /* s_copy.c */; };
 		222FC45113607C7900E64FC9 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A10132FDA830090D617 /* dcsrch.c */; };
 		222FC45213607C7900E64FC9 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 22867A11132FDA830090D617 /* dcstep.c */; };
-		222FC45413607C9B00E64FC9 /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC45313607C9B00E64FC9 /* vecLib.framework */; };
 		222FC45713607F7100E64FC9 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		222FC45813608F4200E64FC9 /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEE8132ED2B40000097B /* vecLib.framework */; };
 		225973FF133CE9AD0022B52E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		22597402133D081B0022B52E /* matrix.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597400133D081A0022B52E /* matrix.c */; };
 		22597403133D081B0022B52E /* matrix.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597401133D081A0022B52E /* matrix.h */; };
@@ -243,7 +243,6 @@
 		222FC3F31360755C00E64FC9 /* hashset_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = hashset_test.c; path = tests/hashset_test.c; sourceTree = "<group>"; };
 		222FC3F913607B2100E64FC9 /* hashset_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hashset_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		222FC45313607C9B00E64FC9 /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		224D0557132EC113007F5646 /* libRiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libRiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		225973FD133CE9AD0022B52E /* compare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compare.h; path = src/core/compare.h; sourceTree = "<group>"; };
 		22597400133D081A0022B52E /* matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = matrix.c; path = src/core/matrix.c; sourceTree = "<group>"; };
@@ -332,7 +331,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				222FC45413607C9B00E64FC9 /* vecLib.framework in Frameworks */,
+				222FC45813608F4200E64FC9 /* vecLib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -487,8 +486,6 @@
 		2275BB84132EAC9D002D8876 = {
 			isa = PBXGroup;
 			children = (
-				222FC40D13607C3F00E64FC9 /* libiproc.dylib */,
-				222FC45313607C9B00E64FC9 /* vecLib.framework */,
 				22678900134CD568001309F5 /* Tests */,
 				22597404133D0ABE0022B52E /* IProc */,
 				221FEE68132EC83F0000097B /* Core */,
@@ -498,6 +495,7 @@
 				22E8B6DC132EFE2100ED84FF /* Frameworks */,
 				2275BB90132EAC9D002D8876 /* Products */,
 				224D0557132EC113007F5646 /* libRiproc.dylib */,
+				222FC40D13607C3F00E64FC9 /* libiproc.dylib */,
 				22678906134CD584001309F5 /* libcmockery.dylib */,
 			);
 			sourceTree = "<group>";

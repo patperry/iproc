@@ -290,6 +290,7 @@ bool hashset_add(struct hashset *s, const void *val)
 	struct hashset_pos pos;
 	if (hashset_find(s, val, &pos)) {
 		hashset_replace(s, &pos, val);
+		assert(hashset_contains(s, val));
 		return true;
 	} else {
 		return hashset_insert(s, &pos, val);
@@ -315,6 +316,7 @@ void hashset_remove(struct hashset *s, const void *key)
 	if (hashset_find(s, key, &pos)) {
 		hashset_erase(s, &pos);
 	}
+	assert(!hashset_contains(s, key));
 }
 
 void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n)
