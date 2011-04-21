@@ -366,10 +366,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				22A88EBA135E6B6A006FE604 /* hashset.c */,
-				22A88EBB135E6B6A006FE604 /* hashset.h */,
-				22D6FA7B135D02A70082D129 /* sparsetable.c */,
-				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
@@ -377,6 +373,8 @@
 				2223CD0F134D76F8004FA7F9 /* darray.h */,
 				221FEE74132EC8710000097B /* hash.c */,
 				221FEE75132EC8710000097B /* hash.h */,
+				22A88EBA135E6B6A006FE604 /* hashset.c */,
+				22A88EBB135E6B6A006FE604 /* hashset.h */,
 				221C601E1352D36D0008B25B /* intmap.c */,
 				221C601F1352D3720008B25B /* intmap.h */,
 				221C601A1352B8580008B25B /* intset.c */,
@@ -387,6 +385,8 @@
 				22597434133D0BD20022B52E /* pqueue.h */,
 				221FEE87132EC8710000097B /* refcount.c */,
 				221FEE88132EC8710000097B /* refcount.h */,
+				22D6FA7B135D02A70082D129 /* sparsetable.c */,
+				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				2223C7A6135364A200601F58 /* trashstack.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
