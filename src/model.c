@@ -100,7 +100,7 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 	
 	intmap_iter_init(cohort_models, &it);
 	while (intmap_iter_advance(cohort_models, &it)) {
-		cm = intmap_iter_current(cohort_models, &it).val;
+		cm = (void *)intmap_iter_current(cohort_models, &it).val;
 		cohort_model_deinit(cm);
 	}
 	intmap_iter_deinit(cohort_models, &it);
@@ -121,7 +121,7 @@ static bool insert_cohort_model (struct intmap *cohort_models,
 		return true;
 	
 	if ((cm = cohort_model_alloc(design, isend, coefs))) {
-		if (intmap_insert(cohort_models, &pos, cm)) {
+		if (intmap_insert(cohort_models, &pos, (intptr_t)cm)) {
 			return true;
 		}
 		
@@ -162,7 +162,7 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)
 	const iproc_design *design = iproc_model_design(model);
 	const iproc_actors *senders = iproc_design_senders(design);
 	int64_t c = iproc_actors_group(senders, isend);
-	return intmap_lookup(&model->cohort_models, c);
+	return (void *)intmap_lookup(&model->cohort_models, c);
 }
 
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
