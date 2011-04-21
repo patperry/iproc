@@ -52,6 +52,8 @@ libcore_la_SOURCES = \
 	src/core/darray.h \
 	src/core/hash.c \
 	src/core/hash.h \
+	src/core/hashset.c \
+	src/core/hashset.h \
 	src/core/intmap.c \
 	src/core/intmap.h \
 	src/core/intset.c \
@@ -205,6 +207,10 @@ check_PROGRAMS = # empty
 check_PROGRAMS += tests/darray_test
 tests_darray_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_darray_test_LDADD    = libcore.la $(cmockery_ldadd)
+
+check_PROGRAMS += tests/hashset_test
+tests_hashset_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_hashset_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/pqueue_test
 tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)

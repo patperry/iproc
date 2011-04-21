@@ -18,7 +18,7 @@
  * (0.0 means never resize lower.)
  * It should be less than OCCUPANCY_PCT / 2 or we thrash resizing
  */
-#define HT_EMPTY_PCT	(0.4f * HT_OCCUPANCY_PCT)
+#define HT_EMPTY_PCT	(0.4 * HT_OCCUPANCY_PCT)
 
 /* Minimum size we're willing to let hashtables be.
  * Must be a power of two, and at least 4.
@@ -33,8 +33,8 @@
  */
 #define HT_DEFAULT_STARTING_BUCKETS	32
 
-#define HT_ENLARGE_FACTOR	(HT_OCCUPANCY_PCT / 100.0f)
-#define HT_SHRINK_FACTOR	(HT_EMPTY_PCT / 100.0f)
+#define HT_ENLARGE_FACTOR	(HT_OCCUPANCY_PCT / 100.0)
+#define HT_SHRINK_FACTOR	(HT_EMPTY_PCT / 100.0)
 
 /* The number of buckets must be a power of 2.  This is the largest 
  * power of 2 that a ssize_t can hold.
@@ -50,7 +50,7 @@ static ssize_t min_buckets(ssize_t num_elts, ssize_t min_buckets_wanted)
 	assert(0 <= num_elts && num_elts <= HT_MAX_SIZE);
 	assert(0 <= min_buckets_wanted && min_buckets_wanted <= HT_MAX_BUCKETS);
 	
-	float enlarge = HT_ENLARGE_FACTOR;
+	double enlarge = HT_ENLARGE_FACTOR;
 	ssize_t sz = HT_MIN_BUCKETS;             // min buckets allowed
 
 	while (sz < min_buckets_wanted
@@ -217,7 +217,7 @@ static bool hashset_shrink(struct hashset *s)
 
 	ssize_t num_remain = sparsetable_count(&s->table);
 	ssize_t bucket_count = hashset_bucket_count(s);
-	float shrink_factor = HT_SHRINK_FACTOR;
+	double shrink_factor = HT_SHRINK_FACTOR;
 	ssize_t sz = bucket_count / 2;    // find how much we should shrink
 
 	while (sz > HT_DEFAULT_STARTING_BUCKETS &&

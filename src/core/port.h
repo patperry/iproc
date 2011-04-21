@@ -86,4 +86,14 @@ define SSIZE_FMT in config.h"
 # endif
 #endif
 
+#ifndef F77_FUNC
+# define F77_FUNC(name) name ## _
+#endif
+#ifndef F77_INT_MAX
+# define F77_INT_MAX LONG_MAX
+#endif
+#ifndef f77int
+# define f77int long int
+#endif
+
 #endif /* _PORT_H */

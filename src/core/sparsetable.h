@@ -83,7 +83,7 @@ void sparsetable_remove(struct sparsetable *t, ssize_t index);
 void sparsetable_remove_all(struct sparsetable *t,
 			    ssize_t *indexes,
 			    ssize_t n);
-void sparsetable_resize(struct sparsetable *t, ssize_t n);
+bool sparsetable_resize(struct sparsetable *t, ssize_t n);
 
 /* position-based interface */
 void *sparsetable_find(const struct sparsetable *t, ssize_t index,
