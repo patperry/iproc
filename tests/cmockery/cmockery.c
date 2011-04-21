@@ -1532,25 +1532,21 @@ static LONG WINAPI exception_filter(EXCEPTION_POINTERS *exception_pointers) {
 
 // Standard output and error print methods.
 void vprint_message(const char* const format, va_list args) {
-#ifdef _WIN32
     char buffer[1024];
     vsnprintf(buffer, sizeof(buffer), format, args);
-    printf(buffer);
+    printf("%s", buffer);
+#ifdef _WIN32
     OutputDebugString(buffer);
-#else
-    vprintf(format, args);
 #endif // _WIN32
 }
 
 
 void vprint_error(const char* const format, va_list args) {
-#ifdef _WIN32
     char buffer[1024];
     vsnprintf(buffer, sizeof(buffer), format, args);
-    fprintf(stderr, buffer);
+    fprintf(stderr, "%s", buffer);
+#ifdef _WIN32
     OutputDebugString(buffer);
-#else
-    vfprintf(stderr, format, args);
 #endif // _WIN32
 }
 
