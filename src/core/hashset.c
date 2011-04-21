@@ -1,289 +1,134 @@
 #include "port.h"
 #include <assert.h>
 #include <stdlib.h>
-#include <sys/queue.h>
 #include "hashset.h"
 
-struct hashset_node {
-	SLIST_ENTRY(hashset_node) nodes;
-};
+/* The probing method */
+/* #define JUMP_(key, num_probes) (1)          // Linear probing */
+#define JUMP_(key, num_probes)    (num_probes) // Quadratic probing
 
-struct hashset_bucket {
-	SLIST_HEAD(nodes_head, hashset_node) collisions;
-};
+/* How full we let the table get before we resize, by default.
+ * Knuth says .8 is good -- higher causes us to probe too much,
+ * though it saves memory.
+ */
+#define HT_OCCUPANCY_PCT 80 // (out of 100);
 
-static bool bucket_init(struct hashset *s, struct hashset_bucket *b)
+/* How empty we let the table get before we resize lower, by default.
+ * (0.0 means never resize lower.)
+ * It should be less than OCCUPANCY_PCT / 2 or we thrash resizing
+ */
+#define HT_EMPTY_PCT	(0.4f * HT_OCCUPANCY_PCT)
+
+/* Minimum size we're willing to let hashtables be.
+ * Must be a power of two, and at least 4.
+ * Note, however, that for a given hashtable, the initial size is a
+ * function of the first constructor arg, and may be >HT_MIN_BUCKETS.
+ */
+#define HT_MIN_BUCKETS	4
+
+/* By default, if you don't specify a hashtable size at
+ * construction-time, we use this size.  Must be a power of two, and
+ * at least HT_MIN_BUCKETS.
+ */
+#define HT_DEFAULT_STARTING_BUCKETS	32
+
+#define HT_ENLARGE_FACTOR	(HT_OCCUPANCY_PCT / 100.0f)
+#define HT_SHRINK_FACTOR	(HT_EMPTY_PCT / 100.0f)
+
+/* The number of buckets must be a power of 2.  This is the largest 
+ * power of 2 that a ssize_t can hold.
+ */
+#define HT_MAX_BUCKETS	((ssize_t)(((size_t)SSIZE_MAX + 1) >> 1))
+#define HT_MAX_SIZE	((ssize_t)(HT_MAX_BUCKETS * HT_ENLARGE_FACTOR))
+
+
+/* This is the smallest size a hashtable can be without being too crowded
+ * If you like, you can give a min #buckets as well as a min #elts */
+static ssize_t min_buckets(ssize_t num_elts, ssize_t min_buckets_wanted)
 {
-	SLIST_INIT(&b->collisions);
-	return b;
-}
+	assert(0 <= num_elts && num_elts <= HT_MAX_SIZE);
+	assert(0 <= min_buckets_wanted && min_buckets_wanted <= HT_MAX_BUCKETS);
+	
+	float enlarge = HT_ENLARGE_FACTOR;
+	ssize_t sz = HT_MIN_BUCKETS;             // min buckets allowed
 
-static void bucket_deinit(struct hashset *s, struct hashset_bucket *b)
-{
-	return;
-}
-
-static size_t bucket_size(const struct hashset *s)
-{
-	return intmap_elt_size(&s->buckets);
-}
-
-static size_t node_size(const struct hashset *s)
-{
-	return bucket_size(s);
-}
-
-static struct hashset_node *node_alloc(struct hashset *s)
-{
-	if (trashstack_empty(&s->nodes)) {
-		return malloc(node_size(s));
-	} else {
-		return trashstack_pop(&s->nodes);
+	while (sz < min_buckets_wanted
+	       || num_elts > (ssize_t)(sz * enlarge)) {
+		assert(sz * 2 > sz);
+		sz *= 2;
 	}
+	return sz;
 }
 
-static void node_free(struct hashset *s, struct hashset_node *n)
+/* Reset the enlarge and shrink thresholds */
+static void hashset_reset_thresholds(struct hashset *s, ssize_t num_buckets)
 {
-	trashstack_push(&s->nodes, n);
+	s->enlarge_threshold = num_buckets * HT_ENLARGE_FACTOR;
+	s->shrink_threshold = num_buckets * HT_SHRINK_FACTOR;
 }
 
-static void *node_val(const struct hashset *s, const struct hashset_node *n)
+static ssize_t hashset_bucket_count(const struct hashset *s)
 {
-	return (void *)n + s->elt_offset;
+	return sparsetable_size(&s->table);
 }
 
-static void *bucket_val(const struct hashset *s, const struct hashset_bucket *b)
+static bool hashset_needs_shrink(const struct hashset *s)
 {
-	return node_val(s, (const struct hashset_node *)b);
+	ssize_t num_remain = sparsetable_count(&s->table);
+	ssize_t shrink_threshold = s->shrink_threshold;
+	ssize_t bucket_count = hashset_bucket_count(s);
+	
+	/* If you construct a hashtable with < HT_DEFAULT_STARTING_BUCKETS,
+	 * we'll never shrink until you get relatively big, and we'll never
+	 * shrink below HT_DEFAULT_STARTING_BUCKETS.  Otherwise, something
+	 * like "dense_hash_set<int> x; x.insert(4); x.erase(4);" will
+	 * shrink us down to HT_MIN_BUCKETS buckets, which is too small.
+	 */
+	return (num_remain < shrink_threshold &&
+		bucket_count > HT_DEFAULT_STARTING_BUCKETS);
 }
 
-bool _hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
-		   size_t elt_size, size_t elt_offset)
+static bool hashset_shrink(const struct hashset *s)
 {
-	assert(s);
-	assert(hash);
-	assert(equals);
-	assert(elt_size > 0);
-	assert(elt_offset >= sizeof(struct hashset_node));
+	assert(hashset_needs_shrink(s));
 
-	size_t bucket_size = elt_offset + elt_size;
-	if (_intmap_init(&s->buckets, bucket_size)) {
-		s->hash = hash;
-		s->equals = equals;
-		s->elt_size = elt_size;
-		s->elt_offset = elt_offset;
-		trashstack_init(&s->nodes);
-		return s;
-	}
+	ssize_t num_remain = sparsetable_count(&s->table);
+	ssize_t bucket_count = hashset_bucket_count(s);
+	float shrink_factor = HT_SHRINK_FACTOR;
+	ssize_t sz = bucket_count / 2;    // find how much we should shrink
 
-	return NULL;
-}
-
-bool hashset_init_copy(struct hashset * s, const struct hashset * src)
-{
-	assert(s);
-	assert(src);
-
-	if (_hashset_init
-	    (s, src->hash, src->equals, src->elt_size, src->elt_offset)) {
-		if (hashset_assign_copy(s, src)) {
-			return s;
-		}
-		hashset_deinit(s);
-	}
-	return NULL;
-}
-
-static void hashset_deinit_nodes(struct trashstack *nodes)
-{
-	struct node *n;
-
-	while (!trashstack_empty(nodes)) {
-		n = trashstack_pop(nodes);
-		free(n);
-	}
-
-}
-
-void hashset_deinit(struct hashset *s)
-{
-	hashset_clear(s);
-	intmap_deinit(&s->buckets);
-	hashset_deinit_nodes(&s->nodes);
-}
-
-void hashset_clear(struct hashset *s)
-{
-	struct hashset_bucket *buckets, *b;
-	struct hashset_node *c;
-	ssize_t i, n = intmap_size(&s->buckets);
-
-	buckets = intmap_vals_begin(&s->buckets);
-
-	for (i = 0; i < n; i++) {
-		b = &buckets[i];
-		while (!SLIST_EMPTY(&b->collisions)) {
-			c = SLIST_FIRST(&b->collisions);
-			SLIST_REMOVE_HEAD(&b->collisions, nodes);
-			node_free(s, c);
-		}
+	while (sz > HT_DEFAULT_STARTING_BUCKETS &&
+	       num_remain < (ssize_t)(sz * shrink_factor)) {
+		sz /= 2;		// stay a power of 2
 	}
 
-	intmap_clear(&s->buckets);
-}
-
-static bool hashset_reserve_nodes(struct hashset *s, ssize_t n)
-{
-	ssize_t i, n0 = trashstack_size(&s->nodes);
-
-	for (i = n0; i < n; i++) {
-		struct hashset_node *node = malloc(sizeof(*node));
-		if (!node)
-			return false;
-		trashstack_push(&s->nodes, node);
-	}
-
+		// TODO: now do the shrink
 	return true;
 }
 
-// assume worst case: each added value is a collision
-bool hashset_reserve(struct hashset * s, ssize_t n)
+static bool hashset_needs_grow_delta(const struct hashset *s, ssize_t delta)
 {
-	assert(s);
-	assert(n >= 0);
-
-	if (intmap_reserve(&s->buckets, n)) {
-		return hashset_reserve_nodes(s, n);
-	}
-	return NULL;
-}
-
-ssize_t hashset_collisions(const struct hashset * s)
-{
-	const struct hashset_bucket *bucket = intmap_vals_begin(&s->buckets);
-	ssize_t i, n = intmap_size(&s->buckets);
-	const struct hashset_node *node;
-
-	ssize_t size = 0;
-
-	for (i = 0; i < n; i++) {
-		SLIST_FOREACH(node, &bucket->collisions, nodes) {
-			size++;
-		}
-	}
-
-	return size;
-}
-
-ssize_t hashset_size(const struct hashset * s)
-{
-	assert(s);
-	return hashset_buckets(s) + hashset_collisions(s);
-}
-
-bool hashset_assign_copy(struct hashset * s, const struct hashset * src)
-{
-	ssize_t bsrc = hashset_buckets(src);
-	ssize_t csrc = hashset_collisions(src);
-	ssize_t cdst = hashset_collisions(s);
-	struct hashset_it it;
-
-	if (intmap_reserve(&s->buckets, bsrc)
-	    && hashset_reserve_nodes(s, MAX(0, cdst - csrc))
-	    && hashset_it_init(src, &it)) {
-
-		hashset_clear(s);
-
-		while (hashset_it_advance(src, &it)) {
-			hashset_add(s, _hashset_it_current(src, &it));
-		}
-
-		hashset_it_deinit(src, &it);
+	assert(delta >= 0);
+	assert(sparsetable_count(&s->table) <= HT_MAX_SIZE - delta);
+	
+	if (hashset_bucket_count(s) >= HT_MIN_BUCKETS
+	    && sparsetable_count(&s->table) + delta <= s->enlarge_threshold) {
+		return false;
+	} else {
 		return true;
 	}
-	return false;
 }
 
-void *hashset_copy_to(const struct hashset *s, void *dst)
+/* the implementation is simpler than in sparsehashtable.h since we don't
+ * store deleted keys */
+static bool hashset_grow_delta(const struct hashset *s, ssize_t delta)
 {
-	assert(s);
-	assert(dst || hashset_empty(s));
+	ssize_t num_nonempty = sparsetable_count(&s->table);
+	ssize_t bucket_count = hashset_bucket_count(s);
+	ssize_t resize_to = min_buckets(num_nonempty + delta, bucket_count);
 
-	size_t elt_size = hashset_elt_size(s);
-	struct hashset_it it;
-
-	if (hashset_it_init(s, &it)) {
-
-		while (hashset_it_advance(s, &it)) {
-			memcpy(dst, _hashset_it_current(s, &it), elt_size);
-			dst += elt_size;
-		}
-
-		hashset_it_deinit(s, &it);
-		return dst;
-	}
-
-	return NULL;		/* never happens; hashset_it_init always succeeds */
-}
-
-void *hashset_add(struct hashset *s, const void *val)
-{
-	assert(s);
-	assert(val);
-
-	struct hashset_pos pos;
-
-	if (hashset_find(s, val, &pos)) {
-		return hashset_replace(s, &pos, val);
-	} else {
-		return hashset_insert(s, &pos, val);
-	}
-}
-
-bool hashset_add_all(struct hashset * s, const void *vals, ssize_t n)
-{
-	assert(s);
-	assert(vals || n == 0);
-
-	size_t elt_size = hashset_elt_size(s);
-	ssize_t i;
-
-	for (i = 0; i < n; i++, vals += elt_size) {
-		if (!hashset_add(s, vals))
-			goto undo;
-	}
-	return true;
-undo:
-	for (vals -= elt_size; i > 0; i--, vals -= elt_size) {
-		hashset_remove(s, vals);
-	}
-	return false;
-}
-
-void hashset_remove(struct hashset *s, const void *key)
-{
-	assert(s);
-	assert(key);
-
-	struct hashset_pos pos;
-
-	if (hashset_find(s, key, &pos)) {
-		hashset_erase(s, &pos);
-	}
-}
-
-void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n)
-{
-	assert(s);
-	assert(keys || n == 0);
-	assert(n >= 0);
-
-	size_t elt_size = hashset_elt_size(s);
-	const void *end = keys + n * elt_size;
-
-	for (; keys < end; keys += elt_size) {
-		hashset_remove(s, keys);
-	}
+		// TODO: now do the grow
+	return resize_to;
 }
 
 void *hashset_find(const struct hashset *s, const void *key,
@@ -292,215 +137,88 @@ void *hashset_find(const struct hashset *s, const void *key,
 	assert(s);
 	assert(key);
 	assert(pos);
+	assert(sparsetable_count(&s->table) < sparsetable_size(&s->table));
 
-	struct hashset_bucket *bucket = NULL;
-	struct hashset_node *node = NULL;
-	void *val = NULL;
+	const struct sparsetable *table = &s->table;
+	const ssize_t bucket_count = sparsetable_size(table);
+	ssize_t num_probes = 0;              // how many times we've probed
+	const ssize_t bucket_count_minus_one = bucket_count - 1;
+	uint32_t hash = hashset_hash(s, key);
+	ssize_t bucknum = hash & bucket_count_minus_one;
+	struct sparsetable_pos table_pos;
+	void *val;
+	bool deleted;
 
-	bucket = intmap_find(&s->buckets, hashset_hash(s, key), &pos->key);
-
-	// bucket exists
-	if (bucket) {
-		val = bucket_val(s, bucket);
-
-		// key is in bucket
-		if (hashset_equals(s, key, val)) {
-			pos->node.b = bucket;
-			goto out;
-		}
-
-		SLIST_FOREACH(node, &bucket->collisions, nodes) {
-			val = node_val(s, node);
-
-			// key is in node
-			if (hashset_equals(s, key, val)) {
-				pos->node.n = node;
-				goto out;
+	pos->hash = hash;
+	pos->has_insert = false;
+	pos->has_existing = false;
+	
+	while (true) {                          // probe until something happens
+		val = sparsetable_find(table, bucknum, &table_pos);
+		deleted = sparsetable_deleted(table, &table_pos);
+		if (!val && !deleted) { // bucket is empty
+			if (!pos->has_insert) { // found no prior place to insert
+				pos->insert = table_pos;
+				pos->has_insert = true;
 			}
+			pos->has_existing = false;
+			return NULL;
+		} else if (!val && deleted) {// keep searching, but mark to insert
+			if (!pos->has_insert) {
+				pos->insert = table_pos;
+				pos->has_insert = true;
+			}
+		} else if (hashset_equals(s, key, val)) {
+			pos->existing = table_pos;
+			pos->has_existing = true;
+			return val;
 		}
-		pos->node.n = NULL;
+		num_probes++;                        // we're doing another probe
+		bucknum = (bucknum + JUMP_(key, num_probes)) & bucket_count_minus_one;
+		assert(num_probes < bucket_count
+		       && "Hashtable is full: an error in hash or equals");
 	}
-	val = NULL;
-out:
-	pos->bucket = bucket;
-	return val;
 }
 
-void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
+bool hashset_insert(struct hashset *s, struct hashset_pos *pos,
+		    const void *val)
+{
+	assert(!pos->has_existing);
+	assert(hashset_hash(s, val) == pos->hash);
+	assert(pos->has_insert);
+	assert(hashset_size(s) < HT_MAX_SIZE);
+
+	if (hashset_needs_grow_delta(s, 1)) {
+		if (hashset_grow_delta(s, 1)) {
+			hashset_find(s, val, pos); // need to recompute pos
+		} else {
+			return false;
+		}
+	}
+	
+	return sparsetable_insert(&s->table, &pos->insert, val);
+}
+
+void hashset_replace(struct hashset *s, struct hashset_pos *pos,
 		     const void *val)
 {
-	assert(s);
-	assert(pos);
-	assert(!pos->bucket || !pos->node.n);
-
-	struct hashset_bucket *bucket = pos->bucket;
-	struct hashset_node *node;
-	void *ptr = NULL;
-
-	// create a bucket
-	if (!bucket) {
-		if ((bucket = intmap_insert(&s->buckets, &pos->key, NULL))) {
-			bucket_init(s, bucket);
-			ptr = bucket_val(s, bucket);
-			pos->bucket = bucket;
-			goto success;
-		}
-		// create a node
+	assert(pos->has_existing);
+	assert(hashset_hash(s, val) == pos->hash);
+	
+	if (pos->has_insert
+	    && sparsetable_insert(&s->table, &pos->insert, val)) {
+		sparsetable_erase(&s->table, &pos->existing);
 	} else {
-		if ((node = node_alloc(s))) {
-			ptr = node_val(s, node);
-			pos->node.n = node;
-			goto success;
-		}
+		// in case the insert fails, replace the existing value
+		sparsetable_replace(&s->table, &pos->existing, val);
 	}
-	return NULL;
-
-success:
-	if (val) {
-		assert(hashset_hash(s, val) == pos->key.key.value);
-		assert(pos->node.b == pos->bucket
-		       || hashset_equals(s, val, bucket_val(s, pos->node.b)));
-		assert(pos->node.b != pos->bucket
-		       || hashset_equals(s, val, node_val(s, pos->node.n)));
-		memcpy(ptr, val, hashset_elt_size(s));
-	}
-	return ptr;
-}
-
-void *hashset_replace(struct hashset *s, struct hashset_pos *pos,
-		      const void *val)
-{
-	assert(s);
-	assert(pos);
-	assert(pos->bucket);
-	assert(pos->node.n || pos->node.b == pos->bucket);
-
-	void *dst;
-
-	if (!val) {
-		hashset_erase(s, pos);
-		return NULL;
-	} else if (pos->node.b == pos->bucket) {
-		dst = bucket_val(s, pos->bucket);
-	} else {
-		dst = node_val(s, pos->node.n);
-	}
-
-	memcpy(dst, val, hashset_elt_size(s));
-	return dst;
 }
 
 void hashset_erase(struct hashset *s, struct hashset_pos *pos)
 {
-	assert(s);
-	assert(pos);
-	assert(pos->bucket);
-	assert(pos->node.n || pos->node.b == pos->bucket);
-	struct hashset_bucket *bucket = pos->bucket;
-
-	// remove a node
-	if (pos->node.b != pos->bucket) {
-		SLIST_REMOVE(&bucket->collisions, pos->node.n, hashset_node,
-			     nodes);
-		node_free(s, pos->node.n);
-		pos->node.n = NULL;
-
-		// remove a bucket     
-	} else if (SLIST_EMPTY(&bucket->collisions)) {
-		bucket_deinit(s, bucket);
-		intmap_erase(&s->buckets, &pos->key);
-		pos->bucket = NULL;
-
-		// move a node to a bucket    
-	} else {
-		struct hashset_node *node = SLIST_FIRST(&bucket->collisions);
-		SLIST_REMOVE_HEAD(&bucket->collisions, nodes);
-		memcpy(bucket_val(s, bucket), node_val(s, node),
-		       hashset_elt_size(s));
-		node_free(s, node);
+	assert(pos->has_existing);
+	sparsetable_erase(&s->table, &pos->existing);
+	if (hashset_needs_shrink(s)) {
+		hashset_shrink(s); // ok if this fails
 	}
-}
-
-bool hashset_it_init(const struct hashset *s, struct hashset_it *it)
-{
-	assert(s);
-	assert(it);
-
-	it->end = intmap_vals_end(&s->buckets);
-	hashset_it_reset(s, it);
-	return it;
-}
-
-void hashset_it_deinit(const struct hashset *s, struct hashset_it *it)
-{
-	assert(s);
-	assert(it);
-}
-
-/*                   bucket  node
- * init:             -       -
- * bucket start:     +       -
- * bucket collision: +       +
- * end:              end     ?
- */
-bool hashset_it_advance(const struct hashset *s, struct hashset_it *it)
-{
-	bool has_next = true;
-
-	// at end of collection
-	if (it->bucket == it->end) {
-		has_next = false;
-		goto out;
-	}
-	// advance to next bucket if:
-	//   (1) at init
-	//   (2) at bucket start and there are no collisions
-	//   (3) at last collision
-	if ((!it->bucket && !it->node)
-	    || (it->bucket && !it->node && SLIST_EMPTY(&it->bucket->collisions))
-	    || (it->bucket && it->node && !SLIST_NEXT(it->node, nodes))) {
-
-		it->bucket++;
-		it->node = NULL;
-
-		if (it->bucket == it->end)
-			has_next = false;
-
-		// advance to first collision if at bucket start
-	} else if (it->bucket && !it->node
-		   && !SLIST_EMPTY(&it->bucket->collisions)) {
-		it->node = SLIST_FIRST(&it->bucket->collisions);
-		has_next = true;
-
-		// otherwise, advance to next collision        
-	} else {
-		it->node = SLIST_NEXT(it->node, nodes);
-	}
-
-out:
-	return has_next;
-}
-
-const void *_hashset_it_current(const struct hashset *s,
-				const struct hashset_it *it)
-{
-	assert(s);
-	assert(it);
-	assert(it->bucket);
-	assert(it->bucket < it->end);
-
-	if (!it->node) {
-		return bucket_val(s, it->bucket);
-	} else {
-		return node_val(s, it->node);
-	}
-}
-
-void hashset_it_reset(const struct hashset *s, struct hashset_it *it)
-{
-	assert(s);
-	assert(it);
-
-	it->bucket = NULL;
-	it->node = NULL;
 }
