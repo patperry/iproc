@@ -30,12 +30,12 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	double logscale = MAX(0.0, lwmax);
 	double invscale = exp(-logscale);
 
-	iproc_logsumexp pos, neg;
-	iproc_logsumexp_init(&pos);
-	iproc_logsumexp_init(&neg);
+	struct logsumexp pos, neg;
+	logsumexp_init(&pos);
+	logsumexp_init(&neg);
 
 	/* treat the initial sum of weights as the first positive difference */
-	iproc_logsumexp_insert(&pos, -logscale);
+	logsumexp_insert(&pos, -logscale);
 
 	/* compute the log sums of the positive and negative differences in weights */
 	for (i = 0; i < nnz; i++) {
@@ -52,15 +52,15 @@ compute_weight_changes(iproc_design_ctx * ctx,
 		 */
 		if (dlw >= 0) {
 			log_abs_dw = lp0 + log(exp(dlw - logscale) - invscale);
-			iproc_logsumexp_insert(&pos, log_abs_dw);
+			logsumexp_insert(&pos, log_abs_dw);
 		} else {
 			log_abs_dw = lp0 + log(invscale - exp(dlw - logscale));
-			iproc_logsumexp_insert(&neg, log_abs_dw);
+			logsumexp_insert(&neg, log_abs_dw);
 		}
 	}
 
-	double log_sum_abs_dw_p = iproc_logsumexp_value(&pos);
-	double log_sum_abs_dw_n = iproc_logsumexp_value(&neg);
+	double log_sum_abs_dw_p = logsumexp_value(&pos);
+	double log_sum_abs_dw_n = logsumexp_value(&neg);
 
 	if (log_sum_abs_dw_n > log_sum_abs_dw_p) {
 		/* The sum of the weights is positive, so this only happens as a

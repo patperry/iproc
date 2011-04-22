@@ -1,17 +1,14 @@
-#ifndef _IPROC_LOGSUMEXP_H
-#define _IPROC_LOGSUMEXP_H
+#ifndef _LOGSUMEXP_H
+#define _LOGSUMEXP_H
 
-typedef struct _iproc_logsumexp iproc_logsumexp;
-
-struct _iproc_logsumexp {
+struct logsumexp {
 	double max;
 	double sumexpm1;
 };
 
-void iproc_logsumexp_init(iproc_logsumexp * lse);
+void logsumexp_init(struct logsumexp *lse);
+void logsumexp_insert(struct logsumexp *lse, double value);
+double logsumexp_max(const struct logsumexp *lse);
+double logsumexp_value(const struct logsumexp *lse);
 
-void iproc_logsumexp_insert(iproc_logsumexp * lse, double value);
-double iproc_logsumexp_max(iproc_logsumexp * lse);
-double iproc_logsumexp_value(iproc_logsumexp * lse);
-
-#endif /* _IPROC_LOGSUMEXP_H */
+#endif /* _LOGSUMEXP_H */

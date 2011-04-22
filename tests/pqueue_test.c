@@ -8,6 +8,8 @@
 
 #include "pqueue.h"
 
+DEFINE_COMPARE_AND_EQUALS_FN(ssize_compare, ssize_equals, ssize_t)
+
 static struct pqueue pqueue;
 static ssize_t size;
 static ssize_t *elts;		// elements sorted in decending order

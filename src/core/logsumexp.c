@@ -26,14 +26,14 @@
  *
  *   return M + log(S + 1)
  */
-void iproc_logsumexp_init(iproc_logsumexp * lse)
+void logsumexp_init(struct logsumexp *lse)
 {
 	assert(lse);
 	lse->max = -INFINITY;
 	lse->sumexpm1 = -1.0;
 }
 
-void iproc_logsumexp_insert(iproc_logsumexp * lse, double val)
+void logsumexp_insert(struct logsumexp* lse, double val)
 {
 	assert(lse);
 
@@ -57,7 +57,7 @@ void iproc_logsumexp_insert(iproc_logsumexp * lse, double val)
 	}
 }
 
-double iproc_logsumexp_value(iproc_logsumexp * lse)
+double logsumexp_value(const struct logsumexp *lse)
 {
 	assert(lse);
 
@@ -67,7 +67,7 @@ double iproc_logsumexp_value(iproc_logsumexp * lse)
 	return max + log1p(sumexpm1);
 }
 
-double iproc_logsumexp_max(iproc_logsumexp * lse)
+double logsumexp_max(const struct logsumexp *lse)
 {
 	assert(lse);
 	return lse->max;
