@@ -6,22 +6,25 @@
 #include "refcount.h"
 #include "vector.h"
 
-typedef struct _iproc_svector iproc_svector;
+typedef struct svector iproc_svector;
 
-struct _iproc_svector {
-	int64_t dim;
+struct svector {
+	ssize_t dim;
 	struct darray index;
 	struct darray value;
-	struct refcount refcount;
 };
 
-iproc_svector *iproc_svector_new(int64_t dim);
-iproc_svector *iproc_svector_new_copy(const iproc_svector * svector);
-void iproc_svector_clear(iproc_svector * svector);
-void iproc_svector_copy(iproc_svector * dst_svector,
-			const iproc_svector * src_svector);
-iproc_svector *iproc_svector_ref(iproc_svector * svector);
-void iproc_svector_unref(iproc_svector * svector);
+bool svector_init(struct svector *v, ssize_t n);
+bool svector_init_copy(struct svector *v, const struct svector *src);
+void svector_deinit(struct svector *v);
+
+struct svector *svector_new(ssize_t n);
+struct svector *svector_new_copy(const struct svector *v);
+void svector_free(iproc_svector * svector);
+
+
+bool svector_assign_copy(struct svector *v, const struct svector *src);
+void svector_clear(struct svector *v);
 
 int64_t iproc_svector_dim(const iproc_svector * svector);
 double iproc_svector_get(const iproc_svector * svector, int64_t i);

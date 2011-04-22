@@ -365,6 +365,8 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				221FEE8B132EC8710000097B /* svector.c */,
+				221FEE8C132EC8710000097B /* svector.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
@@ -398,8 +400,6 @@
 				221FEE8F132EC8710000097B /* vector.h */,
 				22597400133D081A0022B52E /* matrix.c */,
 				22597401133D081A0022B52E /* matrix.h */,
-				221FEE8B132EC8710000097B /* svector.c */,
-				221FEE8C132EC8710000097B /* svector.h */,
 			);
 			name = Core;
 			sourceTree = "<group>";

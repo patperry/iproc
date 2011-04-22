@@ -11,7 +11,7 @@ DEFINE_COMPARE_FN(int64_compare, int64_t)
 
 static iproc_svector *iproc_design_var_new_alloc(iproc_design * design)
 {
-	return iproc_svector_new(design->dim);
+	return svector_new(design->dim);
 }
 
 // TODO : make static
@@ -42,7 +42,7 @@ iproc_sdesign_var_free(iproc_design * design, iproc_svector * svector)
 	if (!svector)
 		return;
 
-	iproc_svector_clear(svector);
+	svector_clear(svector);
 	darray_push_back(svectors, &svector);
 }
 
@@ -253,10 +253,10 @@ iproc_design_ctx_mul(double alpha,
 
 	iproc_design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	iproc_svector *diffprod = iproc_svector_new(vector_size(y));
+	iproc_svector *diffprod = svector_new(vector_size(y));
 	iproc_design_ctx_dmul(alpha, trans, ctx, x, 0.0, diffprod);
 	iproc_vector_sacc(y, 1.0, diffprod);
-	iproc_svector_unref(diffprod);
+	svector_free(diffprod);
 }
 
 void
@@ -280,10 +280,10 @@ iproc_design_ctx_muls(double alpha,
 
 	iproc_design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	iproc_svector *diffprod = iproc_svector_new(vector_size(y));
+	iproc_svector *diffprod = svector_new(vector_size(y));
 	iproc_design_ctx_dmuls(alpha, trans, ctx, x, 0.0, diffprod);
 	iproc_vector_sacc(y, 1.0, diffprod);
-	iproc_svector_unref(diffprod);
+	svector_free(diffprod);
 }
 
 void
@@ -307,7 +307,7 @@ iproc_design_ctx_dmul(double alpha,
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		iproc_svector_clear(y);
+		svector_clear(y);
 	} else if (beta != 1.0) {
 		iproc_svector_scale(y, beta);
 	}
@@ -373,7 +373,7 @@ iproc_design_ctx_dmuls(double alpha,
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		iproc_svector_clear(y);
+		svector_clear(y);
 	} else if (beta != 1.0) {
 		iproc_svector_scale(y, beta);
 	}

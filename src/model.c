@@ -165,9 +165,9 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 {
 	if (ctx) {
-		iproc_svector_unref(ctx->dxbar);
-		iproc_svector_unref(ctx->dp);
-		iproc_svector_unref(ctx->deta);
+		svector_free(ctx->dxbar);
+		svector_free(ctx->dp);
+		svector_free(ctx->deta);
 		free(ctx);
 	}
 }

@@ -90,7 +90,7 @@ compute_active_probs(struct vector *log_p0,
 		     double log_gamma,
 		     iproc_svector * deta, iproc_svector * p_active)
 {
-	iproc_svector_copy(p_active, deta);
+	svector_assign_copy(p_active, deta);
 	int64_t i, nnz = iproc_svector_nnz(p_active);
 	iproc_vector_view p_active_nz = iproc_svector_view_nz(p_active);
 
@@ -149,9 +149,9 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	ctx->design_ctx = NULL;
 	ctx->group = NULL;
 
-	ctx->deta = iproc_svector_new(nreceiver);
-	ctx->dp = iproc_svector_new(nreceiver);
-	ctx->dxbar = iproc_svector_new(dim);
+	ctx->deta = svector_new(nreceiver);
+	ctx->dp = svector_new(nreceiver);
+	ctx->dxbar = svector_new(dim);
 
 	refcount_init(&ctx->refcount);
 
@@ -198,9 +198,9 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, int64_t isend, iproc_history * h)
 	assert(isend >= 0);
 	assert(isend < iproc_model_nsender(ctx->model));
 
-	iproc_svector_clear(ctx->deta);
-	iproc_svector_clear(ctx->dp);
-	iproc_svector_clear(ctx->dxbar);
+	svector_clear(ctx->deta);
+	svector_clear(ctx->dp);
+	svector_clear(ctx->dxbar);
 	if (ctx->design_ctx)
 		iproc_design_ctx_unref(ctx->design_ctx);
 

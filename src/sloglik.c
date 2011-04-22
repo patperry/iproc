@@ -10,10 +10,10 @@
 static void iproc_sloglik_free(iproc_sloglik * sll)
 {
 	if (sll) {
-		iproc_svector_unref(sll->dxbar);
-		iproc_svector_unref(sll->dp);
-		iproc_svector_unref(sll->dxobs);
-		iproc_svector_unref(sll->nrecv);
+		svector_free(sll->dxbar);
+		svector_free(sll->dp);
+		svector_free(sll->dxobs);
+		svector_free(sll->nrecv);
 		vector_free(sll->grad);
 		iproc_model_unref(sll->model);
 		free(sll);
@@ -37,12 +37,12 @@ iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend)
 	sll->grad_cached = false;
 
 	sll->nsend = 0;
-	sll->nrecv = iproc_svector_new(n);
-	sll->dxobs = iproc_svector_new(p);
+	sll->nrecv = svector_new(n);
+	sll->dxobs = svector_new(p);
 
 	sll->gamma = 0.0;
-	sll->dp = iproc_svector_new(n);
-	sll->dxbar = iproc_svector_new(p);
+	sll->dp = svector_new(n);
+	sll->dxbar = svector_new(p);
 
 	refcount_init(&sll->refcount);
 
@@ -89,7 +89,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	int64_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =
 	    iproc_model_ctx_new(sll->model, sll->isend, history);
-	iproc_svector *wt = iproc_svector_new(nreceiver);
+	iproc_svector *wt = svector_new(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
 	double scale0 = 1 - scale1;
@@ -129,7 +129,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	// update number of sends
 	sll->nsend += n;
 
-	iproc_svector_unref(wt);
+	svector_free(wt);
 	iproc_model_ctx_unref(ctx);
 }
 

@@ -22,77 +22,87 @@ int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i)
 	return ix;
 }
 
-static void iproc_svector_free(iproc_svector * svector)
+struct svector *svector_new(ssize_t n)
 {
-	if (svector) {
-		darray_deinit(&svector->value);
-		darray_deinit(&svector->index);
-		free(svector);
-	}
-}
-
-iproc_svector *iproc_svector_new(int64_t dim)
-{
-	assert(dim >= 0);
-
-	iproc_svector *svector = calloc(1, sizeof(*svector));
-
-	if (svector && darray_init(&svector->index, sizeof(int64_t))
-	    && darray_init(&svector->value, sizeof(double))
-	    && refcount_init(&svector->refcount)) {
-		svector->dim = dim;
-		return svector;
+	assert(n >= 0);
+	
+	struct svector *v;
+	
+	if ((v = malloc(sizeof(*v)))) {
+		if (svector_init(v, n)) {
+			return v;
+		}
+		free(v);
 	}
 
-	iproc_svector_free(svector);
 	return NULL;
 }
 
-iproc_svector *iproc_svector_ref(iproc_svector * svector)
+bool svector_init(struct svector *v, ssize_t n)
 {
-	if (svector) {
-		refcount_get(&svector->refcount);
+	assert(v);
+	assert(n >= 0);
+	
+	if (darray_init(&v->index, sizeof(int64_t))) {
+		if (darray_init(&v->value, sizeof(double))) {
+			v->dim = n;
+			return true;
+		}
+		darray_deinit(&v->index);
 	}
-	return svector;
+	return false;
 }
 
-static void iproc_svector_release(struct refcount *refcount)
+struct svector *svector_new_copy(const struct svector *src)
 {
-	iproc_svector *svector =
-	    container_of(refcount, iproc_svector, refcount);
-	iproc_svector_free(svector);
-}
-
-void iproc_svector_unref(iproc_svector * svector)
-{
-	if (!svector)
-		return;
-
-	refcount_put(&svector->refcount, iproc_svector_release);
-}
-
-iproc_svector *iproc_svector_new_copy(const iproc_svector * svector)
-{
-	assert(svector);
-	int64_t dim = iproc_svector_dim(svector);
-	iproc_svector *copy = calloc(1, sizeof(*copy));
-
-	if (copy && darray_init_copy(&copy->index, &svector->index)
-	    && darray_init_copy(&copy->value, &svector->value)
-	    && refcount_init(&copy->refcount)) {
-		copy->dim = dim;
-		return copy;
+	assert(src);
+	struct svector *v;
+	
+	if ((v = malloc(sizeof(*v)))) {
+		if (svector_init_copy(v, src)) {
+			return v;
+		}
+		free(v);
 	}
-
-	free(copy);
 	return NULL;
 }
 
-void iproc_svector_clear(iproc_svector * svector)
+bool svector_init_copy(struct svector *v, const struct svector *src)
 {
-	assert(svector);
-	darray_clear(&svector->index);
-	darray_clear(&svector->value);
+	assert(v);
+	assert(src);
+
+	if (svector_init(v, iproc_svector_dim(src))) {
+		if (svector_assign_copy(v, src)) {
+			return true;
+		}
+		svector_deinit(v);
+	}
+	return false;
+}
+
+void svector_free(struct svector *v)
+{
+	if (v) {
+		svector_deinit(v);
+		free(v);
+	}
+}
+
+void svector_deinit(struct svector *v)
+{
+	darray_deinit(&v->value);
+	darray_deinit(&v->index);
+}
+
+
+
+
+void svector_clear(struct svector * v)
+{
+	assert(v);
+	darray_clear(&v->index);
+	darray_clear(&v->value);
 }
 
 int64_t iproc_svector_dim(const iproc_svector * svector)
@@ -325,28 +335,28 @@ void iproc_svector_printf(const iproc_svector * svector)
 	printf("\n}\n");
 }
 
-void
-iproc_svector_copy(iproc_svector * dst_svector,
-		   const iproc_svector * src_svector)
+bool svector_assign_copy(struct svector *dst, const struct svector *src)
 {
-	assert(dst_svector);
-	assert(src_svector);
-	assert(iproc_svector_dim(dst_svector) ==
-	       iproc_svector_dim(src_svector));
+	assert(dst);
+	assert(src);
+	assert(iproc_svector_dim(dst) ==
+	       iproc_svector_dim(src));
 
-	int64_t nnz = iproc_svector_nnz(src_svector);
+	int64_t nnz = iproc_svector_nnz(src);
 
-	darray_resize(&dst_svector->index, nnz);
+	darray_resize(&dst->index, nnz);
 	if (nnz > 0) {
-		int64_t *idst = darray_front(&dst_svector->index);
-		int64_t *isrc = darray_front(&src_svector->index);
+		int64_t *idst = darray_front(&dst->index);
+		int64_t *isrc = darray_front(&src->index);
 		memcpy(idst, isrc, nnz * sizeof(int64_t));
 	}
 
-	darray_resize(&dst_svector->value, nnz);
+	darray_resize(&dst->value, nnz);
 	if (nnz > 0) {
-		double *vdst = darray_front(&dst_svector->value);
-		double *vsrc = darray_front(&src_svector->value);
+		double *vdst = darray_front(&dst->value);
+		double *vsrc = darray_front(&src->value);
 		memcpy(vdst, vsrc, nnz * sizeof(double));
 	}
+	
+	return true;
 }

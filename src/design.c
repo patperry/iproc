@@ -14,7 +14,7 @@ static void iproc_design_clear_svectors(struct darray *svectors)
 			iproc_svector *x =
 			    *(iproc_svector **) darray_at(svectors,
 							  i);
-			iproc_svector_unref(x);
+			svector_free(x);
 		}
 		darray_resize(svectors, 0);
 	}
