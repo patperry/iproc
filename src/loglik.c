@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "sloglik.h"
 #include "loglik.h"
 
@@ -21,13 +21,13 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 		darray_deinit(array);
 		vector_free(loglik->grad);
 		iproc_model_unref(loglik->model);
-		iproc_free(loglik);
+		free(loglik);
 	}
 }
 
 static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 {
-	iproc_loglik *loglik = iproc_calloc(1, sizeof(*loglik));
+	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
 	iproc_design *design = iproc_model_design(model);
 	int64_t nsender = iproc_design_nsender(design);
 

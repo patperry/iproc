@@ -2,10 +2,10 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
 #include "blas-private.h"
 #include "compare.h"
-#include "memory.h"
 #include "svector.h"
 
 DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
@@ -27,7 +27,7 @@ static void iproc_svector_free(iproc_svector * svector)
 	if (svector) {
 		darray_deinit(&svector->value);
 		darray_deinit(&svector->index);
-		iproc_free(svector);
+		free(svector);
 	}
 }
 
@@ -35,7 +35,7 @@ iproc_svector *iproc_svector_new(int64_t dim)
 {
 	assert(dim >= 0);
 
-	iproc_svector *svector = iproc_calloc(1, sizeof(*svector));
+	iproc_svector *svector = calloc(1, sizeof(*svector));
 
 	if (svector && darray_init(&svector->index, sizeof(int64_t))
 	    && darray_init(&svector->value, sizeof(double))
@@ -75,7 +75,7 @@ iproc_svector *iproc_svector_new_copy(const iproc_svector * svector)
 {
 	assert(svector);
 	int64_t dim = iproc_svector_dim(svector);
-	iproc_svector *copy = iproc_calloc(1, sizeof(*copy));
+	iproc_svector *copy = calloc(1, sizeof(*copy));
 
 	if (copy && darray_init_copy(&copy->index, &svector->index)
 	    && darray_init_copy(&copy->value, &svector->value)
@@ -84,7 +84,7 @@ iproc_svector *iproc_svector_new_copy(const iproc_svector * svector)
 		return copy;
 	}
 
-	iproc_free(copy);
+	free(copy);
 	return NULL;
 }
 

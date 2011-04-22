@@ -1,8 +1,8 @@
 #include "port.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include "compare.h"
-#include "memory.h"
 #include "actors.h"
 
 DEFINE_COMPARE_FN(int64_compare, int64_t)

@@ -23,7 +23,6 @@
 		221FEEA2132EC8710000097B /* ieee754.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE79132EC8710000097B /* ieee754.h */; };
 		221FEEA5132EC8710000097B /* logsumexp.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE7C132EC8710000097B /* logsumexp.c */; };
 		221FEEA6132EC8710000097B /* logsumexp.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE7D132EC8710000097B /* logsumexp.h */; };
-		221FEEA9132EC8710000097B /* memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE80132EC8710000097B /* memory.h */; };
 		221FEEB0132EC8710000097B /* refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE87132EC8710000097B /* refcount.c */; };
 		221FEEB1132EC8710000097B /* refcount.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE88132EC8710000097B /* refcount.h */; };
 		221FEEB4132EC8710000097B /* svector.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE8B132EC8710000097B /* svector.c */; };
@@ -225,7 +224,6 @@
 		221FEE79132EC8710000097B /* ieee754.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ieee754.h; path = src/core/ieee754.h; sourceTree = "<group>"; };
 		221FEE7C132EC8710000097B /* logsumexp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = logsumexp.c; path = src/core/logsumexp.c; sourceTree = "<group>"; };
 		221FEE7D132EC8710000097B /* logsumexp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logsumexp.h; path = src/core/logsumexp.h; sourceTree = "<group>"; };
-		221FEE80132EC8710000097B /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = memory.h; path = src/core/memory.h; sourceTree = "<group>"; };
 		221FEE87132EC8710000097B /* refcount.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = refcount.c; path = src/core/refcount.c; sourceTree = "<group>"; };
 		221FEE88132EC8710000097B /* refcount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = refcount.h; path = src/core/refcount.h; sourceTree = "<group>"; };
 		221FEE8B132EC8710000097B /* svector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = svector.c; path = src/core/svector.c; sourceTree = "<group>"; };
@@ -400,7 +398,6 @@
 				221FEE8F132EC8710000097B /* vector.h */,
 				22597400133D081A0022B52E /* matrix.c */,
 				22597401133D081A0022B52E /* matrix.h */,
-				221FEE80132EC8710000097B /* memory.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
 			);
@@ -558,7 +555,6 @@
 				221FEE9E132EC8710000097B /* hash.h in Headers */,
 				221FEEA2132EC8710000097B /* ieee754.h in Headers */,
 				221FEEA6132EC8710000097B /* logsumexp.h in Headers */,
-				221FEEA9132EC8710000097B /* memory.h in Headers */,
 				221FEEB1132EC8710000097B /* refcount.h in Headers */,
 				221FEEB5132EC8710000097B /* svector.h in Headers */,
 				221FEEB6132EC8710000097B /* util.h in Headers */,

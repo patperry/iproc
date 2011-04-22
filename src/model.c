@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "model.h"
 #include "util.h"
 
@@ -168,7 +168,7 @@ static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 		iproc_svector_unref(ctx->dxbar);
 		iproc_svector_unref(ctx->dp);
 		iproc_svector_unref(ctx->deta);
-		iproc_free(ctx);
+		free(ctx);
 	}
 }
 
@@ -187,7 +187,7 @@ static void iproc_model_free(iproc_model * model)
 		cohort_models_deinit(&model->cohort_models);
 		vector_free(model->coefs);
 		iproc_design_unref(model->design);
-		iproc_free(model);
+		free(model);
 	}
 }
 
@@ -200,7 +200,7 @@ iproc_model *iproc_model_new(iproc_design * design,
 	assert(iproc_design_nreceiver(design) > 0);
 	assert(!has_loops || iproc_design_nreceiver(design) > 1);
 
-	iproc_model *model = iproc_malloc(sizeof(*model));
+	iproc_model *model = malloc(sizeof(*model));
 	model->design = iproc_design_ref(design);
 	model->coefs = vector_new_copy(coefs);
 	model->has_loops = has_loops;

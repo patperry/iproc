@@ -65,7 +65,6 @@ libcore_la_SOURCES = \
 	src/core/macconfig.h \
 	src/core/matrix.c \
 	src/core/matrix.h \
-	src/core/memory.h \
 	src/core/port.h \
 	src/core/pqueue.c \
 	src/core/pqueue.h \

@@ -4,26 +4,25 @@
 #include <stdlib.h>
 #include <strings.h>
 #include "blas-private.h"
-#include "memory.h"
 #include "util.h"
 #include "matrix.h"
 
 static void iproc_matrix_free(iproc_matrix * matrix)
 {
 	if (matrix) {
-		iproc_free(matrix->data);
-		iproc_free(matrix);
+		free(matrix->data);
+		free(matrix);
 	}
 }
 
 iproc_matrix *iproc_matrix_new(int64_t nrow, int64_t ncol)
 {
-	iproc_matrix *matrix = iproc_malloc(sizeof(*matrix));
+	iproc_matrix *matrix = malloc(sizeof(*matrix));
 
 	if (!matrix)
 		return NULL;
 
-	matrix->data = iproc_malloc(nrow * ncol * sizeof(matrix->data[0]));
+	matrix->data = malloc(nrow * ncol * sizeof(matrix->data[0]));
 	matrix->nrow = nrow;
 	matrix->ncol = ncol;
 	matrix->lda = MAX(1, nrow);

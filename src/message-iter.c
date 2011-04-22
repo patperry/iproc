@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "messages.h"
 
 static void iproc_message_iter_free(iproc_message_iter * it)
@@ -10,13 +10,13 @@ static void iproc_message_iter_free(iproc_message_iter * it)
 	if (it) {
 		iproc_history_unref(it->history);
 		iproc_messages_unref(it->messages);
-		iproc_free(it);
+		free(it);
 	}
 }
 
 iproc_message_iter *iproc_message_iter_new(iproc_messages * msgs)
 {
-	iproc_message_iter *it = iproc_malloc(sizeof(*it));
+	iproc_message_iter *it = malloc(sizeof(*it));
 	if (!it)
 		return NULL;
 

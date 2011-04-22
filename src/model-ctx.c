@@ -3,9 +3,9 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "logsumexp.h"
-#include "memory.h"
 #include "refcount.h"
 #include "model.h"
 
@@ -138,7 +138,7 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	assert(isend >= 0);
 	assert(isend < iproc_model_nsender(model));
 
-	iproc_model_ctx *ctx = iproc_malloc(sizeof(*ctx));
+	iproc_model_ctx *ctx = malloc(sizeof(*ctx));
 	if (!ctx)
 		return NULL;
 

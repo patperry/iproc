@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "design.h"
 
 static void iproc_design_clear_svectors(struct darray *svectors)
@@ -33,7 +33,7 @@ static void iproc_design_ctx_free_dealloc(iproc_design_ctx * ctx)
 	if (ctx) {
 		assert(darray_size(&ctx->dxs) == 0);
 		darray_deinit(&ctx->dxs);
-		iproc_free(ctx);
+		free(ctx);
 	}
 }
 
@@ -75,7 +75,7 @@ static void iproc_design_free(iproc_design * design)
 		iproc_design_vars_deinit(&design->vars);
 		actors_free(design->receivers);
 		actors_free(design->senders);
-		iproc_free(design);
+		free(design);
 	}
 }
 
@@ -101,7 +101,7 @@ iproc_design *iproc_design_new(iproc_actors * senders,
 	assert(senders);
 	assert(receivers);
 
-	iproc_design *design = iproc_calloc(1, sizeof(*design));
+	iproc_design *design = calloc(1, sizeof(*design));
 
 	if (!design)
 		return NULL;

@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "compare.h"
-#include "memory.h"
 #include "design.h"
 
 DEFINE_COMPARE_FN(int64_compare, int64_t)
@@ -118,7 +118,7 @@ static iproc_design_ctx *iproc_design_ctx_new_alloc(iproc_design * design,
 	assert(0 <= isend);
 	assert(isend < iproc_design_nsender(design));
 
-	iproc_design_ctx *ctx = iproc_calloc(1, sizeof(*ctx));
+	iproc_design_ctx *ctx = calloc(1, sizeof(*ctx));
 
 	if (!ctx)
 		return NULL;

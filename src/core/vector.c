@@ -4,12 +4,12 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "blas-private.h"
 #include "compare.h"
 #include "hash.h"
 #include "ieee754.h"
-#include "memory.h"
 #include "vector.h"
 
 bool vector_init(struct vector *v, ssize_t n)

@@ -2,9 +2,9 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include "compare.h"
 #include "ieee754.h"
-#include "memory.h"
 #include "design.h"
 #include "util.h"
 #include "vrecip.h"
@@ -13,7 +13,7 @@ static void iproc_vrecip_free(iproc_vrecip * v)
 {
 	if (v) {
 		darray_deinit(&v->intvls);
-		iproc_free(v);
+		free(v);
 	}
 }
 
@@ -70,7 +70,7 @@ iproc_vrecip *iproc_vrecip_new(double *intvls, int64_t n)
 	assert(n >= 0);
 	assert(n == 0 || intvls);
 
-	iproc_vrecip *v = iproc_calloc(1, sizeof(*v));
+	iproc_vrecip *v = calloc(1, sizeof(*v));
 
 	if (!v)
 		return NULL;

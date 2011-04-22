@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "history.h"
 
 static void trace_array_grow(struct darray *array, int64_t n)
@@ -76,13 +76,13 @@ static void iproc_history_free(iproc_history * history)
 	if (history) {
 		trace_array_deinit(&history->send);
 		trace_array_deinit(&history->recv);
-		iproc_free(history);
+		free(history);
 	}
 }
 
 iproc_history *iproc_history_new()
 {
-	iproc_history *history = iproc_calloc(1, sizeof(*history));
+	iproc_history *history = calloc(1, sizeof(*history));
 
 	if (history && darray_init(&history->send, sizeof(iproc_history_trace))
 	    && darray_init(&history->recv, sizeof(iproc_history_trace))

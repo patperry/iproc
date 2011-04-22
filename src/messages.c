@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "messages.h"
 
 static void iproc_messages_free(iproc_messages * msgs)
@@ -10,13 +10,13 @@ static void iproc_messages_free(iproc_messages * msgs)
 	if (msgs) {
 		darray_deinit(&msgs->array);
 		darray_deinit(&msgs->recipients);
-		iproc_free(msgs);
+		free(msgs);
 	}
 }
 
 iproc_messages *iproc_messages_new()
 {
-	iproc_messages *msgs = iproc_calloc(1, sizeof(*msgs));
+	iproc_messages *msgs = calloc(1, sizeof(*msgs));
 	if (!msgs)
 		return NULL;
 

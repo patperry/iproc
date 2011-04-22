@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "memory.h"
 #include "fit.h"
 
 int dcsrch_(double *stp, double *f, double *g,
@@ -67,7 +67,7 @@ iproc_fit *iproc_fit_new(iproc_model * model0,
 	assert(iproc_messages_max_from(messages) < iproc_model_nsender(model0));
 	assert(iproc_messages_max_to(messages) < iproc_model_nreceiver(model0));
 
-	iproc_fit *fit = iproc_malloc(sizeof(*fit));
+	iproc_fit *fit = malloc(sizeof(*fit));
 	if (!fit)
 		return NULL;
 
@@ -96,7 +96,7 @@ void iproc_fit_free(iproc_fit * fit)
 		iproc_matrix_unref(fit->inv_hess);
 		iproc_messages_unref(fit->messages);
 		iproc_model_unref(fit->model);
-		iproc_free(fit);
+		free(fit);
 	}
 }
 

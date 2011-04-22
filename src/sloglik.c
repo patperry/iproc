@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
-#include "memory.h"
+#include <stdlib.h>
 #include "sloglik.h"
 
 static void iproc_sloglik_free(iproc_sloglik * sll)
@@ -16,13 +16,13 @@ static void iproc_sloglik_free(iproc_sloglik * sll)
 		iproc_svector_unref(sll->nrecv);
 		vector_free(sll->grad);
 		iproc_model_unref(sll->model);
-		iproc_free(sll);
+		free(sll);
 	}
 }
 
 iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend)
 {
-	iproc_sloglik *sll = iproc_malloc(sizeof(*sll));
+	iproc_sloglik *sll = malloc(sizeof(*sll));
 	if (!sll)
 		return NULL;
 

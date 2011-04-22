@@ -1,11 +1,12 @@
 #include "port.h"
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include "compare.h"
 #include "trace.h"
-#include "memory.h"
+
 
 DEFINE_COMPARE_FN(int64_compare, int64_t)
 
@@ -78,13 +79,13 @@ static void iproc_trace_free(iproc_trace * trace)
 	if (trace) {
 		iproc_events_array_deinit(&trace->events);
 		darray_deinit(&trace->pending);
-		iproc_free(trace);
+		free(trace);
 	}
 }
 
 iproc_trace *iproc_trace_new()
 {
-	iproc_trace *trace = iproc_malloc(sizeof(*trace));
+	iproc_trace *trace = malloc(sizeof(*trace));
 
 	if (!trace)
 		return NULL;
