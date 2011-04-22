@@ -65,9 +65,22 @@ typedef long long intptr_t;
 intmax_t imaxabs(intmax_t i);
 #endif
 
+#ifndef INT32_MAX
+# define INT32_MAX (~ ((int32_t)(-1) << 31))
+#endif
+#ifndef INT32_MIN
+# define INT32_MIN (-INT32_MAX - 1)
+#endif
+#ifndef INT64_MAX
+# define INT64_MAX (~ ((int64_t)(-1) << 63))
+#endif
+#ifndef INT64_MIN
+# define INT64_MIN (-INT64_MAX - 1)
+#endif
+
 /* http://www.mail-archive.com/bug-gnulib@gnu.org/msg02492.html */
 #ifndef SSIZE_MAX
-# define SSIZE_MAX  (~ (-1L << (SIZEOF_SIZE_T * CHAR_BIT - 1)))
+# define SSIZE_MAX  (~ ((ssize_t)(-1) << (SIZEOF_SIZE_T * CHAR_BIT - 1)))
 #endif
 #ifndef SSIZE_MIN
 # define SSIZE_MIN  (-SSIZE_MAX-1)
@@ -89,11 +102,15 @@ define SSIZE_FMT in config.h"
 #ifndef F77_FUNC
 # define F77_FUNC(name) name ## _
 #endif
-#ifndef F77_INT_MAX
-# define F77_INT_MAX LONG_MAX
-#endif
-#ifndef f77int
-# define f77int long int
+
+#ifdef HAVE_BLAS64
+typedef int64_t f77int;
+# define F77INT_MAX INT64_MAX
+# define F77INT_MIN INT64_MIN
+#else
+typedef int32_t f77int;
+# define F77INT_MAX INT32_MAX
+# define F77INT_MIN INT32_MIN
 #endif
 
 #endif /* _PORT_H */

@@ -16,17 +16,23 @@ AC_PROG_LIBTOOL
 # Checks for libraries
 AC_CHECK_LIBM
 AX_CHECK_BLAS
+AX_CHECK_BLAS64
 AX_CHECK_LAPACK
 
 # Checks for header files
-
-# Checks for typedefs, structures, and compiler characteristics
-AC_C_INLINE
 AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
 
-AC_TYPE_INTPTR_T
+# Checks for typedefs, structures, and compiler characteristics
+AC_C_BIGENDIAN
+AC_C_INLINE
+
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
 AC_TYPE_INTMAX_T
+AC_TYPE_INTPTR_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT8_T
 AC_TYPE_UINT16_T
@@ -39,14 +45,6 @@ AC_CHECK_SIZEOF([long])
 AC_CHECK_SIZEOF([long long])
 AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([void *])
-
-
-## HACK: not portable
-AH_TEMPLATE([f77int], [Define to appropriate type for Fortran integer])
-AH_TEMPLATE([F77_INT_MAX], [Define to maximum Fortran integer])
-AH_TOP([#include <limits.h>])
-AC_DEFINE([f77int],      [long int])
-AC_DEFINE([F77_INT_MAX], [LONG_MAX])
 
 # Checks for library functions
 AC_CONFIG_LIBOBJ_DIR([lib])

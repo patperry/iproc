@@ -16,7 +16,7 @@ bool vector_init(struct vector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
-	assert(n <= F77_INT_MAX);
+	assert(n <= F77INT_MAX);
 	assert(n <= SSIZE_MAX / sizeof(double));
 
 	if (array_init(&v->array, n, sizeof(double))) {

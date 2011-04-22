@@ -10,7 +10,7 @@
 #
 #   To link with LAPACK, you should link with:
 #
-#       $LAPACK_LIBS $BLAS_LIBS $LIBS
+#       $LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS
 #
 #   in that order. BLAS_LIBS is the output variable of the AX_BLAS macro,
 #   called automatically. 
@@ -91,7 +91,7 @@ fi
 
 # First, check LAPACK_LIBS environment variable
 if test "x$LAPACK_LIBS" != x; then
-        save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS"
+        save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
         AC_MSG_CHECKING([for $cheev in $LAPACK_LIBS])
         AC_TRY_LINK_FUNC($cheev, [ax_lapack_ok=yes], [LAPACK_LIBS=""])
         AC_MSG_RESULT($ax_lapack_ok)
@@ -103,7 +103,7 @@ fi
 
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $ax_lapack_ok = no; then
-        save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS"
+        save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
         AC_CHECK_FUNC($cheev, [ax_lapack_ok=yes])
         LIBS="$save_LIBS"
 fi
@@ -111,7 +111,7 @@ fi
 # Generic LAPACK library?
 for lapack in lapack lapack_rs6k; do
         if test $ax_lapack_ok = no; then
-                save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
+                save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS $FLIBS"
                 AC_CHECK_LIB($lapack, $cheev,
                     [ax_lapack_ok=yes; LAPACK_LIBS="-l$lapack"], [], [])
                 LIBS="$save_LIBS"
