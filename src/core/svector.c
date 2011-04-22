@@ -152,7 +152,7 @@ void iproc_svector_scale(iproc_svector * svector, double scale)
 {
 	assert(svector);
 
-	if (iproc_svector_dim(svector) == 0)
+	if (iproc_svector_nnz(svector) == 0)
 		return;
 	
 	f77int n = (f77int) iproc_svector_nnz(svector);
