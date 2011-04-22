@@ -7,6 +7,8 @@
 #include "memory.h"
 #include "design.h"
 
+DEFINE_COMPARE_FN(int64_compare, int64_t)
+
 static iproc_svector *iproc_design_var_new_alloc(iproc_design * design)
 {
 	return iproc_svector_new(design->dim);

@@ -478,7 +478,7 @@ bool vector_equals(const void *v1, const void *v2)
 		double x1 = *vector_at(vector1, i);
 		double x2 = *vector_at(vector2, i);
 
-		if (!iproc_identical(x1, x2))
+		if (!double_identical(x1, x2))
 			return false;
 	}
 

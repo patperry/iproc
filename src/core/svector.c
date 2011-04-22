@@ -8,6 +8,9 @@
 #include "memory.h"
 #include "svector.h"
 
+DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
+
+
 int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);

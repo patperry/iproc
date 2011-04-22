@@ -99,6 +99,13 @@ define SSIZE_FMT in config.h"
 # endif
 #endif
 
+#ifndef INT64_C
+# define INT64_C(x) x##LL
+#endif
+#ifndef UINT64_C
+# define UINT64_C(x) INT64_C(x##U)
+#endif
+
 #ifndef F77_FUNC
 # define F77_FUNC(name) name ## _
 #endif

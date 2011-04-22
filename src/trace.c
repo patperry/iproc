@@ -7,6 +7,8 @@
 #include "trace.h"
 #include "memory.h"
 
+DEFINE_COMPARE_FN(int64_compare, int64_t)
+
 static void iproc_trace_clear_pending(iproc_trace * trace)
 {
 	assert(trace);

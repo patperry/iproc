@@ -5,6 +5,9 @@
 #include "memory.h"
 #include "actors.h"
 
+DEFINE_COMPARE_FN(int64_compare, int64_t)
+DEFINE_COMPARE_FN(size_compare, size_t)
+
 #define group_bucket_compare size_compare
 
 static bool iproc_actors_reserve(iproc_actors * actors, ssize_t size);

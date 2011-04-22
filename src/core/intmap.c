@@ -2,6 +2,9 @@
 #include <assert.h>
 #include "intmap.h"
 
+DEFINE_COMPARE_FN(intptr_compare, intptr_t)
+
+
 static int intmap_item_compare(const void *x1, const void *x2);
 static struct intmap_item *intmap_at(const struct intmap *m, ssize_t i);
 static ssize_t intmap_index(const struct intmap *m, intptr_t key);

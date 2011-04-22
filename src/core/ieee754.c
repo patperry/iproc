@@ -2,8 +2,7 @@
 
 #include <float.h>
 #include <math.h>
-#include <sys/types.h>
-#include <sys/param.h>
+#include "compare.h"
 #include "ieee754.h"
 
 #define DBL_EXPMASK            ((uint16_t) 0x7FF0)
@@ -11,7 +10,7 @@
 #define DBL_EXPBIAS            ((uint16_t) 0x3FE0)
 #define DBL_EXPBIAS_INT32      ((uint32_t) 0x7FF00000)
 #define DBL_MANTISSAMASK_INT32 ((uint32_t) 0x000FFFFF)	/* for the MSB only */
-#if BYTE_ORDER == BIG_ENDIAN
+#ifdef WORDS_BIGENDIAN
 # define DBL_EXPPOS_INT16 0
 # define DBL_SIGNPOS_BYTE 0
 #else
@@ -24,7 +23,7 @@ union double_uint64 {
 	uint64_t w;
 };
 
-int iproc_identical(double x, double y)
+bool double_identical(double x, double y)
 {
 	union double_uint64 ux = { x };
 	union double_uint64 uy = { y };
@@ -32,7 +31,7 @@ int iproc_identical(double x, double y)
 }
 
 /* ported from tango/math/IEEE.d */
-double iproc_nextup(double x)
+double double_nextup(double x)
 {
 	union double_uint64 ps = { x };
 
@@ -56,13 +55,13 @@ double iproc_nextup(double x)
 }
 
 /* ported from tango/math/IEEE.d */
-double iproc_nextdown(double x)
+double double_nextdown(double x)
 {
-	return -iproc_nextup(-x);
+	return -double_nextup(-x);
 }
 
 /* ported from tango/math/IEEE.d */
-double iproc_ieeemean(double x, double y)
+double double_ieeemean(double x, double y)
 {
 	if (!((x >= 0 && y >= 0) || (x <= 0 && y <= 0)))
 		return NAN;
@@ -78,7 +77,7 @@ double iproc_ieeemean(double x, double y)
 	return ul.d;
 }
 
-double iproc_mknan(uint64_t payload)
+double double_mknan(uint64_t payload)
 {
 	union double_uint64 x = { NAN };
 
@@ -92,7 +91,7 @@ double iproc_mknan(uint64_t payload)
 	return x.d;
 }
 
-uint64_t iproc_getnan(double x)
+uint64_t double_getnan(double x)
 {
 	union double_uint64 payload = { x };
 
@@ -101,7 +100,7 @@ uint64_t iproc_getnan(double x)
 	return payload.w;
 }
 
-int iproc_feqrel(double x, double y)
+int double_eqrel(double x, double y)
 {
 	/* Public Domain. Original Author: Don Clugston, 18 Aug 2005.
 	 * Ported to C by Patrick Perry, 26 Feb 2010.
@@ -161,4 +160,19 @@ int iproc_feqrel(double x, double y)
 	return (bitsdiff == 0 && !((pa.w[DBL_EXPPOS_INT16]
 				    ^ pb.w[DBL_EXPPOS_INT16]) & DBL_EXPMASK)) ?
 	    1 : 0;
+}
+
+DEFINE_COMPARE_AND_EQUALS_FN(uint64_compare, uint64_equals, uint64_t)
+
+/* compare using uint64_t instead of double to avoid dealing with NaN
+ * comparisons; this relies on IEEE doubles being 8 bytes and lexicographically
+ * ordered, and uint64_t having the same endianness and alignment as double */
+bool double_equals(const void *x, const void *y)
+{
+	return uint64_equals(x, y);
+}
+
+int double_compare(const void *x, const void *y)
+{
+	return uint64_compare(x, y);
 }

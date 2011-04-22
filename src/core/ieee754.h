@@ -1,17 +1,19 @@
 
-#ifndef _IPROC_IEEE754_H
-#define _IPROC_IEEE754_H
+#ifndef _IEEE754_H
+#define _IEEE754_H
 
-#include <stdint.h>
+#define  MAX_NAN_PAYLOAD  UINT64_C(0x0007FFFFFFFFFFFF)
 
-#define  IPROC_MAX_NAN_PAYLOAD  UINT64_C(0x0007FFFFFFFFFFFF)
+bool double_identical(double x, double y);
+double double_nextup(double x);
+double double_nextdown(double x);
+double double_ieeemean(double x, double y);
+double double_mknan(uint64_t payload);
+uint64_t double_getnan(double x);
+int double_eqrel(double x, double y);
 
-int iproc_identical(double x, double y);
-double iproc_nextup(double x);
-double iproc_nextdown(double x);
-double iproc_ieeemean(double x, double y);
-double iproc_mknan(uint64_t payload);
-uint64_t iproc_getnan(double x);
-int iproc_feqrel(double x, double y);
 
-#endif /* _IPROC_IEEE754_H */
+bool double_equals(const void *x, const void *y);
+int double_compare(const void *x, const void *y);
+
+#endif /* _IEEE754_H */

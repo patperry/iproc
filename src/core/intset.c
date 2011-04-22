@@ -2,6 +2,8 @@
 #include <assert.h>
 #include "intset.h"
 
+DEFINE_COMPARE_FN(intptr_compare, intptr_t)
+
 static intptr_t intset_at(const struct intset *s, ssize_t index);
 static ssize_t intset_index(const struct intset *s, intptr_t val);
 

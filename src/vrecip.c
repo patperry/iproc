@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include "compare.h"
+#include "ieee754.h"
 #include "memory.h"
 #include "design.h"
 #include "util.h"
