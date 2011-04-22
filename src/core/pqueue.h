@@ -35,24 +35,23 @@ void *pqueue_push(struct pqueue *q, const void *val);
 void *pqueue_push_all(struct pqueue *q, const void *vals, ssize_t n);
 void pqueue_pop(struct pqueue *q);
 
-
 /* inline function definitions */
 bool pqueue_empty(const struct pqueue *q)
 {
 	return darray_empty(&q->array);
 }
 
-ssize_t pqueue_size(const struct pqueue * q)
+ssize_t pqueue_size(const struct pqueue *q)
 {
 	return darray_size(&q->array);
 }
 
-ssize_t pqueue_max_size(const struct pqueue * q)
+ssize_t pqueue_max_size(const struct pqueue *q)
 {
 	return darray_max_size(&q->array);
 }
 
-size_t pqueue_elt_size(const struct pqueue * q)
+size_t pqueue_elt_size(const struct pqueue *q)
 {
 	return darray_elt_size(&q->array);
 }

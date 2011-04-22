@@ -25,7 +25,8 @@ bool darray_assign(struct darray *a, const void *ptr, ssize_t n);
 bool darray_assign_repeat(struct darray *a, ssize_t n, const void *val);
 bool darray_assign_copy(struct darray *a, const struct darray *src);
 void *darray_copy_to(const struct darray *a, void *dst);
-void *darray_copy_range_to(const struct darray *a, ssize_t i, ssize_t n, void *dst);
+void *darray_copy_range_to(const struct darray *a, ssize_t i, ssize_t n,
+			   void *dst);
 void darray_fill(struct darray *a, const void *val);
 void darray_fill_range(struct darray *a, ssize_t i, ssize_t n, const void *val);
 
@@ -84,30 +85,28 @@ void darray_sort(struct darray *a, compare_fn compar);
 void darray_swap(struct darray *a, ssize_t i, ssize_t j);
 void darray_reverse(struct darray *a);
 
-
-
 /* inline function definitions */
 ssize_t darray_size(const struct darray *a)
 {
 	return a->size;
 }
 
-bool darray_empty(const struct darray * a)
+bool darray_empty(const struct darray *a)
 {
 	return a->size == 0;
 }
 
-ssize_t darray_capacity(const struct darray * a)
+ssize_t darray_capacity(const struct darray *a)
 {
 	return array_size(&a->array);
 }
 
-size_t darray_elt_size(const struct darray * a)
+size_t darray_elt_size(const struct darray *a)
 {
 	return array_elt_size(&a->array);
 }
 
-ssize_t darray_max_size(const struct darray * a)
+ssize_t darray_max_size(const struct darray *a)
 {
 	return array_max_size(&a->array);
 }

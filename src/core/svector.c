@@ -154,7 +154,7 @@ void iproc_svector_scale(iproc_svector * svector, double scale)
 
 	if (iproc_svector_nnz(svector) == 0)
 		return;
-	
+
 	f77int n = (f77int) iproc_svector_nnz(svector);
 	double alpha = scale;
 	f77int incx = 1;
@@ -207,7 +207,7 @@ iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector)
 
 	int64_t nnz = iproc_svector_nnz(svector);
 	double *px = NULL;
-	
+
 	if (nnz > 0) {
 		px = darray_front(&svector->value);
 	}

@@ -20,13 +20,12 @@ struct intmap {
 
 struct intmap_pos {
 	intptr_t key;
-	ssize_t  index;
+	ssize_t index;
 };
 
 struct intmap_iter {
 	ssize_t index;
 };
-
 
 /* create, destroy */
 bool intmap_init(struct intmap *m);
@@ -51,7 +50,6 @@ intptr_t intmap_lookup(const struct intmap *m, intptr_t key);
 intptr_t intmap_lookup_with(const struct intmap *m, intptr_t key,
 			    intptr_t val0);
 
-
 /* modification */
 bool intmap_add(struct intmap *m, intptr_t key, intptr_t val);
 bool intmap_add_all(struct intmap *m, const intptr_t *keys,
@@ -62,8 +60,7 @@ void intmap_remove_all(struct intmap *m, const intptr_t *keys, ssize_t n);
 /* position-based operations */
 const intptr_t *intmap_find(const struct intmap *m, intptr_t key,
 			    struct intmap_pos *pos);
-bool intmap_insert(struct intmap *m, struct intmap_pos *pos,
-		   intptr_t val);
+bool intmap_insert(struct intmap *m, struct intmap_pos *pos, intptr_t val);
 void intmap_replace(struct intmap *m, struct intmap_pos *pos, intptr_t val);
 void intmap_erase(struct intmap *m, struct intmap_pos *pos);
 
@@ -74,11 +71,5 @@ void intmap_iter_reset(const struct intmap *m, struct intmap_iter *it);
 bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it);
 struct intmap_item intmap_iter_current(const struct intmap *m,
 				       const struct intmap_iter *it);
-
-
-
-
-
-
 
 #endif /* _intmap_H */

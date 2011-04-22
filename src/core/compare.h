@@ -1,7 +1,7 @@
 #ifndef _COMPARE_H
 #define _COMPARE_H
 
-typedef bool(*equals_fn) (const void *px, const void *py);
+typedef bool (*equals_fn) (const void *px, const void *py);
 typedef int (*compare_fn) (const void *px, const void *py);
 
 #define DEFINE_COMPARE_FN(name, t) \
@@ -43,4 +43,4 @@ DEFINE_COMPARE_AND_EQUALS_FN(intptr_compare, intptr_equals, intptr_t)
  * ordered, and uint64_t having the same endianness and alignment as double */
 #define double_compare uint64_compare
 #define double_equals  uint64_equals
-#endif /* _COMPARE_H */
+#endif				/* _COMPARE_H */

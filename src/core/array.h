@@ -33,7 +33,8 @@ void array_init_slice(struct array *a,
 void array_assign_array(struct array *a, const void *src);
 void array_assign_copy(struct array *a, const struct array *src);
 void *array_copy_to(const struct array *a, void *dst);
-void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n, void *dst);
+void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
+			  void *dst);
 void array_fill(struct array *a, const void *val);
 void array_fill_range(struct array *a, ssize_t i, ssize_t n, const void *val);
 
@@ -46,7 +47,6 @@ static inline void array_set_range(struct array *a,
 #define array_set_front(a, val)  (array_set(a, 0, val))
 #define array_back(a)            (array_at(a, array_size(a) - 1))
 #define array_set_back(a, val)   (array_set(a, array_size(a) - 1, val))
-
 
 /* informative */
 static inline ssize_t array_size(const struct array *a);
@@ -74,34 +74,33 @@ ssize_t array_binary_search(const struct array *a,
 			    const void *key, compare_fn compar);
 void array_sort(struct array *a, compare_fn compar);
 
-
 /* inline function defs */
 ssize_t array_size(const struct array *a)
 {
 	return a->size;
 }
 
-bool array_empty(const struct array * a)
+bool array_empty(const struct array *a)
 {
 	return a->size == 0;
 }
 
-size_t array_elt_size(const struct array * a)
+size_t array_elt_size(const struct array *a)
 {
 	return a->elt_size;
 }
 
-ssize_t array_max_size(const struct array * a)
+ssize_t array_max_size(const struct array *a)
 {
 	return SSIZE_MAX / a->elt_size;
 }
 
-bool array_owner(const struct array * a)
+bool array_owner(const struct array *a)
 {
 	return a->owner;
 }
 
-bool array_overlaps(const struct array * a, ssize_t i, ssize_t n,
+bool array_overlaps(const struct array *a, ssize_t i, ssize_t n,
 		    const void *ptr, ssize_t nel)
 {
 	assert(a);
@@ -111,7 +110,7 @@ bool array_overlaps(const struct array * a, ssize_t i, ssize_t n,
 
 	if (array_empty(a) || n == 0 || nel == 0)
 		return false;
-	
+
 	size_t elt_size = array_elt_size(a);
 	const void *begin1 = array_at(a, i);
 	const void *end1 = (char *)begin1 + n * elt_size;
@@ -126,7 +125,7 @@ void *array_at(const struct array *a, ssize_t i)
 {
 	assert(0 <= i && i < array_size(a));
 	return (char *)a->data + i * a->elt_size;
-	
+
 }
 
 void array_set(struct array *a, ssize_t i, const void *src)
@@ -145,7 +144,7 @@ void array_set_range(struct array *a, ssize_t i, ssize_t n, const void *src)
 
 	if (n == 0)
 		return;
-	
+
 	size_t nbytes = n * array_elt_size(a);
 	memcpy(array_at(a, i), src, nbytes);
 }

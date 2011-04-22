@@ -74,6 +74,7 @@ void iproc_matrix_matmul(double alpha,
 			 const iproc_matrix * x, double beta, iproc_matrix * y);
 
 void iproc_matrix_update1(iproc_matrix * matrix,
-			  double alpha, const struct vector *x, const struct vector *y);
+			  double alpha, const struct vector *x,
+			  const struct vector *y);
 
 #endif /* _IPROC_MATRIX_H */

@@ -10,7 +10,7 @@ struct intset {
 
 struct intset_pos {
 	intptr_t value;
-	ssize_t  index;
+	ssize_t index;
 };
 
 struct intset_iter {
@@ -53,8 +53,7 @@ void intset_iter_init(const struct intset *s, struct intset_iter *it);
 void intset_iter_deinit(const struct intset *s, struct intset_iter *it);
 void intset_iter_reset(const struct intset *s, struct intset_iter *it);
 bool intset_iter_advance(const struct intset *s, struct intset_iter *it);
-intptr_t intset_iter_current(const struct intset *s, const struct intset_iter *it);
-
-
+intptr_t intset_iter_current(const struct intset *s,
+			     const struct intset_iter *it);
 
 #endif /* _INTSET_H */

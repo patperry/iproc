@@ -59,19 +59,19 @@ const struct vector *cohort_traits(const struct cohort *c)
 	return &c->traits;
 }
 
-bool cohort_empty(const struct cohort * c)
+bool cohort_empty(const struct cohort *c)
 {
 	assert(c);
 	return intset_empty(&c->members);
 }
 
-ssize_t cohort_size(const struct cohort * c)
+ssize_t cohort_size(const struct cohort *c)
 {
 	assert(c);
 	return intset_size(&c->members);
 }
 
-bool cohort_contains(const struct cohort * c, ssize_t id)
+bool cohort_contains(const struct cohort *c, ssize_t id)
 {
 	assert(c);
 	assert(id >= 0);
@@ -123,4 +123,3 @@ ssize_t cohort_iter_current(const struct cohort *c,
 	assert(it);
 	return (ssize_t)intset_iter_current(&c->members, &it->members_it);
 }
-

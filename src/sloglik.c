@@ -84,7 +84,7 @@ iproc_sloglik_insert(iproc_sloglik * sll,
 
 void
 iproc_sloglik_insertm(iproc_sloglik * sll,
-		      iproc_history * history, int64_t * jrecv, int64_t n)
+		      iproc_history * history, int64_t *jrecv, int64_t n)
 {
 	int64_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =

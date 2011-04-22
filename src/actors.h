@@ -19,7 +19,6 @@ typedef struct actors iproc_actors;
   
  
 
-
 struct _iproc_actors {
     struct hashset  cohorts;
     struct darray   actors;
@@ -46,9 +45,9 @@ struct actor {
 
 struct actors {
 	ssize_t dim;
-	struct darray  actors;
-		//struct hashset cohorts;
-	
+	struct darray actors;
+	//struct hashset cohorts;
+
 	/* deprecated */
 	struct darray group_ids;
 	struct darray group_traits;
@@ -61,14 +60,13 @@ struct actors *actors_alloc(ssize_t dim);
 struct actors *actors_ref(struct actors *a);
 void actors_free(struct actors *a);
 
-
 ssize_t actors_size(const struct actors *a);
 ssize_t actors_cohorts_size(const struct actors *a);
 ssize_t actors_dim(const struct actors *a);
 
 const struct actor *actors_at(const struct actors *a, ssize_t actor_id);
-const struct cohort *actors_cohort_at(const struct actors *a, ssize_t cohort_id);
-
+const struct cohort *actors_cohort_at(const struct actors *a,
+				      ssize_t cohort_id);
 
 /* makes a copy of traits */
 ssize_t actors_add(iproc_actors * actors, const struct vector *traits);
@@ -88,12 +86,10 @@ void actors_matmul(double alpha,
 		   const iproc_actors * actors,
 		   const iproc_matrix * x, double beta, iproc_matrix * y);
 
-
 /* deprecated */
 int64_t iproc_actors_ngroup(const iproc_actors * actors);
 int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id);
 const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
 					       int64_t group_id);
-
 
 #endif /* _IPROC_ACTORS_H */

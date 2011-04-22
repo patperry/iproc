@@ -37,37 +37,35 @@ compute_logprobs0(const iproc_design * design,
 	*logsumweight = log_sum_exp + max;
 }
 
-static bool cohort_model_init (struct cohort_model *cm,
-			       const struct design *design,
-			       ssize_t isend,
-			       const struct vector *coefs)
+static bool cohort_model_init(struct cohort_model *cm,
+			      const struct design *design,
+			      ssize_t isend, const struct vector *coefs)
 {
 	ssize_t nreceiver = iproc_design_nreceiver(design);
 	ssize_t dim = iproc_design_dim(design);
 
 	/* compute initial log(probs) */
 	cm->log_p0 = vector_new(nreceiver);
-	compute_logprobs0(design, isend, coefs, cm->log_p0,
-			  &cm->log_W0);
-	
+	compute_logprobs0(design, isend, coefs, cm->log_p0, &cm->log_W0);
+
 	/* compute initial probs */
 	cm->p0 = vector_new_copy(cm->log_p0);
 	vector_exp(cm->p0);
-	
+
 	/* compute initial covariate mean */
 	cm->xbar0 = vector_new(dim);
 	iproc_design_mul0(1.0, IPROC_TRANS_TRANS, design, isend, cm->p0,
 			  0.0, cm->xbar0);
-	
+
 	return true;
 }
 
-static struct cohort_model * cohort_model_alloc(const struct design *design,
-						ssize_t isend,
-						const struct vector *coefs)
+static struct cohort_model *cohort_model_alloc(const struct design *design,
+					       ssize_t isend,
+					       const struct vector *coefs)
 {
 	struct cohort_model *cm;
-	
+
 	if ((cm = malloc(sizeof(*cm)))) {
 		if (cohort_model_init(cm, design, isend, coefs))
 			return cm;
@@ -82,7 +80,7 @@ static void cohort_model_deinit(struct cohort_model *cm)
 	vector_free(cm->xbar0);
 	vector_free(cm->log_p0);
 	vector_free(cm->p0);
-	
+
 }
 
 static void cohort_model_free(struct cohort_model *cm)
@@ -97,7 +95,7 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 {
 	struct intmap_iter it;
 	struct cohort_model *cm;
-	
+
 	intmap_iter_init(cohort_models, &it);
 	while (intmap_iter_advance(cohort_models, &it)) {
 		cm = (void *)intmap_iter_current(cohort_models, &it).val;
@@ -107,10 +105,9 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 	intmap_deinit(cohort_models);
 }
 
-static bool insert_cohort_model (struct intmap *cohort_models,
-				 const struct design *design,
-				 ssize_t isend,
-				 const struct vector *coefs)
+static bool insert_cohort_model(struct intmap *cohort_models,
+				const struct design *design,
+				ssize_t isend, const struct vector *coefs)
 {
 	const iproc_actors *senders = iproc_design_senders(design);
 	intptr_t c = iproc_actors_group(senders, isend);
@@ -119,12 +116,12 @@ static bool insert_cohort_model (struct intmap *cohort_models,
 
 	if (intmap_find(cohort_models, c, &pos))
 		return true;
-	
+
 	if ((cm = cohort_model_alloc(design, isend, coefs))) {
 		if (intmap_insert(cohort_models, &pos, (intptr_t)cm)) {
 			return true;
 		}
-		
+
 		cohort_model_free(cm);
 	}
 	return false;
@@ -181,7 +178,8 @@ static void iproc_model_free(iproc_model * model)
 		int64_t i, n = darray_size(&model->ctxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_model_ctx *ctx = *(iproc_model_ctx **)darray_at(&model->ctxs,
+			iproc_model_ctx *ctx =
+			    *(iproc_model_ctx **) darray_at(&model->ctxs,
 							    i);
 			iproc_model_ctx_free_dealloc(ctx);
 		}

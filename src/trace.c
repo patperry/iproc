@@ -58,7 +58,7 @@ static void iproc_events_array_deinit(struct darray *events_array)
 	int64_t i, n = darray_size(events_array);
 	for (i = 0; i < n; i++) {
 		iproc_events *events = darray_at(events_array,
-						     i);
+						 i);
 		iproc_events_deinit(events);
 	}
 
@@ -177,7 +177,7 @@ void iproc_trace_advance_to(iproc_trace * trace, double t)
 		}
 		// Add the new meta-data
 		iproc_events *events = darray_at(events_array,
-						     pos);
+						 pos);
 
 		iproc_events_append(events, &event->meta);
 	}
@@ -239,7 +239,7 @@ iproc_event_meta *iproc_events_get(iproc_events * events, int64_t i)
 	assert(i <= iproc_events_size(events));
 
 	iproc_event_meta *meta = darray_at(&events->meta,
-					       i);
+					   i);
 	return meta;
 }
 

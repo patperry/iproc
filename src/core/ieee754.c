@@ -139,7 +139,7 @@ int iproc_feqrel(double x, double y)
 	 */
 	int bitsdiff = ((((pa.w[DBL_EXPPOS_INT16] & DBL_EXPMASK)
 			  + (pb.w[DBL_EXPPOS_INT16] & DBL_EXPMASK)
-			  - ((uint16_t) 0x8000 - DBL_EXPMASK)) >> 1)
+			  - ((uint16_t)0x8000 - DBL_EXPMASK)) >> 1)
 			- (pd.w[DBL_EXPPOS_INT16] & DBL_EXPMASK)) >> 4;
 
 	if ((pd.w[DBL_EXPPOS_INT16] & DBL_EXPMASK) == 0) {

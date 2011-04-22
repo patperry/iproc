@@ -29,7 +29,7 @@ void iproc_loglik_insert(iproc_loglik * loglik,
 			 iproc_history * history, int64_t from, int64_t to);
 void iproc_loglik_insertm(iproc_loglik * loglik,
 			  iproc_history * history,
-			  int64_t from, int64_t * to, int64_t nto);
+			  int64_t from, int64_t *to, int64_t nto);
 
 double iproc_loglik_value(iproc_loglik * loglik);
 struct vector *iproc_loglik_grad(iproc_loglik * loglik);

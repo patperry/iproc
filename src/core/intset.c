@@ -5,7 +5,6 @@
 static intptr_t intset_at(const struct intset *s, ssize_t index);
 static ssize_t intset_index(const struct intset *s, intptr_t val);
 
-
 bool intset_init(struct intset *s)
 {
 	assert(s);
@@ -37,7 +36,7 @@ void intset_deinit(struct intset *s)
 	darray_deinit(&s->values);
 }
 
-bool intset_assign(struct intset *s, const intptr_t * ptr, ssize_t n)
+bool intset_assign(struct intset *s, const intptr_t *ptr, ssize_t n)
 {
 	assert(s);
 	assert(ptr || n == 0);
@@ -50,8 +49,7 @@ bool intset_assign(struct intset *s, const intptr_t * ptr, ssize_t n)
 	return NULL;
 }
 
-bool intset_assign_sorted(struct intset *s, const intptr_t * ptr,
-			  ssize_t n)
+bool intset_assign_sorted(struct intset *s, const intptr_t *ptr, ssize_t n)
 {
 	assert(s);
 	assert(ptr || n == 0);
@@ -180,7 +178,7 @@ bool intset_add_all(struct intset *s, const intptr_t *vals, ssize_t n)
 	return true;
 rollback:
 	for (; i > 0; i--) {
-		intset_remove(s, vals[i-1]);
+		intset_remove(s, vals[i - 1]);
 	}
 	return false;
 }
@@ -224,7 +222,7 @@ bool intset_find(const struct intset *s, intptr_t val, struct intset_pos *pos)
 	}
 }
 
-bool intset_insert(struct intset * s, const struct intset_pos *pos)
+bool intset_insert(struct intset *s, const struct intset_pos *pos)
 {
 	assert(s);
 	assert(pos);
@@ -273,7 +271,8 @@ bool intset_iter_advance(const struct intset *s, struct intset_iter *it)
 	return it->index < intset_size(s);
 }
 
-intptr_t intset_iter_current(const struct intset *s, const struct intset_iter *it)
+intptr_t intset_iter_current(const struct intset *s,
+			     const struct intset_iter *it)
 {
 	assert(s);
 	assert(it);
@@ -292,11 +291,11 @@ intptr_t intset_at(const struct intset *s, ssize_t index)
 ssize_t intset_index(const struct intset *s, intptr_t val)
 {
 	assert(s);
-	
+
 	struct intset_pos pos;
 	if (intset_find(s, val, &pos)) {
 		return pos.index;
 	}
-	
+
 	return -1;
 }

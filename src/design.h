@@ -167,16 +167,17 @@ int64_t iproc_design_ctx_nnz(iproc_design_ctx * ctx);
 
 /* inz-th nonzero row of dX */
 iproc_svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
-				   int64_t inz, int64_t * jrecv);
+				   int64_t inz, int64_t *jrecv);
 
 void iproc_design_ctx_dmul(double alpha,
 			   iproc_trans trans,
 			   const iproc_design_ctx * ctx,
-			   const struct vector *x, double beta, iproc_svector * y);
-void iproc_design_ctx_dmuls(double alpha,
-			    iproc_trans trans,
+			   const struct vector *x, double beta,
+			   iproc_svector * y);
+void iproc_design_ctx_dmuls(double alpha, iproc_trans trans,
 			    const iproc_design_ctx * ctx,
-			    const iproc_svector * x, double beta, iproc_svector * y);
+			    const iproc_svector * x, double beta,
+			    iproc_svector * y);
 
 int64_t iproc_design_nsender(const iproc_design * design);
 int64_t iproc_design_nreceiver(const iproc_design * design);

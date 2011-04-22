@@ -23,7 +23,7 @@
 uint32_t memory_hash(const void *ptr, ssize_t len)
 {
 	const char *data = ptr;
-	uint32_t hash = (uint32_t) len;
+	uint32_t hash = (uint32_t)len;
 	uint32_t tmp;
 	int rem;
 
@@ -70,7 +70,7 @@ uint32_t memory_hash(const void *ptr, ssize_t len)
 /* Ported from boost/functional/detail/hash_float.hpp
  *   C++ version written by Daniel James (Boost License 1.0)
  */
-static void hash_float_combine(uint32_t * seedp, uint32_t value)
+static void hash_float_combine(uint32_t *seedp, uint32_t value)
 {
 	uint32_t seed = *seedp;
 	seed ^= value + (seed << 6) + (seed >> 2);
@@ -111,9 +111,9 @@ uint32_t double_hash(const void *val)
 	case FP_ZERO:
 		return 0;
 	case FP_INFINITE:
-		return (uint32_t) (v > 0 ? -1 : -2);
+		return (uint32_t)(v > 0 ? -1 : -2);
 	case FP_NAN:
-		return (uint32_t) (-3);
+		return (uint32_t)(-3);
 	case FP_NORMAL:
 	case FP_SUBNORMAL:
 		return double_hash_impl(v);

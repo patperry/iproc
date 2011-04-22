@@ -14,7 +14,7 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 
 		for (i = 0; i < n; i++) {
 			iproc_sloglik *sll =
-			    *(iproc_sloglik **)darray_at(array, i);
+			    *(iproc_sloglik **) darray_at(array, i);
 			iproc_sloglik_unref(sll);
 		}
 
@@ -113,12 +113,12 @@ void iproc_loglik_unref(iproc_loglik * loglik)
 static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, int64_t isend)
 {
 	struct darray *array = &loglik->sloglik_array;
-	iproc_sloglik *sll = *(iproc_sloglik **)darray_at(array, isend);
+	iproc_sloglik *sll = *(iproc_sloglik **) darray_at(array, isend);
 
 	if (!sll) {
 		iproc_model *model = loglik->model;
 		sll = iproc_sloglik_new(model, isend);
-		*(iproc_sloglik **)darray_at(array, isend) = sll;
+		*(iproc_sloglik **) darray_at(array, isend) = sll;
 	}
 
 	return sll;
@@ -137,7 +137,7 @@ iproc_loglik_insert(iproc_loglik * loglik,
 void
 iproc_loglik_insertm(iproc_loglik * loglik,
 		     iproc_history * history,
-		     int64_t from, int64_t * to, int64_t nto)
+		     int64_t from, int64_t *to, int64_t nto)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
 	iproc_sloglik_insertm(sll, history, to, nto);
@@ -157,7 +157,7 @@ double iproc_loglik_value(iproc_loglik * loglik)
 	double value = 0.0;
 
 	for (i = 0; i < n; i++) {
-		sll = *(iproc_sloglik **)darray_at(array,i);
+		sll = *(iproc_sloglik **) darray_at(array, i);
 		value += iproc_sloglik_value(sll);
 	}
 
@@ -174,7 +174,7 @@ iproc_vector_acc_loglik_grad_nocache(struct vector *dst_vector,
 	iproc_sloglik *sll;
 
 	for (i = 0; i < nsend; i++) {
-		sll = *(iproc_sloglik **)darray_at(array, i);
+		sll = *(iproc_sloglik **) darray_at(array, i);
 		if (sll) {
 			struct vector *g = iproc_sloglik_grad(sll);
 			vector_axpy(scale, g, dst_vector);

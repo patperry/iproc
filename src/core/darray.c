@@ -53,7 +53,7 @@ struct darray *darray_init(struct darray *a, size_t elt_size)
 	return NULL;
 }
 
-bool darray_init_copy(struct darray * a, const struct darray * src)
+bool darray_init_copy(struct darray *a, const struct darray *src)
 {
 	assert(a);
 	assert(src);
@@ -89,7 +89,7 @@ bool darray_assign_repeat(struct darray *a, ssize_t n, const void *val)
 	return NULL;
 }
 
-bool darray_assign(struct darray * a, const void *ptr, ssize_t n)
+bool darray_assign(struct darray *a, const void *ptr, ssize_t n)
 {
 	assert(a);
 	assert(n >= 0);
@@ -104,7 +104,7 @@ bool darray_assign(struct darray * a, const void *ptr, ssize_t n)
 	return NULL;
 }
 
-bool darray_assign_copy(struct darray * a, const struct darray * src)
+bool darray_assign_copy(struct darray *a, const struct darray *src)
 {
 	assert(a);
 	assert(src);
@@ -120,12 +120,13 @@ void *darray_copy_to(const struct darray *a, void *dst)
 
 	if (darray_empty(a))
 		return dst;
-	
+
 	return memory_copy_to(darray_front(a), darray_size(a), dst,
 			      darray_elt_size(a));
 }
 
-void *darray_copy_range_to(const struct darray *a, ssize_t i, ssize_t n, void *dst)
+void *darray_copy_range_to(const struct darray *a, ssize_t i, ssize_t n,
+			   void *dst)
 {
 	assert(0 <= i && i <= darray_size(a) - n);
 	return array_copy_range_to(&a->array, i, n, dst);
@@ -145,7 +146,7 @@ void darray_fill_range(struct darray *a, ssize_t i, ssize_t n, const void *val)
 
 	if (n == 0)
 		return;
-	
+
 	memory_fill(darray_at(a, i), n, val, darray_elt_size(a));
 }
 
@@ -158,7 +159,7 @@ static ssize_t darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
 
 	void *src, *dst;
 	ssize_t nactual;
-	
+
 	if ((nactual = darray_reserve_insert(a, n))) {
 		darray_resize_with(a, size, NULL);
 		src = darray_at(a, i);	// compute dst after resize in case of realloc
@@ -180,7 +181,7 @@ bool darray_insert(struct darray *a, ssize_t i, const void *val)
 }
 
 ssize_t darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
-			   const void *val)
+			     const void *val)
 {
 	assert(a);
 	assert(i >= 0);
@@ -189,7 +190,7 @@ ssize_t darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
 	assert(n <= darray_max_size(a) - darray_size(a));
 
 	ssize_t nactual;
-	
+
 	if ((nactual = darray_insert_space(a, i, n))) {
 		if (val)
 			array_fill_range(&a->array, i, nactual, val);
@@ -198,7 +199,8 @@ ssize_t darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
 	return nactual;
 }
 
-ssize_t darray_insert_all(struct darray *a, ssize_t i, const void *ptr, ssize_t n)
+ssize_t darray_insert_all(struct darray *a, ssize_t i, const void *ptr,
+			  ssize_t n)
 {
 	assert(a);
 	assert(i >= 0);
@@ -275,7 +277,7 @@ bool darray_reserve(struct darray *a, ssize_t n)
 	return false;
 }
 
-bool darray_resize(struct darray * a, ssize_t n)
+bool darray_resize(struct darray *a, ssize_t n)
 {
 	assert(a);
 	assert(n >= 0);
@@ -292,7 +294,7 @@ bool darray_resize(struct darray * a, ssize_t n)
 	return NULL;
 }
 
-bool darray_resize_with(struct darray * a, ssize_t n, const void *val)
+bool darray_resize_with(struct darray *a, ssize_t n, const void *val)
 {
 	assert(a);
 	assert(n >= 0);
@@ -310,7 +312,7 @@ bool darray_resize_with(struct darray * a, ssize_t n, const void *val)
 	return NULL;
 }
 
-bool darray_contains(const struct darray * a, const void *key, equals_fn equal)
+bool darray_contains(const struct darray *a, const void *key, equals_fn equal)
 {
 	assert(a);
 	assert(equal);
@@ -325,13 +327,13 @@ void *darray_find(const struct darray *a, const void *key, equals_fn equal)
 
 	if (darray_empty(a))
 		return NULL;
-	
+
 	return forward_find(darray_front(a), darray_size(a), key, equal,
 			    darray_elt_size(a));
 
 }
 
-ssize_t darray_find_index(const struct darray * a, const void *key,
+ssize_t darray_find_index(const struct darray *a, const void *key,
 			  equals_fn equal)
 {
 	assert(a);
@@ -339,7 +341,7 @@ ssize_t darray_find_index(const struct darray * a, const void *key,
 
 	if (darray_empty(a))
 		return -1;
-	
+
 	return forward_find_index(darray_front(a), darray_size(a), key, equal,
 				  darray_elt_size(a));
 }
@@ -351,12 +353,12 @@ void *darray_find_last(const struct darray *a, const void *key, equals_fn equal)
 
 	if (darray_empty(a))
 		return NULL;
-	
+
 	return reverse_find(darray_front(a), darray_size(a), key, equal,
 			    darray_elt_size(a));
 }
 
-ssize_t darray_find_last_index(const struct darray * a, const void *key,
+ssize_t darray_find_last_index(const struct darray *a, const void *key,
 			       equals_fn equal)
 {
 	assert(a);
@@ -364,12 +366,12 @@ ssize_t darray_find_last_index(const struct darray * a, const void *key,
 
 	if (darray_empty(a))
 		return -1;
-	
+
 	return reverse_find_index(darray_front(a), darray_size(a), key, equal,
 				  darray_elt_size(a));
 }
 
-ssize_t darray_binary_search(const struct darray * a, const void *key,
+ssize_t darray_binary_search(const struct darray *a, const void *key,
 			     compare_fn compar)
 {
 	assert(a);
@@ -377,7 +379,7 @@ ssize_t darray_binary_search(const struct darray * a, const void *key,
 
 	if (darray_empty(a))
 		return ~((ssize_t)0);
-	
+
 	return binary_search(darray_front(a), darray_size(a), key, compar,
 			     darray_elt_size(a));
 }
@@ -403,9 +405,9 @@ void darray_swap(struct darray *a, ssize_t i, ssize_t j)
 void darray_reverse(struct darray *a)
 {
 	assert(a);
-	
+
 	if (darray_empty(a))
 		return;
-	
+
 	memory_reverse(darray_front(a), darray_size(a), darray_elt_size(a));
 }

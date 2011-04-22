@@ -88,7 +88,7 @@ static int64_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
 	}
 }
 
-static void from_array_copy(int *dst, int64_t * src, int64_t n)
+static void from_array_copy(int *dst, int64_t *src, int64_t n)
 {
 	int64_t i;
 	int64_t s;

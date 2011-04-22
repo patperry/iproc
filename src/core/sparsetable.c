@@ -166,13 +166,13 @@ static bool sparsegroup_add(struct sparsegroup *g, ssize_t index,
 			    const void *val, size_t elt_size);
 static ssize_t sparsegroup_add_all(struct sparsegroup *g,
 				   ssize_t *indexes,
-				   const void *vals, ssize_t n, size_t elt_size);
+				   const void *vals, ssize_t n,
+				   size_t elt_size);
 static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
 			       size_t elt_size);
 static void sparsegroup_remove_preserve(struct sparsegroup *g, ssize_t index,
 					size_t elt_size);
-static void sparsegroup_remove_all(struct sparsegroup *g,
-				   ssize_t *indexes,
+static void sparsegroup_remove_all(struct sparsegroup *g, ssize_t *indexes,
 				   ssize_t n, size_t elt_size);
 static void sparsegroup_remove_range(struct sparsegroup *g, ssize_t i,
 				     ssize_t n, size_t elt_size);
@@ -402,11 +402,13 @@ static ssize_t sparsegroup_add_all(struct sparsegroup *g,
 
 	for (i = 0; i < n; i++) {
 		if (sparsegroup_find(g, indexes[i], &pos, elt_size)) {
-			sparsegroup_replace(g, &pos, (char *)vals + i * elt_size,
+			sparsegroup_replace(g, &pos,
+					    (char *)vals + i * elt_size,
 					    elt_size);
 
 		} else {
-			if (!sparsegroup_insert(g, &pos, (char *)vals + i * elt_size, elt_size))
+			if (!sparsegroup_insert
+			    (g, &pos, (char *)vals + i * elt_size, elt_size))
 				break;
 		}
 	}

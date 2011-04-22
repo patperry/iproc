@@ -37,8 +37,7 @@ static void trace_array_deinit(struct darray *array)
 	ssize_t i;
 
 	for (i = 0; i < n; i++) {
-		iproc_history_trace *ht =
-		    darray_at(array, i);
+		iproc_history_trace *ht = darray_at(array, i);
 		if (ht->trace)
 			iproc_trace_unref(ht->trace);
 	}
@@ -55,7 +54,7 @@ static iproc_trace *trace_array_get(double tcur,
 	trace_array_grow(array, i + 1);
 
 	iproc_history_trace *ht = darray_at(array,
-						i);
+					    i);
 	iproc_trace *t;
 
 	if (!(ht->trace)) {
@@ -156,7 +155,7 @@ void iproc_history_insert(iproc_history * history, int64_t from, int64_t to)
 
 void
 iproc_history_insertm(iproc_history * history,
-		      int64_t from, int64_t * to, int64_t nto)
+		      int64_t from, int64_t *to, int64_t nto)
 {
 	assert(history);
 	assert(to || nto == 0);

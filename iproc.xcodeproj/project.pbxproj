@@ -369,6 +369,7 @@
 			children = (
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
+				221FEE6D132EC8710000097B /* blas-private.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
 				2223CD0E134D76F8004FA7F9 /* darray.c */,
 				2223CD0F134D76F8004FA7F9 /* darray.h */,
@@ -393,7 +394,6 @@
 				221FEE8D132EC8710000097B /* util.h */,
 				221FEE8E132EC8710000097B /* vector.c */,
 				221FEE8F132EC8710000097B /* vector.h */,
-				221FEE6D132EC8710000097B /* blas-private.h */,
 				221FEE78132EC8710000097B /* ieee754.c */,
 				221FEE79132EC8710000097B /* ieee754.h */,
 				221FEE7C132EC8710000097B /* logsumexp.c */,

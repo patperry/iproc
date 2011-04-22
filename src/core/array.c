@@ -25,7 +25,7 @@ bool array_init(struct array *a, ssize_t size, size_t elt_size)
 }
 
 void array_init_view(struct array *a, const void *data,
-		      ssize_t size, size_t elt_size)
+		     ssize_t size, size_t elt_size)
 {
 	assert(a);
 	assert(data || size == 0);
@@ -38,7 +38,7 @@ void array_init_view(struct array *a, const void *data,
 	a->owner = false;
 }
 
-void array_init_slice(struct array * a, const struct array * parent,
+void array_init_slice(struct array *a, const struct array *parent,
 		      ssize_t i, ssize_t n)
 {
 	assert(a);
@@ -47,11 +47,11 @@ void array_init_slice(struct array * a, const struct array * parent,
 	assert(0 <= i && i <= array_size(parent) - n);
 
 	void *ptr = n == 0 ? NULL : array_at(parent, i);
-	
+
 	array_init_view(a, ptr, n, parent->elt_size);
 }
 
-bool array_init_copy(struct array * a, const struct array * src)
+bool array_init_copy(struct array *a, const struct array *src)
 {
 	assert(a);
 	assert(src);
@@ -64,7 +64,7 @@ bool array_init_copy(struct array * a, const struct array * src)
 	return NULL;
 }
 
-bool array_reinit(struct array * a, ssize_t n, size_t elt_size)
+bool array_reinit(struct array *a, ssize_t n, size_t elt_size)
 {
 	assert(a);
 	assert(n >= 0);
@@ -121,11 +121,11 @@ void array_assign_array(struct array *a, const void *src)
 
 	if (array_empty(a))
 		return;
-	
+
 	memory_copy_to(src, array_size(a), array_front(a), array_elt_size(a));
 }
 
-void array_assign_copy(struct array * a, const struct array * src)
+void array_assign_copy(struct array *a, const struct array *src)
 {
 	assert(a);
 	assert(src);
@@ -134,7 +134,7 @@ void array_assign_copy(struct array * a, const struct array * src)
 
 	if (array_empty(a))
 		return;
-	
+
 	array_copy_to(src, array_front(a));
 }
 
@@ -145,20 +145,21 @@ void *array_copy_to(const struct array *a, void *dst)
 
 	if (array_empty(a))
 		return dst;
-	
+
 	return memory_copy_to(array_front(a), array_size(a), dst,
 			      array_elt_size(a));
 }
 
-void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n, void *dst)
+void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
+			  void *dst)
 {
 	assert(n >= 0);
 	assert(0 <= i && i <= array_size(a) - n);
 	assert(!array_overlaps(a, i, n, dst, n));
-	
+
 	if (n == 0)
 		return dst;
-	
+
 	size_t nbytes = n * array_elt_size(a);
 	memcpy(dst, array_at(a, i), nbytes);
 	return (char *)dst + nbytes;
@@ -178,7 +179,7 @@ void array_fill_range(struct array *a, ssize_t i, ssize_t n, const void *val)
 
 	if (n == 0)
 		return;
-	
+
 	memory_fill(array_at(a, i), n, val, array_elt_size(a));
 }
 
@@ -196,12 +197,12 @@ void *array_find(const struct array *a, const void *key, equals_fn equal)
 
 	if (array_empty(a))
 		return NULL;
-	
+
 	return forward_find(array_front(a), array_size(a), key, equal,
 			    array_elt_size(a));
 }
 
-ssize_t array_find_index(const struct array * a, const void *key,
+ssize_t array_find_index(const struct array *a, const void *key,
 			 equals_fn equal)
 {
 	assert(a);
@@ -209,12 +210,12 @@ ssize_t array_find_index(const struct array * a, const void *key,
 
 	if (array_empty(a))
 		return -1;
-	
+
 	return forward_find_index(array_front(a), array_size(a), key, equal,
 				  array_elt_size(a));
 }
 
-ssize_t array_find_last_index(const struct array * a, const void *key,
+ssize_t array_find_last_index(const struct array *a, const void *key,
 			      equals_fn equal)
 {
 	assert(a);
@@ -222,12 +223,12 @@ ssize_t array_find_last_index(const struct array * a, const void *key,
 
 	if (array_empty(a))
 		return -1;
-	
+
 	return reverse_find_index(array_front(a), array_size(a), key, equal,
 				  array_elt_size(a));
 }
 
-ssize_t array_binary_search(const struct array * a, const void *key,
+ssize_t array_binary_search(const struct array *a, const void *key,
 			    compare_fn compar)
 {
 	assert(a);
@@ -235,7 +236,7 @@ ssize_t array_binary_search(const struct array * a, const void *key,
 
 	if (array_empty(a))
 		return ~((ssize_t)0);
-	
+
 	return binary_search(array_front(a), array_size(a), key, compar,
 			     array_elt_size(a));
 }
@@ -247,6 +248,6 @@ void array_sort(struct array *a, compare_fn compar)
 
 	if (array_empty(a))
 		return;
-	
+
 	qsort(array_front(a), array_size(a), array_elt_size(a), compar);
 }

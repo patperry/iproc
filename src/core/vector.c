@@ -36,8 +36,7 @@ void vector_init_view(struct vector *v, const double *ptr, ssize_t n)
 }
 
 void vector_init_slice(struct vector *v,
-				 const struct vector *parent,
-				 ssize_t i, ssize_t n)
+		       const struct vector *parent, ssize_t i, ssize_t n)
 {
 	assert(v);
 	assert(parent);
@@ -45,11 +44,11 @@ void vector_init_slice(struct vector *v,
 	assert(0 <= i && i <= vector_size(parent) - n);
 
 	const void *ptr = NULL;
-	
+
 	if (n > 0) {
 		ptr = vector_at(parent, i);
 	}
-	
+
 	vector_init_view(v, ptr, n);
 }
 
@@ -112,7 +111,7 @@ void vector_assign_copy(struct vector *v, const struct vector *src)
 
 	if (vector_empty(v))
 		return;
-	
+
 	vector_copy_to(src, vector_front(v));
 }
 
@@ -130,7 +129,7 @@ void vector_fill(struct vector *vector, double value)
 
 	if (vector_empty(vector))
 		return;
-	
+
 	ssize_t n = vector_size(vector);
 	double *ptr = vector_at(vector, 0);
 	double *end = ptr + n;
@@ -170,7 +169,7 @@ void vector_scale(struct vector *vector, double scale)
 
 	if (vector_empty(vector))
 		return;
-	
+
 	f77int n = (f77int) vector_size(vector);
 	double alpha = scale;
 	void *px = vector_front(vector);
@@ -185,7 +184,7 @@ void vector_shift(struct vector *vector, double shift)
 
 	if (vector_empty(vector))
 		return;
-	
+
 	ssize_t n = vector_size(vector);
 	double *ptr = vector_front(vector);
 	double *end = ptr + n;
@@ -221,7 +220,7 @@ void vector_mul(struct vector *dst_vector, const struct vector *vector)
 
 	if (vector_empty(dst_vector))
 		return;
-	
+
 	f77int n = (f77int) vector_size(dst_vector);
 	f77int k = 0;
 	double *px = vector_front(vector);
@@ -240,7 +239,7 @@ void vector_div(struct vector *dst_vector, const struct vector *vector)
 
 	if (vector_empty(dst_vector))
 		return;
-	
+
 	f77int n = (f77int) vector_size(dst_vector);
 	f77int k = 0;
 	double *px = vector_front(vector);
@@ -259,7 +258,7 @@ void vector_axpy(double alpha, const struct vector *x, struct vector *y)
 
 	if (vector_empty(x))
 		return;
-	
+
 	f77int n = (f77int) vector_size(y);
 	double *px = vector_front(x);
 	f77int incx = 1;
@@ -277,7 +276,7 @@ double vector_dot(const struct vector *vector1, const struct vector *vector2)
 
 	if (vector_empty(vector1))
 		return 0.0;
-	
+
 	f77int n = (f77int) vector_size(vector1);
 	double *px = vector_front(vector1);
 	f77int incx = 1;
@@ -294,7 +293,7 @@ double vector_norm(const struct vector *vector)
 
 	if (vector_empty(vector))
 		return 0.0;
-	
+
 	f77int n = (f77int) vector_size(vector);
 	void *px = vector_front(vector);
 	f77int incx = 1;
@@ -324,7 +323,7 @@ double vector_max_abs(const struct vector *vector)
 
 	if (vector_empty(vector))
 		return 0.0;
-	
+
 	ssize_t i = vector_max_abs_index(vector);
 	double e = *vector_at(vector, i);
 	double max_abs = fabs(e);
@@ -332,7 +331,7 @@ double vector_max_abs(const struct vector *vector)
 	return max_abs;
 }
 
-ssize_t vector_max_abs_index(const struct vector * vector)
+ssize_t vector_max_abs_index(const struct vector *vector)
 {
 	assert(vector);
 	assert(!vector_empty(vector));
@@ -347,7 +346,7 @@ ssize_t vector_max_abs_index(const struct vector * vector)
 	return index;
 }
 
-ssize_t vector_max_index(const struct vector * vector)
+ssize_t vector_max_index(const struct vector *vector)
 {
 	assert(vector);
 	assert(!vector_empty(vector));
@@ -438,8 +437,7 @@ void vector_printf(const struct vector *v)
 		if (*vector_at(v, i) == 0.0)
 			continue;
 
-		printf("\n         %" SSIZE_FMT ", %.8f", i,
-		       *vector_at(v, i));
+		printf("\n         %" SSIZE_FMT ", %.8f", i, *vector_at(v, i));
 	}
 	printf("\n       }");
 	printf("\n}\n");
@@ -462,12 +460,11 @@ uint32_t vector_hash(const void *v)
 	return seed;
 }
 
-bool
-vector_equals(const void *v1, const void *v2)
+bool vector_equals(const void *v1, const void *v2)
 {
 	const struct vector *vector1 = v1;
 	const struct vector *vector2 = v2;
-	
+
 	if (vector1 == vector2)
 		return true;
 
@@ -500,7 +497,7 @@ int vector_compare(const void *x1, const void *x2)
 	} else if (n1 > n2) {
 		return +1;
 	}
-	
+
 	if (n1 == 0)
 		return 0;
 

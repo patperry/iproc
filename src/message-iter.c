@@ -99,7 +99,7 @@ int64_t *iproc_message_iter_to(iproc_message_iter * it)
 
 	int64_t ito = it->message->ito;
 	int64_t *to = darray_at(&it->messages->recipients,
-						ito);
+				ito);
 	return to;
 }
 

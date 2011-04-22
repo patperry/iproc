@@ -16,8 +16,7 @@ void vector_deinit(struct vector *v);
 /* views */
 void vector_init_view(struct vector *v, const double *ptr, ssize_t n);
 void vector_init_slice(struct vector *v,
-				 const struct vector *parent,
-				 ssize_t i, ssize_t n);
+		       const struct vector *parent, ssize_t i, ssize_t n);
 
 /* assign, copy, fill */
 void vector_assign_copy(struct vector *v, const struct vector *src);
@@ -99,7 +98,7 @@ ssize_t vector_size(const struct vector *v)
 double *vector_at(const struct vector *v, ssize_t i)
 {
 	assert(0 <= i && i < vector_size(v));
-	return (double *)array_front(&v->array)  + i;
+	return (double *)array_front(&v->array) + i;
 }
 
 void vector_set(struct vector *v, ssize_t i, double val)

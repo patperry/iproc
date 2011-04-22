@@ -101,31 +101,36 @@ static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2)
 			     cohort_traits(*(struct cohort **)cohortp2));
 }
 
-static bool actors_init (struct actors *actors, ssize_t dim)
+static bool actors_init(struct actors *actors, ssize_t dim)
 {
 	assert(actors);
 	assert(dim >= 0);
-	
+
 	bool ok;
-	
+
 	ok = darray_init(&actors->actors, sizeof(struct actor));
-	if (!ok) goto fail_actors;
-	
+	if (!ok)
+		goto fail_actors;
+
 	/*ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
-			  cohortp_traits_equals);
-	if (!ok) goto fail_cohorts; */
-	
+	   cohortp_traits_equals);
+	   if (!ok) goto fail_cohorts; */
+
 	ok = darray_init(&actors->group_ids, sizeof(int64_t));
-	if (!ok) goto fail_group_ids;
-	
+	if (!ok)
+		goto fail_group_ids;
+
 	ok = darray_init(&actors->group_traits, sizeof(struct vector *));
-	if (!ok) goto fail_group_traits;
+	if (!ok)
+		goto fail_group_traits;
 
 	ok = darray_init(&actors->group_buckets, sizeof(iproc_group_bucket));
-	if (!ok) goto fail_group_buckets;
-	
+	if (!ok)
+		goto fail_group_buckets;
+
 	ok = refcount_init(&actors->refcount);
-	if (!ok) goto fail_refcount;
+	if (!ok)
+		goto fail_refcount;
 
 	actors->dim = dim;
 	return true;
@@ -145,8 +150,7 @@ fail_actors:
 	return false;
 }
 
-
-static void actors_deinit (struct actors *actors)
+static void actors_deinit(struct actors *actors)
 {
 	assert(actors);
 	refcount_deinit(&actors->refcount);
@@ -155,12 +159,11 @@ static void actors_deinit (struct actors *actors)
 	darray_deinit(&actors->group_ids);
 }
 
-
 struct actors *actors_alloc(ssize_t dim)
 {
 	assert(dim >= 0);
 	struct actors *actors;
-	
+
 	if ((actors = malloc(sizeof(*actors)))) {
 		if (actors_init(actors, dim))
 			return actors;
@@ -169,18 +172,16 @@ struct actors *actors_alloc(ssize_t dim)
 	return NULL;
 }
 
-
-void actors_free(iproc_actors *actors)
+void actors_free(iproc_actors * actors)
 {
 	if (!actors)
 		return;
-	
+
 	if (refcount_put(&actors->refcount, NULL)) {
 		actors_deinit(actors);
 		free(actors);
 	}
 }
-
 
 struct actors *actors_ref(struct actors *actors)
 {
@@ -188,7 +189,6 @@ struct actors *actors_ref(struct actors *actors)
 	refcount_get(&actors->refcount);
 	return actors;
 }
-
 
 ssize_t actors_size(const struct actors *actors)
 {
@@ -210,7 +210,7 @@ bool iproc_actors_reserve(iproc_actors * actors, ssize_t size)
 	return darray_reserve(&actors->group_ids, size);
 }
 
-ssize_t actors_add(iproc_actors * actors, const struct vector * traits)
+ssize_t actors_add(iproc_actors * actors, const struct vector *traits)
 {
 	assert(actors);
 	assert(vector_size(traits) == actors_dim(actors));
@@ -284,8 +284,9 @@ success:
 	return actors_add_old(actors, traits);
 }
 */
- 
-const struct vector *actors_traits(const iproc_actors * actors, ssize_t actor_id)
+
+const struct vector *actors_traits(const iproc_actors * actors,
+				   ssize_t actor_id)
 {
 	assert(actors);
 	assert(0 <= actor_id);
@@ -319,15 +320,16 @@ const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
 	assert(0 <= group_id);
 	assert(group_id < iproc_actors_ngroup(actors));
 
-	struct vector *x = *(struct vector **)darray_at(&actors->group_traits, group_id);
+	struct vector *x =
+	    *(struct vector **)darray_at(&actors->group_traits, group_id);
 	return x;
 }
 
 void
 actors_mul(double alpha,
-		 iproc_trans trans,
-		 const iproc_actors * actors,
-		 const struct vector *x, double beta, struct vector *y)
+	   iproc_trans trans,
+	   const iproc_actors * actors,
+	   const struct vector *x, double beta, struct vector *y)
 {
 	assert(actors);
 	assert(x);
@@ -370,9 +372,9 @@ actors_mul(double alpha,
 
 void
 actors_muls(double alpha,
-		  iproc_trans trans,
-		  const iproc_actors * actors,
-		  const iproc_svector * x, double beta, struct vector *y)
+	    iproc_trans trans,
+	    const iproc_actors * actors,
+	    const iproc_svector * x, double beta, struct vector *y)
 {
 	assert(actors);
 	assert(x);
@@ -417,9 +419,9 @@ actors_muls(double alpha,
 
 void
 actors_matmul(double alpha,
-		    iproc_trans trans,
-		    const iproc_actors * actors,
-		    const iproc_matrix * x, double beta, iproc_matrix * y)
+	      iproc_trans trans,
+	      const iproc_actors * actors,
+	      const iproc_matrix * x, double beta, iproc_matrix * y)
 {
 	assert(actors);
 	assert(x);

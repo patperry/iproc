@@ -1,5 +1,5 @@
-#ifndef _IPROC_BLAS_PRIVATE_H
-#define _IPROC_BLAS_PRIVATE_H
+#ifndef _BLAS_PRIVATE_H
+#define _BLAS_PRIVATE_H
 
 extern double F77_FUNC(ddot) (const f77int * n,
 			      const double *x,
@@ -219,4 +219,4 @@ extern void F77_FUNC(dsyr2k) (const char *uplo,
 			      const double *beta,
 			      double *c, const f77int * ldc);
 
-#endif /* _IPROC_BLAS_PRIVATE_H */
+#endif /* _BLAS_PRIVATE_H */

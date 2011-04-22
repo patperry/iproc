@@ -39,6 +39,7 @@ void cohort_remove(struct cohort *c, ssize_t id);
 void cohort_iter_init(const struct cohort *c, struct cohort_iter *it);
 void cohort_iter_deinit(const struct cohort *c, struct cohort_iter *it);
 bool cohort_iter_advance(const struct cohort *c, struct cohort_iter *it);
-ssize_t cohort_iter_current(const struct cohort *c, const struct cohort_iter *it);
+ssize_t cohort_iter_current(const struct cohort *c,
+			    const struct cohort_iter *it);
 
 #endif /* _COHORT */

@@ -15,8 +15,8 @@
 #define SWAP(x,y,type) do { type t = (x); (x) = (y); (y) = t; } while (0)
 
 #define container_of(ptr, type, member) \
-	((type *)((char *)ptr - offsetof(type, member)))
- 
+	((type *)((char *)(ptr) - offsetof(type, member)))
+
 void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size);
 
 void *memory_copy_to(const void *src, ssize_t size, void *dst, size_t elt_size);

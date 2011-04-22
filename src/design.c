@@ -11,8 +11,9 @@ static void iproc_design_clear_svectors(struct darray *svectors)
 	if (svectors) {
 		int64_t i, n = darray_size(svectors);
 		for (i = 0; i < n; i++) {
-			iproc_svector *x = *(iproc_svector **)darray_at(svectors,
-							i);
+			iproc_svector *x =
+			    *(iproc_svector **) darray_at(svectors,
+							  i);
 			iproc_svector_unref(x);
 		}
 		darray_resize(svectors, 0);
@@ -41,7 +42,8 @@ static void iproc_design_ctxs_deinit(struct darray *ctxs)
 	if (ctxs) {
 		int64_t i, n = darray_size(ctxs);
 		for (i = 0; i < n; i++) {
-			iproc_design_ctx *ctx = *(iproc_design_ctx **)darray_at(ctxs,
+			iproc_design_ctx *ctx =
+			    *(iproc_design_ctx **) darray_at(ctxs,
 							     i);
 			iproc_design_ctx_free_dealloc(ctx);
 		}
@@ -54,7 +56,8 @@ static void iproc_design_vars_deinit(struct darray *vars)
 	if (vars) {
 		int64_t i, n = darray_size(vars);
 		for (i = 0; i < n; i++) {
-			iproc_design_var *var = *(iproc_design_var **)darray_at(vars,
+			iproc_design_var *var =
+			    *(iproc_design_var **) darray_at(vars,
 							     i);
 			if (var->free)
 				var->free(var);
@@ -257,12 +260,10 @@ iproc_design_mul0_static(double alpha,
 				 z);
 
 		/* y := y + R z */
-		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
-				 y);
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
 		/* z := alpha t(R) x */
-		actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
-				 z);
+		actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
 		iproc_vector_view ysub = vector_slice(y, ix_begin, nstatic);
@@ -323,12 +324,10 @@ iproc_design_muls0_static(double alpha,
 		vector_scale(z, alpha);
 
 		/* y := y + R z */
-		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0,
-				 y);
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
 		/* z := alpha t(R) x */
-		actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0,
-				  z);
+		actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
 		iproc_vector_view ysub = vector_slice(y, ix_begin, nstatic);

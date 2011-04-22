@@ -246,8 +246,7 @@ void iproc_matrix_scale_rows(iproc_matrix * matrix, const struct vector *scale)
 	}
 }
 
-void vector_init_matrix_col(struct vector *v, const iproc_matrix * a,
-				      ssize_t j)
+void vector_init_matrix_col(struct vector *v, const iproc_matrix * a, ssize_t j)
 {
 	assert(0 <= j && j < iproc_matrix_ncol(a));
 	ssize_t m = iproc_matrix_nrow(a);
@@ -266,7 +265,8 @@ iproc_matrix_submatrix(const iproc_matrix * matrix,
 	return iproc_matrix_view_array_with_lda(data, nrow, ncol, lda);
 }
 
-iproc_matrix_view iproc_matrix_cols(const iproc_matrix * matrix, int64_t j, int64_t n)
+iproc_matrix_view iproc_matrix_cols(const iproc_matrix * matrix, int64_t j,
+				    int64_t n)
 {
 	assert(matrix);
 	assert(j + n <= iproc_matrix_ncol(matrix));
@@ -294,7 +294,8 @@ iproc_matrix_view_array_with_lda(const double *data,
 }
 
 iproc_matrix_view
-iproc_matrix_view_vector(const struct vector * vector, int64_t nrow, int64_t ncol)
+iproc_matrix_view_vector(const struct vector * vector, int64_t nrow,
+			 int64_t ncol)
 {
 	assert(vector);
 	assert(vector_size(vector) == nrow * ncol);
@@ -326,7 +327,7 @@ iproc_matrix_mul(double alpha,
 	} else if (vector_empty(y)) {
 		return;
 	}
-	
+
 	char *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
 	f77int m = (f77int) iproc_matrix_nrow(matrix);
 	f77int n = (f77int) iproc_matrix_ncol(matrix);
@@ -391,7 +392,7 @@ iproc_matrix_update1(iproc_matrix * matrix,
 
 	if (vector_empty(x) || vector_empty(y))
 		return;
-	
+
 	f77int m = (f77int) iproc_matrix_nrow(matrix);
 	f77int n = (f77int) iproc_matrix_ncol(matrix);
 	void *px = vector_front(x);

@@ -9,7 +9,7 @@ bool refcount_init(struct refcount *refcount)
 	return true;
 }
 
-void refcount_deinit (struct refcount *refcount)
+void refcount_deinit(struct refcount *refcount)
 {
 	assert(refcount);
 }
@@ -33,7 +33,7 @@ bool refcount_get(struct refcount *refcount)
 	return true;
 }
 
-bool refcount_put(struct refcount * refcount,
+bool refcount_put(struct refcount *refcount,
 		  void (*release) (struct refcount * refcount))
 {
 	assert(refcount);

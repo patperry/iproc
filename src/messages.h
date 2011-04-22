@@ -47,7 +47,7 @@ void iproc_messages_advance_to(iproc_messages * msgs, double t);
 
 void iproc_messages_insert(iproc_messages * msgs, int64_t from, int64_t to);
 void iproc_messages_insertm(iproc_messages * msgs,
-			    int64_t from, int64_t * to, int64_t nto);
+			    int64_t from, int64_t *to, int64_t nto);
 
 int64_t iproc_messages_max_from(iproc_messages * msgs);
 int64_t iproc_messages_max_to(iproc_messages * msgs);

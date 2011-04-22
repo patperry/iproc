@@ -227,8 +227,7 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &view.matrix, j);
 		vector_init_matrix_col(&dst, &result.matrix, j);
-		actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col, 0.0,
-				 &dst);
+		actors_mul(1.0, IPROC_TRANS_NOTRANS, actors, &col, 0.0, &dst);
 	}
 
 	UNPROTECT(1);
@@ -257,8 +256,7 @@ SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &view.matrix, j);
 		vector_init_matrix_col(&dst, &result.matrix, j);
-		actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col, 0.0,
-				 &dst);
+		actors_mul(1.0, IPROC_TRANS_TRANS, actors, &col, 0.0, &dst);
 	}
 
 	UNPROTECT(1);

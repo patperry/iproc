@@ -175,7 +175,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 	struct darray *ctxs = &model->ctxs;
 
 	if (!darray_empty(ctxs)) {
-		ctx = *(iproc_model_ctx **)darray_back(ctxs);
+		ctx = *(iproc_model_ctx **) darray_back(ctxs);
 		darray_pop_back(ctxs);
 		iproc_model_ref(model);
 		refcount_init(&ctx->refcount);
