@@ -331,7 +331,7 @@ bool sparsegroup_assign_copy(struct sparsegroup *g,
 void sparsegroup_clear(struct sparsegroup *g, size_t elt_size)
 {
 	sparsegroup_free_group(g, elt_size);
-	memset(g->group, 0, sizeof(g->group));
+	memset(g->bitmap, 0, sizeof(g->bitmap));
 	memset(g->deleted, 0, sizeof(g->deleted));
 	g->num_buckets = 0;
 }
@@ -708,12 +708,14 @@ bool sparsetable_assign_copy(struct sparsetable *t,
 void sparsetable_clear(struct sparsetable *t)
 {
 	struct sparsegroup *groups = darray_front(&t->groups);
-	ssize_t i, n = t->table_size;
+	ssize_t i, n = darray_size(&t->groups);
 	size_t elt_size = t->elt_size;
 
 	for (i = 0; i < n; i++) {
 		sparsegroup_clear(groups + i, elt_size);
 	}
+	
+	t->num_buckets = 0;
 }
 
 ssize_t sparsetable_empty(const struct sparsetable *t)

@@ -118,6 +118,12 @@ static void test_size(void **state)
 	}
 }
 
+static void test_clear(void **state)
+{
+	hashset_clear(&set);
+	assert_true(hashset_empty(&set));
+}
+
 static void test_lookup(void **state)
 {
 	ssize_t i;
@@ -186,6 +192,7 @@ int main(int argc, char **argv)
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),
 		unit_test_setup_teardown(test_size, empty_setup, empty_teardown),
+		unit_test_setup_teardown(test_clear, empty_setup, empty_teardown),
 		unit_test_setup_teardown(test_lookup, empty_setup, empty_teardown),		
 		unit_test_setup_teardown(test_add, empty_setup, empty_teardown),
 		unit_test_setup_teardown(test_add_existing, empty_setup, empty_teardown),
@@ -194,6 +201,7 @@ int main(int argc, char **argv)
 
 		unit_test_setup(big_suite, big_setup_fixture),
 		unit_test_setup_teardown(test_size, big_setup, big_teardown),
+		unit_test_setup_teardown(test_clear, big_setup, big_teardown),		
 		unit_test_setup_teardown(test_lookup, big_setup, big_teardown),		
 		unit_test_setup_teardown(test_add, big_setup, big_teardown),
 		unit_test_setup_teardown(test_add_existing, big_setup, big_teardown),
@@ -203,6 +211,7 @@ int main(int argc, char **argv)
 
 		unit_test_setup(big_bad_suite, big_bad_setup_fixture),
 		unit_test_setup_teardown(test_size, big_bad_setup, big_bad_teardown),
+		unit_test_setup_teardown(test_clear, big_bad_setup, big_bad_teardown),				
 		unit_test_setup_teardown(test_lookup, big_bad_setup, big_bad_teardown),		
 		unit_test_setup_teardown(test_add, big_bad_setup, big_teardown),
 		unit_test_setup_teardown(test_add_existing, big_bad_setup, big_bad_teardown),
