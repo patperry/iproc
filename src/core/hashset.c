@@ -269,17 +269,17 @@ bool hashset_contains(const struct hashset *s, const void *key)
 	return hashset_lookup(s, key);
 }
 
-const void *hashset_lookup(const struct hashset *s, const void *key)
+void *hashset_lookup(const struct hashset *s, const void *key)
 {
 	return hashset_lookup_with(s, key, NULL);
 }
 
-const void *hashset_lookup_with(const struct hashset *s, const void *key,
-				const void *val0)
+void *hashset_lookup_with(const struct hashset *s, const void *key,
+			  const void *val0)
 {
 	struct hashset_pos pos;
-	const void *val = hashset_find(s, key, &pos);
-	return val ? val : val0;
+	void *val = hashset_find(s, key, &pos);
+	return val ? val : (void *)val0;
 }
 
 bool hashset_add(struct hashset *s, const void *val)
@@ -326,8 +326,8 @@ void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n)
 	}
 }
 
-const void *hashset_find(const struct hashset *s, const void *key,
-			 struct hashset_pos *pos)
+void *hashset_find(const struct hashset *s, const void *key,
+		   struct hashset_pos *pos)
 {
 	assert(s);
 	assert(key);
@@ -437,8 +437,8 @@ bool hashset_iter_advance(const struct hashset *s, struct hashset_iter *it)
 	return sparsetable_iter_skip(&s->table, &it->table_it);
 }
 
-const void *hashset_iter_current(const struct hashset *s,
-				 const struct hashset_iter *it)
+void *hashset_iter_current(const struct hashset *s,
+			   const struct hashset_iter *it)
 {
 	return sparsetable_iter_current(&s->table, &it->table_it);
 }

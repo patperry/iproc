@@ -25,25 +25,10 @@ actors <- function(formula, data, na.action, contrasts = NULL, ...)
     actrs
 }
 
-ngroup.actors <- function(object, ...) {
-    .Call("Riproc_actors_ngroup", object)
-}
-
 dim.actors <- function(object, ...) {
     n <- .Call("Riproc_actors_size", object)
     p <- .Call("Riproc_actors_dim", object)
     c(n,p)
-}
-
-group.actors <- function(object, ...) {
-    ids <- seq_len(nrow(object))
-    .Call("Riproc_actors_group", object, ids)
-}
-
-group.traits.actors <- function(object, ...) {
-    group.ids <- seq_len(ngroup(object))
-    xt <- .Call("Riproc_actors_group_traits", object, group.ids)
-    t(xt)
 }
 
 as.matrix.actors <- function(x, ...) {

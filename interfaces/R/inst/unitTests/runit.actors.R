@@ -3,7 +3,7 @@ require(RUnit)
 require(iproc)
 data(enron)
 
-a <- traits <- ngroup <- NULL
+a <- traits <- NULL
 
 .setUp <- function() {
     e <- enron$employees
@@ -13,7 +13,6 @@ a <- traits <- ngroup <- NULL
     attr(mm, "contrasts") <- NULL
 
     traits <<- mm
-    ngroup <<- 12
     a <<- actors(~ gender *seniority * department, enron$employees)
     set.seed(0)
 }
@@ -26,13 +25,6 @@ a <- traits <- ngroup <- NULL
 test.dimensions <- function() {
     checkEquals(nrow(a), nrow(traits))
     checkEquals(ncol(a), ncol(traits))
-    checkEquals(ngroup(a), ngroup)
-}
-
-test.group.traits <- function() {
-    g <- group(a)
-    gt <- group.traits(a)
-    checkEquals(gt[g,,drop = FALSE], traits)
 }
 
 test.as.matrix <- function() {

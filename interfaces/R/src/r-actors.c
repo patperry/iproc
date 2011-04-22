@@ -15,13 +15,9 @@ static SEXP Riproc_actors_type_tag;
 
 static R_CallMethodDef callMethods[] = {
 	{"Riproc_actors_new", (DL_FUNC) & Riproc_actors_new, 1},
-	{"Riproc_actors_ngroup", (DL_FUNC) & Riproc_actors_ngroup, 1},
 	{"Riproc_actors_size", (DL_FUNC) & Riproc_actors_size, 1},
 	{"Riproc_actors_dim", (DL_FUNC) & Riproc_actors_dim, 1},
 	{"Riproc_actors_traits", (DL_FUNC) & Riproc_actors_traits, 2},
-	{"Riproc_actors_group", (DL_FUNC) & Riproc_actors_group, 2},
-	{"Riproc_actors_group_traits", (DL_FUNC) & Riproc_actors_group_traits,
-	 2},
 	{"Riproc_actors_mul", (DL_FUNC) & Riproc_actors_mul, 2},
 	{"Riproc_actors_tmul", (DL_FUNC) & Riproc_actors_tmul, 2},
 	{NULL, NULL, 0}
@@ -105,13 +101,6 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	return Ractors;
 }
 
-SEXP Riproc_actors_ngroup(SEXP Ractors)
-{
-	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int ngroup = (int)iproc_actors_ngroup(actors);
-	return ScalarInteger(ngroup);
-}
-
 SEXP Riproc_actors_size(SEXP Ractors)
 {
 	iproc_actors *actors = Riproc_to_actors(Ractors);
@@ -146,57 +135,6 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 
 		vector_init_matrix_col(&dst, &xt.matrix, i);
 		src = actors_traits(actors, id);
-
-		vector_assign_copy(&dst, src);
-	}
-
-	UNPROTECT(1);
-	return Rxt;
-}
-
-SEXP Riproc_actors_group(SEXP Ractors, SEXP Ractor_ids)
-{
-	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int size = (int)actors_size(actors);
-	int i, n = GET_LENGTH(Ractor_ids);
-	SEXP Rgroup_ids;
-
-	PROTECT(Rgroup_ids = NEW_INTEGER(n));
-
-	for (i = 0; i < n; i++) {
-		int id = INTEGER(Ractor_ids)[i] - 1;
-		if (!(0 <= id && id < size))
-			error("actor id out of range");
-
-		int group_id = (int)iproc_actors_group(actors, id);
-		INTEGER(Rgroup_ids)[i] = group_id + 1;
-	}
-
-	UNPROTECT(1);
-	return Rgroup_ids;
-}
-
-SEXP Riproc_actors_group_traits(SEXP Ractors, SEXP Rgroup_ids)
-{
-	iproc_actors *actors = Riproc_to_actors(Ractors);
-	int ngroup = (int)iproc_actors_ngroup(actors);
-	int dim = (int)actors_dim(actors);
-	int i, n = GET_LENGTH(Rgroup_ids);
-	SEXP Rxt;
-
-	PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
-	iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
-
-	struct vector dst;
-	const struct vector *src;
-
-	for (i = 0; i < n; i++) {
-		int id = INTEGER(Rgroup_ids)[i] - 1;
-		if (!(0 <= id && id < ngroup))
-			error("group id out of range");
-
-		vector_init_matrix_col(&dst, &xt.matrix, i);
-		src = iproc_actors_group_traits(actors, id);
 
 		vector_assign_copy(&dst, src);
 	}

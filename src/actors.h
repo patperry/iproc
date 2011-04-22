@@ -6,6 +6,7 @@
 #include "darray.h"
 #include "refcount.h"
 
+#include "hashset.h"
 #include "matrix.h"
 #include "svector.h"
 #include "vector.h"
@@ -46,7 +47,7 @@ struct actor {
 struct actors {
 	ssize_t dim;
 	struct darray actors;
-	//struct hashset cohorts;
+	struct hashset cohorts;
 
 	/* deprecated */
 	struct darray group_ids;
@@ -65,8 +66,6 @@ ssize_t actors_cohorts_size(const struct actors *a);
 ssize_t actors_dim(const struct actors *a);
 
 const struct actor *actors_at(const struct actors *a, ssize_t actor_id);
-const struct cohort *actors_cohort_at(const struct actors *a,
-				      ssize_t cohort_id);
 
 /* makes a copy of traits */
 ssize_t actors_add(iproc_actors * actors, const struct vector *traits);
@@ -87,7 +86,6 @@ void actors_matmul(double alpha,
 		   const iproc_matrix * x, double beta, iproc_matrix * y);
 
 /* deprecated */
-int64_t iproc_actors_ngroup(const iproc_actors * actors);
 int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id);
 const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
 					       int64_t group_id);

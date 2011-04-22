@@ -47,17 +47,17 @@ static inline bool hashset_equals(const struct hashset *s, const void *val1,
 
 /* modification */
 bool hashset_contains(const struct hashset *s, const void *key);
-const void *hashset_lookup(const struct hashset *s, const void *key);
-const void *hashset_lookup_with(const struct hashset *s, const void *key,
-				const void *val0);
+void *hashset_lookup(const struct hashset *s, const void *key);
+void *hashset_lookup_with(const struct hashset *s, const void *key,
+			  const void *val0);
 bool hashset_add(struct hashset *s, const void *val);
 ssize_t hashset_add_all(struct hashset *s, const void *vals, ssize_t n);
 void hashset_remove(struct hashset *s, const void *key);
 void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n);
 
 /* position-based operations */
-const void *hashset_find(const struct hashset *s, const void *key,
-			 struct hashset_pos *pos);
+void *hashset_find(const struct hashset *s, const void *key,
+		   struct hashset_pos *pos);
 bool hashset_insert(struct hashset *s, struct hashset_pos *pos,
 		    const void *val);
 void hashset_replace(struct hashset *s, struct hashset_pos *pos,
@@ -69,8 +69,8 @@ void hashset_iter_init(const struct hashset *s, struct hashset_iter *it);
 void hashset_iter_deinit(const struct hashset *s, struct hashset_iter *it);
 void hashset_iter_reset(const struct hashset *s, struct hashset_iter *it);
 bool hashset_iter_advance(const struct hashset *s, struct hashset_iter *it);
-const void *hashset_iter_current(const struct hashset *s,
-				 const struct hashset_iter *it);
+void *hashset_iter_current(const struct hashset *s,
+			   const struct hashset_iter *it);
 
 static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
 {
