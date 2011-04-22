@@ -19,7 +19,7 @@ static void empty_setup_fixture(void **state)
 
 static void empty_setup(void **state)
 {
-	static ssize_t empty_elts[] = { };
+	static ssize_t *empty_elts = NULL;
 
 	darray_init(&darray, sizeof(ssize_t));
 	size = 0;

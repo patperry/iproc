@@ -171,8 +171,9 @@ iproc_design_ctx *iproc_design_ctx_ref(iproc_design_ctx * ctx)
 
 static void iproc_design_ctx_release(struct refcount *refcount)
 {
-	iproc_design_ctx *ctx =
-	    container_of(refcount, iproc_design_ctx, refcount);
+	iproc_design_ctx *ctx = 
+		//(void *)((char *)refcount - offsetof(iproc_design_ctx, refcount));
+			    container_of(refcount, iproc_design_ctx, refcount);
 	iproc_design_ctx_free(ctx);
 }
 

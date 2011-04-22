@@ -299,7 +299,7 @@ ssize_t hashset_add_all(struct hashset *s, const void *vals, ssize_t n)
 	size_t elt_size = hashset_elt_size(s);
 	ssize_t i;
 
-	for (i = 0; i < n; i++, vals += elt_size) {
+	for (i = 0; i < n; i++, vals = (char *)vals + elt_size) {
 		if (!hashset_add(s, vals))
 			break;
 	}
@@ -321,7 +321,7 @@ void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n)
 	size_t elt_size = hashset_elt_size(s);
 	ssize_t i;
 
-	for (i = 0; i < n; i++, keys += elt_size) {
+	for (i = 0; i < n; i++, keys = (char *)keys + elt_size) {
 		hashset_remove(s, keys);
 	}
 }

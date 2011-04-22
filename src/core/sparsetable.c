@@ -164,9 +164,9 @@ static void *sparsegroup_lookup_with(const struct sparsegroup *g, ssize_t index,
 /* modification */
 static bool sparsegroup_add(struct sparsegroup *g, ssize_t index,
 			    const void *val, size_t elt_size);
-static bool sparsegroup_add_all(struct sparsegroup *g,
-				ssize_t *indexes,
-				const void *vals, ssize_t n, size_t elt_size);
+static ssize_t sparsegroup_add_all(struct sparsegroup *g,
+				   ssize_t *indexes,
+				   const void *vals, ssize_t n, size_t elt_size);
 static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
 			       size_t elt_size);
 static void sparsegroup_remove_preserve(struct sparsegroup *g, ssize_t index,
@@ -391,49 +391,26 @@ static bool sparsegroup_add(struct sparsegroup *g, ssize_t index,
 	}
 }
 
-static bool sparsegroup_add_all(struct sparsegroup *g,
-				ssize_t *indexes,
-				const void *vals, ssize_t n, size_t elt_size)
+static ssize_t sparsegroup_add_all(struct sparsegroup *g,
+				   ssize_t *indexes,
+				   const void *vals, ssize_t n, size_t elt_size)
 {
-	if (n <= 0)
-		return true;
+	assert(n >= 0);
 
-	char oldvals[n * elt_size];
-	const void *oldval;
-	bool exists[n];
 	struct sparsegroup_pos pos;
 	ssize_t i;
 
 	for (i = 0; i < n; i++) {
-		if ((oldval = sparsegroup_find(g, indexes[i], &pos, elt_size))) {
-			exists[i] = true;
-			memcpy(oldvals + i * elt_size, oldval, elt_size);
-			sparsegroup_replace(g, &pos, vals + i * elt_size,
+		if (sparsegroup_find(g, indexes[i], &pos, elt_size)) {
+			sparsegroup_replace(g, &pos, (char *)vals + i * elt_size,
 					    elt_size);
 
 		} else {
-			exists[i] = false;
-			if (!sparsegroup_insert
-			    (g, &pos, vals + i * elt_size, elt_size))
-				goto rollback;
+			if (!sparsegroup_insert(g, &pos, (char *)vals + i * elt_size, elt_size))
+				break;
 		}
 	}
-	return true;
-rollback:
-	for (; i > 0; i--) {
-		if (exists[i - 1]) {
-			// the add always succeeds since it replaces an
-			// existing element
-			sparsegroup_add(g, indexes[i - 1],
-					oldvals + (i - 1) * elt_size, elt_size);
-		} else {
-			// don't count the remove as a delete, (i.e. preserve
-			// the old dbit) since the add never succeeded
-			sparsegroup_remove_preserve(g, indexes[i - 1],
-						    elt_size);
-		}
-	}
-	return false;
+	return i;
 }
 
 static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
@@ -488,7 +465,7 @@ void *sparsegroup_find(const struct sparsegroup *g, ssize_t index,
 	pos->offset = sparsegroup_index_to_offset(g, index);
 
 	if (sparsegroup_bmtest(g, index)) {
-		return g->group + pos->offset * elt_size;
+		return (char *)g->group + pos->offset * elt_size;
 	}
 	return NULL;
 }
@@ -502,12 +479,12 @@ bool sparsegroup_insert(struct sparsegroup *g,
 	if (!sparsegroup_realloc_group(g, g->num_buckets + 1, elt_size))
 		return false;
 
-	memmove(g->group + (pos->offset + 1) * elt_size,
-		g->group + pos->offset * elt_size,
+	memmove((char *)g->group + (pos->offset + 1) * elt_size,
+		(char *)g->group + pos->offset * elt_size,
 		(g->num_buckets - pos->offset) * elt_size);
 	g->num_buckets++;
 	sparsegroup_bmset(g, pos->index);
-	memcpy(g->group + pos->offset * elt_size, val, elt_size);
+	memcpy((char *)g->group + pos->offset * elt_size, val, elt_size);
 	assert(sparsegroup_contains(g, pos->index, elt_size));
 	return true;
 }
@@ -517,7 +494,7 @@ void sparsegroup_replace(struct sparsegroup *g,
 			 const void *val, size_t elt_size)
 {
 	assert(sparsegroup_bmtest(g, pos->index));
-	memcpy(g->group + pos->offset * elt_size, val, elt_size);
+	memcpy((char *)g->group + pos->offset * elt_size, val, elt_size);
 }
 
 void sparsegroup_erase(struct sparsegroup *g,
@@ -529,8 +506,8 @@ void sparsegroup_erase(struct sparsegroup *g,
 		sparsegroup_free_group(g, elt_size);
 		g->group = NULL;
 	} else {
-		memmove(g->group + pos->offset * elt_size,
-			g->group + (pos->offset + 1) * elt_size,
+		memmove((char *)g->group + pos->offset * elt_size,
+			(char *)g->group + (pos->offset + 1) * elt_size,
 			(g->num_buckets - pos->offset - 1) * elt_size);
 		sparsegroup_realloc_group(g, g->num_buckets - 1, elt_size);
 	}
@@ -589,7 +566,7 @@ static ssize_t sparsegroup_iter_skip(const struct sparsegroup *g,
 	if (it->pos.offset < sparsegroup_count(g)) {
 		ssize_t index0 = it->pos.index;
 		it->pos.index = sparsegroup_offset_to_index(g, it->pos.offset);
-		it->val = g->group + it->pos.offset * elt_size;
+		it->val = (char *)g->group + it->pos.offset * elt_size;
 		return it->pos.index - index0;
 	} else {
 		it->pos.index = sparsegroup_size(g);
@@ -852,44 +829,25 @@ static void sparsetable_remove_preserve(struct sparsetable *t, ssize_t index)
 	}
 }
 
-bool sparsetable_add_all(struct sparsetable *t, ssize_t *indexes,
-			 const void *vals, ssize_t n)
+ssize_t sparsetable_add_all(struct sparsetable *t, ssize_t *indexes,
+			    const void *vals, ssize_t n)
 {
 	if (n <= 0)
 		return true;
 
 	size_t elt_size = sparsetable_elt_size(t);
-	char oldvals[n * elt_size];
-	const void *oldval;
-	bool exists[n];
 	struct sparsetable_pos pos;
 	ssize_t i;
 
-	for (i = 0; i < n; i++) {
-		if ((oldval = sparsetable_find(t, indexes[i], &pos))) {
-			exists[i] = true;
-			memcpy(oldvals + i * elt_size, oldval, elt_size);
-			sparsetable_replace(t, &pos, vals + i * elt_size);
-
+	for (i = 0; i < n; i++, vals = (char *)vals + elt_size) {
+		if (sparsetable_find(t, indexes[i], &pos)) {
+			sparsetable_replace(t, &pos, vals);
 		} else {
-			exists[i] = false;
-			if (!sparsetable_insert(t, &pos, vals + i * elt_size))
-				goto rollback;
+			if (!sparsetable_insert(t, &pos, vals))
+				break;
 		}
 	}
-	return true;
-rollback:
-	for (; i > 0; i--) {
-		if (exists[i - 1]) {
-			// the add always succeeds since it replaces an
-			// existing element
-			sparsetable_add(t, indexes[i - 1],
-					oldvals + (i - 1) * elt_size);
-		} else {
-			sparsetable_remove_preserve(t, indexes[i - 1]);
-		}
-	}
-	return false;
+	return i;
 }
 
 void sparsetable_remove(struct sparsetable *t, ssize_t index)

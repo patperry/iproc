@@ -20,7 +20,7 @@ static void empty_setup_fixture(void **state)
 
 static void empty_setup(void **state)
 {
-	static ssize_t empty_elts[] = { };
+	static ssize_t *empty_elts = NULL;
 
 	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
 	size = 0;

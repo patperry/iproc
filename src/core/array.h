@@ -114,9 +114,9 @@ bool array_overlaps(const struct array * a, ssize_t i, ssize_t n,
 	
 	size_t elt_size = array_elt_size(a);
 	const void *begin1 = array_at(a, i);
-	const void *end1 = begin1 + n * elt_size;
+	const void *end1 = (char *)begin1 + n * elt_size;
 	const void *begin2 = ptr;
-	const void *end2 = begin2 + nel * elt_size;
+	const void *end2 = (char *)begin2 + nel * elt_size;
 
 	return ((begin1 <= begin2 && begin2 < end1)
 		|| (begin2 <= begin1 && begin1 < end2));
@@ -125,7 +125,7 @@ bool array_overlaps(const struct array * a, ssize_t i, ssize_t n,
 void *array_at(const struct array *a, ssize_t i)
 {
 	assert(0 <= i && i < array_size(a));
-	return a->data + i * a->elt_size;
+	return (char *)a->data + i * a->elt_size;
 	
 }
 

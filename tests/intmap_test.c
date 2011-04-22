@@ -26,8 +26,8 @@ static void teardown_fixture(void **state)
 
 static void empty_setup(void **state)
 {
-	static intptr_t empty_keys[] = { };
-	static int empty_vals[] = { };
+	static intptr_t *empty_keys = NULL;
+	static int *empty_vals = NULL;
 
 	intmap_init(&map);
 	keys = empty_keys;

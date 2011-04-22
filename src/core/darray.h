@@ -127,7 +127,7 @@ void darray_set(struct darray *a, ssize_t i, const void *src)
 void darray_set_range(struct darray *a, ssize_t i, ssize_t n, const void *src)
 {
 	assert(0 <= i && i <= darray_size(a) - n);
-	return array_set_range(&a->array, i, n, src);
+	array_set_range(&a->array, i, n, src);
 }
 
 #endif /* _DARRAY_H */

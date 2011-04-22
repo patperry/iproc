@@ -91,7 +91,7 @@ void *pqueue_push(struct pqueue *q, const void *val)
 	// actually copy new element
 	darray_set(array, icur, val);
 
-	return (void *)val + pqueue_elt_size(q);
+	return (char *)val + pqueue_elt_size(q);
 }
 
 void *pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
@@ -105,9 +105,9 @@ void *pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
 		return NULL;
 
 	size_t elt_size = pqueue_elt_size(q);
-	const void *end = src + n * elt_size;
+	const void *end = (char *)src + n * elt_size;
 
-	for (; src < end; src += elt_size) {
+	for (; src < end; src = (char *)src + elt_size) {
 		pqueue_push(q, src);
 	}
 

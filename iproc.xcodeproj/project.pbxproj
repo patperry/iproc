@@ -299,6 +299,7 @@
 		22867A10132FDA830090D617 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = src/minpack/dcsrch.c; sourceTree = "<group>"; };
 		22867A11132FDA830090D617 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = src/minpack/dcstep.c; sourceTree = "<group>"; };
 		22867A15132FDABD0090D617 /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = src/libf2c/f2c.h; sourceTree = "<group>"; };
+		22950A9413611D8D0074897C /* intmap_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = intmap_test.c; path = tests/intmap_test.c; sourceTree = "<group>"; };
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
 		22A88EBA135E6B6A006FE604 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
 		22A88EBB135E6B6A006FE604 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
@@ -466,6 +467,7 @@
 		22678900134CD568001309F5 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				22950A9413611D8D0074897C /* intmap_test.c */,
 				222FC3F31360755C00E64FC9 /* hashset_test.c */,
 				2223CD20134D8C11004FA7F9 /* darray_test.c */,
 				2267891C134CD66F001309F5 /* pqueue_test.c */,
@@ -1109,6 +1111,7 @@
 				222FC40113607B2100E64FC9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		222FC40E13607C3F00E64FC9 /* Build configuration list for PBXNativeTarget "iproc" */ = {
 			isa = XCConfigurationList;
@@ -1117,6 +1120,7 @@
 				222FC41013607C3F00E64FC9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		224D0558132EC113007F5646 /* Build configuration list for PBXNativeTarget "Riproc" */ = {
 			isa = XCConfigurationList;

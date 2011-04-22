@@ -465,11 +465,11 @@ static void free_value(const void *value, void *cleanup_value_data) {
 static void free_symbol_map_value(const void *value,
                                   void *cleanup_value_data) {
     SymbolMapValue * const map_value = (SymbolMapValue*)value;
-    const unsigned int children = (unsigned int)(cleanup_value_data - NULL);
+    const unsigned int children = (unsigned int)((char *)cleanup_value_data - (char *)NULL);
     assert_true(value);
     list_free(&map_value->symbol_values_list_head,
               children ? free_symbol_map_value : free_value,
-              NULL + children - 1);
+              (char *)NULL + children - 1);
     free(map_value);
 }
 

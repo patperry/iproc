@@ -10,7 +10,7 @@ void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size)
 	assert(elt_size > 0);
 
 	size_t nbytes = size * elt_size;
-	void *end = begin + nbytes;
+	void *end = (char *)begin + nbytes;
 	void *dst;
 
 	if (!val) {
@@ -18,7 +18,7 @@ void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size)
 	} else {
 		assert(!(begin <= val && val < end));
 
-		for (dst = begin; dst < end; dst += elt_size) {
+		for (dst = begin; dst < end; dst = (char *)dst + elt_size) {
 			memcpy(dst, val, elt_size);
 		}
 	}
@@ -35,7 +35,7 @@ void *memory_copy_to(const void *src, ssize_t size, void *dst, size_t elt_size)
 
 	size_t nbytes = size * elt_size;
 	memmove(dst, src, nbytes);	// not memcpy; be careful of aliasing
-	return dst + elt_size;
+	return (char *)dst + elt_size;
 }
 
 void memory_swap(void *val1, void *val2, size_t elt_size)
@@ -62,11 +62,11 @@ void *memory_reverse(void *begin, ssize_t size, size_t elt_size)
 	ssize_t i;
 
 	for (i = 0; i < n / 2; i++) {
-		memory_swap(begin + i * elt_size,
-			    begin + (n - i - 1) * elt_size, elt_size);
+		memory_swap((char *)begin + i * elt_size,
+			    (char *)begin + (n - i - 1) * elt_size, elt_size);
 	}
 
-	return begin + n * elt_size;
+	return (char *)begin + n * elt_size;
 }
 
 void *forward_find(const void *begin, ssize_t size, const void *key,
@@ -76,10 +76,10 @@ void *forward_find(const void *begin, ssize_t size, const void *key,
 	assert(equal);
 	assert(elt_size > 0);
 
-	const void *end = begin + size * elt_size;
+	const void *end = (char *)begin + size * elt_size;
 	const void *ptr;
 
-	for (ptr = begin; ptr < end; ptr += elt_size) {
+	for (ptr = begin; ptr < end; ptr = (char *)ptr + elt_size) {
 		if (equal(ptr, key))
 			return (void *)ptr;
 	}
@@ -97,7 +97,7 @@ ssize_t forward_find_index(const void *begin, ssize_t size, const void *key,
 	const void *ptr = forward_find(begin, size, key, equal, elt_size);
 
 	if (ptr) {
-		return (ptr - begin) / elt_size;
+		return ((char *)ptr - (char *)begin) / elt_size;
 	}
 
 	return -1;
@@ -110,11 +110,11 @@ void *reverse_find(const void *begin, ssize_t size, const void *key,
 	assert(equal);
 	assert(elt_size > 0);
 
-	const void *end = begin + size * elt_size;
+	const void *end = (char *)begin + size * elt_size;
 	const void *ptr;
 
 	for (ptr = end; ptr > begin;) {
-		ptr -= elt_size;
+		ptr = (char *)ptr - elt_size;
 		if (equal(ptr, key))
 			return (void *)ptr;
 	}
@@ -132,7 +132,7 @@ ssize_t reverse_find_index(const void *begin, ssize_t size, const void *key,
 	const void *ptr = reverse_find(begin, size, key, equal, elt_size);
 
 	if (ptr) {
-		return (ptr - begin) / elt_size;
+		return ((char *)ptr - (char *)begin) / elt_size;
 	}
 
 	return -1;
@@ -148,7 +148,7 @@ void *sorted_find(const void *begin, ssize_t size, const void *key,
 	ssize_t i = binary_search(begin, size, key, compar, elt_size);
 
 	if (i >= 0) {
-		return (void *)begin + i * elt_size;
+		return (char *)begin + i * elt_size;
 	}
 
 	return NULL;
@@ -169,7 +169,7 @@ ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 
 	while (left < right) {
 		i = left + ((right - left) >> 1);
-		ptr = begin + i * elt_size;
+		ptr = (char *)begin + i * elt_size;
 		cmp = compar(ptr, key);
 
 		if (cmp < 0) {	// array[i] < key

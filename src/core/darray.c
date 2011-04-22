@@ -162,7 +162,7 @@ static ssize_t darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
 	if ((nactual = darray_reserve_insert(a, n))) {
 		darray_resize_with(a, size, NULL);
 		src = darray_at(a, i);	// compute dst after resize in case of realloc
-		dst = src + nactual * elt_size;
+		dst = (char *)src + nactual * elt_size;
 		memmove(dst, src, tail_size);
 	}
 
@@ -243,7 +243,7 @@ void darray_erase_range(struct darray *a, ssize_t i, ssize_t n)
 	size_t elt_size = darray_elt_size(a);
 	ssize_t size = darray_size(a) - n;
 	void *dst = darray_at(a, i);
-	void *src = dst + n * elt_size;
+	void *src = (char *)dst + n * elt_size;
 
 	memmove(dst, src, n * elt_size);
 	darray_resize(a, size);

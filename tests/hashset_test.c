@@ -36,7 +36,7 @@ static void teardown_fixture(void **state)
 
 static void empty_setup(void **state)
 {
-	static int empty_vals[] = { };
+	static int *empty_vals = NULL;
 
 	hash = int_hash;
 	equals = int_equals;

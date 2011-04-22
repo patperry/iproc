@@ -161,7 +161,7 @@ void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n, void *dst
 	
 	size_t nbytes = n * array_elt_size(a);
 	memcpy(dst, array_at(a, i), nbytes);
-	return (void *)dst + nbytes;
+	return (char *)dst + nbytes;
 }
 
 void array_fill(struct array *a, const void *val)
