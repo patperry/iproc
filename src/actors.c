@@ -244,6 +244,11 @@ const struct actor *actors_at(const struct actors *a, ssize_t actor_id)
 	return darray_at(&a->actors, actor_id);
 }
 
+const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
+{
+	return actors_at(a, actor_id)->cohort;
+}
+
 /* deprecated */
 bool iproc_actors_reserve(iproc_actors * actors, ssize_t size)
 {
@@ -337,8 +342,8 @@ const struct vector *actors_traits(const iproc_actors * a,
 	return cohort_traits(actor->cohort);
 }
 
-/* deprecated */
-int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id)
+/* deprecated
+int64_t actors_cohort(const iproc_actors * actors, int64_t actor_id)
 {
 	assert(actors);
 	assert(0 <= actor_id);
@@ -348,6 +353,7 @@ int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id)
 	int64_t g = *(int64_t *)darray_at(group_ids, actor_id);
 	return g;
 }
+ */
 
 /* deprecated */
 const struct vector *iproc_actors_group_traits(const iproc_actors * actors,

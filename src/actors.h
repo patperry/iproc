@@ -1,5 +1,5 @@
-#ifndef _IPROC_ACTORS_H
-#define _IPROC_ACTORS_H
+#ifndef _ACTORS_H
+#define _ACTORS_H
 
 #include <stddef.h>
 
@@ -65,11 +65,12 @@ ssize_t actors_size(const struct actors *a);
 ssize_t actors_cohorts_size(const struct actors *a);
 ssize_t actors_dim(const struct actors *a);
 
-const struct actor *actors_at(const struct actors *a, ssize_t actor_id);
-
 /* makes a copy of traits */
-ssize_t actors_add(iproc_actors * actors, const struct vector *traits);
+ssize_t actors_add(struct actors *a, const struct vector *traits);
+
+const struct actor *actors_at(const struct actors *a, ssize_t actor_id);
 const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
+const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id);
 
 void actors_mul(double alpha,
 		iproc_trans trans,
@@ -85,9 +86,4 @@ void actors_matmul(double alpha,
 		   const struct actors *a,
 		   const iproc_matrix * x, double beta, iproc_matrix * y);
 
-/* deprecated */
-int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id);
-const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
-					       int64_t group_id);
-
-#endif /* _IPROC_ACTORS_H */
+#endif /* _ACTORS_H */
