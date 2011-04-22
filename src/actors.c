@@ -365,70 +365,93 @@ const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
 void
 actors_mul(double alpha,
 	   iproc_trans trans,
-	   const iproc_actors * actors,
+	   const struct actors *a,
 	   const struct vector *x, double beta, struct vector *y)
 {
-	assert(actors);
+	assert(a);
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(x) == actors_dim(actors));
+	       || vector_size(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_size(actors));
+	       || vector_size(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(x) == actors_size(actors));
+	       || vector_size(x) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_dim(actors));
+	       || vector_size(y) == actors_dim(a));
 
-	int64_t n = actors_size(actors);
-	int64_t i;
 	const struct vector *row;
-	double dot, entry;
-
+	double alpha_dot, scale;
+	struct hashset_iter it;
+	struct cohort *c;
+	struct cohort_iter c_it;
+	ssize_t id;
+	
 	if (beta == 0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1) {
 		vector_scale(y, beta);
 	}
 
-	/* NOTE: this could be more efficient by using info about actor groups */
+	hashset_iter_init(&a->cohorts, &it);
 	if (trans == IPROC_TRANS_NOTRANS) {
-		for (i = 0; i < n; i++) {
-			row = actors_traits(actors, i);
-			dot = vector_dot(row, x);
-			*vector_at(y, i) += alpha * dot;
+		while (hashset_iter_advance(&a->cohorts, &it)) {
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			row = cohort_traits(c);
+			alpha_dot = alpha * vector_dot(row, x);
+			
+			cohort_iter_init(c, &c_it);
+			while (cohort_iter_advance(c, &c_it)) {
+				id = cohort_iter_current(c, &c_it);
+				*vector_at(y, id) += alpha_dot;
+			}
+			cohort_iter_deinit(c, &c_it);
 		}
 	} else {
-		for (i = 0; i < n; i++) {
-			row = actors_traits(actors, i);
-			entry = *vector_at(x, i);
-			vector_axpy(alpha * entry, row, y);
+		while (hashset_iter_advance(&a->cohorts, &it)) {
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			row = cohort_traits(c);
+			scale = 0.0;
+			
+			cohort_iter_init(c, &c_it);
+			while (cohort_iter_advance(c, &c_it)) {
+				id = cohort_iter_current(c, &c_it);
+				scale += *vector_at(x, id);
+			}
+			cohort_iter_deinit(c, &c_it);
+			
+			vector_axpy(alpha * scale, row, y);
 		}
+
+		
 	}
+	hashset_iter_deinit(&a->cohorts, &it);
 }
 
 void
 actors_muls(double alpha,
 	    iproc_trans trans,
-	    const iproc_actors * actors,
+	    const struct actors *a,
 	    const iproc_svector * x, double beta, struct vector *y)
 {
-	assert(actors);
+	assert(a);
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == actors_dim(actors));
+	       || iproc_svector_dim(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_size(actors));
+	       || vector_size(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == actors_size(actors));
+	       || iproc_svector_dim(x) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_dim(actors));
+	       || vector_size(y) == actors_dim(a));
 
-	int64_t n = actors_size(actors);
-	int64_t i;
 	const struct vector *row;
-	double dot, entry;
+	double alpha_dot, entry;
+	struct hashset_iter it;
+	struct cohort *c;
+	struct cohort_iter c_it;
+	ssize_t id;
 
 	if (beta == 0) {
 		vector_fill(y, 0.0);
@@ -436,41 +459,53 @@ actors_muls(double alpha,
 		vector_scale(y, beta);
 	}
 
-	/* NOTE: this could be more efficient by using info about actor groups */
 	if (trans == IPROC_TRANS_NOTRANS) {
-		for (i = 0; i < n; i++) {
-			row = actors_traits(actors, i);
-			dot = iproc_vector_sdot(row, x);
-			*vector_at(y, i) += alpha * dot;
+		hashset_iter_init(&a->cohorts, &it);		
+		while (hashset_iter_advance(&a->cohorts, &it)) {
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			row = cohort_traits(c);
+			alpha_dot = alpha * vector_dots(row, x);
+			
+			cohort_iter_init(c, &c_it);
+			while (cohort_iter_advance(c, &c_it)) {
+				id = cohort_iter_current(c, &c_it);
+				*vector_at(y, id) += alpha_dot;
+			}
+			cohort_iter_deinit(c, &c_it);
 		}
+		hashset_iter_deinit(&a->cohorts, &it);		
 	} else {
-		int64_t inz, nnz = iproc_svector_nnz(x);
+		/* NOTE: this could potentially be made more effecient by
+		 * using the cohort structure.  Below, we assume that
+		 * the sparsity in x is more important.
+		 */
+		ssize_t inz, nnz = iproc_svector_nnz(x);
 		for (inz = 0; inz < nnz; inz++) {
-			i = iproc_svector_nz(x, inz);
-			row = actors_traits(actors, i);
+			id = iproc_svector_nz(x, inz);
+			row = actors_traits(a, id);
 			entry = iproc_svector_nz_get(x, inz);
 			vector_axpy(alpha * entry, row, y);
 		}
-	}
+	}	
 }
 
 void
 actors_matmul(double alpha,
 	      iproc_trans trans,
-	      const iproc_actors * actors,
+	      const struct actors *a,
 	      const iproc_matrix * x, double beta, iproc_matrix * y)
 {
-	assert(actors);
+	assert(a);
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_matrix_nrow(x) == actors_dim(actors));
+	       || iproc_matrix_nrow(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_matrix_nrow(y) == actors_size(actors));
+	       || iproc_matrix_nrow(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_matrix_nrow(x) == actors_size(actors));
+	       || iproc_matrix_nrow(x) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_matrix_nrow(y) == actors_dim(actors));
+	       || iproc_matrix_nrow(y) == actors_dim(a));
 	assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
 
 	int64_t m = iproc_matrix_ncol(x);
@@ -488,6 +523,6 @@ actors_matmul(double alpha,
 	for (j = 0; j < m; j++) {
 		vector_init_matrix_col(&xcol, x, j);
 		vector_init_matrix_col(&ycol, y, j);
-		actors_mul(alpha, trans, actors, &xcol, 1.0, &ycol);
+		actors_mul(alpha, trans, a, &xcol, 1.0, &ycol);
 	}
 }

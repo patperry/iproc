@@ -330,7 +330,7 @@ iproc_design_ctx_dmul(double alpha,
 			iproc_design_dx *sv = darray_at(dxs, i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
-			double dot = iproc_vector_sdot(x, dx);
+			double dot = vector_dots(x, dx);
 			iproc_svector_inc(y, jrecv, alpha * dot);
 		}
 	} else {

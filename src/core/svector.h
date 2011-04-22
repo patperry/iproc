@@ -38,7 +38,7 @@ void iproc_svector_nz_inc(iproc_svector * svector, int64_t inz, double inc);
 iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector);
 int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i);
 
-double iproc_vector_sdot(const struct vector *vector,
+double vector_dots(const struct vector *vector,
 			 const iproc_svector * svector);
 void iproc_vector_sacc(struct vector *dst_vector,
 		       double scale, const iproc_svector * svector);

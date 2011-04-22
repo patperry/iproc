@@ -218,7 +218,7 @@ iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector)
 	return iproc_vector_view_array(px, nnz);
 }
 
-double iproc_vector_sdot(const struct vector *vector,
+double vector_dots(const struct vector *vector,
 			 const iproc_svector * svector)
 {
 	assert(vector);
