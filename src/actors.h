@@ -4,41 +4,14 @@
 #include <stddef.h>
 
 #include "darray.h"
-#include "refcount.h"
-
 #include "hashset.h"
 #include "matrix.h"
+#include "refcount.h"
 #include "svector.h"
 #include "vector.h"
 
 #include "cohort.h"
 
-typedef struct actors iproc_actors;
-
-/*
- 
-  
- 
-
-struct _iproc_actors {
-    struct hashset  cohorts;
-    struct darray   actors;
-    ssize_t         dim; 
-    struct refcount refcount;
-};
-*/
-
-typedef struct _iproc_group iproc_group;
-struct _iproc_group {
-	struct vector *traits;	/* traits must be the first member */
-	int64_t id;
-};
-
-typedef struct _iproc_group_bucket iproc_group_bucket;
-struct _iproc_group_bucket {
-	size_t traits_hash;	/* traits_hash must be the first member */
-	struct darray groups;
-};
 
 struct actor {
 	struct cohort *cohort;
@@ -48,18 +21,17 @@ struct actors {
 	ssize_t dim;
 	struct darray actors;
 	struct hashset cohorts;
-
-	/* deprecated */
-	struct darray group_ids;
-	struct darray group_traits;
-	struct darray group_buckets;
 	struct refcount refcount;
 };
 
-/* makes a copy of traits0 */
+
 struct actors *actors_alloc(ssize_t dim);
 struct actors *actors_ref(struct actors *a);
 void actors_free(struct actors *a);
+bool actors_init(struct actors *actors, ssize_t dim);
+void actors_deinit(struct actors *a);
+
+void actors_clear(struct actors *a);
 
 ssize_t actors_size(const struct actors *a);
 ssize_t actors_cohorts_size(const struct actors *a);

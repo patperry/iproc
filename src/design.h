@@ -80,8 +80,8 @@ typedef struct _iproc_design_ctx iproc_design_ctx;
 typedef struct _iproc_design_dx iproc_design_dx;	// private
 
 struct design {
-	iproc_actors *senders;
-	iproc_actors *receivers;
+	struct actors *senders;
+	struct actors *receivers;
 	bool has_reffects;
 	struct darray vars;
 	int64_t ireffects, nreffects;
@@ -124,8 +124,8 @@ void iproc_design_var_init(iproc_design_var * var,
 					    int64_t),
 			   void (*free) (iproc_design_var *));
 
-iproc_design *iproc_design_new(iproc_actors * senders,
-			       iproc_actors * receivers, bool has_reffects);
+iproc_design *iproc_design_new(struct actors *senders,
+			       struct actors *receivers, bool has_reffects);
 iproc_design *iproc_design_ref(iproc_design * design);
 void iproc_design_unref(iproc_design * design);
 
@@ -181,7 +181,7 @@ void iproc_design_ctx_dmuls(double alpha, iproc_trans trans,
 
 int64_t iproc_design_nsender(const iproc_design * design);
 int64_t iproc_design_nreceiver(const iproc_design * design);
-iproc_actors *iproc_design_senders(const iproc_design * design);
-iproc_actors *iproc_design_receivers(const iproc_design * design);
+struct actors *iproc_design_senders(const iproc_design * design);
+struct actors *iproc_design_receivers(const iproc_design * design);
 
 #endif /* _IPROC_DESIGN_H */

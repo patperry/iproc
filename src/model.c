@@ -109,7 +109,7 @@ static bool insert_cohort_model(struct intmap *cohort_models,
 				const struct design *design,
 				ssize_t isend, const struct vector *coefs)
 {
-	const iproc_actors *senders = iproc_design_senders(design);
+	const struct actors *senders = iproc_design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
 	struct intmap_pos pos;
 	struct cohort_model *cm;
@@ -157,7 +157,7 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)
 	assert(isend < iproc_model_nsender(model));
 
 	const iproc_design *design = iproc_model_design(model);
-	const iproc_actors *senders = iproc_design_senders(design);
+	const struct actors *senders = iproc_design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
 	return (void *)intmap_lookup(&model->cohort_models, c);
 }

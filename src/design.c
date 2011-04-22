@@ -95,8 +95,8 @@ iproc_design_var_init(iproc_design_var * var,
 	var->free = free;
 }
 
-iproc_design *iproc_design_new(iproc_actors * senders,
-			       iproc_actors * receivers, bool has_reffects)
+iproc_design *iproc_design_new(struct actors * senders,
+			       struct actors * receivers, bool has_reffects)
 {
 	assert(senders);
 	assert(receivers);
@@ -241,8 +241,8 @@ iproc_design_mul0_static(double alpha,
 	if (design->nstatic == 0)
 		return;
 
-	const iproc_actors *senders = iproc_design_senders(design);
-	const iproc_actors *receivers = iproc_design_receivers(design);
+	const struct actors *senders = iproc_design_senders(design);
+	const struct actors *receivers = iproc_design_receivers(design);
 	int64_t p = actors_dim(senders);
 	int64_t q = actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
@@ -288,8 +288,8 @@ iproc_design_muls0_static(double alpha,
 	if (design->nstatic == 0)
 		return;
 
-	const iproc_actors *senders = iproc_design_senders(design);
-	const iproc_actors *receivers = iproc_design_receivers(design);
+	const struct actors *senders = iproc_design_senders(design);
+	const struct actors *receivers = iproc_design_receivers(design);
 	int64_t p = actors_dim(senders);
 	int64_t q = actors_dim(receivers);
 	int64_t ix_begin = design->istatic;
@@ -411,24 +411,24 @@ iproc_design_muls0(double alpha,
 int64_t iproc_design_nsender(const iproc_design * design)
 {
 	assert(design);
-	const iproc_actors *senders = iproc_design_senders(design);
+	const struct actors *senders = iproc_design_senders(design);
 	return actors_size(senders);
 }
 
 int64_t iproc_design_nreceiver(const iproc_design * design)
 {
 	assert(design);
-	const iproc_actors *receivers = iproc_design_receivers(design);
+	const struct actors *receivers = iproc_design_receivers(design);
 	return actors_size(receivers);
 }
 
-iproc_actors *iproc_design_senders(const iproc_design * design)
+struct actors *iproc_design_senders(const iproc_design * design)
 {
 	assert(design);
 	return design->senders;
 }
 
-iproc_actors *iproc_design_receivers(const iproc_design * design)
+struct actors *iproc_design_receivers(const iproc_design * design)
 {
 	assert(design);
 	return design->receivers;

@@ -1,98 +1,8 @@
 #include "port.h"
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include "compare.h"
 #include "actors.h"
-
-DEFINE_COMPARE_FN(int64_compare, int64_t)
-DEFINE_COMPARE_FN(size_compare, size_t)
-
-#define group_bucket_compare size_compare
-
-static bool iproc_actors_reserve(iproc_actors * actors, ssize_t size);
-
-static int group_compare(const void *x, const void *y)
-{
-	return vector_compare(((iproc_group *) x)->traits,
-			      ((iproc_group *) y)->traits);
-}
-
-static ssize_t
-iproc_actors_insert_group(iproc_actors * actors, const struct vector *traits)
-{
-	assert(actors);
-	assert(traits);
-
-	/* first, find the right bucket */
-	size_t traits_hash = vector_hash(traits);
-	ssize_t i = darray_binary_search(&actors->group_buckets,
-					 &traits_hash,
-					 group_bucket_compare);
-
-	if (i < 0) {		/* insert a new bucket if necessary */
-		i = ~i;
-		iproc_group_bucket new_bucket;
-		new_bucket.traits_hash = traits_hash;
-		darray_init(&new_bucket.groups, sizeof(iproc_group));
-		darray_insert(&actors->group_buckets, i, &new_bucket);
-	}
-
-	iproc_group_bucket *bucket = darray_at(&actors->group_buckets, i);
-
-	/* now, find the right group  */
-	ssize_t j = darray_binary_search(&bucket->groups,
-					 &traits,
-					 group_compare);
-
-	if (j < 0) {		/* insert a new group if necessary */
-		j = ~j;
-		struct vector *new_traits = vector_new_copy(traits);
-		int64_t new_id = darray_size(&actors->group_traits);
-		darray_push_back(&actors->group_traits, &new_traits);
-		iproc_group new_group = { new_traits, new_id };
-
-		darray_insert(&bucket->groups, j, &new_group);
-	}
-
-	/* lastly return the id */
-	iproc_group *group = darray_at(&bucket->groups, j);
-	return group->id;
-}
-
-static void iproc_actors_group_deinit(iproc_group * group)
-{
-	vector_free(group->traits);
-}
-
-static void iproc_actors_group_bucket_deinit(iproc_group_bucket * bucket)
-{
-	ssize_t i, n;
-	struct darray *groups = &bucket->groups;
-	iproc_group *group;
-
-	n = darray_size(groups);
-	for (i = 0; i < n; i++) {
-		group = darray_at(groups, i);
-		iproc_actors_group_deinit(group);
-	}
-
-	darray_deinit(groups);
-}
-
-static void iproc_actors_group_buckets_deinit(struct darray *group_buckets)
-{
-	ssize_t i, n;
-	iproc_group_bucket *bucket;
-
-	n = darray_size(group_buckets);
-	for (i = 0; i < n; i++) {
-		bucket = darray_at(group_buckets, i);
-		iproc_actors_group_bucket_deinit(bucket);
-	}
-	darray_deinit(group_buckets);
-}
 
 static uint32_t cohortp_traits_hash(const void *cohortp)
 {
@@ -105,7 +15,7 @@ static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2)
 			     cohort_traits(*(struct cohort **)cohortp2));
 }
 
-static bool actors_init(struct actors *actors, ssize_t dim)
+bool actors_init(struct actors *actors, ssize_t dim)
 {
 	assert(actors);
 	assert(dim >= 0);
@@ -121,19 +31,6 @@ static bool actors_init(struct actors *actors, ssize_t dim)
 	if (!ok)
 		goto fail_cohorts;
 
-	/* old */
-	ok = darray_init(&actors->group_ids, sizeof(int64_t));
-	if (!ok)
-		goto fail_group_ids;
-
-	ok = darray_init(&actors->group_traits, sizeof(struct vector *));
-	if (!ok)
-		goto fail_group_traits;
-
-	ok = darray_init(&actors->group_buckets, sizeof(iproc_group_bucket));
-	if (!ok)
-		goto fail_group_buckets;
-
 	ok = refcount_init(&actors->refcount);
 	if (!ok)
 		goto fail_refcount;
@@ -144,12 +41,6 @@ static bool actors_init(struct actors *actors, ssize_t dim)
 
 	refcount_deinit(&actors->refcount);
 fail_refcount:
-	darray_deinit(&actors->group_buckets);
-fail_group_buckets:
-	darray_deinit(&actors->group_traits);
-fail_group_traits:
-	darray_deinit(&actors->group_ids);
-fail_group_ids:
 	hashset_deinit(&actors->cohorts);
 fail_cohorts:
 	darray_deinit(&actors->actors);	
@@ -166,26 +57,23 @@ static void cohorts_clear(struct hashset *cohorts)
 		cohort_free(*cp);
 	}
 	hashset_iter_deinit(cohorts, &it);
+	hashset_clear(cohorts);
 }
 
-static void cohorts_deinit(struct hashset *cohorts)
+void actors_clear(struct actors *a)
 {
-	cohorts_clear(cohorts);
-	hashset_deinit(cohorts);
+	cohorts_clear(&a->cohorts);
+	darray_clear(&a->actors);
 }
 
-static void actors_deinit(struct actors *actors)
+void actors_deinit(struct actors *a)
 {
-	assert(actors);
+	assert(a);
 
-	cohorts_deinit(&actors->cohorts);
-	darray_deinit(&actors->actors);
-
-	/* old */
-	refcount_deinit(&actors->refcount);
-	iproc_actors_group_buckets_deinit(&actors->group_buckets);
-	darray_deinit(&actors->group_traits);
-	darray_deinit(&actors->group_ids);
+	actors_clear(a);
+	refcount_deinit(&a->refcount);
+	hashset_deinit(&a->cohorts);
+	darray_deinit(&a->actors);
 }
 
 struct actors *actors_alloc(ssize_t dim)
@@ -201,14 +89,14 @@ struct actors *actors_alloc(ssize_t dim)
 	return NULL;
 }
 
-void actors_free(iproc_actors * actors)
+void actors_free(struct actors *a)
 {
-	if (!actors)
+	if (!a)
 		return;
 
-	if (refcount_put(&actors->refcount, NULL)) {
-		actors_deinit(actors);
-		free(actors);
+	if (refcount_put(&a->refcount, NULL)) {
+		actors_deinit(a);
+		free(a);
 	}
 }
 
@@ -247,34 +135,6 @@ const struct actor *actors_at(const struct actors *a, ssize_t actor_id)
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
 {
 	return actors_at(a, actor_id)->cohort;
-}
-
-/* deprecated */
-bool iproc_actors_reserve(iproc_actors * actors, ssize_t size)
-{
-	assert(actors);
-	assert(size >= 0);
-
-	return darray_reserve(&actors->group_ids, size);
-}
-
-/* deprecated */
-ssize_t actors_add_old(iproc_actors * actors, const struct vector *traits)
-{
-	assert(actors);
-	assert(vector_size(traits) == actors_dim(actors));
-
-	ssize_t id = -1;
-
-	if (iproc_actors_reserve(actors, actors_size(actors) + 1)) {
-		id = actors_size(actors);
-
-		int64_t group_id = iproc_actors_insert_group(actors, traits);
-
-		darray_push_back(&actors->group_ids, &group_id);
-	}
-
-	return id;
 }
 
 
@@ -328,11 +188,10 @@ fail_push_back:
 fail_get_cohort:
 	id = -1;
 out:
-	actors_add_old(actors, traits);
 	return id;
 }
 
-const struct vector *actors_traits(const iproc_actors * a,
+const struct vector *actors_traits(const struct actors *a,
 				   ssize_t actor_id)
 {
 	assert(a);
@@ -342,37 +201,8 @@ const struct vector *actors_traits(const iproc_actors * a,
 	return cohort_traits(actor->cohort);
 }
 
-/* deprecated
-int64_t actors_cohort(const iproc_actors * actors, int64_t actor_id)
-{
-	assert(actors);
-	assert(0 <= actor_id);
-	assert(actor_id < actors_size(actors));
-
-	const struct darray *group_ids = &actors->group_ids;
-	int64_t g = *(int64_t *)darray_at(group_ids, actor_id);
-	return g;
-}
- */
-
-/* deprecated */
-const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
-					       int64_t group_id)
-{
-	assert(actors);
-	assert(0 <= group_id);
-	assert(group_id < actors_cohorts_size(actors));
-
-	struct vector *x =
-	    *(struct vector **)darray_at(&actors->group_traits, group_id);
-	return x;
-}
-
-void
-actors_mul(double alpha,
-	   iproc_trans trans,
-	   const struct actors *a,
-	   const struct vector *x, double beta, struct vector *y)
+void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
+		const struct vector *x, double beta, struct vector *y)
 {
 	assert(a);
 	assert(x);

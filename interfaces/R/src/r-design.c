@@ -86,8 +86,8 @@ Riproc_design_new(SEXP Rsenders,
 		  SEXP Rreceivers,
 		  SEXP Rreceiver_effects, SEXP Rrecip_intervals)
 {
-	iproc_actors *senders = Riproc_to_actors(Rsenders);
-	iproc_actors *receivers = Riproc_to_actors(Rreceivers);
+	struct actors *senders = Riproc_to_actors(Rsenders);
+	struct actors *receivers = Riproc_to_actors(Rreceivers);
 	Rboolean receiver_effects = LOGICAL_VALUE(Rreceiver_effects);
 
 	if (receiver_effects == NA_LOGICAL) {
@@ -130,14 +130,14 @@ SEXP Riproc_design_nreceiver(SEXP Rdesign)
 SEXP Riproc_design_senders(SEXP Rdesign)
 {
 	iproc_design *design = Riproc_to_design(Rdesign);
-	iproc_actors *senders = iproc_design_senders(design);
+	struct actors *senders = iproc_design_senders(design);
 	return Riproc_from_actors(senders);
 }
 
 SEXP Riproc_design_receivers(SEXP Rdesign)
 {
 	iproc_design *design = Riproc_to_design(Rdesign);
-	iproc_actors *receivers = iproc_design_receivers(design);
+	struct actors *receivers = iproc_design_receivers(design);
 	return Riproc_from_actors(receivers);
 }
 

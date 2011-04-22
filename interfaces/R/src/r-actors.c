@@ -31,11 +31,11 @@ void Riproc_actors_init(DllInfo * info)
 
 static void Riproc_actors_free(SEXP Ractors)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	actors_free(actors);
 }
 
-SEXP Riproc_from_actors(iproc_actors * actors)
+SEXP Riproc_from_actors(struct actors * actors)
 {
 	SEXP Ractors, class;
 
@@ -55,12 +55,12 @@ SEXP Riproc_from_actors(iproc_actors * actors)
 	return Ractors;
 }
 
-iproc_actors *Riproc_to_actors(SEXP Ractors)
+struct actors *Riproc_to_actors(SEXP Ractors)
 {
 	Rboolean null_ok = TRUE;
 	SEXP tag = Riproc_actors_type_tag;
 	char *type = "actors";
-	iproc_actors *actors = Riproc_sexp2ptr(Ractors, null_ok, tag, type);
+	struct actors *actors = Riproc_sexp2ptr(Ractors, null_ok, tag, type);
 	return actors;
 }
 
@@ -76,7 +76,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	vector_init_matrix_col(&traits0, &traits_t.matrix, 0);
 	ssize_t dim = vector_size(&traits0);
 
-	iproc_actors *actors = actors_alloc(dim);
+	struct actors *actors = actors_alloc(dim);
 
 	if (!actors)
 		error("could not allocate new actors object");
@@ -103,21 +103,21 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 
 SEXP Riproc_actors_size(SEXP Ractors)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	int size = (int)actors_size(actors);
 	return ScalarInteger(size);
 }
 
 SEXP Riproc_actors_dim(SEXP Ractors)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	int dim = (int)actors_dim(actors);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	int size = (int)actors_size(actors);
 	int dim = (int)actors_dim(actors);
 	int i, n = GET_LENGTH(Ractor_ids);
@@ -145,7 +145,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 
 SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);
@@ -174,7 +174,7 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 
 SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 {
-	iproc_actors *actors = Riproc_to_actors(Ractors);
+	struct actors *actors = Riproc_to_actors(Ractors);
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);

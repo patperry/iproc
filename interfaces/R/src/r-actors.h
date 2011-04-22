@@ -18,7 +18,7 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix);
 SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix);
 
 /* Internal use only */
-iproc_actors *Riproc_to_actors(SEXP Ractors);
-SEXP Riproc_from_actors(iproc_actors * actors);
+struct actors *Riproc_to_actors(SEXP Ractors);
+SEXP Riproc_from_actors(struct actors *actors);
 
 #endif /* _IPROC_R_ACTORS_H */
