@@ -6,14 +6,13 @@
 
 #include "pqueue.h"
 
-struct pqueue *_pqueue_init(struct pqueue *q, compare_fn compar,
-			    size_t elt_size)
+bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
 {
 	assert(q);
 	assert(compar);
 	assert(elt_size > 0);
 
-	if (_darray_init(&q->array, elt_size)) {
+	if (darray_init(&q->array, elt_size)) {
 		q->compare = compar;
 		return q;
 	}
@@ -21,7 +20,7 @@ struct pqueue *_pqueue_init(struct pqueue *q, compare_fn compar,
 	return NULL;
 }
 
-struct pqueue *pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
+bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
 {
 	assert(q);
 	assert(src);
@@ -78,7 +77,7 @@ void *pqueue_push(struct pqueue *q, const void *val)
 	// while current element has a parent:
 	while (icur > 0) {
 		ssize_t iparent = (icur - 1) >> 1;
-		void *parent = darray_ptr(array, iparent);
+		void *parent = darray_at(array, iparent);
 
 		// if cur <= parent, heap condition is satisfied
 		if (compare(val, parent) <= 0)
@@ -95,7 +94,7 @@ void *pqueue_push(struct pqueue *q, const void *val)
 	return (void *)val + pqueue_elt_size(q);
 }
 
-void *pqueue_push_array(struct pqueue *q, const void *src, ssize_t n)
+void *pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
 {
 	assert(q);
 	assert(src || n == 0);
@@ -128,7 +127,7 @@ void pqueue_pop(struct pqueue *q)
 
 	// swap the last element in the tree with the root, then heapify
 	compare_fn compare = q->compare;
-	void *cur = darray_ptr(array, n);
+	void *cur = darray_back(array);
 	ssize_t icur = 0;
 
 	// while current element has at least one child
@@ -136,8 +135,8 @@ void pqueue_pop(struct pqueue *q)
 		ssize_t ileft = (icur << 1) + 1;
 		ssize_t iright = (icur << 1) + 2;
 		ssize_t imax;
-		void *left = darray_ptr(array, ileft);
-		void *right = darray_ptr(array, iright);
+		void *left = darray_at(array, ileft);
+		void *right = darray_at(array, iright);
 		void *max;
 
 		// find the child with highest priority
@@ -163,20 +162,4 @@ void pqueue_pop(struct pqueue *q)
 
 out:
 	darray_resize(array, n);
-}
-
-void pqueue_pop_array(struct pqueue *q, void *dst, ssize_t n)
-{
-	assert(q);
-	assert(dst || n == 0);
-	assert(n >= 0);
-	assert(n <= pqueue_size(q));
-
-	size_t elt_size = pqueue_elt_size(q);
-	void *end = dst + n * elt_size;
-
-	for (; dst < end; dst += elt_size) {
-		pqueue_get_top(q, dst);
-		pqueue_pop(q);
-	}
 }

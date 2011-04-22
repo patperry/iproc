@@ -77,7 +77,7 @@ iproc_vrecip *iproc_vrecip_new(double *intvls, int64_t n)
 	iproc_design_var_init(&v->var, n, design_var_get_dxs, design_var_free);
 	refcount_init(&v->refcount);
 
-	if (!darray_init(&v->intvls, double)) {
+	if (!darray_init(&v->intvls, sizeof(double))) {
 		iproc_vrecip_free(v);
 		v = NULL;
 	} else {

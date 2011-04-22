@@ -21,7 +21,7 @@ static iproc_svector *iproc_design_var_new(iproc_design * design)
 	iproc_svector *svector;
 
 	if (n > 0) {
-		svector = darray_index(svectors, iproc_svector *, n - 1);
+		svector = *(iproc_svector **)darray_at(svectors, n - 1);
 		darray_resize(svectors, n - 1);
 	} else {
 		svector = iproc_design_var_new_alloc(design);
@@ -51,9 +51,7 @@ static void clear_dxs(iproc_design * design, struct darray *dxs)
 
 	int64_t i, n = darray_size(dxs);
 	for (i = 0; i < n; i++) {
-		iproc_design_dx *sv = &darray_index(dxs,
-						    iproc_design_dx,
-						    i);
+		iproc_design_dx *sv = darray_at(dxs, i);
 		iproc_sdesign_var_free(design, sv->dx);
 	}
 
@@ -86,8 +84,7 @@ iproc_design_ctx_set(iproc_design_ctx * ctx, int64_t isend, iproc_history * h)
 	int64_t offset = design->idynamic;
 
 	for (i = 0; i < n; i++) {
-		iproc_design_var *var = darray_index(vars,
-						     iproc_design_var *,
+		iproc_design_var *var = *(iproc_design_var **)darray_at(vars,
 						     i);
 		assert(var->get_dxs);
 		var->get_dxs(var, ctx, offset);
@@ -129,7 +126,7 @@ static iproc_design_ctx *iproc_design_ctx_new_alloc(iproc_design * design,
 	ctx->isend = -1;
 	refcount_init(&ctx->refcount);
 
-	if (!darray_init(&ctx->dxs, iproc_design_dx)) {
+	if (!darray_init(&ctx->dxs, sizeof(iproc_design_dx))) {
 		iproc_design_ctx_free(ctx);
 		ctx = NULL;
 	} else {
@@ -151,7 +148,7 @@ iproc_design_ctx *iproc_design_ctx_new(iproc_design * design,
 	int64_t n = darray_size(ctxs);
 
 	if (n > 0) {
-		ctx = darray_index(ctxs, iproc_design_ctx *, n - 1);
+		ctx = *(iproc_design_ctx **)darray_at(ctxs, n - 1);
 		darray_resize(ctxs, n - 1);
 		iproc_design_ref(design);
 		refcount_init(&ctx->refcount);
@@ -207,7 +204,7 @@ iproc_svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
 			darray_insert(dxs, i, &new_dx);
 		}
 	} else {
-		dx = (darray_index(dxs, iproc_design_dx, i)).dx;
+		dx = ((iproc_design_dx *)darray_at(dxs, i))->dx;
 	}
 
 	return dx;
@@ -226,9 +223,8 @@ iproc_svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
 	assert(inz < iproc_design_ctx_nnz(ctx));
 	assert(jrecv);
 
-	iproc_design_dx dx = darray_index(&ctx->dxs,
-					  iproc_design_dx,
-					  inz);
+	iproc_design_dx dx = *(iproc_design_dx *)darray_at(&ctx->dxs,
+							   inz);
 	*jrecv = dx.jrecv;
 	return dx.dx;
 }
@@ -328,9 +324,7 @@ iproc_design_ctx_dmul(double alpha,
 		int64_t i, n = darray_size(dxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_design_dx *sv = &darray_index(dxs,
-							    iproc_design_dx,
-							    i);
+			iproc_design_dx *sv = darray_at(dxs, i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
 			double dot = iproc_vector_sdot(x, dx);
@@ -340,12 +334,10 @@ iproc_design_ctx_dmul(double alpha,
 		int64_t i, n = darray_size(dxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_design_dx *sv = &darray_index(dxs,
-							    iproc_design_dx,
-							    i);
+			iproc_design_dx *sv = darray_at(dxs, i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
-			double xjrecv = vector_index(x, jrecv);
+			double xjrecv = *vector_at(x, jrecv);
 
 			if (xjrecv == 0.0)
 				continue;
@@ -400,8 +392,7 @@ iproc_design_ctx_dmuls(double alpha,
 		int64_t i, n = darray_size(dxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_design_dx *sv = &darray_index(dxs,
-							    iproc_design_dx,
+			iproc_design_dx *sv = darray_at(dxs,
 							    i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
@@ -423,8 +414,7 @@ iproc_design_ctx_dmuls(double alpha,
 		int64_t i, n = darray_size(dxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_design_dx *sv = &darray_index(dxs,
-							    iproc_design_dx,
+			iproc_design_dx *sv = darray_at(dxs,
 							    i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;

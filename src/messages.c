@@ -26,8 +26,8 @@ iproc_messages *iproc_messages_new()
 	msgs->max_nto = 0;
 	refcount_init(&msgs->refcount);
 
-	if (!(darray_init(&msgs->array, iproc_message)
-	      && darray_init(&msgs->recipients, int64_t))) {
+	if (!(darray_init(&msgs->array, sizeof(iproc_message))
+	      && darray_init(&msgs->recipients, sizeof(int64_t)))) {
 		iproc_messages_free(msgs);
 		msgs = NULL;
 	}

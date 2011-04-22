@@ -23,7 +23,7 @@ static void trace_array_clear(struct darray *array)
 	iproc_history_trace *ht;
 
 	for (i = 0; i < n; i++) {
-		ht = &(darray_index(array, iproc_history_trace, i));
+		ht = darray_at(array, i);
 		ht->tcur = -INFINITY;
 
 		if (ht->trace)
@@ -38,7 +38,7 @@ static void trace_array_deinit(struct darray *array)
 
 	for (i = 0; i < n; i++) {
 		iproc_history_trace *ht =
-		    &darray_index(array, iproc_history_trace, i);
+		    darray_at(array, i);
 		if (ht->trace)
 			iproc_trace_unref(ht->trace);
 	}
@@ -54,8 +54,7 @@ static iproc_trace *trace_array_get(double tcur,
 
 	trace_array_grow(array, i + 1);
 
-	iproc_history_trace *ht = &darray_index(array,
-						iproc_history_trace,
+	iproc_history_trace *ht = darray_at(array,
 						i);
 	iproc_trace *t;
 
@@ -86,8 +85,8 @@ iproc_history *iproc_history_new()
 {
 	iproc_history *history = iproc_calloc(1, sizeof(*history));
 
-	if (history && darray_init(&history->send, iproc_history_trace)
-	    && darray_init(&history->recv, iproc_history_trace)
+	if (history && darray_init(&history->send, sizeof(iproc_history_trace))
+	    && darray_init(&history->recv, sizeof(iproc_history_trace))
 	    && refcount_init(&history->refcount)) {
 		history->tcur = -INFINITY;
 		return history;

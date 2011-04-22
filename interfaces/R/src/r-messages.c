@@ -78,10 +78,14 @@ static int64_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
 		if (s <= 0)
 			error("'to' values must be positive");
 
-		darray_index(dst, int64_t, i) = s - 1;
+		*(int64_t *)darray_at(dst, i) = s - 1;
 	}
 
-	return &(darray_index(dst, int64_t, 0));
+	if (n > 0) {
+		return darray_front(dst);
+	} else {
+		return NULL;
+	}
 }
 
 static void from_array_copy(int *dst, int64_t * src, int64_t n)
@@ -113,7 +117,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	iproc_messages *msgs = iproc_messages_new();
 	SEXP Rmsgs, Rmsg_to;
 
-	darray_init(&to_buf, int64_t);
+	darray_init(&to_buf, sizeof(int64_t));
 
 	for (i = 0; i < n; i++) {
 		msg_time = time[i];

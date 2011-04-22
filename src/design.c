@@ -11,8 +11,7 @@ static void iproc_design_clear_svectors(struct darray *svectors)
 	if (svectors) {
 		int64_t i, n = darray_size(svectors);
 		for (i = 0; i < n; i++) {
-			iproc_svector *x = darray_index(svectors,
-							iproc_svector *,
+			iproc_svector *x = *(iproc_svector **)darray_at(svectors,
 							i);
 			iproc_svector_unref(x);
 		}
@@ -42,8 +41,7 @@ static void iproc_design_ctxs_deinit(struct darray *ctxs)
 	if (ctxs) {
 		int64_t i, n = darray_size(ctxs);
 		for (i = 0; i < n; i++) {
-			iproc_design_ctx *ctx = darray_index(ctxs,
-							     iproc_design_ctx *,
+			iproc_design_ctx *ctx = *(iproc_design_ctx **)darray_at(ctxs,
 							     i);
 			iproc_design_ctx_free_dealloc(ctx);
 		}
@@ -56,8 +54,7 @@ static void iproc_design_vars_deinit(struct darray *vars)
 	if (vars) {
 		int64_t i, n = darray_size(vars);
 		for (i = 0; i < n; i++) {
-			iproc_design_var *var = darray_index(vars,
-							     iproc_design_var *,
+			iproc_design_var *var = *(iproc_design_var **)darray_at(vars,
 							     i);
 			if (var->free)
 				var->free(var);
@@ -122,9 +119,9 @@ iproc_design *iproc_design_new(iproc_actors * senders,
 	design->dim = design->idynamic + design->ndynamic;
 	refcount_init(&design->refcount);
 
-	if (!(darray_init(&design->vars, iproc_design_var *)
-	      && darray_init(&design->ctxs, iproc_design_ctx *)
-	      && darray_init(&design->svectors, iproc_svector *))) {
+	if (!(darray_init(&design->vars, sizeof(iproc_design_var *))
+	      && darray_init(&design->ctxs, sizeof(iproc_design_ctx *))
+	      && darray_init(&design->svectors, sizeof(iproc_svector *)))) {
 		iproc_design_free(design);
 		design = NULL;
 	}
@@ -221,7 +218,7 @@ iproc_design_muls0_reffects(double alpha,
 				break;
 
 			double x_i = iproc_svector_nz_get(x, inz);
-			vector_index(y, i) += alpha * x_i;
+			*vector_at(y, i) += alpha * x_i;
 
 			inz++;
 		}
@@ -320,8 +317,8 @@ iproc_design_muls0_static(double alpha,
 			int64_t i = ij.rem;	/* ix % p */
 			int64_t j = ij.quot;	/* ix / p */
 			double x_ij = iproc_svector_nz_get(x, inz);
-			double s_i = vector_index(s, i);
-			vector_index(z, j) += x_ij * s_i;
+			double s_i = *vector_at(s, i);
+			*vector_at(z, j) += x_ij * s_i;
 		}
 		vector_scale(z, alpha);
 

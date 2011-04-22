@@ -6,7 +6,7 @@
 #include "util.h"
 #include "array.h"
 
-bool _array_init(struct array *a, ssize_t size, size_t elt_size)
+bool array_init(struct array *a, ssize_t size, size_t elt_size)
 {
 	assert(a);
 	assert(size >= 0);
@@ -24,7 +24,7 @@ bool _array_init(struct array *a, ssize_t size, size_t elt_size)
 	return a;
 }
 
-bool _array_init_view(struct array * a, const void *data,
+void array_init_view(struct array *a, const void *data,
 		      ssize_t size, size_t elt_size)
 {
 	assert(a);
@@ -36,11 +36,9 @@ bool _array_init_view(struct array * a, const void *data,
 	a->size = size;
 	a->elt_size = elt_size;
 	a->owner = false;
-
-	return a;
 }
 
-bool array_init_slice(struct array * a, const struct array * parent,
+void array_init_slice(struct array * a, const struct array * parent,
 		      ssize_t i, ssize_t n)
 {
 	assert(a);
@@ -48,7 +46,9 @@ bool array_init_slice(struct array * a, const struct array * parent,
 	assert(n >= 0);
 	assert(0 <= i && i <= array_size(parent) - n);
 
-	return _array_init_view(a, array_ptr(parent, i), n, parent->elt_size);
+	void *ptr = n == 0 ? NULL : array_at(parent, i);
+	
+	array_init_view(a, ptr, n, parent->elt_size);
 }
 
 bool array_init_copy(struct array * a, const struct array * src)
@@ -56,17 +56,15 @@ bool array_init_copy(struct array * a, const struct array * src)
 	assert(a);
 	assert(src);
 
-	if (_array_init(a, array_size(src), array_elt_size(src))) {
-		if (array_assign_copy(a, src)) {
-			return a;
-		}
-		array_deinit(a);
+	if (array_init(a, array_size(src), array_elt_size(src))) {
+		array_assign_copy(a, src);
+		return a;
 	}
 
 	return NULL;
 }
 
-bool _array_reinit(struct array * a, ssize_t n, size_t elt_size)
+bool array_reinit(struct array * a, ssize_t n, size_t elt_size)
 {
 	assert(a);
 	assert(n >= 0);
@@ -104,33 +102,40 @@ void array_swap(struct array *a, ssize_t i, ssize_t j)
 	assert(0 <= j && j < array_size(a));
 	assert(i != j);
 
-	memory_swap(array_ptr(a, i), array_ptr(a, j), array_elt_size(a));
+	memory_swap(array_at(a, i), array_at(a, j), array_elt_size(a));
 }
 
 void array_reverse(struct array *a)
 {
 	assert(a);
-	memory_reverse(array_begin(a), array_size(a), array_elt_size(a));
+	if (array_empty(a))
+		return;
+
+	memory_reverse(array_front(a), array_size(a), array_elt_size(a));
 }
 
-struct array *array_assign_array(struct array *a, const void *ptr)
+void array_assign_array(struct array *a, const void *src)
 {
 	assert(a);
-	assert(ptr || array_size(a) == 0);
+	assert(src || array_size(a) == 0);
 
-	memory_copy_to(ptr, array_size(a), array_begin(a), array_elt_size(a));
-	return a;
+	if (array_empty(a))
+		return;
+	
+	memory_copy_to(src, array_size(a), array_front(a), array_elt_size(a));
 }
 
-bool array_assign_copy(struct array * a, const struct array * src)
+void array_assign_copy(struct array * a, const struct array * src)
 {
 	assert(a);
 	assert(src);
 	assert(array_elt_size(a) == array_elt_size(src));
 	assert(array_size(a) == array_size(src));
 
-	array_copy_to(src, array_begin(a));
-	return a;
+	if (array_empty(a))
+		return;
+	
+	array_copy_to(src, array_front(a));
 }
 
 void *array_copy_to(const struct array *a, void *dst)
@@ -138,8 +143,25 @@ void *array_copy_to(const struct array *a, void *dst)
 	assert(a);
 	assert(dst || array_size(a) == 0);
 
-	return memory_copy_to(array_begin(a), array_size(a), dst,
+	if (array_empty(a))
+		return dst;
+	
+	return memory_copy_to(array_front(a), array_size(a), dst,
 			      array_elt_size(a));
+}
+
+void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n, void *dst)
+{
+	assert(n >= 0);
+	assert(0 <= i && i <= array_size(a) - n);
+	assert(!array_overlaps(a, i, n, dst, n));
+	
+	if (n == 0)
+		return dst;
+	
+	size_t nbytes = n * array_elt_size(a);
+	memcpy(dst, array_at(a, i), nbytes);
+	return (void *)dst + nbytes;
 }
 
 void array_fill(struct array *a, const void *val)
@@ -154,7 +176,10 @@ void array_fill_range(struct array *a, ssize_t i, ssize_t n, const void *val)
 	assert(n >= 0);
 	assert(0 <= i && i <= array_size(a) - n);
 
-	memory_fill(array_ptr(a, i), n, val, array_elt_size(a));
+	if (n == 0)
+		return;
+	
+	memory_fill(array_at(a, i), n, val, array_elt_size(a));
 }
 
 bool array_contains(const struct array *a, const void *key, equals_fn equal)
@@ -169,7 +194,10 @@ void *array_find(const struct array *a, const void *key, equals_fn equal)
 	assert(a);
 	assert(equal);
 
-	return forward_find(array_begin(a), array_size(a), key, equal,
+	if (array_empty(a))
+		return NULL;
+	
+	return forward_find(array_front(a), array_size(a), key, equal,
 			    array_elt_size(a));
 }
 
@@ -179,7 +207,10 @@ ssize_t array_find_index(const struct array * a, const void *key,
 	assert(a);
 	assert(equal);
 
-	return forward_find_index(array_begin(a), array_size(a), key, equal,
+	if (array_empty(a))
+		return -1;
+	
+	return forward_find_index(array_front(a), array_size(a), key, equal,
 				  array_elt_size(a));
 }
 
@@ -189,7 +220,10 @@ ssize_t array_find_last_index(const struct array * a, const void *key,
 	assert(a);
 	assert(equal);
 
-	return reverse_find_index(array_begin(a), array_size(a), key, equal,
+	if (array_empty(a))
+		return -1;
+	
+	return reverse_find_index(array_front(a), array_size(a), key, equal,
 				  array_elt_size(a));
 }
 
@@ -199,7 +233,10 @@ ssize_t array_binary_search(const struct array * a, const void *key,
 	assert(a);
 	assert(compar);
 
-	return binary_search(array_begin(a), array_size(a), key, compar,
+	if (array_empty(a))
+		return ~((ssize_t)0);
+	
+	return binary_search(array_front(a), array_size(a), key, compar,
 			     array_elt_size(a));
 }
 
@@ -208,5 +245,8 @@ void array_sort(struct array *a, compare_fn compar)
 	assert(a);
 	assert(compar);
 
-	qsort(array_begin(a), array_size(a), array_elt_size(a), compar);
+	if (array_empty(a))
+		return;
+	
+	qsort(array_front(a), array_size(a), array_elt_size(a), compar);
 }

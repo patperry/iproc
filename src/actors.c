@@ -31,13 +31,11 @@ iproc_actors_insert_group(iproc_actors * actors, const struct vector *traits)
 		i = ~i;
 		iproc_group_bucket new_bucket;
 		new_bucket.traits_hash = traits_hash;
-		darray_init(&new_bucket.groups, iproc_group);
+		darray_init(&new_bucket.groups, sizeof(iproc_group));
 		darray_insert(&actors->group_buckets, i, &new_bucket);
 	}
 
-	iproc_group_bucket *bucket = &darray_index(&actors->group_buckets,
-						   iproc_group_bucket,
-						   i);
+	iproc_group_bucket *bucket = darray_at(&actors->group_buckets, i);
 
 	/* now, find the right group  */
 	ssize_t j = darray_binary_search(&bucket->groups,
@@ -55,7 +53,7 @@ iproc_actors_insert_group(iproc_actors * actors, const struct vector *traits)
 	}
 
 	/* lastly return the id */
-	iproc_group *group = &darray_index(&bucket->groups, iproc_group, j);
+	iproc_group *group = darray_at(&bucket->groups, j);
 	return group->id;
 }
 
@@ -72,7 +70,7 @@ static void iproc_actors_group_bucket_deinit(iproc_group_bucket * bucket)
 
 	n = darray_size(groups);
 	for (i = 0; i < n; i++) {
-		group = &darray_index(groups, iproc_group, i);
+		group = darray_at(groups, i);
 		iproc_actors_group_deinit(group);
 	}
 
@@ -86,7 +84,7 @@ static void iproc_actors_group_buckets_deinit(struct darray *group_buckets)
 
 	n = darray_size(group_buckets);
 	for (i = 0; i < n; i++) {
-		bucket = &darray_index(group_buckets, iproc_group_bucket, i);
+		bucket = darray_at(group_buckets, i);
 		iproc_actors_group_bucket_deinit(bucket);
 	}
 	darray_deinit(group_buckets);
@@ -110,20 +108,20 @@ static bool actors_init (struct actors *actors, ssize_t dim)
 	
 	bool ok;
 	
-	ok = darray_init(&actors->actors, struct actor);
+	ok = darray_init(&actors->actors, sizeof(struct actor));
 	if (!ok) goto fail_actors;
 	
 	/*ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
 			  cohortp_traits_equals);
 	if (!ok) goto fail_cohorts; */
 	
-	ok = darray_init(&actors->group_ids, int64_t);
+	ok = darray_init(&actors->group_ids, sizeof(int64_t));
 	if (!ok) goto fail_group_ids;
 	
-	ok = darray_init(&actors->group_traits, struct vector *);
+	ok = darray_init(&actors->group_traits, sizeof(struct vector *));
 	if (!ok) goto fail_group_traits;
 
-	ok = darray_init(&actors->group_buckets, iproc_group_bucket);
+	ok = darray_init(&actors->group_buckets, sizeof(iproc_group_bucket));
 	if (!ok) goto fail_group_buckets;
 	
 	ok = refcount_init(&actors->refcount);
@@ -310,7 +308,7 @@ int64_t iproc_actors_group(const iproc_actors * actors, int64_t actor_id)
 	assert(actor_id < actors_size(actors));
 
 	const struct darray *group_ids = &actors->group_ids;
-	int64_t g = darray_index(group_ids, int64_t, actor_id);
+	int64_t g = *(int64_t *)darray_at(group_ids, actor_id);
 	return g;
 }
 
@@ -321,9 +319,7 @@ const struct vector *iproc_actors_group_traits(const iproc_actors * actors,
 	assert(0 <= group_id);
 	assert(group_id < iproc_actors_ngroup(actors));
 
-	struct vector *x = darray_index(&actors->group_traits,
-					struct vector *,
-					group_id);
+	struct vector *x = *(struct vector **)darray_at(&actors->group_traits, group_id);
 	return x;
 }
 
@@ -361,12 +357,12 @@ actors_mul(double alpha,
 		for (i = 0; i < n; i++) {
 			row = actors_traits(actors, i);
 			dot = vector_dot(row, x);
-			vector_index(y, i) += alpha * dot;
+			*vector_at(y, i) += alpha * dot;
 		}
 	} else {
 		for (i = 0; i < n; i++) {
 			row = actors_traits(actors, i);
-			entry = vector_index(x, i);
+			entry = *vector_at(x, i);
 			vector_axpy(alpha * entry, row, y);
 		}
 	}
@@ -406,7 +402,7 @@ actors_muls(double alpha,
 		for (i = 0; i < n; i++) {
 			row = actors_traits(actors, i);
 			dot = iproc_vector_sdot(row, x);
-			vector_index(y, i) += alpha * dot;
+			*vector_at(y, i) += alpha * dot;
 		}
 	} else {
 		int64_t inz, nnz = iproc_svector_nnz(x);

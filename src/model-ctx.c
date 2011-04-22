@@ -40,8 +40,8 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	/* compute the log sums of the positive and negative differences in weights */
 	for (i = 0; i < nnz; i++) {
 		int64_t jrecv = iproc_svector_nz(deta, i);
-		double lp0 = vector_index(log_p0, jrecv);
-		double dlw = vector_index(&deta_nz.vector, i);
+		double lp0 = *vector_at(log_p0, jrecv);
+		double dlw = *vector_at(&deta_nz.vector, i);
 		double log_abs_dw;
 
 		/* When w > w0:
@@ -96,10 +96,10 @@ compute_active_probs(struct vector *log_p0,
 
 	for (i = 0; i < nnz; i++) {
 		int64_t jrecv = iproc_svector_nz(p_active, i);
-		double lp0_j = vector_index(log_p0, jrecv);
-		double deta_j = vector_index(&p_active_nz.vector, i);
+		double lp0_j = *vector_at(log_p0, jrecv);
+		double deta_j = *vector_at(&p_active_nz.vector, i);
 		double lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
-		vector_index(&p_active_nz.vector, i) = lp_j;
+		*vector_at(&p_active_nz.vector, i) = lp_j;
 	}
 
 	vector_exp(&p_active_nz.vector);
@@ -113,10 +113,10 @@ compute_prob_diffs(struct vector *p0, double gamma, iproc_svector * p_active)
 
 	for (i = 0; i < nnz; i++) {
 		int64_t jrecv = iproc_svector_nz(p_active, i);
-		double p0_j = vector_index(p0, jrecv);
-		double p_j = vector_index(&p_active_nz.vector, i);
+		double p0_j = *vector_at(p0, jrecv);
+		double p_j = *vector_at(&p_active_nz.vector, i);
 		double dp_j = p_j - gamma * p0_j;
-		vector_index(&p_active_nz.vector, i) = dp_j;
+		*vector_at(&p_active_nz.vector, i) = dp_j;
 	}
 }
 
@@ -175,7 +175,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 	struct darray *ctxs = &model->ctxs;
 
 	if (!darray_empty(ctxs)) {
-		ctx = darray_back(ctxs, iproc_model_ctx *);
+		ctx = *(iproc_model_ctx **)darray_back(ctxs);
 		darray_pop_back(ctxs);
 		iproc_model_ref(model);
 		refcount_init(&ctx->refcount);
@@ -282,7 +282,7 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, int64_t jrecv)
 	 */
 
 	double log_gamma = ctx->log_gamma;
-	double log_p0 = vector_index(ctx->group->log_p0, jrecv);
+	double log_p0 = *vector_at(ctx->group->log_p0, jrecv);
 	double deta = iproc_svector_get(ctx->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);
@@ -309,6 +309,6 @@ iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx, struct vector *logprobs)
 
 	for (j = 0; j < n; j++) {
 		double lp = iproc_model_ctx_logprob(ctx, j);
-		vector_index(logprobs, j) = lp;
+		*vector_at(logprobs, j) = lp;
 	}
 }

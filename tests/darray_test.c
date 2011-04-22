@@ -21,7 +21,7 @@ static void empty_setup(void **state)
 {
 	static ssize_t empty_elts[] = { };
 
-	darray_init(&darray, ssize_t);
+	darray_init(&darray, sizeof(ssize_t));
 	size = 0;
 	elts = empty_elts;
 }
@@ -36,7 +36,7 @@ static void singleton_setup(void **state)
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
-	darray_init(&darray, ssize_t);
+	darray_init(&darray, sizeof(ssize_t));
 	elts = singleton_elts;
 	size = 1;
 	darray_assign(&darray, singleton_elts, size);
@@ -113,13 +113,13 @@ static void test_insert(void **state)
 		assert_int_equal(darray_size(&a), size + 1);
 		for (j = 0; j <= size; j++) {
 			if (j < i) {
-				assert_int_equal(darray_index(&a, ssize_t, j),
+				assert_int_equal(*(ssize_t *)darray_at(&a, j),
 						 elts[j]);
 			} else if (j == i) {
-				assert_int_equal(darray_index(&a, ssize_t, j),
+				assert_int_equal(*(ssize_t *)darray_at(&a, j),
 						 val);
 			} else {
-				assert_int_equal(darray_index(&a, ssize_t, j),
+				assert_int_equal(*(ssize_t *)darray_at(&a, j),
 						 elts[j - 1]);
 			}
 		}

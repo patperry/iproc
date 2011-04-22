@@ -22,7 +22,7 @@ static void empty_setup(void **state)
 {
 	static ssize_t empty_elts[] = { };
 
-	pqueue_init(&pqueue, ssize_t, ssize_compare);
+	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
 	size = 0;
 	elts = empty_elts;
 }
@@ -37,10 +37,10 @@ static void singleton_setup(void **state)
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
-	pqueue_init(&pqueue, ssize_t, ssize_compare);
+	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
 	elts = singleton_elts;
 	size = 1;
-	pqueue_push_array(&pqueue, elts, size);
+	pqueue_push_all(&pqueue, elts, size);
 }
 
 static void sorted5_setup_fixture(void **state)
@@ -53,10 +53,10 @@ static void sorted5_setup(void **state)
 {
 	static ssize_t sorted5_elts[] = { 5, 4, 3, 2, 1 };
 
-	pqueue_init(&pqueue, ssize_t, ssize_compare);
+	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
 	elts = sorted5_elts;
 	size = 5;
-	pqueue_push_array(&pqueue, elts, size);
+	pqueue_push_all(&pqueue, elts, size);
 
 }
 
@@ -71,10 +71,10 @@ static void unsorted7_setup(void **state)
 	static ssize_t sorted7_elts[] = { 7, 6, 5, 4, 3, 2, 1 };
 	ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
 
-	pqueue_init(&pqueue, ssize_t, ssize_compare);
+	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
 	elts = sorted7_elts;
 	size = 7;
-	pqueue_push_array(&pqueue, unsorted7_elts, size);
+	pqueue_push_all(&pqueue, unsorted7_elts, size);
 
 }
 
@@ -99,7 +99,7 @@ static void test_push_min_minus_one(void **state)
 	ssize_t min_minus_one = min - 1;
 	pqueue_push(&pqueue, &min_minus_one);
 	assert_int_equal(pqueue_size(&pqueue), size + 1);
-	assert_int_equal(pqueue_top(&pqueue, ssize_t), elts[0]);
+	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), elts[0]);
 }
 
 static void test_push_min(void **state)
@@ -108,7 +108,7 @@ static void test_push_min(void **state)
 	ssize_t elt = min;
 	pqueue_push(&pqueue, &elt);
 	assert_int_equal(pqueue_size(&pqueue), size + 1);
-	assert_int_equal(pqueue_top(&pqueue, ssize_t), elts[0]);
+	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), elts[0]);
 }
 
 static void test_push_max_minus_one(void **state)
@@ -117,7 +117,7 @@ static void test_push_max_minus_one(void **state)
 	ssize_t max_minus_one = max - 1;
 	pqueue_push(&pqueue, &max_minus_one);
 	assert_int_equal(pqueue_size(&pqueue), size + 1);
-	assert_int_equal(pqueue_top(&pqueue, ssize_t), max);
+	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max);
 }
 
 static void test_push_max(void **state)
@@ -126,7 +126,7 @@ static void test_push_max(void **state)
 	ssize_t elt = max;
 	pqueue_push(&pqueue, &elt);
 	assert_int_equal(pqueue_size(&pqueue), size + 1);
-	assert_int_equal(pqueue_top(&pqueue, ssize_t), max);
+	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max);
 }
 
 static void test_push_max_plus_one(void **state)
@@ -135,7 +135,7 @@ static void test_push_max_plus_one(void **state)
 	ssize_t max_plus_one = max + 1;
 	pqueue_push(&pqueue, &max_plus_one);
 	assert_int_equal(pqueue_size(&pqueue), size + 1);
-	assert_int_equal(pqueue_top(&pqueue, ssize_t), max + 1);
+	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max + 1);
 }
 
 static void test_push_existing(void **state)
@@ -154,7 +154,8 @@ static void test_push_existing(void **state)
 		assert_int_equal(pqueue_size(&pq), size + 1);
 
 		for (j = 0; j < size + 1; j++) {
-			pqueue_pop_array(&pq, &top, 1);
+			top = *(ssize_t *)pqueue_top(&pq);
+			pqueue_pop(&pq);
 			if (j <= i) {
 				assert_int_equal(top, elts[j]);
 			} else {

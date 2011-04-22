@@ -181,8 +181,7 @@ static void iproc_model_free(iproc_model * model)
 		int64_t i, n = darray_size(&model->ctxs);
 
 		for (i = 0; i < n; i++) {
-			iproc_model_ctx *ctx = darray_index(&model->ctxs,
-							    iproc_model_ctx *,
+			iproc_model_ctx *ctx = *(iproc_model_ctx **)darray_at(&model->ctxs,
 							    i);
 			iproc_model_ctx_free_dealloc(ctx);
 		}
@@ -208,7 +207,7 @@ iproc_model *iproc_model_new(iproc_design * design,
 	model->coefs = vector_new_copy(coefs);
 	model->has_loops = has_loops;
 	cohort_models_init(&model->cohort_models, design, coefs);
-	darray_init(&model->ctxs, iproc_model_ctx *);
+	darray_init(&model->ctxs, sizeof(iproc_model_ctx *));
 	refcount_init(&model->refcount);
 
 	return model;

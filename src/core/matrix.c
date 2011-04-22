@@ -246,14 +246,14 @@ void iproc_matrix_scale_rows(iproc_matrix * matrix, const struct vector *scale)
 	}
 }
 
-struct vector *vector_init_matrix_col(struct vector *v, const iproc_matrix * a,
+void vector_init_matrix_col(struct vector *v, const iproc_matrix * a,
 				      ssize_t j)
 {
 	assert(0 <= j && j < iproc_matrix_ncol(a));
 	ssize_t m = iproc_matrix_nrow(a);
 	double *ptr = iproc_matrix_ptr(a, 0, j);
 
-	return vector_init_view(v, ptr, m);
+	vector_init_view(v, ptr, m);
 
 }
 
@@ -298,7 +298,7 @@ iproc_matrix_view_vector(const struct vector * vector, int64_t nrow, int64_t nco
 {
 	assert(vector);
 	assert(vector_size(vector) == nrow * ncol);
-	double *data = vector_ptr(vector, 0);
+	double *data = vector_empty(vector) ? NULL : vector_front(vector);
 	return iproc_matrix_view_array(data, nrow, ncol);
 }
 
@@ -320,14 +320,21 @@ iproc_matrix_mul(double alpha,
 	assert(trans == IPROC_TRANS_NOTRANS
 	       || vector_size(y) == iproc_matrix_ncol(matrix));
 
+	if (vector_empty(x)) {
+		vector_scale(y, beta);
+		return;
+	} else if (vector_empty(y)) {
+		return;
+	}
+	
 	char *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
 	f77int m = (f77int) iproc_matrix_nrow(matrix);
 	f77int n = (f77int) iproc_matrix_ncol(matrix);
 	void *pa = iproc_matrix_ptr(matrix, 0, 0);
 	f77int lda = (f77int) iproc_matrix_lda(matrix);
-	void *px = vector_ptr(x, 0);
+	void *px = vector_front(x);
 	f77int incx = 1;
-	void *py = vector_ptr(y, 0);
+	void *py = vector_front(y);
 	f77int incy = 1;
 
 	F77_FUNC(dgemv) (ptrans, &m, &n, &alpha, pa, &lda,
@@ -382,11 +389,14 @@ iproc_matrix_update1(iproc_matrix * matrix,
 	assert(iproc_matrix_nrow(matrix) == vector_size(x));
 	assert(iproc_matrix_ncol(matrix) == vector_size(y));
 
+	if (vector_empty(x) || vector_empty(y))
+		return;
+	
 	f77int m = (f77int) iproc_matrix_nrow(matrix);
 	f77int n = (f77int) iproc_matrix_ncol(matrix);
-	void *px = vector_ptr(x, 0);
+	void *px = vector_front(x);
 	f77int incx = 1;
-	void *py = vector_ptr(y, 0);
+	void *py = vector_front(y);
 	f77int incy = 1;
 	void *pa = iproc_matrix_ptr(matrix, 0, 0);
 	f77int lda = (f77int) iproc_matrix_lda(matrix);

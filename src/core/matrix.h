@@ -49,8 +49,8 @@ void iproc_matrix_acc(iproc_matrix * dst_matrix,
 void iproc_matrix_scale(iproc_matrix * matrix, double scale);
 void iproc_matrix_scale_rows(iproc_matrix * matrix, const struct vector *scale);
 
-struct vector *vector_init_matrix_col(struct vector *v,
-				      const iproc_matrix * a, ssize_t j);
+void vector_init_matrix_col(struct vector *v,
+			    const iproc_matrix * a, ssize_t j);
 iproc_matrix_view iproc_matrix_cols(const iproc_matrix * matrix,
 				    int64_t j, int64_t n);
 iproc_matrix_view iproc_matrix_submatrix(const iproc_matrix * a,

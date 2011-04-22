@@ -25,14 +25,14 @@ static iproc_event *iproc_trace_get_pending(iproc_trace * trace, int64_t i)
 	assert(0 <= i);
 	assert(i < iproc_trace_npending(trace));
 
-	return &darray_index(&trace->pending, iproc_event, i);
+	return darray_at(&trace->pending, i);
 }
 
 static void iproc_events_init(iproc_events * events, int64_t e)
 {
 	assert(events);
 	events->e = e;
-	darray_init(&events->meta, iproc_event_meta);
+	darray_init(&events->meta, sizeof(iproc_event_meta));
 }
 
 static void iproc_events_deinit(iproc_events * events)
@@ -57,8 +57,7 @@ static void iproc_events_array_deinit(struct darray *events_array)
 
 	int64_t i, n = darray_size(events_array);
 	for (i = 0; i < n; i++) {
-		iproc_events *events = &darray_index(events_array,
-						     iproc_events,
+		iproc_events *events = darray_at(events_array,
 						     i);
 		iproc_events_deinit(events);
 	}
@@ -91,8 +90,8 @@ iproc_trace *iproc_trace_new()
 	trace->tcur = -INFINITY;
 	refcount_init(&trace->refcount);
 
-	if (!(darray_init(&trace->pending, iproc_event)
-	      && darray_init(&trace->events, iproc_events))) {
+	if (!(darray_init(&trace->pending, sizeof(iproc_event))
+	      && darray_init(&trace->events, sizeof(iproc_events)))) {
 		iproc_trace_free(trace);
 		trace = NULL;
 	}
@@ -131,8 +130,7 @@ void iproc_trace_clear(iproc_trace * trace)
 
 	n = darray_size(&trace->events);
 	for (i = 0; i < n; i++) {
-		iproc_events_deinit(&darray_index
-				    (&trace->events, iproc_events, i));
+		iproc_events_deinit(darray_at(&trace->events, i));
 	}
 
 	darray_clear(&trace->events);
@@ -178,8 +176,7 @@ void iproc_trace_advance_to(iproc_trace * trace, double t)
 			darray_insert(events_array, pos, &new_events);
 		}
 		// Add the new meta-data
-		iproc_events *events = &darray_index(events_array,
-						     iproc_events,
+		iproc_events *events = darray_at(events_array,
 						     pos);
 
 		iproc_events_append(events, &event->meta);
@@ -208,7 +205,7 @@ iproc_events *iproc_trace_lookup(iproc_trace * trace, int64_t e)
 	int64_t i = iproc_trace_find_index(trace, e);
 
 	if (i >= 0) {
-		events = &darray_index(&trace->events, iproc_events, i);
+		events = darray_at(&trace->events, i);
 	}
 
 	return events;
@@ -220,7 +217,7 @@ iproc_events *iproc_trace_get(iproc_trace * trace, int64_t i)
 	assert(0 <= i);
 	assert(i < iproc_trace_size(trace));
 
-	return &darray_index(&trace->events, iproc_events, i);
+	return darray_at(&trace->events, i);
 }
 
 int64_t iproc_events_id(iproc_events * events)
@@ -241,8 +238,7 @@ iproc_event_meta *iproc_events_get(iproc_events * events, int64_t i)
 	assert(i >= 0);
 	assert(i <= iproc_events_size(events));
 
-	iproc_event_meta *meta = &darray_index(&events->meta,
-					       iproc_event_meta,
+	iproc_event_meta *meta = darray_at(&events->meta,
 					       i);
 	return meta;
 }

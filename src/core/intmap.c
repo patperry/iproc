@@ -10,7 +10,7 @@ static ssize_t intmap_index(const struct intmap *m, intptr_t key);
 bool intmap_init(struct intmap *m)
 {
 	assert(m);
-	return darray_init(&m->items, struct intmap_item);
+	return darray_init(&m->items, sizeof(struct intmap_item));
 }
 
 bool intmap_init_copy(struct intmap *m, const struct intmap * src)
@@ -223,14 +223,14 @@ void intmap_replace(struct intmap *m, struct intmap_pos *pos, intptr_t val)
 	assert(m);
 	assert(pos);
 
-	darray_index(&m->items, struct intmap_item, pos->index).val = val;
+	((struct intmap_item *)darray_at(&m->items, pos->index))->val = val;
 }
 
 void intmap_erase(struct intmap *m, struct intmap_pos *pos)
 {
 	assert(m);
 	assert(pos);
-	assert(darray_index(&m->items, struct intmap_item, pos->index).key == pos->key);
+	assert(((struct intmap_item *)darray_at(&m->items, pos->index))->key == pos->key);
 
 	darray_erase(&m->items, pos->index);
 }
@@ -289,7 +289,7 @@ static struct intmap_item *intmap_at(const const struct intmap *m, ssize_t i)
 {
 	assert(m);
 	assert(0 <= i && i < intmap_size(m));
-	return &darray_index(&m->items, struct intmap_item, i);
+	return darray_at(&m->items, i);
 }
 
 ssize_t intmap_index(const struct intmap *m, intptr_t key)

@@ -10,7 +10,7 @@ bool intset_init(struct intset *s)
 {
 	assert(s);
 
-	if (darray_init(&s->values, intptr_t)) {
+	if (darray_init(&s->values, sizeof(intptr_t))) {
 		return s;
 	}
 	return NULL;
@@ -137,14 +137,14 @@ intptr_t intset_min(const struct intset *s)
 {
 	assert(s);
 	assert(!intset_empty(s));
-	return darray_front(&s->values, intptr_t);
+	return *(intptr_t *)darray_front(&s->values);
 }
 
 intptr_t intset_max(const struct intset *s)
 {
 	assert(s);
 	assert(!intset_empty(s));
-	return darray_back(&s->values, intptr_t);
+	return *(intptr_t *)darray_back(&s->values);
 }
 
 bool intset_contains(const struct intset *s, intptr_t val)
@@ -286,7 +286,7 @@ intptr_t intset_at(const struct intset *s, ssize_t index)
 	assert(index >= 0);
 	assert(index < intset_size(s));
 
-	return darray_index(&s->values, intptr_t, index);
+	return *(intptr_t *)darray_at(&s->values, index);
 }
 
 ssize_t intset_index(const struct intset *s, intptr_t val)

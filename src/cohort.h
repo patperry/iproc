@@ -23,8 +23,8 @@ bool cohort_init(struct cohort *c, const struct vector *x);	// copies x
 void cohort_deinit(struct cohort *c);
 
 /* traits */
-static inline ssize_t cohort_dim(const struct cohort *c);
-static inline const struct vector *cohort_traits(const struct cohort *c);
+ssize_t cohort_dim(const struct cohort *c);
+const struct vector *cohort_traits(const struct cohort *c);
 
 /* size/query */
 bool cohort_empty(const struct cohort *c);
