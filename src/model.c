@@ -98,7 +98,8 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 
 	intmap_iter_init(cohort_models, &it);
 	while (intmap_iter_advance(cohort_models, &it)) {
-		cm = *(struct cohort_model **)intmap_iter_current(cohort_models, &it);
+		cm = *(struct cohort_model **)intmap_iter_current(cohort_models,
+								  &it);
 		cohort_model_deinit(cm);
 	}
 	intmap_iter_deinit(cohort_models, &it);
@@ -135,7 +136,7 @@ static bool cohort_models_init(struct intmap *cohort_models,
 
 	if (!intmap_init(cohort_models, sizeof(struct cohort_model *),
 			 alignof(struct cohort_model *)))
-		return false;
+		 return false;
 
 	/* We have to loop over all senders, not over all cohorts, because we
 	 * need a representative sender for each group when we call

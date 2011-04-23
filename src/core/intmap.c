@@ -3,8 +3,7 @@
 #include "intmap.h"
 
 DEFINE_HASH_FN(intptr_hash, intptr_t)
-DEFINE_EQUALS_FN(intptr_equals, intptr_t)
-
+    DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 
 bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
@@ -13,9 +12,11 @@ bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 	assert(elt_align > 0);
 
 	size_t key_size = sizeof(intptr_t);
-	size_t val_offset = ((char *)ALIGN_PTR((char *)NULL + key_size, elt_align) - (char *)NULL);
+	size_t val_offset =
+	    ((char *)ALIGN_PTR((char *)NULL + key_size, elt_align) -
+	     (char *)NULL);
 	size_t pair_size = val_offset + elt_size;
-	
+
 	m->elt_size = elt_size;
 	m->elt_align = elt_align;
 	m->val_offset = val_offset;
@@ -44,7 +45,7 @@ bool intmap_assign_copy(struct intmap *m, const struct intmap *src)
 {
 	assert(m);
 	assert(src);
-	
+
 	if (hashset_assign_copy(&m->pairs, &src->pairs)) {
 		m->elt_size = src->elt_size;
 		m->elt_align = src->elt_align;
@@ -131,14 +132,13 @@ bool intmap_contains(const struct intmap *m, intptr_t key)
 	return intmap_find(m, key, &pos);
 }
 
-void * intmap_lookup(const struct intmap *m, intptr_t key)
+void *intmap_lookup(const struct intmap *m, intptr_t key)
 {
 	assert(m);
 	return intmap_lookup_with(m, key, NULL);
 }
 
-void *intmap_lookup_with(const struct intmap *m, intptr_t key,
-			 const void * val0)
+void *intmap_lookup_with(const struct intmap *m, intptr_t key, const void *val0)
 {
 	assert(m);
 	struct intmap_pos pos;
@@ -161,7 +161,7 @@ bool intmap_add(struct intmap *m, intptr_t key, const void *val)
 }
 
 ssize_t intmap_add_all(struct intmap *m, const intptr_t *keys,
-		    const void *vals, ssize_t n)
+		       const void *vals, ssize_t n)
 {
 	assert(m);
 	assert(keys || n == 0);
@@ -183,7 +183,7 @@ ssize_t intmap_add_all(struct intmap *m, const intptr_t *keys,
 void intmap_remove(struct intmap *m, intptr_t key)
 {
 	assert(m);
-	
+
 	struct intmap_pos pos;
 	if (intmap_find(m, key, &pos)) {
 		intmap_erase(m, &pos);
@@ -197,7 +197,7 @@ void intmap_remove_all(struct intmap *m, const intptr_t *keys, ssize_t n)
 	assert(n >= 0);
 
 	ssize_t i;
-	
+
 	for (i = 0; i < n; i++) {
 		intmap_remove(m, keys[i]);
 	}
@@ -209,7 +209,7 @@ void *intmap_find(const struct intmap *m, intptr_t key, struct intmap_pos *pos)
 	assert(pos);
 
 	void *pair;
-	
+
 	pos->key = key;
 	if ((pair = hashset_find(&m->pairs, &key, &pos->pairs_pos))) {
 		return (char *)pair + m->val_offset;
@@ -225,11 +225,11 @@ bool intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 
 	void *pair = alloca(hashset_elt_size(&m->pairs));
 	bool ok;
-	
+
 	memcpy(pair, &pos->key, sizeof(pos->key));
 	memcpy((char *)pair + m->val_offset, val, m->elt_size);
 	ok = hashset_insert(&m->pairs, &pos->pairs_pos, pair);
-	
+
 #ifdef C_ALLOCA
 	alloca(0);
 #endif
@@ -243,11 +243,11 @@ void intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
 	assert(val || intmap_elt_size(m) == 0);
 
 	void *pair = alloca(hashset_elt_size(&m->pairs));
-	
+
 	memcpy(pair, &pos->key, sizeof(pos->key));
 	memcpy((char *)pair + m->val_offset, val, m->elt_size);
 	hashset_replace(&m->pairs, &pos->pairs_pos, pair);
-	
+
 #ifdef C_ALLOCA
 	alloca(0);
 #endif
@@ -257,7 +257,7 @@ void intmap_erase(struct intmap *m, struct intmap_pos *pos)
 {
 	assert(m);
 	assert(pos);
-	
+
 	hashset_erase(&m->pairs, &pos->pairs_pos);
 }
 
@@ -290,8 +290,7 @@ bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it)
 	return hashset_iter_advance(&m->pairs, &it->pairs_it);
 }
 
-void *intmap_iter_current(const struct intmap *m,
-			  const struct intmap_iter *it)
+void *intmap_iter_current(const struct intmap *m, const struct intmap_iter *it)
 {
 	assert(m);
 	assert(it);
@@ -305,7 +304,7 @@ intptr_t intmap_iter_current_key(const struct intmap *m,
 {
 	assert(m);
 	assert(it);
-	
+
 	void *pair = hashset_iter_current(&m->pairs, &it->pairs_it);
 	return *(intptr_t *)pair;
 }

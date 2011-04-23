@@ -33,7 +33,7 @@ void logsumexp_init(struct logsumexp *lse)
 	lse->sumexpm1 = -1.0;
 }
 
-void logsumexp_insert(struct logsumexp* lse, double val)
+void logsumexp_insert(struct logsumexp *lse, double val)
 {
 	assert(lse);
 

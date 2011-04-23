@@ -714,7 +714,7 @@ void sparsetable_clear(struct sparsetable *t)
 	for (i = 0; i < n; i++) {
 		sparsegroup_clear(groups + i, elt_size);
 	}
-	
+
 	t->num_buckets = 0;
 }
 

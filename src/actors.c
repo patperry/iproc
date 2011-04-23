@@ -35,7 +35,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 	if (!ok)
 		goto fail_refcount;
 	/* end of old */
-	
+
 	actors->dim = dim;
 	return true;
 
@@ -43,7 +43,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 fail_refcount:
 	hashset_deinit(&actors->cohorts);
 fail_cohorts:
-	darray_deinit(&actors->actors);	
+	darray_deinit(&actors->actors);
 fail_actors:
 	return false;
 }
@@ -118,7 +118,7 @@ ssize_t actors_cohorts_size(const struct actors *a)
 	assert(a);
 	return hashset_size(&a->cohorts);
 }
- 
+
 ssize_t actors_dim(const struct actors *actors)
 {
 	assert(actors);
@@ -137,18 +137,17 @@ const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
 	return actors_at(a, actor_id)->cohort;
 }
 
-
-static struct cohort * actors_get_cohort(struct actors *actors,
-					 const struct vector *traits)
+static struct cohort *actors_get_cohort(struct actors *actors,
+					const struct vector *traits)
 {
 	struct cohort *key = container_of(traits, struct cohort, traits);
 	struct hashset_pos pos;
 	struct cohort *new_cohort;
 	struct cohort **cohortp;
-	
+
 	if ((cohortp = hashset_find(&actors->cohorts, &key, &pos)))
 		return *cohortp;
-	
+
 	if ((new_cohort = cohort_new(traits))) {
 		if (hashset_insert(&actors->cohorts, &pos, &new_cohort)) {
 			return new_cohort;
@@ -174,14 +173,14 @@ ssize_t actors_add(struct actors *actors, const struct vector *traits)
 	ok = darray_push_back(&actors->actors, &a);
 	if (!ok)
 		goto fail_push_back;
-	
+
 	id = darray_size(&actors->actors) - 1;
 	ok = cohort_add(a.cohort, id);
 	if (!ok)
 		goto fail_cohort_add;
-	
+
 	goto out;
-	
+
 fail_cohort_add:
 	darray_pop_back(&actors->actors);
 fail_push_back:
@@ -191,8 +190,7 @@ out:
 	return id;
 }
 
-const struct vector *actors_traits(const struct actors *a,
-				   ssize_t actor_id)
+const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_size(a));
@@ -207,14 +205,12 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(x) == actors_dim(a));
+	assert(trans != IPROC_TRANS_NOTRANS || vector_size(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
 	       || vector_size(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
 	       || vector_size(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_dim(a));
+	assert(trans == IPROC_TRANS_NOTRANS || vector_size(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, scale;
@@ -222,7 +218,7 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 	struct cohort *c;
 	struct cohort_iter c_it;
 	ssize_t id;
-	
+
 	if (beta == 0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1) {
@@ -232,10 +228,11 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 	hashset_iter_init(&a->cohorts, &it);
 	if (trans == IPROC_TRANS_NOTRANS) {
 		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
+								    &it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dot(row, x);
-			
+
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
@@ -245,21 +242,21 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 		}
 	} else {
 		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
+								    &it);
 			row = cohort_traits(c);
 			scale = 0.0;
-			
+
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
 				scale += *vector_at(x, id);
 			}
 			cohort_iter_deinit(c, &c_it);
-			
+
 			vector_axpy(alpha * scale, row, y);
 		}
 
-		
 	}
 	hashset_iter_deinit(&a->cohorts, &it);
 }
@@ -279,8 +276,7 @@ actors_muls(double alpha,
 	       || vector_size(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
 	       || iproc_svector_dim(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_dim(a));
+	assert(trans == IPROC_TRANS_NOTRANS || vector_size(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, entry;
@@ -296,12 +292,13 @@ actors_muls(double alpha,
 	}
 
 	if (trans == IPROC_TRANS_NOTRANS) {
-		hashset_iter_init(&a->cohorts, &it);		
+		hashset_iter_init(&a->cohorts, &it);
 		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts, &it);
+			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
+								    &it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dots(row, x);
-			
+
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
@@ -309,7 +306,7 @@ actors_muls(double alpha,
 			}
 			cohort_iter_deinit(c, &c_it);
 		}
-		hashset_iter_deinit(&a->cohorts, &it);		
+		hashset_iter_deinit(&a->cohorts, &it);
 	} else {
 		/* NOTE: this could potentially be made more effecient by
 		 * using the cohort structure.  Below, we assume that
@@ -322,7 +319,7 @@ actors_muls(double alpha,
 			entry = iproc_svector_nz_get(x, inz);
 			vector_axpy(alpha * entry, row, y);
 		}
-	}	
+	}
 }
 
 void

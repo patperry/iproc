@@ -66,8 +66,7 @@ void intmap_iter_init(const struct intmap *m, struct intmap_iter *it);
 void intmap_iter_deinit(const struct intmap *m, struct intmap_iter *it);
 void intmap_iter_reset(const struct intmap *m, struct intmap_iter *it);
 bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it);
-void *intmap_iter_current(const struct intmap *m,
-			  const struct intmap_iter *it);
+void *intmap_iter_current(const struct intmap *m, const struct intmap_iter *it);
 intptr_t intmap_iter_current_key(const struct intmap *m,
 				 const struct intmap_iter *it);
 

@@ -4,7 +4,6 @@
 typedef bool (*equals_fn) (const void *px, const void *py);
 typedef int (*compare_fn) (const void *px, const void *py);
 
-
 /* Example use:
  * 
  * DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
@@ -38,5 +37,4 @@ typedef int (*compare_fn) (const void *px, const void *py);
         DEFINE_COMPARE_FN(compare_name, t) \
         DEFINE_EQUALS_FN(equal_name, t)
 
- 
 #endif /* _COMPARE_H */

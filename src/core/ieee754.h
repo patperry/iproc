@@ -12,7 +12,6 @@ double double_mknan(uint64_t payload);
 uint64_t double_getnan(double x);
 int double_eqrel(double x, double y);
 
-
 bool double_equals(const void *x, const void *y);
 int double_compare(const void *x, const void *y);
 

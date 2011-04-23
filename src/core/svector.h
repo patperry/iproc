@@ -22,7 +22,6 @@ struct svector *svector_new(ssize_t n);
 struct svector *svector_new_copy(const struct svector *v);
 void svector_free(iproc_svector * svector);
 
-
 bool svector_assign_copy(struct svector *v, const struct svector *src);
 void svector_clear(struct svector *v);
 
@@ -41,8 +40,7 @@ void iproc_svector_nz_inc(iproc_svector * svector, int64_t inz, double inc);
 iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector);
 int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i);
 
-double vector_dots(const struct vector *vector,
-			 const iproc_svector * svector);
+double vector_dots(const struct vector *vector, const iproc_svector * svector);
 void iproc_vector_sacc(struct vector *dst_vector,
 		       double scale, const iproc_svector * svector);
 

@@ -52,10 +52,9 @@
 #  ifdef  __cplusplus
 extern "C"
 #  endif
-void *alloca (size_t);
+void *alloca(size_t);
 # endif
 #endif
-
 
 /* http://www.gnu.org/software/autoconf/manual/autoconf.html#index-HAVE_005fSTDBOOL_005fH-624 */
 #ifdef HAVE_STDBOOL_H

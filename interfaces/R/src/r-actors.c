@@ -35,7 +35,7 @@ static void Riproc_actors_free(SEXP Ractors)
 	actors_free(actors);
 }
 
-SEXP Riproc_from_actors(struct actors * actors)
+SEXP Riproc_from_actors(struct actors *actors)
 {
 	SEXP Ractors, class;
 

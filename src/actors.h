@@ -12,7 +12,6 @@
 
 #include "cohort.h"
 
-
 struct actor {
 	struct cohort *cohort;
 };
@@ -23,7 +22,6 @@ struct actors {
 	struct hashset cohorts;
 	struct refcount refcount;
 };
-
 
 struct actors *actors_alloc(ssize_t dim);
 struct actors *actors_ref(struct actors *a);

@@ -95,8 +95,8 @@ iproc_design_var_init(iproc_design_var * var,
 	var->free = free;
 }
 
-iproc_design *iproc_design_new(struct actors * senders,
-			       struct actors * receivers, bool has_reffects)
+iproc_design *iproc_design_new(struct actors *senders,
+			       struct actors *receivers, bool has_reffects)
 {
 	assert(senders);
 	assert(receivers);

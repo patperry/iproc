@@ -10,7 +10,6 @@
 
 DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
 
-
 int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i)
 {
 	assert(svector);
@@ -25,9 +24,9 @@ int64_t iproc_svector_find_nz(const iproc_svector * svector, int64_t i)
 struct svector *svector_new(ssize_t n)
 {
 	assert(n >= 0);
-	
+
 	struct svector *v;
-	
+
 	if ((v = malloc(sizeof(*v)))) {
 		if (svector_init(v, n)) {
 			return v;
@@ -42,7 +41,7 @@ bool svector_init(struct svector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
-	
+
 	if (darray_init(&v->index, sizeof(int64_t))) {
 		if (darray_init(&v->value, sizeof(double))) {
 			v->dim = n;
@@ -57,7 +56,7 @@ struct svector *svector_new_copy(const struct svector *src)
 {
 	assert(src);
 	struct svector *v;
-	
+
 	if ((v = malloc(sizeof(*v)))) {
 		if (svector_init_copy(v, src)) {
 			return v;
@@ -95,10 +94,7 @@ void svector_deinit(struct svector *v)
 	darray_deinit(&v->index);
 }
 
-
-
-
-void svector_clear(struct svector * v)
+void svector_clear(struct svector *v)
 {
 	assert(v);
 	darray_clear(&v->index);
@@ -228,8 +224,7 @@ iproc_vector_view iproc_svector_view_nz(const iproc_svector * svector)
 	return iproc_vector_view_array(px, nnz);
 }
 
-double vector_dots(const struct vector *vector,
-			 const iproc_svector * svector)
+double vector_dots(const struct vector *vector, const iproc_svector * svector)
 {
 	assert(vector);
 	assert(svector);
@@ -339,8 +334,7 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 {
 	assert(dst);
 	assert(src);
-	assert(iproc_svector_dim(dst) ==
-	       iproc_svector_dim(src));
+	assert(iproc_svector_dim(dst) == iproc_svector_dim(src));
 
 	int64_t nnz = iproc_svector_nnz(src);
 
@@ -357,6 +351,6 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 		double *vsrc = darray_front(&src->value);
 		memcpy(vdst, vsrc, nnz * sizeof(double));
 	}
-	
+
 	return true;
 }
