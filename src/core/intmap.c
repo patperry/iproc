@@ -2,17 +2,25 @@
 #include <assert.h>
 #include "intmap.h"
 
-DEFINE_COMPARE_FN(intptr_compare, intptr_t)
+DEFINE_HASH_FN(intptr_hash, intptr_t)
+DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 
 
-static int intmap_item_compare(const void *x1, const void *x2);
-static struct intmap_item *intmap_at(const struct intmap *m, ssize_t i);
-static ssize_t intmap_index(const struct intmap *m, intptr_t key);
-
-bool intmap_init(struct intmap *m)
+bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
 	assert(m);
-	return darray_init(&m->items, sizeof(struct intmap_item));
+	assert(elt_size >= 0);
+	assert(elt_align > 0);
+
+	size_t key_size = sizeof(intptr_t);
+	size_t val_offset = ((char *)ALIGN_PTR((char *)NULL + key_size, elt_align) - (char *)NULL);
+	size_t pair_size = val_offset + elt_size;
+	
+	m->elt_size = elt_size;
+	m->elt_align = elt_align;
+	m->val_offset = val_offset;
+
+	return hashset_init(&m->pairs, intptr_hash, intptr_equals, pair_size);
 }
 
 bool intmap_init_copy(struct intmap *m, const struct intmap *src)
@@ -20,38 +28,47 @@ bool intmap_init_copy(struct intmap *m, const struct intmap *src)
 	assert(m);
 	assert(src);
 
-	if (intmap_init(m)) {
-		if (intmap_assign_copy(m, src)) {
-			return true;
-		}
-		intmap_deinit(m);
-	}
-	return false;
+	m->elt_size = src->elt_size;
+	m->elt_align = src->elt_align;
+	m->val_offset = src->val_offset;
+	return hashset_init_copy(&m->pairs, &src->pairs);
 }
 
 void intmap_deinit(struct intmap *m)
 {
 	assert(m);
-
-	darray_deinit(&m->items);
+	hashset_deinit(&m->pairs);
 }
 
 bool intmap_assign_copy(struct intmap *m, const struct intmap *src)
 {
 	assert(m);
 	assert(src);
-	return darray_assign_copy(&m->items, &src->items);
+	
+	if (hashset_assign_copy(&m->pairs, &src->pairs)) {
+		m->elt_size = src->elt_size;
+		m->elt_align = src->elt_align;
+		m->val_offset = src->val_offset;
+		return true;
+
+	}
+	return false;
 }
 
-intptr_t *intmap_copy_vals_to(const struct intmap *m, intptr_t *dst)
+void *intmap_copy_vals_to(const struct intmap *m, void *dst)
 {
 	assert(m);
 	assert(dst || intmap_empty(m));
 
+	size_t elt_size = intmap_elt_size(m);
 	struct intmap_iter it;
+	const void *val;
+
 	intmap_iter_init(m, &it);
 	while (intmap_iter_advance(m, &it)) {
-		*dst++ = intmap_iter_current(m, &it).val;
+		val = intmap_iter_current(m, &it);
+		memcpy(dst, val, elt_size);
+		dst = (char *)dst + elt_size;
 	}
 	intmap_iter_deinit(m, &it);
 	return dst;
@@ -65,7 +82,7 @@ intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 	struct intmap_iter it;
 	intmap_iter_init(m, &it);
 	while (intmap_iter_advance(m, &it)) {
-		*dst++ = intmap_iter_current(m, &it).key;
+		*dst++ = intmap_iter_current_key(m, &it);
 	}
 	intmap_iter_deinit(m, &it);
 	return dst;
@@ -74,25 +91,37 @@ intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 void intmap_clear(struct intmap *m)
 {
 	assert(m);
-	darray_clear(&m->items);
+	hashset_clear(&m->pairs);
 }
 
 bool intmap_empty(const struct intmap *m)
 {
 	assert(m);
-	return darray_empty(&m->items);
+	return hashset_empty(&m->pairs);
 }
 
 ssize_t intmap_size(const struct intmap *m)
 {
 	assert(m);
-	return darray_size(&m->items);
+	return hashset_size(&m->pairs);
 }
 
 ssize_t intmap_max_size(const struct intmap *m)
 {
 	assert(m);
-	return darray_max_size(&m->items);
+	return hashset_max_size(&m->pairs);
+}
+
+size_t intmap_elt_size(const struct intmap *m)
+{
+	assert(m);
+	return m->elt_size;
+}
+
+size_t intmap_elt_align(const struct intmap *m)
+{
+	assert(m);
+	return m->elt_align;
 }
 
 bool intmap_contains(const struct intmap *m, intptr_t key)
@@ -102,74 +131,63 @@ bool intmap_contains(const struct intmap *m, intptr_t key)
 	return intmap_find(m, key, &pos);
 }
 
-intptr_t intmap_lookup(const struct intmap *m, intptr_t key)
+void * intmap_lookup(const struct intmap *m, intptr_t key)
 {
 	assert(m);
-	return intmap_lookup_with(m, key, (intptr_t)NULL);
+	return intmap_lookup_with(m, key, NULL);
 }
 
-intptr_t intmap_lookup_with(const struct intmap *m, intptr_t key, intptr_t val0)
+void *intmap_lookup_with(const struct intmap *m, intptr_t key,
+			 const void * val0)
 {
 	assert(m);
 	struct intmap_pos pos;
-	const intptr_t *valp;
-
-	if ((valp = intmap_find(m, key, &pos))) {
-		return *valp;
-	}
-
-	return val0;
+	void *val = intmap_find(m, key, &pos);
+	return val ? val : (void *)val0;
 }
 
-bool intmap_add(struct intmap *m, intptr_t key, intptr_t val)
+bool intmap_add(struct intmap *m, intptr_t key, const void *val)
 {
 	assert(m);
-	assert(val);
+	assert(val || intmap_elt_size(m) == 0);
 
-	return intmap_add_all(m, &key, &val, 1);
+	struct intmap_pos pos;
+	if (intmap_find(m, key, &pos)) {
+		intmap_replace(m, &pos, val);
+		return true;
+	} else {
+		return intmap_insert(m, &pos, val);
+	}
 }
 
-bool intmap_add_all(struct intmap *m, const intptr_t *keys,
-		    const intptr_t *vals, ssize_t n)
+ssize_t intmap_add_all(struct intmap *m, const intptr_t *keys,
+		    const void *vals, ssize_t n)
 {
 	assert(m);
 	assert(keys || n == 0);
-	assert(vals || n == 0);
+	assert(vals || n == 0 || intmap_elt_size(m) == 0);
 	assert(n >= 0);
 
-	struct intmap_pos pos;
-	intptr_t oldvals[n];
-	const intptr_t *valp;
-	bool finds[n];
+	size_t elt_size = intmap_elt_size(m);
 	ssize_t i;
 
 	for (i = 0; i < n; i++) {
-		valp = intmap_find(m, keys[i], &pos);
-		finds[i] = valp;
-		if ((finds[i])) {
-			oldvals[i] = *valp;
-			intmap_replace(m, &pos, vals[i]);
-		} else {
-			if (!intmap_insert(m, &pos, vals[i]))
-				goto rollback;
-		}
+		if (!intmap_add(m, *keys, vals))
+			break;
+		keys++;
+		vals = (char *)vals + elt_size;
 	}
-	return true;
-rollback:
-	for (; i > 0; i--) {
-		if (!finds[i - 1]) {
-			intmap_remove(m, keys[i - 1]);
-		} else {
-			intmap_add(m, keys[i - 1], oldvals[i - 1]);
-		}
-	}
-	return false;
+	return i;
 }
 
 void intmap_remove(struct intmap *m, intptr_t key)
 {
 	assert(m);
-	intmap_remove_all(m, &key, 1);
+	
+	struct intmap_pos pos;
+	if (intmap_find(m, key, &pos)) {
+		intmap_erase(m, &pos);
+	}
 }
 
 void intmap_remove_all(struct intmap *m, const intptr_t *keys, ssize_t n)
@@ -178,81 +196,90 @@ void intmap_remove_all(struct intmap *m, const intptr_t *keys, ssize_t n)
 	assert(keys || n == 0);
 	assert(n >= 0);
 
-	struct intmap_pos pos;
 	ssize_t i;
-
+	
 	for (i = 0; i < n; i++) {
-		if (intmap_find(m, keys[i], &pos)) {
-			darray_erase(&m->items, pos.index);
-		}
+		intmap_remove(m, keys[i]);
 	}
 }
 
-const intptr_t *intmap_find(const struct intmap *m, intptr_t key,
-			    struct intmap_pos *pos)
+void *intmap_find(const struct intmap *m, intptr_t key, struct intmap_pos *pos)
 {
 	assert(m);
 	assert(pos);
 
-	ssize_t index = intmap_index(m, key);
+	void *pair;
+	
 	pos->key = key;
-
-	if (index < 0) {
-		pos->index = ~index;
-		return NULL;
-	} else {
-		pos->index = index;
-		return &intmap_at(m, pos->index)->val;
+	if ((pair = hashset_find(&m->pairs, &key, &pos->pairs_pos))) {
+		return (char *)pair + m->val_offset;
 	}
+	return NULL;
 }
 
-bool intmap_insert(struct intmap *m, struct intmap_pos *pos, intptr_t val)
+bool intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
-	assert(val);
+	assert(val || intmap_elt_size(m) == 0);
 
-	struct intmap_item item = {.key = pos->key,.val = val };
-
-	return darray_insert(&m->items, pos->index, &item);
+	void *pair = alloca(hashset_elt_size(&m->pairs));
+	bool ok;
+	
+	memcpy(pair, &pos->key, sizeof(pos->key));
+	memcpy((char *)pair + m->val_offset, val, m->elt_size);
+	ok = hashset_insert(&m->pairs, &pos->pairs_pos, pair);
+	
+#ifdef C_ALLOCA
+	alloca(0);
+#endif
+	return ok;
 }
 
-void intmap_replace(struct intmap *m, struct intmap_pos *pos, intptr_t val)
+void intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
+	assert(val || intmap_elt_size(m) == 0);
 
-	((struct intmap_item *)darray_at(&m->items, pos->index))->val = val;
+	void *pair = alloca(hashset_elt_size(&m->pairs));
+	
+	memcpy(pair, &pos->key, sizeof(pos->key));
+	memcpy((char *)pair + m->val_offset, val, m->elt_size);
+	hashset_replace(&m->pairs, &pos->pairs_pos, pair);
+	
+#ifdef C_ALLOCA
+	alloca(0);
+#endif
 }
 
 void intmap_erase(struct intmap *m, struct intmap_pos *pos)
 {
 	assert(m);
 	assert(pos);
-	assert(((struct intmap_item *)darray_at(&m->items, pos->index))->key ==
-	       pos->key);
-
-	darray_erase(&m->items, pos->index);
+	
+	hashset_erase(&m->pairs, &pos->pairs_pos);
 }
 
 void intmap_iter_init(const struct intmap *m, struct intmap_iter *it)
 {
 	assert(m);
 	assert(it);
-	intmap_iter_reset(m, it);
+	hashset_iter_init(&m->pairs, &it->pairs_it);
 }
 
 void intmap_iter_deinit(const struct intmap *m, struct intmap_iter *it)
 {
 	assert(m);
 	assert(it);
+	hashset_iter_deinit(&m->pairs, &it->pairs_it);
 }
 
 void intmap_iter_reset(const struct intmap *m, struct intmap_iter *it)
 {
 	assert(m);
 	assert(it);
-	it->index = -1;
+	hashset_iter_reset(&m->pairs, &it->pairs_it);
 }
 
 bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it)
@@ -260,40 +287,25 @@ bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it)
 	assert(m);
 	assert(it);
 
-	it->index++;
-	return (it->index < intmap_size(m));
+	return hashset_iter_advance(&m->pairs, &it->pairs_it);
 }
 
-struct intmap_item intmap_iter_current(const struct intmap *m,
-				       const struct intmap_iter *it)
+void *intmap_iter_current(const struct intmap *m,
+			  const struct intmap_iter *it)
 {
 	assert(m);
 	assert(it);
 
-	return *intmap_at(m, it->index);
+	void *pair = hashset_iter_current(&m->pairs, &it->pairs_it);
+	return (char *)pair + m->val_offset;
 }
 
-static int intmap_item_compare(const void *x1, const void *x2)
-{
-	assert(x1);
-	assert(x2);
-
-	const struct intmap_item *kv1 = x1;
-	const struct intmap_item *kv2 = x2;
-
-	return intptr_compare(&kv1->key, &kv2->key);
-}
-
-static struct intmap_item *intmap_at(const const struct intmap *m, ssize_t i)
+intptr_t intmap_iter_current_key(const struct intmap *m,
+				 const struct intmap_iter *it)
 {
 	assert(m);
-	assert(0 <= i && i < intmap_size(m));
-	return darray_at(&m->items, i);
-}
-
-ssize_t intmap_index(const struct intmap *m, intptr_t key)
-{
-	assert(m);
-	struct intmap_item kvkey = {.key = key };
-	return darray_binary_search(&m->items, &kvkey, intmap_item_compare);
+	assert(it);
+	
+	void *pair = hashset_iter_current(&m->pairs, &it->pairs_it);
+	return *(intptr_t *)pair;
 }

@@ -98,7 +98,7 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 
 	intmap_iter_init(cohort_models, &it);
 	while (intmap_iter_advance(cohort_models, &it)) {
-		cm = (void *)intmap_iter_current(cohort_models, &it).val;
+		cm = *(struct cohort_model **)intmap_iter_current(cohort_models, &it);
 		cohort_model_deinit(cm);
 	}
 	intmap_iter_deinit(cohort_models, &it);
@@ -118,7 +118,7 @@ static bool insert_cohort_model(struct intmap *cohort_models,
 		return true;
 
 	if ((cm = cohort_model_alloc(design, isend, coefs))) {
-		if (intmap_insert(cohort_models, &pos, (intptr_t)cm)) {
+		if (intmap_insert(cohort_models, &pos, &cm)) {
 			return true;
 		}
 
@@ -133,7 +133,8 @@ static bool cohort_models_init(struct intmap *cohort_models,
 {
 	ssize_t i, nsender = iproc_design_nsender(design);
 
-	if (!intmap_init(cohort_models))
+	if (!intmap_init(cohort_models, sizeof(struct cohort_model *),
+			 alignof(struct cohort_model *)))
 		return false;
 
 	/* We have to loop over all senders, not over all cohorts, because we
@@ -159,7 +160,7 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)
 	const iproc_design *design = iproc_model_design(model);
 	const struct actors *senders = iproc_design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
-	return (void *)intmap_lookup(&model->cohort_models, c);
+	return *(struct cohort_model **)intmap_lookup(&model->cohort_models, c);
 }
 
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
