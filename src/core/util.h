@@ -17,6 +17,15 @@
 #define container_of(ptr, type, member) \
 	((type *)((char *)(ptr) - offsetof(type, member)))
 
+#ifndef alignof
+# ifdef HAVE_ALIGNOF
+#  define alignof __alignof__
+# else
+#  define alignof(type) \
+          ((sizeof(type) > 1)? offsetof(struct { char c; type x; }, x) : 1)
+# endif
+#endif
+
 void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size);
 
 void *memory_copy_to(const void *src, ssize_t size, void *dst, size_t elt_size);

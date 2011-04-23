@@ -26,6 +26,7 @@ AC_HEADER_STDBOOL
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
 AC_C_INLINE
+AX_C___ALIGNOF__
 
 AC_TYPE_INT8_T
 AC_TYPE_INT16_T
