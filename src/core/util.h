@@ -26,6 +26,23 @@
 # endif
 #endif
 
+/**
+ * ALIGN_PTR:
+ * @p: a pointer
+ * @a: an alignment (typically a small power of 2)
+ *
+ * Advance the pointer @p by the minimum number of bytes necessary so that
+ * the result is divisible by @a.
+ */
+#define ALIGN_PTR(p,a) \
+	((void *) \
+	(((char *)(p) + (size_t)(a) - 1) \
+	- \
+	((uintptr_t)(((char *)(p) + (size_t)(a) - 1)) \
+	& \
+	((size_t)(a)-1))))
+
+
 void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size);
 
 void *memory_copy_to(const void *src, ssize_t size, void *dst, size_t elt_size);

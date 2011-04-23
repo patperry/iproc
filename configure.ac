@@ -39,6 +39,8 @@ AC_TYPE_UINT8_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
+AC_TYPE_UINTMAX_T
+AC_TYPE_UINTPTR_T
 
 AC_CHECK_SIZEOF([int])
 AC_CHECK_SIZEOF([intmax_t])
@@ -49,6 +51,7 @@ AC_CHECK_SIZEOF([void *])
 
 # Checks for library functions
 AC_CONFIG_LIBOBJ_DIR([lib])
+AC_FUNC_ALLOCA
 AC_REPLACE_FUNCS([imaxabs])
 
 # Checks for system services

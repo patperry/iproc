@@ -13,6 +13,15 @@
 # include "macconfig.h"
 #endif
 
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
@@ -28,9 +37,29 @@
 
 #include <limits.h>
 
+/* http://www.gnu.org/software/autoconf/manual/autoconf.html#AC_005fFUNC_005fALLOCA */
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#elif defined __GNUC__
+# define alloca __builtin_alloca
+#elif defined _AIX
+# define alloca __alloca
+#elif defined _MSC_VER
+# include <malloc.h>
+# define alloca _alloca
+#else
+# ifndef HAVE_ALLOCA
+#  ifdef  __cplusplus
+extern "C"
+#  endif
+void *alloca (size_t);
+# endif
+#endif
+
+
 /* http://www.gnu.org/software/autoconf/manual/autoconf.html#index-HAVE_005fSTDBOOL_005fH-624 */
 #ifdef HAVE_STDBOOL_H
-#				/* bool defined in stdbool.h */
+/* bool defined in stdbool.h */
 #else
 # ifndef HAVE__BOOL
 #  ifdef __cplusplus
