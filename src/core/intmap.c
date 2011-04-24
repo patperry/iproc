@@ -2,8 +2,7 @@
 #include <assert.h>
 #include "intmap.h"
 
-DEFINE_HASH_FN(intptr_hash, intptr_t)
-    DEFINE_EQUALS_FN(intptr_equals, intptr_t)
+DEFINE_HASH_FN(intptr_hash, intptr_t) DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 
 bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
@@ -12,10 +11,13 @@ bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 	assert(elt_align > 0);
 
 	size_t key_size = sizeof(intptr_t);
+	size_t key_align = alignof(intptr_t);
 	size_t val_offset =
 	    ((char *)ALIGN_PTR((char *)NULL + key_size, elt_align) -
 	     (char *)NULL);
-	size_t pair_size = val_offset + elt_size;
+	size_t pair_size =
+	    ((char *)ALIGN_PTR((char *)NULL + val_offset + elt_size, key_align)
+	     - (char *)NULL);
 
 	m->elt_size = elt_size;
 	m->elt_align = elt_align;
