@@ -226,16 +226,10 @@ bool intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 	assert(val || intmap_elt_size(m) == 0);
 
 	void *pair = alloca(hashset_elt_size(&m->pairs));
-	bool ok;
 
 	memcpy(pair, &pos->key, sizeof(pos->key));
 	memcpy((char *)pair + m->val_offset, val, m->elt_size);
-	ok = hashset_insert(&m->pairs, &pos->pairs_pos, pair);
-
-#ifdef C_ALLOCA
-	alloca(0);
-#endif
-	return ok;
+	return hashset_insert(&m->pairs, &pos->pairs_pos, pair);
 }
 
 void intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
@@ -249,10 +243,6 @@ void intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
 	memcpy(pair, &pos->key, sizeof(pos->key));
 	memcpy((char *)pair + m->val_offset, val, m->elt_size);
 	hashset_replace(&m->pairs, &pos->pairs_pos, pair);
-
-#ifdef C_ALLOCA
-	alloca(0);
-#endif
 }
 
 void intmap_erase(struct intmap *m, struct intmap_pos *pos)
