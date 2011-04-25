@@ -1,7 +1,7 @@
 #ifndef _COHORT
 #define _COHORT
 
-#include "darray.h"
+#include "intset.h"
 #include "vector.h"
 
 /* A set of actors with the same traits
@@ -9,11 +9,11 @@
 
 struct cohort {
 	struct vector traits;
-	struct darray members;
+	struct intset members;
 };
 
 struct cohort_iter {
-	ssize_t index;
+	struct intset_iter members_it;
 };
 
 /* create, destroy */
