@@ -1,6 +1,7 @@
 #include "port.h"
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "blas-private.h"
@@ -187,6 +188,28 @@ ssize_t svector_size(const struct svector *v)
 {
 	assert(v);
 	return darray_size(&v->index);
+}
+
+double svector_max(const struct svector *v)
+{
+	assert(v);
+	
+	struct svector_iter it;
+	double val;
+	double max = NAN;
+	
+	svector_iter_init(v, &it);
+	while (svector_iter_advance(v, &it)) {
+		val = *svector_iter_current(v, &it);
+		if (isnan(max)) {
+			max = val;
+		} else if (val > max) {
+			max = val;
+		}
+	}
+	svector_iter_deinit(v, &it);
+
+	return max;
 }
 
 double svector_dot(const struct svector *x, const struct vector *y)

@@ -26,7 +26,7 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	iproc_vector_view deta_nz = iproc_svector_view_nz(deta);
 
 	/* compute the scale for the weight differences */
-	double lwmax = vector_max(&deta_nz.vector);
+	double lwmax = svector_max(deta);
 	double logscale = MAX(0.0, lwmax);
 	double invscale = exp(-logscale);
 
