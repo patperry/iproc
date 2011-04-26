@@ -41,7 +41,7 @@ static inline void vector_set(struct vector *v, ssize_t i, double val);
 
 /* informative */
 static inline bool vector_empty(const struct vector *v);
-static inline ssize_t vector_size(const struct vector *v);
+static inline ssize_t vector_dim(const struct vector *v);
 
 /* arithmetic operations */
 void vector_scale(struct vector *v, double scale);
@@ -90,14 +90,14 @@ bool vector_empty(const struct vector *v)
 	return array_empty(&v->array);
 }
 
-ssize_t vector_size(const struct vector *v)
+ssize_t vector_dim(const struct vector *v)
 {
 	return array_size(&v->array);
 }
 
 double *vector_at(const struct vector *v, ssize_t i)
 {
-	assert(0 <= i && i < vector_size(v));
+	assert(0 <= i && i < vector_dim(v));
 	return (double *)array_front(&v->array) + i;
 }
 

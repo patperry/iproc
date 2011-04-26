@@ -209,7 +209,7 @@ iproc_design_muls0_reffects(double alpha,
 	int64_t end = off + dim;
 
 	if (trans == IPROC_TRANS_NOTRANS) {
-		int64_t nnz = iproc_svector_nnz(x);
+		int64_t nnz = svector_size(x);
 		int64_t inz = iproc_svector_find_nz(x, off);
 
 		if (inz < 0)
@@ -227,7 +227,7 @@ iproc_design_muls0_reffects(double alpha,
 		}
 	} else {
 		iproc_vector_view ysub = vector_slice(y, off, dim);
-		iproc_vector_sacc(&ysub.vector, alpha, x);
+		svector_axpy(alpha, x, &ysub.vector);
 	}
 }
 
@@ -304,7 +304,7 @@ iproc_design_muls0_static(double alpha,
 		 * z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
 		 */
 		vector_fill(z, 0.0);
-		int64_t inz, nnz = iproc_svector_nnz(x);
+		int64_t inz, nnz = svector_size(x);
 		for (inz = 0; inz < nnz; inz++) {
 			int64_t ix = iproc_svector_nz(x, inz);
 
@@ -355,13 +355,13 @@ iproc_design_mul0(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_dim(design));
+	       || vector_dim(x) == iproc_design_dim(design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_nreceiver(design));
+	       || vector_dim(y) == iproc_design_nreceiver(design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_nreceiver(design));
+	       || vector_dim(x) == iproc_design_nreceiver(design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_dim(design));
+	       || vector_dim(y) == iproc_design_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -387,13 +387,13 @@ iproc_design_muls0(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_dim(design));
+	       || svector_dim(x) == iproc_design_dim(design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_nreceiver(design));
+	       || vector_dim(y) == iproc_design_nreceiver(design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_nreceiver(design));
+	       || svector_dim(x) == iproc_design_nreceiver(design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_dim(design));
+	       || vector_dim(y) == iproc_design_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {

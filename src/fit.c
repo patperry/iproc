@@ -199,7 +199,7 @@ static void update_hess(iproc_fit * fit)
 			scale = s_y / s_s;
 		}
 
-		int64_t i, n = vector_size(y);
+		int64_t i, n = vector_dim(y);
 		H = iproc_matrix_new(n, n);
 		iproc_matrix_set_all(H, 0.0);
 
@@ -209,7 +209,7 @@ static void update_hess(iproc_fit * fit)
 
 		fit->inv_hess = H;
 	} else {
-		struct vector *H_y = vector_new(vector_size(y));
+		struct vector *H_y = vector_new(vector_dim(y));
 		iproc_matrix_mul(1.0, IPROC_TRANS_NOTRANS, H, y, 0.0, H_y);
 
 		double y_H_y = vector_dot(H_y, y);
@@ -239,7 +239,7 @@ static void update_searchdir(iproc_fit * fit)
 	} else {
 		vector_assign_copy(s, fit->grad);
 		double scale = vector_norm(s);
-		int64_t i, n = vector_size(s);
+		int64_t i, n = vector_dim(s);
 
 		if (scale != 0) {
 			for (i = 0; i < n; i++) {

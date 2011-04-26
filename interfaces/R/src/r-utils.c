@@ -6,6 +6,7 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 
+#include "vector.h"
 #include "r-utils.h"
 
 static R_CallMethodDef callMethods[] = {
@@ -50,7 +51,7 @@ void *Riproc_sexp2ptr(SEXP s, Rboolean null_ok, SEXP tag, char *type)
 
 SEXP Riproc_vector_new_copy(struct vector * vector)
 {
-	int n = (int)vector_size(vector);
+	int n = (int)vector_dim(vector);
 	SEXP Rvector;
 
 	PROTECT(Rvector = NEW_NUMERIC(n));

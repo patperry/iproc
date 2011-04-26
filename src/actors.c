@@ -160,7 +160,7 @@ static struct cohort *actors_get_cohort(struct actors *actors,
 ssize_t actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);
-	assert(vector_size(traits) == actors_dim(actors));
+	assert(vector_dim(traits) == actors_dim(actors));
 
 	struct actor a;
 	ssize_t id;
@@ -205,12 +205,12 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS || vector_size(x) == actors_dim(a));
+	assert(trans != IPROC_TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_size(a));
+	       || vector_dim(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS || vector_size(y) == actors_dim(a));
+	       || vector_dim(x) == actors_size(a));
+	assert(trans == IPROC_TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, scale;
@@ -271,12 +271,12 @@ actors_muls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == actors_dim(a));
+	       || svector_dim(x) == actors_dim(a));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == actors_size(a));
+	       || vector_dim(y) == actors_size(a));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS || vector_size(y) == actors_dim(a));
+	       || svector_dim(x) == actors_size(a));
+	assert(trans == IPROC_TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, entry;
@@ -297,7 +297,7 @@ actors_muls(double alpha,
 			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
 								    &it);
 			row = cohort_traits(c);
-			alpha_dot = alpha * vector_dots(row, x);
+			alpha_dot = alpha * svector_dot(x, row);
 
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
@@ -312,7 +312,7 @@ actors_muls(double alpha,
 		 * using the cohort structure.  Below, we assume that
 		 * the sparsity in x is more important.
 		 */
-		ssize_t inz, nnz = iproc_svector_nnz(x);
+		ssize_t inz, nnz = svector_size(x);
 		for (inz = 0; inz < nnz; inz++) {
 			id = iproc_svector_nz(x, inz);
 			row = actors_traits(a, id);

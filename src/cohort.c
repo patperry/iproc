@@ -50,7 +50,7 @@ void cohort_deinit(struct cohort *c)
 ssize_t cohort_dim(const struct cohort *c)
 {
 	assert(c);
-	return vector_size(cohort_traits(c));
+	return vector_dim(cohort_traits(c));
 }
 
 const struct vector *cohort_traits(const struct cohort *c)

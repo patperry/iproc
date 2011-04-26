@@ -19,10 +19,10 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	/* compute the changes in weights */
 	iproc_design_ctx_dmul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, deta);
 	if (!has_loops) {
-		iproc_svector_set(deta, ctx->isend, -INFINITY);
+		svector_set(deta, ctx->isend, -INFINITY);
 	}
 
-	int64_t i, nnz = iproc_svector_nnz(deta);
+	int64_t i, nnz = svector_size(deta);
 	iproc_vector_view deta_nz = iproc_svector_view_nz(deta);
 
 	/* compute the scale for the weight differences */
@@ -91,7 +91,7 @@ compute_active_probs(struct vector *log_p0,
 		     iproc_svector * deta, iproc_svector * p_active)
 {
 	svector_assign_copy(p_active, deta);
-	int64_t i, nnz = iproc_svector_nnz(p_active);
+	int64_t i, nnz = svector_size(p_active);
 	iproc_vector_view p_active_nz = iproc_svector_view_nz(p_active);
 
 	for (i = 0; i < nnz; i++) {
@@ -108,7 +108,7 @@ compute_active_probs(struct vector *log_p0,
 static void
 compute_prob_diffs(struct vector *p0, double gamma, iproc_svector * p_active)
 {
-	int64_t i, nnz = iproc_svector_nnz(p_active);
+	int64_t i, nnz = svector_size(p_active);
 	iproc_vector_view p_active_nz = iproc_svector_view_nz(p_active);
 
 	for (i = 0; i < nnz; i++) {
@@ -283,7 +283,7 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, int64_t jrecv)
 
 	double log_gamma = ctx->log_gamma;
 	double log_p0 = *vector_at(ctx->group->log_p0, jrecv);
-	double deta = iproc_svector_get(ctx->deta, jrecv);
+	double deta = svector_get(ctx->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);
 }
@@ -292,7 +292,7 @@ void iproc_model_ctx_get_probs(iproc_model_ctx * ctx, struct vector *probs)
 {
 	assert(ctx);
 	assert(probs);
-	assert(iproc_model_ctx_nreceiver(ctx) == vector_size(probs));
+	assert(iproc_model_ctx_nreceiver(ctx) == vector_dim(probs));
 
 	iproc_model_ctx_get_logprobs(ctx, probs);
 	vector_exp(probs);
@@ -303,7 +303,7 @@ iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx, struct vector *logprobs)
 {
 	assert(ctx);
 	assert(logprobs);
-	assert(iproc_model_ctx_nreceiver(ctx) == vector_size(logprobs));
+	assert(iproc_model_ctx_nreceiver(ctx) == vector_dim(logprobs));
 
 	int64_t j, n = iproc_model_ctx_nreceiver(ctx);
 

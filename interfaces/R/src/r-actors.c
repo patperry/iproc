@@ -7,6 +7,7 @@
 #include <R_ext/Rdynload.h>
 
 #include "actors.h"
+#include "vector.h"
 #include "matrix.h"
 #include "r-utils.h"
 #include "r-actors.h"
@@ -74,7 +75,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 
 	struct vector traits0;
 	vector_init_matrix_col(&traits0, &traits_t.matrix, 0);
-	ssize_t dim = vector_size(&traits0);
+	ssize_t dim = vector_dim(&traits0);
 
 	struct actors *actors = actors_alloc(dim);
 

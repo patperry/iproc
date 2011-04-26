@@ -120,11 +120,11 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 
 	sll->gamma += scale1 * (ctx->gamma - sll->gamma);
 
-	iproc_svector_scale(sll->dp, scale0);
-	iproc_svector_sacc(sll->dp, scale1, ctx->dp);
+	svector_scale(sll->dp, scale0);
+	svector_axpys(scale1, ctx->dp, sll->dp);
 
-	iproc_svector_scale(sll->dxbar, scale0);
-	iproc_svector_sacc(sll->dxbar, scale1, ctx->dxbar);
+	svector_scale(sll->dxbar, scale0);
+	svector_axpys(scale1, ctx->dxbar, sll->dxbar);
 
 	// update number of sends
 	sll->nsend += n;
@@ -166,7 +166,7 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 			   1.0, dst_vector);
 
 	// sum{dxbar[t,i]}
-	iproc_vector_sacc(dst_vector, scale, sll->dxbar);
+	svector_axpy(scale, sll->dxbar, dst_vector);
 
 	// - (X[0,i])^T n[i]
 	iproc_design_muls0(-scale / sll->nsend, IPROC_TRANS_TRANS,
@@ -174,7 +174,7 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 			   1.0, dst_vector);
 
 	// -sum{dx[t,i,j]}
-	iproc_vector_sacc(dst_vector, -scale, sll->dxobs);
+	svector_axpy(-scale, sll->dxobs, dst_vector);
 }
 
 struct vector *iproc_sloglik_grad(iproc_sloglik * sll)

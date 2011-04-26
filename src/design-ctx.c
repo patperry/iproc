@@ -243,19 +243,19 @@ iproc_design_ctx_mul(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_dim(ctx->design));
+	       || vector_dim(x) == iproc_design_dim(ctx->design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(y) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(x) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_dim(ctx->design));
+	       || vector_dim(y) == iproc_design_dim(ctx->design));
 
 	iproc_design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	iproc_svector *diffprod = svector_new(vector_size(y));
+	iproc_svector *diffprod = svector_new(vector_dim(y));
 	iproc_design_ctx_dmul(alpha, trans, ctx, x, 0.0, diffprod);
-	iproc_vector_sacc(y, 1.0, diffprod);
+	svector_axpy(1.0, diffprod, y);
 	svector_free(diffprod);
 }
 
@@ -270,19 +270,19 @@ iproc_design_ctx_muls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_dim(ctx->design));
+	       || svector_dim(x) == iproc_design_dim(ctx->design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(y) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(x) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(y) == iproc_design_dim(ctx->design));
+	       || vector_dim(y) == iproc_design_dim(ctx->design));
 
 	iproc_design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	iproc_svector *diffprod = svector_new(vector_size(y));
+	iproc_svector *diffprod = svector_new(vector_dim(y));
 	iproc_design_ctx_dmuls(alpha, trans, ctx, x, 0.0, diffprod);
-	iproc_vector_sacc(y, 1.0, diffprod);
+	svector_axpy(1.0, diffprod, y);
 	svector_free(diffprod);
 }
 
@@ -297,19 +297,19 @@ iproc_design_ctx_dmul(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_dim(ctx->design));
+	       || vector_dim(x) == iproc_design_dim(ctx->design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(y) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || vector_size(x) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(x) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(y) == iproc_design_dim(ctx->design));
+	       || svector_dim(y) == iproc_design_dim(ctx->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
 		svector_clear(y);
 	} else if (beta != 1.0) {
-		iproc_svector_scale(y, beta);
+		svector_scale(y, beta);
 	}
 
 	if (ctx->history == NULL)
@@ -330,7 +330,7 @@ iproc_design_ctx_dmul(double alpha,
 			iproc_design_dx *sv = darray_at(dxs, i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
-			double dot = vector_dots(x, dx);
+			double dot = svector_dot(dx, x);
 			iproc_svector_inc(y, jrecv, alpha * dot);
 		}
 	} else {
@@ -347,7 +347,7 @@ iproc_design_ctx_dmul(double alpha,
 
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * xjrecv;
-			iproc_svector_sacc(y, jscale, dx);
+			svector_axpys(jscale, dx, y);
 		}
 	}
 }
@@ -363,19 +363,19 @@ iproc_design_ctx_dmuls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_dim(ctx->design));
+	       || svector_dim(x) == iproc_design_dim(ctx->design));
 	assert(trans != IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(y) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(x) == iproc_design_nreceiver(ctx->design));
 	assert(trans == IPROC_TRANS_NOTRANS
-	       || iproc_svector_dim(y) == iproc_design_dim(ctx->design));
+	       || svector_dim(y) == iproc_design_dim(ctx->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
 		svector_clear(y);
 	} else if (beta != 1.0) {
-		iproc_svector_scale(y, beta);
+		svector_scale(y, beta);
 	}
 
 	if (ctx->history == NULL)
@@ -399,7 +399,7 @@ iproc_design_ctx_dmuls(double alpha,
 							i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
-			int64_t inz, nnz = iproc_svector_nnz(x);
+			int64_t inz, nnz = svector_size(x);
 			double dot = 0.0;
 			for (inz = 0; inz < nnz; inz++) {
 				int64_t ix = iproc_svector_nz(x, inz);
@@ -407,7 +407,7 @@ iproc_design_ctx_dmuls(double alpha,
 					continue;
 
 				double xval = iproc_svector_nz_get(x, inz);
-				double diffval = iproc_svector_get(dx, ix);
+				double diffval = svector_get(dx, ix);
 				dot += xval * diffval;
 			}
 
@@ -421,13 +421,13 @@ iproc_design_ctx_dmuls(double alpha,
 							i);
 			int64_t jrecv = sv->jrecv;
 			iproc_svector *dx = sv->dx;
-			double xjrecv = iproc_svector_get(x, jrecv);
+			double xjrecv = svector_get(x, jrecv);
 			if (xjrecv == 0.0)
 				continue;
 
 			/* y := y + alpha * x[j] * diff[j] */
 			double jscale = alpha * xjrecv;
-			iproc_svector_sacc(y, jscale, dx);
+			svector_axpys(jscale, dx, y);
 		}
 	}
 
