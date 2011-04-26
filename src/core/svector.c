@@ -5,21 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "blas-private.h"
+#include "hash.h"
 #include "compare.h"
 #include "svector.h"
-
-DEFINE_COMPARE_FN(ssize_compare, ssize_t)
-
-static ssize_t svector_find_index(const struct svector *v, ssize_t i)
-{
-	assert(v);
-	assert(0 <= i);
-	assert(i < svector_dim(v));
-	ssize_t ix = darray_binary_search(&v->index,
-					  &i,
-					  ssize_compare);
-	return ix;
-}
 
 struct svector *svector_alloc(ssize_t n)
 {
@@ -41,13 +29,11 @@ bool svector_init(struct svector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
+	assert(n <= INTPTR_MAX);
 
-	if (darray_init(&v->index, sizeof(ssize_t))) {
-		if (darray_init(&v->value, sizeof(double))) {
-			v->dim = n;
-			return true;
-		}
-		darray_deinit(&v->index);
+	if (intmap_init(&v->map, sizeof(double), alignof(double))) {
+		v->dim = n;
+		return true;
 	}
 	return false;
 }
@@ -71,11 +57,9 @@ bool svector_init_copy(struct svector *v, const struct svector *src)
 	assert(v);
 	assert(src);
 
-	if (svector_init(v, svector_dim(src))) {
-		if (svector_assign_copy(v, src)) {
-			return true;
-		}
-		svector_deinit(v);
+	if (intmap_init_copy(&v->map, &src->map)) {
+		v->dim = src->dim;
+		return true;
 	}
 	return false;
 }
@@ -90,15 +74,13 @@ void svector_free(struct svector *v)
 
 void svector_deinit(struct svector *v)
 {
-	darray_deinit(&v->value);
-	darray_deinit(&v->index);
+	intmap_deinit(&v->map);
 }
 
 void svector_clear(struct svector *v)
 {
 	assert(v);
-	darray_clear(&v->index);
-	darray_clear(&v->value);
+	intmap_clear(&v->map);
 }
 
 ssize_t svector_dim(const struct svector* v)
@@ -113,14 +95,8 @@ double svector_get(const struct svector *v, ssize_t i)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	double value = 0.0;
-	ssize_t ix = svector_find_index(v, i);
-
-	if (ix >= 0) {
-		value = *(double *)darray_at(&v->value, ix);
-	}
-
-	return value;
+	double val0 = 0.0;
+	return *(double *)intmap_lookup_with(&v->map, i, &val0);
 }
 
 bool svector_set(struct svector* v, ssize_t i, double val)
@@ -129,22 +105,7 @@ bool svector_set(struct svector* v, ssize_t i, double val)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	ssize_t ix = svector_find_index(v, i);
-
-	if (ix < 0) {
-		ix = ~ix;
-		if (darray_insert(&v->index, ix, &i)) {
-			if (darray_insert(&v->value, ix, &val)) {
-				return true;
-			}
-			darray_erase(&v->index, ix);
-		}
-		return false;
-		
-	} else {
-		*(double *)darray_at(&v->value, ix) = val;
-		return true;
-	}
+	return intmap_add(&v->map, i, &val);
 }
 
 double *svector_at(struct svector *v, ssize_t i)
@@ -152,42 +113,33 @@ double *svector_at(struct svector *v, ssize_t i)
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 	
-	ssize_t ix = svector_find_index(v, i);
+	struct intmap_pos pos;
 	double zero = 0.0;
+	double *val;
 	
-	if (ix < 0) {
-		ix = ~ix;
-		if (darray_insert(&v->index, ix, &i)) {
-			if (darray_insert(&v->value, ix, &zero)) {
-				return darray_at(&v->value, ix);
-			}
-			darray_erase(&v->index, ix);
-		}
-		return NULL;
+	if ((val = intmap_find(&v->map, i, &pos))) {
+		return val;
 	} else {
-		return darray_at(&v->value, ix);
-	}
+		return intmap_insert(&v->map, &pos, &zero);
+	}	
 }
 
 void svector_scale(struct svector *v, double scale)
 {
 	assert(v);
 
-	if (svector_size(v) == 0)
-		return;
-
-	f77int n = (f77int) svector_size(v);
-	double alpha = scale;
-	f77int incx = 1;
-	double *px = darray_front(&v->value);
-
-	F77_FUNC(dscal) (&n, &alpha, px, &incx);
+	struct svector_iter it;
+	svector_iter_init(v, &it);
+	while (svector_iter_advance(v, &it)) {
+		*svector_iter_current(v, &it) *= scale;
+	}
+	svector_iter_deinit(v, &it);
 }
 
 ssize_t svector_size(const struct svector *v)
 {
 	assert(v);
-	return darray_size(&v->index);
+	return intmap_size(&v->map);
 }
 
 double svector_max(const struct svector *v)
@@ -338,46 +290,31 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
 
-	ssize_t nnz = svector_size(src);
-
-	darray_resize(&dst->index, nnz);
-	if (nnz > 0) {
-		ssize_t *idst = darray_front(&dst->index);
-		ssize_t *isrc = darray_front(&src->index);
-		memcpy(idst, isrc, nnz * sizeof(ssize_t));
-	}
-
-	darray_resize(&dst->value, nnz);
-	if (nnz > 0) {
-		double *vdst = darray_front(&dst->value);
-		double *vsrc = darray_front(&src->value);
-		memcpy(vdst, vsrc, nnz * sizeof(double));
-	}
-
-	return true;
+	return intmap_assign_copy(&dst->map, &src->map);
 }
 
 void svector_iter_init(const struct svector *v, struct svector_iter *it)
 {
-	it->pat_index = -1;
+	intmap_iter_init(&v->map, &it->map_it);
 }
 
 bool svector_iter_advance(const struct svector *v, struct svector_iter *it)
 {
-	it->pat_index++;
-	return it->pat_index < svector_size(v);
+	return intmap_iter_advance(&v->map, &it->map_it);
 }
 
 double *svector_iter_current(const struct svector *v, struct svector_iter *it)
 {
-	return darray_at(&v->value, it->pat_index);
+	return intmap_iter_current(&v->map, &it->map_it);
 }
 
 ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter *it)
 {
-	return *(ssize_t *)darray_at(&v->index, it->pat_index);
+	return (ssize_t)intmap_iter_current_key(&v->map, &it->map_it);
 }
 
 void svector_iter_deinit(const struct svector *v, struct svector_iter *it)
 {
+	intmap_iter_deinit(&v->map, &it->map_it);
+
 }

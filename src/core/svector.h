@@ -1,17 +1,16 @@
 #ifndef _SVECTOR_H
 #define _SVECTOR_H
 
-#include "darray.h"
+#include "intmap.h"
 #include "vector.h"
 
 struct svector {
+	struct intmap map;
 	ssize_t dim;
-	struct darray index;
-	struct darray value;
 };
 
 struct svector_iter {
-	ssize_t pat_index;
+	struct intmap_iter map_it;
 };
 
 bool svector_init(struct svector *v, ssize_t n);
