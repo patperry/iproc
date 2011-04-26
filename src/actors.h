@@ -54,6 +54,6 @@ void actors_muls(double alpha,
 void actors_matmul(double alpha,
 		   enum trans_op trans,
 		   const struct actors *a,
-		   const iproc_matrix * x, double beta, iproc_matrix * y);
+		   const struct matrix *x, double beta, struct matrix *y);
 
 #endif /* _ACTORS_H */

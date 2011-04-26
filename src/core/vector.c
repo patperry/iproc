@@ -65,7 +65,7 @@ bool vector_init_copy(struct vector *v, const struct vector *src)
 	return NULL;
 }
 
-struct vector *vector_new(ssize_t n)
+struct vector *vector_alloc(ssize_t n)
 {
 	struct vector *v = malloc(sizeof(*v));
 
@@ -77,7 +77,7 @@ struct vector *vector_new(ssize_t n)
 	return NULL;
 }
 
-struct vector *vector_new_copy(const struct vector *src)
+struct vector *vector_alloc_copy(const struct vector *src)
 {
 	struct vector *v = malloc(sizeof(*v));
 

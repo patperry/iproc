@@ -70,8 +70,8 @@ double vector_max_abs(const struct vector *vector);
 ssize_t vector_max_abs_index(const struct vector *vector);
 
 /* DEPRECATED */
-struct vector *vector_new(ssize_t n);
-struct vector *vector_new_copy(const struct vector *v);
+struct vector *vector_alloc(ssize_t n);
+struct vector *vector_alloc_copy(const struct vector *v);
 void vector_free(struct vector *v);
 
 struct vector vector_slice(const struct vector *vector,

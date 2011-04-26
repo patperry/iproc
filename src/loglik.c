@@ -35,7 +35,7 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 		return NULL;
 
 	loglik->model = iproc_model_ref(model);
-	loglik->grad = vector_new(iproc_design_dim(design));
+	loglik->grad = vector_alloc(iproc_design_dim(design));
 	loglik->grad_cached = false;
 	loglik->nsend = 0;
 	loglik->nrecv = 0;

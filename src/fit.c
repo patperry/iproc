@@ -38,11 +38,11 @@ static bool iproc_fit_init(iproc_fit * fit)
 	int64_t dim = iproc_model_dim(fit->model);
 
 	fit->inv_hess = NULL;
-	fit->x0 = vector_new(dim);
-	fit->x = vector_new(dim);
-	fit->grad0 = vector_new(dim);
-	fit->grad = vector_new(dim);
-	fit->search_dir = vector_new(dim);
+	fit->x0 = vector_alloc(dim);
+	fit->x = vector_alloc(dim);
+	fit->grad0 = vector_alloc(dim);
+	fit->grad = vector_alloc(dim);
+	fit->search_dir = vector_alloc(dim);
 	fit->loglik = iproc_loglik_new(fit->model, fit->messages);
 
 	if (!
@@ -93,7 +93,7 @@ void iproc_fit_free(iproc_fit * fit)
 		vector_free(fit->grad0);
 		vector_free(fit->x);
 		vector_free(fit->x0);
-		iproc_matrix_unref(fit->inv_hess);
+		matrix_free(fit->inv_hess);
 		iproc_messages_unref(fit->messages);
 		iproc_model_unref(fit->model);
 		free(fit);
@@ -181,15 +181,15 @@ cleanup:
 
 static void update_hess(iproc_fit * fit)
 {
-	struct vector *s = vector_new_copy(fit->search_dir);
+	struct vector *s = vector_alloc_copy(fit->search_dir);
 	vector_scale(s, fit->step);
 
-	struct vector *y = vector_new_copy(fit->grad);
+	struct vector *y = vector_alloc_copy(fit->grad);
 	vector_axpy(-1.0, fit->grad0, y);
 
 	double s_y = vector_dot(s, y);
 
-	iproc_matrix *H = fit->inv_hess;
+	struct matrix *H = fit->inv_hess;
 
 	if (H == NULL) {
 		double scale = 1.0;
@@ -200,25 +200,25 @@ static void update_hess(iproc_fit * fit)
 		}
 
 		int64_t i, n = vector_dim(y);
-		H = iproc_matrix_new(n, n);
-		iproc_matrix_set_all(H, 0.0);
+		H = matrix_alloc(n, n);
+		matrix_fill(H, 0.0);
 
 		for (i = 0; i < n; i++) {
-			iproc_matrix_set(H, i, i, scale);
+			matrix_set(H, i, i, scale);
 		}
 
 		fit->inv_hess = H;
 	} else {
-		struct vector *H_y = vector_new(vector_dim(y));
-		iproc_matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
+		struct vector *H_y = vector_alloc(vector_dim(y));
+		matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
 
 		double y_H_y = vector_dot(H_y, y);
 		double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
 		double rho = 1.0 / s_y;
 
-		iproc_matrix_update1(H, scale1, s, s);
-		iproc_matrix_update1(H, -rho, H_y, s);
-		iproc_matrix_update1(H, -rho, s, H_y);
+		matrix_update1(H, scale1, s, s);
+		matrix_update1(H, -rho, H_y, s);
+		matrix_update1(H, -rho, s, H_y);
 
 		vector_free(H_y);
 	}
@@ -234,7 +234,7 @@ static void update_searchdir(iproc_fit * fit)
 	struct vector *s = fit->search_dir;
 
 	if (fit->inv_hess) {
-		iproc_matrix_mul(-1.0, TRANS_NOTRANS, fit->inv_hess,
+		matrix_mul(-1.0, TRANS_NOTRANS, fit->inv_hess,
 				 fit->grad, +0.0, s);
 	} else {
 		vector_assign_copy(s, fit->grad);

@@ -248,7 +248,7 @@ iproc_design_mul0_static(double alpha,
 	int64_t ix_begin = design->istatic;
 	int64_t nstatic = design->nstatic;
 	const struct vector *s = actors_traits(senders, isend);
-	struct vector *z = vector_new(q);
+	struct vector *z = vector_alloc(q);
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub;
@@ -257,7 +257,7 @@ iproc_design_mul0_static(double alpha,
 		/* z := alpha t(x) s */
 		iproc_matrix_view xmat =
 		    iproc_matrix_view_vector(&xsub, p, q);
-		iproc_matrix_mul(alpha, TRANS_TRANS, &xmat.matrix, s, 0.0,
+		matrix_mul(alpha, TRANS_TRANS, &xmat.matrix, s, 0.0,
 				 z);
 
 		/* y := y + R z */
@@ -273,7 +273,7 @@ iproc_design_mul0_static(double alpha,
 		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		iproc_matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
+		matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
 				    &zmat.matrix, 1.0, &ymat.matrix);
 	}
 
@@ -298,7 +298,7 @@ iproc_design_muls0_static(double alpha,
 	int64_t nstatic = design->nstatic;
 	int64_t ix_end = ix_begin + nstatic;
 	const struct vector *s = actors_traits(senders, isend);
-	struct vector *z = vector_new(q);
+	struct vector *z = vector_alloc(q);
 
 	if (trans == TRANS_NOTRANS) {
 		/* z := alpha t(x) s 
@@ -343,7 +343,7 @@ iproc_design_muls0_static(double alpha,
 		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		iproc_matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
+		matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
 				    &zmat.matrix, 1.0, &ymat.matrix);
 	}
 

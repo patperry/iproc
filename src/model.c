@@ -45,15 +45,15 @@ static bool cohort_model_init(struct cohort_model *cm,
 	ssize_t dim = iproc_design_dim(design);
 
 	/* compute initial log(probs) */
-	cm->log_p0 = vector_new(nreceiver);
+	cm->log_p0 = vector_alloc(nreceiver);
 	compute_logprobs0(design, isend, coefs, cm->log_p0, &cm->log_W0);
 
 	/* compute initial probs */
-	cm->p0 = vector_new_copy(cm->log_p0);
+	cm->p0 = vector_alloc_copy(cm->log_p0);
 	vector_exp(cm->p0);
 
 	/* compute initial covariate mean */
-	cm->xbar0 = vector_new(dim);
+	cm->xbar0 = vector_alloc(dim);
 	iproc_design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0,
 			  0.0, cm->xbar0);
 
@@ -204,7 +204,7 @@ iproc_model *iproc_model_new(iproc_design * design,
 
 	iproc_model *model = malloc(sizeof(*model));
 	model->design = iproc_design_ref(design);
-	model->coefs = vector_new_copy(coefs);
+	model->coefs = vector_alloc_copy(coefs);
 	model->has_loops = has_loops;
 	cohort_models_init(&model->cohort_models, design, coefs);
 	darray_init(&model->ctxs, sizeof(iproc_model_ctx *));

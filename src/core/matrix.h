@@ -1,19 +1,15 @@
-#ifndef _IPROC_MATRIX_H
-#define _IPROC_MATRIX_H
+#ifndef _MATRIX_H
+#define _MATRIX_H
 
-#include <stdint.h>
-#include "refcount.h"
 #include "vector.h"
 
-typedef struct matrix iproc_matrix;
 typedef struct _iproc_matrix_view iproc_matrix_view;
 
 struct matrix {
 	double *data;
-	int64_t nrow;
-	int64_t ncol;
-	int64_t lda;
-	struct refcount refcount;
+	ssize_t nrow;
+	ssize_t ncol;
+	ssize_t lda;
 };
 
 struct _iproc_matrix_view {
@@ -26,34 +22,39 @@ enum trans_op {
 	TRANS_CONJTRANS
 };
 
-iproc_matrix *iproc_matrix_new(int64_t nrow, int64_t ncol);
-iproc_matrix *iproc_matrix_new_copy(const iproc_matrix * matrix);
-iproc_matrix *iproc_matrix_ref(iproc_matrix * matrix);
-void iproc_matrix_unref(iproc_matrix * matrix);
-void iproc_matrix_copy(iproc_matrix * dst, const iproc_matrix * src);
-void iproc_matrix_set_all(iproc_matrix * matrix, double value);
-void iproc_matrix_set_identity(iproc_matrix * matrix);
+bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
+bool matrix_init_copy(struct matrix *a, const struct matrix *src);
+void matrix_deinit(struct matrix *a);
 
-int64_t iproc_matrix_nrow(const iproc_matrix * a);
-int64_t iproc_matrix_ncol(const iproc_matrix * a);
-int64_t iproc_matrix_lda(const iproc_matrix * a);
+struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol);
+struct matrix *matrix_alloc_copy(const struct matrix *src);
+void matrix_free(struct matrix *a);
 
-double iproc_matrix_get(const iproc_matrix * a, int64_t i, int64_t j);
-void iproc_matrix_set(iproc_matrix * a, int64_t i, int64_t j, double val);
-double *iproc_matrix_ptr(const iproc_matrix * a, int64_t i, int64_t j);
+void matrix_assign_copy(struct matrix *a, const struct matrix *src);
+void matrix_assign_identity(struct matrix *a);
+void matrix_fill(struct matrix *a, double value);
 
-void iproc_matrix_add(iproc_matrix * dst_matrix, const iproc_matrix * matrix);
-void iproc_matrix_sub(iproc_matrix * dst_matrix, const iproc_matrix * matrix);
-void iproc_matrix_acc(iproc_matrix * dst_matrix,
-		      double scale, const iproc_matrix * matrix);
-void iproc_matrix_scale(iproc_matrix * matrix, double scale);
-void iproc_matrix_scale_rows(iproc_matrix * matrix, const struct vector *scale);
 
-void vector_init_matrix_col(struct vector *v,
-			    const iproc_matrix * a, ssize_t j);
-iproc_matrix_view iproc_matrix_cols(const iproc_matrix * matrix,
+ssize_t matrix_nrow(const struct matrix *a);
+ssize_t matrix_ncol(const struct matrix *a);
+ssize_t matrix_lda(const struct matrix *a);
+
+double matrix_get(const struct matrix *a, ssize_t i, ssize_t j);
+void matrix_set(struct matrix *a, ssize_t i, ssize_t j, double val);
+double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j);
+
+
+void matrix_add(struct matrix *a, const struct matrix *src);
+void matrix_sub(struct matrix *a, const struct matrix *src);
+void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y);
+void matrix_scale(struct matrix *a, double scale);
+void matrix_scale_rows(struct matrix *a, const struct vector *scale);
+
+void vector_init_matrix_col(struct vector *v, const struct matrix *a, ssize_t j);
+
+iproc_matrix_view iproc_matrix_cols(const struct matrix * matrix,
 				    int64_t j, int64_t n);
-iproc_matrix_view iproc_matrix_submatrix(const iproc_matrix * a,
+iproc_matrix_view iproc_matrix_submatrix(const struct matrix * a,
 					 int64_t i,
 					 int64_t j, int64_t nrow, int64_t ncol);
 iproc_matrix_view iproc_matrix_view_array(const double *data,
@@ -64,17 +65,12 @@ iproc_matrix_view iproc_matrix_view_array_with_lda(const double *data,
 iproc_matrix_view iproc_matrix_view_vector(const struct vector *vector,
 					   int64_t nrow, int64_t ncol);
 
-void iproc_matrix_mul(double alpha,
-		      enum trans_op trans,
-		      const iproc_matrix * matrix,
-		      const struct vector *x, double beta, struct vector *y);
-void iproc_matrix_matmul(double alpha,
-			 enum trans_op trans,
-			 const iproc_matrix * matrix,
-			 const iproc_matrix * x, double beta, iproc_matrix * y);
+void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
+		const struct vector *x, double beta, struct vector *y);
+void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
+		   const struct matrix *x, double beta, struct matrix *y);
+void matrix_update1(struct matrix *a,
+		    double alpha, const struct vector *x,
+		    const struct vector *y);
 
-void iproc_matrix_update1(iproc_matrix * matrix,
-			  double alpha, const struct vector *x,
-			  const struct vector *y);
-
-#endif /* _IPROC_MATRIX_H */
+#endif /* _MATRIX_H */

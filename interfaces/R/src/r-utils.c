@@ -61,15 +61,15 @@ SEXP Riproc_vector_new_copy(struct vector * vector)
 	return Rvector;
 }
 
-SEXP Riproc_matrix_new_copy(iproc_matrix * matrix)
+SEXP Riproc_matrix_new_copy(struct matrix *matrix)
 {
-	int nrow = (int)iproc_matrix_nrow(matrix);
-	int ncol = (int)iproc_matrix_ncol(matrix);
+	int nrow = (int)matrix_nrow(matrix);
+	int ncol = (int)matrix_ncol(matrix);
 	SEXP Rmatrix;
 
 	PROTECT(Rmatrix = allocMatrix(REALSXP, nrow, ncol));
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
-	iproc_matrix_copy(&view.matrix, matrix);
+	matrix_assign_copy(&view.matrix, matrix);
 	UNPROTECT(1);
 	return Rmatrix;
 }

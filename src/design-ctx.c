@@ -11,7 +11,7 @@ DEFINE_COMPARE_FN(int64_compare, int64_t)
 
 static struct svector *iproc_design_var_new_alloc(iproc_design * design)
 {
-	return svector_new(design->dim);
+	return svector_alloc(design->dim);
 }
 
 // TODO : make static
@@ -253,7 +253,7 @@ iproc_design_ctx_mul(double alpha,
 
 	iproc_design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	struct svector *diffprod = svector_new(vector_dim(y));
+	struct svector *diffprod = svector_alloc(vector_dim(y));
 	iproc_design_ctx_dmul(alpha, trans, ctx, x, 0.0, diffprod);
 	svector_axpy(1.0, diffprod, y);
 	svector_free(diffprod);
@@ -280,7 +280,7 @@ iproc_design_ctx_muls(double alpha,
 
 	iproc_design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
-	struct svector *diffprod = svector_new(vector_dim(y));
+	struct svector *diffprod = svector_alloc(vector_dim(y));
 	iproc_design_ctx_dmuls(alpha, trans, ctx, x, 0.0, diffprod);
 	svector_axpy(1.0, diffprod, y);
 	svector_free(diffprod);

@@ -148,8 +148,8 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int nsender = (int)iproc_design_nsender(design);
 	int nreceiver = (int)iproc_design_nreceiver(design);
 	iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
-	int nrow = (int)iproc_matrix_nrow(&x.matrix);
-	int ncol = (int)iproc_matrix_ncol(&x.matrix);
+	int nrow = (int)matrix_nrow(&x.matrix);
+	int ncol = (int)matrix_ncol(&x.matrix);
 	int sender = INTEGER(Rsender)[0] - 1;
 	iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
@@ -188,8 +188,8 @@ SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int nsender = (int)iproc_design_nsender(design);
 	int nreceiver = (int)iproc_design_nreceiver(design);
 	iproc_matrix_view x = Riproc_matrix_view_sexp(Rx);
-	int nrow = (int)iproc_matrix_nrow(&x.matrix);
-	int ncol = (int)iproc_matrix_ncol(&x.matrix);
+	int nrow = (int)matrix_nrow(&x.matrix);
+	int ncol = (int)matrix_ncol(&x.matrix);
 	int sender = INTEGER(Rsender)[0] - 1;
 	iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));

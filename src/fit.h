@@ -28,7 +28,7 @@ struct _iproc_fit {
 	struct vector *x;
 	struct vector *grad0;
 	struct vector *grad;
-	iproc_matrix *inv_hess;
+	struct matrix *inv_hess;
 	struct vector *search_dir;
 	double step;
 };

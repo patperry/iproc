@@ -157,9 +157,9 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	ctx->design_ctx = NULL;
 	ctx->group = NULL;
 
-	ctx->deta = svector_new(nreceiver);
-	ctx->dp = svector_new(nreceiver);
-	ctx->dxbar = svector_new(dim);
+	ctx->deta = svector_alloc(nreceiver);
+	ctx->dp = svector_alloc(nreceiver);
+	ctx->dxbar = svector_alloc(dim);
 
 	refcount_init(&ctx->refcount);
 

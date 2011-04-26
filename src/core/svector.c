@@ -21,7 +21,7 @@ static ssize_t svector_find_index(const struct svector *v, ssize_t i)
 	return ix;
 }
 
-struct svector *svector_new(ssize_t n)
+struct svector *svector_alloc(ssize_t n)
 {
 	assert(n >= 0);
 
@@ -52,7 +52,7 @@ bool svector_init(struct svector *v, ssize_t n)
 	return false;
 }
 
-struct svector *svector_new_copy(const struct svector *src)
+struct svector *svector_alloc_copy(const struct svector *src)
 {
 	assert(src);
 	struct svector *v;

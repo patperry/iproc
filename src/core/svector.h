@@ -18,8 +18,8 @@ bool svector_init(struct svector *v, ssize_t n);
 bool svector_init_copy(struct svector *v, const struct svector *src);
 void svector_deinit(struct svector *v);
 
-struct svector *svector_new(ssize_t n);
-struct svector *svector_new_copy(const struct svector *v);
+struct svector *svector_alloc(ssize_t n);
+struct svector *svector_alloc_copy(const struct svector *v);
 void svector_free(struct svector *v);
 
 bool svector_assign_copy(struct svector *v, const struct svector *src);

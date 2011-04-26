@@ -68,7 +68,7 @@ struct actors *Riproc_to_actors(SEXP Ractors)
 SEXP Riproc_actors_new(SEXP Rtraits_t)
 {
 	iproc_matrix_view traits_t = Riproc_matrix_view_sexp(Rtraits_t);
-	int n = (int)iproc_matrix_ncol(&traits_t.matrix);
+	int n = (int)matrix_ncol(&traits_t.matrix);
 
 	if (!(n > 0))
 		error("must specify at least one actor");
@@ -150,8 +150,8 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);
-	int nrow = (int)iproc_matrix_nrow(&view.matrix);
-	int ncol = (int)iproc_matrix_ncol(&view.matrix);
+	int nrow = (int)matrix_nrow(&view.matrix);
+	int ncol = (int)matrix_ncol(&view.matrix);
 	SEXP Rresult;
 
 	if (nrow != dim)
@@ -179,8 +179,8 @@ SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);
-	int nrow = (int)iproc_matrix_nrow(&view.matrix);
-	int ncol = (int)iproc_matrix_ncol(&view.matrix);
+	int nrow = (int)matrix_nrow(&view.matrix);
+	int ncol = (int)matrix_ncol(&view.matrix);
 	SEXP Rresult;
 
 	if (nrow != size)

@@ -329,28 +329,28 @@ void
 actors_matmul(double alpha,
 	      enum trans_op trans,
 	      const struct actors *a,
-	      const iproc_matrix * x, double beta, iproc_matrix * y)
+	      const struct matrix *x, double beta, struct matrix *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || iproc_matrix_nrow(x) == actors_dim(a));
+	       || matrix_nrow(x) == actors_dim(a));
 	assert(trans != TRANS_NOTRANS
-	       || iproc_matrix_nrow(y) == actors_size(a));
+	       || matrix_nrow(y) == actors_size(a));
 	assert(trans == TRANS_NOTRANS
-	       || iproc_matrix_nrow(x) == actors_size(a));
+	       || matrix_nrow(x) == actors_size(a));
 	assert(trans == TRANS_NOTRANS
-	       || iproc_matrix_nrow(y) == actors_dim(a));
-	assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
+	       || matrix_nrow(y) == actors_dim(a));
+	assert(matrix_ncol(x) == matrix_ncol(y));
 
-	int64_t m = iproc_matrix_ncol(x);
+	int64_t m = matrix_ncol(x);
 	int64_t j;
 
 	if (beta == 0) {
-		iproc_matrix_set_all(y, 0.0);
+		matrix_fill(y, 0.0);
 	} else if (beta != 1) {
-		iproc_matrix_scale(y, beta);
+		matrix_scale(y, beta);
 	}
 
 	struct vector xcol;

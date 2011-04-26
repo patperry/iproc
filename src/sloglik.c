@@ -33,16 +33,16 @@ iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend)
 	sll->isend = isend;
 
 	sll->f = 0.0;
-	sll->grad = vector_new(p);
+	sll->grad = vector_alloc(p);
 	sll->grad_cached = false;
 
 	sll->nsend = 0;
-	sll->nrecv = svector_new(n);
-	sll->dxobs = svector_new(p);
+	sll->nrecv = svector_alloc(n);
+	sll->dxobs = svector_alloc(p);
 
 	sll->gamma = 0.0;
-	sll->dp = svector_new(n);
-	sll->dxbar = svector_new(p);
+	sll->dp = svector_alloc(n);
+	sll->dxbar = svector_alloc(p);
 
 	refcount_init(&sll->refcount);
 
@@ -89,7 +89,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	int64_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =
 	    iproc_model_ctx_new(sll->model, sll->isend, history);
-	struct svector *wt = svector_new(nreceiver);
+	struct svector *wt = svector_alloc(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
 	double scale0 = 1 - scale1;
