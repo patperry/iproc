@@ -7,16 +7,16 @@
 #include "compare.h"
 #include "svector.h"
 
-DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
+DEFINE_COMPARE_AND_EQUALS_FN(ssize_compare, ssize_equals, ssize_t)
 
-int64_t iproc_svector_find_nz(const struct svector * svector, int64_t i)
+ssize_t iproc_svector_find_nz(const struct svector * svector, ssize_t i)
 {
 	assert(svector);
 	assert(0 <= i);
 	assert(i < svector_dim(svector));
 	ssize_t ix = darray_binary_search(&svector->index,
 					  &i,
-					  int64_compare);
+					  ssize_compare);
 	return ix;
 }
 
@@ -41,7 +41,7 @@ bool svector_init(struct svector *v, ssize_t n)
 	assert(v);
 	assert(n >= 0);
 
-	if (darray_init(&v->index, sizeof(int64_t))) {
+	if (darray_init(&v->index, sizeof(ssize_t))) {
 		if (darray_init(&v->value, sizeof(double))) {
 			v->dim = n;
 			return true;
@@ -113,7 +113,7 @@ double svector_get(const struct svector *v, ssize_t i)
 	assert(i < svector_dim(v));
 
 	double value = 0.0;
-	int64_t ix = iproc_svector_find_nz(v, i);
+	ssize_t ix = iproc_svector_find_nz(v, i);
 
 	if (ix >= 0) {
 		value = iproc_svector_nz_get(v, ix);
@@ -189,67 +189,25 @@ ssize_t svector_size(const struct svector *v)
 	return darray_size(&v->index);
 }
 
-int64_t iproc_svector_nz(const struct svector * svector, int64_t i)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	return *(int64_t *)darray_at(&svector->index, i);
-}
-
-double iproc_svector_nz_get(const struct svector * svector, int64_t i)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	return *(double *)darray_at(&svector->value, i);
-}
-
-void iproc_svector_nz_set(struct svector * svector, int64_t i, double value)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	*(double *)darray_at(&svector->value, i) = value;
-}
-
-void iproc_svector_nz_inc(struct svector * svector, int64_t i, double inc)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	*(double *)darray_at(&svector->value, i) += inc;
-}
-
-iproc_vector_view iproc_svector_view_nz(const struct svector * svector)
-{
-	assert(svector);
-
-	int64_t nnz = svector_size(svector);
-	double *px = NULL;
-
-	if (nnz > 0) {
-		px = darray_front(&svector->value);
-	}
-
-	return iproc_vector_view_array(px, nnz);
-}
-
 double svector_dot(const struct svector *x, const struct vector *y)
 {
 	assert(x);
 	assert(y);
 	assert(vector_dim(y) == svector_dim(x));
 
-	int64_t i, ix, n = svector_size(x);
-	double e1, e2, dot = 0.0;
-
-	for (i = 0; i < n; i++) {
-		ix = iproc_svector_nz(x, i);
-		e1 = *vector_at(y, ix);
-		e2 = iproc_svector_nz_get(x, i);
-		dot += e1 * e2;
+	ssize_t i;
+	double dot = 0.0, valx, valy;
+	struct svector_iter itx;
+	
+	svector_iter_init(x, &itx);
+	while (svector_iter_advance(x, &itx)) {
+		i = svector_iter_current_index(x, &itx);
+		valx = *svector_iter_current(x, &itx);
+		valy = *vector_at(y, i);
+		dot += valx * valy;
 	}
+	svector_iter_deinit(x, &itx);
+	
 	return dot;
 }
 
@@ -259,14 +217,17 @@ void svector_axpy(double scale, const struct svector *x, struct vector *y)
 	assert(x);
 	assert(vector_dim(y) == svector_dim(x));
 
-	int64_t i, ix, n = svector_size(x);
-	double e;
-
-	for (i = 0; i < n; i++) {
-		e = iproc_svector_nz_get(x, i);
-		ix = iproc_svector_nz(x, i);
-		*vector_at(y, ix) += scale * e;
+	struct svector_iter itx;
+	ssize_t i;
+	double val;
+	
+	svector_iter_init(x, &itx);
+	while (svector_iter_advance(x, &itx)) {
+		i = svector_iter_current_index(x, &itx);
+		val = *svector_iter_current(x, &itx);
+		*vector_at(y, i) += scale * val;
 	}
+	svector_iter_deinit(x, &itx);
 }
 
 double svector_dots(const struct svector *v1, const struct svector *v2)
@@ -275,33 +236,33 @@ double svector_dots(const struct svector *v1, const struct svector *v2)
 	assert(v2);
 	assert(svector_dim(v1) == svector_dim(v2));
 
-	int64_t n1 = svector_size(v1);
-	int64_t n2 = svector_size(v2);
+	ssize_t n1 = svector_size(v1);
+	ssize_t n2 = svector_size(v2);
 
 	if (n1 == 0 || n2 == 0)
 		return 0.0;
 
-	int64_t i1 = 0;
-	int64_t i2 = 0;
-	int64_t ix1, ix2;
-	double dot = 0.0, val1, val2;
-
-	while (i1 < n1 && i2 < n2) {
-		ix1 = iproc_svector_nz(v1, i1);
-		ix2 = iproc_svector_nz(v2, i2);
-
-		if (ix1 == ix2) {
-			val1 = iproc_svector_nz_get(v1, i1);
-			val2 = iproc_svector_nz_get(v2, i2);
-			dot += val1 * val2;
-			i1++;
-			i2++;
-		} else if (ix1 < ix2) {
-			i1++;
-		} else {	/* ix1 > ix2 */
-			i2++;
-		}
+	const struct svector *x, *y;
+	if (n1 <= n2) {
+		x = v1;
+		y = v2;
+	} else {
+		x = v2;
+		y = v1;
 	}
+	
+	ssize_t i;
+	double dot = 0.0, valx, valy;
+	struct svector_iter itx;
+
+	svector_iter_init(x, &itx);
+	while (svector_iter_advance(x, &itx)) {
+		i = svector_iter_current_index(x, &itx);
+		valx = *svector_iter_current(x, &itx);
+		valy = svector_get(y, i);
+		dot += valx * valy;
+	}
+	svector_iter_deinit(x, &itx);
 
 	return dot;
 }
@@ -312,26 +273,38 @@ void svector_axpys(double scale, const struct svector* x, struct svector *y)
 	assert(x);
 	assert(svector_dim(y) == svector_dim(x));
 
-	int64_t inz, nnz = svector_size(x);
-	for (inz = 0; inz < nnz; inz++) {
-		int64_t i = iproc_svector_nz(x, inz);
-		double val = iproc_svector_nz_get(x, inz);
+	struct svector_iter itx;
+	ssize_t i;
+	double val;
+
+	svector_iter_init(x, &itx);
+	while (svector_iter_advance(x, &itx)) {
+		i = svector_iter_current_index(x, &itx);
+		val = *svector_iter_current(x, &itx);
 		*svector_at(y, i) += scale * val;
 	}
+	svector_iter_deinit(x, &itx);
 }
 
-void svector_printf(const struct svector * svector)
+void svector_printf(const struct svector *v)
 {
+	struct svector_iter it;
+	ssize_t i;
+	double val;
+	
 	printf("\nsvector {");
-	printf("\n  dim: %" SSIZE_FMT "", svector_dim(svector));
+	printf("\n  dim: %" SSIZE_FMT "", svector_dim(v));
 	printf("\n   nz: {");
 
-	int64_t i, n = svector_size(svector);
-	for (i = 0; i < n; i++) {
-		printf("\n         %" PRId64 ", %.8f",
-		       iproc_svector_nz(svector, i),
-		       iproc_svector_nz_get(svector, i));
+	svector_iter_init(v, &it);
+	while (svector_iter_advance(v, &it)) {
+		i = svector_iter_current_index(v, &it);
+		val = *svector_iter_current(v, &it);
+		printf("\n         %" SSIZE_FMT ", %.8f", i, val);
+
 	}
+	svector_iter_deinit(v, &it);
+
 	printf("\n       }");
 	printf("\n}\n");
 }
@@ -342,13 +315,13 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
 
-	int64_t nnz = svector_size(src);
+	ssize_t nnz = svector_size(src);
 
 	darray_resize(&dst->index, nnz);
 	if (nnz > 0) {
-		int64_t *idst = darray_front(&dst->index);
-		int64_t *isrc = darray_front(&src->index);
-		memcpy(idst, isrc, nnz * sizeof(int64_t));
+		ssize_t *idst = darray_front(&dst->index);
+		ssize_t *isrc = darray_front(&src->index);
+		memcpy(idst, isrc, nnz * sizeof(ssize_t));
 	}
 
 	darray_resize(&dst->value, nnz);
@@ -359,4 +332,77 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	}
 
 	return true;
+}
+
+void svector_iter_init(const struct svector *v, struct svector_iter *it)
+{
+	it->pat_index = -1;
+}
+
+bool svector_iter_advance(const struct svector *v, struct svector_iter *it)
+{
+	it->pat_index++;
+	return it->pat_index < svector_size(v);
+}
+
+double *svector_iter_current(const struct svector *v, struct svector_iter *it)
+{
+	return darray_at(&v->value, it->pat_index);
+}
+
+ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter *it)
+{
+	return *(ssize_t *)darray_at(&v->index, it->pat_index);
+}
+
+void svector_iter_deinit(const struct svector *v, struct svector_iter *it)
+{
+}
+
+
+/* DEPRECATED */
+ssize_t iproc_svector_nz(const struct svector * svector, ssize_t i)
+{
+	assert(svector);
+	assert(0 <= i);
+	assert(i < svector_size(svector));
+	return *(ssize_t *)darray_at(&svector->index, i);
+}
+
+double iproc_svector_nz_get(const struct svector * svector, ssize_t i)
+{
+	assert(svector);
+	assert(0 <= i);
+	assert(i < svector_size(svector));
+	return *(double *)darray_at(&svector->value, i);
+}
+
+void iproc_svector_nz_set(struct svector * svector, ssize_t i, double value)
+{
+	assert(svector);
+	assert(0 <= i);
+	assert(i < svector_size(svector));
+	*(double *)darray_at(&svector->value, i) = value;
+}
+
+void iproc_svector_nz_inc(struct svector * svector, ssize_t i, double inc)
+{
+	assert(svector);
+	assert(0 <= i);
+	assert(i < svector_size(svector));
+	*(double *)darray_at(&svector->value, i) += inc;
+}
+
+iproc_vector_view iproc_svector_view_nz(const struct svector * svector)
+{
+	assert(svector);
+	
+	ssize_t nnz = svector_size(svector);
+	double *px = NULL;
+	
+	if (nnz > 0) {
+		px = darray_front(&svector->value);
+	}
+	
+	return iproc_vector_view_array(px, nnz);
 }

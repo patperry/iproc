@@ -37,14 +37,20 @@ double svector_dots(const struct svector *v1, const struct svector *v2);
 void svector_axpy(double scale, const struct svector *x, struct vector *y);
 void svector_axpys(double scale, const struct svector* x, struct svector *y);
 
+/* iteration */
+void svector_iter_init(const struct svector *v, struct svector_iter *it);
+bool svector_iter_advance(const struct svector *v, struct svector_iter *it);
+double *svector_iter_current(const struct svector *v, struct svector_iter *it);
+ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter *it);
+void svector_iter_deinit(const struct svector *v, struct svector_iter *it);
 
-int64_t iproc_svector_nz(const struct svector * svector, int64_t inz);
-double iproc_svector_nz_get(const struct svector * svector, int64_t inz);
-void iproc_svector_nz_set(struct svector * svector, int64_t inz, double value);
-void iproc_svector_nz_inc(struct svector * svector, int64_t inz, double inc);
-
+/* deprecated */
+ssize_t iproc_svector_nz(const struct svector * svector, ssize_t inz);
+double iproc_svector_nz_get(const struct svector * svector, ssize_t inz);
+void iproc_svector_nz_set(struct svector * svector, ssize_t inz, double value);
+void iproc_svector_nz_inc(struct svector * svector, ssize_t inz, double inc);
 iproc_vector_view iproc_svector_view_nz(const struct svector * svector);
-int64_t iproc_svector_find_nz(const struct svector * svector, int64_t i);
+ssize_t iproc_svector_find_nz(const struct svector * svector, ssize_t i);
 
 
 #endif /* _SVECTOR_H */
