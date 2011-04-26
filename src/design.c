@@ -187,11 +187,13 @@ iproc_design_mul0_reffects(double alpha,
 	int64_t dim = design->nreffects;
 
 	if (trans == IPROC_TRANS_NOTRANS) {
-		iproc_vector_view xsub = vector_slice(x, off, dim);
-		vector_axpy(alpha, &xsub.vector, y);
+		struct vector xsub;
+		vector_init_slice(&xsub, x, off, dim);
+		vector_axpy(alpha, &xsub, y);
 	} else {
-		iproc_vector_view ysub = vector_slice(y, off, dim);
-		vector_axpy(alpha, x, &ysub.vector);
+		struct vector ysub;
+		vector_init_slice(&ysub, y, off, dim);
+		vector_axpy(alpha, x, &ysub);
 	}
 }
 
@@ -223,8 +225,9 @@ iproc_design_muls0_reffects(double alpha,
 		}
 		svector_iter_deinit(x, &itx);
 	} else {
-		iproc_vector_view ysub = vector_slice(y, off, dim);
-		svector_axpy(alpha, x, &ysub.vector);
+		struct vector ysub;
+		vector_init_slice(&ysub, y, off, dim);
+		svector_axpy(alpha, x, &ysub);
 	}
 }
 
@@ -248,11 +251,12 @@ iproc_design_mul0_static(double alpha,
 	struct vector *z = vector_new(q);
 
 	if (trans == IPROC_TRANS_NOTRANS) {
-		iproc_vector_view xsub = vector_slice(x, ix_begin, nstatic);
+		struct vector xsub;
+		vector_init_slice(&xsub, x, ix_begin, nstatic);
 
 		/* z := alpha t(x) s */
 		iproc_matrix_view xmat =
-		    iproc_matrix_view_vector(&xsub.vector, p, q);
+		    iproc_matrix_view_vector(&xsub, p, q);
 		iproc_matrix_mul(alpha, IPROC_TRANS_TRANS, &xmat.matrix, s, 0.0,
 				 z);
 
@@ -263,9 +267,10 @@ iproc_design_mul0_static(double alpha,
 		actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
-		iproc_vector_view ysub = vector_slice(y, ix_begin, nstatic);
+		struct vector ysub;
+		vector_init_slice(&ysub, y, ix_begin, nstatic);
 		iproc_matrix_view ymat =
-		    iproc_matrix_view_vector(&ysub.vector, p, q);
+		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
 		iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix,
@@ -332,9 +337,10 @@ iproc_design_muls0_static(double alpha,
 		actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
-		iproc_vector_view ysub = vector_slice(y, ix_begin, nstatic);
+		struct vector ysub;
+		vector_init_slice(&ysub, y, ix_begin, nstatic);
 		iproc_matrix_view ymat =
-		    iproc_matrix_view_vector(&ysub.vector, p, q);
+		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
 		iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix,

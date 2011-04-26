@@ -149,17 +149,10 @@ void vector_set_basis(struct vector *v, ssize_t i)
 	*vector_at(v, i) = 1.0;
 }
 
-iproc_vector_view vector_slice(const struct vector *v, ssize_t i, ssize_t n)
+struct vector vector_slice(const struct vector *v, ssize_t i, ssize_t n)
 {
-	iproc_vector_view view;
-	vector_init_slice(&view.vector, v, i, n);
-	return view;
-}
-
-iproc_vector_view iproc_vector_view_array(const double *ptr, ssize_t n)
-{
-	iproc_vector_view view;
-	vector_init_view(&view.vector, ptr, n);
+	struct vector view;
+	vector_init_slice(&view, v, i, n);
 	return view;
 }
 

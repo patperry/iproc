@@ -365,8 +365,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				221FEE8B132EC8710000097B /* svector.c */,
-				221FEE8C132EC8710000097B /* svector.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
@@ -393,6 +391,8 @@
 				221FEE88132EC8710000097B /* refcount.h */,
 				22D6FA7B135D02A70082D129 /* sparsetable.c */,
 				22D6FA7C135D02A70082D129 /* sparsetable.h */,
+				221FEE8B132EC8710000097B /* svector.c */,
+				221FEE8C132EC8710000097B /* svector.h */,
 				2223C7A6135364A200601F58 /* trashstack.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,

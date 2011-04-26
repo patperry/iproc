@@ -74,15 +74,8 @@ struct vector *vector_new(ssize_t n);
 struct vector *vector_new_copy(const struct vector *v);
 void vector_free(struct vector *v);
 
-typedef struct _iproc_vector_view iproc_vector_view;
-
-struct _iproc_vector_view {
-	struct vector vector;
-};
-
-iproc_vector_view vector_slice(const struct vector *vector,
-			       ssize_t index, ssize_t dim);
-iproc_vector_view iproc_vector_view_array(const double *array, ssize_t dim);
+struct vector vector_slice(const struct vector *vector,
+			   ssize_t index, ssize_t dim);
 
 /* inline function definitions */
 bool vector_empty(const struct vector *v)

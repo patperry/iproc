@@ -21,8 +21,8 @@ void Riproc_utils_init(DllInfo * info)
 
 SEXP Riproc_hash_numeric(SEXP x)
 {
-	iproc_vector_view view = Riproc_vector_view_sexp(x);
-	size_t hash = vector_hash(&view.vector);
+	struct vector view = Riproc_vector_view_sexp(x);
+	size_t hash = vector_hash(&view);
 	int int_hash = (int)(hash % INT_MAX);
 	return ScalarInteger(int_hash);
 }
@@ -55,8 +55,8 @@ SEXP Riproc_vector_new_copy(struct vector * vector)
 	SEXP Rvector;
 
 	PROTECT(Rvector = NEW_NUMERIC(n));
-	iproc_vector_view view = Riproc_vector_view_sexp(Rvector);
-	vector_assign_copy(&view.vector, vector);
+	struct vector view = Riproc_vector_view_sexp(Rvector);
+	vector_assign_copy(&view, vector);
 	UNPROTECT(1);
 	return Rvector;
 }
@@ -74,11 +74,13 @@ SEXP Riproc_matrix_new_copy(iproc_matrix * matrix)
 	return Rmatrix;
 }
 
-iproc_vector_view Riproc_vector_view_sexp(SEXP Rvector)
+struct vector Riproc_vector_view_sexp(SEXP Rvector)
 {
 	int n = GET_LENGTH(Rvector);
 	double *data = NUMERIC_POINTER(Rvector);
-	return iproc_vector_view_array(data, n);
+	struct vector view;
+	vector_init_view(&view, data, n);
+	return view;
 }
 
 iproc_matrix_view Riproc_matrix_view_sexp(SEXP Rmatrix)
