@@ -11,8 +11,8 @@ static void iproc_design_clear_svectors(struct darray *svectors)
 	if (svectors) {
 		int64_t i, n = darray_size(svectors);
 		for (i = 0; i < n; i++) {
-			iproc_svector *x =
-			    *(iproc_svector **) darray_at(svectors,
+			struct svector *x =
+			    *(struct svector **) darray_at(svectors,
 							  i);
 			svector_free(x);
 		}
@@ -124,7 +124,7 @@ iproc_design *iproc_design_new(struct actors *senders,
 
 	if (!(darray_init(&design->vars, sizeof(iproc_design_var *))
 	      && darray_init(&design->ctxs, sizeof(iproc_design_ctx *))
-	      && darray_init(&design->svectors, sizeof(iproc_svector *)))) {
+	      && darray_init(&design->svectors, sizeof(struct svector *)))) {
 		iproc_design_free(design);
 		design = NULL;
 	}
@@ -199,7 +199,7 @@ static void
 iproc_design_muls0_reffects(double alpha,
 			    iproc_trans trans,
 			    const iproc_design * design,
-			    const iproc_svector * x, struct vector *y)
+			    const struct svector * x, struct vector *y)
 {
 	if (!design->has_reffects)
 		return;
@@ -282,7 +282,7 @@ static void
 iproc_design_muls0_static(double alpha,
 			  iproc_trans trans,
 			  const iproc_design * design,
-			  int64_t isend, const iproc_svector * x,
+			  int64_t isend, const struct svector * x,
 			  struct vector *y)
 {
 	if (design->nstatic == 0)
@@ -379,7 +379,7 @@ iproc_design_muls0(double alpha,
 		   iproc_trans trans,
 		   const iproc_design * design,
 		   int64_t isend,
-		   const iproc_svector * x, double beta, struct vector *y)
+		   const struct svector * x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);

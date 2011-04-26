@@ -63,12 +63,12 @@ struct _iproc_sloglik {
 	bool grad_cached;
 
 	int64_t nsend;
-	iproc_svector *nrecv;
-	iproc_svector *dxobs;
+	struct svector *nrecv;
+	struct svector *dxobs;
 
 	double gamma;
-	iproc_svector *dp;
-	iproc_svector *dxbar;
+	struct svector *dp;
+	struct svector *dxbar;
 };
 
 iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend);

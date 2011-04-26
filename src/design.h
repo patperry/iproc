@@ -114,7 +114,7 @@ struct _iproc_design_var {
 /* dx[t,i,j] */
 struct _iproc_design_dx {
 	int64_t jrecv;		// NOTE: layout is important here
-	iproc_svector *dx;
+	struct svector *dx;
 };
 
 void iproc_design_var_init(iproc_design_var * var,
@@ -143,7 +143,7 @@ void iproc_design_muls0(double alpha,
 			iproc_trans trans,
 			const iproc_design * design,
 			int64_t isend,
-			const iproc_svector * x, double beta, struct vector *y);
+			const struct svector *x, double beta, struct vector *y);
 
 iproc_design_ctx *iproc_design_ctx_new(iproc_design * design,
 				       int64_t isend, iproc_history * h);
@@ -157,27 +157,27 @@ void iproc_design_ctx_mul(double alpha,
 void iproc_design_ctx_muls(double alpha,
 			   iproc_trans trans,
 			   iproc_design_ctx * ctx,
-			   iproc_svector * x, double beta, struct vector *y);
+			   struct svector *x, double beta, struct vector *y);
 
-iproc_svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
+struct svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
 				   int64_t jrecv, bool null_ok);
 
 /* number of nonzero rows in dX */
 int64_t iproc_design_ctx_nnz(iproc_design_ctx * ctx);
 
 /* inz-th nonzero row of dX */
-iproc_svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
+struct svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
 				   int64_t inz, int64_t *jrecv);
 
 void iproc_design_ctx_dmul(double alpha,
 			   iproc_trans trans,
 			   const iproc_design_ctx * ctx,
 			   const struct vector *x, double beta,
-			   iproc_svector * y);
+			   struct svector *y);
 void iproc_design_ctx_dmuls(double alpha, iproc_trans trans,
 			    const iproc_design_ctx * ctx,
-			    const iproc_svector * x, double beta,
-			    iproc_svector * y);
+			    const struct svector *x, double beta,
+			    struct svector *y);
 
 int64_t iproc_design_nsender(const iproc_design * design);
 int64_t iproc_design_nreceiver(const iproc_design * design);

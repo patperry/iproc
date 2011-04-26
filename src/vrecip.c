@@ -58,9 +58,9 @@ design_var_get_dxs(iproc_design_var * var,
 
 		if (pos < nintvl) {
 			/* (jsend, [(pos, +1.0)]) */
-			iproc_svector *dx =
+			struct svector *dx =
 			    iproc_design_ctx_dx(ctx, jsend, false);
-			iproc_svector_inc(dx, offset + pos, 1.0);
+			*svector_at(dx, offset + pos) += 1.0;
 		}
 	}
 }

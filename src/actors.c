@@ -265,7 +265,7 @@ void
 actors_muls(double alpha,
 	    iproc_trans trans,
 	    const struct actors *a,
-	    const iproc_svector * x, double beta, struct vector *y)
+	    const struct svector *x, double beta, struct vector *y)
 {
 	assert(a);
 	assert(x);

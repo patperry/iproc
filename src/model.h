@@ -137,9 +137,9 @@ struct _iproc_model_ctx {
 
 	double gamma;
 	double log_gamma;
-	iproc_svector *deta;
-	iproc_svector *dp;
-	iproc_svector *dxbar;
+	struct svector *deta;
+	struct svector *dp;
+	struct svector *dxbar;
 
 	struct refcount refcount;
 };

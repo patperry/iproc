@@ -89,7 +89,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	int64_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =
 	    iproc_model_ctx_new(sll->model, sll->isend, history);
-	iproc_svector *wt = svector_new(nreceiver);
+	struct svector *wt = svector_new(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
 	double scale0 = 1 - scale1;
@@ -105,10 +105,10 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 		double lp = iproc_model_ctx_logprob(ctx, jrecv[i]);
 		lpbar += (lp - lpbar) / (i + 1);
 
-		iproc_svector_inc(wt, jrecv[i], 1.0);
+		*svector_at(wt, jrecv[i]) += 1.0;
 
 		// update number of receives
-		iproc_svector_inc(sll->nrecv, jrecv[i], 1.0);
+		*svector_at(sll->nrecv, jrecv[i]) += 1.0;
 	}
 
 	// update log likelihood
