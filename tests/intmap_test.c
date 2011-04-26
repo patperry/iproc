@@ -15,7 +15,7 @@ static ssize_t size;
 
 static void empty_setup_fixture(void **state)
 {
-	print_message("empty intset\n");
+	print_message("empty intmap\n");
 	print_message("------------\n");
 }
 
@@ -57,7 +57,6 @@ static void test_add(void **state)
 
 static void test_add_hard(void **state)
 {
-	intptr_t key = 1;
 	char val = 'a';
 	int i, j, n = 100;
 	

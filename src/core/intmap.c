@@ -219,30 +219,36 @@ void *intmap_find(const struct intmap *m, intptr_t key, struct intmap_pos *pos)
 	return NULL;
 }
 
-bool intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
+void * intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
-	assert(val || intmap_elt_size(m) == 0);
 
-	void *pair = alloca(hashset_elt_size(&m->pairs));
-
-	memcpy(pair, &pos->key, sizeof(pos->key));
-	memcpy((char *)pair + m->val_offset, val, m->elt_size);
-	return hashset_insert(&m->pairs, &pos->pairs_pos, pair);
+	void *pair = hashset_insert(&m->pairs, &pos->pairs_pos, &pos->key);
+	void *res = NULL;
+	
+	if (pair) {
+		res = (char *)pair + m->val_offset;
+		if (val)
+			memcpy(res, val, m->elt_size);
+	}
+	return res;
 }
 
-void intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
+void * intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
-	assert(val || intmap_elt_size(m) == 0);
 
-	void *pair = alloca(hashset_elt_size(&m->pairs));
-
-	memcpy(pair, &pos->key, sizeof(pos->key));
-	memcpy((char *)pair + m->val_offset, val, m->elt_size);
-	hashset_replace(&m->pairs, &pos->pairs_pos, pair);
+	void *pair = hashset_replace(&m->pairs, &pos->pairs_pos, &pos->key);
+	void *res = NULL;
+	
+	if (pair) {
+		res = (char *)pair + m->val_offset;
+		if (val)
+			memcpy(res, val, m->elt_size);
+	}
+	return res;
 }
 
 void intmap_erase(struct intmap *m, struct intmap_pos *pos)
