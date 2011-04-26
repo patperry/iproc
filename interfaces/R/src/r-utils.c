@@ -60,7 +60,7 @@ SEXP Riproc_vector_new_copy(struct vector * vector)
 	return Rvector;
 }
 
-SEXP Riproc_matrix_new_copy(struct matrix *matrix)
+SEXP Riproc_matrix_new_copy(struct matrix * matrix)
 {
 	int nrow = (int)matrix_nrow(matrix);
 	int ncol = (int)matrix_ncol(matrix);
@@ -85,7 +85,7 @@ struct vector Riproc_vector_view_sexp(SEXP Rvector)
 struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix)
 {
 	struct matrix view;
-	
+
 	if (isMatrix(Rmatrix)) {
 		int nrow = INTEGER(GET_DIM(Rmatrix))[0];
 		int ncol = INTEGER(GET_DIM(Rmatrix))[1];
@@ -97,6 +97,6 @@ struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix)
 		double *data = NUMERIC_POINTER(Rmatrix);
 		matrix_init_view(&view, data, nrow, ncol);
 	}
-	
+
 	return view;
 }

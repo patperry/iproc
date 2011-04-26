@@ -376,7 +376,8 @@ void *hashset_find(const struct hashset *s, const void *key,
 	return NULL;		// table is full and val is not present
 }
 
-void * hashset_insert(struct hashset *s, struct hashset_pos *pos, const void *val)
+void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
+		     const void *val)
 {
 	assert(!pos->has_existing);
 	assert(val);
@@ -395,15 +396,15 @@ void * hashset_insert(struct hashset *s, struct hashset_pos *pos, const void *va
 	return sparsetable_insert(&s->table, &pos->insert, val);
 }
 
-void * hashset_replace(struct hashset *s, struct hashset_pos *pos,
-		       const void *val)
+void *hashset_replace(struct hashset *s, struct hashset_pos *pos,
+		      const void *val)
 {
 	assert(pos->has_existing);
 	assert(val);
 	assert(hashset_hash(s, val) == pos->hash);
 
 	void *res;
-	
+
 	if (pos->has_insert && sparsetable_insert(&s->table, &pos->insert, val)) {
 		sparsetable_erase(&s->table, &pos->existing);
 		// need to compute the position *after* the erase

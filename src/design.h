@@ -160,14 +160,14 @@ void iproc_design_ctx_muls(double alpha,
 			   struct svector *x, double beta, struct vector *y);
 
 struct svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
-				   int64_t jrecv, bool null_ok);
+				    int64_t jrecv, bool null_ok);
 
 /* number of nonzero rows in dX */
 int64_t iproc_design_ctx_nnz(iproc_design_ctx * ctx);
 
 /* inz-th nonzero row of dX */
 struct svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
-				   int64_t inz, int64_t *jrecv);
+				    int64_t inz, int64_t *jrecv);
 
 void iproc_design_ctx_dmul(double alpha,
 			   enum trans_op trans,

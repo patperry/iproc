@@ -171,8 +171,7 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &x, j);
 		vector_init_matrix_col(&dst, &result, j);
-		iproc_design_ctx_mul(1.0, TRANS_NOTRANS, ctx, &col, 0.0,
-				     &dst);
+		iproc_design_ctx_mul(1.0, TRANS_NOTRANS, ctx, &col, 0.0, &dst);
 	}
 
 	iproc_design_ctx_unref(ctx);
@@ -211,8 +210,7 @@ SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	for (j = 0; j < ncol; j++) {
 		vector_init_matrix_col(&col, &x, j);
 		vector_init_matrix_col(&dst, &result, j);
-		iproc_design_ctx_mul(1.0, TRANS_TRANS, ctx, &col, 0.0,
-				     &dst);
+		iproc_design_ctx_mul(1.0, TRANS_TRANS, ctx, &col, 0.0, &dst);
 	}
 
 	iproc_design_ctx_unref(ctx);

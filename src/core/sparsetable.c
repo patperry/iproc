@@ -486,14 +486,14 @@ void *sparsegroup_insert(struct sparsegroup *g,
 		(g->num_buckets - pos->offset) * elt_size);
 	g->num_buckets++;
 	sparsegroup_bmset(g, pos->index);
-	
+
 	void *res = (char *)g->group + pos->offset * elt_size;
-	
+
 	if (val) {
 		memcpy(res, val, elt_size);
 		assert(sparsegroup_contains(g, pos->index, elt_size));
 	}
-	
+
 	return res;
 }
 
@@ -502,12 +502,12 @@ void *sparsegroup_replace(struct sparsegroup *g,
 			  const void *val, size_t elt_size)
 {
 	assert(sparsegroup_bmtest(g, pos->index));
-	
+
 	void *res = (char *)g->group + pos->offset * elt_size;
-	
+
 	if (val)
 		memcpy(res, val, elt_size);
-	
+
 	return res;
 }
 
@@ -897,7 +897,7 @@ void *sparsetable_find(const struct sparsetable *t, ssize_t index,
 }
 
 void *sparsetable_insert(struct sparsetable *t,
-			const struct sparsetable_pos *pos, const void *val)
+			 const struct sparsetable_pos *pos, const void *val)
 {
 	void *res;
 	if ((res = sparsegroup_insert(pos->group, &pos->group_pos, val,

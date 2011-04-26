@@ -83,7 +83,7 @@ void svector_clear(struct svector *v)
 	intmap_clear(&v->map);
 }
 
-ssize_t svector_dim(const struct svector* v)
+ssize_t svector_dim(const struct svector *v)
 {
 	assert(v);
 	return v->dim;
@@ -99,7 +99,7 @@ double svector_get(const struct svector *v, ssize_t i)
 	return *(double *)intmap_lookup_with(&v->map, i, &val0);
 }
 
-bool svector_set(struct svector* v, ssize_t i, double val)
+bool svector_set(struct svector *v, ssize_t i, double val)
 {
 	assert(v);
 	assert(0 <= i);
@@ -112,16 +112,16 @@ double *svector_at(struct svector *v, ssize_t i)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
-	
+
 	struct intmap_pos pos;
 	double zero = 0.0;
 	double *val;
-	
+
 	if ((val = intmap_find(&v->map, i, &pos))) {
 		return val;
 	} else {
 		return intmap_insert(&v->map, &pos, &zero);
-	}	
+	}
 }
 
 void svector_scale(struct svector *v, double scale)
@@ -145,11 +145,11 @@ ssize_t svector_size(const struct svector *v)
 double svector_max(const struct svector *v)
 {
 	assert(v);
-	
+
 	struct svector_iter it;
 	double val;
 	double max = NAN;
-	
+
 	svector_iter_init(v, &it);
 	while (svector_iter_advance(v, &it)) {
 		val = *svector_iter_current(v, &it);
@@ -173,7 +173,7 @@ double svector_dot(const struct svector *x, const struct vector *y)
 	ssize_t i;
 	double dot = 0.0, valx, valy;
 	struct svector_iter itx;
-	
+
 	svector_iter_init(x, &itx);
 	while (svector_iter_advance(x, &itx)) {
 		i = svector_iter_current_index(x, &itx);
@@ -182,7 +182,7 @@ double svector_dot(const struct svector *x, const struct vector *y)
 		dot += valx * valy;
 	}
 	svector_iter_deinit(x, &itx);
-	
+
 	return dot;
 }
 
@@ -195,7 +195,7 @@ void svector_axpy(double scale, const struct svector *x, struct vector *y)
 	struct svector_iter itx;
 	ssize_t i;
 	double val;
-	
+
 	svector_iter_init(x, &itx);
 	while (svector_iter_advance(x, &itx)) {
 		i = svector_iter_current_index(x, &itx);
@@ -225,7 +225,7 @@ double svector_dots(const struct svector *v1, const struct svector *v2)
 		x = v2;
 		y = v1;
 	}
-	
+
 	ssize_t i;
 	double dot = 0.0, valx, valy;
 	struct svector_iter itx;
@@ -242,7 +242,7 @@ double svector_dots(const struct svector *v1, const struct svector *v2)
 	return dot;
 }
 
-void svector_axpys(double scale, const struct svector* x, struct svector *y)
+void svector_axpys(double scale, const struct svector *x, struct svector *y)
 {
 	assert(y);
 	assert(x);
@@ -266,7 +266,7 @@ void svector_printf(const struct svector *v)
 	struct svector_iter it;
 	ssize_t i;
 	double val;
-	
+
 	printf("\nsvector {");
 	printf("\n  dim: %" SSIZE_FMT "", svector_dim(v));
 	printf("\n   nz: {");
@@ -308,7 +308,8 @@ double *svector_iter_current(const struct svector *v, struct svector_iter *it)
 	return intmap_iter_current(&v->map, &it->map_it);
 }
 
-ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter *it)
+ssize_t svector_iter_current_index(const struct svector *v,
+				   struct svector_iter *it)
 {
 	return (ssize_t)intmap_iter_current_key(&v->map, &it->map_it);
 }

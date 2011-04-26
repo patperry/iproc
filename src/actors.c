@@ -206,10 +206,8 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == actors_size(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_size(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(x) == actors_size(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
@@ -270,12 +268,9 @@ actors_muls(double alpha,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || svector_dim(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == actors_size(a));
+	assert(trans != TRANS_NOTRANS || svector_dim(x) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_size(a));
+	assert(trans == TRANS_NOTRANS || svector_dim(x) == actors_size(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
@@ -334,14 +329,10 @@ actors_matmul(double alpha,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || matrix_nrow(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS
-	       || matrix_nrow(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS
-	       || matrix_nrow(x) == actors_size(a));
-	assert(trans == TRANS_NOTRANS
-	       || matrix_nrow(y) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(x) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == actors_size(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == actors_size(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == actors_dim(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 
 	int64_t m = matrix_ncol(x);

@@ -85,7 +85,7 @@ bool sparsetable_resize(struct sparsetable *t, ssize_t n);
 void *sparsetable_find(const struct sparsetable *t, ssize_t index,
 		       struct sparsetable_pos *pos);
 void *sparsetable_insert(struct sparsetable *t,
-			const struct sparsetable_pos *pos, const void *val);
+			 const struct sparsetable_pos *pos, const void *val);
 void *sparsetable_replace(struct sparsetable *t,
 			  const struct sparsetable_pos *pos, const void *val);
 void sparsetable_erase(struct sparsetable *t,

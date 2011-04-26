@@ -235,7 +235,7 @@ static void update_searchdir(iproc_fit * fit)
 
 	if (fit->inv_hess) {
 		matrix_mul(-1.0, TRANS_NOTRANS, fit->inv_hess,
-				 fit->grad, +0.0, s);
+			   fit->grad, +0.0, s);
 	} else {
 		vector_assign_copy(s, fit->grad);
 		double scale = vector_norm(s);

@@ -365,8 +365,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				22597400133D081A0022B52E /* matrix.c */,
-				22597401133D081A0022B52E /* matrix.h */,
 				221C5FEB134E230D0008B25B /* array.c */,
 				221C5FEC134E230D0008B25B /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
@@ -386,6 +384,8 @@
 				221FEE7C132EC8710000097B /* logsumexp.c */,
 				221FEE7D132EC8710000097B /* logsumexp.h */,
 				221C601413511AD80008B25B /* macconfig.h */,
+				22597400133D081A0022B52E /* matrix.c */,
+				22597401133D081A0022B52E /* matrix.h */,
 				221C5FDA134DB9BC0008B25B /* port.h */,
 				22597433133D0BD20022B52E /* pqueue.c */,
 				22597434133D0BD20022B52E /* pqueue.h */,

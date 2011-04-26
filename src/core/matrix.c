@@ -26,7 +26,7 @@ bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol)
 {
 	struct matrix *a;
-	
+
 	if ((a = malloc(sizeof(*a)))) {
 		if (matrix_init(a, nrow, ncol)) {
 			return a;
@@ -40,7 +40,7 @@ bool matrix_init_copy(struct matrix *a, const struct matrix *src)
 {
 	assert(a);
 	assert(src);
-	
+
 	ssize_t nrow = matrix_nrow(src);
 	ssize_t ncol = matrix_ncol(src);
 	if (matrix_init(a, nrow, ncol)) {
@@ -53,7 +53,7 @@ bool matrix_init_copy(struct matrix *a, const struct matrix *src)
 struct matrix *matrix_alloc_copy(const struct matrix *src)
 {
 	struct matrix *a;
-	
+
 	if ((a = malloc(sizeof(*a)))) {
 		if (matrix_init_copy(a, src)) {
 			return a;
@@ -76,13 +76,13 @@ void matrix_free(struct matrix *a)
 	}
 }
 
-
 void matrix_init_view(struct matrix *a, const double *ptr, ssize_t m, ssize_t n)
 {
 	matrix_init_view_with_lda(a, ptr, m, n, MAX(1, m));
 }
 
-void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m, ssize_t n, ssize_t lda)
+void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m,
+			       ssize_t n, ssize_t lda)
 {
 	assert(a);
 	assert(ptr || m == 0 || n == 0);
@@ -96,10 +96,11 @@ void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m, s
 	a->nrow = m;
 	a->ncol = n;
 	a->lda = lda;
-	
+
 }
 
-void matrix_init_view_vector(struct matrix *a, const struct vector *v, ssize_t m, ssize_t n)
+void matrix_init_view_vector(struct matrix *a, const struct vector *v,
+			     ssize_t m, ssize_t n)
 {
 	assert(a);
 	assert(v);
@@ -122,13 +123,12 @@ void matrix_init_slice(struct matrix *a, const struct matrix *parent,
 	assert(n >= 0);
 	assert(i <= matrix_nrow(parent) - m);
 	assert(j <= matrix_ncol(parent) - n);
-	
+
 	const double *ptr = (m > 0 && n > 0) ? matrix_at(parent, i, j) : NULL;
 	ssize_t lda = matrix_lda(parent);
 
 	matrix_init_view_with_lda(a, ptr, m, n, lda);
 }
-
 
 void matrix_init_slice_cols(struct matrix *a, const struct matrix *parent,
 			    ssize_t j, ssize_t n)
@@ -141,7 +141,6 @@ void matrix_init_slice_cols(struct matrix *a, const struct matrix *parent,
 
 	matrix_init_slice(a, parent, 0, j, matrix_nrow(parent), n);
 }
-
 
 ssize_t matrix_nrow(const struct matrix *a)
 {
@@ -215,14 +214,13 @@ void matrix_assign_copy(struct matrix *a, const struct matrix *src)
 
 	if (m == 0 || n == 0)
 		return;
-	
+
 	if (matrix_lda(a) == m && matrix_lda(src) == m) {
 		f77int mn = m * n;
 		f77int one = 1;
 
 		F77_FUNC(dcopy) (&mn, matrix_at(src, 0, 0),
-				 &one, matrix_at(a, 0, 0),
-				 &one);
+				 &one, matrix_at(a, 0, 0), &one);
 	} else {
 		double value;
 
@@ -288,7 +286,7 @@ void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y)
 
 	if (m == 0 || n == 0)
 		return;
-	
+
 	if (matrix_lda(x) == m && matrix_lda(y) == m) {
 		f77int mn = m * n;
 		F77_FUNC(daxpy) (&mn, &alpha,
@@ -298,8 +296,7 @@ void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y)
 		for (j = 0; j < n; j++) {
 			F77_FUNC(daxpy) (&m, &alpha,
 					 matrix_at(x, 0, j), &one,
-					 matrix_at(y, 0, j),
-					 &one);
+					 matrix_at(y, 0, j), &one);
 		}
 	}
 
@@ -351,14 +348,10 @@ void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || vector_dim(x) == matrix_ncol(a));
-	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == matrix_nrow(a));
-	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == matrix_nrow(a));
-	assert(trans == TRANS_NOTRANS
-	       || vector_dim(y) == matrix_ncol(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(x) == matrix_ncol(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(x) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == matrix_ncol(a));
 
 	if (vector_empty(x)) {
 		vector_scale(y, beta);
@@ -387,14 +380,10 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || matrix_nrow(x) == matrix_ncol(a));
-	assert(trans != TRANS_NOTRANS
-	       || matrix_nrow(y) == matrix_nrow(a));
-	assert(trans == TRANS_NOTRANS
-	       || matrix_nrow(x) == matrix_nrow(a));
-	assert(trans == TRANS_NOTRANS
-	       || matrix_nrow(y) == matrix_ncol(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(x) == matrix_ncol(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == matrix_ncol(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 
 	char *ptransa = (trans == TRANS_NOTRANS) ? "N" : "T";
@@ -404,14 +393,14 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 	f77int k = (f77int) ((trans == TRANS_NOTRANS)
 			     ? matrix_ncol(a)
 			     : matrix_nrow(a));
-	
+
 	if (k == 0) {
 		matrix_scale(y, beta);
 		return;
 	} else if (m == 0 || n == 0) {
 		return;
 	}
-	
+
 	void *pa = matrix_at(a, 0, 0);
 	f77int lda = (f77int) matrix_lda(a);
 	void *pb = matrix_at(x, 0, 0);
@@ -425,8 +414,7 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 
 void
 matrix_update1(struct matrix *a,
-		     double alpha, const struct vector *x,
-		     const struct vector *y)
+	       double alpha, const struct vector *x, const struct vector *y)
 {
 	assert(a);
 	assert(x);

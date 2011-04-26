@@ -12,7 +12,7 @@ static void iproc_design_clear_svectors(struct darray *svectors)
 		int64_t i, n = darray_size(svectors);
 		for (i = 0; i < n; i++) {
 			struct svector *x =
-			    *(struct svector **) darray_at(svectors,
+			    *(struct svector **)darray_at(svectors,
 							  i);
 			svector_free(x);
 		}
@@ -201,7 +201,7 @@ static void
 iproc_design_muls0_reffects(double alpha,
 			    enum trans_op trans,
 			    const iproc_design * design,
-			    const struct svector * x, struct vector *y)
+			    const struct svector *x, struct vector *y)
 {
 	if (!design->has_reffects)
 		return;
@@ -214,7 +214,7 @@ iproc_design_muls0_reffects(double alpha,
 		struct svector_iter itx;
 		ssize_t i;
 		double x_i;
-		
+
 		svector_iter_init(x, &itx);
 		while (svector_iter_advance(x, &itx)) {
 			i = svector_iter_current_index(x, &itx);
@@ -257,7 +257,7 @@ iproc_design_mul0_static(double alpha,
 		/* z := alpha t(x) s */
 		struct matrix xmat;
 		matrix_init_view_vector(&xmat, &xsub, p, q);
-		
+
 		matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
 
 		/* y := y + R z */
@@ -269,13 +269,13 @@ iproc_design_mul0_static(double alpha,
 		/* y := y + s \otimes z */
 		struct vector ysub;
 		vector_init_slice(&ysub, y, ix_begin, nstatic);
-		
+
 		struct matrix ymat;
 		matrix_init_view_vector(&ymat, &ysub, p, q);
-		
+
 		struct matrix smat;
 		matrix_init_view_vector(&smat, s, p, 1);
-		
+
 		struct matrix zmat;
 		matrix_init_view_vector(&zmat, z, 1, q);
 
@@ -289,7 +289,7 @@ static void
 iproc_design_muls0_static(double alpha,
 			  enum trans_op trans,
 			  const iproc_design * design,
-			  int64_t isend, const struct svector * x,
+			  int64_t isend, const struct svector *x,
 			  struct vector *y)
 {
 	if (design->nstatic == 0)
@@ -317,13 +317,13 @@ iproc_design_muls0_static(double alpha,
 		imaxdiv_t ij;
 
 		vector_fill(z, 0.0);
-		
+
 		svector_iter_init(x, &itx);
 		while (svector_iter_advance(x, &itx)) {
 			ix = svector_iter_current_index(x, &itx);
 			if (ix < ix_begin || ix >= ix_end)
 				continue;
-			
+
 			ij = imaxdiv(ix - ix_begin, p);
 			i = ij.rem;	/* ix % p */
 			j = ij.quot;	/* ix / p */
@@ -332,7 +332,7 @@ iproc_design_muls0_static(double alpha,
 			*vector_at(z, j) += x_ij * s_i;
 		}
 		svector_iter_deinit(x, &itx);
-		
+
 		vector_scale(z, alpha);
 
 		/* y := y + R z */
@@ -350,7 +350,7 @@ iproc_design_muls0_static(double alpha,
 
 		struct matrix smat;
 		matrix_init_view_vector(&smat, s, p, 1);
-	
+
 		struct matrix zmat;
 		matrix_init_view_vector(&zmat, z, 1, q);
 
@@ -397,7 +397,7 @@ iproc_design_muls0(double alpha,
 		   enum trans_op trans,
 		   const iproc_design * design,
 		   int64_t isend,
-		   const struct svector * x, double beta, struct vector *y)
+		   const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);

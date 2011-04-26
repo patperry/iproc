@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "intmap.h"
 
-DEFINE_HASH_FN(intptr_hash, intptr_t) DEFINE_EQUALS_FN(intptr_equals, intptr_t)
+DEFINE_HASH_FN(intptr_hash, intptr_t)DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 
 bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
@@ -219,14 +219,14 @@ void *intmap_find(const struct intmap *m, intptr_t key, struct intmap_pos *pos)
 	return NULL;
 }
 
-void * intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
+void *intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
 
 	void *pair = hashset_insert(&m->pairs, &pos->pairs_pos, &pos->key);
 	void *res = NULL;
-	
+
 	if (pair) {
 		res = (char *)pair + m->val_offset;
 		if (val)
@@ -235,14 +235,14 @@ void * intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 	return res;
 }
 
-void * intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
+void *intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
 {
 	assert(m);
 	assert(pos);
 
 	void *pair = hashset_replace(&m->pairs, &pos->pairs_pos, &pos->key);
 	void *res = NULL;
-	
+
 	if (pair) {
 		res = (char *)pair + m->val_offset;
 		if (val)

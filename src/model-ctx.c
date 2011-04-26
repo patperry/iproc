@@ -14,7 +14,7 @@ compute_weight_changes(iproc_design_ctx * ctx,
 		       bool has_loops,
 		       struct vector *coefs,
 		       struct vector *log_p0,
-		       struct svector * deta, double *gamma, double *log_gamma)
+		       struct svector *deta, double *gamma, double *log_gamma)
 {
 	/* compute the changes in weights */
 	iproc_design_ctx_dmul(1.0, TRANS_NOTRANS, ctx, coefs, 0.0, deta);
@@ -38,7 +38,7 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	struct svector_iter it;
 	svector_iter_init(deta, &it);
 	while (svector_iter_advance(deta, &it)) {
-			//	for (i = 0; i < nnz; i++) {
+		//      for (i = 0; i < nnz; i++) {
 		ssize_t jrecv = svector_iter_current_index(deta, &it);
 		double lp0 = *vector_at(log_p0, jrecv);
 		double dlw = *svector_iter_current(deta, &it);
@@ -89,14 +89,14 @@ compute_weight_changes(iproc_design_ctx * ctx,
 static void
 compute_active_probs(struct vector *log_p0,
 		     double log_gamma,
-		     struct svector * deta, struct svector * p_active)
+		     struct svector *deta, struct svector *p_active)
 {
 	ssize_t jrecv;
 	double lp0_j, lp_j, deta_j, *p_j;
 	struct svector_iter it;
 
 	svector_assign_copy(p_active, deta);
-	
+
 	svector_iter_init(p_active, &it);
 	while (svector_iter_advance(p_active, &it)) {
 		jrecv = svector_iter_current_index(p_active, &it);
@@ -110,12 +110,12 @@ compute_active_probs(struct vector *log_p0,
 }
 
 static void
-compute_prob_diffs(struct vector *p0, double gamma, struct svector * p_active)
+compute_prob_diffs(struct vector *p0, double gamma, struct svector *p_active)
 {
 	ssize_t jrecv;
 	double p0_j, dp_j, *p_j;
 	struct svector_iter it;
-	
+
 	svector_iter_init(p_active, &it);
 	while (svector_iter_advance(p_active, &it)) {
 		jrecv = svector_iter_current_index(p_active, &it);

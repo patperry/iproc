@@ -23,7 +23,7 @@ static struct svector *iproc_design_var_new(iproc_design * design)
 	struct svector *svector;
 
 	if (n > 0) {
-		svector = *(struct svector **) darray_at(svectors, n - 1);
+		svector = *(struct svector **)darray_at(svectors, n - 1);
 		darray_resize(svectors, n - 1);
 	} else {
 		svector = iproc_design_var_new_alloc(design);
@@ -34,7 +34,7 @@ static struct svector *iproc_design_var_new(iproc_design * design)
 
 // TODO : make static
 static void
-iproc_sdesign_var_free(iproc_design * design, struct svector * svector)
+iproc_sdesign_var_free(iproc_design * design, struct svector *svector)
 {
 	assert(design);
 	struct darray *svectors = &design->svectors;
@@ -188,7 +188,7 @@ void iproc_design_ctx_unref(iproc_design_ctx * ctx)
 }
 
 struct svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
-				   int64_t jrecv, bool null_ok)
+				    int64_t jrecv, bool null_ok)
 {
 	assert(ctx);
 	assert(jrecv >= 0);
@@ -220,7 +220,7 @@ int64_t iproc_design_ctx_nnz(iproc_design_ctx * ctx)
 }
 
 struct svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
-				   int64_t inz, int64_t *jrecv)
+				    int64_t inz, int64_t *jrecv)
 {
 	assert(inz >= 0);
 	assert(inz < iproc_design_ctx_nnz(ctx));
@@ -263,7 +263,7 @@ void
 iproc_design_ctx_muls(double alpha,
 		      enum trans_op trans,
 		      iproc_design_ctx * ctx,
-		      struct svector * x, double beta, struct vector *y)
+		      struct svector *x, double beta, struct vector *y)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -290,7 +290,7 @@ void
 iproc_design_ctx_dmul(double alpha,
 		      enum trans_op trans,
 		      const iproc_design_ctx * ctx,
-		      const struct vector *x, double beta, struct svector * y)
+		      const struct vector *x, double beta, struct svector *y)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -356,7 +356,7 @@ void
 iproc_design_ctx_dmuls(double alpha,
 		       enum trans_op trans,
 		       const iproc_design_ctx * ctx,
-		       const struct svector * x, double beta, struct svector * y)
+		       const struct svector *x, double beta, struct svector *y)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -403,7 +403,7 @@ iproc_design_ctx_dmuls(double alpha,
 			double xval, diffval;
 			ssize_t ix;
 			double dot = 0.0;
-			
+
 			svector_iter_init(x, &itx);
 			while (svector_iter_advance(x, &itx)) {
 				ix = svector_iter_current_index(x, &itx);
@@ -415,7 +415,7 @@ iproc_design_ctx_dmuls(double alpha,
 				dot += xval * diffval;
 			}
 			svector_iter_deinit(x, &itx);
-			
+
 			*svector_at(y, jrecv) += alpha * dot;
 		}
 	} else {
