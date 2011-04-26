@@ -46,12 +46,4 @@ double *svector_iter_current(const struct svector *v, struct svector_iter *it);
 ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter *it);
 void svector_iter_deinit(const struct svector *v, struct svector_iter *it);
 
-/* deprecated */
-ssize_t iproc_svector_nz(const struct svector * svector, ssize_t inz);
-double iproc_svector_nz_get(const struct svector * svector, ssize_t inz);
-void iproc_svector_nz_set(struct svector * svector, ssize_t inz, double value);
-void iproc_svector_nz_inc(struct svector * svector, ssize_t inz, double inc);
-iproc_vector_view iproc_svector_view_nz(const struct svector * svector);
-
-
 #endif /* _SVECTOR_H */

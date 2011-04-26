@@ -117,7 +117,7 @@ double svector_get(const struct svector *v, ssize_t i)
 	ssize_t ix = svector_find_index(v, i);
 
 	if (ix >= 0) {
-		value = iproc_svector_nz_get(v, ix);
+		value = *(double *)darray_at(&v->value, ix);
 	}
 
 	return value;
@@ -380,52 +380,4 @@ ssize_t svector_iter_current_index(const struct svector *v, struct svector_iter 
 
 void svector_iter_deinit(const struct svector *v, struct svector_iter *it)
 {
-}
-
-
-/* DEPRECATED */
-ssize_t iproc_svector_nz(const struct svector * svector, ssize_t i)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	return *(ssize_t *)darray_at(&svector->index, i);
-}
-
-double iproc_svector_nz_get(const struct svector * svector, ssize_t i)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	return *(double *)darray_at(&svector->value, i);
-}
-
-void iproc_svector_nz_set(struct svector * svector, ssize_t i, double value)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	*(double *)darray_at(&svector->value, i) = value;
-}
-
-void iproc_svector_nz_inc(struct svector * svector, ssize_t i, double inc)
-{
-	assert(svector);
-	assert(0 <= i);
-	assert(i < svector_size(svector));
-	*(double *)darray_at(&svector->value, i) += inc;
-}
-
-iproc_vector_view iproc_svector_view_nz(const struct svector * svector)
-{
-	assert(svector);
-	
-	ssize_t nnz = svector_size(svector);
-	double *px = NULL;
-	
-	if (nnz > 0) {
-		px = darray_front(&svector->value);
-	}
-	
-	return iproc_vector_view_array(px, nnz);
 }

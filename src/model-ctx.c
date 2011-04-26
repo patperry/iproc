@@ -22,9 +22,6 @@ compute_weight_changes(iproc_design_ctx * ctx,
 		svector_set(deta, ctx->isend, -INFINITY);
 	}
 
-	int64_t i, nnz = svector_size(deta);
-	iproc_vector_view deta_nz = iproc_svector_view_nz(deta);
-
 	/* compute the scale for the weight differences */
 	double lwmax = svector_max(deta);
 	double logscale = MAX(0.0, lwmax);
@@ -38,10 +35,13 @@ compute_weight_changes(iproc_design_ctx * ctx,
 	logsumexp_insert(&pos, -logscale);
 
 	/* compute the log sums of the positive and negative differences in weights */
-	for (i = 0; i < nnz; i++) {
-		int64_t jrecv = iproc_svector_nz(deta, i);
+	struct svector_iter it;
+	svector_iter_init(deta, &it);
+	while (svector_iter_advance(deta, &it)) {
+			//	for (i = 0; i < nnz; i++) {
+		ssize_t jrecv = svector_iter_current_index(deta, &it);
 		double lp0 = *vector_at(log_p0, jrecv);
-		double dlw = *vector_at(&deta_nz.vector, i);
+		double dlw = *svector_iter_current(deta, &it);
 		double log_abs_dw;
 
 		/* When w > w0:
@@ -58,6 +58,7 @@ compute_weight_changes(iproc_design_ctx * ctx,
 			logsumexp_insert(&neg, log_abs_dw);
 		}
 	}
+	svector_iter_deinit(deta, &it);
 
 	double log_sum_abs_dw_p = logsumexp_value(&pos);
 	double log_sum_abs_dw_n = logsumexp_value(&neg);
