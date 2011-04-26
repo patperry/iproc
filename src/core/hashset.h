@@ -58,10 +58,10 @@ void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n);
 /* position-based operations */
 void *hashset_find(const struct hashset *s, const void *key,
 		   struct hashset_pos *pos);
-bool hashset_insert(struct hashset *s, struct hashset_pos *pos,
-		    const void *val);
-void hashset_replace(struct hashset *s, struct hashset_pos *pos,
+void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
 		     const void *val);
+void *hashset_replace(struct hashset *s, struct hashset_pos *pos,
+		      const void *val);
 void hashset_erase(struct hashset *s, struct hashset_pos *pos);
 
 /* iteration */
