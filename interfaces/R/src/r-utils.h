@@ -23,6 +23,6 @@ SEXP Riproc_vector_new_copy(struct vector *vector);
 SEXP Riproc_matrix_new_copy(struct matrix *matrix);
 
 struct vector Riproc_vector_view_sexp(SEXP Rvector);
-iproc_matrix_view Riproc_matrix_view_sexp(SEXP Rmatrix);
+struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix);
 
 #endif /* _RIPROC_UTILS_H */

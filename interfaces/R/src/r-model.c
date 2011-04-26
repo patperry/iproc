@@ -144,7 +144,7 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 	SEXP Rprobst;
 
 	PROTECT(Rprobst = allocMatrix(REALSXP, nreceiver, n));
-	iproc_matrix_view probst = Riproc_matrix_view_sexp(Rprobst);
+	struct matrix probst = Riproc_matrix_view_sexp(Rprobst);
 	struct vector dst;
 
 	for (i = 0; i < n; i++) {
@@ -154,7 +154,7 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 
 		iproc_model_ctx *ctx =
 		    iproc_model_ctx_new(model, isend, history);
-		vector_init_matrix_col(&dst, &probst.matrix, i);
+		vector_init_matrix_col(&dst, &probst, i);
 
 		iproc_model_ctx_get_logprobs(ctx, &dst);
 		iproc_model_ctx_unref(ctx);

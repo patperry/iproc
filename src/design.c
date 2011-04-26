@@ -255,10 +255,10 @@ iproc_design_mul0_static(double alpha,
 		vector_init_slice(&xsub, x, ix_begin, nstatic);
 
 		/* z := alpha t(x) s */
-		iproc_matrix_view xmat =
-		    iproc_matrix_view_vector(&xsub, p, q);
-		matrix_mul(alpha, TRANS_TRANS, &xmat.matrix, s, 0.0,
-				 z);
+		struct matrix xmat;
+		matrix_init_view_vector(&xmat, &xsub, p, q);
+		
+		matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
 
 		/* y := y + R z */
 		actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
@@ -269,12 +269,17 @@ iproc_design_mul0_static(double alpha,
 		/* y := y + s \otimes z */
 		struct vector ysub;
 		vector_init_slice(&ysub, y, ix_begin, nstatic);
-		iproc_matrix_view ymat =
-		    iproc_matrix_view_vector(&ysub, p, q);
-		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
-		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
-				    &zmat.matrix, 1.0, &ymat.matrix);
+		
+		struct matrix ymat;
+		matrix_init_view_vector(&ymat, &ysub, p, q);
+		
+		struct matrix smat;
+		matrix_init_view_vector(&smat, s, p, 1);
+		
+		struct matrix zmat;
+		matrix_init_view_vector(&zmat, z, 1, q);
+
+		matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	}
 
 	vector_free(z);
@@ -339,12 +344,17 @@ iproc_design_muls0_static(double alpha,
 		/* y := y + s \otimes z */
 		struct vector ysub;
 		vector_init_slice(&ysub, y, ix_begin, nstatic);
-		iproc_matrix_view ymat =
-		    iproc_matrix_view_vector(&ysub, p, q);
-		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
-		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
-				    &zmat.matrix, 1.0, &ymat.matrix);
+
+		struct matrix ymat;
+		matrix_init_view_vector(&ymat, &ysub, p, q);
+
+		struct matrix smat;
+		matrix_init_view_vector(&smat, s, p, 1);
+	
+		struct matrix zmat;
+		matrix_init_view_vector(&zmat, z, 1, q);
+
+		matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	}
 
 	vector_free(z);

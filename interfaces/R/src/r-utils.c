@@ -6,7 +6,6 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 
-#include "vector.h"
 #include "r-utils.h"
 
 static R_CallMethodDef callMethods[] = {
@@ -68,8 +67,8 @@ SEXP Riproc_matrix_new_copy(struct matrix *matrix)
 	SEXP Rmatrix;
 
 	PROTECT(Rmatrix = allocMatrix(REALSXP, nrow, ncol));
-	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
-	matrix_assign_copy(&view.matrix, matrix);
+	struct matrix view = Riproc_matrix_view_sexp(Rmatrix);
+	matrix_assign_copy(&view, matrix);
 	UNPROTECT(1);
 	return Rmatrix;
 }
@@ -83,17 +82,21 @@ struct vector Riproc_vector_view_sexp(SEXP Rvector)
 	return view;
 }
 
-iproc_matrix_view Riproc_matrix_view_sexp(SEXP Rmatrix)
+struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix)
 {
+	struct matrix view;
+	
 	if (isMatrix(Rmatrix)) {
 		int nrow = INTEGER(GET_DIM(Rmatrix))[0];
 		int ncol = INTEGER(GET_DIM(Rmatrix))[1];
 		double *data = NUMERIC_POINTER(Rmatrix);
-		return iproc_matrix_view_array(data, nrow, ncol);
+		matrix_init_view(&view, data, nrow, ncol);
 	} else {
 		int nrow = GET_LENGTH(Rmatrix);
 		int ncol = 1;
 		double *data = NUMERIC_POINTER(Rmatrix);
-		return iproc_matrix_view_array(data, nrow, ncol);
+		matrix_init_view(&view, data, nrow, ncol);
 	}
+	
+	return view;
 }

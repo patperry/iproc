@@ -12,8 +12,9 @@ bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 	assert(a);
 	assert(nrow >= 0);
 	assert(ncol >= 0);
+	assert(ncol == 0 || nrow <= SSIZE_MAX / ncol);
 
-	if ((a->data = malloc(nrow * ncol * sizeof(a->data[0])))) {
+	if (array_init(&a->array, nrow * ncol, sizeof(double))) {
 		a->nrow = nrow;
 		a->ncol = ncol;
 		a->lda = MAX(1, nrow);
@@ -64,7 +65,7 @@ struct matrix *matrix_alloc_copy(const struct matrix *src)
 
 void matrix_deinit(struct matrix *a)
 {
-	free(a->data);
+	array_deinit(&a->array);
 }
 
 void matrix_free(struct matrix *a)
@@ -74,6 +75,73 @@ void matrix_free(struct matrix *a)
 		free(a);
 	}
 }
+
+
+void matrix_init_view(struct matrix *a, const double *ptr, ssize_t m, ssize_t n)
+{
+	matrix_init_view_with_lda(a, ptr, m, n, MAX(1, m));
+}
+
+void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m, ssize_t n, ssize_t lda)
+{
+	assert(a);
+	assert(ptr || m == 0 || n == 0);
+	assert(m >= 0);
+	assert(n >= 0);
+	assert(lda >= MAX(1, m));
+	assert(n <= SSIZE_MAX / lda);
+
+	ssize_t array_size = lda * n;
+	array_init_view(&a->array, ptr, array_size, sizeof(double));
+	a->nrow = m;
+	a->ncol = n;
+	a->lda = lda;
+	
+}
+
+void matrix_init_view_vector(struct matrix *a, const struct vector *v, ssize_t m, ssize_t n)
+{
+	assert(a);
+	assert(v);
+	assert(m >= 0);
+	assert(n >= 0);
+	assert(m == 0 || n <= vector_dim(v) / m);
+
+	const double *ptr = m > 0 && n > 0 ? vector_front(v) : NULL;
+	matrix_init_view(a, ptr, m, n);
+}
+
+void matrix_init_slice(struct matrix *a, const struct matrix *parent,
+		       ssize_t i, ssize_t j, ssize_t m, ssize_t n)
+{
+	assert(a);
+	assert(parent);
+	assert(i >= 0);
+	assert(j >= 0);
+	assert(m >= 0);
+	assert(n >= 0);
+	assert(i <= matrix_nrow(parent) - m);
+	assert(j <= matrix_ncol(parent) - n);
+	
+	const double *ptr = (m > 0 && n > 0) ? matrix_at(parent, i, j) : NULL;
+	ssize_t lda = matrix_lda(parent);
+
+	matrix_init_view_with_lda(a, ptr, m, n, lda);
+}
+
+
+void matrix_init_slice_cols(struct matrix *a, const struct matrix *parent,
+			    ssize_t j, ssize_t n)
+{
+	assert(a);
+	assert(parent);
+	assert(j >= 0);
+	assert(n >= 0);
+	assert(j <= matrix_ncol(parent) - n);
+
+	matrix_init_slice(a, parent, 0, j, matrix_nrow(parent), n);
+}
+
 
 ssize_t matrix_nrow(const struct matrix *a)
 {
@@ -93,6 +161,16 @@ ssize_t matrix_lda(const struct matrix *a)
 	return a->lda;
 }
 
+ssize_t matrix_size(const struct matrix *a)
+{
+	return matrix_nrow(a) * matrix_ncol(a);
+}
+
+bool matrix_empty(const struct matrix *a)
+{
+	return matrix_nrow(a) == 0 || matrix_ncol(a) == 0;
+}
+
 void matrix_fill(struct matrix *a, double value)
 {
 	assert(a);
@@ -108,7 +186,7 @@ void matrix_fill(struct matrix *a, double value)
 	}
 }
 
-void matrix_assign_identity(struct matrix *a)
+void matrix_set_identity(struct matrix *a)
 {
 	assert(a);
 
@@ -183,7 +261,7 @@ double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j)
 	assert(0 <= i && i < matrix_nrow(a));
 	assert(0 <= j && j < matrix_ncol(a));
 
-	return (double *)(a->data + (i + j * (matrix_lda(a))));
+	return array_at(&a->array, i + j * matrix_lda(a));
 }
 
 void matrix_add(struct matrix *a, const struct matrix *src)
@@ -265,53 +343,6 @@ void vector_init_matrix_col(struct vector *v, const struct matrix *a, ssize_t j)
 
 	vector_init_view(v, ptr, m);
 
-}
-
-iproc_matrix_view
-iproc_matrix_submatrix(const struct matrix * matrix,
-		       int64_t i, int64_t j, int64_t nrow, int64_t ncol)
-{
-	int64_t lda = matrix_lda(matrix);
-	double *data = nrow > 0 && ncol > 0 ? matrix_at(matrix, i, j) : NULL;
-	return iproc_matrix_view_array_with_lda(data, nrow, ncol, lda);
-}
-
-iproc_matrix_view iproc_matrix_cols(const struct matrix * matrix, int64_t j,
-				    int64_t n)
-{
-	assert(matrix);
-	assert(j + n <= matrix_ncol(matrix));
-
-	int64_t m = matrix_nrow(matrix);
-	return iproc_matrix_submatrix(matrix, 0, j, m, n);
-}
-
-iproc_matrix_view
-iproc_matrix_view_array(const double *data, int64_t nrow, int64_t ncol)
-{
-	assert(data);
-	int64_t lda = MAX(1, nrow);
-	return iproc_matrix_view_array_with_lda(data, nrow, ncol, lda);
-}
-
-iproc_matrix_view
-iproc_matrix_view_array_with_lda(const double *data,
-				 int64_t nrow, int64_t ncol, int64_t lda)
-{
-	assert(lda >= MAX(1, nrow));
-
-	iproc_matrix_view view = { {(double *)data, nrow, ncol, lda } };
-	return view;
-}
-
-iproc_matrix_view
-iproc_matrix_view_vector(const struct vector * vector, int64_t nrow,
-			 int64_t ncol)
-{
-	assert(vector);
-	assert(vector_dim(vector) == nrow * ncol);
-	double *data = vector_empty(vector) ? NULL : vector_front(vector);
-	return iproc_matrix_view_array(data, nrow, ncol);
 }
 
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,

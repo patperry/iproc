@@ -67,14 +67,14 @@ struct actors *Riproc_to_actors(SEXP Ractors)
 
 SEXP Riproc_actors_new(SEXP Rtraits_t)
 {
-	iproc_matrix_view traits_t = Riproc_matrix_view_sexp(Rtraits_t);
-	int n = (int)matrix_ncol(&traits_t.matrix);
+	struct matrix traits_t = Riproc_matrix_view_sexp(Rtraits_t);
+	int n = (int)matrix_ncol(&traits_t);
 
 	if (!(n > 0))
 		error("must specify at least one actor");
 
 	struct vector traits0;
-	vector_init_matrix_col(&traits0, &traits_t.matrix, 0);
+	vector_init_matrix_col(&traits0, &traits_t, 0);
 	ssize_t dim = vector_dim(&traits0);
 
 	struct actors *actors = actors_alloc(dim);
@@ -87,7 +87,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	SEXP Ractors;
 
 	for (i = 0; i < n; i++) {
-		vector_init_matrix_col(&traits, &traits_t.matrix, i);
+		vector_init_matrix_col(&traits, &traits_t, i);
 		if (actors_add(actors, &traits) != i) {
 			actors_free(actors);
 			error
@@ -125,7 +125,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 	SEXP Rxt;
 
 	PROTECT(Rxt = allocMatrix(REALSXP, dim, n));
-	iproc_matrix_view xt = Riproc_matrix_view_sexp(Rxt);
+	struct matrix xt = Riproc_matrix_view_sexp(Rxt);
 	struct vector dst;
 	const struct vector *src;
 
@@ -134,7 +134,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 		if (!(0 <= id && id < size))
 			error("actor id out of range");
 
-		vector_init_matrix_col(&dst, &xt.matrix, i);
+		vector_init_matrix_col(&dst, &xt, i);
 		src = actors_traits(actors, id);
 
 		vector_assign_copy(&dst, src);
@@ -147,25 +147,25 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 {
 	struct actors *actors = Riproc_to_actors(Ractors);
-	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
+	struct matrix view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);
-	int nrow = (int)matrix_nrow(&view.matrix);
-	int ncol = (int)matrix_ncol(&view.matrix);
+	int nrow = (int)matrix_nrow(&view);
+	int ncol = (int)matrix_ncol(&view);
 	SEXP Rresult;
 
 	if (nrow != dim)
 		error("dimension mismatch");
 
 	PROTECT(Rresult = allocMatrix(REALSXP, size, ncol));
-	iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+	struct matrix result = Riproc_matrix_view_sexp(Rresult);
 	struct vector col;
 	struct vector dst;
 
 	int j;
 	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &view.matrix, j);
-		vector_init_matrix_col(&dst, &result.matrix, j);
+		vector_init_matrix_col(&col, &view, j);
+		vector_init_matrix_col(&dst, &result, j);
 		actors_mul(1.0, TRANS_NOTRANS, actors, &col, 0.0, &dst);
 	}
 
@@ -176,25 +176,25 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 {
 	struct actors *actors = Riproc_to_actors(Ractors);
-	iproc_matrix_view view = Riproc_matrix_view_sexp(Rmatrix);
+	struct matrix view = Riproc_matrix_view_sexp(Rmatrix);
 	int dim = (int)actors_dim(actors);
 	int size = (int)actors_size(actors);
-	int nrow = (int)matrix_nrow(&view.matrix);
-	int ncol = (int)matrix_ncol(&view.matrix);
+	int nrow = (int)matrix_nrow(&view);
+	int ncol = (int)matrix_ncol(&view);
 	SEXP Rresult;
 
 	if (nrow != size)
 		error("dimension mismatch");
 
 	PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
-	iproc_matrix_view result = Riproc_matrix_view_sexp(Rresult);
+	struct matrix result = Riproc_matrix_view_sexp(Rresult);
 	struct vector col;
 	struct vector dst;
 
 	int j;
 	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &view.matrix, j);
-		vector_init_matrix_col(&dst, &result.matrix, j);
+		vector_init_matrix_col(&col, &view, j);
+		vector_init_matrix_col(&dst, &result, j);
 		actors_mul(1.0, TRANS_TRANS, actors, &col, 0.0, &dst);
 	}
 
