@@ -204,27 +204,24 @@ iproc_design_muls0_reffects(double alpha,
 	if (!design->has_reffects)
 		return;
 
-	int64_t off = design->ireffects;
-	int64_t dim = design->nreffects;
-	int64_t end = off + dim;
+	ssize_t off = design->ireffects;
+	ssize_t dim = design->nreffects;
+	ssize_t end = off + dim;
 
 	if (trans == IPROC_TRANS_NOTRANS) {
-		int64_t nnz = svector_size(x);
-		int64_t inz = iproc_svector_find_nz(x, off);
-
-		if (inz < 0)
-			inz = ~inz;
-
-		while (inz < nnz) {
-			int64_t i = iproc_svector_nz(x, inz);
-			if (i >= end)
-				break;
-
-			double x_i = iproc_svector_nz_get(x, inz);
-			*vector_at(y, i) += alpha * x_i;
-
-			inz++;
+		struct svector_iter itx;
+		ssize_t i;
+		double x_i;
+		
+		svector_iter_init(x, &itx);
+		while (svector_iter_advance(x, &itx)) {
+			i = svector_iter_current_index(x, &itx);
+			if (off <= i && i < end) {
+				x_i = *svector_iter_current(x, &itx);
+				*vector_at(y, i) += alpha * x_i;
+			}
 		}
+		svector_iter_deinit(x, &itx);
 	} else {
 		iproc_vector_view ysub = vector_slice(y, off, dim);
 		svector_axpy(alpha, x, &ysub.vector);
@@ -303,24 +300,29 @@ iproc_design_muls0_static(double alpha,
 		 *
 		 * z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
 		 */
+
+		struct svector_iter itx;
+		double x_ij, s_i;
+		ssize_t ix, i, j;
+		imaxdiv_t ij;
+
 		vector_fill(z, 0.0);
-		int64_t inz, nnz = svector_size(x);
-		for (inz = 0; inz < nnz; inz++) {
-			int64_t ix = iproc_svector_nz(x, inz);
-
-			if (ix < ix_begin)
+		
+		svector_iter_init(x, &itx);
+		while (svector_iter_advance(x, &itx)) {
+			ix = svector_iter_current_index(x, &itx);
+			if (ix < ix_begin || ix >= ix_end)
 				continue;
-
-			if (ix >= ix_end)
-				break;
-
-			imaxdiv_t ij = imaxdiv(ix - ix_begin, p);
-			int64_t i = ij.rem;	/* ix % p */
-			int64_t j = ij.quot;	/* ix / p */
-			double x_ij = iproc_svector_nz_get(x, inz);
-			double s_i = *vector_at(s, i);
+			
+			ij = imaxdiv(ix - ix_begin, p);
+			i = ij.rem;	/* ix % p */
+			j = ij.quot;	/* ix / p */
+			x_ij = *svector_iter_current(x, &itx);
+			s_i = *vector_at(s, i);
 			*vector_at(z, j) += x_ij * s_i;
 		}
+		svector_iter_deinit(x, &itx);
+		
 		vector_scale(z, alpha);
 
 		/* y := y + R z */

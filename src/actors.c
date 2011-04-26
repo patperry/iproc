@@ -312,13 +312,16 @@ actors_muls(double alpha,
 		 * using the cohort structure.  Below, we assume that
 		 * the sparsity in x is more important.
 		 */
-		ssize_t inz, nnz = svector_size(x);
-		for (inz = 0; inz < nnz; inz++) {
-			id = iproc_svector_nz(x, inz);
+		struct svector_iter itx;
+		svector_iter_init(x, &itx);
+		while (svector_iter_advance(x, &itx)) {
+			id = svector_iter_current_index(x, &itx);
+			entry = *svector_iter_current(x, &itx);
 			row = actors_traits(a, id);
-			entry = iproc_svector_nz_get(x, inz);
 			vector_axpy(alpha * entry, row, y);
+
 		}
+		svector_iter_deinit(x, &itx);
 	}
 }
 

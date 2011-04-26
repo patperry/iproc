@@ -90,34 +90,41 @@ compute_active_probs(struct vector *log_p0,
 		     double log_gamma,
 		     struct svector * deta, struct svector * p_active)
 {
+	ssize_t jrecv;
+	double lp0_j, lp_j, deta_j, *p_j;
+	struct svector_iter it;
+
 	svector_assign_copy(p_active, deta);
-	int64_t i, nnz = svector_size(p_active);
-	iproc_vector_view p_active_nz = iproc_svector_view_nz(p_active);
-
-	for (i = 0; i < nnz; i++) {
-		int64_t jrecv = iproc_svector_nz(p_active, i);
-		double lp0_j = *vector_at(log_p0, jrecv);
-		double deta_j = *vector_at(&p_active_nz.vector, i);
-		double lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
-		*vector_at(&p_active_nz.vector, i) = lp_j;
+	
+	svector_iter_init(p_active, &it);
+	while (svector_iter_advance(p_active, &it)) {
+		jrecv = svector_iter_current_index(p_active, &it);
+		lp0_j = *vector_at(log_p0, jrecv);
+		p_j = svector_iter_current(p_active, &it);
+		deta_j = *p_j;
+		lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
+		*p_j = exp(lp_j);
 	}
-
-	vector_exp(&p_active_nz.vector);
+	svector_iter_deinit(p_active, &it);
 }
 
 static void
 compute_prob_diffs(struct vector *p0, double gamma, struct svector * p_active)
 {
-	int64_t i, nnz = svector_size(p_active);
-	iproc_vector_view p_active_nz = iproc_svector_view_nz(p_active);
+	ssize_t jrecv;
+	double p0_j, dp_j, *p_j;
+	struct svector_iter it;
+	
+	svector_iter_init(p_active, &it);
+	while (svector_iter_advance(p_active, &it)) {
+		jrecv = svector_iter_current_index(p_active, &it);
+		p0_j = *vector_at(p0, jrecv);
+		p_j = svector_iter_current(p_active, &it);
+		dp_j = *p_j - gamma * p0_j;
+		*p_j = dp_j;
 
-	for (i = 0; i < nnz; i++) {
-		int64_t jrecv = iproc_svector_nz(p_active, i);
-		double p0_j = *vector_at(p0, jrecv);
-		double p_j = *vector_at(&p_active_nz.vector, i);
-		double dp_j = p_j - gamma * p0_j;
-		*vector_at(&p_active_nz.vector, i) = dp_j;
 	}
+	svector_iter_deinit(p_active, &it);
 }
 
 static void iproc_model_ctx_free(iproc_model_ctx * ctx)
@@ -274,10 +281,10 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, int64_t jrecv)
 
 	/*
 	   double gamma = ctx->gamma;
-	   double p0 = iproc_vector_get(ctx->group->p0, jrecv);
-	   double dp = iproc_svector_get(ctx->dp, jrecv);
+	   double p0 = *vector_at(ctx->group->p0, jrecv);
+	   double dp = svector_get(ctx->dp, jrecv);
 	   double p = gamma * p0 + dp;
-	   p = IPROC_MAX(0.0, IPROC_MIN(1.0, p));
+	   p = MAX(0.0, MIN(1.0, p));
 	   return log(p);
 	 */
 

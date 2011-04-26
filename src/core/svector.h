@@ -50,7 +50,6 @@ double iproc_svector_nz_get(const struct svector * svector, ssize_t inz);
 void iproc_svector_nz_set(struct svector * svector, ssize_t inz, double value);
 void iproc_svector_nz_inc(struct svector * svector, ssize_t inz, double inc);
 iproc_vector_view iproc_svector_view_nz(const struct svector * svector);
-ssize_t iproc_svector_find_nz(const struct svector * svector, ssize_t i);
 
 
 #endif /* _SVECTOR_H */

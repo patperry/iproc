@@ -399,18 +399,23 @@ iproc_design_ctx_dmuls(double alpha,
 							i);
 			int64_t jrecv = sv->jrecv;
 			struct svector *dx = sv->dx;
-			int64_t inz, nnz = svector_size(x);
+			struct svector_iter itx;
+			double xval, diffval;
+			ssize_t ix;
 			double dot = 0.0;
-			for (inz = 0; inz < nnz; inz++) {
-				int64_t ix = iproc_svector_nz(x, inz);
+			
+			svector_iter_init(x, &itx);
+			while (svector_iter_advance(x, &itx)) {
+				ix = svector_iter_current_index(x, &itx);
 				if (ix < ix_begin || ix >= ix_end)
 					continue;
 
-				double xval = iproc_svector_nz_get(x, inz);
-				double diffval = svector_get(dx, ix);
+				xval = *svector_iter_current(x, &itx);
+				diffval = svector_get(dx, ix);
 				dot += xval * diffval;
 			}
-
+			svector_iter_deinit(x, &itx);
+			
 			*svector_at(y, jrecv) += alpha * dot;
 		}
 	} else {

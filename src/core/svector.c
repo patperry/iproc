@@ -7,14 +7,14 @@
 #include "compare.h"
 #include "svector.h"
 
-DEFINE_COMPARE_AND_EQUALS_FN(ssize_compare, ssize_equals, ssize_t)
+DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
-ssize_t iproc_svector_find_nz(const struct svector * svector, ssize_t i)
+static ssize_t svector_find_index(const struct svector *v, ssize_t i)
 {
-	assert(svector);
+	assert(v);
 	assert(0 <= i);
-	assert(i < svector_dim(svector));
-	ssize_t ix = darray_binary_search(&svector->index,
+	assert(i < svector_dim(v));
+	ssize_t ix = darray_binary_search(&v->index,
 					  &i,
 					  ssize_compare);
 	return ix;
@@ -113,7 +113,7 @@ double svector_get(const struct svector *v, ssize_t i)
 	assert(i < svector_dim(v));
 
 	double value = 0.0;
-	ssize_t ix = iproc_svector_find_nz(v, i);
+	ssize_t ix = svector_find_index(v, i);
 
 	if (ix >= 0) {
 		value = iproc_svector_nz_get(v, ix);
@@ -128,7 +128,7 @@ bool svector_set(struct svector* v, ssize_t i, double val)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	ssize_t ix = iproc_svector_find_nz(v, i);
+	ssize_t ix = svector_find_index(v, i);
 
 	if (ix < 0) {
 		ix = ~ix;
@@ -151,7 +151,7 @@ double *svector_at(struct svector *v, ssize_t i)
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 	
-	ssize_t ix = iproc_svector_find_nz(v, i);
+	ssize_t ix = svector_find_index(v, i);
 	double zero = 0.0;
 	
 	if (ix < 0) {
