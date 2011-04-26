@@ -210,7 +210,7 @@ static void update_hess(iproc_fit * fit)
 		fit->inv_hess = H;
 	} else {
 		struct vector *H_y = vector_new(vector_dim(y));
-		iproc_matrix_mul(1.0, IPROC_TRANS_NOTRANS, H, y, 0.0, H_y);
+		iproc_matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
 
 		double y_H_y = vector_dot(H_y, y);
 		double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
@@ -234,7 +234,7 @@ static void update_searchdir(iproc_fit * fit)
 	struct vector *s = fit->search_dir;
 
 	if (fit->inv_hess) {
-		iproc_matrix_mul(-1.0, IPROC_TRANS_NOTRANS, fit->inv_hess,
+		iproc_matrix_mul(-1.0, TRANS_NOTRANS, fit->inv_hess,
 				 fit->grad, +0.0, s);
 	} else {
 		vector_assign_copy(s, fit->grad);

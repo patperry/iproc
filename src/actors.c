@@ -199,18 +199,18 @@ const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
 	return cohort_traits(actor->cohort);
 }
 
-void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
+void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		const struct vector *x, double beta, struct vector *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, scale;
@@ -226,7 +226,7 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 	}
 
 	hashset_iter_init(&a->cohorts, &it);
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		while (hashset_iter_advance(&a->cohorts, &it)) {
 			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
 								    &it);
@@ -263,20 +263,20 @@ void actors_mul(double alpha, iproc_trans trans, const struct actors *a,
 
 void
 actors_muls(double alpha,
-	    iproc_trans trans,
+	    enum trans_op trans,
 	    const struct actors *a,
 	    const struct svector *x, double beta, struct vector *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || svector_dim(x) == actors_dim(a));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
 	double alpha_dot, entry;
@@ -291,7 +291,7 @@ actors_muls(double alpha,
 		vector_scale(y, beta);
 	}
 
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		hashset_iter_init(&a->cohorts, &it);
 		while (hashset_iter_advance(&a->cohorts, &it)) {
 			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
@@ -327,20 +327,20 @@ actors_muls(double alpha,
 
 void
 actors_matmul(double alpha,
-	      iproc_trans trans,
+	      enum trans_op trans,
 	      const struct actors *a,
 	      const iproc_matrix * x, double beta, iproc_matrix * y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || iproc_matrix_nrow(x) == actors_dim(a));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || iproc_matrix_nrow(y) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || iproc_matrix_nrow(x) == actors_size(a));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || iproc_matrix_nrow(y) == actors_dim(a));
 	assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
 

@@ -135,12 +135,12 @@ int64_t iproc_design_dim(const iproc_design * design);
 void iproc_design_append(iproc_design * design, iproc_design_var * var);
 
 void iproc_design_mul0(double alpha,
-		       iproc_trans trans,
+		       enum trans_op trans,
 		       const iproc_design * design,
 		       int64_t isend,
 		       const struct vector *x, double beta, struct vector *y);
 void iproc_design_muls0(double alpha,
-			iproc_trans trans,
+			enum trans_op trans,
 			const iproc_design * design,
 			int64_t isend,
 			const struct svector *x, double beta, struct vector *y);
@@ -151,11 +151,11 @@ iproc_design_ctx *iproc_design_ctx_ref(iproc_design_ctx * ctx);
 void iproc_design_ctx_unref(iproc_design_ctx * ctx);
 
 void iproc_design_ctx_mul(double alpha,
-			  iproc_trans trans,
+			  enum trans_op trans,
 			  iproc_design_ctx * ctx,
 			  struct vector *x, double beta, struct vector *y);
 void iproc_design_ctx_muls(double alpha,
-			   iproc_trans trans,
+			   enum trans_op trans,
 			   iproc_design_ctx * ctx,
 			   struct svector *x, double beta, struct vector *y);
 
@@ -170,11 +170,11 @@ struct svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
 				   int64_t inz, int64_t *jrecv);
 
 void iproc_design_ctx_dmul(double alpha,
-			   iproc_trans trans,
+			   enum trans_op trans,
 			   const iproc_design_ctx * ctx,
 			   const struct vector *x, double beta,
 			   struct svector *y);
-void iproc_design_ctx_dmuls(double alpha, iproc_trans trans,
+void iproc_design_ctx_dmuls(double alpha, enum trans_op trans,
 			    const iproc_design_ctx * ctx,
 			    const struct svector *x, double beta,
 			    struct svector *y);

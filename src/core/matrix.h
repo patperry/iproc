@@ -5,10 +5,10 @@
 #include "refcount.h"
 #include "vector.h"
 
-typedef struct _iproc_matrix iproc_matrix;
+typedef struct matrix iproc_matrix;
 typedef struct _iproc_matrix_view iproc_matrix_view;
 
-struct _iproc_matrix {
+struct matrix {
 	double *data;
 	int64_t nrow;
 	int64_t ncol;
@@ -17,14 +17,14 @@ struct _iproc_matrix {
 };
 
 struct _iproc_matrix_view {
-	iproc_matrix matrix;
+	struct matrix matrix;
 };
 
-typedef enum _iproc_trans {
-	IPROC_TRANS_NOTRANS,
-	IPROC_TRANS_TRANS,
-	IPROC_TRANS_CONJTRANS
-} iproc_trans;
+enum trans_op {
+	TRANS_NOTRANS,
+	TRANS_TRANS,
+	TRANS_CONJTRANS
+};
 
 iproc_matrix *iproc_matrix_new(int64_t nrow, int64_t ncol);
 iproc_matrix *iproc_matrix_new_copy(const iproc_matrix * matrix);
@@ -65,11 +65,11 @@ iproc_matrix_view iproc_matrix_view_vector(const struct vector *vector,
 					   int64_t nrow, int64_t ncol);
 
 void iproc_matrix_mul(double alpha,
-		      iproc_trans trans,
+		      enum trans_op trans,
 		      const iproc_matrix * matrix,
 		      const struct vector *x, double beta, struct vector *y);
 void iproc_matrix_matmul(double alpha,
-			 iproc_trans trans,
+			 enum trans_op trans,
 			 const iproc_matrix * matrix,
 			 const iproc_matrix * x, double beta, iproc_matrix * y);
 

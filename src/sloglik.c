@@ -115,7 +115,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	sll->f += scale1 * ((-lpbar) - sll->f);
 
 	// update observed variable diffs
-	iproc_design_ctx_dmuls(scale1 / n, IPROC_TRANS_TRANS, ctx->design_ctx,
+	iproc_design_ctx_dmuls(scale1 / n, TRANS_TRANS, ctx->design_ctx,
 			       wt, scale0, sll->dxobs);
 
 	sll->gamma += scale1 * (ctx->gamma - sll->gamma);
@@ -161,7 +161,7 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 	vector_axpy(scale * sll->gamma, group->xbar0, dst_vector);
 
 	// (X[0,i])^T * sum{dP[t,i]}
-	iproc_design_muls0(scale, IPROC_TRANS_TRANS,
+	iproc_design_muls0(scale, TRANS_TRANS,
 			   sll->model->design, sll->isend, sll->dp,
 			   1.0, dst_vector);
 
@@ -169,7 +169,7 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 	svector_axpy(scale, sll->dxbar, dst_vector);
 
 	// - (X[0,i])^T n[i]
-	iproc_design_muls0(-scale / sll->nsend, IPROC_TRANS_TRANS,
+	iproc_design_muls0(-scale / sll->nsend, TRANS_TRANS,
 			   sll->model->design, sll->isend, sll->nrecv,
 			   1.0, dst_vector);
 

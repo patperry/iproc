@@ -17,7 +17,7 @@ compute_weight_changes(iproc_design_ctx * ctx,
 		       struct svector * deta, double *gamma, double *log_gamma)
 {
 	/* compute the changes in weights */
-	iproc_design_ctx_dmul(1.0, IPROC_TRANS_NOTRANS, ctx, coefs, 0.0, deta);
+	iproc_design_ctx_dmul(1.0, TRANS_NOTRANS, ctx, coefs, 0.0, deta);
 	if (!has_loops) {
 		svector_set(deta, ctx->isend, -INFINITY);
 	}
@@ -225,7 +225,7 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, int64_t isend, iproc_history * h)
 	compute_weight_changes(design_ctx, has_loops, coefs, group->log_p0,
 			       ctx->deta, &ctx->gamma, &ctx->log_gamma);
 	compute_active_probs(group->log_p0, ctx->log_gamma, ctx->deta, ctx->dp);
-	iproc_design_ctx_dmuls(1.0, IPROC_TRANS_TRANS, design_ctx, ctx->dp,
+	iproc_design_ctx_dmuls(1.0, TRANS_TRANS, design_ctx, ctx->dp,
 			       0.0, ctx->dxbar);
 	compute_prob_diffs(group->p0, ctx->gamma, ctx->dp);
 }

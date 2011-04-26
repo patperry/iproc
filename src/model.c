@@ -22,7 +22,7 @@ compute_logprobs0(const iproc_design * design,
 	 * multiplication, then unscaling after subtracting of the max value.  This
 	 * shouldn't be necessary in most (all?) real-world situations.
 	 */
-	iproc_design_mul0(1.0, IPROC_TRANS_NOTRANS, design, isend, coefs,
+	iproc_design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs,
 			  0.0, logprobs);
 
 	/* protect against overflow */
@@ -54,7 +54,7 @@ static bool cohort_model_init(struct cohort_model *cm,
 
 	/* compute initial covariate mean */
 	cm->xbar0 = vector_new(dim);
-	iproc_design_mul0(1.0, IPROC_TRANS_TRANS, design, isend, cm->p0,
+	iproc_design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0,
 			  0.0, cm->xbar0);
 
 	return true;

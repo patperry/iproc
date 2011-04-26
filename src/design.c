@@ -176,7 +176,7 @@ void iproc_design_append(iproc_design * design, iproc_design_var * var)
 
 static void
 iproc_design_mul0_reffects(double alpha,
-			   iproc_trans trans,
+			   enum trans_op trans,
 			   const iproc_design * design,
 			   const struct vector *x, struct vector *y)
 {
@@ -186,7 +186,7 @@ iproc_design_mul0_reffects(double alpha,
 	int64_t off = design->ireffects;
 	int64_t dim = design->nreffects;
 
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		struct vector xsub;
 		vector_init_slice(&xsub, x, off, dim);
 		vector_axpy(alpha, &xsub, y);
@@ -199,7 +199,7 @@ iproc_design_mul0_reffects(double alpha,
 
 static void
 iproc_design_muls0_reffects(double alpha,
-			    iproc_trans trans,
+			    enum trans_op trans,
 			    const iproc_design * design,
 			    const struct svector * x, struct vector *y)
 {
@@ -210,7 +210,7 @@ iproc_design_muls0_reffects(double alpha,
 	ssize_t dim = design->nreffects;
 	ssize_t end = off + dim;
 
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		struct svector_iter itx;
 		ssize_t i;
 		double x_i;
@@ -233,7 +233,7 @@ iproc_design_muls0_reffects(double alpha,
 
 static void
 iproc_design_mul0_static(double alpha,
-			 iproc_trans trans,
+			 enum trans_op trans,
 			 const iproc_design * design,
 			 int64_t isend, const struct vector *x,
 			 struct vector *y)
@@ -250,21 +250,21 @@ iproc_design_mul0_static(double alpha,
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_new(q);
 
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		struct vector xsub;
 		vector_init_slice(&xsub, x, ix_begin, nstatic);
 
 		/* z := alpha t(x) s */
 		iproc_matrix_view xmat =
 		    iproc_matrix_view_vector(&xsub, p, q);
-		iproc_matrix_mul(alpha, IPROC_TRANS_TRANS, &xmat.matrix, s, 0.0,
+		iproc_matrix_mul(alpha, TRANS_TRANS, &xmat.matrix, s, 0.0,
 				 z);
 
 		/* y := y + R z */
-		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0, y);
+		actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
 		/* z := alpha t(R) x */
-		actors_mul(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
+		actors_mul(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
 		struct vector ysub;
@@ -273,7 +273,7 @@ iproc_design_mul0_static(double alpha,
 		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix,
+		iproc_matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
 				    &zmat.matrix, 1.0, &ymat.matrix);
 	}
 
@@ -282,7 +282,7 @@ iproc_design_mul0_static(double alpha,
 
 static void
 iproc_design_muls0_static(double alpha,
-			  iproc_trans trans,
+			  enum trans_op trans,
 			  const iproc_design * design,
 			  int64_t isend, const struct svector * x,
 			  struct vector *y)
@@ -300,7 +300,7 @@ iproc_design_muls0_static(double alpha,
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_new(q);
 
-	if (trans == IPROC_TRANS_NOTRANS) {
+	if (trans == TRANS_NOTRANS) {
 		/* z := alpha t(x) s 
 		 *
 		 * z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
@@ -331,10 +331,10 @@ iproc_design_muls0_static(double alpha,
 		vector_scale(z, alpha);
 
 		/* y := y + R z */
-		actors_mul(1.0, IPROC_TRANS_NOTRANS, receivers, z, 1.0, y);
+		actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
 		/* z := alpha t(R) x */
-		actors_muls(alpha, IPROC_TRANS_TRANS, receivers, x, 0.0, z);
+		actors_muls(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
 		struct vector ysub;
@@ -343,7 +343,7 @@ iproc_design_muls0_static(double alpha,
 		    iproc_matrix_view_vector(&ysub, p, q);
 		iproc_matrix_view smat = iproc_matrix_view_vector(s, p, 1);
 		iproc_matrix_view zmat = iproc_matrix_view_vector(z, 1, q);
-		iproc_matrix_matmul(1.0, IPROC_TRANS_NOTRANS, &smat.matrix,
+		iproc_matrix_matmul(1.0, TRANS_NOTRANS, &smat.matrix,
 				    &zmat.matrix, 1.0, &ymat.matrix);
 	}
 
@@ -352,7 +352,7 @@ iproc_design_muls0_static(double alpha,
 
 void
 iproc_design_mul0(double alpha,
-		  iproc_trans trans,
+		  enum trans_op trans,
 		  const iproc_design * design,
 		  int64_t isend,
 		  const struct vector *x, double beta, struct vector *y)
@@ -362,13 +362,13 @@ iproc_design_mul0(double alpha,
 	assert(isend < iproc_design_nsender(design));
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(x) == iproc_design_dim(design));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == iproc_design_nreceiver(design));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == iproc_design_nreceiver(design));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == iproc_design_dim(design));
 
 	/* y := beta y */
@@ -384,7 +384,7 @@ iproc_design_mul0(double alpha,
 
 void
 iproc_design_muls0(double alpha,
-		   iproc_trans trans,
+		   enum trans_op trans,
 		   const iproc_design * design,
 		   int64_t isend,
 		   const struct svector * x, double beta, struct vector *y)
@@ -394,13 +394,13 @@ iproc_design_muls0(double alpha,
 	assert(isend < iproc_design_nsender(design));
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || svector_dim(x) == iproc_design_dim(design));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == iproc_design_nreceiver(design));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == iproc_design_nreceiver(design));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == iproc_design_dim(design));
 
 	/* y := beta y */

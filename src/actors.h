@@ -43,16 +43,16 @@ const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id);
 
 void actors_mul(double alpha,
-		iproc_trans trans,
+		enum trans_op trans,
 		const struct actors *a,
 		const struct vector *x, double beta, struct vector *y);
 void actors_muls(double alpha,
-		 iproc_trans trans,
+		 enum trans_op trans,
 		 const struct actors *a,
 		 const struct svector *x, double beta, struct vector *y);
 
 void actors_matmul(double alpha,
-		   iproc_trans trans,
+		   enum trans_op trans,
 		   const struct actors *a,
 		   const iproc_matrix * x, double beta, iproc_matrix * y);
 

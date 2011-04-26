@@ -304,20 +304,20 @@ iproc_matrix_view_vector(const struct vector * vector, int64_t nrow,
 
 void
 iproc_matrix_mul(double alpha,
-		 iproc_trans trans,
+		 enum trans_op trans,
 		 const iproc_matrix * matrix,
 		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(matrix);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(x) == iproc_matrix_ncol(matrix));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == iproc_matrix_nrow(matrix));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == iproc_matrix_nrow(matrix));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == iproc_matrix_ncol(matrix));
 
 	if (vector_empty(x)) {
@@ -327,7 +327,7 @@ iproc_matrix_mul(double alpha,
 		return;
 	}
 
-	char *ptrans = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
+	char *ptrans = (trans == TRANS_NOTRANS) ? "N" : "T";
 	f77int m = (f77int) iproc_matrix_nrow(matrix);
 	f77int n = (f77int) iproc_matrix_ncol(matrix);
 	void *pa = iproc_matrix_ptr(matrix, 0, 0);
@@ -343,28 +343,28 @@ iproc_matrix_mul(double alpha,
 
 void
 iproc_matrix_matmul(double alpha,
-		    iproc_trans trans,
+		    enum trans_op trans,
 		    const iproc_matrix * matrix,
 		    const iproc_matrix * x, double beta, iproc_matrix * y)
 {
 	assert(matrix);
 	assert(x);
 	assert(y);
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || iproc_matrix_nrow(x) == iproc_matrix_ncol(matrix));
-	assert(trans != IPROC_TRANS_NOTRANS
+	assert(trans != TRANS_NOTRANS
 	       || iproc_matrix_nrow(y) == iproc_matrix_nrow(matrix));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || iproc_matrix_nrow(x) == iproc_matrix_nrow(matrix));
-	assert(trans == IPROC_TRANS_NOTRANS
+	assert(trans == TRANS_NOTRANS
 	       || iproc_matrix_nrow(y) == iproc_matrix_ncol(matrix));
 	assert(iproc_matrix_ncol(x) == iproc_matrix_ncol(y));
 
-	char *ptransa = (trans == IPROC_TRANS_NOTRANS) ? "N" : "T";
+	char *ptransa = (trans == TRANS_NOTRANS) ? "N" : "T";
 	char *ptransb = "N";
 	f77int m = (f77int) iproc_matrix_nrow(y);
 	f77int n = (f77int) iproc_matrix_ncol(y);
-	f77int k = (f77int) ((trans == IPROC_TRANS_NOTRANS)
+	f77int k = (f77int) ((trans == TRANS_NOTRANS)
 			     ? iproc_matrix_ncol(matrix)
 			     : iproc_matrix_nrow(matrix));
 	void *pa = iproc_matrix_ptr(matrix, 0, 0);
