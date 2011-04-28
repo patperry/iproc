@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <stdlib.h>
 #include <cmockery.h>
 #include <yajl/yajl_parse.h> 
 
