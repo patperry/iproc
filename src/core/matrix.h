@@ -47,6 +47,11 @@ double matrix_get(const struct matrix *a, ssize_t i, ssize_t j);
 void matrix_set(struct matrix *a, ssize_t i, ssize_t j, double val);
 double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j);
 
+void matrix_fill_col(struct matrix *a, ssize_t j, double val);
+void matrix_fill_row(struct matrix *a, ssize_t i, double val);
+void matrix_set_row(struct matrix *a, ssize_t i, const double *src);
+void matrix_get_row(const struct matrix *a, ssize_t i, double *dst);
+
 /* informative */
 ssize_t matrix_nrow(const struct matrix *a);
 ssize_t matrix_ncol(const struct matrix *a);

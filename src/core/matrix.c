@@ -262,6 +262,62 @@ double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j)
 	return array_at(&a->array, i + j * matrix_lda(a));
 }
 
+void matrix_fill_col(struct matrix *a, ssize_t j, double val)
+{
+	assert(a);
+	assert(0 <= j && j < matrix_ncol(a));
+	
+	ssize_t i, m = matrix_nrow(a);
+	
+	
+	for (i = 0; i < m; i++) {
+		matrix_set(a, i, j, val);
+	}
+}
+
+void matrix_fill_row(struct matrix *a, ssize_t i, double val)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+
+	ssize_t j, n = matrix_ncol(a);
+		
+	
+	for (j = 0; j < n; j++) {
+		matrix_set(a, i, j, val);
+	}
+}
+
+void matrix_set_row(struct matrix *a, ssize_t i, const double *src)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	assert(src || matrix_ncol(a) == 0);
+
+	f77int n = (f77int)matrix_ncol(a);
+	const double *x = src;
+	f77int incx = 1;	
+	double *y = matrix_at(a, i, 0);
+	f77int incy = (f77int)matrix_lda(a);
+	
+	F77_FUNC(dcopy)(&n, x, &incx, y, &incy);
+}
+
+void matrix_get_row(const struct matrix *a, ssize_t i, double *dst)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	assert(dst || matrix_ncol(a) == 0);
+	
+	f77int n = (f77int)matrix_ncol(a);
+	const double *x = matrix_at(a, i, 0);
+	f77int incx = (f77int)matrix_lda(a);	
+	double *y = dst;
+	f77int incy = 1;
+	
+	F77_FUNC(dcopy)(&n, x, &incx, y, &incy);
+}
+
 void matrix_add(struct matrix *a, const struct matrix *src)
 {
 	matrix_axpy(+1.0, src, a);
