@@ -16,8 +16,8 @@ struct _iproc_loglik {
 	struct darray sloglik_array;
 	struct vector *grad;
 	bool grad_cached;
-	int64_t nsend;
-	int64_t nrecv;
+	ssize_t nsend;
+	ssize_t nrecv;
 	struct refcount refcount;
 };
 
@@ -26,10 +26,10 @@ iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
 void iproc_loglik_unref(iproc_loglik * loglik);
 
 void iproc_loglik_insert(iproc_loglik * loglik,
-			 iproc_history * history, int64_t from, int64_t to);
+			 iproc_history * history, ssize_t from, ssize_t to);
 void iproc_loglik_insertm(iproc_loglik * loglik,
 			  iproc_history * history,
-			  int64_t from, int64_t *to, int64_t nto);
+			  ssize_t from, ssize_t *to, ssize_t nto);
 
 double iproc_loglik_value(iproc_loglik * loglik);
 struct vector *iproc_loglik_grad(iproc_loglik * loglik);

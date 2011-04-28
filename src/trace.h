@@ -34,16 +34,16 @@ typedef struct _iproc_trace iproc_trace;
 
 struct _iproc_event_meta {
 	double time;
-	int64_t attr;
+	ssize_t attr;
 };
 
 struct _iproc_event {
-	int64_t e;
+	ssize_t e;
 	iproc_event_meta meta;
 };
 
 struct _iproc_events {
-	int64_t e;
+	ssize_t e;
 	struct darray meta;
 };
 
@@ -60,17 +60,17 @@ void iproc_trace_unref(iproc_trace * trace);
 
 void iproc_trace_clear(iproc_trace * trace);
 
-void iproc_trace_insert(iproc_trace * trace, int64_t e);
+void iproc_trace_insert(iproc_trace * trace, ssize_t e);
 void iproc_trace_advance_to(iproc_trace * trace, double time);
 
 double iproc_trace_tcur(iproc_trace * trace);
-int64_t iproc_trace_size(iproc_trace * trace);
-iproc_events *iproc_trace_get(iproc_trace * trace, int64_t i);
-iproc_events *iproc_trace_lookup(iproc_trace * trace, int64_t e);
+ssize_t iproc_trace_size(iproc_trace * trace);
+iproc_events *iproc_trace_get(iproc_trace * trace, ssize_t i);
+iproc_events *iproc_trace_lookup(iproc_trace * trace, ssize_t e);
 
-int64_t iproc_events_id(iproc_events * events);
-int64_t iproc_events_size(iproc_events * events);
-iproc_event_meta *iproc_events_get(iproc_events * events, int64_t i);
+ssize_t iproc_events_id(iproc_events * events);
+ssize_t iproc_events_size(iproc_events * events);
+iproc_event_meta *iproc_events_get(iproc_events * events, ssize_t i);
 iproc_event_meta *iproc_events_last(iproc_events * events);
 
 #endif /* _IPROC_TRACE_H */

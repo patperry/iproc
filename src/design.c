@@ -9,7 +9,7 @@
 static void iproc_design_clear_svectors(struct darray *svectors)
 {
 	if (svectors) {
-		int64_t i, n = darray_size(svectors);
+		ssize_t i, n = darray_size(svectors);
 		for (i = 0; i < n; i++) {
 			struct svector *x =
 			    *(struct svector **)darray_at(svectors,
@@ -40,7 +40,7 @@ static void iproc_design_ctx_free_dealloc(iproc_design_ctx * ctx)
 static void iproc_design_ctxs_deinit(struct darray *ctxs)
 {
 	if (ctxs) {
-		int64_t i, n = darray_size(ctxs);
+		ssize_t i, n = darray_size(ctxs);
 		for (i = 0; i < n; i++) {
 			iproc_design_ctx *ctx =
 			    *(iproc_design_ctx **) darray_at(ctxs,
@@ -54,7 +54,7 @@ static void iproc_design_ctxs_deinit(struct darray *ctxs)
 static void iproc_design_vars_deinit(struct darray *vars)
 {
 	if (vars) {
-		int64_t i, n = darray_size(vars);
+		ssize_t i, n = darray_size(vars);
 		for (i = 0; i < n; i++) {
 			iproc_design_var *var =
 			    *(iproc_design_var **) darray_at(vars,
@@ -81,10 +81,10 @@ static void iproc_design_free(iproc_design * design)
 
 void
 iproc_design_var_init(iproc_design_var * var,
-		      int64_t dim,
+		      ssize_t dim,
 		      void (*get_dxs) (iproc_design_var *,
 				       iproc_design_ctx * ctx,
-				       int64_t),
+				       ssize_t),
 		      void (*free) (iproc_design_var *))
 {
 	assert(var);
@@ -106,9 +106,9 @@ iproc_design *iproc_design_new(struct actors *senders,
 	if (!design)
 		return NULL;
 
-	int64_t nreceivers = actors_size(receivers);
-	int64_t p = actors_dim(senders);
-	int64_t q = actors_dim(receivers);
+	ssize_t nreceivers = actors_size(receivers);
+	ssize_t p = actors_dim(senders);
+	ssize_t q = actors_dim(receivers);
 
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
@@ -154,7 +154,7 @@ void iproc_design_unref(iproc_design * design)
 	refcount_put(&design->refcount, iproc_design_release);
 }
 
-int64_t iproc_design_dim(const iproc_design * design)
+ssize_t iproc_design_dim(const iproc_design * design)
 {
 	assert(design);
 	return design->dim;
@@ -183,8 +183,8 @@ iproc_design_mul0_reffects(double alpha,
 	if (!design->has_reffects)
 		return;
 
-	int64_t off = design->ireffects;
-	int64_t dim = design->nreffects;
+	ssize_t off = design->ireffects;
+	ssize_t dim = design->nreffects;
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub;
@@ -235,7 +235,7 @@ static void
 iproc_design_mul0_static(double alpha,
 			 enum trans_op trans,
 			 const iproc_design * design,
-			 int64_t isend, const struct vector *x,
+			 ssize_t isend, const struct vector *x,
 			 struct vector *y)
 {
 	if (design->nstatic == 0)
@@ -243,10 +243,10 @@ iproc_design_mul0_static(double alpha,
 
 	const struct actors *senders = iproc_design_senders(design);
 	const struct actors *receivers = iproc_design_receivers(design);
-	int64_t p = actors_dim(senders);
-	int64_t q = actors_dim(receivers);
-	int64_t ix_begin = design->istatic;
-	int64_t nstatic = design->nstatic;
+	ssize_t p = actors_dim(senders);
+	ssize_t q = actors_dim(receivers);
+	ssize_t ix_begin = design->istatic;
+	ssize_t nstatic = design->nstatic;
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_alloc(q);
 
@@ -289,7 +289,7 @@ static void
 iproc_design_muls0_static(double alpha,
 			  enum trans_op trans,
 			  const iproc_design * design,
-			  int64_t isend, const struct svector *x,
+			  ssize_t isend, const struct svector *x,
 			  struct vector *y)
 {
 	if (design->nstatic == 0)
@@ -297,11 +297,11 @@ iproc_design_muls0_static(double alpha,
 
 	const struct actors *senders = iproc_design_senders(design);
 	const struct actors *receivers = iproc_design_receivers(design);
-	int64_t p = actors_dim(senders);
-	int64_t q = actors_dim(receivers);
-	int64_t ix_begin = design->istatic;
-	int64_t nstatic = design->nstatic;
-	int64_t ix_end = ix_begin + nstatic;
+	ssize_t p = actors_dim(senders);
+	ssize_t q = actors_dim(receivers);
+	ssize_t ix_begin = design->istatic;
+	ssize_t nstatic = design->nstatic;
+	ssize_t ix_end = ix_begin + nstatic;
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_alloc(q);
 
@@ -364,7 +364,7 @@ void
 iproc_design_mul0(double alpha,
 		  enum trans_op trans,
 		  const iproc_design * design,
-		  int64_t isend,
+		  ssize_t isend,
 		  const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
@@ -396,7 +396,7 @@ void
 iproc_design_muls0(double alpha,
 		   enum trans_op trans,
 		   const iproc_design * design,
-		   int64_t isend,
+		   ssize_t isend,
 		   const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
@@ -426,14 +426,14 @@ iproc_design_muls0(double alpha,
 
 /////// make these static ?
 
-int64_t iproc_design_nsender(const iproc_design * design)
+ssize_t iproc_design_nsender(const iproc_design * design)
 {
 	assert(design);
 	const struct actors *senders = iproc_design_senders(design);
 	return actors_size(senders);
 }
 
-int64_t iproc_design_nreceiver(const iproc_design * design)
+ssize_t iproc_design_nreceiver(const iproc_design * design)
 {
 	assert(design);
 	const struct actors *receivers = iproc_design_receivers(design);

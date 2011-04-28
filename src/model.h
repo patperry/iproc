@@ -152,27 +152,27 @@ void iproc_model_unref(iproc_model * model);
 iproc_design *iproc_model_design(iproc_model * model);
 struct vector *iproc_model_coefs(iproc_model * model);
 bool iproc_model_has_loops(iproc_model * model);
-int64_t iproc_model_nsender(iproc_model * model);
-int64_t iproc_model_nreceiver(iproc_model * model);
-int64_t iproc_model_dim(iproc_model * model);
+ssize_t iproc_model_nsender(iproc_model * model);
+ssize_t iproc_model_nreceiver(iproc_model * model);
+ssize_t iproc_model_dim(iproc_model * model);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-iproc_group_model *iproc_model_send_group(iproc_model * model, int64_t isend);
-struct vector *iproc_model_logprobs0(iproc_model * model, int64_t isend);
-struct vector *iproc_model_probs0(iproc_model * model, int64_t isend);
-struct vector *iproc_model_mean0(iproc_model * model, int64_t isend);
+iproc_group_model *iproc_model_send_group(iproc_model * model, ssize_t isend);
+struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend);
+struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend);
+struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend);
 
 iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     int64_t isend, iproc_history * h);
+				     ssize_t isend, iproc_history * h);
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx);
 void iproc_model_ctx_unref(iproc_model_ctx * ctx);
 
 void iproc_model_ctx_set(iproc_model_ctx * ctx,
-			 int64_t isend, iproc_history * h);
+			 ssize_t isend, iproc_history * h);
 
-int64_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx);
-double iproc_model_ctx_prob(iproc_model_ctx * ctx, int64_t jrecv);
-double iproc_model_ctx_logprob(iproc_model_ctx * ctx, int64_t jrecv);
+ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx);
+double iproc_model_ctx_prob(iproc_model_ctx * ctx, ssize_t jrecv);
+double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv);
 void iproc_model_ctx_get_probs(iproc_model_ctx * ctx, struct vector *probs);
 void iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx,
 				  struct vector *logprobs);

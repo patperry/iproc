@@ -65,7 +65,7 @@ SEXP Riproc_from_messages(iproc_messages * msgs)
 	return Rmsgs;
 }
 
-static int64_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
+static ssize_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
 {
 	int i, n = GET_LENGTH(Rsrc);
 	int *src = INTEGER_POINTER(Rsrc);
@@ -78,7 +78,7 @@ static int64_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
 		if (s <= 0)
 			error("'to' values must be positive");
 
-		*(int64_t *)darray_at(dst, i) = s - 1;
+		*(ssize_t *)darray_at(dst, i) = s - 1;
 	}
 
 	if (n > 0) {
@@ -88,10 +88,10 @@ static int64_t *copy_sexp_to_int64(struct darray *dst, SEXP Rsrc)
 	}
 }
 
-static void from_array_copy(int *dst, int64_t *src, int64_t n)
+static void from_array_copy(int *dst, ssize_t *src, ssize_t n)
 {
-	int64_t i;
-	int64_t s;
+	ssize_t i;
+	ssize_t s;
 
 	for (i = 0; i < n; i++) {
 		s = src[i];
@@ -112,12 +112,12 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	double tcur = -INFINITY;
 	double msg_time;
 	int msg_from, msg_nto;
-	int64_t *msg_to;
+	ssize_t *msg_to;
 	int i;
 	iproc_messages *msgs = iproc_messages_new();
 	SEXP Rmsgs, Rmsg_to;
 
-	darray_init(&to_buf, sizeof(int64_t));
+	darray_init(&to_buf, sizeof(ssize_t));
 
 	for (i = 0; i < n; i++) {
 		msg_time = time[i];
@@ -208,7 +208,7 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 {
 	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
 	int i, msg, ntie, nto, n = (int)iproc_messages_size(msgs);
-	int64_t *msg_to;
+	ssize_t *msg_to;
 	SEXP Rto, Rmsg_to;
 	iproc_message_iter *it;
 

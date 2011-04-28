@@ -20,14 +20,14 @@ static void iproc_sloglik_free(iproc_sloglik * sll)
 	}
 }
 
-iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend)
+iproc_sloglik *iproc_sloglik_new(iproc_model * model, ssize_t isend)
 {
 	iproc_sloglik *sll = malloc(sizeof(*sll));
 	if (!sll)
 		return NULL;
 
-	int64_t n = iproc_model_nreceiver(model);
-	int64_t p = iproc_model_dim(model);
+	ssize_t n = iproc_model_nreceiver(model);
+	ssize_t p = iproc_model_dim(model);
 
 	sll->model = iproc_model_ref(model);
 	sll->isend = isend;
@@ -77,16 +77,16 @@ void iproc_sloglik_unref(iproc_sloglik * sll)
 
 void
 iproc_sloglik_insert(iproc_sloglik * sll,
-		     iproc_history * history, int64_t jrecv)
+		     iproc_history * history, ssize_t jrecv)
 {
 	iproc_sloglik_insertm(sll, history, &jrecv, 1);
 }
 
 void
 iproc_sloglik_insertm(iproc_sloglik * sll,
-		      iproc_history * history, int64_t *jrecv, int64_t n)
+		      iproc_history * history, ssize_t *jrecv, ssize_t n)
 {
-	int64_t nreceiver = iproc_model_nreceiver(sll->model);
+	ssize_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =
 	    iproc_model_ctx_new(sll->model, sll->isend, history);
 	struct svector *wt = svector_alloc(nreceiver);
@@ -94,7 +94,7 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	double scale1 = n / ntot;
 	double scale0 = 1 - scale1;
 	double lpbar = 0.0;
-	int64_t i;
+	ssize_t i;
 
 	sll->grad_cached = false;
 

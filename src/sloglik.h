@@ -56,13 +56,13 @@ struct _iproc_sloglik {
 	struct refcount refcount;
 
 	iproc_model *model;
-	int64_t isend;
+	ssize_t isend;
 
 	double f;
 	struct vector *grad;
 	bool grad_cached;
 
-	int64_t nsend;
+	ssize_t nsend;
 	struct svector *nrecv;
 	struct svector *dxobs;
 
@@ -71,14 +71,14 @@ struct _iproc_sloglik {
 	struct svector *dxbar;
 };
 
-iproc_sloglik *iproc_sloglik_new(iproc_model * model, int64_t isend);
+iproc_sloglik *iproc_sloglik_new(iproc_model * model, ssize_t isend);
 iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
 void iproc_sloglik_unref(iproc_sloglik * sll);
 
 void iproc_sloglik_insert(iproc_sloglik * sll,
-			  iproc_history * history, int64_t jrecv);
+			  iproc_history * history, ssize_t jrecv);
 void iproc_sloglik_insertm(iproc_sloglik * sll,
-			   iproc_history * history, int64_t *jrecv, int64_t n);
+			   iproc_history * history, ssize_t *jrecv, ssize_t n);
 
 double iproc_sloglik_value(iproc_sloglik * sll);
 struct vector *iproc_sloglik_grad(iproc_sloglik * sll);

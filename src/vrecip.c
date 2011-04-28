@@ -25,13 +25,13 @@ static void design_var_free(iproc_design_var * var)
 
 static void
 design_var_get_dxs(iproc_design_var * var,
-		   iproc_design_ctx * ctx, int64_t offset)
+		   iproc_design_ctx * ctx, ssize_t offset)
 {
 	iproc_vrecip *v = container_of(var, iproc_vrecip, var);
 	struct darray *intvls = &v->intvls;
-	int64_t nintvl = darray_size(intvls);
+	ssize_t nintvl = darray_size(intvls);
 	iproc_history *history = ctx->history;
-	int64_t isend = ctx->isend;
+	ssize_t isend = ctx->isend;
 
 	if (!history || nintvl == 0)
 		return;
@@ -39,7 +39,7 @@ design_var_get_dxs(iproc_design_var * var,
 	double tcur = iproc_history_tcur(history);
 	iproc_trace *trace = iproc_history_recv(history, isend);
 
-	int64_t i, n = iproc_trace_size(trace);
+	ssize_t i, n = iproc_trace_size(trace);
 	for (i = 0; i < n; i++) {
 		iproc_events *events = iproc_trace_get(trace, i);
 		iproc_event_meta *meta = iproc_events_last(events);
@@ -47,7 +47,7 @@ design_var_get_dxs(iproc_design_var * var,
 		if (!meta)
 			continue;
 
-		int64_t jsend = iproc_events_id(events);
+		ssize_t jsend = iproc_events_id(events);
 		double t = meta->time;
 		double dt = tcur - t;
 		ssize_t pos = darray_binary_search(intvls,
@@ -65,7 +65,7 @@ design_var_get_dxs(iproc_design_var * var,
 	}
 }
 
-iproc_vrecip *iproc_vrecip_new(double *intvls, int64_t n)
+iproc_vrecip *iproc_vrecip_new(double *intvls, ssize_t n)
 {
 	assert(n >= 0);
 	assert(n == 0 || intvls);
@@ -82,7 +82,7 @@ iproc_vrecip *iproc_vrecip_new(double *intvls, int64_t n)
 		iproc_vrecip_free(v);
 		v = NULL;
 	} else {
-		int64_t i;
+		ssize_t i;
 		for (i = 0; i < n; i++) {
 			assert(intvls[i] > 0.0);
 			assert(i == 0 || intvls[i] > intvls[i - 1]);

@@ -6,7 +6,7 @@ typedef int (*compare_fn) (const void *px, const void *py);
 
 /* Example use:
  * 
- * DEFINE_COMPARE_AND_EQUALS_FN(int64_compare, int64_equals, int64_t)
+ * DEFINE_COMPARE_AND_EQUALS_FN(int_compare, int_equals, int)
  */
 
 #define DEFINE_COMPARE_FN(name, t) \

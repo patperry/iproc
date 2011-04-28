@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include "history.h"
 
-static void trace_array_grow(struct darray *array, int64_t n)
+static void trace_array_grow(struct darray *array, ssize_t n)
 {
 	assert(array);
-	int64_t nold = darray_size(array);
+	ssize_t nold = darray_size(array);
 
 	if (n > nold) {
 		darray_resize(array, n);
@@ -18,8 +18,8 @@ static void trace_array_grow(struct darray *array, int64_t n)
 static void trace_array_clear(struct darray *array)
 {
 	assert(array);
-	int64_t n = darray_size(array);
-	int64_t i;
+	ssize_t n = darray_size(array);
+	ssize_t i;
 	iproc_history_trace *ht;
 
 	for (i = 0; i < n; i++) {
@@ -46,7 +46,7 @@ static void trace_array_deinit(struct darray *array)
 }
 
 static iproc_trace *trace_array_get(double tcur,
-				    struct darray *array, int64_t i)
+				    struct darray *array, ssize_t i)
 {
 	assert(array);
 	assert(i >= 0);
@@ -140,7 +140,7 @@ void iproc_history_advance_to(iproc_history * history, double t)
 	history->tcur = t;
 }
 
-void iproc_history_insert(iproc_history * history, int64_t from, int64_t to)
+void iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to)
 {
 	assert(history);
 	assert(from >= 0);
@@ -155,7 +155,7 @@ void iproc_history_insert(iproc_history * history, int64_t from, int64_t to)
 
 void
 iproc_history_insertm(iproc_history * history,
-		      int64_t from, int64_t *to, int64_t nto)
+		      ssize_t from, ssize_t *to, ssize_t nto)
 {
 	assert(history);
 	assert(to || nto == 0);
@@ -168,19 +168,19 @@ iproc_history_insertm(iproc_history * history,
 	}
 }
 
-int64_t iproc_history_nsend(iproc_history * history)
+ssize_t iproc_history_nsend(iproc_history * history)
 {
 	assert(history);
 	return darray_size(&history->send);
 }
 
-int64_t iproc_history_nrecv(iproc_history * history)
+ssize_t iproc_history_nrecv(iproc_history * history)
 {
 	assert(history);
 	return darray_size(&history->recv);
 }
 
-iproc_trace *iproc_history_send(iproc_history * history, int64_t i)
+iproc_trace *iproc_history_send(iproc_history * history, ssize_t i)
 {
 	assert(history);
 	assert(0 <= i);
@@ -188,7 +188,7 @@ iproc_trace *iproc_history_send(iproc_history * history, int64_t i)
 	return trace_array_get(history->tcur, &history->send, i);
 }
 
-iproc_trace *iproc_history_recv(iproc_history * history, int64_t j)
+iproc_trace *iproc_history_recv(iproc_history * history, ssize_t j)
 {
 	assert(history);
 	assert(0 <= j);

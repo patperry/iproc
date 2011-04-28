@@ -139,7 +139,7 @@ static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 }
 
 static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
-						  int64_t isend,
+						  ssize_t isend,
 						  iproc_history * h)
 {
 	assert(model);
@@ -150,8 +150,8 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	if (!ctx)
 		return NULL;
 
-	int64_t nreceiver = iproc_model_nreceiver(model);
-	int64_t dim = iproc_model_dim(model);
+	ssize_t nreceiver = iproc_model_nreceiver(model);
+	ssize_t dim = iproc_model_dim(model);
 
 	ctx->model = iproc_model_ref(model);
 	ctx->design_ctx = NULL;
@@ -173,7 +173,7 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 }
 
 iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     int64_t isend, iproc_history * h)
+				     ssize_t isend, iproc_history * h)
 {
 	assert(model);
 	assert(0 <= isend);
@@ -199,7 +199,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 }
 
 void
-iproc_model_ctx_set(iproc_model_ctx * ctx, int64_t isend, iproc_history * h)
+iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, iproc_history * h)
 {
 	assert(ctx);
 	assert(ctx->model);
@@ -252,15 +252,15 @@ void iproc_model_ctx_unref(iproc_model_ctx * ctx)
 	}
 }
 
-int64_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx)
+ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx)
 {
 	assert(ctx);
 	iproc_model *model = ctx->model;
-	int64_t nreceiver = iproc_model_nreceiver(model);
+	ssize_t nreceiver = iproc_model_nreceiver(model);
 	return nreceiver;
 }
 
-double iproc_model_ctx_prob(iproc_model_ctx * ctx, int64_t jrecv)
+double iproc_model_ctx_prob(iproc_model_ctx * ctx, ssize_t jrecv)
 {
 	assert(ctx);
 	assert(0 <= jrecv);
@@ -274,7 +274,7 @@ double iproc_model_ctx_prob(iproc_model_ctx * ctx, int64_t jrecv)
 /*
  *         log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
-double iproc_model_ctx_logprob(iproc_model_ctx * ctx, int64_t jrecv)
+double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv)
 {
 	assert(ctx);
 	assert(0 <= jrecv);
@@ -313,7 +313,7 @@ iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx, struct vector *logprobs)
 	assert(logprobs);
 	assert(iproc_model_ctx_nreceiver(ctx) == vector_dim(logprobs));
 
-	int64_t j, n = iproc_model_ctx_nreceiver(ctx);
+	ssize_t j, n = iproc_model_ctx_nreceiver(ctx);
 
 	for (j = 0; j < n; j++) {
 		double lp = iproc_model_ctx_logprob(ctx, j);

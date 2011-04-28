@@ -335,8 +335,8 @@ actors_matmul(double alpha,
 	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == actors_dim(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 
-	int64_t m = matrix_ncol(x);
-	int64_t j;
+	ssize_t m = matrix_ncol(x);
+	ssize_t j;
 
 	if (beta == 0) {
 		matrix_fill(y, 0.0);

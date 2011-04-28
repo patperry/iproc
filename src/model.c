@@ -8,7 +8,7 @@
 
 static void
 compute_logprobs0(const iproc_design * design,
-		  int64_t isend,
+		  ssize_t isend,
 		  const struct vector *coefs,
 		  struct vector *logprobs, double *logsumweight)
 {
@@ -152,7 +152,7 @@ fail:
 	return false;
 }
 
-struct cohort_model *iproc_model_send_group(iproc_model * model, int64_t isend)
+struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);
@@ -177,7 +177,7 @@ static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 static void iproc_model_free(iproc_model * model)
 {
 	if (model) {
-		int64_t i, n = darray_size(&model->ctxs);
+		ssize_t i, n = darray_size(&model->ctxs);
 
 		for (i = 0; i < n; i++) {
 			iproc_model_ctx *ctx =
@@ -253,28 +253,28 @@ bool iproc_model_has_loops(iproc_model * model)
 	return model->has_loops;
 }
 
-int64_t iproc_model_nsender(iproc_model * model)
+ssize_t iproc_model_nsender(iproc_model * model)
 {
 	assert(model);
 	iproc_design *design = iproc_model_design(model);
 	return iproc_design_nsender(design);
 }
 
-int64_t iproc_model_nreceiver(iproc_model * model)
+ssize_t iproc_model_nreceiver(iproc_model * model)
 {
 	assert(model);
 	iproc_design *design = iproc_model_design(model);
 	return iproc_design_nreceiver(design);
 }
 
-int64_t iproc_model_dim(iproc_model * model)
+ssize_t iproc_model_dim(iproc_model * model)
 {
 	assert(model);
 	iproc_design *design = iproc_model_design(model);
 	return iproc_design_dim(design);
 }
 
-struct vector *iproc_model_logprobs0(iproc_model * model, int64_t isend)
+struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);
@@ -285,7 +285,7 @@ struct vector *iproc_model_logprobs0(iproc_model * model, int64_t isend)
 	return group->log_p0;
 }
 
-struct vector *iproc_model_probs0(iproc_model * model, int64_t isend)
+struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);
@@ -296,7 +296,7 @@ struct vector *iproc_model_probs0(iproc_model * model, int64_t isend)
 	return group->p0;
 }
 
-struct vector *iproc_model_mean0(iproc_model * model, int64_t isend)
+struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);

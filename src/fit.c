@@ -35,7 +35,7 @@ eval_objective(iproc_loglik * loglik,
 
 static bool iproc_fit_init(iproc_fit * fit)
 {
-	int64_t dim = iproc_model_dim(fit->model);
+	ssize_t dim = iproc_model_dim(fit->model);
 
 	fit->inv_hess = NULL;
 	fit->x0 = vector_alloc(dim);
@@ -199,7 +199,7 @@ static void update_hess(iproc_fit * fit)
 			scale = s_y / s_s;
 		}
 
-		int64_t i, n = vector_dim(y);
+		ssize_t i, n = vector_dim(y);
 		H = matrix_alloc(n, n);
 		matrix_fill(H, 0.0);
 
@@ -239,7 +239,7 @@ static void update_searchdir(iproc_fit * fit)
 	} else {
 		vector_assign_copy(s, fit->grad);
 		double scale = vector_norm(s);
-		int64_t i, n = vector_dim(s);
+		ssize_t i, n = vector_dim(s);
 
 		if (scale != 0) {
 			for (i = 0; i < n; i++) {

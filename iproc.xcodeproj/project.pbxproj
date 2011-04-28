@@ -133,8 +133,6 @@
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
 		22A88EBC135E6B6A006FE604 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
 		22A88EBD135E6B6A006FE604 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A88EBB135E6B6A006FE604 /* hashset.h */; };
-		22B64EC61367CCAA0024B06D /* frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B64EC41367CCAA0024B06D /* frame.c */; };
-		22B64EC71367CCAA0024B06D /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B64EC51367CCAA0024B06D /* frame.h */; };
 		22C67AA61354FCC8006A81E8 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
 		22C67AA71354FCC8006A81E8 /* cohort.h in Headers */ = {isa = PBXBuildFile; fileRef = 22C67AA51354FCC7006A81E8 /* cohort.h */; };
 		22D2DD6B136929100048244C /* yajl_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD57136929100048244C /* yajl_alloc.h */; };
@@ -359,8 +357,6 @@
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
 		22A88EBA135E6B6A006FE604 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
 		22A88EBB135E6B6A006FE604 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
-		22B64EC41367CCAA0024B06D /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
-		22B64EC51367CCAA0024B06D /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; };
 		22C67AA41354FCC6006A81E8 /* cohort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cohort.c; path = src/cohort.c; sourceTree = "<group>"; };
 		22C67AA51354FCC7006A81E8 /* cohort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cohort.h; path = src/cohort.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -533,8 +529,9 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				22B64EC41367CCAA0024B06D /* frame.c */,
-				22B64EC51367CCAA0024B06D /* frame.h */,
+				22597410133D0AFB0022B52E /* message-iter.c */,
+				22597411133D0AFB0022B52E /* messages.c */,
+				22597412133D0AFB0022B52E /* messages.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
 				22C67AA41354FCC6006A81E8 /* cohort.c */,
@@ -548,9 +545,6 @@
 				2259740D133D0AFB0022B52E /* history.h */,
 				2259740E133D0AFB0022B52E /* loglik.c */,
 				2259740F133D0AFB0022B52E /* loglik.h */,
-				22597410133D0AFB0022B52E /* message-iter.c */,
-				22597411133D0AFB0022B52E /* messages.c */,
-				22597412133D0AFB0022B52E /* messages.h */,
 				22597413133D0AFB0022B52E /* model-ctx.c */,
 				22597414133D0AFB0022B52E /* model.c */,
 				22597415133D0AFB0022B52E /* model.h */,
@@ -751,7 +745,6 @@
 				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
 				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
 				22A88EBD135E6B6A006FE604 /* hashset.h in Headers */,
-				22B64EC71367CCAA0024B06D /* frame.h in Headers */,
 				22D2DD6B136929100048244C /* yajl_alloc.h in Headers */,
 				22D2DD6D136929100048244C /* yajl_buf.h in Headers */,
 				22D2DD6E136929100048244C /* yajl_bytestack.h in Headers */,
@@ -1063,7 +1056,6 @@
 				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
 				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
 				22A88EBC135E6B6A006FE604 /* hashset.c in Sources */,
-				22B64EC61367CCAA0024B06D /* frame.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -27,7 +27,7 @@ iproc_messages *iproc_messages_new()
 	refcount_init(&msgs->refcount);
 
 	if (!(darray_init(&msgs->array, sizeof(iproc_message))
-	      && darray_init(&msgs->recipients, sizeof(int64_t)))) {
+	      && darray_init(&msgs->recipients, sizeof(ssize_t)))) {
 		iproc_messages_free(msgs);
 		msgs = NULL;
 	}
@@ -56,7 +56,7 @@ void iproc_messages_unref(iproc_messages * msgs)
 	}
 }
 
-int64_t iproc_messages_size(iproc_messages * msgs)
+ssize_t iproc_messages_size(iproc_messages * msgs)
 {
 	assert(msgs);
 	return darray_size(&msgs->array);
@@ -69,7 +69,7 @@ void iproc_messages_advance_to(iproc_messages * msgs, double t)
 	msgs->tcur = t;
 }
 
-void iproc_messages_insert(iproc_messages * msgs, int64_t from, int64_t to)
+void iproc_messages_insert(iproc_messages * msgs, ssize_t from, ssize_t to)
 {
 	assert(msgs);
 	assert(from >= 0);
@@ -79,7 +79,7 @@ void iproc_messages_insert(iproc_messages * msgs, int64_t from, int64_t to)
 
 void
 iproc_messages_insertm(iproc_messages * msgs,
-		       int64_t from, int64_t *to, int64_t nto)
+		       ssize_t from, ssize_t *to, ssize_t nto)
 {
 	assert(msgs);
 	assert(from >= 0);
@@ -90,9 +90,9 @@ iproc_messages_insertm(iproc_messages * msgs,
 	struct darray *array = &msgs->array;
 	struct darray *recipients = &msgs->recipients;
 
-	int64_t ito = darray_size(recipients);
+	ssize_t ito = darray_size(recipients);
 	iproc_message m = { time, from, ito, nto };
-	int64_t i;
+	ssize_t i;
 
 	for (i = 0; i < nto; i++) {
 		assert(to[i] >= 0);
@@ -110,19 +110,19 @@ iproc_messages_insertm(iproc_messages * msgs,
 	darray_push_back(array, &m);
 }
 
-int64_t iproc_messages_max_from(iproc_messages * msgs)
+ssize_t iproc_messages_max_from(iproc_messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_from;
 }
 
-int64_t iproc_messages_max_to(iproc_messages * msgs)
+ssize_t iproc_messages_max_to(iproc_messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_to;
 }
 
-int64_t iproc_messages_max_nto(iproc_messages * msgs)
+ssize_t iproc_messages_max_nto(iproc_messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_nto;

@@ -65,7 +65,7 @@ Riproc_fit(SEXP Rmodel0,
 
 		if (trace && it % report == 0) {
 			const char *msg = penalty == 0 ? "" : "(penalized) ";
-			int64_t n = fit->loglik->nrecv;
+			ssize_t n = fit->loglik->nrecv;
 			double dev = 2 * fit->value * n;
 			double dec =
 			    -1 * vector_dot(fit->search_dir, fit->grad) * n;

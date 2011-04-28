@@ -58,25 +58,25 @@ double iproc_message_iter_time(iproc_message_iter * it)
 	return it->message->time;
 }
 
-int64_t iproc_message_iter_ntie(iproc_message_iter * it)
+ssize_t iproc_message_iter_ntie(iproc_message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
 	return it->ntie;
 }
 
-void iproc_message_iter_select(iproc_message_iter * it, int64_t tie)
+void iproc_message_iter_select(iproc_message_iter * it, ssize_t tie)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
 	assert(tie >= 0);
 	assert(tie < iproc_message_iter_ntie(it));
 
-	int64_t i = it->offset + tie;
+	ssize_t i = it->offset + tie;
 	it->message = darray_at(&it->messages->array, i);
 }
 
-int64_t iproc_message_iter_from(iproc_message_iter * it)
+ssize_t iproc_message_iter_from(iproc_message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -84,7 +84,7 @@ int64_t iproc_message_iter_from(iproc_message_iter * it)
 	return it->message->from;
 }
 
-int64_t iproc_message_iter_nto(iproc_message_iter * it)
+ssize_t iproc_message_iter_nto(iproc_message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -92,13 +92,13 @@ int64_t iproc_message_iter_nto(iproc_message_iter * it)
 	return it->message->nto;
 }
 
-int64_t *iproc_message_iter_to(iproc_message_iter * it)
+ssize_t *iproc_message_iter_to(iproc_message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
 
-	int64_t ito = it->message->ito;
-	int64_t *to = darray_at(&it->messages->recipients,
+	ssize_t ito = it->message->ito;
+	ssize_t *to = darray_at(&it->messages->recipients,
 				ito);
 	return to;
 }
@@ -120,27 +120,27 @@ bool iproc_message_iter_next(iproc_message_iter * it)
 	if (iproc_message_iter_finished(it))
 		return false;
 
-	int64_t offset = it->offset + it->ntie;
+	ssize_t offset = it->offset + it->ntie;
 
 	struct darray *messages = &it->messages->array;
 	struct darray *recipients = &it->messages->recipients;
 	iproc_history *history = it->history;
-	int64_t n = darray_size(messages);
+	ssize_t n = darray_size(messages);
 	bool has_next = offset < n;
 
 	if (has_next) {
 		iproc_message *message = darray_at(messages, offset);
 		double time = message[0].time;
-		int64_t ntie_max = n - offset;
-		int64_t ntie = 0;
+		ssize_t ntie_max = n - offset;
+		ssize_t ntie = 0;
 
 		iproc_history_advance_to(history, time);
 
 		while (ntie < ntie_max && message[ntie].time == time) {
-			int64_t msg_from = message[ntie].from;
-			int64_t msg_ito = message[ntie].ito;
-			int64_t *msg_to = darray_at(recipients, msg_ito);
-			int64_t msg_nto = message[ntie].nto;
+			ssize_t msg_from = message[ntie].from;
+			ssize_t msg_ito = message[ntie].ito;
+			ssize_t *msg_to = darray_at(recipients, msg_ito);
+			ssize_t msg_nto = message[ntie].nto;
 
 			iproc_history_insertm(history, msg_from, msg_to,
 					      msg_nto);

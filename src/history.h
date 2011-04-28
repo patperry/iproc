@@ -43,13 +43,13 @@ void iproc_history_clear(iproc_history * history);
 
 double iproc_history_tcur(iproc_history * history);
 void iproc_history_advance_to(iproc_history * history, double t);
-void iproc_history_insert(iproc_history * history, int64_t from, int64_t to);
+void iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to);
 void iproc_history_insertm(iproc_history * history,
-			   int64_t from, int64_t *to, int64_t nto);
+			   ssize_t from, ssize_t *to, ssize_t nto);
 
-int64_t iproc_history_nsend(iproc_history * history);
-int64_t iproc_history_nrecv(iproc_history * history);
-iproc_trace *iproc_history_send(iproc_history * history, int64_t i);
-iproc_trace *iproc_history_recv(iproc_history * history, int64_t j);
+ssize_t iproc_history_nsend(iproc_history * history);
+ssize_t iproc_history_nrecv(iproc_history * history);
+iproc_trace *iproc_history_send(iproc_history * history, ssize_t i);
+iproc_trace *iproc_history_recv(iproc_history * history, ssize_t j);
 
 #endif /* _IPROC_HISTORY_H */

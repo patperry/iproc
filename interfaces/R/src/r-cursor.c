@@ -158,7 +158,7 @@ SEXP Riproc_cursor_to(SEXP Rcursor)
 	for (i = 0; i < n; i++) {
 		iproc_message_iter_select(cursor, i);
 		int msg_nto = (int)iproc_message_iter_nto(cursor);
-		int64_t *msg_to = iproc_message_iter_to(cursor);
+		ssize_t *msg_to = iproc_message_iter_to(cursor);
 		SEXP Rmsg_to;
 
 		PROTECT(Rmsg_to = NEW_INTEGER(msg_nto));

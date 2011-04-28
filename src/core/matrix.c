@@ -189,10 +189,10 @@ void matrix_set_identity(struct matrix *a)
 {
 	assert(a);
 
-	int64_t m = matrix_nrow(a);
-	int64_t n = matrix_ncol(a);
-	int64_t mn = MIN(m, n);
-	int64_t i;
+	ssize_t m = matrix_nrow(a);
+	ssize_t n = matrix_ncol(a);
+	ssize_t mn = MIN(m, n);
+	ssize_t i;
 
 	matrix_fill(a, 0.0);
 	for (i = 0; i < mn; i++) {
@@ -403,8 +403,8 @@ void matrix_scale(struct matrix *a, double scale)
 	assert(a);
 
 	struct vector col;
-	int64_t n = matrix_ncol(a);
-	int64_t j;
+	ssize_t n = matrix_ncol(a);
+	ssize_t j;
 
 	for (j = 0; j < n; j++) {
 		vector_init_matrix_col(&col, a, j);
@@ -419,8 +419,8 @@ void matrix_scale_rows(struct matrix *a, const struct vector *scale)
 	assert(matrix_nrow(a) == vector_dim(scale));
 
 	struct vector col;
-	int64_t n = matrix_ncol(a);
-	int64_t j;
+	ssize_t n = matrix_ncol(a);
+	ssize_t j;
 
 	for (j = 0; j < n; j++) {
 		vector_init_matrix_col(&col, a, j);

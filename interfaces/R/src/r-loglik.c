@@ -74,13 +74,13 @@ SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor)
 	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
 	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
 	iproc_history *history = iproc_message_iter_history(cursor);
-	int64_t i, n = iproc_message_iter_ntie(cursor);
+	ssize_t i, n = iproc_message_iter_ntie(cursor);
 
 	for (i = 0; i < n; i++) {
 		iproc_message_iter_select(cursor, i);
-		int64_t msg_from = iproc_message_iter_from(cursor);
-		int64_t *msg_to = iproc_message_iter_to(cursor);
-		int64_t msg_nto = iproc_message_iter_nto(cursor);
+		ssize_t msg_from = iproc_message_iter_from(cursor);
+		ssize_t *msg_to = iproc_message_iter_to(cursor);
+		ssize_t msg_nto = iproc_message_iter_nto(cursor);
 
 		iproc_loglik_insertm(loglik, history, msg_from, msg_to,
 				     msg_nto);

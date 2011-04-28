@@ -10,7 +10,7 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 {
 	if (loglik) {
 		struct darray *array = &loglik->sloglik_array;
-		int64_t i, n = darray_size(array);
+		ssize_t i, n = darray_size(array);
 
 		for (i = 0; i < n; i++) {
 			iproc_sloglik *sll =
@@ -29,7 +29,7 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
 	iproc_design *design = iproc_model_design(model);
-	int64_t nsender = iproc_design_nsender(design);
+	ssize_t nsender = iproc_design_nsender(design);
 
 	if (!loglik)
 		return NULL;
@@ -71,14 +71,14 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, iproc_messages * messages)
 
 	while (iproc_message_iter_next(it)) {
 		iproc_history *history = iproc_message_iter_history(it);
-		int64_t tie, ntie = iproc_message_iter_ntie(it);
+		ssize_t tie, ntie = iproc_message_iter_ntie(it);
 
 		for (tie = 0; tie < ntie; tie++) {
 			iproc_message_iter_select(it, tie);
 
-			int64_t from = iproc_message_iter_from(it);
-			int64_t *to = iproc_message_iter_to(it);
-			int64_t nto = iproc_message_iter_nto(it);
+			ssize_t from = iproc_message_iter_from(it);
+			ssize_t *to = iproc_message_iter_to(it);
+			ssize_t nto = iproc_message_iter_nto(it);
 
 			iproc_loglik_insertm(loglik, history, from, to, nto);
 		}
@@ -110,7 +110,7 @@ void iproc_loglik_unref(iproc_loglik * loglik)
 	}
 }
 
-static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, int64_t isend)
+static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 {
 	struct darray *array = &loglik->sloglik_array;
 	iproc_sloglik *sll = *(iproc_sloglik **) darray_at(array, isend);
@@ -126,7 +126,7 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, int64_t isend)
 
 void
 iproc_loglik_insert(iproc_loglik * loglik,
-		    iproc_history * history, int64_t from, int64_t to)
+		    iproc_history * history, ssize_t from, ssize_t to)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
 	iproc_sloglik_insert(sll, history, to);
@@ -137,7 +137,7 @@ iproc_loglik_insert(iproc_loglik * loglik,
 void
 iproc_loglik_insertm(iproc_loglik * loglik,
 		     iproc_history * history,
-		     int64_t from, int64_t *to, int64_t nto)
+		     ssize_t from, ssize_t *to, ssize_t nto)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
 	iproc_sloglik_insertm(sll, history, to, nto);
@@ -152,7 +152,7 @@ double iproc_loglik_value(iproc_loglik * loglik)
 		return 0.0;
 
 	struct darray *array = &loglik->sloglik_array;
-	int64_t i, n = darray_size(array);
+	ssize_t i, n = darray_size(array);
 	iproc_sloglik *sll;
 	double value = 0.0;
 
@@ -169,8 +169,8 @@ iproc_vector_acc_loglik_grad_nocache(struct vector *dst_vector,
 				     double scale, iproc_loglik * loglik)
 {
 	struct darray *array = &loglik->sloglik_array;
-	int64_t nsend = darray_size(array);
-	int64_t i;
+	ssize_t nsend = darray_size(array);
+	ssize_t i;
 	iproc_sloglik *sll;
 
 	for (i = 0; i < nsend; i++) {
