@@ -64,8 +64,8 @@ iproc_fit *iproc_fit_new(iproc_model * model0,
 	assert(model0);
 	assert(messages);
 	assert(penalty >= 0.0);
-	assert(iproc_messages_max_from(messages) < iproc_model_nsender(model0));
-	assert(iproc_messages_max_to(messages) < iproc_model_nreceiver(model0));
+	assert(messages_max_from(messages) < iproc_model_nsender(model0));
+	assert(messages_max_to(messages) < iproc_model_nreceiver(model0));
 
 	iproc_fit *fit = malloc(sizeof(*fit));
 	if (!fit)

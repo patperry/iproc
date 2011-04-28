@@ -68,30 +68,29 @@ void messages_free(struct messages * msgs)
 	}
 }
 
-ssize_t iproc_messages_size(struct messages * msgs)
+ssize_t messages_size(const struct messages * msgs)
 {
 	assert(msgs);
 	return darray_size(&msgs->message_reps);
 }
 
-void iproc_messages_advance_to(struct messages * msgs, double t)
+void messages_advance_to(struct messages * msgs, double t)
 {
 	assert(msgs);
 	assert(t >= msgs->tcur);
 	msgs->tcur = t;
 }
 
-void iproc_messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
+void messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
 {
 	assert(msgs);
 	assert(from >= 0);
 	assert(to >= 0);
-	iproc_messages_insertm(msgs, from, &to, 1);
+	messages_insertm(msgs, from, &to, 1);
 }
 
-void
-iproc_messages_insertm(struct messages * msgs,
-		       ssize_t from, ssize_t *to, ssize_t nto)
+void messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
+		      ssize_t nto)
 {
 	assert(msgs);
 	assert(from >= 0);
@@ -122,19 +121,19 @@ iproc_messages_insertm(struct messages * msgs,
 	darray_push_back(message_reps, &m);
 }
 
-ssize_t iproc_messages_max_from(struct messages * msgs)
+ssize_t messages_max_from(const struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_from;
 }
 
-ssize_t iproc_messages_max_to(struct messages * msgs)
+ssize_t messages_max_to(const struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_to;
 }
 
-ssize_t iproc_messages_max_nto(struct messages * msgs)
+ssize_t messages_max_nto(const struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_nto;

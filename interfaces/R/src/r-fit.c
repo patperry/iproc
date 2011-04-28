@@ -36,9 +36,9 @@ Riproc_fit(SEXP Rmodel0,
 	bool trace = LOGICAL_VALUE(Rtrace);
 	int report = INTEGER_VALUE(Rreport);
 
-	if (iproc_messages_max_from(messages) >= iproc_model_nsender(model0)) {
+	if (messages_max_from(messages) >= iproc_model_nsender(model0)) {
 		error("message 'from' id outside sender range");
-	} else if (iproc_messages_max_to(messages) >=
+	} else if (messages_max_to(messages) >=
 		   iproc_model_nreceiver(model0)) {
 		error("message 'to' id outside receiver range");
 	} else if (!(penalty >= 0.0 && isfinite(penalty))) {

@@ -1,5 +1,5 @@
-#ifndef _IPROC_MESSAGES_H
-#define _IPROC_MESSAGES_H
+#ifndef _MESSAGES_H
+#define _MESSAGES_H
 
 #include "darray.h"
 #include "history.h"
@@ -22,7 +22,7 @@ struct messages {
 	ssize_t max_nto;
 };
 
-struct message_iter {
+struct messages_iter {
 	struct messages *messages;
 	iproc_history *history;
 	ssize_t offset;
@@ -40,34 +40,34 @@ struct messages *messages_ref(struct messages *msgs);
 void messages_free(struct messages * msgs);
 
 
-ssize_t iproc_messages_size(struct messages * msgs);
-void iproc_messages_advance_to(struct messages * msgs, double t);
+ssize_t messages_size(const struct messages * msgs);
+void messages_advance_to(struct messages * msgs, double t);
 
-void iproc_messages_insert(struct messages * msgs, ssize_t from, ssize_t to);
-void iproc_messages_insertm(struct messages * msgs,
+void messages_insert(struct messages * msgs, ssize_t from, ssize_t to);
+void messages_insertm(struct messages * msgs,
 			    ssize_t from, ssize_t *to, ssize_t nto);
 
-ssize_t iproc_messages_max_from(struct messages * msgs);
-ssize_t iproc_messages_max_to(struct messages * msgs);
-ssize_t iproc_messages_max_nto(struct messages * msgs);
+ssize_t messages_max_from(const struct messages * msgs);
+ssize_t messages_max_to(const struct messages * msgs);
+ssize_t messages_max_nto(const struct messages * msgs);
 
-struct message_iter *iproc_message_iter_new(struct messages * msgs);
-struct message_iter *iproc_message_iter_ref(struct message_iter * it);
-void iproc_message_iter_unref(struct message_iter * it);
+struct messages_iter *messages_iter_alloc(struct messages * msgs);
+struct messages_iter *messages_iter_ref(struct messages_iter * it);
+void messages_iter_free(struct messages_iter * it);
 
-double iproc_message_iter_time(struct message_iter * it);
-ssize_t iproc_message_iter_ntie(struct message_iter * it);
-void iproc_message_iter_select(struct message_iter * it, ssize_t tie);
+double messages_iter_time(struct messages_iter * it);
+ssize_t messages_iter_ntie(struct messages_iter * it);
+void messages_iter_select(struct messages_iter * it, ssize_t tie);
 
-ssize_t iproc_message_iter_from(struct message_iter * it);
-ssize_t iproc_message_iter_nto(struct message_iter * it);
-ssize_t *iproc_message_iter_to(struct message_iter * it);
+ssize_t messages_iter_from(struct messages_iter * it);
+ssize_t messages_iter_nto(struct messages_iter * it);
+ssize_t *messages_iter_to(struct messages_iter * it);
 
-iproc_history *iproc_message_iter_history(struct message_iter * it);
+iproc_history *messages_iter_history(struct messages_iter * it);
 
-void iproc_message_iter_reset(struct message_iter * it);
-bool iproc_message_iter_next(struct message_iter * it);
-bool iproc_message_iter_started(struct message_iter * it);
-bool iproc_message_iter_finished(struct message_iter * it);
+void messages_iter_reset(struct messages_iter * it);
+bool messages_iter_next(struct messages_iter * it);
+bool messages_iter_started(struct messages_iter * it);
+bool messages_iter_finished(struct messages_iter * it);
 
-#endif /* _IPROC_MESSAGES_H */
+#endif /* _MESSAGES_H */

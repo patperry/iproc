@@ -56,10 +56,10 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 {
 	assert(model);
 	assert(!messages
-	       || iproc_messages_max_from(messages) <
+	       || messages_max_from(messages) <
 	       iproc_model_nsender(model));
 	assert(!messages
-	       || iproc_messages_max_to(messages) <
+	       || messages_max_to(messages) <
 	       iproc_model_nreceiver(model));
 
 	iproc_loglik *loglik = iproc_loglik_new_empty(model);
@@ -67,24 +67,24 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 	if (!messages)
 		return loglik;
 
-	struct message_iter *it = iproc_message_iter_new(messages);
+	struct messages_iter *it = messages_iter_alloc(messages);
 
-	while (iproc_message_iter_next(it)) {
-		iproc_history *history = iproc_message_iter_history(it);
-		ssize_t tie, ntie = iproc_message_iter_ntie(it);
+	while (messages_iter_next(it)) {
+		iproc_history *history = messages_iter_history(it);
+		ssize_t tie, ntie = messages_iter_ntie(it);
 
 		for (tie = 0; tie < ntie; tie++) {
-			iproc_message_iter_select(it, tie);
+			messages_iter_select(it, tie);
 
-			ssize_t from = iproc_message_iter_from(it);
-			ssize_t *to = iproc_message_iter_to(it);
-			ssize_t nto = iproc_message_iter_nto(it);
+			ssize_t from = messages_iter_from(it);
+			ssize_t *to = messages_iter_to(it);
+			ssize_t nto = messages_iter_nto(it);
 
 			iproc_loglik_insertm(loglik, history, from, to, nto);
 		}
 	}
 
-	iproc_message_iter_unref(it);
+	messages_iter_free(it);
 	return loglik;
 }
 
