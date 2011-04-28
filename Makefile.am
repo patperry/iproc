@@ -6,7 +6,8 @@ lib_LTLIBRARIES = \
 noinst_LTLIBRARIES = \
 	libcore.la \
 	libf2c.la \
-	libminpack.la
+	libminpack.la \
+	libyajl.la
 
 libiproc_la_SOURCES = \
 	src/actors.c \
@@ -104,6 +105,38 @@ libminpack_la_LIBADD = \
 	$(BLAS_LIBS) \
 	$(LIBS) \
 	$(FLIBS)
+
+libyajl_la_SOURCES = \
+	lib/yajl/yajl_common.h \
+	lib/yajl/yajl_gen.h \
+	lib/yajl/yajl_parse.h \
+	lib/yajl/yajl_tree.h \
+	lib/yajl/yajl_version.h \
+	lib/yajl/api/yajl_common.h \
+	lib/yajl/api/yajl_gen.h \
+	lib/yajl/api/yajl_parse.h \
+	lib/yajl/api/yajl_tree.h \
+	lib/yajl/yajl.c \
+	lib/yajl/yajl_alloc.c \
+	lib/yajl/yajl_alloc.h \
+	lib/yajl/yajl_buf.c \
+	lib/yajl/yajl_buf.h \
+	lib/yajl/yajl_bytestack.h \
+	lib/yajl/yajl_encode.c \
+	lib/yajl/yajl_encode.h \
+	lib/yajl/yajl_gen.c \
+	lib/yajl/yajl_lex.c \
+	lib/yajl/yajl_lex.h \
+	lib/yajl/yajl_parser.c \
+	lib/yajl/yajl_parser.h \
+	lib/yajl/yajl_tree.c \
+	lib/yajl/yajl_version.c
+
+libyajl_la_CPPFLAGS = \
+	-I./lib/ \
+	-I./lib/yajl \
+	$(AM_CPPFLAGS)
+
 
 dist_noinst_DATA = \
 	@RPACKAGE@
@@ -218,6 +251,10 @@ tests_pqueue_test_LDADD    = libcore.la $(cmockery_ldadd)
 check_PROGRAMS += tests/intmap_test
 tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
+
+check_PROGRAMS += tests/actors_test
+tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Ilib $(cmockery_cppflags)
+tests_actors_test_LDADD    = libiproc.la libcore.la libyajl.la $(cmockery_ldadd)
 
 
 TESTS = \
