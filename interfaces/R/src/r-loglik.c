@@ -59,8 +59,8 @@ SEXP Riproc_from_loglik(iproc_loglik * loglik)
 SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 {
 	iproc_model *model = Riproc_to_model(Rmodel);
-	iproc_messages *messages = (Rmessages == NULL_USER_OBJECT
-				    ? NULL : Riproc_to_messages(Rmessages));
+	struct messages *messages = (Rmessages == NULL_USER_OBJECT
+				     ? NULL : Riproc_to_messages(Rmessages));
 	iproc_loglik *loglik = iproc_loglik_new(model, messages);
 	SEXP Rloglik;
 	PROTECT(Rloglik = Riproc_from_loglik(loglik));
@@ -72,7 +72,7 @@ SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor)
 {
 	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 	iproc_history *history = iproc_message_iter_history(cursor);
 	ssize_t i, n = iproc_message_iter_ntie(cursor);
 

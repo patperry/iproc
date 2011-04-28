@@ -28,7 +28,7 @@ Riproc_fit(SEXP Rmodel0,
 	   SEXP Rreltol, SEXP Rabstol, SEXP Rmaxit, SEXP Rtrace, SEXP Rreport)
 {
 	iproc_model *model0 = Riproc_to_model(Rmodel0);
-	iproc_messages *messages = Riproc_to_messages(Rmessages);
+	struct messages *messages = Riproc_to_messages(Rmessages);
 	double penalty = REAL(Rpenalty)[0];
 	double reltol = REAL(Rreltol)[0];
 	double abstol = REAL(Rabstol)[0];

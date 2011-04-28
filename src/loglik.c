@@ -52,7 +52,7 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 	return loglik;
 }
 
-iproc_loglik *iproc_loglik_new(iproc_model * model, iproc_messages * messages)
+iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 {
 	assert(model);
 	assert(!messages
@@ -67,7 +67,7 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, iproc_messages * messages)
 	if (!messages)
 		return loglik;
 
-	iproc_message_iter *it = iproc_message_iter_new(messages);
+	struct message_iter *it = iproc_message_iter_new(messages);
 
 	while (iproc_message_iter_next(it)) {
 		iproc_history *history = iproc_message_iter_history(it);

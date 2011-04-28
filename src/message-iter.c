@@ -5,22 +5,22 @@
 #include <stdlib.h>
 #include "messages.h"
 
-static void iproc_message_iter_free(iproc_message_iter * it)
+static void iproc_message_iter_free(struct message_iter * it)
 {
 	if (it) {
 		iproc_history_unref(it->history);
-		iproc_messages_unref(it->messages);
+		messages_free(it->messages);
 		free(it);
 	}
 }
 
-iproc_message_iter *iproc_message_iter_new(iproc_messages * msgs)
+struct message_iter *iproc_message_iter_new(struct messages * msgs)
 {
-	iproc_message_iter *it = malloc(sizeof(*it));
+	struct message_iter *it = malloc(sizeof(*it));
 	if (!it)
 		return NULL;
 
-	it->messages = iproc_messages_ref(msgs);
+	it->messages = messages_ref(msgs);
 	it->history = iproc_history_new();
 	refcount_init(&it->refcount);
 	iproc_message_iter_reset(it);
@@ -28,7 +28,7 @@ iproc_message_iter *iproc_message_iter_new(iproc_messages * msgs)
 	return it;
 }
 
-iproc_message_iter *iproc_message_iter_ref(iproc_message_iter * it)
+struct message_iter *iproc_message_iter_ref(struct message_iter * it)
 {
 	if (it) {
 		refcount_get(&it->refcount);
@@ -39,33 +39,33 @@ iproc_message_iter *iproc_message_iter_ref(iproc_message_iter * it)
 
 static void iproc_message_iter_release(struct refcount *refcount)
 {
-	iproc_message_iter *it =
-	    container_of(refcount, iproc_message_iter, refcount);
+	struct message_iter *it =
+	    container_of(refcount, struct message_iter, refcount);
 	iproc_message_iter_free(it);
 }
 
-void iproc_message_iter_unref(iproc_message_iter * it)
+void iproc_message_iter_unref(struct message_iter * it)
 {
 	if (it) {
 		refcount_put(&it->refcount, iproc_message_iter_release);
 	}
 }
 
-double iproc_message_iter_time(iproc_message_iter * it)
+double iproc_message_iter_time(struct message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
 	return it->message->time;
 }
 
-ssize_t iproc_message_iter_ntie(iproc_message_iter * it)
+ssize_t iproc_message_iter_ntie(struct message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
 	return it->ntie;
 }
 
-void iproc_message_iter_select(iproc_message_iter * it, ssize_t tie)
+void iproc_message_iter_select(struct message_iter * it, ssize_t tie)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -73,10 +73,10 @@ void iproc_message_iter_select(iproc_message_iter * it, ssize_t tie)
 	assert(tie < iproc_message_iter_ntie(it));
 
 	ssize_t i = it->offset + tie;
-	it->message = darray_at(&it->messages->array, i);
+	it->message = darray_at(&it->messages->message_reps, i);
 }
 
-ssize_t iproc_message_iter_from(iproc_message_iter * it)
+ssize_t iproc_message_iter_from(struct message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -84,7 +84,7 @@ ssize_t iproc_message_iter_from(iproc_message_iter * it)
 	return it->message->from;
 }
 
-ssize_t iproc_message_iter_nto(iproc_message_iter * it)
+ssize_t iproc_message_iter_nto(struct message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -92,7 +92,7 @@ ssize_t iproc_message_iter_nto(iproc_message_iter * it)
 	return it->message->nto;
 }
 
-ssize_t *iproc_message_iter_to(iproc_message_iter * it)
+ssize_t *iproc_message_iter_to(struct message_iter * it)
 {
 	assert(iproc_message_iter_started(it));
 	assert(!iproc_message_iter_finished(it));
@@ -103,7 +103,7 @@ ssize_t *iproc_message_iter_to(iproc_message_iter * it)
 	return to;
 }
 
-void iproc_message_iter_reset(iproc_message_iter * it)
+void iproc_message_iter_reset(struct message_iter * it)
 {
 	if (!it)
 		return;
@@ -115,21 +115,21 @@ void iproc_message_iter_reset(iproc_message_iter * it)
 	it->finished = false;
 }
 
-bool iproc_message_iter_next(iproc_message_iter * it)
+bool iproc_message_iter_next(struct message_iter * it)
 {
 	if (iproc_message_iter_finished(it))
 		return false;
 
 	ssize_t offset = it->offset + it->ntie;
 
-	struct darray *messages = &it->messages->array;
+	struct darray *message_reps = &it->messages->message_reps;
 	struct darray *recipients = &it->messages->recipients;
 	iproc_history *history = it->history;
-	ssize_t n = darray_size(messages);
+	ssize_t n = darray_size(message_reps);
 	bool has_next = offset < n;
 
 	if (has_next) {
-		iproc_message *message = darray_at(messages, offset);
+		struct message_rep *message = darray_at(message_reps, offset);
 		double time = message[0].time;
 		ssize_t ntie_max = n - offset;
 		ssize_t ntie = 0;
@@ -156,7 +156,7 @@ bool iproc_message_iter_next(iproc_message_iter * it)
 	return has_next;
 }
 
-bool iproc_message_iter_started(iproc_message_iter * it)
+bool iproc_message_iter_started(struct message_iter * it)
 {
 	if (!it)
 		return false;
@@ -164,7 +164,7 @@ bool iproc_message_iter_started(iproc_message_iter * it)
 	return it->message != NULL;
 }
 
-bool iproc_message_iter_finished(iproc_message_iter * it)
+bool iproc_message_iter_finished(struct message_iter * it)
 {
 	if (!it)
 		return true;
@@ -172,7 +172,7 @@ bool iproc_message_iter_finished(iproc_message_iter * it)
 	return it->finished;
 }
 
-iproc_history *iproc_message_iter_history(iproc_message_iter * it)
+iproc_history *iproc_message_iter_history(struct message_iter * it)
 {
 	if (!it)
 		return NULL;

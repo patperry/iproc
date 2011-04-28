@@ -135,7 +135,7 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 {
 	iproc_model *model = Riproc_to_model(Rmodel);
 	int i, n = GET_LENGTH(Risend);
-	iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
+	struct message_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
 	int nsender = (int)iproc_model_nsender(model);
 	int nreceiver = (int)iproc_model_nreceiver(model);

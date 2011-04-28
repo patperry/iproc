@@ -34,24 +34,24 @@ void Riproc_messages_init(DllInfo * info)
 
 static void Riproc_messages_free(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
-	iproc_messages_unref(msgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
+	messages_free(msgs);
 }
 
-iproc_messages *Riproc_to_messages(SEXP Rmsgs)
+struct messages *Riproc_to_messages(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_sexp2ptr(Rmsgs,
-					       FALSE,
-					       Riproc_messages_type_tag,
-					       "messages");
+	struct messages *msgs = Riproc_sexp2ptr(Rmsgs,
+						FALSE,
+						Riproc_messages_type_tag,
+						"messages");
 	return msgs;
 }
 
-SEXP Riproc_from_messages(iproc_messages * msgs)
+SEXP Riproc_from_messages(struct messages * msgs)
 {
 	SEXP Rmsgs, class;
 
-	iproc_messages_ref(msgs);
+	messages_ref(msgs);
 
 	PROTECT(Rmsgs =
 		R_MakeExternalPtr(msgs, Riproc_messages_type_tag, R_NilValue));
@@ -114,7 +114,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	int msg_from, msg_nto;
 	ssize_t *msg_to;
 	int i;
-	iproc_messages *msgs = iproc_messages_new();
+	struct messages *msgs = messages_alloc();
 	SEXP Rmsgs, Rmsg_to;
 
 	darray_init(&to_buf, sizeof(ssize_t));
@@ -139,7 +139,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	}
 
 	PROTECT(Rmsgs = Riproc_from_messages(msgs));
-	iproc_messages_unref(msgs);
+	messages_free(msgs);
 	darray_deinit(&to_buf);
 
 	UNPROTECT(1);
@@ -148,14 +148,14 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 
 SEXP Riproc_messages_size(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int size = (int)iproc_messages_size(msgs);
 	return ScalarInteger(size);
 }
 
 SEXP Riproc_messages_time(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int i, ntie, n = (int)iproc_messages_size(msgs);
 	double t;
 	SEXP Rtime;
@@ -163,7 +163,7 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 	PROTECT(Rtime = NEW_NUMERIC(n));
 	double *time = NUMERIC_POINTER(Rtime);
 
-	iproc_message_iter *it = iproc_message_iter_new(msgs);
+	struct message_iter *it = iproc_message_iter_new(msgs);
 
 	while (iproc_message_iter_next(it)) {
 		t = iproc_message_iter_time(it);
@@ -181,14 +181,14 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 
 SEXP Riproc_messages_from(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int i, ntie, n = (int)iproc_messages_size(msgs);
 	SEXP Rfrom;
 
 	PROTECT(Rfrom = NEW_INTEGER(n));
 	int *from = INTEGER_POINTER(Rfrom);
 
-	iproc_message_iter *it = iproc_message_iter_new(msgs);
+	struct message_iter *it = iproc_message_iter_new(msgs);
 
 	while (iproc_message_iter_next(it)) {
 		ntie = (int)iproc_message_iter_ntie(it);
@@ -206,11 +206,11 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 
 SEXP Riproc_messages_to(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int i, msg, ntie, nto, n = (int)iproc_messages_size(msgs);
 	ssize_t *msg_to;
 	SEXP Rto, Rmsg_to;
-	iproc_message_iter *it;
+	struct message_iter *it;
 
 	PROTECT(Rto = NEW_LIST(n));
 
@@ -241,14 +241,14 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 
 SEXP Riproc_messages_nto(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int i, ntie, n = (int)iproc_messages_size(msgs);
 	SEXP Rnto;
 
 	PROTECT(Rnto = NEW_INTEGER(n));
 	int *nto = INTEGER_POINTER(Rnto);
 
-	iproc_message_iter *it = iproc_message_iter_new(msgs);
+	struct message_iter *it = iproc_message_iter_new(msgs);
 
 	while (iproc_message_iter_next(it)) {
 		ntie = (int)iproc_message_iter_ntie(it);
@@ -266,21 +266,21 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 
 SEXP Riproc_messages_max_from(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int max_from = (int)iproc_messages_max_from(msgs);
 	return ScalarInteger(max_from + 1);
 }
 
 SEXP Riproc_messages_max_to(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int max_to = (int)iproc_messages_max_to(msgs);
 	return ScalarInteger(max_to + 1);
 }
 
 SEXP Riproc_messages_max_nto(SEXP Rmsgs)
 {
-	iproc_messages *msgs = Riproc_to_messages(Rmsgs);
+	struct messages *msgs = Riproc_to_messages(Rmsgs);
 	int max_nto = (int)iproc_messages_max_nto(msgs);
 	return ScalarInteger(max_nto);
 }

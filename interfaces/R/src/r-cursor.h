@@ -22,7 +22,7 @@ SEXP Riproc_cursor_from(SEXP Rcursor);
 SEXP Riproc_cursor_to(SEXP Rcursor);
 
 /* Internal use only */
-iproc_message_iter *Riproc_to_cursor(SEXP Rcursor);
-SEXP Riproc_from_cursor(iproc_message_iter * it);
+struct message_iter *Riproc_to_cursor(SEXP Rcursor);
+SEXP Riproc_from_cursor(struct message_iter * it);
 
 #endif /* _RIPROC_CURSOR_H */

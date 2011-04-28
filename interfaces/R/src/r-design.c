@@ -151,7 +151,7 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int nrow = (int)matrix_nrow(&x);
 	int ncol = (int)matrix_ncol(&x);
 	int sender = INTEGER(Rsender)[0] - 1;
-	iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
+	struct message_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
 	iproc_history *history = iproc_message_iter_history(cursor);
 
@@ -190,7 +190,7 @@ SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int nrow = (int)matrix_nrow(&x);
 	int ncol = (int)matrix_ncol(&x);
 	int sender = INTEGER(Rsender)[0] - 1;
-	iproc_message_iter *cursor = (Rcursor == NULL_USER_OBJECT
+	struct message_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
 	iproc_history *history = iproc_message_iter_history(cursor);
 

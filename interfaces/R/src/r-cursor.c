@@ -28,11 +28,11 @@ void Riproc_cursor_init(DllInfo * info)
 
 static void Riproc_cursor_free(SEXP Rcursor)
 {
-	iproc_message_iter *it = Riproc_to_cursor(Rcursor);
+	struct message_iter *it = Riproc_to_cursor(Rcursor);
 	iproc_message_iter_unref(it);
 }
 
-SEXP Riproc_from_cursor(iproc_message_iter * it)
+SEXP Riproc_from_cursor(struct message_iter * it)
 {
 	SEXP Rcursor, class;
 
@@ -52,17 +52,17 @@ SEXP Riproc_from_cursor(iproc_message_iter * it)
 	return Rcursor;
 }
 
-iproc_message_iter *Riproc_to_cursor(SEXP Rcursor)
+struct message_iter *Riproc_to_cursor(SEXP Rcursor)
 {
-	iproc_message_iter *it;
+	struct message_iter *it;
 	it = Riproc_sexp2ptr(Rcursor, FALSE, Riproc_cursor_type_tag, "cursor");
 	return it;
 }
 
 SEXP Riproc_cursor_new(SEXP Rmessages)
 {
-	iproc_messages *messages = Riproc_to_messages(Rmessages);
-	iproc_message_iter *cursor = iproc_message_iter_new(messages);
+	struct messages *messages = Riproc_to_messages(Rmessages);
+	struct message_iter *cursor = iproc_message_iter_new(messages);
 	SEXP Rcursor;
 
 	PROTECT(Rcursor = Riproc_from_cursor(cursor));
@@ -73,7 +73,7 @@ SEXP Riproc_cursor_new(SEXP Rmessages)
 
 SEXP Riproc_cursor_advance(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 
 	if (iproc_message_iter_next(cursor)) {
 		return ScalarLogical(TRUE);
@@ -84,14 +84,14 @@ SEXP Riproc_cursor_advance(SEXP Rcursor)
 
 SEXP Riproc_cursor_reset(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 	iproc_message_iter_reset(cursor);
 	return NULL_USER_OBJECT;
 }
 
 SEXP Riproc_cursor_time(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 
 	if (!iproc_message_iter_started(cursor))
 		error("cursor has not started");
@@ -104,7 +104,7 @@ SEXP Riproc_cursor_time(SEXP Rcursor)
 
 SEXP Riproc_cursor_nties(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 
 	if (!iproc_message_iter_started(cursor))
 		error("cursor has not started");
@@ -117,7 +117,7 @@ SEXP Riproc_cursor_nties(SEXP Rcursor)
 
 SEXP Riproc_cursor_from(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 
 	if (!iproc_message_iter_started(cursor))
 		error("cursor has not started");
@@ -143,7 +143,7 @@ SEXP Riproc_cursor_from(SEXP Rcursor)
 
 SEXP Riproc_cursor_to(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 
 	if (!iproc_message_iter_started(cursor))
 		error("cursor has not started");
@@ -177,7 +177,7 @@ SEXP Riproc_cursor_to(SEXP Rcursor)
 
 SEXP Riproc_cursor_started(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 	if (iproc_message_iter_started(cursor)) {
 		return ScalarLogical(TRUE);
 	} else {
@@ -187,7 +187,7 @@ SEXP Riproc_cursor_started(SEXP Rcursor)
 
 SEXP Riproc_cursor_finished(SEXP Rcursor)
 {
-	iproc_message_iter *cursor = Riproc_to_cursor(Rcursor);
+	struct message_iter *cursor = Riproc_to_cursor(Rcursor);
 	if (iproc_message_iter_finished(cursor)) {
 		return ScalarLogical(TRUE);
 	} else {

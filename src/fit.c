@@ -59,7 +59,7 @@ static bool iproc_fit_init(iproc_fit * fit)
 }
 
 iproc_fit *iproc_fit_new(iproc_model * model0,
-			 iproc_messages * messages, double penalty)
+			 struct messages * messages, double penalty)
 {
 	assert(model0);
 	assert(messages);
@@ -72,7 +72,7 @@ iproc_fit *iproc_fit_new(iproc_model * model0,
 		return NULL;
 
 	fit->model = iproc_model_ref(model0);
-	fit->messages = iproc_messages_ref(messages);
+	fit->messages = messages_ref(messages);
 	fit->penalty = penalty;
 	fit->loglik = NULL;
 
@@ -94,7 +94,7 @@ void iproc_fit_free(iproc_fit * fit)
 		vector_free(fit->x);
 		vector_free(fit->x0);
 		matrix_free(fit->inv_hess);
-		iproc_messages_unref(fit->messages);
+		messages_free(fit->messages);
 		iproc_model_unref(fit->model);
 		free(fit);
 	}
@@ -105,7 +105,7 @@ static void linesearch(iproc_fit * fit)
 	assert(fit);
 
 	iproc_model *model = fit->model;
-	iproc_messages *messages = fit->messages;
+	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
 	iproc_design *design = iproc_design_ref(model->design);
 	int has_loops = model->has_loops;

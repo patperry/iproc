@@ -5,71 +5,83 @@
 #include <stdlib.h>
 #include "messages.h"
 
-static void iproc_messages_free(iproc_messages * msgs)
+bool messages_init(struct messages *msgs)
 {
-	if (msgs) {
-		darray_deinit(&msgs->array);
-		darray_deinit(&msgs->recipients);
-		free(msgs);
-	}
-}
+	assert(msgs);
 
-iproc_messages *iproc_messages_new()
-{
-	iproc_messages *msgs = calloc(1, sizeof(*msgs));
-	if (!msgs)
-		return NULL;
-
+	if (!darray_init(&msgs->message_reps, sizeof(struct message_rep)))
+		goto fail_message_reps;
+	if (!darray_init(&msgs->recipients, sizeof(ssize_t)))
+		goto fail_recipients;
+	if (!refcount_init(&msgs->refcount))
+		goto fail_refcount;
+	
 	msgs->tcur = -INFINITY;
 	msgs->max_to = -1;
 	msgs->max_from = -1;
 	msgs->max_nto = 0;
-	refcount_init(&msgs->refcount);
+	return true;
 
-	if (!(darray_init(&msgs->array, sizeof(iproc_message))
-	      && darray_init(&msgs->recipients, sizeof(ssize_t)))) {
-		iproc_messages_free(msgs);
-		msgs = NULL;
-	}
-
-	return msgs;
+fail_refcount:
+	darray_deinit(&msgs->recipients);
+fail_recipients:
+	darray_deinit(&msgs->message_reps);
+fail_message_reps:
+	return false;
 }
 
-iproc_messages *iproc_messages_ref(iproc_messages * msgs)
+struct messages *messages_alloc()
 {
+	struct messages *msgs = malloc(sizeof(*msgs));
+	
 	if (msgs) {
-		refcount_get(&msgs->refcount);
+		if (messages_init(msgs))
+			return msgs;
+		free(msgs);
 	}
-	return msgs;
+	return NULL;
 }
 
-static void iproc_messages_release(struct refcount *refcount)
-{
-	iproc_messages *msgs = container_of(refcount, iproc_messages, refcount);
-	iproc_messages_free(msgs);
-}
-
-void iproc_messages_unref(iproc_messages * msgs)
-{
-	if (msgs) {
-		refcount_put(&msgs->refcount, iproc_messages_release);
-	}
-}
-
-ssize_t iproc_messages_size(iproc_messages * msgs)
+struct messages *messages_ref(struct messages * msgs)
 {
 	assert(msgs);
-	return darray_size(&msgs->array);
+	refcount_get(&msgs->refcount);
+	return msgs;
 }
 
-void iproc_messages_advance_to(iproc_messages * msgs, double t)
+void messages_deinit(struct messages *msgs)
+{
+	assert(msgs);
+	refcount_deinit(&msgs->refcount);
+	darray_deinit(&msgs->message_reps);
+	darray_deinit(&msgs->recipients);
+}
+
+void messages_free(struct messages * msgs)
+{
+	if (!msgs)
+		return;
+	
+	if (refcount_put(&msgs->refcount, NULL)) {
+		messages_deinit(msgs);
+		free(msgs);
+	}
+}
+
+ssize_t iproc_messages_size(struct messages * msgs)
+{
+	assert(msgs);
+	return darray_size(&msgs->message_reps);
+}
+
+void iproc_messages_advance_to(struct messages * msgs, double t)
 {
 	assert(msgs);
 	assert(t >= msgs->tcur);
 	msgs->tcur = t;
 }
 
-void iproc_messages_insert(iproc_messages * msgs, ssize_t from, ssize_t to)
+void iproc_messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
 {
 	assert(msgs);
 	assert(from >= 0);
@@ -78,7 +90,7 @@ void iproc_messages_insert(iproc_messages * msgs, ssize_t from, ssize_t to)
 }
 
 void
-iproc_messages_insertm(iproc_messages * msgs,
+iproc_messages_insertm(struct messages * msgs,
 		       ssize_t from, ssize_t *to, ssize_t nto)
 {
 	assert(msgs);
@@ -87,11 +99,11 @@ iproc_messages_insertm(iproc_messages * msgs,
 	assert(to || nto == 0);
 
 	double time = msgs->tcur;
-	struct darray *array = &msgs->array;
+	struct darray *message_reps = &msgs->message_reps;
 	struct darray *recipients = &msgs->recipients;
 
 	ssize_t ito = darray_size(recipients);
-	iproc_message m = { time, from, ito, nto };
+	struct message_rep m = { time, from, ito, nto };
 	ssize_t i;
 
 	for (i = 0; i < nto; i++) {
@@ -107,22 +119,22 @@ iproc_messages_insertm(iproc_messages * msgs,
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	darray_push_back(array, &m);
+	darray_push_back(message_reps, &m);
 }
 
-ssize_t iproc_messages_max_from(iproc_messages * msgs)
+ssize_t iproc_messages_max_from(struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_from;
 }
 
-ssize_t iproc_messages_max_to(iproc_messages * msgs)
+ssize_t iproc_messages_max_to(struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_to;
 }
 
-ssize_t iproc_messages_max_nto(iproc_messages * msgs)
+ssize_t iproc_messages_max_nto(struct messages * msgs)
 {
 	assert(msgs);
 	return msgs->max_nto;

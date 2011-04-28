@@ -21,7 +21,7 @@ SEXP Riproc_messages_max_to(SEXP Rmsgs);
 SEXP Riproc_messages_max_nto(SEXP Rmsgs);
 
 /* Internal use only */
-iproc_messages *Riproc_to_messages(SEXP Rmsgs);
-SEXP Riproc_from_messages(iproc_messages * msgs);
+struct messages *Riproc_to_messages(SEXP Rmsgs);
+SEXP Riproc_from_messages(struct messages * msgs);
 
 #endif /* _RIPROC_MESSAGES_H */
