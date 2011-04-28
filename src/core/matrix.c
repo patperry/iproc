@@ -318,6 +318,46 @@ void matrix_get_row(const struct matrix *a, ssize_t i, double *dst)
 	F77_FUNC(dcopy)(&n, x, &incx, y, &incy);
 }
 
+void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
+		     struct vector *y)
+{
+	assert(x);
+	assert(y);
+	assert(0 <= i && i < matrix_nrow(x));
+	assert(vector_dim(y) == matrix_ncol(x));
+
+	if (vector_empty(y))
+		return;
+	
+	f77int n = (f77int)matrix_ncol(x);
+	const double *px = matrix_at(x, i, 0);
+	f77int incx = (f77int)matrix_lda(x);	
+	double *py = vector_front(y);
+	f77int incy = 1;
+	
+	F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
+}
+
+void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
+		     struct vector *y)
+{
+	assert(x);
+	assert(y);
+	assert(0 <= j && j < matrix_ncol(x));
+	assert(vector_dim(y) == matrix_nrow(x));
+	
+	if (vector_empty(y))
+		return;
+	
+	f77int n = (f77int)matrix_nrow(x);
+	const double *px = matrix_at(x, 0, j);
+	f77int incx = 1;
+	double *py = vector_front(y);
+	f77int incy = 1;
+	
+	F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
+}
+
 void matrix_add(struct matrix *a, const struct matrix *src)
 {
 	matrix_axpy(+1.0, src, a);
@@ -467,6 +507,53 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 	F77_FUNC(dgemm) (ptransa, ptransb, &m, &n, &k,
 			 &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc);
 }
+
+void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
+		 const struct svector *x, double beta, struct vector *y)
+{
+	assert(a);
+	assert(x);
+	assert(y);
+	assert(trans != TRANS_NOTRANS || svector_dim(x) == matrix_ncol(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || svector_dim(x) == matrix_nrow(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == matrix_ncol(a));
+	
+	if (svector_size(x) == 0) {
+		vector_scale(y, beta);
+		return;
+	} else if (vector_empty(y)) {
+		return;
+	}
+	
+	struct svector_iter itx;
+	ssize_t i, j;
+	double x_i, x_j;
+	
+	if (beta == 0) {
+		vector_fill(y, 0.0);
+	} else if (beta != 1) {
+		vector_scale(y, beta);
+	}
+	
+	svector_iter_init(x, &itx);
+	while (svector_iter_advance(x, &itx)) {
+		if (trans == TRANS_NOTRANS) {
+			j = svector_iter_current_index(x, &itx);
+			x_j = *svector_iter_current(x, &itx);
+			matrix_col_axpy(alpha * x_j, a, j, y);
+		} else {
+			
+			i = svector_iter_current_index(x, &itx);
+			x_i = *svector_iter_current(x, &itx);
+			matrix_row_axpy(alpha * x_i, a, i, y);
+		}
+	}
+	
+	svector_iter_deinit(x, &itx);
+
+}
+
 
 void
 matrix_update1(struct matrix *a,

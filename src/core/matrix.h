@@ -2,6 +2,7 @@
 #define _MATRIX_H
 
 #include "array.h"
+#include "svector.h"
 #include "vector.h"
 
 struct matrix {
@@ -66,11 +67,18 @@ void matrix_add(struct matrix *a, const struct matrix *src);
 void matrix_sub(struct matrix *a, const struct matrix *src);
 void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y);
 
+void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
+		     struct vector *y);
+void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
+		     struct vector *y);
+
 /* linear algebra */
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y);
 void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 		   const struct matrix *x, double beta, struct matrix *y);
+void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
+		 const struct svector *x, double beta, struct vector *y);
 void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
