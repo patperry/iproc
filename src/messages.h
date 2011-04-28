@@ -29,7 +29,6 @@ struct messages_iter {
 	ssize_t ntie;
 	struct message_rep *message;
 	bool finished;
-	struct refcount refcount;
 };
 
 bool messages_init(struct messages *msgs);
@@ -52,8 +51,7 @@ ssize_t messages_max_to(const struct messages * msgs);
 ssize_t messages_max_nto(const struct messages * msgs);
 
 struct messages_iter *messages_iter_alloc(struct messages * msgs);
-struct messages_iter *messages_iter_ref(struct messages_iter * it);
-void messages_iter_free(struct messages_iter * it);
+void messages_iter_free(struct messages_iter *it);
 
 double messages_iter_time(struct messages_iter * it);
 ssize_t messages_iter_ntie(struct messages_iter * it);

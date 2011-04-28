@@ -5,14 +5,6 @@
 #include <stdlib.h>
 #include "messages.h"
 
-static void iproc_message_iter_free(struct messages_iter * it)
-{
-	if (it) {
-		iproc_history_unref(it->history);
-		messages_free(it->messages);
-		free(it);
-	}
-}
 
 struct messages_iter *messages_iter_alloc(struct messages * msgs)
 {
@@ -22,32 +14,22 @@ struct messages_iter *messages_iter_alloc(struct messages * msgs)
 
 	it->messages = messages_ref(msgs);
 	it->history = iproc_history_new();
-	refcount_init(&it->refcount);
 	messages_iter_reset(it);
 
 	return it;
 }
 
-struct messages_iter *messages_iter_ref(struct messages_iter * it)
+void message_iter_deinit(struct messages_iter *it)
 {
-	if (it) {
-		refcount_get(&it->refcount);
-	}
-
-	return it;
-}
-
-static void iproc_message_iter_release(struct refcount *refcount)
-{
-	struct messages_iter *it =
-	    container_of(refcount, struct messages_iter, refcount);
-	iproc_message_iter_free(it);
+	iproc_history_unref(it->history);
+	messages_free(it->messages);
 }
 
 void messages_iter_free(struct messages_iter * it)
 {
 	if (it) {
-		refcount_put(&it->refcount, iproc_message_iter_release);
+		message_iter_deinit(it);
+		free(it);
 	}
 }
 

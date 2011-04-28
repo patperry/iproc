@@ -36,8 +36,6 @@ SEXP Riproc_from_cursor(struct messages_iter * it)
 {
 	SEXP Rcursor, class;
 
-	messages_iter_ref(it);
-
 	/* store the cursor pointer in an external pointer */
 	PROTECT(Rcursor =
 		R_MakeExternalPtr(it, Riproc_cursor_type_tag, R_NilValue));
@@ -66,7 +64,6 @@ SEXP Riproc_cursor_new(SEXP Rmessages)
 	SEXP Rcursor;
 
 	PROTECT(Rcursor = Riproc_from_cursor(cursor));
-	messages_iter_free(cursor);
 	UNPROTECT(1);
 	return Rcursor;
 }
