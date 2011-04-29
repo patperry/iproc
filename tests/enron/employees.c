@@ -260,3 +260,28 @@ bool enron_employee_matrix_init(struct matrix *employees)
 	return true;
 }
 
+
+bool enron_employees_init(struct actors *employees)
+{
+	struct matrix x;
+	struct vector row;
+	ssize_t i, m;
+
+	if (enron_employee_matrix_init(&x)) {
+		actors_init(employees, matrix_ncol(&x));
+		vector_init(&row, matrix_ncol(&x));
+
+		m = matrix_nrow(&x);
+		for (i = 0; i < m; i++) {
+			matrix_get_row(&x, i, vector_front(&row));
+			actors_add(employees, &row);
+		}
+		
+		vector_deinit(&row);
+		matrix_deinit(&x);
+		
+		return true;
+	}
+
+	return false;
+}
