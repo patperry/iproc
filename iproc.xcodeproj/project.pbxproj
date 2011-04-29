@@ -594,9 +594,9 @@
 				2267890A134CD594001309F5 /* cmockery */,
 				22D2DDAA136A57DD0048244C /* enron */,
 				22D2DD9413692A6A0048244C /* actors_test.c */,
-				22950A9413611D8D0074897C /* intmap_test.c */,
-				222FC3F31360755C00E64FC9 /* hashset_test.c */,
 				2223CD20134D8C11004FA7F9 /* darray_test.c */,
+				222FC3F31360755C00E64FC9 /* hashset_test.c */,
+				22950A9413611D8D0074897C /* intmap_test.c */,
 				2267891C134CD66F001309F5 /* pqueue_test.c */,
 			);
 			name = Tests;
