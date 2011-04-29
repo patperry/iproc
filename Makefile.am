@@ -221,15 +221,31 @@ rpkg_extra_sources = \
 	R CMD build interfaces/R
 
 check_LTLIBRARIES = \
-	tests/libcmockery.la
+	tests/libcmockery.la \
+	tests/libenron.la
 
 tests_libcmockery_la_SOURCES = \
 	tests/cmockery/cmockery.c \
 	tests/cmockery/cmockery.h
 
 tests_libcmockery_la_CPPFLAGS = \
-	-Itests/cmockery \
+	-I./tests/cmockery \
 	$(AM_CPPFLAGS)
+
+tests_libenron_la_SOURCES = \
+	tests/enron/employees.c \
+	tests/enron/enron.h
+
+tests_libenron_la_CPPFLAGS = \
+	-I./lib \
+	-I./src \
+	-I./src/core \
+	$(AM_CPPFLAGS)
+
+tests_libenron_la_LIBADD = \
+	libiproc.la \
+	libyajl.la
+
 
 cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
 cmockery_ldadd    = tests/libcmockery.la
@@ -253,8 +269,8 @@ tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/actors_test
-tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Ilib $(cmockery_cppflags)
-tests_actors_test_LDADD    = libiproc.la libcore.la libyajl.la $(cmockery_ldadd)
+tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
+tests_actors_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
 
 TESTS = \

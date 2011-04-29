@@ -155,11 +155,14 @@
 		22D2DD84136929440048244C /* yajl_tree.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DD65136929100048244C /* yajl_tree.c */; };
 		22D2DD85136929440048244C /* yajl_version.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DD67136929100048244C /* yajl_version.c */; };
 		22D2DD86136929440048244C /* yajl.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DD69136929100048244C /* yajl.c */; };
-		22D2DD9513692A6A0048244C /* actors_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DD9413692A6A0048244C /* actors_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery -I$(SRCROOT)/lib"; }; };
+		22D2DD9513692A6A0048244C /* actors_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DD9413692A6A0048244C /* actors_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		22D2DD9C13692ABA0048244C /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22D2DD9D13692ABA0048244C /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
-		22D2DD9E13692ABA0048244C /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
-		22D2DDA213692B4F0048244C /* employees.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDA113692B350048244C /* employees.json */; };
+		22D2DDBB136A5E760048244C /* employees.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DDAB136A58010048244C /* employees.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib"; }; };
+		22D2DDBC136A5E810048244C /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
+		22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAD136A58230048244C /* employees.json */; };
+		22D2DDC2136A5ED60048244C /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D6FA7C135D02A70082D129 /* sparsetable.h */; };
 /* End PBXBuildFile section */
@@ -214,12 +217,26 @@
 			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
 			remoteInfo = iproc;
 		};
-		22D2DD9A13692AAF0048244C /* PBXContainerItemProxy */ = {
+		22D2DDB7136A5E6F0048244C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
+		};
+		22D2DDB9136A5E6F0048244C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 22D2DD51136928DE0048244C;
 			remoteInfo = yajl;
+		};
+		22D2DDC0136A5EC90048244C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
+			remoteInfo = enron;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -251,13 +268,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
-		22D2DD8913692A490048244C /* CopyFiles */ = {
+		22D2DDBE136A5EA20048244C /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 12;
-			dstPath = data/enron;
+			buildActionMask = 2147483647;
+			dstPath = tests/enron;
 			dstSubfolderSpec = 16;
 			files = (
-				22D2DDA213692B4F0048244C /* employees.json in CopyFiles */,
+				22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -382,7 +399,11 @@
 		22D2DD69136929100048244C /* yajl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = yajl.c; path = lib/yajl/yajl.c; sourceTree = "<group>"; };
 		22D2DD8B13692A490048244C /* actors_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = actors_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D2DD9413692A6A0048244C /* actors_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actors_test.c; path = tests/actors_test.c; sourceTree = "<group>"; };
-		22D2DDA113692B350048244C /* employees.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = employees.json; path = data/enron/employees.json; sourceTree = "<group>"; };
+		22D2DDAB136A58010048244C /* employees.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = employees.c; path = tests/enron/employees.c; sourceTree = "<group>"; };
+		22D2DDAC136A58010048244C /* enron.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = enron.h; path = tests/enron/enron.h; sourceTree = "<group>"; };
+		22D2DDAD136A58230048244C /* employees.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = employees.json; path = tests/enron/employees.json; sourceTree = "<group>"; };
+		22D2DDAE136A58230048244C /* messages.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = messages.json; path = tests/enron/messages.json; sourceTree = "<group>"; };
+		22D2DDB3136A5E5B0048244C /* libenron.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libenron.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D6FA7B135D02A70082D129 /* sparsetable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sparsetable.c; path = src/core/sparsetable.c; sourceTree = "<group>"; };
 		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -450,9 +471,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22D2DDC2136A5ED60048244C /* libenron.dylib in Frameworks */,
 				22D2DD9C13692ABA0048244C /* libcmockery.dylib in Frameworks */,
 				22D2DD9D13692ABA0048244C /* libiproc.dylib in Frameworks */,
-				22D2DD9E13692ABA0048244C /* libyajl.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22D2DDB0136A5E5B0048244C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22D2DDBC136A5E810048244C /* libiproc.dylib in Frameworks */,
+				22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -561,12 +591,13 @@
 		22678900134CD568001309F5 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				2267890A134CD594001309F5 /* cmockery */,
+				22D2DDAA136A57DD0048244C /* enron */,
 				22D2DD9413692A6A0048244C /* actors_test.c */,
 				22950A9413611D8D0074897C /* intmap_test.c */,
 				222FC3F31360755C00E64FC9 /* hashset_test.c */,
 				2223CD20134D8C11004FA7F9 /* darray_test.c */,
 				2267891C134CD66F001309F5 /* pqueue_test.c */,
-				2267890A134CD594001309F5 /* cmockery */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -590,7 +621,6 @@
 				22867A14132FDA8E0090D617 /* Libf2c */,
 				22867A0E132FDA580090D617 /* Minpack */,
 				22D2DD4D136928C30048244C /* Yajl */,
-				22D2DD9F13692AFE0048244C /* Data */,
 				22E8B6DC132EFE2100ED84FF /* Frameworks */,
 				22D2DDA313692BCD0048244C /* Libraries */,
 				2275BB90132EAC9D002D8876 /* Products */,
@@ -654,31 +684,27 @@
 			name = Yajl;
 			sourceTree = "<group>";
 		};
-		22D2DD9F13692AFE0048244C /* Data */ = {
-			isa = PBXGroup;
-			children = (
-				22D2DDA013692B170048244C /* Enron */,
-			);
-			name = Data;
-			sourceTree = "<group>";
-		};
-		22D2DDA013692B170048244C /* Enron */ = {
-			isa = PBXGroup;
-			children = (
-				22D2DDA113692B350048244C /* employees.json */,
-			);
-			name = Enron;
-			sourceTree = "<group>";
-		};
 		22D2DDA313692BCD0048244C /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				224D0557132EC113007F5646 /* libRiproc.dylib */,
 				22678906134CD584001309F5 /* libcmockery.dylib */,
+				22D2DDB3136A5E5B0048244C /* libenron.dylib */,
 				222FC40D13607C3F00E64FC9 /* libiproc.dylib */,
 				22D2DD52136928DE0048244C /* libyajl.dylib */,
-				224D0557132EC113007F5646 /* libRiproc.dylib */,
 			);
 			name = Libraries;
+			sourceTree = "<group>";
+		};
+		22D2DDAA136A57DD0048244C /* enron */ = {
+			isa = PBXGroup;
+			children = (
+				22D2DDAB136A58010048244C /* employees.c */,
+				22D2DDAC136A58010048244C /* enron.h */,
+				22D2DDAD136A58230048244C /* employees.json */,
+				22D2DDAE136A58230048244C /* messages.json */,
+			);
+			name = enron;
 			sourceTree = "<group>";
 		};
 		22E8B6DC132EFE2100ED84FF /* Frameworks */ = {
@@ -768,6 +794,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		22D2DD50136928DE0048244C /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22D2DDB1136A5E5B0048244C /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -907,19 +940,38 @@
 			buildPhases = (
 				22D2DD8713692A490048244C /* Sources */,
 				22D2DD8813692A490048244C /* Frameworks */,
-				22D2DD8913692A490048244C /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				22D2DDC1136A5EC90048244C /* PBXTargetDependency */,
 				22D2DD9713692AAF0048244C /* PBXTargetDependency */,
 				22D2DD9913692AAF0048244C /* PBXTargetDependency */,
-				22D2DD9B13692AAF0048244C /* PBXTargetDependency */,
 			);
 			name = actors_test;
 			productName = actors_test;
 			productReference = 22D2DD8B13692A490048244C /* actors_test */;
 			productType = "com.apple.product-type.tool";
+		};
+		22D2DDB2136A5E5B0048244C /* enron */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22D2DDB4136A5E5B0048244C /* Build configuration list for PBXNativeTarget "enron" */;
+			buildPhases = (
+				22D2DDAF136A5E5B0048244C /* Sources */,
+				22D2DDB0136A5E5B0048244C /* Frameworks */,
+				22D2DDB1136A5E5B0048244C /* Headers */,
+				22D2DDBE136A5EA20048244C /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22D2DDB8136A5E6F0048244C /* PBXTargetDependency */,
+				22D2DDBA136A5E6F0048244C /* PBXTargetDependency */,
+			);
+			name = enron;
+			productName = enron;
+			productReference = 22D2DDB3136A5E5B0048244C /* libenron.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 /* End PBXNativeTarget section */
 
@@ -943,12 +995,13 @@
 			targets = (
 				224D0556132EC113007F5646 /* Riproc */,
 				22678905134CD584001309F5 /* cmockery */,
-				22678912134CD651001309F5 /* pqueue_test */,
-				2223CD25134D8C4D004FA7F9 /* darray_test */,
-				222FC3F813607B2100E64FC9 /* hashset_test */,
+				22D2DDB2136A5E5B0048244C /* enron */,
 				222FC40C13607C3F00E64FC9 /* iproc */,
 				22D2DD51136928DE0048244C /* yajl */,
 				22D2DD8A13692A490048244C /* actors_test */,
+				2223CD25134D8C4D004FA7F9 /* darray_test */,
+				222FC3F813607B2100E64FC9 /* hashset_test */,
+				22678912134CD651001309F5 /* pqueue_test */,
 			);
 		};
 /* End PBXProject section */
@@ -1099,6 +1152,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22D2DDAF136A5E5B0048244C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22D2DDBB136A5E760048244C /* employees.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1137,10 +1198,20 @@
 			target = 222FC40C13607C3F00E64FC9 /* iproc */;
 			targetProxy = 22D2DD9813692AAF0048244C /* PBXContainerItemProxy */;
 		};
-		22D2DD9B13692AAF0048244C /* PBXTargetDependency */ = {
+		22D2DDB8136A5E6F0048244C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 22D2DDB7136A5E6F0048244C /* PBXContainerItemProxy */;
+		};
+		22D2DDBA136A5E6F0048244C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 22D2DD51136928DE0048244C /* yajl */;
-			targetProxy = 22D2DD9A13692AAF0048244C /* PBXContainerItemProxy */;
+			targetProxy = 22D2DDB9136A5E6F0048244C /* PBXContainerItemProxy */;
+		};
+		22D2DDC1136A5EC90048244C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22D2DDB2136A5E5B0048244C /* enron */;
+			targetProxy = 22D2DDC0136A5EC90048244C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1385,6 +1456,32 @@
 			};
 			name = Release;
 		};
+		22D2DDB5136A5E5B0048244C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				HEADER_SEARCH_PATHS = "-I$(SRCROOT)/lib";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		22D2DDB6136A5E5B0048244C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				HEADER_SEARCH_PATHS = "-I$(SRCROOT)/lib";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1464,6 +1561,14 @@
 			buildConfigurations = (
 				22D2DD9213692A490048244C /* Debug */,
 				22D2DD9313692A490048244C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		22D2DDB4136A5E5B0048244C /* Build configuration list for PBXNativeTarget "enron" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22D2DDB5136A5E5B0048244C /* Debug */,
+				22D2DDB6136A5E5B0048244C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 		};
