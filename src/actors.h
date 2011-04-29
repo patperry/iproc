@@ -43,6 +43,7 @@ bool actors_add(struct actors *a, const struct vector *traits);
 const struct actor *actors_at(const struct actors *a, ssize_t actor_id);
 const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id);
+double actors_get(const struct actors *a, ssize_t actor_id, ssize_t j);
 
 void actors_mul(double alpha,
 		enum trans_op trans,

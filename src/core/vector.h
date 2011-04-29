@@ -37,6 +37,7 @@ int vector_ptr_compare(const void *pv1, const void *pv2);
 #define vector_back(v)           vector_at(v, vector_size(v) - 1)
 #define vector_set_back(v)       vector_set(v, vector_size(v) - 1, val)
 static inline double *vector_at(const struct vector *v, ssize_t i);
+static inline double vector_get(const struct vector *v, ssize_t i);
 static inline void vector_set(struct vector *v, ssize_t i, double val);
 
 /* informative */
@@ -62,6 +63,7 @@ double vector_dot(const struct vector *v1, const struct vector *v2);
 double vector_norm(const struct vector *v);
 double vector_norm1(const struct vector *v);
 void vector_axpy(double alpha, const struct vector *x, struct vector *y);
+double vector_dist(const struct vector *v1, const struct vector *v2);
 
 /* min and max */
 double vector_max(const struct vector *vector);
@@ -92,6 +94,11 @@ double *vector_at(const struct vector *v, ssize_t i)
 {
 	assert(0 <= i && i < vector_dim(v));
 	return (double *)array_front(&v->array) + i;
+}
+
+double vector_get(const struct vector *v, ssize_t i)
+{
+	return *vector_at(v, i);
 }
 
 void vector_set(struct vector *v, ssize_t i, double val)

@@ -103,6 +103,7 @@ ssize_t design_nsender(const struct design * design);
 ssize_t design_nreceiver(const struct design * design);
 struct actors *design_senders(const struct design * design);
 struct actors *design_receivers(const struct design * design);
+bool design_has_reffects(const struct design *design);
 
 
 void design_mul0(double alpha,

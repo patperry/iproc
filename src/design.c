@@ -462,3 +462,9 @@ struct actors *design_receivers(const struct design *design)
 	assert(design);
 	return design->receivers;
 }
+
+bool design_has_reffects(const struct design *design)
+{
+	assert(design);
+	return design->has_reffects;
+}

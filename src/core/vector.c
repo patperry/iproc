@@ -280,6 +280,25 @@ double vector_dot(const struct vector *vector1, const struct vector *vector2)
 	return dot;
 }
 
+double vector_dist(const struct vector *v1, const struct vector *v2)
+{
+	assert(v1);
+	assert(v2);
+	assert(vector_dim(v1) == vector_dim(v2));
+	
+	ssize_t i, n = vector_dim(v1);
+	double dist, dist2 = 0.0;
+	double delta;
+	
+	for (i = 0; i < n; i++) {
+		delta = vector_get(v1, i) - vector_get(v2, i);
+		dist2 += delta * delta;
+	}
+	
+	dist = sqrt(dist2);
+	return dist;
+}
+
 double vector_norm(const struct vector *vector)
 {
 	assert(vector);

@@ -41,7 +41,7 @@ void vector_init_matrix_col(struct vector *v, const struct matrix *a,
 /* assign, copy, fill */
 void matrix_assign_copy(struct matrix *a, const struct matrix *src);
 void matrix_fill(struct matrix *a, double value);
-void matrix_set_identity(struct matrix *a);
+void matrix_assign_identity(struct matrix *a);
 
 /* indexing */
 double matrix_get(const struct matrix *a, ssize_t i, ssize_t j);

@@ -209,6 +209,17 @@ static struct cohort *actors_get_cohort(struct actors *actors,
 	return NULL;
 }
 
+double actors_get(const struct actors *a, ssize_t actor_id, ssize_t j)
+{
+	assert(a);
+	assert(0 <= actor_id && actor_id < actors_size(a));
+	assert(0 <= j && j < actors_dim(a));
+	
+	const struct vector *x = actors_traits(a, actor_id);
+	double val = vector_get(x, j);
+	return val;
+}
+
 bool actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);

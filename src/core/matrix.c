@@ -185,7 +185,7 @@ void matrix_fill(struct matrix *a, double value)
 	}
 }
 
-void matrix_set_identity(struct matrix *a)
+void matrix_assign_identity(struct matrix *a)
 {
 	assert(a);
 
