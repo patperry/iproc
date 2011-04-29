@@ -27,6 +27,7 @@
 /m4/lt~obsolete.m4
 /tests/actors_test
 /tests/darray_test
+/tests/design_test
 /tests/hashset_test
 /tests/intmap_test
 /tests/pqueue_test
