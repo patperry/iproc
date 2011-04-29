@@ -76,25 +76,15 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	struct vector traits0;
 	vector_init_matrix_col(&traits0, &traits_t, 0);
 	ssize_t dim = vector_dim(&traits0);
-
 	struct actors *actors = actors_alloc(dim);
-
+	SEXP Ractors;
+	
 	if (!actors)
 		error("could not allocate new actors object");
 
-	struct vector traits;
-	int i;
-	SEXP Ractors;
-
-	for (i = 0; i < n; i++) {
-		vector_init_matrix_col(&traits, &traits_t, i);
-		if (actors_add(actors, &traits) != i) {
-			actors_free(actors);
-			error
-			    ("could not allocate space for %d actors with dim %d",
-			     n, dim);
-		}
-	}
+	if (!actors_init_matrix(actors, &traits_t, TRANS_TRANS))
+		error("could not allocate space for %d actors with dim %d",
+		      n, dim);
 
 	PROTECT(Ractors = Riproc_from_actors(actors));
 	actors_free(actors);

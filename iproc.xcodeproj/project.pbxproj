@@ -238,6 +238,13 @@
 			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
 			remoteInfo = enron;
 		};
+		22EA3315136B14D900C5627F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -876,6 +883,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				22EA3316136B14D900C5627F /* PBXTargetDependency */,
 			);
 			name = Riproc;
 			productName = Riproc;
@@ -1212,6 +1220,11 @@
 			isa = PBXTargetDependency;
 			target = 22D2DDB2136A5E5B0048244C /* enron */;
 			targetProxy = 22D2DDC0136A5EC90048244C /* PBXContainerItemProxy */;
+		};
+		22EA3316136B14D900C5627F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 22EA3315136B14D900C5627F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1555,6 +1568,7 @@
 				22D2DD55136928DE0048244C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		22D2DD9113692A490048244C /* Build configuration list for PBXNativeTarget "actors_test" */ = {
 			isa = XCConfigurationList;
@@ -1563,6 +1577,7 @@
 				22D2DD9313692A490048244C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		22D2DDB4136A5E5B0048244C /* Build configuration list for PBXNativeTarget "enron" */ = {
 			isa = XCConfigurationList;
@@ -1571,6 +1586,7 @@
 				22D2DDB6136A5E5B0048244C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

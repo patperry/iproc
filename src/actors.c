@@ -48,6 +48,58 @@ fail_actors:
 	return false;
 }
 
+bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
+			enum trans_op trans)
+{
+	assert(actors);
+	assert(matrix);
+
+	ssize_t m = matrix_nrow(matrix);
+	ssize_t n = matrix_ncol(matrix);
+	ssize_t dim = trans == TRANS_NOTRANS ? n : m;
+	bool ok = false;	
+	
+	if (!actors_init(actors, dim))
+		return false;
+	
+	if (trans == TRANS_NOTRANS) {
+		struct vector row;
+		double *row_front;
+		ssize_t i;		
+	
+		if (vector_init(&row, n)) {
+			ok = true;			
+			row_front = n == 0 ? NULL : vector_front(&row);
+
+			for (i = 0; i < m; i++) {
+				matrix_get_row(matrix, i, row_front);
+				if (!actors_add(actors, &row)) {
+					ok = false;
+					break;
+				}
+			}
+			vector_deinit(&row);
+		}
+	} else {
+		struct vector col;
+		ssize_t j;
+		
+		ok = true;
+		for (j = 0; j < n; j++) {
+			vector_init_matrix_col(&col, matrix, j);
+			if (!actors_add(actors, &col)) {
+				ok = false;
+				break;
+			}
+		}
+	}
+
+	if (!ok)
+		actors_deinit(actors);
+	return ok;
+}
+
+
 static void cohorts_clear(struct hashset *cohorts)
 {
 	struct hashset_iter it;
@@ -157,7 +209,7 @@ static struct cohort *actors_get_cohort(struct actors *actors,
 	return NULL;
 }
 
-ssize_t actors_add(struct actors *actors, const struct vector *traits)
+bool actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);
 	assert(vector_dim(traits) == actors_dim(actors));
@@ -185,9 +237,9 @@ fail_cohort_add:
 	darray_pop_back(&actors->actors);
 fail_push_back:
 fail_get_cohort:
-	id = -1;
+	ok = false;
 out:
-	return id;
+	return ok;
 }
 
 const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)

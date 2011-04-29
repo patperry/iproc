@@ -31,19 +31,7 @@ static void enron_teardown_fixture(void **state)
 static void enron_setup(void **state)
 {
 	matrix_init_copy(&matrix, &employees);
-	actors_init(&actors, matrix_ncol(&matrix));
-
-	ssize_t i, m = matrix_nrow(&matrix);
-	struct vector row;
-
-	vector_init(&row, matrix_ncol(&matrix));
-
-	for (i = 0; i < m; i++) {
-		matrix_get_row(&matrix, i, vector_front(&row));
-		actors_add(&actors, &row);
-	}
-
-	vector_deinit(&row);
+	actors_init_matrix(&actors, &matrix, TRANS_NOTRANS);
 }
 
 static void enron_teardown(void **state)
