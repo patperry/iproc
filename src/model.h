@@ -122,7 +122,7 @@ struct cohort_model {
 };
 
 struct _iproc_model {
-	iproc_design *design;
+	struct design *design;
 	struct vector *coefs;
 	bool has_loops;
 	struct intmap cohort_models;
@@ -144,12 +144,12 @@ struct _iproc_model_ctx {
 	struct refcount refcount;
 };
 
-iproc_model *iproc_model_new(iproc_design * design,
+iproc_model *iproc_model_new(struct design * design,
 			     struct vector *coefs, bool has_loops);
 iproc_model *iproc_model_ref(iproc_model * model);
 void iproc_model_unref(iproc_model * model);
 
-iproc_design *iproc_model_design(iproc_model * model);
+struct design *iproc_model_design(iproc_model * model);
 struct vector *iproc_model_coefs(iproc_model * model);
 bool iproc_model_has_loops(iproc_model * model);
 ssize_t iproc_model_nsender(iproc_model * model);

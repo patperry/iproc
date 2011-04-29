@@ -66,11 +66,11 @@ SEXP Riproc_from_model(iproc_model * model)
 
 SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs, SEXP Rhas_loops)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
+	struct design *design = Riproc_to_design(Rdesign);
 	struct vector coefs = Riproc_vector_view_sexp(Rcoefs);
 	Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
-	if (iproc_design_dim(design) != vector_dim(&coefs))
+	if (design_dim(design) != vector_dim(&coefs))
 		error("design and coefs have different dimensions");
 	if (has_loops == NA_LOGICAL)
 		error("has.loops is be NA");
@@ -109,7 +109,7 @@ SEXP Riproc_model_nreceiver(SEXP Rmodel)
 SEXP Riproc_model_design(SEXP Rmodel)
 {
 	iproc_model *model = Riproc_to_model(Rmodel);
-	iproc_design *design = iproc_model_design(model);
+	struct design *design = iproc_model_design(model);
 	return Riproc_from_design(design);
 }
 

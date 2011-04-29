@@ -23,7 +23,7 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rmatrix, SEXP Rsender, SEXP Rcursor);
 SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rmatrix, SEXP Rsender, SEXP Rcursor);
 
 /* Internal use only */
-iproc_design *Riproc_to_design(SEXP Rdesign);
-SEXP Riproc_from_design(iproc_design * design);
+struct design *Riproc_to_design(SEXP Rdesign);
+SEXP Riproc_from_design(struct design * design);
 
 #endif /* _RIPROC_DESIGN_H */

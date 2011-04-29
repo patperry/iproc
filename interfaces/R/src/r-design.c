@@ -26,7 +26,7 @@ static R_CallMethodDef callMethods[] = {
 	{NULL, NULL, 0}
 };
 
-static void append_recip(iproc_design * design, SEXP Rrecip_intervals)
+static void append_recip(struct design * design, SEXP Rrecip_intervals)
 {
 	int n;
 	double *intvls;
@@ -51,22 +51,22 @@ void Riproc_design_init(DllInfo * info)
 
 static void Riproc_design_free(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	iproc_design_unref(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	design_free(design);
 }
 
-iproc_design *Riproc_to_design(SEXP Rdesign)
+struct design *Riproc_to_design(SEXP Rdesign)
 {
-	iproc_design *design =
+	struct design *design =
 	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_type_tag, "design");
 	return design;
 }
 
-SEXP Riproc_from_design(iproc_design * design)
+SEXP Riproc_from_design(struct design * design)
 {
 	SEXP Rdesign, class;
 
-	iproc_design_ref(design);
+	design_ref(design);
 
 	PROTECT(Rdesign =
 		R_MakeExternalPtr(design, Riproc_design_type_tag, R_NilValue));
@@ -94,13 +94,13 @@ Riproc_design_new(SEXP Rsenders,
 		error("'receiver.effects' value is NA");
 	}
 
-	iproc_design *design =
-	    iproc_design_new(senders, receivers, receiver_effects);
+	struct design *design =
+	    design_alloc(senders, receivers, receiver_effects);
 	append_recip(design, Rrecip_intervals);
 	SEXP Rdesign;
 
 	PROTECT(Rdesign = Riproc_from_design(design));
-	iproc_design_unref(design);
+	design_free(design);
 
 	UNPROTECT(1);
 	return Rdesign;
@@ -108,45 +108,45 @@ Riproc_design_new(SEXP Rsenders,
 
 SEXP Riproc_design_dim(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	int dim = (int)iproc_design_dim(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	int dim = (int)design_dim(design);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_design_nsender(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	int nsender = (int)iproc_design_nsender(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	int nsender = (int)design_nsender(design);
 	return ScalarInteger(nsender);
 }
 
 SEXP Riproc_design_nreceiver(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	int nreceiver = (int)iproc_design_nreceiver(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	int nreceiver = (int)design_nreceiver(design);
 	return ScalarInteger(nreceiver);
 }
 
 SEXP Riproc_design_senders(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	struct actors *senders = iproc_design_senders(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	struct actors *senders = design_senders(design);
 	return Riproc_from_actors(senders);
 }
 
 SEXP Riproc_design_receivers(SEXP Rdesign)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	struct actors *receivers = iproc_design_receivers(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	struct actors *receivers = design_receivers(design);
 	return Riproc_from_actors(receivers);
 }
 
 SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	int dim = (int)iproc_design_dim(design);
-	int nsender = (int)iproc_design_nsender(design);
-	int nreceiver = (int)iproc_design_nreceiver(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	int dim = (int)design_dim(design);
+	int nsender = (int)design_nsender(design);
+	int nreceiver = (int)design_nreceiver(design);
 	struct matrix x = Riproc_matrix_view_sexp(Rx);
 	int nrow = (int)matrix_nrow(&x);
 	int ncol = (int)matrix_ncol(&x);
@@ -182,10 +182,10 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 
 SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 {
-	iproc_design *design = Riproc_to_design(Rdesign);
-	int dim = (int)iproc_design_dim(design);
-	int nsender = (int)iproc_design_nsender(design);
-	int nreceiver = (int)iproc_design_nreceiver(design);
+	struct design *design = Riproc_to_design(Rdesign);
+	int dim = (int)design_dim(design);
+	int nsender = (int)design_nsender(design);
+	int nreceiver = (int)design_nreceiver(design);
 	struct matrix x = Riproc_matrix_view_sexp(Rx);
 	int nrow = (int)matrix_nrow(&x);
 	int ncol = (int)matrix_ncol(&x);

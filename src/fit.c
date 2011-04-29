@@ -107,7 +107,7 @@ static void linesearch(iproc_fit * fit)
 	iproc_model *model = fit->model;
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
-	iproc_design *design = iproc_design_ref(model->design);
+	struct design *design = design_ref(model->design);
 	int has_loops = model->has_loops;
 	iproc_loglik *loglik = fit->loglik;
 
@@ -166,7 +166,7 @@ static void linesearch(iproc_fit * fit)
 	}
 
 cleanup:
-	iproc_design_unref(design);
+	design_free(design);
 
 	fit->step = stp;
 	fit->x = x;

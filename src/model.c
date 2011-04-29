@@ -7,7 +7,7 @@
 #include "util.h"
 
 static void
-compute_logprobs0(const iproc_design * design,
+compute_logprobs0(const struct design * design,
 		  ssize_t isend,
 		  const struct vector *coefs,
 		  struct vector *logprobs, double *logsumweight)
@@ -22,7 +22,7 @@ compute_logprobs0(const iproc_design * design,
 	 * multiplication, then unscaling after subtracting of the max value.  This
 	 * shouldn't be necessary in most (all?) real-world situations.
 	 */
-	iproc_design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs,
+	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs,
 			  0.0, logprobs);
 
 	/* protect against overflow */
@@ -41,8 +41,8 @@ static bool cohort_model_init(struct cohort_model *cm,
 			      const struct design *design,
 			      ssize_t isend, const struct vector *coefs)
 {
-	ssize_t nreceiver = iproc_design_nreceiver(design);
-	ssize_t dim = iproc_design_dim(design);
+	ssize_t nreceiver = design_nreceiver(design);
+	ssize_t dim = design_dim(design);
 
 	/* compute initial log(probs) */
 	cm->log_p0 = vector_alloc(nreceiver);
@@ -54,7 +54,7 @@ static bool cohort_model_init(struct cohort_model *cm,
 
 	/* compute initial covariate mean */
 	cm->xbar0 = vector_alloc(dim);
-	iproc_design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0,
+	design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0,
 			  0.0, cm->xbar0);
 
 	return true;
@@ -110,7 +110,7 @@ static bool insert_cohort_model(struct intmap *cohort_models,
 				const struct design *design,
 				ssize_t isend, const struct vector *coefs)
 {
-	const struct actors *senders = iproc_design_senders(design);
+	const struct actors *senders = design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
 	struct intmap_pos pos;
 	struct cohort_model *cm;
@@ -129,10 +129,10 @@ static bool insert_cohort_model(struct intmap *cohort_models,
 }
 
 static bool cohort_models_init(struct intmap *cohort_models,
-			       const iproc_design * design,
+			       const struct design * design,
 			       const struct vector *coefs)
 {
-	ssize_t i, nsender = iproc_design_nsender(design);
+	ssize_t i, nsender = design_nsender(design);
 
 	if (!intmap_init(cohort_models, sizeof(struct cohort_model *),
 			 alignof(struct cohort_model *)))
@@ -158,8 +158,8 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
 	assert(isend >= 0);
 	assert(isend < iproc_model_nsender(model));
 
-	const iproc_design *design = iproc_model_design(model);
-	const struct actors *senders = iproc_design_senders(design);
+	const struct design *design = iproc_model_design(model);
+	const struct actors *senders = design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
 	return *(struct cohort_model **)intmap_lookup(&model->cohort_models, c);
 }
@@ -188,22 +188,22 @@ static void iproc_model_free(iproc_model * model)
 		darray_deinit(&model->ctxs);
 		cohort_models_deinit(&model->cohort_models);
 		vector_free(model->coefs);
-		iproc_design_unref(model->design);
+		design_free(model->design);
 		free(model);
 	}
 }
 
-iproc_model *iproc_model_new(iproc_design * design,
+iproc_model *iproc_model_new(struct design * design,
 			     struct vector *coefs, bool has_loops)
 {
 	assert(design);
 	assert(coefs);
-	assert(iproc_design_dim(design) == vector_dim(coefs));
-	assert(iproc_design_nreceiver(design) > 0);
-	assert(!has_loops || iproc_design_nreceiver(design) > 1);
+	assert(design_dim(design) == vector_dim(coefs));
+	assert(design_nreceiver(design) > 0);
+	assert(!has_loops || design_nreceiver(design) > 1);
 
 	iproc_model *model = malloc(sizeof(*model));
-	model->design = iproc_design_ref(design);
+	model->design = design_ref(design);
 	model->coefs = vector_alloc_copy(coefs);
 	model->has_loops = has_loops;
 	cohort_models_init(&model->cohort_models, design, coefs);
@@ -235,7 +235,7 @@ void iproc_model_unref(iproc_model * model)
 	refcount_put(&model->refcount, iproc_model_release);
 }
 
-iproc_design *iproc_model_design(iproc_model * model)
+struct design *iproc_model_design(iproc_model * model)
 {
 	assert(model);
 	return model->design;
@@ -256,22 +256,22 @@ bool iproc_model_has_loops(iproc_model * model)
 ssize_t iproc_model_nsender(iproc_model * model)
 {
 	assert(model);
-	iproc_design *design = iproc_model_design(model);
-	return iproc_design_nsender(design);
+	struct design *design = iproc_model_design(model);
+	return design_nsender(design);
 }
 
 ssize_t iproc_model_nreceiver(iproc_model * model)
 {
 	assert(model);
-	iproc_design *design = iproc_model_design(model);
-	return iproc_design_nreceiver(design);
+	struct design *design = iproc_model_design(model);
+	return design_nreceiver(design);
 }
 
 ssize_t iproc_model_dim(iproc_model * model)
 {
 	assert(model);
-	iproc_design *design = iproc_model_design(model);
-	return iproc_design_dim(design);
+	struct design *design = iproc_model_design(model);
+	return design_dim(design);
 }
 
 struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend)

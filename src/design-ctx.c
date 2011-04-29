@@ -9,13 +9,13 @@
 
 DEFINE_COMPARE_FN(int64_compare, ssize_t)
 
-static struct svector *iproc_design_var_new_alloc(iproc_design * design)
+static struct svector *iproc_design_var_new_alloc(struct design * design)
 {
 	return svector_alloc(design->dim);
 }
 
 // TODO : make static
-static struct svector *iproc_design_var_new(iproc_design * design)
+static struct svector *iproc_design_var_new(struct design * design)
 {
 	assert(design);
 	struct darray *svectors = &design->svectors;
@@ -34,7 +34,7 @@ static struct svector *iproc_design_var_new(iproc_design * design)
 
 // TODO : make static
 static void
-iproc_sdesign_var_free(iproc_design * design, struct svector *svector)
+iproc_sdesign_var_free(struct design * design, struct svector *svector)
 {
 	assert(design);
 	struct darray *svectors = &design->svectors;
@@ -46,7 +46,7 @@ iproc_sdesign_var_free(iproc_design * design, struct svector *svector)
 	darray_push_back(svectors, &svector);
 }
 
-static void clear_dxs(iproc_design * design, struct darray *dxs)
+static void clear_dxs(struct design * design, struct darray *dxs)
 {
 	if (!dxs)
 		return;
@@ -66,9 +66,9 @@ iproc_design_ctx_set(iproc_design_ctx * ctx, ssize_t isend, iproc_history * h)
 	assert(ctx);
 	assert(ctx->design);
 	assert(0 <= isend);
-	assert(isend < iproc_design_nsender(ctx->design));
+	assert(isend < design_nsender(ctx->design));
 
-	iproc_design *design = ctx->design;
+	struct design *design = ctx->design;
 
 	if (h != ctx->history) {
 		iproc_history_ref(h);
@@ -103,27 +103,27 @@ static void iproc_design_ctx_free(iproc_design_ctx * ctx)
 		ctx->history = NULL;
 		clear_dxs(ctx->design, &ctx->dxs);
 
-		iproc_design *design = ctx->design;
+		struct design *design = ctx->design;
 		darray_push_back(&design->ctxs, &ctx);
-		iproc_design_unref(design);
+		design_free(design);
 	}
 
 }
 
-static iproc_design_ctx *iproc_design_ctx_new_alloc(iproc_design * design,
+static iproc_design_ctx *iproc_design_ctx_new_alloc(struct design * design,
 						    ssize_t isend,
 						    iproc_history * h)
 {
 	assert(design);
 	assert(0 <= isend);
-	assert(isend < iproc_design_nsender(design));
+	assert(isend < design_nsender(design));
 
 	iproc_design_ctx *ctx = calloc(1, sizeof(*ctx));
 
 	if (!ctx)
 		return NULL;
 
-	ctx->design = iproc_design_ref(design);
+	ctx->design = design_ref(design);
 	ctx->history = NULL;
 	ctx->isend = -1;
 	refcount_init(&ctx->refcount);
@@ -138,12 +138,12 @@ static iproc_design_ctx *iproc_design_ctx_new_alloc(iproc_design * design,
 	return ctx;
 }
 
-iproc_design_ctx *iproc_design_ctx_new(iproc_design * design,
+iproc_design_ctx *iproc_design_ctx_new(struct design * design,
 				       ssize_t isend, iproc_history * h)
 {
 	assert(design);
 	assert(0 <= isend);
-	assert(isend < iproc_design_nsender(design));
+	assert(isend < design_nsender(design));
 
 	iproc_design_ctx *ctx;
 	struct darray *ctxs = &design->ctxs;
@@ -152,7 +152,7 @@ iproc_design_ctx *iproc_design_ctx_new(iproc_design * design,
 	if (n > 0) {
 		ctx = *(iproc_design_ctx **) darray_at(ctxs, n - 1);
 		darray_resize(ctxs, n - 1);
-		iproc_design_ref(design);
+		design_ref(design);
 		refcount_init(&ctx->refcount);
 		iproc_design_ctx_set(ctx, isend, h);
 		assert(ctx->design == design);
@@ -192,7 +192,7 @@ struct svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
 {
 	assert(ctx);
 	assert(jrecv >= 0);
-	assert(jrecv < iproc_design_nreceiver(ctx->design));
+	assert(jrecv < design_nreceiver(ctx->design));
 
 	struct darray *dxs = &ctx->dxs;
 	struct svector *dx = NULL;
@@ -243,15 +243,15 @@ iproc_design_ctx_mul(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(x) == iproc_design_dim(ctx->design));
+	       || vector_dim(x) == design_dim(ctx->design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(y) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(x) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(y) == iproc_design_dim(ctx->design));
+	       || vector_dim(y) == design_dim(ctx->design));
 
-	iproc_design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
+	design_mul0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
 	struct svector *diffprod = svector_alloc(vector_dim(y));
 	iproc_design_ctx_dmul(alpha, trans, ctx, x, 0.0, diffprod);
@@ -270,15 +270,15 @@ iproc_design_ctx_muls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(x) == iproc_design_dim(ctx->design));
+	       || svector_dim(x) == design_dim(ctx->design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(y) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(x) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(y) == iproc_design_dim(ctx->design));
+	       || vector_dim(y) == design_dim(ctx->design));
 
-	iproc_design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
+	design_muls0(alpha, trans, ctx->design, ctx->isend, x, beta, y);
 
 	struct svector *diffprod = svector_alloc(vector_dim(y));
 	iproc_design_ctx_dmuls(alpha, trans, ctx, x, 0.0, diffprod);
@@ -297,13 +297,13 @@ iproc_design_ctx_dmul(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(x) == iproc_design_dim(ctx->design));
+	       || vector_dim(x) == design_dim(ctx->design));
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(y) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || vector_dim(x) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(y) == iproc_design_dim(ctx->design));
+	       || svector_dim(y) == design_dim(ctx->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -315,7 +315,7 @@ iproc_design_ctx_dmul(double alpha,
 	if (ctx->history == NULL)
 		return;
 
-	iproc_design *design = ctx->design;
+	struct design *design = ctx->design;
 	ssize_t ndynamic = design->ndynamic;
 
 	if (ndynamic == 0)
@@ -363,13 +363,13 @@ iproc_design_ctx_dmuls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(x) == iproc_design_dim(ctx->design));
+	       || svector_dim(x) == design_dim(ctx->design));
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(y) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(y) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == iproc_design_nreceiver(ctx->design));
+	       || svector_dim(x) == design_nreceiver(ctx->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(y) == iproc_design_dim(ctx->design));
+	       || svector_dim(y) == design_dim(ctx->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -381,7 +381,7 @@ iproc_design_ctx_dmuls(double alpha,
 	if (ctx->history == NULL)
 		return;
 
-	iproc_design *design = ctx->design;
+	struct design *design = ctx->design;
 	ssize_t ndynamic = design->ndynamic;
 
 	if (ndynamic == 0)

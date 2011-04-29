@@ -213,7 +213,7 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, iproc_history * h)
 		iproc_design_ctx_unref(ctx->design_ctx);
 
 	iproc_model *model = ctx->model;
-	iproc_design *design = iproc_model_design(model);
+	struct design *design = iproc_model_design(model);
 	iproc_design_ctx *design_ctx = iproc_design_ctx_new(design, isend, h);
 	struct vector *coefs = iproc_model_coefs(model);
 	bool has_loops = iproc_model_has_loops(model);

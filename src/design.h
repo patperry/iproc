@@ -1,8 +1,6 @@
-#ifndef _IPROC_DESIGN_H
-#define _IPROC_DESIGN_H
+#ifndef _DESIGN_H
+#define _DESIGN_H
 
-#include <stdbool.h>
-#include <stdint.h>
 #include "actors.h"
 #include "history.h"
 #include "darray.h"
@@ -73,30 +71,63 @@
  * a sparse vector.
  */
 
-typedef struct design iproc_design;
-typedef struct _iproc_design_var iproc_design_var;
-typedef struct _iproc_design_ctx iproc_design_ctx;
-
-typedef struct _iproc_design_dx iproc_design_dx;	// private
-
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
-	bool has_reffects;
 	struct darray vars;
 	ssize_t ireffects, nreffects;
 	ssize_t istatic, nstatic;
 	ssize_t idynamic, ndynamic;
 	ssize_t dim;
+	bool has_reffects;
 
+
+	/* deprecated */
 	struct darray ctxs;
 	struct darray svectors;
 	struct refcount refcount;
 };
 
+struct design *design_alloc(struct actors *senders,
+			       struct actors *receivers, bool has_reffects);
+struct design *design_ref(struct design * design);
+void design_free(struct design * design);
+
+bool design_init(struct design *design, struct actors *senders,
+		 struct actors *receivers, bool has_reffects);
+void design_deinit(struct design *design);
+
+
+ssize_t design_dim(const struct design * design);
+ssize_t design_nsender(const struct design * design);
+ssize_t design_nreceiver(const struct design * design);
+struct actors *design_senders(const struct design * design);
+struct actors *design_receivers(const struct design * design);
+
+
+void design_mul0(double alpha,
+		       enum trans_op trans,
+		       const struct design * design,
+		       ssize_t isend,
+		       const struct vector *x, double beta, struct vector *y);
+void design_muls0(double alpha,
+			enum trans_op trans,
+			const struct design * design,
+			ssize_t isend,
+			const struct svector *x, double beta, struct vector *y);
+
+
+
+/********** DEPRECATED **********/
+
+typedef struct _iproc_design_var iproc_design_var;
+typedef struct _iproc_design_ctx iproc_design_ctx;
+typedef struct _iproc_design_dx iproc_design_dx;	// private
+
+
 /* dX[t,i] */
 struct _iproc_design_ctx {
-	iproc_design *design;
+	struct design *design;
 	iproc_history *history;
 	ssize_t isend;
 	struct darray dxs;
@@ -117,6 +148,10 @@ struct _iproc_design_dx {
 	struct svector *dx;
 };
 
+// NOTE: a call to `append` invalidates existing design_ctxs
+void iproc_design_append(struct design * design, iproc_design_var * var);
+
+
 void iproc_design_var_init(iproc_design_var * var,
 			   ssize_t dim,
 			   void (*get_dxs) (iproc_design_var *,
@@ -124,28 +159,7 @@ void iproc_design_var_init(iproc_design_var * var,
 					    ssize_t),
 			   void (*free) (iproc_design_var *));
 
-iproc_design *iproc_design_new(struct actors *senders,
-			       struct actors *receivers, bool has_reffects);
-iproc_design *iproc_design_ref(iproc_design * design);
-void iproc_design_unref(iproc_design * design);
-
-ssize_t iproc_design_dim(const iproc_design * design);
-
-// NOTE: a call to `append` invalidates existing design_ctxs
-void iproc_design_append(iproc_design * design, iproc_design_var * var);
-
-void iproc_design_mul0(double alpha,
-		       enum trans_op trans,
-		       const iproc_design * design,
-		       ssize_t isend,
-		       const struct vector *x, double beta, struct vector *y);
-void iproc_design_muls0(double alpha,
-			enum trans_op trans,
-			const iproc_design * design,
-			ssize_t isend,
-			const struct svector *x, double beta, struct vector *y);
-
-iproc_design_ctx *iproc_design_ctx_new(iproc_design * design,
+iproc_design_ctx *iproc_design_ctx_new(struct design * design,
 				       ssize_t isend, iproc_history * h);
 iproc_design_ctx *iproc_design_ctx_ref(iproc_design_ctx * ctx);
 void iproc_design_ctx_unref(iproc_design_ctx * ctx);
@@ -179,9 +193,6 @@ void iproc_design_ctx_dmuls(double alpha, enum trans_op trans,
 			    const struct svector *x, double beta,
 			    struct svector *y);
 
-ssize_t iproc_design_nsender(const iproc_design * design);
-ssize_t iproc_design_nreceiver(const iproc_design * design);
-struct actors *iproc_design_senders(const iproc_design * design);
-struct actors *iproc_design_receivers(const iproc_design * design);
 
-#endif /* _IPROC_DESIGN_H */
+
+#endif /* _DESIGN_H */

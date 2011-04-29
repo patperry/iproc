@@ -28,14 +28,14 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
-	iproc_design *design = iproc_model_design(model);
-	ssize_t nsender = iproc_design_nsender(design);
+	struct design *design = iproc_model_design(model);
+	ssize_t nsender = design_nsender(design);
 
 	if (!loglik)
 		return NULL;
 
 	loglik->model = iproc_model_ref(model);
-	loglik->grad = vector_alloc(iproc_design_dim(design));
+	loglik->grad = vector_alloc(design_dim(design));
 	loglik->grad_cached = false;
 	loglik->nsend = 0;
 	loglik->nrecv = 0;
