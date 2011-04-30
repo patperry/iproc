@@ -81,15 +81,15 @@ void messages_advance_to(struct messages * msgs, double t)
 	msgs->tcur = t;
 }
 
-void messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
+bool messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
 {
 	assert(msgs);
 	assert(from >= 0);
 	assert(to >= 0);
-	messages_insertm(msgs, from, &to, 1);
+	return messages_insertm(msgs, from, &to, 1);
 }
 
-void messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
+bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 		      ssize_t nto)
 {
 	assert(msgs);
@@ -101,6 +101,11 @@ void messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 	struct darray *message_reps = &msgs->message_reps;
 	struct darray *recipients = &msgs->recipients;
 
+	// reserve space for new recipients and message_reps
+	if (!darray_reserve(message_reps, darray_size(message_reps) + 1)
+	    || !darray_reserve(recipients, darray_size(recipients) + nto))
+		return false;
+	
 	ssize_t ito = darray_size(recipients);
 	struct message_rep m = { time, from, ito, nto };
 	ssize_t i;
@@ -108,17 +113,18 @@ void messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 	for (i = 0; i < nto; i++) {
 		assert(to[i] >= 0);
 
-		darray_push_back(recipients, to + i);
+		darray_push_back(recipients, to + i); // always succeeds
 		if (to[i] > msgs->max_to)
 			msgs->max_to = to[i];
 	}
-
+	
 	if (from > msgs->max_from)
 		msgs->max_from = from;
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	darray_push_back(message_reps, &m);
+	darray_push_back(message_reps, &m); // always succeeds
+	return true;
 }
 
 ssize_t messages_max_from(const struct messages * msgs)

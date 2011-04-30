@@ -234,7 +234,8 @@ tests_libcmockery_la_CPPFLAGS = \
 
 tests_libenron_la_SOURCES = \
 	tests/enron/employees.c \
-	tests/enron/enron.h
+	tests/enron/enron.h \
+	tests/enron/messages.c
 
 tests_libenron_la_CPPFLAGS = \
 	-I./lib \

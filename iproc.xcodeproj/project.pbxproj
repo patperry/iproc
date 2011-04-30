@@ -169,6 +169,11 @@
 		22EA332E136B29E700C5627F /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22EA332F136B29E700C5627F /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22EA3330136B29E700C5627F /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		22EA3333136B440B00C5627F /* frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3331136B440B00C5627F /* frame.c */; };
+		22EA3334136B440B00C5627F /* frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3331136B440B00C5627F /* frame.c */; };
+		22EA3335136B440B00C5627F /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EA3332136B440B00C5627F /* frame.h */; };
+		22EA3336136B440B00C5627F /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EA3332136B440B00C5627F /* frame.h */; };
+		22EA3338136B4CEC00C5627F /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3337136B4CEC00C5627F /* messages.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib -I$(SRCROOT)/src/core"; }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -449,6 +454,9 @@
 		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EA3325136B29AE00C5627F /* design_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_test.c; path = tests/design_test.c; sourceTree = "<group>"; };
+		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
+		22EA3332136B440B00C5627F /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; };
+		22EA3337136B4CEC00C5627F /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = tests/enron/messages.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -612,6 +620,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				22EA3331136B440B00C5627F /* frame.c */,
+				22EA3332136B440B00C5627F /* frame.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
 				22C67AA41354FCC6006A81E8 /* cohort.c */,
@@ -756,6 +766,7 @@
 			children = (
 				22D2DDAB136A58010048244C /* employees.c */,
 				22D2DDAC136A58010048244C /* enron.h */,
+				22EA3337136B4CEC00C5627F /* messages.c */,
 				22D2DDAD136A58230048244C /* employees.json */,
 				22D2DDAE136A58230048244C /* messages.json */,
 			);
@@ -778,6 +789,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22EA3336136B440B00C5627F /* frame.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -837,6 +849,7 @@
 				22D2DD78136929100048244C /* yajl_parser.h in Headers */,
 				22D2DD7A136929100048244C /* yajl_tree.h in Headers */,
 				22D2DD7C136929100048244C /* yajl_version.h in Headers */,
+				22EA3335136B440B00C5627F /* frame.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1137,6 +1150,7 @@
 				222FC45013607C7900E64FC9 /* s_copy.c in Sources */,
 				222FC45113607C7900E64FC9 /* dcsrch.c in Sources */,
 				222FC45213607C7900E64FC9 /* dcstep.c in Sources */,
+				22EA3334136B440B00C5627F /* frame.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1186,6 +1200,7 @@
 				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
 				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
 				22A88EBC135E6B6A006FE604 /* hashset.c in Sources */,
+				22EA3333136B440B00C5627F /* frame.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1234,6 +1249,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				22D2DDBB136A5E760048244C /* employees.c in Sources */,
+				22EA3338136B4CEC00C5627F /* messages.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1564,12 +1580,15 @@
 		22D2DDB5136A5E5B0048244C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = "-I$(SRCROOT)/lib";
+				HEADER_SEARCH_PATHS = (
+					"-I$(SRCROOT)/lib",
+					"-I$(SRCROOT)/src/core",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1577,12 +1596,15 @@
 		22D2DDB6136A5E5B0048244C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = "-I$(SRCROOT)/lib";
+				HEADER_SEARCH_PATHS = (
+					"-I$(SRCROOT)/lib",
+					"-I$(SRCROOT)/src/core",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
