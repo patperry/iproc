@@ -5,11 +5,16 @@
 #include "history.h"
 #include "refcount.h"
 
-struct message_rep {
+struct message {
 	double time;
 	ssize_t from;
-	ssize_t ito;
+	ssize_t *to;
 	ssize_t nto;
+};
+
+struct message_rep {
+	struct message message;
+	ssize_t ito;
 };
 
 struct messages {
@@ -20,13 +25,14 @@ struct messages {
 	ssize_t max_from;
 	ssize_t max_to;
 	ssize_t max_nto;
+	bool to_cached;
 };
 
 struct messages_iter {
 	struct messages *messages;
 	ssize_t offset;
 	ssize_t ntie;
-	struct message_rep *message;
+	struct message_rep *message_rep;
 
 	/* deprecated */
 	iproc_history *history;
@@ -55,13 +61,9 @@ ssize_t messages_max_nto(const struct messages * msgs);
 struct messages_iter *messages_iter_alloc(struct messages * msgs);
 void messages_iter_free(struct messages_iter *it);
 
-double messages_iter_time(struct messages_iter * it);
 ssize_t messages_iter_ntie(struct messages_iter * it);
-void messages_iter_select(struct messages_iter * it, ssize_t tie);
-
-ssize_t messages_iter_from(struct messages_iter * it);
-ssize_t messages_iter_nto(struct messages_iter * it);
-ssize_t *messages_iter_to(struct messages_iter * it);
+struct message *messages_iter_current(struct messages_iter * it, ssize_t itie);
+double messages_iter_current_time(struct messages_iter *it);
 
 void messages_iter_reset(struct messages_iter * it);
 bool messages_iter_next(struct messages_iter * it);

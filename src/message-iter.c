@@ -33,11 +33,11 @@ void messages_iter_free(struct messages_iter * it)
 	}
 }
 
-double messages_iter_time(struct messages_iter * it)
+double messages_iter_current_time(struct messages_iter * it)
 {
 	assert(messages_iter_started(it));
 	assert(!messages_iter_finished(it));
-	return it->message->time;
+	return it->message_rep->message.time;
 }
 
 ssize_t messages_iter_ntie(struct messages_iter * it)
@@ -47,42 +47,17 @@ ssize_t messages_iter_ntie(struct messages_iter * it)
 	return it->ntie;
 }
 
-void messages_iter_select(struct messages_iter * it, ssize_t tie)
+struct message *messages_iter_current(struct messages_iter * it, ssize_t itie)
 {
 	assert(messages_iter_started(it));
 	assert(!messages_iter_finished(it));
-	assert(tie >= 0);
-	assert(tie < messages_iter_ntie(it));
+	assert(itie >= 0);
+	assert(itie < messages_iter_ntie(it));
 
-	ssize_t i = it->offset + tie;
-	it->message = darray_at(&it->messages->message_reps, i);
-}
+	ssize_t i = it->offset + itie;
+	it->message_rep = darray_at(&it->messages->message_reps, i);
+	return &it->message_rep->message;
 
-ssize_t messages_iter_from(struct messages_iter * it)
-{
-	assert(messages_iter_started(it));
-	assert(!messages_iter_finished(it));
-
-	return it->message->from;
-}
-
-ssize_t messages_iter_nto(struct messages_iter * it)
-{
-	assert(messages_iter_started(it));
-	assert(!messages_iter_finished(it));
-
-	return it->message->nto;
-}
-
-ssize_t *messages_iter_to(struct messages_iter * it)
-{
-	assert(messages_iter_started(it));
-	assert(!messages_iter_finished(it));
-
-	ssize_t ito = it->message->ito;
-	ssize_t *to = darray_at(&it->messages->recipients,
-				ito);
-	return to;
 }
 
 void messages_iter_reset(struct messages_iter * it)
@@ -91,7 +66,7 @@ void messages_iter_reset(struct messages_iter * it)
 		return;
 
 	iproc_history_clear(it->history);
-	it->message = NULL;
+	it->message_rep = NULL;
 	it->offset = 0;
 	it->ntie = 0;
 	it->finished = false;
@@ -111,27 +86,36 @@ bool messages_iter_next(struct messages_iter * it)
 	bool has_next = offset < n;
 
 	if (has_next) {
-		struct message_rep *message = darray_at(message_reps, offset);
-		double time = message[0].time;
+		struct message_rep *message_rep = darray_at(message_reps, offset);
+		double time = message_rep[0].message.time;
 		ssize_t ntie_max = n - offset;
 		ssize_t ntie = 0;
 
 		iproc_history_advance_to(history, time);
 
-		while (ntie < ntie_max && message[ntie].time == time) {
-			ssize_t msg_from = message[ntie].from;
-			ssize_t msg_ito = message[ntie].ito;
-			ssize_t *msg_to = darray_at(recipients, msg_ito);
-			ssize_t msg_nto = message[ntie].nto;
-
+		do {
+			if (!it->messages->to_cached) {
+				ssize_t msg_ito = message_rep[ntie].ito;
+				ssize_t *msg_to = darray_at(recipients, msg_ito);
+				message_rep[ntie].message.to = msg_to;
+			}
+			
+			/* deprecated */
+			ssize_t msg_from = message_rep[ntie].message.from;
+			ssize_t *msg_to = message_rep[ntie].message.to;
+			ssize_t msg_nto = message_rep[ntie].message.nto;
 			iproc_history_insertm(history, msg_from, msg_to,
 					      msg_nto);
+			
+			/* not deprecated */
 			ntie++;
-		}
+		} while (ntie < ntie_max && message_rep[ntie].message.time == time);
+		
 		it->ntie = ntie;
-		it->message = message;
+		it->message_rep = message_rep;
 	} else {
 		it->finished = true;
+		it->messages->to_cached = true;
 	}
 	it->offset = offset;
 
@@ -143,7 +127,7 @@ bool messages_iter_started(struct messages_iter * it)
 	if (!it)
 		return false;
 
-	return it->message != NULL;
+	return it->message_rep != NULL;
 }
 
 bool messages_iter_finished(struct messages_iter * it)

@@ -166,7 +166,7 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 	struct messages_iter *it = messages_iter_alloc(msgs);
 
 	while (messages_iter_next(it)) {
-		t = messages_iter_time(it);
+		t = messages_iter_current_time(it);
 		ntie = (int)messages_iter_ntie(it);
 		for (i = 0; i < ntie; i++) {
 			*time++ = t;
@@ -189,12 +189,13 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 	int *from = INTEGER_POINTER(Rfrom);
 
 	struct messages_iter *it = messages_iter_alloc(msgs);
+	const struct message *msg;
 
 	while (messages_iter_next(it)) {
 		ntie = (int)messages_iter_ntie(it);
 		for (i = 0; i < ntie; i++) {
-			messages_iter_select(it, i);
-			*from++ = (int)messages_iter_from(it) + 1;
+			msg = messages_iter_current(it, i);
+			*from++ = (int)msg->from + 1;
 		}
 	}
 
@@ -207,7 +208,7 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 SEXP Riproc_messages_to(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int i, msg, ntie, nto, n = (int)messages_size(msgs);
+	int i, imsg, ntie, nto, n = (int)messages_size(msgs);
 	ssize_t *msg_to;
 	SEXP Rto, Rmsg_to;
 	struct messages_iter *it;
@@ -215,23 +216,23 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	PROTECT(Rto = NEW_LIST(n));
 
 	it = messages_iter_alloc(msgs);
-	msg = 0;
+	imsg = 0;
 
 	while (messages_iter_next(it)) {
 		ntie = (int)messages_iter_ntie(it);
 		for (i = 0; i < ntie; i++) {
-			messages_iter_select(it, i);
-			nto = (int)messages_iter_nto(it);
-			msg_to = messages_iter_to(it);
+			const struct message *msg = messages_iter_current(it, i);
+			nto = (int)msg->nto;
+			msg_to = msg->to;
 
 			PROTECT(Rmsg_to = NEW_INTEGER(nto));
 			from_array_copy(INTEGER_POINTER(Rmsg_to), msg_to, nto);
-			SET_VECTOR_ELT(Rto, msg, Rmsg_to);
+			SET_VECTOR_ELT(Rto, imsg, Rmsg_to);
 			UNPROTECT(1);
-			msg++;
+			imsg++;
 		}
 	}
-	assert(msg == n);
+	assert(imsg == n);
 
 	messages_iter_free(it);
 
@@ -249,12 +250,13 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 	int *nto = INTEGER_POINTER(Rnto);
 
 	struct messages_iter *it = messages_iter_alloc(msgs);
+	const struct message *msg;
 
 	while (messages_iter_next(it)) {
 		ntie = (int)messages_iter_ntie(it);
 		for (i = 0; i < ntie; i++) {
-			messages_iter_select(it, i);
-			*nto++ = (int)messages_iter_nto(it);
+			msg = messages_iter_current(it, i);
+			*nto++ = (int)msg->nto;
 		}
 	}
 

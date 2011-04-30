@@ -95,7 +95,7 @@ SEXP Riproc_cursor_time(SEXP Rcursor)
 	if (messages_iter_finished(cursor))
 		error("cursor has finished");
 
-	double time = messages_iter_time(cursor);
+	double time = messages_iter_current_time(cursor);
 	return ScalarReal(time);
 }
 
@@ -129,8 +129,8 @@ SEXP Riproc_cursor_from(SEXP Rcursor)
 	from = INTEGER_POINTER(Rfrom);
 
 	for (i = 0; i < n; i++) {
-		messages_iter_select(cursor, i);
-		int msg_from = (int)messages_iter_from(cursor);
+		const struct message *msg = messages_iter_current(cursor, i);
+		int msg_from = (int)msg->from;
 		from[i] = msg_from + 1;
 	}
 
@@ -153,9 +153,9 @@ SEXP Riproc_cursor_to(SEXP Rcursor)
 	PROTECT(Rto = NEW_LIST(n));
 
 	for (i = 0; i < n; i++) {
-		messages_iter_select(cursor, i);
-		int msg_nto = (int)messages_iter_nto(cursor);
-		ssize_t *msg_to = messages_iter_to(cursor);
+		const struct message *msg = messages_iter_current(cursor, i);
+		int msg_nto = (int)msg->nto;
+		ssize_t *msg_to = msg->to;
 		SEXP Rmsg_to;
 
 		PROTECT(Rmsg_to = NEW_INTEGER(msg_nto));

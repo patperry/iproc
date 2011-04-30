@@ -77,13 +77,8 @@ SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor)
 	ssize_t i, n = messages_iter_ntie(cursor);
 
 	for (i = 0; i < n; i++) {
-		messages_iter_select(cursor, i);
-		ssize_t msg_from = messages_iter_from(cursor);
-		ssize_t *msg_to = messages_iter_to(cursor);
-		ssize_t msg_nto = messages_iter_nto(cursor);
-
-		iproc_loglik_insertm(loglik, history, msg_from, msg_to,
-				     msg_nto);
+		const struct message *msg = messages_iter_current(cursor, i);
+		iproc_loglik_insert(loglik, history, msg);
 	}
 
 	return NULL_USER_OBJECT;

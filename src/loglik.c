@@ -74,13 +74,8 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 		ssize_t tie, ntie = messages_iter_ntie(it);
 
 		for (tie = 0; tie < ntie; tie++) {
-			messages_iter_select(it, tie);
-
-			ssize_t from = messages_iter_from(it);
-			ssize_t *to = messages_iter_to(it);
-			ssize_t nto = messages_iter_nto(it);
-
-			iproc_loglik_insertm(loglik, history, from, to, nto);
+			const struct message *msg = messages_iter_current(it, tie);
+			iproc_loglik_insert(loglik, history, msg);
 		}
 	}
 
@@ -126,24 +121,14 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 
 void
 iproc_loglik_insert(iproc_loglik * loglik,
-		    iproc_history * history, ssize_t from, ssize_t to)
+		    iproc_history * history,
+		    const struct message *msg)
 {
-	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
-	iproc_sloglik_insert(sll, history, to);
-	loglik->nsend++;
-	loglik->nrecv++;
-}
-
-void
-iproc_loglik_insertm(iproc_loglik * loglik,
-		     iproc_history * history,
-		     ssize_t from, ssize_t *to, ssize_t nto)
-{
-	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, from);
-	iproc_sloglik_insertm(sll, history, to, nto);
+	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, msg->from);
+	iproc_sloglik_insertm(sll, history, msg->to, msg->nto);
 	loglik->grad_cached = false;
 	loglik->nsend += 1;
-	loglik->nrecv += nto;
+	loglik->nrecv += msg->nto;
 }
 
 double iproc_loglik_value(iproc_loglik * loglik)

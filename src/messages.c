@@ -20,6 +20,7 @@ bool messages_init(struct messages *msgs)
 	msgs->max_to = -1;
 	msgs->max_from = -1;
 	msgs->max_nto = 0;
+	msgs->to_cached = false;
 	return true;
 
 fail_refcount:
@@ -107,7 +108,7 @@ bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 		return false;
 	
 	ssize_t ito = darray_size(recipients);
-	struct message_rep m = { time, from, ito, nto };
+	struct message_rep m = { { time, from, NULL, nto }, ito };
 	ssize_t i;
 
 	for (i = 0; i < nto; i++) {
@@ -124,6 +125,8 @@ bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 		msgs->max_nto = nto;
 
 	darray_push_back(message_reps, &m); // always succeeds
+	msgs->to_cached = false;
+
 	return true;
 }
 

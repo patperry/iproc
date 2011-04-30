@@ -26,10 +26,8 @@ iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
 void iproc_loglik_unref(iproc_loglik * loglik);
 
 void iproc_loglik_insert(iproc_loglik * loglik,
-			 iproc_history * history, ssize_t from, ssize_t to);
-void iproc_loglik_insertm(iproc_loglik * loglik,
-			  iproc_history * history,
-			  ssize_t from, ssize_t *to, ssize_t nto);
+			 iproc_history * history,
+			 const struct message *msg);
 
 double iproc_loglik_value(iproc_loglik * loglik);
 struct vector *iproc_loglik_grad(iproc_loglik * loglik);
