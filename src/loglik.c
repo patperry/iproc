@@ -67,19 +67,19 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 	if (!messages)
 		return loglik;
 
-	struct messages_iter *it = messages_iter_alloc(messages);
+	struct messages_iter it = messages_iter(messages);
 
-	while (messages_iter_next(it)) {
-		iproc_history *history = messages_iter_history(it);
-		ssize_t tie, ntie = messages_iter_ntie(it);
+	while (messages_iter_next(&it)) {
+		iproc_history *history = messages_iter_history(&it);
+		ssize_t tie, ntie = messages_iter_ntie(&it);
 
 		for (tie = 0; tie < ntie; tie++) {
-			const struct message *msg = messages_iter_current(it, tie);
+			const struct message *msg = messages_iter_current(&it, tie);
 			iproc_loglik_insert(loglik, history, msg);
 		}
 	}
 
-	messages_iter_free(it);
+	messages_iter_deinit(&it);
 	return loglik;
 }
 

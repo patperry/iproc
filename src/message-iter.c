@@ -6,31 +6,22 @@
 #include "messages.h"
 
 
-struct messages_iter *messages_iter_alloc(struct messages * msgs)
-{
-	struct messages_iter *it = malloc(sizeof(*it));
-	if (!it)
-		return NULL;
 
-	it->messages = messages_ref(msgs);
-	it->history = iproc_history_new();
-	messages_iter_reset(it);
+struct messages_iter messages_iter(struct messages * msgs)
+{
+	struct messages_iter it;
+
+	it.messages = messages_ref(msgs);
+	it.history = iproc_history_new();
+	messages_iter_reset(&it);
 
 	return it;
 }
 
-void message_iter_deinit(struct messages_iter *it)
+void messages_iter_deinit(struct messages_iter *it)
 {
 	iproc_history_unref(it->history);
 	messages_free(it->messages);
-}
-
-void messages_iter_free(struct messages_iter * it)
-{
-	if (it) {
-		message_iter_deinit(it);
-		free(it);
-	}
 }
 
 double messages_iter_current_time(struct messages_iter * it)
@@ -47,7 +38,7 @@ ssize_t messages_iter_ntie(struct messages_iter * it)
 	return it->ntie;
 }
 
-struct message *messages_iter_current(struct messages_iter * it, ssize_t itie)
+struct message *messages_iter_current(struct messages_iter *it, ssize_t itie)
 {
 	assert(messages_iter_started(it));
 	assert(!messages_iter_finished(it));

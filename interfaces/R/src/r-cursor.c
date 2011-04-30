@@ -29,7 +29,8 @@ void Riproc_cursor_init(DllInfo * info)
 static void Riproc_cursor_free(SEXP Rcursor)
 {
 	struct messages_iter *it = Riproc_to_cursor(Rcursor);
-	messages_iter_free(it);
+	messages_iter_deinit(it);
+	free(it);
 }
 
 SEXP Riproc_from_cursor(struct messages_iter * it)
@@ -60,7 +61,8 @@ struct messages_iter *Riproc_to_cursor(SEXP Rcursor)
 SEXP Riproc_cursor_new(SEXP Rmessages)
 {
 	struct messages *messages = Riproc_to_messages(Rmessages);
-	struct messages_iter *cursor = messages_iter_alloc(messages);
+	struct messages_iter *cursor = malloc(sizeof(*cursor));
+	*cursor = messages_iter(messages);
 	SEXP Rcursor;
 
 	PROTECT(Rcursor = Riproc_from_cursor(cursor));

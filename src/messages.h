@@ -58,8 +58,8 @@ ssize_t messages_max_from(const struct messages * msgs);
 ssize_t messages_max_to(const struct messages * msgs);
 ssize_t messages_max_nto(const struct messages * msgs);
 
-struct messages_iter *messages_iter_alloc(struct messages * msgs);
-void messages_iter_free(struct messages_iter *it);
+struct messages_iter messages_iter(struct messages * msgs);
+void messages_iter_deinit(struct messages_iter *it);
 
 ssize_t messages_iter_ntie(struct messages_iter * it);
 struct message *messages_iter_current(struct messages_iter * it, ssize_t itie);

@@ -163,17 +163,17 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 	PROTECT(Rtime = NEW_NUMERIC(n));
 	double *time = NUMERIC_POINTER(Rtime);
 
-	struct messages_iter *it = messages_iter_alloc(msgs);
+	struct messages_iter it = messages_iter(msgs);
 
-	while (messages_iter_next(it)) {
-		t = messages_iter_current_time(it);
-		ntie = (int)messages_iter_ntie(it);
+	while (messages_iter_next(&it)) {
+		t = messages_iter_current_time(&it);
+		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
 			*time++ = t;
 		}
 	}
 
-	messages_iter_free(it);
+	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rtime;
@@ -188,18 +188,18 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 	PROTECT(Rfrom = NEW_INTEGER(n));
 	int *from = INTEGER_POINTER(Rfrom);
 
-	struct messages_iter *it = messages_iter_alloc(msgs);
+	struct messages_iter it = messages_iter(msgs);
 	const struct message *msg;
 
-	while (messages_iter_next(it)) {
-		ntie = (int)messages_iter_ntie(it);
+	while (messages_iter_next(&it)) {
+		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
-			msg = messages_iter_current(it, i);
+			msg = messages_iter_current(&it, i);
 			*from++ = (int)msg->from + 1;
 		}
 	}
 
-	messages_iter_free(it);
+	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rfrom;
@@ -211,17 +211,16 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	int i, imsg, ntie, nto, n = (int)messages_size(msgs);
 	ssize_t *msg_to;
 	SEXP Rto, Rmsg_to;
-	struct messages_iter *it;
 
 	PROTECT(Rto = NEW_LIST(n));
 
-	it = messages_iter_alloc(msgs);
+	struct messages_iter it = messages_iter(msgs);
 	imsg = 0;
 
-	while (messages_iter_next(it)) {
-		ntie = (int)messages_iter_ntie(it);
+	while (messages_iter_next(&it)) {
+		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
-			const struct message *msg = messages_iter_current(it, i);
+			const struct message *msg = messages_iter_current(&it, i);
 			nto = (int)msg->nto;
 			msg_to = msg->to;
 
@@ -234,7 +233,7 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	}
 	assert(imsg == n);
 
-	messages_iter_free(it);
+	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rto;
@@ -249,18 +248,18 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 	PROTECT(Rnto = NEW_INTEGER(n));
 	int *nto = INTEGER_POINTER(Rnto);
 
-	struct messages_iter *it = messages_iter_alloc(msgs);
+	struct messages_iter it = messages_iter(msgs);
 	const struct message *msg;
 
-	while (messages_iter_next(it)) {
-		ntie = (int)messages_iter_ntie(it);
+	while (messages_iter_next(&it)) {
+		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
-			msg = messages_iter_current(it, i);
+			msg = messages_iter_current(&it, i);
 			*nto++ = (int)msg->nto;
 		}
 	}
 
-	messages_iter_free(it);
+	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rnto;
