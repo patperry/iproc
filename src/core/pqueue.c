@@ -59,7 +59,7 @@ void *pqueue_copy_to(const struct pqueue *q, void *dst)
 	return darray_copy_to(&q->array, dst);
 }
 
-void *pqueue_push(struct pqueue *q, const void *val)
+bool pqueue_push(struct pqueue *q, const void *val)
 {
 	assert(q);
 	assert(val);
@@ -70,7 +70,7 @@ void *pqueue_push(struct pqueue *q, const void *val)
 
 	// make space for the new element
 	if (!darray_reserve(array, icur + 1))
-		return NULL;
+		return false;
 
 	darray_resize(array, icur + 1);
 
@@ -91,18 +91,18 @@ void *pqueue_push(struct pqueue *q, const void *val)
 	// actually copy new element
 	darray_set(array, icur, val);
 
-	return (char *)val + pqueue_elt_size(q);
+	return true;
 }
 
-void *pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
+bool pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
 {
 	assert(q);
 	assert(src || n == 0);
 	assert(n >= 0);
 
 	// make space for the new elements
-	if (!darray_reserve(&q->array, pqueue_size(q) + n))
-		return NULL;
+	if (!pqueue_reserve_push(q, n))
+		return false;
 
 	size_t elt_size = pqueue_elt_size(q);
 	const void *end = (char *)src + n * elt_size;
@@ -111,7 +111,7 @@ void *pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
 		pqueue_push(q, src);
 	}
 
-	return (void *)src;
+	return true;
 }
 
 void pqueue_pop(struct pqueue *q)
@@ -162,4 +162,19 @@ void pqueue_pop(struct pqueue *q)
 
 out:
 	darray_resize(array, n);
+}
+
+bool pqueue_reserve(struct pqueue *q, ssize_t n)
+{
+	assert(q);
+	assert(n >= 0);
+	return darray_reserve(&q->array, n);
+}
+
+bool pqueue_reserve_push(struct pqueue *q, ssize_t npush)
+{
+	assert(q);
+	assert(npush >= 0);
+
+	return pqueue_reserve(q, pqueue_size(q) + npush);
 }
