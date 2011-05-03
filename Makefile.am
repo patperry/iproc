@@ -19,6 +19,8 @@ libiproc_la_SOURCES = \
 	src/design.h \
 	src/fit.c \
 	src/fit.h \
+	src/frame.c \
+	src/frame.h \
 	src/history.c \
 	src/history.h \
 	src/loglik.c \
@@ -33,6 +35,8 @@ libiproc_la_SOURCES = \
 	src/sloglik.h \
 	src/trace.c \
 	src/trace.h \
+	src/vnrecv.c \
+	src/vnrecv.h \
 	src/vrecip.c \
 	src/vrecip.h
 
@@ -277,6 +281,9 @@ check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
 tests_design_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
+check_PROGRAMS += tests/frame_test
+tests_frame_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
+tests_frame_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
 
 TESTS = \

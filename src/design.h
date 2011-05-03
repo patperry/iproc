@@ -5,6 +5,7 @@
 #include "history.h"
 #include "darray.h"
 #include "matrix.h"
+#include "messages.h"
 #include "refcount.h"
 #include "svector.h"
 #include "vector.h"
@@ -71,18 +72,31 @@
  * a sparse vector.
  */
 
+struct frame; // forward declaration
+
+struct dyad_var {
+	ssize_t dim;
+	bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index);
+};
+
+struct design_dyad_var {
+	ssize_t index;
+	const struct dyad_var *var;
+};
+
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
-	struct darray vars;
 	ssize_t ireffects, nreffects;
 	ssize_t istatic, nstatic;
 	ssize_t idynamic, ndynamic;
 	ssize_t dim;
 	bool has_reffects;
 
+	struct darray design_dyad_vars;
 
 	/* deprecated */
+	struct darray vars;
 	struct darray ctxs;
 	struct darray svectors;
 	struct refcount refcount;
@@ -106,6 +120,7 @@ struct actors *design_receivers(const struct design * design);
 bool design_has_reffects(const struct design *design);
 
 
+
 void design_mul0(double alpha,
 		       enum trans_op trans,
 		       const struct design * design,
@@ -116,6 +131,12 @@ void design_muls0(double alpha,
 			const struct design * design,
 			ssize_t isend,
 			const struct svector *x, double beta, struct vector *y);
+
+
+bool dyad_var_init(struct dyad_var *v, ssize_t dim,
+		   bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index));
+void dyad_var_deinit(struct dyad_var *v);
+ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var);
 
 
 

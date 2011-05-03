@@ -2,6 +2,7 @@
 #define _FRAME_H
 
 #include "actors.h"
+#include "messages.h"
 #include "intmap.h"
 #include "pqueue.h"
 
@@ -20,13 +21,6 @@ struct send_frame {
 };
 
 
-struct dyad_var {
-	ssize_t dim;
-	ssize_t offset;
-	bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f);
-	void (*deinit) (struct dyad_var *v);
-};
-
 
 struct dyad_var_diff {
 	double time;	
@@ -40,20 +34,12 @@ struct frame_diff {
 	struct darray dyad_var_diffs;
 };
 
-void design_var_init(struct design_var *v, ssize_t dim,
-		     bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f),
-		     void (*deinit) (struct dyad_var *v));
-void design_var_deinit(struct design_var *v);
-
 /* create/destroy */
 bool frame_init(struct frame *f, struct design *design);
 void frame_deinit(struct frame *f);
 
-bool frame_add_dyad_event(struct frame *f, double t,
-			  const struct dyad_var_diff *delta);
-bool frame_add_send_event(struct frame *f, double t,
-			  const struct send_var_diff *delta);
-
+bool frame_add_dyad_event(struct frame *f, const struct dyad_var_diff *delta);
+bool frame_reserve_dyad_events(struct frame *f, ssize_t nadd);
 
 /* record a message event */
 bool frame_insert(struct frame *f, const struct message *msg);

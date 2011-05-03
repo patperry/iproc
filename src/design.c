@@ -103,6 +103,9 @@ bool design_init(struct design *design, struct actors *senders,
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 	
+	if (!darray_init(&design->design_dyad_vars, sizeof(struct design_dyad_var)))
+		goto fail_design_dyad_vars;
+	
 	if (!darray_init(&design->vars, sizeof(iproc_design_var *)))
 		goto fail_vars;
 	
@@ -134,6 +137,8 @@ fail_svectors:
 fail_ctxs:
 	darray_deinit(&design->vars);
 fail_vars:
+	darray_deinit(&design->design_dyad_vars);
+fail_design_dyad_vars:
 	return false;
 }
 
@@ -467,4 +472,34 @@ bool design_has_reffects(const struct design *design)
 {
 	assert(design);
 	return design->has_reffects;
+}
+
+bool dyad_var_init(struct dyad_var *v, ssize_t dim,
+		   bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index))
+{
+	assert(v);
+	assert(dim >= 0);
+	
+	v->dim = dim;
+	v->insert = insert;
+	return true;
+}
+
+void dyad_var_deinit(struct dyad_var *v)
+{
+	assert(v);
+}
+
+ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var)
+{
+	struct design_dyad_var *design_var;
+	
+	if ((design_var = darray_push_back(&design->design_dyad_vars, NULL))) {
+		design_var->index = design->idynamic + design->ndynamic;
+		design_var->var = var;
+		design->ndynamic += design_var->var->dim;
+		return design_var->index;
+	}
+
+	return -1;
 }
