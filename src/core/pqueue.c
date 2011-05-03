@@ -59,6 +59,12 @@ void *pqueue_copy_to(const struct pqueue *q, void *dst)
 	return darray_copy_to(&q->array, dst);
 }
 
+void pqueue_clear(struct pqueue *q)
+{
+	assert(q);
+	darray_clear(&q->array);
+}
+
 bool pqueue_push(struct pqueue *q, const void *val)
 {
 	assert(q);

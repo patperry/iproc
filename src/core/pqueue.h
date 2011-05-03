@@ -19,9 +19,10 @@ bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size);
 bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src);
 void pqueue_deinit(struct pqueue *q);
 
-/* assignment, copy */
+/* assignment, copy, clear */
 struct pqueue *pqueue_assign_copy(struct pqueue *q, const struct pqueue *src);
 void *pqueue_copy_to(const struct pqueue *q, void *dst);
+void pqueue_clear(struct pqueue *q);
 
 /* informative */
 static inline void *pqueue_top(const struct pqueue *q);
