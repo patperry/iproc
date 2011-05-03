@@ -27,17 +27,17 @@ static bool darray_grow(struct darray *a)
 	return NULL;
 }
 
-static ssize_t darray_reserve_insert(struct darray *a, ssize_t delta)
+static bool darray_reserve_insert(struct darray *a, ssize_t delta)
 {
 	assert(a);
 	assert(delta >= 0);
 
 	do {
 		if (darray_size(a) <= darray_capacity(a) - delta)
-			return delta;
+			return true;
 	} while (darray_grow(a));
 
-	return 0;
+	return false;
 }
 
 struct darray *darray_init(struct darray *a, size_t elt_size)
@@ -82,7 +82,8 @@ bool darray_assign_repeat(struct darray *a, ssize_t n, const void *val)
 
 	if (darray_reserve(a, n)) {
 		darray_clear(a);
-		darray_insert_repeat(a, 0, n, val);
+		if (n > 0)
+			darray_insert_repeat(a, 0, n, val);
 		return a;
 	}
 
@@ -97,7 +98,8 @@ bool darray_assign(struct darray *a, const void *ptr, ssize_t n)
 
 	if (darray_reserve(a, n)) {
 		darray_clear(a);
-		darray_insert_all(a, 0, ptr, n);
+		if (n > 0)
+			darray_insert_all(a, 0, ptr, n);
 		return a;
 	}
 
@@ -150,7 +152,7 @@ void darray_fill_range(struct darray *a, ssize_t i, ssize_t n, const void *val)
 	memory_fill(darray_at(a, i), n, val, darray_elt_size(a));
 }
 
-static ssize_t darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
+static void * darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
 {
 	ssize_t size0 = a->size;
 	ssize_t size = size0 + n;
@@ -158,67 +160,65 @@ static ssize_t darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
 	size_t tail_size = (size0 - i) * elt_size;
 
 	void *src, *dst;
-	ssize_t nactual;
 
-	if ((nactual = darray_reserve_insert(a, n))) {
+	if (darray_reserve_insert(a, n)) {
 		darray_resize_with(a, size, NULL);
 		src = darray_at(a, i);	// compute dst after resize in case of realloc
-		dst = (char *)src + nactual * elt_size;
+		dst = (char *)src + n * elt_size;
 		memmove(dst, src, tail_size);
+		return src;
 	}
 
-	return nactual;
+	return NULL;
 }
 
-bool darray_insert(struct darray *a, ssize_t i, const void *val)
+void *darray_insert(struct darray *a, ssize_t i, const void *val)
 {
 	assert(a);
 	assert(darray_size(a) <= darray_max_size(a) - 1);
 	assert(i >= 0);
 	assert(i <= darray_size(a));
 
-	return darray_insert_repeat(a, i, 1, val);
+	return darray_insert_all(a, i, val, 1);
 }
 
-ssize_t darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
-			     const void *val)
+void *darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
+			   const void *val)
 {
 	assert(a);
 	assert(i >= 0);
 	assert(i <= darray_size(a));
-	assert(n >= 0);
+	assert(n >= 1);
 	assert(n <= darray_max_size(a) - darray_size(a));
 
-	ssize_t nactual;
+	void *res;
 
-	if ((nactual = darray_insert_space(a, i, n))) {
-		if (val)
-			array_fill_range(&a->array, i, nactual, val);
+	if ((res = darray_insert_space(a, i, n))) {
+		array_fill_range(&a->array, i, n, val);
 	}
 
-	return nactual;
+	return res;
 }
 
-ssize_t darray_insert_all(struct darray *a, ssize_t i, const void *ptr,
-			  ssize_t n)
+void *darray_insert_all(struct darray *a, ssize_t i, const void *ptr,
+			ssize_t n)
 {
 	assert(a);
 	assert(i >= 0);
 	assert(i <= darray_size(a));
-	assert(ptr || n == 0);
-	assert(n >= 0);
+	assert(n >= 1);
 	assert(n <= darray_max_size(a) - darray_size(a));
 
-	ssize_t nactual;
+	void *res;
 
-	if ((nactual = darray_insert_space(a, i, n)) && ptr) {
-		array_set_range(&a->array, i, nactual, ptr);
+	if ((res = darray_insert_space(a, i, n)) && ptr) {
+		array_set_range(&a->array, i, n, ptr);
 	}
 
-	return nactual;
+	return res;
 }
 
-bool darray_push_back(struct darray *a, const void *val)
+void *darray_push_back(struct darray *a, const void *val)
 {
 	assert(a);
 	assert(darray_size(a) <= darray_max_size(a) - 1);
