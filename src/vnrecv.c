@@ -7,7 +7,7 @@
 
 
 
-static bool insert(struct dyad_var *dyad_var, const struct message *msg, struct frame *f, ssize_t index)
+static bool insert(const struct dyad_var *dyad_var, const struct message *msg, struct frame *f, ssize_t index)
 {
 	assert(dyad_var);
 	assert(msg);

@@ -76,7 +76,7 @@ struct frame; // forward declaration
 
 struct dyad_var {
 	ssize_t dim;
-	bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index);
+	bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index);
 };
 
 struct design_dyad_var {
@@ -134,7 +134,7 @@ void design_muls0(double alpha,
 
 
 bool dyad_var_init(struct dyad_var *v, ssize_t dim,
-		   bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index));
+		   bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index));
 void dyad_var_deinit(struct dyad_var *v);
 ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var);
 

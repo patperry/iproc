@@ -475,7 +475,7 @@ bool design_has_reffects(const struct design *design)
 }
 
 bool dyad_var_init(struct dyad_var *v, ssize_t dim,
-		   bool (*insert) (struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index))
+		   bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index))
 {
 	assert(v);
 	assert(dim >= 0);
