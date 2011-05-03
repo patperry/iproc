@@ -242,7 +242,7 @@ double svector_dots(const struct svector *v1, const struct svector *v2)
 	return dot;
 }
 
-void svector_axpys(double scale, const struct svector *x, struct svector *y)
+bool svector_axpys(double scale, const struct svector *x, struct svector *y)
 {
 	assert(y);
 	assert(x);
@@ -251,14 +251,24 @@ void svector_axpys(double scale, const struct svector *x, struct svector *y)
 	struct svector_iter itx;
 	ssize_t i;
 	double val;
+	double *yi;
+	bool ok = true;
 
 	svector_iter_init(x, &itx);
 	while (svector_iter_advance(x, &itx)) {
 		i = svector_iter_current_index(x, &itx);
 		val = *svector_iter_current(x, &itx);
-		*svector_at(y, i) += scale * val;
+		yi = svector_at(y, i);
+		
+		if (!yi) {
+			ok = false;
+			break;
+		}
+		
+		*yi += scale * val;
 	}
 	svector_iter_deinit(x, &itx);
+	return ok;
 }
 
 void svector_printf(const struct svector *v)
