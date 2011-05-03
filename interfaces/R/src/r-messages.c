@@ -165,7 +165,7 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 
 	struct messages_iter it = messages_iter(msgs);
 
-	while (messages_iter_next(&it)) {
+	while (messages_iter_advance(&it)) {
 		t = messages_iter_current_time(&it);
 		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
@@ -191,7 +191,7 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 	struct messages_iter it = messages_iter(msgs);
 	const struct message *msg;
 
-	while (messages_iter_next(&it)) {
+	while (messages_iter_advance(&it)) {
 		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
 			msg = messages_iter_current(&it, i);
@@ -217,7 +217,7 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	struct messages_iter it = messages_iter(msgs);
 	imsg = 0;
 
-	while (messages_iter_next(&it)) {
+	while (messages_iter_advance(&it)) {
 		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
 			const struct message *msg = messages_iter_current(&it, i);
@@ -251,7 +251,7 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 	struct messages_iter it = messages_iter(msgs);
 	const struct message *msg;
 
-	while (messages_iter_next(&it)) {
+	while (messages_iter_advance(&it)) {
 		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
 			msg = messages_iter_current(&it, i);

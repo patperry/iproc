@@ -69,7 +69,7 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 
 	struct messages_iter it = messages_iter(messages);
 
-	while (messages_iter_next(&it)) {
+	while (messages_iter_advance(&it)) {
 		iproc_history *history = messages_iter_history(&it);
 		ssize_t tie, ntie = messages_iter_ntie(&it);
 

@@ -63,7 +63,7 @@ void messages_iter_reset(struct messages_iter * it)
 	it->finished = false;
 }
 
-bool messages_iter_next(struct messages_iter * it)
+bool messages_iter_advance(struct messages_iter * it)
 {
 	if (messages_iter_finished(it))
 		return false;

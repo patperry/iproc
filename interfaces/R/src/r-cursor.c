@@ -74,7 +74,7 @@ SEXP Riproc_cursor_advance(SEXP Rcursor)
 {
 	struct messages_iter *cursor = Riproc_to_cursor(Rcursor);
 
-	if (messages_iter_next(cursor)) {
+	if (messages_iter_advance(cursor)) {
 		return ScalarLogical(TRUE);
 	} else {
 		return ScalarLogical(FALSE);

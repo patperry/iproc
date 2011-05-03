@@ -66,7 +66,7 @@ struct message *messages_iter_current(struct messages_iter * it, ssize_t itie);
 double messages_iter_current_time(struct messages_iter *it);
 
 void messages_iter_reset(struct messages_iter * it);
-bool messages_iter_next(struct messages_iter * it);
+bool messages_iter_advance(struct messages_iter * it);
 bool messages_iter_started(struct messages_iter * it);
 bool messages_iter_finished(struct messages_iter * it);
 
