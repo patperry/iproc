@@ -23,6 +23,25 @@ struct message_parse {
 	bool multiple_receivers;
 };
 
+static bool message_parse_init(struct message_parse *parse, struct messages *messages)
+{
+	if (darray_init(&parse->receiver_id, sizeof(ssize_t))) {
+		parse->messages = messages;
+		parse->id = -1;
+		parse->time = NAN;
+		parse->sender_id = -1;
+		parse->map_key = MAP_KEY_NONE;
+		parse->multiple_receivers = false;
+		return true;
+	}
+	return false;
+}
+
+static void message_parse_deinit(struct message_parse *parse)
+{
+	darray_deinit(&parse->receiver_id);
+}
+
 static int parse_integer(void *ctx, long long integerVal)
 {
 	struct message_parse *parse = ctx;
@@ -208,9 +227,13 @@ bool enron_messages_init_fread(struct messages *messages, FILE *stream)
 	
 	struct message_parse parse;
 	
-	parse.messages = messages;
 	if (!messages_init(messages))
 		return false;
+	
+	if (!message_parse_init(&parse, messages)) {
+		messages_deinit(messages);
+		return false;
+	}
 	
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *) &parse);
 	yajl_config(hand, yajl_allow_comments, 1);
@@ -242,9 +265,10 @@ bool enron_messages_init_fread(struct messages *messages, FILE *stream)
 	}
 	
 	yajl_free(hand);
+	message_parse_deinit(&parse);
 	
 	if (!parse_ok) {
-		messages_deinit(parse.messages);
+		messages_deinit(messages);
 	}
 	
 	return parse_ok;
