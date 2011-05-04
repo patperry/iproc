@@ -498,6 +498,7 @@ ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var)
 		design_var->index = design->idynamic + design->ndynamic;
 		design_var->var = var;
 		design->ndynamic += design_var->var->dim;
+		design->dim += design_var->var->dim;
 		return design_var->index;
 	}
 
