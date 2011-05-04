@@ -111,8 +111,9 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	struct darray to_buf;
 	double tcur = -INFINITY;
 	double msg_time;
-	int msg_from, msg_nto;
+	ssize_t msg_from, msg_nto;
 	ssize_t *msg_to;
+	intptr_t msg_attr = 0;
 	int i;
 	struct messages *msgs = messages_alloc();
 	SEXP Rmsgs, Rmsg_to;
@@ -124,7 +125,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 		msg_from = from[i] - 1;
 		Rmsg_to = VECTOR_ELT(Rto, i);
 		msg_to = copy_sexp_to_int64(&to_buf, Rmsg_to);
-		msg_nto = (int)darray_size(&to_buf);
+		msg_nto = darray_size(&to_buf);
 
 		if (msg_time < tcur)
 			error
@@ -133,7 +134,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 			error("'from' values must be positive");
 
 		messages_advance_to(msgs, msg_time);
-		messages_insertm(msgs, msg_from, msg_to, msg_nto);
+		messages_insertm(msgs, msg_from, msg_to, msg_nto, msg_attr);
 
 		tcur = msg_time;
 	}

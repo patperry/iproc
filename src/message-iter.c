@@ -95,8 +95,9 @@ bool messages_iter_advance(struct messages_iter * it)
 			ssize_t msg_from = message_rep[ntie].message.from;
 			ssize_t *msg_to = message_rep[ntie].message.to;
 			ssize_t msg_nto = message_rep[ntie].message.nto;
+			intptr_t attr = message_rep[ntie].message.attr;
 			iproc_history_insertm(history, msg_from, msg_to,
-					      msg_nto);
+					      msg_nto, attr);
 			
 			/* not deprecated */
 			ntie++;

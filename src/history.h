@@ -25,7 +25,7 @@ typedef struct _iproc_history iproc_history;
 typedef struct _iproc_history_trace iproc_history_trace;
 
 struct _iproc_history_trace {
-	struct event_trace *trace;
+	struct event_trace trace;
 	double tcur;
 };
 
@@ -42,10 +42,10 @@ void iproc_history_unref(iproc_history * history);
 void iproc_history_clear(iproc_history * history);
 
 double iproc_history_tcur(iproc_history * history);
-void iproc_history_advance_to(iproc_history * history, double t);
-void iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to);
-void iproc_history_insertm(iproc_history * history,
-			   ssize_t from, ssize_t *to, ssize_t nto);
+bool iproc_history_advance_to(iproc_history * history, double t);
+bool iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to, intptr_t attr);
+bool iproc_history_insertm(iproc_history * history,
+			   ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
 
 ssize_t iproc_history_nsend(iproc_history * history);
 ssize_t iproc_history_nrecv(iproc_history * history);

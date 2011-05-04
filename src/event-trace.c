@@ -117,6 +117,14 @@ bool event_trace_insert(struct event_trace * trace, ssize_t e, intptr_t attr)
 	return darray_push_back(&trace->pending, &event);
 }
 
+bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert)
+{
+	assert(trace);
+	assert(ninsert >= 0);
+	return darray_reserve(&trace->pending,
+			      darray_size(&trace->pending) + ninsert);
+}
+
 bool event_trace_advance_to(struct event_trace * trace, double t)
 {
 	assert(trace);

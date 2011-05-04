@@ -19,6 +19,7 @@ struct message_parse {
 	double time;
 	ssize_t sender_id;
 	struct darray receiver_id;
+	intptr_t attr;
 	enum message_map_key map_key;
 	bool multiple_receivers;
 };
@@ -30,6 +31,7 @@ static bool message_parse_init(struct message_parse *parse, struct messages *mes
 		parse->id = -1;
 		parse->time = NAN;
 		parse->sender_id = -1;
+		parse->attr = 0;
 		parse->map_key = MAP_KEY_NONE;
 		parse->multiple_receivers = false;
 		return true;
@@ -181,7 +183,8 @@ static int parse_end_map(void *ctx)
 	if (!messages_insertm(parse->messages,
 			      parse->sender_id,
 			      darray_front(&parse->receiver_id),
-			      darray_size(&parse->receiver_id))) {
+			      darray_size(&parse->receiver_id),
+			      parse->attr)) {
 		fprintf(stderr, "not enough memory to insert message '%" SSIZE_FMT "'",
 			parse->id);
 		return 0;

@@ -82,16 +82,16 @@ void messages_advance_to(struct messages * msgs, double t)
 	msgs->tcur = t;
 }
 
-bool messages_insert(struct messages * msgs, ssize_t from, ssize_t to)
+bool messages_insert(struct messages * msgs, ssize_t from, ssize_t to, intptr_t attr)
 {
 	assert(msgs);
 	assert(from >= 0);
 	assert(to >= 0);
-	return messages_insertm(msgs, from, &to, 1);
+	return messages_insertm(msgs, from, &to, 1, attr);
 }
 
 bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
-		      ssize_t nto)
+		      ssize_t nto, intptr_t attr)
 {
 	assert(msgs);
 	assert(from >= 0);
@@ -108,7 +108,7 @@ bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
 		return false;
 	
 	ssize_t ito = darray_size(recipients);
-	struct message_rep m = { { time, from, NULL, nto }, ito };
+	struct message_rep m = { { time, from, NULL, nto, attr }, ito };
 	ssize_t i;
 
 	for (i = 0; i < nto; i++) {

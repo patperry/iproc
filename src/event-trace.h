@@ -43,13 +43,12 @@ struct event_trace {
 
 bool event_trace_init(struct event_trace *trace);
 void event_trace_deinit(struct event_trace *trace);
-struct event_trace *event_trace_alloc(void);
-void event_trace_free(struct event_trace *trace);
 
 void event_trace_clear(struct event_trace *trace);
 
 bool event_trace_insert(struct event_trace * trace, ssize_t e, intptr_t attr);
 bool event_trace_advance_to(struct event_trace * trace, double time);
+bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert);
 
 double event_trace_tcur(const struct event_trace * trace);
 ssize_t event_trace_size(const struct event_trace * trace);
