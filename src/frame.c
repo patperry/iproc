@@ -48,6 +48,9 @@ bool frame_init(struct frame *f, struct design *design)
 	assert(f);
 	assert(design);
 	
+	if (!history_init(&f->history))
+	    goto fail_history;
+	
 	if (!pqueue_init(&f->dyad_var_diffs, dyad_var_diff_rcompare,
 			 sizeof(struct dyad_var_diff)))
 		goto fail_dyad_var_diffs;
@@ -63,6 +66,8 @@ bool frame_init(struct frame *f, struct design *design)
 fail_send_frames:
 	pqueue_deinit(&f->dyad_var_diffs);
 fail_dyad_var_diffs:
+	history_deinit(&f->history);
+    fail_history:
 	return false;
 }
 
@@ -83,6 +88,7 @@ void frame_deinit(struct frame *f)
 	
 	intmap_deinit(&f->send_frames);
 	pqueue_deinit(&f->dyad_var_diffs);
+	history_deinit(&f->history);
 }
 
 static void send_frame_clear(struct send_frame *sf)
@@ -122,6 +128,12 @@ double frame_time(const struct frame *f)
 {
 	assert(f);
 	return f->time;
+}
+
+const struct history *frame_history(const struct frame *f)
+{
+	assert(f);
+	return &f->history;
 }
 
 bool frame_insert(struct frame *f, const struct message *msg)
@@ -234,6 +246,9 @@ bool frame_advance_to(struct frame *f, double t, struct frame_diff *diff)
 		return true;
 	
 	struct dyad_var_diff *dyad_var_diff;
+	
+	if (!history_advance_to(&f->history, t))
+		return false;
 	
 	while (!pqueue_empty(&f->dyad_var_diffs) && frame_next_update(f) <= t) {
 		dyad_var_diff = pqueue_top(&f->dyad_var_diffs);

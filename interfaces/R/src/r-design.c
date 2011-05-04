@@ -154,7 +154,7 @@ SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int sender = INTEGER(Rsender)[0] - 1;
 	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
-	iproc_history *history = messages_iter_history(cursor);
+	struct history *history = messages_iter_history(cursor);
 
 	if (sender < 0 || sender >= nsender)
 		error("invalid sender");
@@ -193,7 +193,7 @@ SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
 	int sender = INTEGER(Rsender)[0] - 1;
 	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_cursor(Rcursor));
-	iproc_history *history = messages_iter_history(cursor);
+	struct history *history = messages_iter_history(cursor);
 
 	if (sender < 0 || sender >= nsender)
 		error("invalid sender");

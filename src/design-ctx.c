@@ -61,7 +61,7 @@ static void clear_dxs(struct design * design, struct darray *dxs)
 }
 
 static void
-iproc_design_ctx_set(iproc_design_ctx * ctx, ssize_t isend, iproc_history * h)
+iproc_design_ctx_set(iproc_design_ctx * ctx, ssize_t isend, struct history * h)
 {
 	assert(ctx);
 	assert(ctx->design);
@@ -71,8 +71,8 @@ iproc_design_ctx_set(iproc_design_ctx * ctx, ssize_t isend, iproc_history * h)
 	struct design *design = ctx->design;
 
 	if (h != ctx->history) {
-		iproc_history_ref(h);
-		iproc_history_unref(ctx->history);
+		history_ref(h);
+		history_free(ctx->history);
 		ctx->history = h;
 	}
 	ctx->isend = isend;
@@ -99,7 +99,7 @@ iproc_design_ctx_set(iproc_design_ctx * ctx, ssize_t isend, iproc_history * h)
 static void iproc_design_ctx_free(iproc_design_ctx * ctx)
 {
 	if (ctx) {
-		iproc_history_unref(ctx->history);
+		history_free(ctx->history);
 		ctx->history = NULL;
 		clear_dxs(ctx->design, &ctx->dxs);
 
@@ -112,7 +112,7 @@ static void iproc_design_ctx_free(iproc_design_ctx * ctx)
 
 static iproc_design_ctx *iproc_design_ctx_new_alloc(struct design * design,
 						    ssize_t isend,
-						    iproc_history * h)
+						    struct history * h)
 {
 	assert(design);
 	assert(0 <= isend);
@@ -139,7 +139,7 @@ static iproc_design_ctx *iproc_design_ctx_new_alloc(struct design * design,
 }
 
 iproc_design_ctx *iproc_design_ctx_new(struct design * design,
-				       ssize_t isend, iproc_history * h)
+				       ssize_t isend, struct history * h)
 {
 	assert(design);
 	assert(0 <= isend);

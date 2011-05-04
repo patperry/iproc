@@ -77,14 +77,14 @@ void iproc_sloglik_unref(iproc_sloglik * sll)
 
 void
 iproc_sloglik_insert(iproc_sloglik * sll,
-		     iproc_history * history, ssize_t jrecv)
+		     struct history * history, ssize_t jrecv)
 {
 	iproc_sloglik_insertm(sll, history, &jrecv, 1);
 }
 
 void
 iproc_sloglik_insertm(iproc_sloglik * sll,
-		      iproc_history * history, ssize_t *jrecv, ssize_t n)
+		      struct history * history, ssize_t *jrecv, ssize_t n)
 {
 	ssize_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =

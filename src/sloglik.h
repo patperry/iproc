@@ -76,9 +76,9 @@ iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
 void iproc_sloglik_unref(iproc_sloglik * sll);
 
 void iproc_sloglik_insert(iproc_sloglik * sll,
-			  iproc_history * history, ssize_t jrecv);
+			  struct history * history, ssize_t jrecv);
 void iproc_sloglik_insertm(iproc_sloglik * sll,
-			   iproc_history * history, ssize_t *jrecv, ssize_t n);
+			   struct history * history, ssize_t *jrecv, ssize_t n);
 
 double iproc_sloglik_value(iproc_sloglik * sll);
 struct vector *iproc_sloglik_grad(iproc_sloglik * sll);

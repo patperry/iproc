@@ -30,14 +30,14 @@ design_var_get_dxs(iproc_design_var * var,
 	iproc_vrecip *v = container_of(var, iproc_vrecip, var);
 	struct darray *intvls = &v->intvls;
 	ssize_t nintvl = darray_size(intvls);
-	iproc_history *history = ctx->history;
+	struct history *history = ctx->history;
 	ssize_t isend = ctx->isend;
 
 	if (!history || nintvl == 0)
 		return;
 
-	double tcur = iproc_history_tcur(history);
-	struct event_trace *trace = iproc_history_recv(history, isend);
+	double tcur = history_tcur(history);
+	struct event_trace *trace = history_recv(history, isend);
 
 	ssize_t i, n = event_trace_size(trace);
 	for (i = 0; i < n; i++) {

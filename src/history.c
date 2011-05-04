@@ -10,7 +10,7 @@ static bool trace_array_grow(struct darray *array, ssize_t n)
 	assert(array);
 	ssize_t nold = darray_size(array);
 	ssize_t i;
-	iproc_history_trace *ht;
+	struct history_trace *ht;
 
 	if (n > nold) {
 		if (darray_resize(array, n)) {
@@ -32,7 +32,7 @@ static void trace_array_clear(struct darray *array)
 	assert(array);
 	ssize_t n = darray_size(array);
 	ssize_t i;
-	iproc_history_trace *ht;
+	struct history_trace *ht;
 
 	for (i = 0; i < n; i++) {
 		ht = darray_at(array, i);
@@ -47,7 +47,7 @@ static void trace_array_deinit(struct darray *array)
 	ssize_t i;
 
 	for (i = 0; i < n; i++) {
-		iproc_history_trace *ht = darray_at(array, i);
+		struct history_trace *ht = darray_at(array, i);
 		event_trace_deinit(&ht->trace);
 	}
 
@@ -61,7 +61,7 @@ static struct event_trace *trace_array_get(double tcur,
 	assert(i >= 0);
 
 	if (trace_array_grow(array, i + 1)) {
-		iproc_history_trace *ht = darray_at(array, i);
+		struct history_trace *ht = darray_at(array, i);
 		struct event_trace *t = &ht->trace;
 
 		if (ht->tcur != tcur) {
@@ -80,14 +80,6 @@ void history_deinit(struct history *history)
 	refcount_deinit(&history->refcount);
 	trace_array_deinit(&history->recv);	
 	trace_array_deinit(&history->send);
-}
-
-static void iproc_history_free(iproc_history * history)
-{
-	if (history) {
-		history_deinit(history);
-		free(history);
-	}
 }
 
 bool history_init(struct history *history)
@@ -114,9 +106,9 @@ fail_send:
 	return false;
 }
 
-iproc_history *iproc_history_new(void)
+struct history *history_alloc(void)
 {
-	iproc_history *history = malloc(sizeof(*history));
+	struct history *history = malloc(sizeof(*history));
 
 	if (history) {
 		if (history_init(history))
@@ -127,7 +119,7 @@ iproc_history *iproc_history_new(void)
 	return NULL;
 }
 
-iproc_history *iproc_history_ref(iproc_history * history)
+struct history *history_ref(struct history * history)
 {
 	if (history) {
 		refcount_get(&history->refcount);
@@ -135,22 +127,18 @@ iproc_history *iproc_history_ref(iproc_history * history)
 	return history;
 }
 
-static void iproc_history_release(struct refcount *refcount)
-{
-	iproc_history *history =
-	    container_of(refcount, iproc_history, refcount);
-	iproc_history_free(history);
-}
-
-void iproc_history_unref(iproc_history * history)
+void history_free(struct history * history)
 {
 	if (!history)
 		return;
-
-	refcount_put(&history->refcount, iproc_history_release);
+	
+	if (refcount_put(&history->refcount, NULL)) {
+		history_deinit(history);
+		free(history);
+	}
 }
 
-void iproc_history_clear(iproc_history * history)
+void history_clear(struct history * history)
 {
 	assert(history);
 	history->tcur = -INFINITY;
@@ -158,13 +146,13 @@ void iproc_history_clear(iproc_history * history)
 	trace_array_clear(&history->recv);
 }
 
-double iproc_history_tcur(iproc_history * history)
+double history_tcur(struct history * history)
 {
 	assert(history);
 	return history->tcur;
 }
 
-bool iproc_history_advance_to(iproc_history * history, double t)
+bool history_advance_to(struct history * history, double t)
 {
 	assert(history);
 	assert(history->tcur <= t);
@@ -173,33 +161,25 @@ bool iproc_history_advance_to(iproc_history * history, double t)
 	return true;
 }
 
-bool iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to, intptr_t attr)
-{
-	assert(history);
-	assert(from >= 0);
-	assert(to >= 0);
-	return iproc_history_insertm(history, from, &to, 1, attr);
-}
-
-bool iproc_history_insertm(iproc_history * history, ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
+bool history_insert(struct history * history, ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
 {
 	assert(history);
 	assert(to || nto == 0);
 	assert(nto >= 0);
 
-	struct event_trace *efrom = iproc_history_send(history, from);
+	struct event_trace *efrom = history_send(history, from);
 	if (!(efrom && event_trace_reserve_insert(efrom, nto)))
 		return false;
 	
 	ssize_t i;
 	for (i = 0; i < nto; i++) {
-		struct event_trace *eto = iproc_history_recv(history, to[i]);
+		struct event_trace *eto = history_recv(history, to[i]);
 		if (!(eto && event_trace_reserve_insert(eto, 1)))
 			return false;
 	}
 
 	for (i = 0; i < nto; i++) {
-		struct event_trace *eto = iproc_history_recv(history, to[i]);
+		struct event_trace *eto = history_recv(history, to[i]);
 		event_trace_insert(efrom, to[i], attr);
 		event_trace_insert(eto, from, attr);
 	}
@@ -207,19 +187,19 @@ bool iproc_history_insertm(iproc_history * history, ssize_t from, ssize_t *to, s
 	return true;
 }
 
-ssize_t iproc_history_nsend(iproc_history * history)
+ssize_t history_nsend(struct history * history)
 {
 	assert(history);
 	return darray_size(&history->send);
 }
 
-ssize_t iproc_history_nrecv(iproc_history * history)
+ssize_t history_nrecv(struct history * history)
 {
 	assert(history);
 	return darray_size(&history->recv);
 }
 
-struct event_trace *iproc_history_send(iproc_history * history, ssize_t i)
+struct event_trace *history_send(struct history * history, ssize_t i)
 {
 	assert(history);
 	assert(0 <= i);
@@ -227,7 +207,7 @@ struct event_trace *iproc_history_send(iproc_history * history, ssize_t i)
 	return trace_array_get(history->tcur, &history->send, i);
 }
 
-struct event_trace *iproc_history_recv(iproc_history * history, ssize_t j)
+struct event_trace *history_recv(struct history * history, ssize_t j)
 {
 	assert(history);
 	assert(0 <= j);

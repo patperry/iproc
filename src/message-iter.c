@@ -12,7 +12,7 @@ struct messages_iter messages_iter(struct messages * msgs)
 	struct messages_iter it;
 
 	it.messages = messages_ref(msgs);
-	it.history = iproc_history_new();
+	it.history = history_alloc();
 	messages_iter_reset(&it);
 
 	return it;
@@ -20,7 +20,7 @@ struct messages_iter messages_iter(struct messages * msgs)
 
 void messages_iter_deinit(struct messages_iter *it)
 {
-	iproc_history_unref(it->history);
+	history_free(it->history);
 	messages_free(it->messages);
 }
 
@@ -56,7 +56,7 @@ void messages_iter_reset(struct messages_iter * it)
 	if (!it)
 		return;
 
-	iproc_history_clear(it->history);
+	history_clear(it->history);
 	it->message_rep = NULL;
 	it->offset = 0;
 	it->ntie = 0;
@@ -72,7 +72,7 @@ bool messages_iter_advance(struct messages_iter * it)
 
 	struct darray *message_reps = &it->messages->message_reps;
 	struct darray *recipients = &it->messages->recipients;
-	iproc_history *history = it->history;
+	struct history *history = it->history;
 	ssize_t n = darray_size(message_reps);
 	bool has_next = offset < n;
 
@@ -82,7 +82,7 @@ bool messages_iter_advance(struct messages_iter * it)
 		ssize_t ntie_max = n - offset;
 		ssize_t ntie = 0;
 
-		iproc_history_advance_to(history, time);
+		history_advance_to(history, time);
 
 		do {
 			if (!it->messages->to_cached) {
@@ -96,7 +96,7 @@ bool messages_iter_advance(struct messages_iter * it)
 			ssize_t *msg_to = message_rep[ntie].message.to;
 			ssize_t msg_nto = message_rep[ntie].message.nto;
 			intptr_t attr = message_rep[ntie].message.attr;
-			iproc_history_insertm(history, msg_from, msg_to,
+			history_insert(history, msg_from, msg_to,
 					      msg_nto, attr);
 			
 			/* not deprecated */
@@ -130,7 +130,7 @@ bool messages_iter_finished(struct messages_iter * it)
 	return it->finished;
 }
 
-iproc_history *messages_iter_history(struct messages_iter * it)
+struct history *messages_iter_history(struct messages_iter * it)
 {
 	if (!it)
 		return NULL;

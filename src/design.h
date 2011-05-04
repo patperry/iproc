@@ -152,7 +152,7 @@ typedef struct _iproc_design_dx iproc_design_dx;	// private
 /* dX[t,i] */
 struct _iproc_design_ctx {
 	struct design *design;
-	iproc_history *history;
+	struct history *history;
 	ssize_t isend;
 	struct darray dxs;
 	struct refcount refcount;
@@ -184,7 +184,7 @@ void iproc_design_var_init(iproc_design_var * var,
 			   void (*free) (iproc_design_var *));
 
 iproc_design_ctx *iproc_design_ctx_new(struct design * design,
-				       ssize_t isend, iproc_history * h);
+				       ssize_t isend, struct history * h);
 iproc_design_ctx *iproc_design_ctx_ref(iproc_design_ctx * ctx);
 void iproc_design_ctx_unref(iproc_design_ctx * ctx);
 

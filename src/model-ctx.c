@@ -140,7 +140,7 @@ static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 
 static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 						  ssize_t isend,
-						  iproc_history * h)
+						  struct history * h)
 {
 	assert(model);
 	assert(isend >= 0);
@@ -173,7 +173,7 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 }
 
 iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     ssize_t isend, iproc_history * h)
+				     ssize_t isend, struct history * h)
 {
 	assert(model);
 	assert(0 <= isend);
@@ -199,7 +199,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 }
 
 void
-iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, iproc_history * h)
+iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, struct history * h)
 {
 	assert(ctx);
 	assert(ctx->model);

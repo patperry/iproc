@@ -163,12 +163,12 @@ struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend);
 struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend);
 
 iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     ssize_t isend, iproc_history * h);
+				     ssize_t isend, struct history * h);
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx);
 void iproc_model_ctx_unref(iproc_model_ctx * ctx);
 
 void iproc_model_ctx_set(iproc_model_ctx * ctx,
-			 ssize_t isend, iproc_history * h);
+			 ssize_t isend, struct history * h);
 
 ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx);
 double iproc_model_ctx_prob(iproc_model_ctx * ctx, ssize_t jrecv);

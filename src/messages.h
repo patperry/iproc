@@ -36,7 +36,7 @@ struct messages_iter {
 	struct message_rep *message_rep;
 
 	/* deprecated */
-	iproc_history *history;
+	struct history *history;
 	bool finished;
 };
 
@@ -72,7 +72,7 @@ bool messages_iter_started(struct messages_iter * it);
 bool messages_iter_finished(struct messages_iter * it);
 
 /* DEPRECATED */
-iproc_history *messages_iter_history(struct messages_iter * it);
+struct history *messages_iter_history(struct messages_iter * it);
 
 
 

@@ -70,7 +70,7 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 	struct messages_iter it = messages_iter(messages);
 
 	while (messages_iter_advance(&it)) {
-		iproc_history *history = messages_iter_history(&it);
+		struct history *history = messages_iter_history(&it);
 		ssize_t tie, ntie = messages_iter_ntie(&it);
 
 		for (tie = 0; tie < ntie; tie++) {
@@ -121,7 +121,7 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 
 void
 iproc_loglik_insert(iproc_loglik * loglik,
-		    iproc_history * history,
+		    struct history * history,
 		    const struct message *msg)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, msg->from);

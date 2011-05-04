@@ -26,7 +26,7 @@ iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
 void iproc_loglik_unref(iproc_loglik * loglik);
 
 void iproc_loglik_insert(iproc_loglik * loglik,
-			 iproc_history * history,
+			 struct history * history,
 			 const struct message *msg);
 
 double iproc_loglik_value(iproc_loglik * loglik);

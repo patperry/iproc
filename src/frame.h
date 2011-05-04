@@ -3,11 +3,13 @@
 
 #include "actors.h"
 #include "messages.h"
+#include "history.h"
 #include "intmap.h"
 #include "pqueue.h"
 #include "design.h"
 
 struct frame {
+	struct history history;
 	struct pqueue dyad_var_diffs;
 	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
@@ -50,6 +52,7 @@ void frame_clear(struct frame *f);
 /* time of the next change */
 double frame_time(const struct frame *f);
 double frame_next_update(const struct frame *f);
+const struct history *frame_history(const struct frame *f);
 
 
 

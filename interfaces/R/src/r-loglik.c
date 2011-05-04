@@ -73,7 +73,7 @@ SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor)
 {
 	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
 	struct messages_iter *cursor = Riproc_to_cursor(Rcursor);
-	iproc_history *history = messages_iter_history(cursor);
+	struct history *history = messages_iter_history(cursor);
 	ssize_t i, n = messages_iter_ntie(cursor);
 
 	for (i = 0; i < n; i++) {

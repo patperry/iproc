@@ -1,5 +1,5 @@
-#ifndef _IPROC_HISTORY_H
-#define _IPROC_HISTORY_H
+#ifndef _HISTORY_H
+#define _HISTORY_H
 
 #include "darray.h"
 #include "event-trace.h"
@@ -13,16 +13,12 @@
  *         (1) event (t,j) in sender i's trace; and
  *         (2) event (t,i) in receiver j's trace.
  *
- * Events can be added to the history by `iproc_history_insert` and
- * `iproc_history_insertm`, the latter of which is for multicast events.
- * The current time can be changed by calling `iproc_history_advance_to`.
+ * Events can be added to the history by `history_insert`.
+ * The current time can be changed by calling `history_advance_to`.
  *
- * The function `iproc_history_send(h,i)` gets sender i's trace;
- * the function `iproc_history_recv(h,j)` gets receiver j's trace.
+ * The function `history_send(h,i)` gets sender i's trace;
+ * the function `history_recv(h,j)` gets receiver j's trace.
  */
-
-typedef struct history iproc_history;
-typedef struct history_trace iproc_history_trace;
 
 struct history_trace {
 	struct event_trace trace;
@@ -33,26 +29,31 @@ struct history {
 	double tcur;
 	struct darray send;
 	struct darray recv;
+	
+	/* deprecated */
 	struct refcount refcount;
 };
 
 bool history_init(struct history *history);
 void history_deinit(struct history *history);
 
-iproc_history *iproc_history_new(void);
-iproc_history *iproc_history_ref(iproc_history * history);
-void iproc_history_unref(iproc_history * history);
-void iproc_history_clear(iproc_history * history);
+void history_clear(struct history * history);
 
-double iproc_history_tcur(iproc_history * history);
-bool iproc_history_advance_to(iproc_history * history, double t);
-bool iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to, intptr_t attr);
-bool iproc_history_insertm(iproc_history * history,
-			   ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
+double history_tcur(struct history * history);
+bool history_advance_to(struct history * history, double t);
+bool history_insert(struct history *history, ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
 
-ssize_t iproc_history_nsend(iproc_history * history);
-ssize_t iproc_history_nrecv(iproc_history * history);
-struct event_trace *iproc_history_send(iproc_history * history, ssize_t i);
-struct event_trace *iproc_history_recv(iproc_history * history, ssize_t j);
+ssize_t history_nsend(struct history * history);
+ssize_t history_nrecv(struct history * history);
+struct event_trace *history_send(struct history * history, ssize_t i);
+struct event_trace *history_recv(struct history * history, ssize_t j);
 
-#endif /* _IPROC_HISTORY_H */
+
+/* deprecated */
+struct history *history_alloc(void);
+struct history *history_ref(struct history * history);
+void history_free(struct history * history);
+
+
+
+#endif /* _HISTORY_H */
