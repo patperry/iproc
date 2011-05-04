@@ -35,8 +35,10 @@ static inline size_t pqueue_elt_size(const struct pqueue *q);
 bool pqueue_push(struct pqueue *q, const void *val);
 bool pqueue_push_all(struct pqueue *q, const void *vals, ssize_t n);
 void pqueue_pop(struct pqueue *q);
+void pqueue_update_top(struct pqueue *q);
 bool pqueue_reserve(struct pqueue *q, ssize_t n);
 bool pqueue_reserve_push(struct pqueue *q, ssize_t npush);
+
 
 /* inline function definitions */
 bool pqueue_empty(const struct pqueue *q)

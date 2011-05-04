@@ -170,6 +170,58 @@ out:
 	darray_resize(array, n);
 }
 
+void pqueue_update_top(struct pqueue *q)
+{
+	assert(q);
+	assert(!pqueue_empty(q));
+	
+	struct darray *array = &q->array;
+	ssize_t n = darray_size(array);
+	size_t elt_size = pqueue_elt_size(q);	
+	compare_fn compare = q->compare;
+
+	// make a temporary copy of the old top
+	void *cur = alloca(elt_size);
+	memcpy(cur, darray_front(array), elt_size);
+	ssize_t icur = 0;
+	
+	// while current element has at least one child
+	while ((icur << 1) + 1 < n) {
+		ssize_t ileft = (icur << 1) + 1;
+		ssize_t imax;
+		void *left = darray_at(array, ileft);
+		void *max;		
+		
+		// find the child with highest priority
+		if (ileft == n - 1) {
+			imax = ileft;
+			max = left;
+		} else {
+			ssize_t iright = ileft + 1;
+			void *right = darray_at(array, iright);
+			
+			if (compare(right, left) <= 0) {
+				imax = ileft;
+				max = left;
+			} else {
+				imax = iright;
+				max = right;
+			}
+		}
+
+		// stop if heap condition is satisfied
+		if (compare(max, cur) <= 0)
+			break;
+		
+		// otherwise swap current with maximum child
+		darray_set(array, icur, max);
+		icur = imax;
+	}
+
+	// actually do the copy
+	darray_set(array, icur, cur);
+}
+
 bool pqueue_reserve(struct pqueue *q, ssize_t n)
 {
 	assert(q);
