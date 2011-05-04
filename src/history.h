@@ -21,22 +21,25 @@
  * the function `iproc_history_recv(h,j)` gets receiver j's trace.
  */
 
-typedef struct _iproc_history iproc_history;
-typedef struct _iproc_history_trace iproc_history_trace;
+typedef struct history iproc_history;
+typedef struct history_trace iproc_history_trace;
 
-struct _iproc_history_trace {
+struct history_trace {
 	struct event_trace trace;
 	double tcur;
 };
 
-struct _iproc_history {
+struct history {
 	double tcur;
 	struct darray send;
 	struct darray recv;
 	struct refcount refcount;
 };
 
-iproc_history *iproc_history_new();
+bool history_init(struct history *history);
+void history_deinit(struct history *history);
+
+iproc_history *iproc_history_new(void);
 iproc_history *iproc_history_ref(iproc_history * history);
 void iproc_history_unref(iproc_history * history);
 void iproc_history_clear(iproc_history * history);

@@ -74,27 +74,56 @@ static struct event_trace *trace_array_get(double tcur,
 	return NULL;
 }
 
+void history_deinit(struct history *history)
+{
+	assert(history);
+	refcount_deinit(&history->refcount);
+	trace_array_deinit(&history->recv);	
+	trace_array_deinit(&history->send);
+}
+
 static void iproc_history_free(iproc_history * history)
 {
 	if (history) {
-		trace_array_deinit(&history->send);
-		trace_array_deinit(&history->recv);
+		history_deinit(history);
 		free(history);
 	}
 }
 
-iproc_history *iproc_history_new()
+bool history_init(struct history *history)
 {
-	iproc_history *history = calloc(1, sizeof(*history));
+	assert(history);
+	
+	if (!darray_init(&history->send, sizeof(struct history_trace)))
+		goto fail_send;
+	
+	if (!darray_init(&history->recv, sizeof(struct history_trace)))
+		goto fail_recv;
+	
+	if (!refcount_init(&history->refcount))
+		goto fail_refcount;
+	
+	history->tcur = -INFINITY;
+	return true;
+	
+fail_refcount:
+	darray_deinit(&history->recv);
+fail_recv:
+	darray_deinit(&history->send);
+fail_send:
+	return false;
+}
 
-	if (history && darray_init(&history->send, sizeof(iproc_history_trace))
-	    && darray_init(&history->recv, sizeof(iproc_history_trace))
-	    && refcount_init(&history->refcount)) {
-		history->tcur = -INFINITY;
-		return history;
+iproc_history *iproc_history_new(void)
+{
+	iproc_history *history = malloc(sizeof(*history));
+
+	if (history) {
+		if (history_init(history))
+			return history;
+		free(history);
 	}
-
-	iproc_history_free(history);
+	
 	return NULL;
 }
 
