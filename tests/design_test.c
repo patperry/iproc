@@ -17,6 +17,7 @@ static struct design design;
 static struct actors senders;
 static struct actors receivers;
 static bool has_reffects;
+static bool has_loops;
 static ssize_t dim;
 
 
@@ -43,8 +44,9 @@ static void enron_setup(void **state)
 	actors_init_matrix(&receivers, &enron_employees0, TRANS_NOTRANS);	
 	dim = actors_dim(&senders) * actors_dim(&receivers);
 	has_reffects = false;
+	has_loops = false;
 
-	design_init(&design, &senders, &receivers, has_reffects);
+	design_init(&design, &senders, &receivers, has_reffects, has_loops);
 	matrix_deinit(&enron_employees0);
 }
 
@@ -78,8 +80,9 @@ static void enron_reff_setup(void **state)
 	dim = (actors_size(&receivers)
 	       + actors_dim(&senders) * actors_dim(&receivers));
 	has_reffects = true;
+	has_loops = false;
 	
-	design_init(&design, &senders, &receivers, has_reffects);
+	design_init(&design, &senders, &receivers, has_reffects, has_loops);
 	matrix_deinit(&enron_employees0);
 }
 

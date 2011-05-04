@@ -89,13 +89,14 @@ Riproc_design_new(SEXP Rsenders,
 	struct actors *senders = Riproc_to_actors(Rsenders);
 	struct actors *receivers = Riproc_to_actors(Rreceivers);
 	Rboolean receiver_effects = LOGICAL_VALUE(Rreceiver_effects);
-
+	bool has_loops = true;
+	
 	if (receiver_effects == NA_LOGICAL) {
 		error("'receiver.effects' value is NA");
 	}
 
 	struct design *design =
-	    design_alloc(senders, receivers, receiver_effects);
+	    design_alloc(senders, receivers, receiver_effects, has_loops);
 	append_recip(design, Rrecip_intervals);
 	SEXP Rdesign;
 

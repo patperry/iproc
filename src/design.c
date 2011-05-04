@@ -93,7 +93,8 @@ iproc_design_var_init(iproc_design_var * var,
 }
 
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects)
+		 struct actors *receivers, bool has_reffects,
+		 bool has_loops)
 {
 	assert(design);
 	assert(senders);
@@ -128,6 +129,7 @@ bool design_init(struct design *design, struct actors *senders,
 	design->idynamic = design->istatic + design->nstatic;
 	design->ndynamic = 0;
 	design->dim = design->idynamic + design->ndynamic;
+	design->has_loops = has_loops;
 	return true;
 	
 fail_refcount:
@@ -142,13 +144,13 @@ fail_design_dyad_vars:
 	return false;
 }
 
-struct design *design_alloc(struct actors *senders,
-			       struct actors *receivers, bool has_reffects)
+struct design *design_alloc(struct actors *senders, struct actors *receivers,
+			    bool has_reffects, bool has_loops)
 {
 	struct design *design = malloc(sizeof(*design));
 
 	if (design) {
-		if (design_init(design, senders, receivers, has_reffects))
+		if (design_init(design, senders, receivers, has_reffects, has_loops))
 			return design;
 
 		free(design);
@@ -472,6 +474,12 @@ bool design_has_reffects(const struct design *design)
 {
 	assert(design);
 	return design->has_reffects;
+}
+
+bool design_has_loops(const struct design *design)
+{
+	assert(design);
+	return design->has_loops;
 }
 
 bool dyad_var_init(struct dyad_var *v, ssize_t dim,

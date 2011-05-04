@@ -92,7 +92,8 @@ struct design {
 	ssize_t idynamic, ndynamic;
 	ssize_t dim;
 	bool has_reffects;
-
+	bool has_loops;
+	
 	struct darray design_dyad_vars;
 
 	/* deprecated */
@@ -102,13 +103,13 @@ struct design {
 	struct refcount refcount;
 };
 
-struct design *design_alloc(struct actors *senders,
-			       struct actors *receivers, bool has_reffects);
+struct design *design_alloc(struct actors *senders, struct actors *receivers,
+			    bool has_reffects, bool has_loops);
 struct design *design_ref(struct design * design);
 void design_free(struct design * design);
 
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects);
+		 struct actors *receivers, bool has_reffects, bool has_loops);
 void design_deinit(struct design *design);
 
 
@@ -118,6 +119,7 @@ ssize_t design_nreceiver(const struct design * design);
 struct actors *design_senders(const struct design * design);
 struct actors *design_receivers(const struct design * design);
 bool design_has_reffects(const struct design *design);
+bool design_has_loops(const struct design *design);
 
 
 

@@ -16,6 +16,7 @@
 static struct actors senders;
 static struct actors receivers;
 static bool has_reffects;
+static bool has_loops;
 static struct messages messages;
 static struct design design;
 static struct vnrecv vnrecv;
@@ -43,7 +44,8 @@ static void enron_teardown_fixture(void **state)
 static void enron_setup(void **state)
 {
 	has_reffects = false;
-	design_init(&design, &senders, &receivers, has_reffects);
+	has_loops = false;
+	design_init(&design, &senders, &receivers, has_reffects, has_loops);
 	vnrecv_init(&vnrecv, NULL, 0);
 	vnrecv_index = design_add_dyad_var(&design, &vnrecv.dyad_var);	
 	frame_init(&frame, &design);
