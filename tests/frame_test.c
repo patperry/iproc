@@ -19,6 +19,7 @@ static bool has_reffects;
 static struct messages messages;
 static struct design design;
 static struct vnrecv vnrecv;
+static ssize_t vnrecv_index;
 static struct frame frame;
 
 
@@ -44,6 +45,7 @@ static void enron_setup(void **state)
 	has_reffects = false;
 	design_init(&design, &senders, &receivers, has_reffects);
 	vnrecv_init(&vnrecv, NULL, 0);
+	vnrecv_index = design_add_dyad_var(&design, &vnrecv.dyad_var);	
 	frame_init(&frame, &design);
 }
 
@@ -57,20 +59,49 @@ static void enron_teardown(void **state)
 static void test_basic(void **state)
 {
 	double t;
-	ssize_t itie, ntie;
-	const struct message *msg;
+	ssize_t itie, ntie, ito;
+	ssize_t isend;
+	ssize_t jrecv, nrecv = design_nreceiver(&design);
+	const struct message *msg = NULL;
 	struct messages_iter it = messages_iter(&messages);	
+	struct matrix xnrecv;
+	struct vector x, y;
+	
+	
+	
+	matrix_init(&xnrecv, design_nsender(&design), design_nreceiver(&design));
+	matrix_fill(&xnrecv, 0.0);
+
+	vector_init(&x, design_dim(&design));
+	vector_set_basis(&x, vnrecv_index);
+	vector_init(&y, design_nreceiver(&design));
+	
+	isend = 0;
 	
 	while (messages_iter_advance(&it)) {
+			//print_message(".");
+			//fflush(stdout);
 		t = messages_iter_current_time(&it);
 		frame_advance_to(&frame, t, NULL);
+		
+		isend = msg ? msg->from : 0;
+		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
+			assert_true(vector_get(&y, jrecv) == matrix_get(&xnrecv, jrecv, isend));
+		}
 		
 		ntie = messages_iter_ntie(&it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = messages_iter_current(&it, itie);
 			frame_insert(&frame, msg);
+			
+			for (ito = 0; ito < msg->nto; ito++) {
+				*matrix_at(&xnrecv, msg->from, msg->to[ito]) += 1.0;
+			}
 		}
 	}
+	
+	matrix_deinit(&xnrecv);
 }
 
 int main(int argc, char **argv)
