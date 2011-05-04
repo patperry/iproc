@@ -17,6 +17,8 @@ libiproc_la_SOURCES = \
 	src/design-ctx.c \
 	src/design.c \
 	src/design.h \
+	src/event-trace.c \
+	src/event-trace.h \
 	src/fit.c \
 	src/fit.h \
 	src/frame.c \
@@ -33,8 +35,6 @@ libiproc_la_SOURCES = \
 	src/model.h \
 	src/sloglik.c \
 	src/sloglik.h \
-	src/trace.c \
-	src/trace.h \
 	src/vnrecv.c \
 	src/vnrecv.h \
 	src/vrecip.c \

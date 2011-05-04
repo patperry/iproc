@@ -2,7 +2,7 @@
 #define _IPROC_HISTORY_H
 
 #include "darray.h"
-#include "trace.h"
+#include "event-trace.h"
 #include "refcount.h"
 
 /* A `history` object stores the history of the process up to the
@@ -25,7 +25,7 @@ typedef struct _iproc_history iproc_history;
 typedef struct _iproc_history_trace iproc_history_trace;
 
 struct _iproc_history_trace {
-	iproc_trace *trace;
+	struct event_trace *trace;
 	double tcur;
 };
 
@@ -49,7 +49,7 @@ void iproc_history_insertm(iproc_history * history,
 
 ssize_t iproc_history_nsend(iproc_history * history);
 ssize_t iproc_history_nrecv(iproc_history * history);
-iproc_trace *iproc_history_send(iproc_history * history, ssize_t i);
-iproc_trace *iproc_history_recv(iproc_history * history, ssize_t j);
+struct event_trace *iproc_history_send(iproc_history * history, ssize_t i);
+struct event_trace *iproc_history_recv(iproc_history * history, ssize_t j);
 
 #endif /* _IPROC_HISTORY_H */

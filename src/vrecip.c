@@ -37,17 +37,17 @@ design_var_get_dxs(iproc_design_var * var,
 		return;
 
 	double tcur = iproc_history_tcur(history);
-	iproc_trace *trace = iproc_history_recv(history, isend);
+	struct event_trace *trace = iproc_history_recv(history, isend);
 
-	ssize_t i, n = iproc_trace_size(trace);
+	ssize_t i, n = event_trace_size(trace);
 	for (i = 0; i < n; i++) {
-		iproc_events *events = iproc_trace_get(trace, i);
-		iproc_event_meta *meta = iproc_events_last(events);
-
-		if (!meta)
+		struct events *events = event_trace_at(trace, i);
+		
+		if (events_empty(events))
 			continue;
-
-		ssize_t jsend = iproc_events_id(events);
+		
+		struct event_meta *meta = events_back(events);
+		ssize_t jsend = events_id(events);
 		double t = meta->time;
 		double dt = tcur - t;
 		ssize_t pos = darray_binary_search(intvls,

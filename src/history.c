@@ -27,7 +27,7 @@ static void trace_array_clear(struct darray *array)
 		ht->tcur = -INFINITY;
 
 		if (ht->trace)
-			iproc_trace_clear(ht->trace);
+			event_trace_clear(ht->trace);
 	}
 }
 
@@ -39,13 +39,13 @@ static void trace_array_deinit(struct darray *array)
 	for (i = 0; i < n; i++) {
 		iproc_history_trace *ht = darray_at(array, i);
 		if (ht->trace)
-			iproc_trace_unref(ht->trace);
+			event_trace_free(ht->trace);
 	}
 
 	darray_deinit(array);
 }
 
-static iproc_trace *trace_array_get(double tcur,
+static struct event_trace *trace_array_get(double tcur,
 				    struct darray *array, ssize_t i)
 {
 	assert(array);
@@ -55,16 +55,16 @@ static iproc_trace *trace_array_get(double tcur,
 
 	iproc_history_trace *ht = darray_at(array,
 					    i);
-	iproc_trace *t;
+	struct event_trace *t;
 
 	if (!(ht->trace)) {
-		ht->trace = iproc_trace_new(tcur);
+		ht->trace = event_trace_alloc();
 	}
 
 	t = ht->trace;
 
 	if (ht->tcur != tcur) {
-		iproc_trace_advance_to(t, tcur);
+		event_trace_advance_to(t, tcur);
 		ht->tcur = tcur;
 	}
 
@@ -146,11 +146,12 @@ void iproc_history_insert(iproc_history * history, ssize_t from, ssize_t to)
 	assert(from >= 0);
 	assert(to >= 0);
 
-	iproc_trace *efrom = iproc_history_send(history, from);
-	iproc_trace *eto = iproc_history_recv(history, to);
+	intptr_t attr = 0;
+	struct event_trace *efrom = iproc_history_send(history, from);
+	struct event_trace *eto = iproc_history_recv(history, to);
 
-	iproc_trace_insert(efrom, to);
-	iproc_trace_insert(eto, from);
+	event_trace_insert(efrom, to, attr);
+	event_trace_insert(eto, from, attr);
 }
 
 void
@@ -180,7 +181,7 @@ ssize_t iproc_history_nrecv(iproc_history * history)
 	return darray_size(&history->recv);
 }
 
-iproc_trace *iproc_history_send(iproc_history * history, ssize_t i)
+struct event_trace *iproc_history_send(iproc_history * history, ssize_t i)
 {
 	assert(history);
 	assert(0 <= i);
@@ -188,7 +189,7 @@ iproc_trace *iproc_history_send(iproc_history * history, ssize_t i)
 	return trace_array_get(history->tcur, &history->send, i);
 }
 
-iproc_trace *iproc_history_recv(iproc_history * history, ssize_t j)
+struct event_trace *iproc_history_recv(iproc_history * history, ssize_t j)
 {
 	assert(history);
 	assert(0 <= j);
