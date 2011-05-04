@@ -54,7 +54,7 @@ static int parse_integer(void *ctx, long long integerVal)
 				fprintf(stderr, "non-positive message id: '%"SSIZE_FMT"'", ssizeVal);
 				return 0;
 			}
-			parse->id = ssizeVal;
+			parse->id = ssizeVal - 1;
 			break;
 		case MAP_KEY_TIME:
 			parse->time = doubleVal;
@@ -64,7 +64,7 @@ static int parse_integer(void *ctx, long long integerVal)
 				fprintf(stderr, "non-positive sender_id: '%"SSIZE_FMT"'", ssizeVal);
 				return 0;
 			}
-			parse->sender_id = ssizeVal;
+			parse->sender_id = ssizeVal - 1;
 			break;
 		case MAP_KEY_RECEIVER_ID:
 			if (ssizeVal <= 0) {
@@ -72,6 +72,7 @@ static int parse_integer(void *ctx, long long integerVal)
 				return 0;
 			}
 			
+			ssizeVal = ssizeVal - 1;
 			if (!darray_push_back(&parse->receiver_id, &ssizeVal)) {
 				fprintf(stderr, "not enough memory");
 				return 0;
