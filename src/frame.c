@@ -79,7 +79,7 @@ void frame_deinit(struct frame *f)
 		sf = intmap_iter_current(&f->send_frames, &it);
 		send_frame_deinit(sf);
 	}
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
+	intmap_iter_deinit(&f->send_frames, &it);
 	
 	intmap_deinit(&f->send_frames);
 	pqueue_deinit(&f->dyad_var_diffs);
