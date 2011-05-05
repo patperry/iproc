@@ -14,5 +14,6 @@ int double_eqrel(double x, double y);
 
 bool double_equals(const void *x, const void *y);
 int double_compare(const void *x, const void *y);
+int double_rcompare(const void *x, const void *y);
 
 #endif /* _IEEE754_H */

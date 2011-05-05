@@ -176,3 +176,8 @@ int double_compare(const void *x, const void *y)
 {
 	return uint64_compare(x, y);
 }
+
+int double_rcompare(const void *x, const void *y)
+{
+	return double_compare(y, x);
+}
