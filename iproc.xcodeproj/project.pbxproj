@@ -112,6 +112,10 @@
 		22597432133D0AFB0022B52E /* vrecip.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259741B133D0AFB0022B52E /* vrecip.h */; };
 		22597435133D0BD30022B52E /* pqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597433133D0BD20022B52E /* pqueue.c */; };
 		22597436133D0BD30022B52E /* pqueue.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597434133D0BD20022B52E /* pqueue.h */; };
+		225CFDDF1373457E007B075D /* dyad-queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 225CFDDD1373457E007B075D /* dyad-queue.c */; };
+		225CFDE01373457E007B075D /* dyad-queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 225CFDDD1373457E007B075D /* dyad-queue.c */; };
+		225CFDE11373457E007B075D /* dyad-queue.h in Headers */ = {isa = PBXBuildFile; fileRef = 225CFDDE1373457E007B075D /* dyad-queue.h */; };
+		225CFDE21373457E007B075D /* dyad-queue.h in Headers */ = {isa = PBXBuildFile; fileRef = 225CFDDE1373457E007B075D /* dyad-queue.h */; };
 		225DAD64132FE4B700696C9B /* s_cmp.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD62132FE4B700696C9B /* s_cmp.c */; };
 		225DAD65132FE4B700696C9B /* s_copy.c in Sources */ = {isa = PBXBuildFile; fileRef = 225DAD63132FE4B700696C9B /* s_copy.c */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
@@ -412,7 +416,7 @@
 		22597406133D0AFB0022B52E /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = src/actors.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597407133D0AFB0022B52E /* design-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "design-ctx.c"; path = "src/design-ctx.c"; sourceTree = "<group>"; };
 		22597408133D0AFB0022B52E /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
-		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; };
+		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		2259740A133D0AFB0022B52E /* fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fit.c; path = src/fit.c; sourceTree = "<group>"; };
 		2259740B133D0AFB0022B52E /* fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fit.h; path = src/fit.h; sourceTree = "<group>"; };
 		2259740C133D0AFB0022B52E /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/history.c; sourceTree = "<group>"; };
@@ -433,6 +437,8 @@
 		2259741B133D0AFB0022B52E /* vrecip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vrecip.h; path = src/vrecip.h; sourceTree = "<group>"; };
 		22597433133D0BD20022B52E /* pqueue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pqueue.c; path = src/core/pqueue.c; sourceTree = "<group>"; };
 		22597434133D0BD20022B52E /* pqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pqueue.h; path = src/core/pqueue.h; sourceTree = "<group>"; };
+		225CFDDD1373457E007B075D /* dyad-queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dyad-queue.c"; path = "src/dyad-queue.c"; sourceTree = "<group>"; };
+		225CFDDE1373457E007B075D /* dyad-queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dyad-queue.h"; path = "src/dyad-queue.h"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		225DAD62132FE4B700696C9B /* s_cmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_cmp.c; path = src/libf2c/s_cmp.c; sourceTree = "<group>"; };
 		225DAD63132FE4B700696C9B /* s_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_copy.c; path = src/libf2c/s_copy.c; sourceTree = "<group>"; };
 		22678906134CD584001309F5 /* libcmockery.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcmockery.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -674,6 +680,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				225CFDDD1373457E007B075D /* dyad-queue.c */,
+				225CFDDE1373457E007B075D /* dyad-queue.h */,
 				22286F0D136F36340015CC42 /* vnrecv.c */,
 				22286F0E136F36340015CC42 /* vnrecv.h */,
 				22EA3331136B440B00C5627F /* frame.c */,
@@ -849,6 +857,7 @@
 			files = (
 				22EA3336136B440B00C5627F /* frame.h in Headers */,
 				22286F12136F36340015CC42 /* vnrecv.h in Headers */,
+				225CFDE21373457E007B075D /* dyad-queue.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -910,6 +919,7 @@
 				22D2DD7C136929100048244C /* yajl_version.h in Headers */,
 				22EA3335136B440B00C5627F /* frame.h in Headers */,
 				22286F11136F36340015CC42 /* vnrecv.h in Headers */,
+				225CFDE11373457E007B075D /* dyad-queue.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1241,6 +1251,7 @@
 				222FC45213607C7900E64FC9 /* dcstep.c in Sources */,
 				22EA3334136B440B00C5627F /* frame.c in Sources */,
 				22286F10136F36340015CC42 /* vnrecv.c in Sources */,
+				225CFDE01373457E007B075D /* dyad-queue.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1292,6 +1303,7 @@
 				22A88EBC135E6B6A006FE604 /* hashset.c in Sources */,
 				22EA3333136B440B00C5627F /* frame.c in Sources */,
 				22286F0F136F36340015CC42 /* vnrecv.c in Sources */,
+				225CFDDF1373457E007B075D /* dyad-queue.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

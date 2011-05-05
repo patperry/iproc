@@ -17,8 +17,8 @@ libiproc_la_SOURCES = \
 	src/design-ctx.c \
 	src/design.c \
 	src/design.h \
-	src/dyad-table.c \
-	src/dyad-table.h \
+	src/dyad-queue.c \
+	src/dyad-queue.h \
 	src/event-trace.c \
 	src/event-trace.h \
 	src/fit.c \

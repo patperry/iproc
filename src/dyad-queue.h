@@ -1,5 +1,5 @@
-#ifndef _DYAD_TABLE_H
-#define _DYAD_TABLE_H
+#ifndef _DYAD_QUEUE_H
+#define _DYAD_QUEUE_H
 
 #include "history.h"
 #include "messages.h"
@@ -83,4 +83,4 @@ bool dyad_queue_insert(struct dyad_queue *queue, const struct message *msg);
 bool dyad_queue_advance_to(struct dyad_queue *queue, double time);
 
 
-#endif /* _DYAD_TABLE_H */
+#endif /* _DYAD_QUEUE_H */

@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <math.h>
 #include "ieee754.h"
-#include "dyad-table.h"
+#include "dyad-queue.h"
 
 static int dyad_queue_event_rcompare(const void *x, const void *y)
 {
