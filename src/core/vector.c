@@ -103,6 +103,14 @@ void vector_free(struct vector *v)
 	}
 }
 
+void vector_assign_array(struct vector *v, const double *src)
+{
+	assert(v);
+	assert(src || vector_empty(v));
+	
+	array_assign_array(&v->array, src);
+}
+
 void vector_assign_copy(struct vector *v, const struct vector *src)
 {
 	assert(v);

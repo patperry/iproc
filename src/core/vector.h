@@ -19,6 +19,7 @@ void vector_init_slice(struct vector *v,
 		       const struct vector *parent, ssize_t i, ssize_t n);
 
 /* assign, copy, fill */
+void vector_assign_array(struct vector *v, const double *src);
 void vector_assign_copy(struct vector *v, const struct vector *src);
 double *vector_copy_to(const struct vector *v, double *dst);
 
@@ -33,9 +34,11 @@ int vector_ptr_compare(const void *pv1, const void *pv2);
 
 /* index */
 #define vector_front(v)          vector_at(v, 0)
+#define vector_get_front(v)      vector_get(v, 0)
 #define vector_set_front(v, val) vector_set(v, 0, val)
-#define vector_back(v)           vector_at(v, vector_size(v) - 1)
-#define vector_set_back(v)       vector_set(v, vector_size(v) - 1, val)
+#define vector_back(v)           vector_at(v, vector_dim(v) - 1)
+#define vector_get_back(v)       vector_get(v, vector_dim(v) - 1)
+#define vector_set_back(v)       vector_set(v, vector_dim(v) - 1, val)
 static inline double *vector_at(const struct vector *v, ssize_t i);
 static inline double vector_get(const struct vector *v, ssize_t i);
 static inline void vector_set(struct vector *v, ssize_t i, double val);
