@@ -62,8 +62,7 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 	assert(f);
 	assert(index >= 0);
 	
-	struct vnrecv *v = container_of(dyad_var, struct vnrecv, dyad_var);
-	struct array *intvls = &v->intvls;
+	const struct vector *intvls = f->design->intervals;
 	struct history *history = &f->history;
 	ssize_t isend = f->isend;
 	
@@ -86,7 +85,7 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 			
 			t = meta->time;
 			dt = tcur - t;
-			pos = array_binary_search(intvls, &dt, double_compare);
+			pos = array_binary_search(&intvls->array, &dt, double_compare);
 		
 			if (pos < 0)
 				pos = ~pos;
@@ -104,27 +103,20 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 	return true;
 }
 
-
-bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n)
+bool vnrecv_init(struct vnrecv *v, const struct design *d)
 {
 	assert(v);
-	assert(intvls || n == 0);
-	assert(n >= 0);
-	
-	if (array_init(&v->intvls, n, sizeof(double))) {
-		array_assign_array(&v->intvls, intvls);
-		v->dyad_var.dim = n + 1;
-		v->dyad_var.dyad_event_mask = 0;
-		v->dyad_var.update_send = NULL;
-		v->dyad_var.get_jrecv_dxs = vnrecv_get_jrecv_dxs;
-		return true;
-	}
+	assert(d);
 
-	return false;
+	ssize_t n = vector_dim(design_intervals(d));
+	v->dyad_var.dim = n + 1;
+	v->dyad_var.dyad_event_mask = 0;
+	v->dyad_var.update_send = NULL;
+	v->dyad_var.get_jrecv_dxs = vnrecv_get_jrecv_dxs;
+	return true;
 }
 
 void vnrecv_deinit(struct vnrecv *v)
 {
 	assert(v);
-	array_deinit(&v->intvls);
 }

@@ -49,8 +49,8 @@ static void enron_setup(void **state)
 	vector_init(&intervals, 0);
 	design_init(&design, &senders, &receivers, has_reffects, has_loops,
 		    &intervals);
-	vnrecv_init(&vnrecv, NULL, 0);
-	vnrecv_index = design_add_dyad_var(&design, &vnrecv.dyad_var);	
+	vnrecv_init(&vnrecv, &design);
+	vnrecv_index = design_add_dyad_var(&design, &vnrecv.dyad_var);
 	frame_init(&frame, &design);
 }
 

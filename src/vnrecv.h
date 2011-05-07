@@ -12,10 +12,9 @@
 
 struct vnrecv {
 	struct dyad_var dyad_var;
-	struct array intvls;
 };
 
-bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n);
+bool vnrecv_init(struct vnrecv *v, const struct design *d);
 void vnrecv_deinit(struct vnrecv *v);
 
 #endif /* _VNRECV_H */

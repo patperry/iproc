@@ -133,7 +133,7 @@ struct actors *design_senders(const struct design * design);
 struct actors *design_receivers(const struct design * design);
 bool design_has_reffects(const struct design *design);
 bool design_has_loops(const struct design *design);
-
+const struct vector *design_intervals(const struct design *design);
 
 
 void design_mul0(double alpha,
