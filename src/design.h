@@ -4,6 +4,7 @@
 #include "actors.h"
 #include "history.h"
 #include "darray.h"
+#include "dyad-queue.h"
 #include "matrix.h"
 #include "messages.h"
 #include "refcount.h"
@@ -73,11 +74,23 @@
  */
 
 struct frame; // forward declaration
+struct dyad_var;
 
 struct dyad_var {
 	ssize_t dim;
-	bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index);
+	uint8_t dyad_event_mask;
+	bool (*update_send) (struct dyad_var *v,
+			     const struct dyad_event *e,
+			     struct frame *f,
+			     ssize_t index);
+	bool (*copy_dx_to) (struct dyad_var *v,
+			    struct frame *f,
+			    ssize_t isend,
+			    ssize_t jrecv,
+			    struct svector *dx,
+			    ssize_t index);
 };
+
 
 struct design_dyad_var {
 	ssize_t index;
@@ -87,6 +100,7 @@ struct design_dyad_var {
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
+	const struct vector *intervals;
 	ssize_t ireffects, nreffects;
 	ssize_t istatic, nstatic;
 	ssize_t idynamic, ndynamic;
@@ -104,12 +118,14 @@ struct design {
 };
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    bool has_reffects, bool has_loops);
+			    bool has_reffects, bool has_loops,
+			    const struct vector *intervals);
 struct design *design_ref(struct design * design);
 void design_free(struct design * design);
 
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects, bool has_loops);
+		 struct actors *receivers, bool has_reffects, bool has_loops,
+		 const struct vector *intervals);
 void design_deinit(struct design *design);
 
 
@@ -135,9 +151,6 @@ void design_muls0(double alpha,
 			const struct svector *x, double beta, struct vector *y);
 
 
-bool dyad_var_init(struct dyad_var *v, ssize_t dim,
-		   bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index));
-void dyad_var_deinit(struct dyad_var *v);
 ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var);
 
 

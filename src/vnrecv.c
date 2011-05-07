@@ -6,7 +6,7 @@
 #include "vnrecv.h"
 
 
-
+/*
 static bool insert(const struct dyad_var *dyad_var, const struct message *msg, struct frame *f, ssize_t index)
 {
 	assert(dyad_var);
@@ -18,12 +18,8 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 	double dt, t, t0 = frame_time(f);
 	ssize_t iintvl, nintvl= array_size(&v->intvls);
 	ssize_t ito, nto = msg->nto;
-	struct dyad_var_diff diff;
-	
-	if (!frame_reserve_dyad_events(f, (1 + 2 * nintvl) * nto))
-		return false;
-	
-	/* at t0+, increment interval[0] */
+
+	// at t0+, increment interval[0]
 	t = double_nextup(t0);
 	diff.time = t;
 	diff.jrecv = msg->from;
@@ -34,7 +30,7 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 		frame_add_dyad_event(f, &diff);
 	}
 	
-	/* at (t0 + delta[k])+, move weight from interval[k] to interval[k+1] */
+	// at (t0 + delta[k])+, move weight from interval[k] to interval[k+1]
 	for (iintvl = 0; iintvl < nintvl; iintvl++) {
 		dt = *(double *)array_at(&v->intvls, iintvl);
 		t = double_nextup(t0 + dt);
@@ -56,6 +52,7 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 	
 	return true;
 }
+*/
 
 bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n)
 {
@@ -65,7 +62,10 @@ bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n)
 	
 	if (array_init(&v->intvls, n, sizeof(double))) {
 		array_assign_array(&v->intvls, intvls);
-		dyad_var_init(&v->dyad_var, n + 1, insert);
+		v->dyad_var.dim = n + 1;
+		v->dyad_var.dyad_event_mask = 0;
+		v->dyad_var.update_send = NULL;
+		v->dyad_var.copy_dx_to = NULL;
 		return true;
 	}
 

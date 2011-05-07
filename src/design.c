@@ -93,13 +93,21 @@ iproc_design_var_init(iproc_design_var * var,
 }
 
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects,
-		 bool has_loops)
+		 struct actors *receivers, bool has_reffects, bool has_loops,
+		 const struct vector *intervals)
 {
 	assert(design);
 	assert(senders);
 	assert(receivers);
+	assert(intervals);
 
+#ifndef NDEBUG
+	ssize_t i, nintervals = vector_dim(intervals);
+	for (i = 1; i < nintervals; i++) {
+		assert(vector_get(intervals, i-1) < vector_get(intervals, i));
+	}
+#endif
+	     
 	ssize_t nreceivers = actors_size(receivers);
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
@@ -121,6 +129,7 @@ bool design_init(struct design *design, struct actors *senders,
 	
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
+	design->intervals = intervals;
 	design->has_reffects = has_reffects;
 	design->ireffects = 0;
 	design->nreffects = has_reffects ? nreceivers : 0;
@@ -145,12 +154,14 @@ fail_design_dyad_vars:
 }
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    bool has_reffects, bool has_loops)
+			    bool has_reffects, bool has_loops,
+			    const struct vector *intervals)
 {
 	struct design *design = malloc(sizeof(*design));
 
 	if (design) {
-		if (design_init(design, senders, receivers, has_reffects, has_loops))
+		if (design_init(design, senders, receivers, has_reffects, has_loops,
+				intervals))
 			return design;
 
 		free(design);
@@ -480,22 +491,6 @@ bool design_has_loops(const struct design *design)
 {
 	assert(design);
 	return design->has_loops;
-}
-
-bool dyad_var_init(struct dyad_var *v, ssize_t dim,
-		   bool (*insert) (const struct dyad_var *v, const struct message *msg, struct frame *f, ssize_t index))
-{
-	assert(v);
-	assert(dim >= 0);
-	
-	v->dim = dim;
-	v->insert = insert;
-	return true;
-}
-
-void dyad_var_deinit(struct dyad_var *v)
-{
-	assert(v);
 }
 
 ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var)

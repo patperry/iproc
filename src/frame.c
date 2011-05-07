@@ -1,5 +1,6 @@
 #include "port.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <math.h>
 #include "ieee754.h"
 #include "frame.h"
@@ -8,40 +9,51 @@ static bool send_frame_init(struct send_frame *sf, struct frame *f)
 {
 	assert(sf);
 
-	if (!intmap_init(&sf->jrecv_dxs, sizeof(struct svector),
-			 alignof(struct svector)))
-		goto fail_jrecv_dxs;
-	
 	sf->frame = f;
 	return true;
-fail_jrecv_dxs:
-	return false;
 }
 
 
 static void send_frame_deinit(struct send_frame *sf)
 {
 	assert(sf);
+}
+
+static struct svector *frame_dx_alloc(struct frame *f)
+{
+	assert(f);
+	assert(0 <= f->next_dx && f->next_dx <= darray_size(&f->dxs));
 	
-	struct intmap_iter it;
 	struct svector *dx;
 	
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	if (f->next_dx == darray_size(&f->dxs)) {
+		if (!((dx = malloc(sizeof(*dx)))))
+			goto fail_malloc;
+		
+		if (!svector_init(dx, design_dim(f->design)))
+			goto fail_init;
+		
+		if (!darray_push_back(&f->dxs, dx))
+			goto fail_push_back;
+		
+		goto success;
+		
+	fail_push_back:
 		svector_deinit(dx);
+	fail_init:
+		free(dx);
+	fail_malloc:
+		return NULL;
 	}
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
+success:
+	assert(f->next_dx < darray_size(&f->dxs));
 
-	intmap_deinit(&sf->jrecv_dxs);
+	dx = *(struct svector **)darray_at(&f->dxs, f->next_dx++);
+	svector_clear(dx);
+
+	assert(svector_dim(dx) == design_dim(f->design));
+	return dx;
 }
-
-static int dyad_var_diff_rcompare(const void *px, const void *py)
-{
-	return double_compare(&((struct dyad_var_diff *)py)->time,
-			      &((struct dyad_var_diff *)px)->time);
-}
-
 
 bool frame_init(struct frame *f, struct design *design)
 {
@@ -51,23 +63,30 @@ bool frame_init(struct frame *f, struct design *design)
 	if (!history_init(&f->history))
 	    goto fail_history;
 	
-	if (!pqueue_init(&f->dyad_var_diffs, dyad_var_diff_rcompare,
-			 sizeof(struct dyad_var_diff)))
-		goto fail_dyad_var_diffs;
-
 	if (!intmap_init(&f->send_frames, sizeof(struct send_frame),
 			 alignof(struct send_frame)))
 		goto fail_send_frames;
 	
+	if (!intmap_init(&f->jrecv_dxs, sizeof(struct svector *),
+			 alignof(struct svector *)))
+		goto fail_jrecv_dxs;
+
+	if (!darray_init(&f->dxs, sizeof(struct svector *)))
+		goto fail_dxs;
+	
 	f->design = design;
 	f->time = -INFINITY;
+	f->isend = -1;
+	f->next_dx = 0;
 	return true;
 	
+fail_dxs:
+	intmap_deinit(&f->jrecv_dxs);
+fail_jrecv_dxs:
+	intmap_deinit(&f->send_frames);
 fail_send_frames:
-	pqueue_deinit(&f->dyad_var_diffs);
-fail_dyad_var_diffs:
 	history_deinit(&f->history);
-    fail_history:
+fail_history:
 	return false;
 }
 
@@ -78,6 +97,16 @@ void frame_deinit(struct frame *f)
 	
 	struct intmap_iter it;
 	struct send_frame *sf;
+	struct svector *dx;
+
+	ssize_t i, n = darray_size(&f->dxs);
+	for (i = 0; i < n; i++) {
+		dx = *(struct svector **)darray_at(&f->dxs, i);
+		svector_deinit(dx);
+		free(dx);
+	}
+	darray_deinit(&f->dxs);
+	intmap_deinit(&f->jrecv_dxs);
 	
 	intmap_iter_init(&f->send_frames, &it);
 	while (intmap_iter_advance(&f->send_frames, &it)) {
@@ -87,23 +116,12 @@ void frame_deinit(struct frame *f)
 	intmap_iter_deinit(&f->send_frames, &it);
 	
 	intmap_deinit(&f->send_frames);
-	pqueue_deinit(&f->dyad_var_diffs);
 	history_deinit(&f->history);
 }
 
 static void send_frame_clear(struct send_frame *sf)
 {
 	assert(sf);
-
-	struct intmap_iter it;
-	struct svector *dx;
-	
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
-		svector_clear(dx);
-	}
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
 }
 
 void frame_clear(struct frame *f)
@@ -120,8 +138,11 @@ void frame_clear(struct frame *f)
 	}
 	intmap_iter_deinit(&f->send_frames, &it);
 	
-	pqueue_clear(&f->dyad_var_diffs);
 	f->time = -INFINITY;
+	f->isend = -1;
+	
+	intmap_clear(&f->jrecv_dxs);
+	f->next_dx = 0;
 }
 
 double frame_time(const struct frame *f)
@@ -147,25 +168,9 @@ bool frame_insert(struct frame *f, const struct message *msg)
 	
 	for (i = 0; i < n; i++) {
 		design_dyad_var = darray_at(&f->design->design_dyad_vars, i);
-		if (!design_dyad_var->var->insert(design_dyad_var->var,
-						  msg,
-						  f,
-						  design_dyad_var->index))
-			return false;
 	}
 	
 	return true;
-}
-
-
-double frame_next_update(const struct frame *f)
-{
-	assert(f);
-	
-	if (pqueue_empty(&f->dyad_var_diffs))
-		return INFINITY;
-	
-	return ((struct dyad_var_diff *)pqueue_top(&f->dyad_var_diffs))->time;
 }
 
 
@@ -190,111 +195,73 @@ static struct send_frame *frame_get_send(struct frame *f, ssize_t isend)
 	return NULL;
 }
 
-static struct svector *send_frame_get_recv(struct send_frame *sf, ssize_t jrecv)
+
+struct svector *frame_dx(struct frame *f, ssize_t jrecv)
 {
-	assert(sf);
-	assert(0 <= jrecv && jrecv < design_nreceiver(sf->frame->design));
+	assert(f);
+	assert(0 <= jrecv && jrecv < design_nreceiver(f->design));
 	
 	struct intmap_pos pos;
+	struct svector **pdx;	
 	struct svector *dx;
 	
-	if ((dx = intmap_find(&sf->jrecv_dxs, jrecv, &pos))) {
-		return dx;
+	if ((pdx = intmap_find(&f->jrecv_dxs, jrecv, &pos))) {
+		return *pdx;
 	}
 	
-	if ((dx = intmap_insert(&sf->jrecv_dxs, &pos, NULL))) {
-		if (svector_init(dx, design_dim(sf->frame->design)))
-			return dx;
-		
-		intmap_erase(&sf->jrecv_dxs, &pos);
+	if ((dx = frame_dx_alloc(f))
+	    && intmap_insert(&f->jrecv_dxs, &pos, &dx)) {
+		return dx;
 	}
 	
 	return NULL;
 }
 
 
-static bool frame_apply_dyad_var_diff(struct frame *f,
-				      const struct dyad_var_diff *diff)
-{
-	assert(f);
-	assert(diff);
-	assert(diff->time >= frame_time(f));
-	assert(f->design->idynamic <= diff->index);
-	assert(diff->index < f->design->idynamic + f->design->ndynamic);
-	       
-	struct send_frame *sf;
-	struct svector *dx;
-	double *val;
-	
-	if ((sf = frame_get_send(f, diff->isend))
-	    && (dx = send_frame_get_recv(sf, diff->jrecv))
-	    && (val = svector_at(dx, diff->index))) {
-		*val += diff->delta; // TODO: clear zeros?
-		f->time = diff->time;
-		return true;
-	}
-	return false;
-}
-
-
-bool frame_advance_to(struct frame *f, double t, struct frame_diff *diff)
+bool frame_advance_to(struct frame *f, double t)
 {
 	assert(f);
 	assert(t >= frame_time(f));
-
+	
 	if (t == frame_time(f))
 		return true;
-	
-	struct dyad_var_diff *dyad_var_diff;
-	
+
 	if (!history_advance_to(&f->history, t))
 		return false;
 	
-	while (!pqueue_empty(&f->dyad_var_diffs) && frame_next_update(f) <= t) {
-		dyad_var_diff = pqueue_top(&f->dyad_var_diffs);
-		
-		if (diff && !darray_push_back(&diff->dyad_var_diffs,
-					      dyad_var_diff)) {
-			return false;
-		}
-		
-		if (!frame_apply_dyad_var_diff(f, dyad_var_diff)) {
-			if (diff)
-				darray_pop_back(&diff->dyad_var_diffs);
-			return false;
-		}
-		pqueue_pop(&f->dyad_var_diffs);
-	}
+	// TODO: update var sums
+	
+	
+	intmap_clear(&f->jrecv_dxs);
+	f->next_dx = 0;
+	f->isend = -1;
 	f->time = t;
+	
 	return true;
 }
 
 
-bool frame_add_dyad_event(struct frame *f, const struct dyad_var_diff *delta)
+bool frame_set_sender(struct frame *f, ssize_t isend)
 {
 	assert(f);
-	assert(delta);
-	assert(!(delta->time <= frame_time(f)));
+	assert(0 <= isend && isend < design_nsender(f->design));
+	f->isend = isend;
 	
-	return pqueue_push(&f->dyad_var_diffs, delta);
-}
+	intmap_clear(&f->jrecv_dxs);
+	f->next_dx = 0;
 
-
-bool frame_reserve_dyad_events(struct frame *f, ssize_t nadd)
-{
-	assert(f);
-	assert(nadd >= 0);
-
-	return pqueue_reserve_push(&f->dyad_var_diffs, nadd);
+	// TODO: update dx[i,j]
+	return true;
 }
 
 
 bool frame_mul(double alpha, enum trans_op trans,
-	       const struct frame *f, ssize_t isend,
+	       const struct frame *f,
 	       const struct vector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
+	assert(f->isend >= 0);
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -311,8 +278,8 @@ bool frame_mul(double alpha, enum trans_op trans,
 	bool ok = false;
 	
 	if (svector_init(&diffprod, vector_dim(y))) {
-		if (frame_dmul(alpha, trans, f, isend, x, 0.0, &diffprod)) {
-			design_mul0(alpha, trans, f->design, isend, x, beta, y);
+		if (frame_dmul(alpha, trans, f, x, 0.0, &diffprod)) {
+			design_mul0(alpha, trans, f->design, f->isend, x, beta, y);
 			svector_axpy(1.0, &diffprod, y);
 			ok = true;
 		}
@@ -324,11 +291,12 @@ bool frame_mul(double alpha, enum trans_op trans,
 
 
 bool frame_muls(double alpha, enum trans_op trans,
-		const struct frame *f, ssize_t isend,
+		const struct frame *f,
 		const struct svector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
+	assert(f->isend >= 0);
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -345,8 +313,8 @@ bool frame_muls(double alpha, enum trans_op trans,
 	bool ok = false;
 	
 	if (svector_init(&diffprod, vector_dim(y))) {
-		if (frame_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod)) {
-			design_muls0(alpha, trans, f->design, isend, x, beta, y);
+		if (frame_dmuls(alpha, trans, f, x, 0.0, &diffprod)) {
+			design_muls0(alpha, trans, f->design, f->isend, x, beta, y);
 			svector_axpy(1.0, &diffprod, y);
 			ok = true;
 		}
@@ -359,11 +327,12 @@ bool frame_muls(double alpha, enum trans_op trans,
 
 
 bool frame_dmul(double alpha, enum trans_op trans,
-		const struct frame *f, ssize_t isend,
+		const struct frame *f,
 		const struct vector *x, double beta, struct svector *y)
 {
 	assert(f);
 	assert(f->design);
+	assert(f->isend >= 0);
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -388,21 +357,16 @@ bool frame_dmul(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return true;
 
-	const struct send_frame *sf = intmap_lookup(&f->send_frames, isend);
-	
-	if (!sf)
-		return true;
-	
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
 	bool ok = true;
 	
-	intmap_iter_init(&sf->jrecv_dxs, &it);
+	intmap_iter_init(&f->jrecv_dxs, &it);
 	
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		jrecv = intmap_iter_current_key(&sf->jrecv_dxs, &it);
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	while (intmap_iter_advance(&f->jrecv_dxs, &it)) {
+		jrecv = intmap_iter_current_key(&f->jrecv_dxs, &it);
+		dx = *(struct svector **)intmap_iter_current(&f->jrecv_dxs, &it);
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dot(dx, x);
 			double *yjrecv = svector_at(y, jrecv);
@@ -427,17 +391,18 @@ bool frame_dmul(double alpha, enum trans_op trans,
 		}
 	}
 
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
+	intmap_iter_deinit(&f->jrecv_dxs, &it);
 	return ok;
 }
 
 
 bool frame_dmuls(double alpha, enum trans_op trans,
-		 const struct frame *f, ssize_t isend,
+		 const struct frame *f,
 		 const struct svector *x, double beta, struct svector *y)
 {
 	assert(f);
 	assert(f->design);
+	assert(f->isend >= 0);	
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -462,21 +427,16 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return true;
 	
-	const struct send_frame *sf = intmap_lookup(&f->send_frames, isend);
-	
-	if (!sf)
-		return true;
-	
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
 	bool ok = true;
 	
-	intmap_iter_init(&sf->jrecv_dxs, &it);
+	intmap_iter_init(&f->jrecv_dxs, &it);
 	
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		jrecv = intmap_iter_current_key(&sf->jrecv_dxs, &it);
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	while (intmap_iter_advance(&f->jrecv_dxs, &it)) {
+		jrecv = intmap_iter_current_key(&f->jrecv_dxs, &it);
+		dx = *(struct svector **)intmap_iter_current(&f->jrecv_dxs, &it);
 
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dots(dx, x);

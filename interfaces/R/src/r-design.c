@@ -52,6 +52,12 @@ void Riproc_design_init(DllInfo * info)
 static void Riproc_design_free(SEXP Rdesign)
 {
 	struct design *design = Riproc_to_design(Rdesign);
+	
+	if (design->refcount.count == 1) {
+		struct vector *intervals = (struct vector *)(design->intervals);
+		vector_deinit(intervals);
+		free(intervals);
+	}
 	design_free(design);
 }
 
@@ -94,9 +100,13 @@ Riproc_design_new(SEXP Rsenders,
 	if (receiver_effects == NA_LOGICAL) {
 		error("'receiver.effects' value is NA");
 	}
+	
+	struct vector *intervals = malloc(sizeof(*intervals));
+	vector_init(intervals, 0);
 
 	struct design *design =
-	    design_alloc(senders, receivers, receiver_effects, has_loops);
+	    design_alloc(senders, receivers, receiver_effects, has_loops,
+			 intervals);
 	append_recip(design, Rrecip_intervals);
 	SEXP Rdesign;
 
