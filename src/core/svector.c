@@ -303,6 +303,31 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	return intmap_assign_copy(&dst->map, &src->map);
 }
 
+double *svector_find(const struct svector *v, ssize_t i, struct svector_pos *pos)
+{
+	assert(v);
+	assert(0 <= i && i < svector_dim(v));
+	assert(pos);
+	
+	return intmap_find(&v->map, i, &pos->map_pos);
+}
+
+double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
+{
+	assert(v);
+	assert(pos);
+
+	return intmap_insert(&v->map, &pos->map_pos, &val);
+}
+
+void svector_erase(struct svector *v, struct svector_pos *pos)
+{
+	assert(v);
+	assert(pos);
+	
+	intmap_erase(&v->map, &pos->map_pos);
+}
+
 void svector_iter_init(const struct svector *v, struct svector_iter *it)
 {
 	intmap_iter_init(&v->map, &it->map_it);

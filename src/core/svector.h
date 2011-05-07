@@ -9,6 +9,10 @@ struct svector {
 	ssize_t dim;
 };
 
+struct svector_pos {
+	struct intmap_pos map_pos;
+};
+
 struct svector_iter {
 	struct intmap_iter map_it;
 };
@@ -37,6 +41,12 @@ double svector_dot(const struct svector *x, const struct vector *y);
 double svector_dots(const struct svector *v1, const struct svector *v2);
 void svector_axpy(double scale, const struct svector *x, struct vector *y);
 bool svector_axpys(double scale, const struct svector *x, struct svector *y);
+
+
+/* position-based operations */
+double *svector_find(const struct svector *v, ssize_t i, struct svector_pos *pos);
+double *svector_insert(struct svector *v, struct svector_pos *pos, double val);
+void svector_erase(struct svector *v, struct svector_pos *pos);
 
 /* iteration */
 void svector_iter_init(const struct svector *v, struct svector_iter *it);
