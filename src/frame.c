@@ -33,7 +33,7 @@ static struct svector *frame_dx_alloc(struct frame *f)
 		if (!svector_init(dx, design_dim(f->design)))
 			goto fail_init;
 		
-		if (!darray_push_back(&f->dxs, dx))
+		if (!darray_push_back(&f->dxs, &dx))
 			goto fail_push_back;
 		
 		goto success;
@@ -170,7 +170,7 @@ bool frame_insert(struct frame *f, const struct message *msg)
 		design_dyad_var = darray_at(&f->design->design_dyad_vars, i);
 	}
 	
-	return true;
+	return history_insert(&f->history, msg->from, msg->to, msg->nto, msg->attr);
 }
 
 
@@ -240,17 +240,35 @@ bool frame_advance_to(struct frame *f, double t)
 	return true;
 }
 
+ssize_t frame_sender(const struct frame *f)
+{
+	assert(f);
+	return f->isend;
+}
 
 bool frame_set_sender(struct frame *f, ssize_t isend)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_nsender(f->design));
+
+	// set sender and clear old jrecv_dxs
 	f->isend = isend;
-	
 	intmap_clear(&f->jrecv_dxs);
 	f->next_dx = 0;
 
-	// TODO: update dx[i,j]
+	// get new jrecv_dxs
+	const struct darray *design_dyad_vars = &f->design->design_dyad_vars;
+	struct design_dyad_var *v;
+	ssize_t i, n = darray_size(design_dyad_vars);
+	bool ok;
+	
+	for (i = 0; i < n; i++) {
+		v = darray_at(design_dyad_vars, i);
+		ok = v->var->get_jrecv_dxs((struct dyad_var *)v->var, f, v->index);
+		if (!ok)
+			return false;
+	}
+	
 	return true;
 }
 

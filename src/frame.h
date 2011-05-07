@@ -33,7 +33,11 @@ bool frame_insert(struct frame *f, const struct message *msg);
 
 /* advance time */
 bool frame_advance_to(struct frame *f, double t);
+
+ssize_t frame_sender(const struct frame *f);
 bool frame_set_sender(struct frame *f, ssize_t isend);
+
+
 void frame_clear(struct frame *f);
 
 /* time of the next change */

@@ -83,12 +83,9 @@ struct dyad_var {
 			     const struct dyad_event *e,
 			     struct frame *f,
 			     ssize_t index);
-	bool (*copy_dx_to) (struct dyad_var *v,
-			    struct frame *f,
-			    ssize_t isend,
-			    ssize_t jrecv,
-			    struct svector *dx,
-			    ssize_t index);
+	bool (*get_jrecv_dxs) (struct dyad_var *v,
+			       struct frame *f,
+			       ssize_t index);
 };
 
 

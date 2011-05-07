@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
-		// unit_test_setup_teardown(test_basic, enron_setup, enron_teardown),
+		unit_test_setup_teardown(test_basic, enron_setup, enron_teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);

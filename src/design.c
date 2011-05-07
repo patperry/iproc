@@ -495,6 +495,11 @@ bool design_has_loops(const struct design *design)
 
 ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var)
 {
+	assert(design);
+	assert(var);
+	assert(var->dim >= 0);
+	assert(var->get_jrecv_dxs);
+	       
 	struct design_dyad_var *design_var;
 	
 	if ((design_var = darray_push_back(&design->design_dyad_vars, NULL))) {

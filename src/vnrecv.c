@@ -54,6 +54,57 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 }
 */
 
+
+static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
+				 struct frame *f, ssize_t index)
+{
+	assert(dyad_var);
+	assert(f);
+	assert(index >= 0);
+	
+	struct vnrecv *v = container_of(dyad_var, struct vnrecv, dyad_var);
+	struct array *intvls = &v->intvls;
+	struct history *history = &f->history;
+	ssize_t isend = f->isend;
+	
+	double tcur = history_tcur(history);
+	struct event_trace *trace = history_recv(history, isend);
+	
+	ssize_t i, n = event_trace_size(trace);
+	for (i = 0; i < n; i++) {
+		struct events *events = event_trace_at(trace, i);
+		ssize_t jsend = events_id(events);
+		ssize_t k, K = events_size(events);
+		const struct event_meta *meta;
+		struct svector *dx;
+		double *dx_pos;
+		ssize_t pos;
+		double t, dt;
+		
+		for (k = 0; k < K; k++) {
+			meta = events_at(events, k);
+			
+			t = meta->time;
+			dt = tcur - t;
+			pos = array_binary_search(intvls, &dt, double_compare);
+		
+			if (pos < 0)
+				pos = ~pos;
+			
+			/* (jsend, [(pos, +1.0)]) */
+			if (!((dx = frame_dx(f, jsend))))
+				return false;
+			if (!((dx_pos = svector_at(dx, index + pos))))
+				return false;
+			
+			*dx_pos += 1.0;
+		}
+	}
+	
+	return true;
+}
+
+
 bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n)
 {
 	assert(v);
@@ -65,7 +116,7 @@ bool vnrecv_init(struct vnrecv *v, const double *intvls, ssize_t n)
 		v->dyad_var.dim = n + 1;
 		v->dyad_var.dyad_event_mask = 0;
 		v->dyad_var.update_send = NULL;
-		v->dyad_var.copy_dx_to = NULL;
+		v->dyad_var.get_jrecv_dxs = vnrecv_get_jrecv_dxs;
 		return true;
 	}
 
