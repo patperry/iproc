@@ -82,15 +82,7 @@ void messages_advance_to(struct messages * msgs, double t)
 	msgs->tcur = t;
 }
 
-bool messages_insert(struct messages * msgs, ssize_t from, ssize_t to, intptr_t attr)
-{
-	assert(msgs);
-	assert(from >= 0);
-	assert(to >= 0);
-	return messages_insertm(msgs, from, &to, 1, attr);
-}
-
-bool messages_insertm(struct messages * msgs, ssize_t from, ssize_t *to,
+bool messages_insert(struct messages * msgs, ssize_t from, ssize_t *to,
 		      ssize_t nto, intptr_t attr)
 {
 	assert(msgs);

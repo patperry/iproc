@@ -51,8 +51,7 @@ void messages_free(struct messages * msgs);
 ssize_t messages_size(const struct messages * msgs);
 void messages_advance_to(struct messages * msgs, double t);
 
-bool messages_insert(struct messages * msgs, ssize_t from, ssize_t to, intptr_t attr);
-bool messages_insertm(struct messages * msgs,
+bool messages_insert(struct messages * msgs,
 		      ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
 
 ssize_t messages_max_from(const struct messages * msgs);

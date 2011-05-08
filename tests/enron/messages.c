@@ -180,7 +180,7 @@ static int parse_end_map(void *ctx)
 	}
 
 	messages_advance_to(parse->messages, parse->time);
-	if (!messages_insertm(parse->messages,
+	if (!messages_insert(parse->messages,
 			      parse->sender_id,
 			      darray_front(&parse->receiver_id),
 			      darray_size(&parse->receiver_id),

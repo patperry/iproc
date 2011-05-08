@@ -134,7 +134,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 			error("'from' values must be positive");
 
 		messages_advance_to(msgs, msg_time);
-		messages_insertm(msgs, msg_from, msg_to, msg_nto, msg_attr);
+		messages_insert(msgs, msg_from, msg_to, msg_nto, msg_attr);
 
 		tcur = msg_time;
 	}
