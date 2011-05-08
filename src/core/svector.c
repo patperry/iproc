@@ -124,6 +124,18 @@ double *svector_at(struct svector *v, ssize_t i)
 	}
 }
 
+void svector_clear_at(struct svector *v, ssize_t i)
+{
+	assert(v);
+	assert(0 <= i && i < svector_dim(v));
+	
+	struct svector_pos pos;
+	
+	if ((svector_find(v, i, &pos))) {
+		svector_erase(v, &pos);
+	}
+}
+
 void svector_scale(struct svector *v, double scale)
 {
 	assert(v);

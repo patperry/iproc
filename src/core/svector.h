@@ -33,6 +33,7 @@ ssize_t svector_size(const struct svector *v);
 double svector_get(const struct svector *v, ssize_t i);
 bool svector_set(struct svector *v, ssize_t i, double val);
 double *svector_at(struct svector *v, ssize_t i);
+void svector_clear_at(struct svector *v, ssize_t i);
 
 double svector_max(const struct svector *v);
 
