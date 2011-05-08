@@ -83,6 +83,15 @@ void svector_clear(struct svector *v)
 	intmap_clear(&v->map);
 }
 
+bool svector_set_basis(struct svector *v, ssize_t i)
+{
+	assert(v);
+	assert(0 <= i && i < svector_dim(v));
+	
+	svector_clear(v);
+	return svector_set(v, i, 1.0);
+}
+
 ssize_t svector_dim(const struct svector *v)
 {
 	assert(v);

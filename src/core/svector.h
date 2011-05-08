@@ -27,6 +27,7 @@ void svector_free(struct svector *v);
 
 bool svector_assign_copy(struct svector *v, const struct svector *src);
 void svector_clear(struct svector *v);
+bool svector_set_basis(struct svector *v, ssize_t i);
 
 ssize_t svector_dim(const struct svector *v);
 ssize_t svector_size(const struct svector *v);
