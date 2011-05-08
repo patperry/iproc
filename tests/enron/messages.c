@@ -179,8 +179,14 @@ static int parse_end_map(void *ctx)
 		return 0;
 	}
 
-	messages_advance_to(parse->messages, parse->time);
-	if (!messages_insert(parse->messages,
+	if (!(parse->time >= messages_tlast(parse->messages))) {
+		fprintf(stderr, "message '%" SSIZE_FMT"' time not in sorted order",
+			parse->id);
+		return 0;
+	}
+	
+	if (!messages_add(parse->messages,
+			      parse->time,
 			      parse->sender_id,
 			      darray_front(&parse->receiver_id),
 			      darray_size(&parse->receiver_id),

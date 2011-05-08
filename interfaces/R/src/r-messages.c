@@ -127,14 +127,13 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 		msg_to = copy_sexp_to_int64(&to_buf, Rmsg_to);
 		msg_nto = darray_size(&to_buf);
 
-		if (msg_time < tcur)
+		if (!(msg_time >= tcur))
 			error
 			    ("'time' values must be sorted in increasing order");
 		if (msg_from < 0)
 			error("'from' values must be positive");
 
-		messages_advance_to(msgs, msg_time);
-		messages_insert(msgs, msg_from, msg_to, msg_nto, msg_attr);
+		messages_add(msgs, msg_time, msg_from, msg_to, msg_nto, msg_attr);
 
 		tcur = msg_time;
 	}

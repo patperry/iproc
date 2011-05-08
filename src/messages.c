@@ -16,7 +16,7 @@ bool messages_init(struct messages *msgs)
 	if (!refcount_init(&msgs->refcount))
 		goto fail_refcount;
 	
-	msgs->tcur = -INFINITY;
+	msgs->tlast = -INFINITY;
 	msgs->max_to = -1;
 	msgs->max_from = -1;
 	msgs->max_nto = 0;
@@ -75,22 +75,38 @@ ssize_t messages_size(const struct messages * msgs)
 	return darray_size(&msgs->message_reps);
 }
 
-void messages_advance_to(struct messages * msgs, double t)
+double messages_tlast(const struct messages *msgs)
 {
 	assert(msgs);
-	assert(t >= msgs->tcur);
-	msgs->tcur = t;
+	return msgs->tlast;
 }
 
-bool messages_insert(struct messages * msgs, ssize_t from, ssize_t *to,
-		      ssize_t nto, intptr_t attr)
+struct message *messages_at(const struct messages *msgs, ssize_t i)
 {
 	assert(msgs);
+	assert(0 <= i && i < messages_size(msgs));
+	
+	struct message_rep *rep = darray_at(&msgs->message_reps, i);
+	
+	if (!msgs->to_cached) {
+		ssize_t msg_ito = rep->ito;
+		ssize_t *msg_to = darray_at(&msgs->recipients, msg_ito);
+		rep->message.to = msg_to;
+	}
+
+	return &rep->message;
+}
+
+bool messages_add(struct messages *msgs, double time,
+		  ssize_t from, ssize_t *to,
+		  ssize_t nto, intptr_t attr)
+{
+	assert(msgs);
+	assert(time >= messages_tlast(msgs));
 	assert(from >= 0);
 	assert(nto >= 0);
 	assert(to || nto == 0);
 
-	double time = msgs->tcur;
 	struct darray *message_reps = &msgs->message_reps;
 	struct darray *recipients = &msgs->recipients;
 
@@ -118,7 +134,8 @@ bool messages_insert(struct messages * msgs, ssize_t from, ssize_t *to,
 
 	darray_push_back(message_reps, &m); // always succeeds
 	msgs->to_cached = false;
-
+	msgs->tlast = time;
+	
 	return true;
 }
 

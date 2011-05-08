@@ -22,7 +22,7 @@ struct messages {
 	struct darray message_reps;
 	struct darray recipients;
 	struct refcount refcount;
-	double tcur;
+	double tlast;
 	ssize_t max_from;
 	ssize_t max_to;
 	ssize_t max_nto;
@@ -48,11 +48,12 @@ struct messages *messages_ref(struct messages *msgs);
 void messages_free(struct messages * msgs);
 
 
-ssize_t messages_size(const struct messages * msgs);
-void messages_advance_to(struct messages * msgs, double t);
+ssize_t messages_size(const struct messages *msgs);
+double messages_tlast(const struct messages *msgs);
+bool messages_add(struct messages * msgs, double time,
+		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
 
-bool messages_insert(struct messages * msgs,
-		      ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
+struct message *messages_at(const struct messages *msgs, ssize_t i);
 
 ssize_t messages_max_from(const struct messages * msgs);
 ssize_t messages_max_to(const struct messages * msgs);
