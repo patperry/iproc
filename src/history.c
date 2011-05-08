@@ -146,7 +146,7 @@ void history_clear(struct history * history)
 	trace_array_clear(&history->recv);
 }
 
-double history_tcur(struct history * history)
+double history_tcur(const struct history * history)
 {
 	assert(history);
 	return history->tcur;

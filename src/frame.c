@@ -93,7 +93,6 @@ bool frame_init(struct frame *f, struct design *design)
 		goto fail_send_frames;
 	
 	f->design = design;
-	f->time = -INFINITY;
 	return true;
 	
 	intmap_deinit(&f->send_frames);
@@ -139,8 +138,6 @@ void frame_clear(struct frame *f)
 	}
 	intmap_iter_deinit(&f->send_frames, &it);
 	
-	f->time = -INFINITY;
-	
 	history_clear(&f->history);
 	dyad_queue_clear(&f->dyad_queue);
 }
@@ -148,7 +145,7 @@ void frame_clear(struct frame *f)
 double frame_time(const struct frame *f)
 {
 	assert(f);
-	return f->time;
+	return history_tcur(&f->history);
 }
 
 double frame_next_update(const struct frame *f)
@@ -228,9 +225,6 @@ bool frame_advance_to(struct frame *f, double t)
 	
 	if (!history_advance_to(&f->history, t))
 		return false;
-	
-	// DEPRECATED
-	f->time = t;
 	
 	const struct darray *design_dyad_vars = &f->design->design_dyad_vars;
 	struct design_dyad_var *v;

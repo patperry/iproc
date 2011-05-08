@@ -13,7 +13,6 @@ struct frame {
 	struct dyad_queue dyad_queue;
 	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
-	double time;
 };
 
 /* dX[t,i] */
