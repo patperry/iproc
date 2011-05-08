@@ -83,9 +83,6 @@ struct dyad_var {
 				   const struct dyad_event *e,
 				   struct frame *f,
 				   ssize_t index);
-	bool (*get_jrecv_dxs) (struct dyad_var *v,
-			       struct frame *f,
-			       ssize_t index);
 };
 
 

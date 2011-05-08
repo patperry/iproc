@@ -14,10 +14,6 @@ struct frame {
 	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
 	double time;
-	ssize_t isend;
-	struct intmap jrecv_dxs; // dx is a 'struct svector *'
-	struct darray dxs;
-	ssize_t next_dx;
 };
 
 /* dX[t,i] */
@@ -36,10 +32,6 @@ bool frame_insert(struct frame *f, const struct message *msg);
 /* advance time */
 bool frame_advance_to(struct frame *f, double t);
 
-ssize_t frame_sender(const struct frame *f);
-bool frame_set_sender(struct frame *f, ssize_t isend);
-
-
 void frame_clear(struct frame *f);
 
 /* time of the next change */
@@ -49,21 +41,19 @@ const struct history *frame_history(const struct frame *f);
 
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
-struct svector *DEPRECATED_frame_dx(struct frame *f, ssize_t jrecv);
-
 
 bool frame_mul(double alpha, enum trans_op trans,
-	       const struct frame *f,
+	       const struct frame *f, ssize_t isend,
 	       const struct vector *x, double beta, struct vector *y);
 bool frame_muls(double alpha, enum trans_op trans,
-		const struct frame *f,
+		const struct frame *f, ssize_t isend,
 		const struct svector *x, double beta, struct vector *y);
 
 bool frame_dmul(double alpha, enum trans_op trans,
-		const struct frame *f,
+		const struct frame *f, ssize_t isend,
 		const struct vector *x, double beta, struct svector *y);
 bool frame_dmuls(double alpha, enum trans_op trans,
-		 const struct frame *f,
+		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y);
 
 

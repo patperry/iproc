@@ -91,7 +91,7 @@ static bool vnrecv_handle_dyad_event (struct dyad_var *v,
 	return true;
 }
 
-
+/*
 static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 				 struct frame *f, ssize_t index)
 {
@@ -127,7 +127,7 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 			if (pos < 0)
 				pos = ~pos;
 			
-			/* (jsend, [(pos, +1.0)]) */
+			// (jsend, [(pos, +1.0)])
 			if (!((dx = DEPRECATED_frame_dx(f, jsend))))
 				return false;
 			if (!((dx_pos = svector_at(dx, index + pos))))
@@ -139,6 +139,7 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 	
 	return true;
 }
+*/
 
 bool vnrecv_init(struct vnrecv *v, const struct design *d)
 {
@@ -149,7 +150,6 @@ bool vnrecv_init(struct vnrecv *v, const struct design *d)
 	v->dyad_var.dim = n + 1;
 	v->dyad_var.dyad_event_mask = DYAD_EVENT_INIT | DYAD_EVENT_MOVE;
 	v->dyad_var.handle_dyad_event = vnrecv_handle_dyad_event;
-	v->dyad_var.get_jrecv_dxs = vnrecv_get_jrecv_dxs;
 	return true;
 }
 

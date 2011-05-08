@@ -504,7 +504,6 @@ ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var)
 	assert(design);
 	assert(var);
 	assert(var->dim >= 0);
-	assert(var->get_jrecv_dxs);
 	       
 	struct design_dyad_var *design_var;
 	

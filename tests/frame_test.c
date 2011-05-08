@@ -91,8 +91,7 @@ static void test_basic(void **state)
 		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_set_sender(&frame, isend);
-		frame_mul(1.0, TRANS_NOTRANS, &frame, &x, 0.0, &y);
+		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
 			assert_true(vector_get(&y, jrecv) == matrix_get(&xnrecv, jrecv, isend));
 		}
