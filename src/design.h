@@ -79,10 +79,10 @@ struct dyad_var;
 struct dyad_var {
 	ssize_t dim;
 	uint8_t dyad_event_mask;
-	bool (*update_send) (struct dyad_var *v,
-			     const struct dyad_event *e,
-			     struct frame *f,
-			     ssize_t index);
+	bool (*handle_dyad_event) (struct dyad_var *v,
+				   const struct dyad_event *e,
+				   struct frame *f,
+				   ssize_t index);
 	bool (*get_jrecv_dxs) (struct dyad_var *v,
 			       struct frame *f,
 			       ssize_t index);
@@ -91,7 +91,7 @@ struct dyad_var {
 
 struct design_dyad_var {
 	ssize_t index;
-	const struct dyad_var *var;
+	struct dyad_var *var;
 };
 
 struct design {
@@ -148,7 +148,7 @@ void design_muls0(double alpha,
 			const struct svector *x, double beta, struct vector *y);
 
 
-ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var);
+ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var);
 
 
 

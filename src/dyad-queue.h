@@ -56,6 +56,7 @@ void dyad_queue_clear(struct dyad_queue *queue);
 bool dyad_queue_empty(const struct dyad_queue *queue);
 ssize_t dyad_queue_size(const struct dyad_queue *queue);
 
+double dyad_queue_next_update(const struct dyad_queue *queue);
 const struct dyad_event *dyad_queue_top(const struct dyad_queue *queue);
 
 bool dyad_queue_push(struct dyad_queue *queue, const struct message *msg);

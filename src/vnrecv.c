@@ -55,6 +55,43 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 */
 
 
+static bool vnrecv_handle_dyad_event (struct dyad_var *v,
+				      const struct dyad_event *e,
+				      struct frame *f,
+				      ssize_t index)
+{
+	assert(v);
+	assert(v->dim >= 0);
+	assert(e);
+	assert(f);
+	assert(f->design);	
+	assert(index >= 0);
+	assert(index <= design_dim(f->design) - v->dim);
+	
+	struct svector *dx = frame_dx(f, e->jrecv, e->isend);
+	struct svector_pos pos;
+	double *val;
+	
+	if (!dx)
+		return false;
+	
+	if (e->type == DYAD_EVENT_MOVE) {
+		val = svector_find(dx, index + e->intvl - 1, &pos);
+		assert(val);
+		*val -= 1.0;
+		if (*val == 0.0)
+			svector_erase(dx, &pos);
+	}
+
+	val = svector_at(dx, index + e->intvl);
+	if (!val)
+		return false;
+
+	*val += 1.0;
+	return true;
+}
+
+
 static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 				 struct frame *f, ssize_t index)
 {
@@ -91,7 +128,7 @@ static bool vnrecv_get_jrecv_dxs(struct dyad_var *dyad_var,
 				pos = ~pos;
 			
 			/* (jsend, [(pos, +1.0)]) */
-			if (!((dx = frame_dx(f, jsend))))
+			if (!((dx = DEPRECATED_frame_dx(f, jsend))))
 				return false;
 			if (!((dx_pos = svector_at(dx, index + pos))))
 				return false;
@@ -110,8 +147,8 @@ bool vnrecv_init(struct vnrecv *v, const struct design *d)
 
 	ssize_t n = vector_dim(design_intervals(d));
 	v->dyad_var.dim = n + 1;
-	v->dyad_var.dyad_event_mask = 0;
-	v->dyad_var.update_send = NULL;
+	v->dyad_var.dyad_event_mask = DYAD_EVENT_INIT | DYAD_EVENT_MOVE;
+	v->dyad_var.handle_dyad_event = vnrecv_handle_dyad_event;
 	v->dyad_var.get_jrecv_dxs = vnrecv_get_jrecv_dxs;
 	return true;
 }

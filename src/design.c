@@ -499,7 +499,7 @@ const struct vector *design_intervals(const struct design *design)
 	return design->intervals;
 }
 
-ssize_t design_add_dyad_var(struct design *design, const struct dyad_var *var)
+ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var)
 {
 	assert(design);
 	assert(var);

@@ -61,6 +61,18 @@ ssize_t dyad_queue_size(const struct dyad_queue *queue)
 	return pqueue_size(&queue->events);
 }
 
+double dyad_queue_next_update(const struct dyad_queue *queue)
+{
+	assert(queue);
+	
+	if (dyad_queue_empty(queue))
+		return INFINITY;
+	
+	const struct dyad_queue_event *top = pqueue_top(&queue->events);
+	return top->tnext;
+}
+
+
 const struct dyad_event *dyad_queue_top(const struct dyad_queue *queue)
 {
 	assert(queue);

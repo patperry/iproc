@@ -10,6 +10,7 @@
 
 struct frame {
 	struct history history;
+	struct dyad_queue dyad_queue;
 	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
 	double time;
@@ -22,6 +23,7 @@ struct frame {
 /* dX[t,i] */
 struct send_frame {
 	struct frame *frame;
+	struct intmap jrecv_dxs;
 };
 
 /* create/destroy */
@@ -46,7 +48,8 @@ double frame_next_update(const struct frame *f);
 const struct history *frame_history(const struct frame *f);
 
 
-struct svector *frame_dx(struct frame *f, ssize_t jrecv);
+struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
+struct svector *DEPRECATED_frame_dx(struct frame *f, ssize_t jrecv);
 
 
 bool frame_mul(double alpha, enum trans_op trans,
