@@ -100,6 +100,31 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 }
 
 
+bool actors_init_copy(struct actors *actors, const struct actors *src)
+{
+	assert(actors);
+	assert(src);
+	
+	if (!actors_init(actors, src->dim))
+		goto fail_init;
+	
+	ssize_t i, n = actors_size(src);
+	for (i = 0; i < n; i++) {
+		if (!actors_add(actors, actors_traits(src, i)))
+			goto fail_add;
+	}
+	
+	assert(actors_size(actors) == actors_cohorts_size(src));
+	assert(actors_cohorts_size(actors) == actors_cohorts_size(src));
+	
+	return true;
+fail_add:
+	actors_deinit(actors);
+fail_init:
+	return false;
+}
+
+
 static void cohorts_clear(struct hashset *cohorts)
 {
 	struct hashset_iter it;
