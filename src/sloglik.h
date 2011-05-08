@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "darray.h"
+#include "frame.h"
 #include "history.h"
 #include "model.h"
 #include "refcount.h"
@@ -76,9 +77,9 @@ iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
 void iproc_sloglik_unref(iproc_sloglik * sll);
 
 void iproc_sloglik_insert(iproc_sloglik * sll,
-			  struct history * history, ssize_t jrecv);
+			  const struct frame *f, ssize_t jrecv);
 void iproc_sloglik_insertm(iproc_sloglik * sll,
-			   struct history * history, ssize_t *jrecv, ssize_t n);
+			   const struct frame *f, ssize_t *jrecv, ssize_t n);
 
 double iproc_sloglik_value(iproc_sloglik * sll);
 struct vector *iproc_sloglik_grad(iproc_sloglik * sll);

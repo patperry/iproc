@@ -63,23 +63,27 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 	       iproc_model_nreceiver(model));
 
 	iproc_loglik *loglik = iproc_loglik_new_empty(model);
-
+	struct frame frame;
+	frame_init(&frame, model->design);
+	
 	if (!messages)
 		return loglik;
 
 	struct messages_iter it = messages_iter(messages);
 
 	while (messages_iter_advance(&it)) {
-		struct history *history = messages_iter_history(&it);
 		ssize_t tie, ntie = messages_iter_ntie(&it);
 
 		for (tie = 0; tie < ntie; tie++) {
 			const struct message *msg = messages_iter_current(&it, tie);
-			iproc_loglik_insert(loglik, history, msg);
+			iproc_loglik_insert(loglik, &frame, msg);
+			frame_insert(&frame, msg);
 		}
 	}
 
 	messages_iter_deinit(&it);
+	
+	frame_deinit(&frame);
 	return loglik;
 }
 
@@ -119,13 +123,12 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 	return sll;
 }
 
-void
-iproc_loglik_insert(iproc_loglik * loglik,
-		    struct history * history,
-		    const struct message *msg)
+void iproc_loglik_insert(iproc_loglik * loglik,
+			 const struct frame *f,
+			 const struct message *msg)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, msg->from);
-	iproc_sloglik_insertm(sll, history, msg->to, msg->nto);
+	iproc_sloglik_insertm(sll, f, msg->to, msg->nto);
 	loglik->grad_cached = false;
 	loglik->nsend += 1;
 	loglik->nrecv += msg->nto;

@@ -6,13 +6,14 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
+#include "actors.h"
 #include "vrecv.h"
+#include "vnrecv.h"
 #include "r-utils.h"
 #include "r-actors.h"
-#include "r-cursor.h"
 #include "r-design.h"
 
-static SEXP Riproc_design_type_tag;
+static SEXP Riproc_design_rep_type_tag;
 
 static R_CallMethodDef callMethods[] = {
 	{"Riproc_design_new", (DL_FUNC) & Riproc_design_new, 4},
@@ -21,61 +22,153 @@ static R_CallMethodDef callMethods[] = {
 	{"Riproc_design_nsender", (DL_FUNC) & Riproc_design_nsender, 1},
 	{"Riproc_design_receivers", (DL_FUNC) & Riproc_design_receivers, 1},
 	{"Riproc_design_senders", (DL_FUNC) & Riproc_design_senders, 1},
-	{"Riproc_design_mul", (DL_FUNC) & Riproc_design_mul, 4},
-	{"Riproc_design_tmul", (DL_FUNC) & Riproc_design_tmul, 4},
 	{NULL, NULL, 0}
 };
 
-static void append_recip(struct design * design, SEXP Rrecip_intervals)
-{
-	int n;
-	double *intvls;
+struct design_params {
+	bool loops;
+	bool reffects;
+	bool vrecv;
+	bool vnrecv;
+};
 
-	if (Rrecip_intervals == NULL_USER_OBJECT) {
-		n = 0;
-		intvls = NULL;
-	} else {
-		n = GET_LENGTH(Rrecip_intervals);
-		intvls = NUMERIC_POINTER(Rrecip_intervals);
+struct design_rep {
+	struct refcount refcount;	
+	struct actors senders;
+	struct actors receivers;
+	struct vector intervals;
+	struct vrecv vrecv;
+	struct vnrecv vnrecv;
+	struct design design;
+
+};
+
+static struct design_rep *design_rep_alloc(const struct actors *senders,
+					   const struct actors *receivers,
+					   const struct vector *intervals,
+					   const struct design_params *params)
+{
+	assert(senders);
+	assert(receivers);
+	assert(intervals);
+	assert(params);
+	
+	struct design_rep *rep;
+	
+	if (!(rep = malloc(sizeof(*rep))))
+		goto fail_malloc;
+	if (!refcount_init(&rep->refcount))
+		goto fail_refcount;
+	if (!actors_init_copy(&rep->senders, senders))
+		goto fail_senders;
+	if (!actors_init_copy(&rep->receivers, receivers))
+		goto fail_receivers;
+	if (!vector_init_copy(&rep->intervals, intervals))
+		goto fail_intervals;
+	if (!design_init(&rep->design, &rep->senders, &rep->receivers, &rep->intervals))
+		goto fail_design;
+	
+	design_set_loops(&rep->design, params->loops);
+	design_set_reffects(&rep->design, params->reffects);
+	
+	if (params->vrecv) {
+		if (!vrecv_init(&rep->vrecv, &rep->design))
+			goto fail_vrecv_init;
+		if (!design_add_dyad_var(&rep->design, &rep->vrecv.dyad_var))
+			goto fail_vrecv_add;
 	}
 
-	iproc_vrecip *v = iproc_vrecip_new(intvls, n);
-	iproc_design_append(design, &v->var);	// design frees memory
+	if (params->vnrecv) {
+		if (!vnrecv_init(&rep->vnrecv, &rep->design))
+			goto fail_vnrecv_init;
+		if (!design_add_dyad_var(&rep->design, &rep->vnrecv.dyad_var))
+			goto fail_vnrecv_add;
+	}
+	
+	return rep;
+	
+fail_vnrecv_add:
+	if (params->vnrecv)
+		vnrecv_deinit(&rep->vnrecv);
+fail_vnrecv_init:
+fail_vrecv_add:
+	if (params->vrecv)
+		vrecv_deinit(&rep->vrecv);
+fail_vrecv_init:
+	design_deinit(&rep->design);
+fail_design:
+	vector_deinit(&rep->intervals);
+fail_intervals:
+	actors_deinit(&rep->receivers);
+fail_receivers:
+	actors_deinit(&rep->senders);
+fail_senders:
+	refcount_deinit(&rep->refcount);
+fail_refcount:
+	free(rep);
+fail_malloc:
+	return NULL;
 }
+
+static struct design_rep *design_rep_ref(struct design_rep *rep)
+{
+	assert(rep);
+	if (refcount_get(&rep->refcount))
+		return rep;
+	return NULL;
+}
+
+static void design_rep_free(struct design_rep *rep)
+{
+	assert(rep);
+	
+	if (!rep || !refcount_put(&rep->refcount, NULL))
+		return;
+	
+	if (design_dyad_var_index(&rep->design, &rep->vnrecv.dyad_var) >= 0)
+		vnrecv_deinit(&rep->vnrecv);
+	if (design_dyad_var_index(&rep->design, &rep->vrecv.dyad_var) >= 0)
+		vrecv_deinit(&rep->vrecv);
+
+	design_deinit(&rep->design);
+	vector_deinit(&rep->intervals);
+	actors_deinit(&rep->receivers);
+	actors_deinit(&rep->senders);
+	refcount_deinit(&rep->refcount);
+	free(rep);
+}
+
+
 
 void Riproc_design_init(DllInfo * info)
 {
-	Riproc_design_type_tag = install("Riproc_design_type_tag");
+	Riproc_design_rep_type_tag = install("Riproc_design_rep_type_tag");
 	R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 }
 
 static void Riproc_design_free(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
-	
-	if (design->refcount.count == 1) {
-		struct vector *intervals = (struct vector *)(design->intervals);
-		vector_deinit(intervals);
-		free(intervals);
-	}
-	design_free(design);
+	struct design_rep *rep =
+		Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag, "design");
+
+	design_rep_free(rep);
 }
 
-struct design *Riproc_to_design(SEXP Rdesign)
+const struct design *Riproc_to_design(SEXP Rdesign)
 {
-	struct design *design =
-	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_type_tag, "design");
-	return design;
+	struct design_rep *rep =
+	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag, "design");
+	return &rep->design;
 }
 
-SEXP Riproc_from_design(struct design * design)
+static SEXP Riproc_from_design_rep(struct design_rep *rep)
 {
 	SEXP Rdesign, class;
 
-	design_ref(design);
+	design_rep_ref(rep);
 
 	PROTECT(Rdesign =
-		R_MakeExternalPtr(design, Riproc_design_type_tag, R_NilValue));
+		R_MakeExternalPtr(rep, Riproc_design_rep_type_tag, R_NilValue));
 	R_RegisterCFinalizer(Rdesign, Riproc_design_free);
 
 	/* set the class of the result */
@@ -85,6 +178,12 @@ SEXP Riproc_from_design(struct design * design)
 
 	UNPROTECT(2);
 	return Rdesign;
+}
+
+SEXP Riproc_from_design(const struct design *design)
+{
+	struct design_rep *rep = container_of(design, struct design_rep, design);
+	return Riproc_from_design_rep(rep);
 }
 
 SEXP
@@ -104,14 +203,18 @@ Riproc_design_new(SEXP Rsenders,
 	struct vector *intervals = malloc(sizeof(*intervals));
 	vector_init(intervals, 0);
 
-	struct design *design =
-	    design_alloc(senders, receivers, receiver_effects, has_loops,
-			 intervals);
-	append_recip(design, Rrecip_intervals);
+	struct design_params params;
+	params.loops = has_loops;
+	params.reffects = receiver_effects;
+	params.vrecv = false;
+	params.vnrecv = false;
+	
+	struct design_rep *rep = design_rep_alloc(senders, receivers, intervals, &params);
+
 	SEXP Rdesign;
 
-	PROTECT(Rdesign = Riproc_from_design(design));
-	design_free(design);
+	PROTECT(Rdesign = Riproc_from_design_rep(rep));
+	design_rep_free(rep);
 
 	UNPROTECT(1);
 	return Rdesign;
@@ -119,113 +222,35 @@ Riproc_design_new(SEXP Rsenders,
 
 SEXP Riproc_design_dim(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	int dim = (int)design_dim(design);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_design_nsender(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	int nsender = (int)design_nsender(design);
 	return ScalarInteger(nsender);
 }
 
 SEXP Riproc_design_nreceiver(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	int nreceiver = (int)design_nreceiver(design);
 	return ScalarInteger(nreceiver);
 }
 
 SEXP Riproc_design_senders(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	struct actors *senders = design_senders(design);
 	return Riproc_from_actors(senders);
 }
 
 SEXP Riproc_design_receivers(SEXP Rdesign)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	struct actors *receivers = design_receivers(design);
 	return Riproc_from_actors(receivers);
-}
-
-SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
-{
-	struct design *design = Riproc_to_design(Rdesign);
-	int dim = (int)design_dim(design);
-	int nsender = (int)design_nsender(design);
-	int nreceiver = (int)design_nreceiver(design);
-	struct matrix x = Riproc_matrix_view_sexp(Rx);
-	int nrow = (int)matrix_nrow(&x);
-	int ncol = (int)matrix_ncol(&x);
-	int sender = INTEGER(Rsender)[0] - 1;
-	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
-				      ? NULL : Riproc_to_cursor(Rcursor));
-	struct history *history = messages_iter_history(cursor);
-
-	if (sender < 0 || sender >= nsender)
-		error("invalid sender");
-	if (nrow != dim)
-		error("dimension mismatch");
-
-	SEXP Rresult;
-	PROTECT(Rresult = allocMatrix(REALSXP, nreceiver, ncol));
-	struct matrix result = Riproc_matrix_view_sexp(Rresult);
-	iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
-	struct vector col;
-	struct vector dst;
-
-	int j;
-	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &x, j);
-		vector_init_matrix_col(&dst, &result, j);
-		iproc_design_ctx_mul(1.0, TRANS_NOTRANS, ctx, &col, 0.0, &dst);
-	}
-
-	iproc_design_ctx_unref(ctx);
-
-	UNPROTECT(1);
-	return Rresult;
-}
-
-SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rx, SEXP Rsender, SEXP Rcursor)
-{
-	struct design *design = Riproc_to_design(Rdesign);
-	int dim = (int)design_dim(design);
-	int nsender = (int)design_nsender(design);
-	int nreceiver = (int)design_nreceiver(design);
-	struct matrix x = Riproc_matrix_view_sexp(Rx);
-	int nrow = (int)matrix_nrow(&x);
-	int ncol = (int)matrix_ncol(&x);
-	int sender = INTEGER(Rsender)[0] - 1;
-	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
-				      ? NULL : Riproc_to_cursor(Rcursor));
-	struct history *history = messages_iter_history(cursor);
-
-	if (sender < 0 || sender >= nsender)
-		error("invalid sender");
-	if (nrow != nreceiver)
-		error("dimension mismatch");
-
-	SEXP Rresult;
-	PROTECT(Rresult = allocMatrix(REALSXP, dim, ncol));
-	struct matrix result = Riproc_matrix_view_sexp(Rresult);
-	iproc_design_ctx *ctx = iproc_design_ctx_new(design, sender, history);
-	struct vector col;
-	struct vector dst;
-
-	int j;
-	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &x, j);
-		vector_init_matrix_col(&dst, &result, j);
-		iproc_design_ctx_mul(1.0, TRANS_TRANS, ctx, &col, 0.0, &dst);
-	}
-
-	iproc_design_ctx_unref(ctx);
-
-	UNPROTECT(1);
-	return Rresult;
 }

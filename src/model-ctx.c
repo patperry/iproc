@@ -10,16 +10,16 @@
 #include "model.h"
 
 static void
-compute_weight_changes(iproc_design_ctx * ctx,
+compute_weight_changes(const struct frame *f, ssize_t isend,
 		       bool has_loops,
 		       struct vector *coefs,
 		       struct vector *log_p0,
 		       struct svector *deta, double *gamma, double *log_gamma)
 {
 	/* compute the changes in weights */
-	iproc_design_ctx_dmul(1.0, TRANS_NOTRANS, ctx, coefs, 0.0, deta);
+	frame_dmul(1.0, TRANS_NOTRANS, f, isend, coefs, 0.0, deta);
 	if (!has_loops) {
-		svector_set(deta, ctx->isend, -INFINITY);
+		svector_set(deta, isend, -INFINITY);
 	}
 
 	/* compute the scale for the weight differences */
@@ -131,7 +131,6 @@ compute_prob_diffs(struct vector *p0, double gamma, struct svector *p_active)
 static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 {
 	if (ctx) {
-		iproc_design_ctx_unref(ctx->design_ctx);
 		iproc_model *model = ctx->model;
 		darray_push_back(&model->ctxs, &ctx);
 		iproc_model_unref(model);
@@ -139,8 +138,8 @@ static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 }
 
 static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
-						  ssize_t isend,
-						  struct history * h)
+						  const struct frame *f,
+						  ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);
@@ -154,7 +153,7 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	ssize_t dim = iproc_model_dim(model);
 
 	ctx->model = iproc_model_ref(model);
-	ctx->design_ctx = NULL;
+	ctx->frame = NULL;
 	ctx->group = NULL;
 
 	ctx->deta = svector_alloc(nreceiver);
@@ -168,12 +167,12 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 		return NULL;
 	}
 
-	iproc_model_ctx_set(ctx, isend, h);
+	iproc_model_ctx_set(ctx, f, isend);
 	return ctx;
 }
 
-iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     ssize_t isend, struct history * h)
+iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,const struct frame *f,
+				     ssize_t isend)
 {
 	assert(model);
 	assert(0 <= isend);
@@ -187,11 +186,11 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 		darray_pop_back(ctxs);
 		iproc_model_ref(model);
 		refcount_init(&ctx->refcount);
-		ctx->design_ctx = NULL;
-		iproc_model_ctx_set(ctx, isend, h);
+		ctx->frame = NULL;
+		iproc_model_ctx_set(ctx, f, isend);
 		assert(ctx->model == model);
 	} else {
-		ctx = iproc_model_ctx_new_alloc(model, isend, h);
+		ctx = iproc_model_ctx_new_alloc(model, f, isend);
 	}
 
 	return ctx;
@@ -199,7 +198,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 }
 
 void
-iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, struct history * h)
+iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f, ssize_t isend)
 {
 	assert(ctx);
 	assert(ctx->model);
@@ -209,24 +208,20 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, ssize_t isend, struct history * h)
 	svector_clear(ctx->deta);
 	svector_clear(ctx->dp);
 	svector_clear(ctx->dxbar);
-	if (ctx->design_ctx)
-		iproc_design_ctx_unref(ctx->design_ctx);
 
 	iproc_model *model = ctx->model;
-	struct design *design = iproc_model_design(model);
-	iproc_design_ctx *design_ctx = iproc_design_ctx_new(design, isend, h);
 	struct vector *coefs = iproc_model_coefs(model);
 	bool has_loops = iproc_model_has_loops(model);
 	iproc_group_model *group = iproc_model_send_group(model, isend);
 
-	ctx->design_ctx = design_ctx;
+	ctx->frame = f;
+	ctx->isend = isend;
 	ctx->group = group;
 
-	compute_weight_changes(design_ctx, has_loops, coefs, group->log_p0,
+	compute_weight_changes(f, isend, has_loops, coefs, group->log_p0,
 			       ctx->deta, &ctx->gamma, &ctx->log_gamma);
 	compute_active_probs(group->log_p0, ctx->log_gamma, ctx->deta, ctx->dp);
-	iproc_design_ctx_dmuls(1.0, TRANS_TRANS, design_ctx, ctx->dp,
-			       0.0, ctx->dxbar);
+	frame_dmuls(1.0, TRANS_TRANS, f, isend, ctx->dp, 0.0, ctx->dxbar);
 	compute_prob_diffs(group->p0, ctx->gamma, ctx->dp);
 }
 

@@ -95,31 +95,26 @@ struct design {
 	struct actors *senders;
 	struct actors *receivers;
 	const struct vector *intervals;
-	ssize_t ireffects, nreffects;
+	ssize_t ireffects;
 	ssize_t istatic, nstatic;
 	ssize_t idynamic, ndynamic;
 	ssize_t dim;
-	bool has_reffects;
-	bool has_loops;
+	bool reffects;
+	bool loops;
 	
 	struct darray design_dyad_vars;
 
 	/* deprecated */
-	struct darray vars;
-	struct darray ctxs;
-	struct darray svectors;
 	struct refcount refcount;
 };
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    bool has_reffects, bool has_loops,
 			    const struct vector *intervals);
 struct design *design_ref(struct design * design);
 void design_free(struct design * design);
 
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects, bool has_loops,
-		 const struct vector *intervals);
+		 struct actors *receivers, const struct vector *intervals);
 void design_deinit(struct design *design);
 
 
@@ -128,9 +123,20 @@ ssize_t design_nsender(const struct design * design);
 ssize_t design_nreceiver(const struct design * design);
 struct actors *design_senders(const struct design * design);
 struct actors *design_receivers(const struct design * design);
-bool design_has_reffects(const struct design *design);
-bool design_has_loops(const struct design *design);
+
+
 const struct vector *design_intervals(const struct design *design);
+
+
+bool design_add_dyad_var(struct design *design, struct dyad_var *var);
+void design_set_loops(struct design *design, bool loops);
+bool design_loops(const struct design *design);
+void design_set_reffects(struct design *design, bool reffects);
+bool design_reffects(const struct design *design);
+
+ssize_t design_traits_index(const struct design *design);
+ssize_t design_reffects_index(const struct design *design);
+ssize_t design_dyad_var_index(const struct design *design, const struct dyad_var *var);
 
 
 void design_mul0(double alpha,
@@ -145,84 +151,6 @@ void design_muls0(double alpha,
 			const struct svector *x, double beta, struct vector *y);
 
 
-ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var);
-
-
-
-/********** DEPRECATED **********/
-
-typedef struct _iproc_design_var iproc_design_var;
-typedef struct _iproc_design_ctx iproc_design_ctx;
-typedef struct _iproc_design_dx iproc_design_dx;	// private
-
-
-/* dX[t,i] */
-struct _iproc_design_ctx {
-	struct design *design;
-	struct history *history;
-	ssize_t isend;
-	struct darray dxs;
-	struct refcount refcount;
-};
-
-/* dX{k}[t,i] */
-struct _iproc_design_var {
-	ssize_t dim;
-	void (*get_dxs) (iproc_design_var * var, iproc_design_ctx * ctx,
-			 ssize_t offset);
-	void (*free) (iproc_design_var * var);
-};
-
-/* dx[t,i,j] */
-struct _iproc_design_dx {
-	ssize_t jrecv;		// NOTE: layout is important here
-	struct svector *dx;
-};
-
-// NOTE: a call to `append` invalidates existing design_ctxs
-void iproc_design_append(struct design * design, iproc_design_var * var);
-
-
-void iproc_design_var_init(iproc_design_var * var,
-			   ssize_t dim,
-			   void (*get_dxs) (iproc_design_var *,
-					    iproc_design_ctx * ctx,
-					    ssize_t),
-			   void (*free) (iproc_design_var *));
-
-iproc_design_ctx *iproc_design_ctx_new(struct design * design,
-				       ssize_t isend, struct history * h);
-iproc_design_ctx *iproc_design_ctx_ref(iproc_design_ctx * ctx);
-void iproc_design_ctx_unref(iproc_design_ctx * ctx);
-
-void iproc_design_ctx_mul(double alpha,
-			  enum trans_op trans,
-			  iproc_design_ctx * ctx,
-			  struct vector *x, double beta, struct vector *y);
-void iproc_design_ctx_muls(double alpha,
-			   enum trans_op trans,
-			   iproc_design_ctx * ctx,
-			   struct svector *x, double beta, struct vector *y);
-
-struct svector *iproc_design_ctx_dx(iproc_design_ctx * ctx,
-				    ssize_t jrecv, bool null_ok);
-
-/* number of nonzero rows in dX */
-ssize_t iproc_design_ctx_nnz(iproc_design_ctx * ctx);
-
-/* inz-th nonzero row of dX */
-struct svector *iproc_design_ctx_nz(iproc_design_ctx * ctx,
-				    ssize_t inz, ssize_t *jrecv);
-
-void iproc_design_ctx_dmul(double alpha,
-			   enum trans_op trans,
-			   const iproc_design_ctx * ctx,
-			   const struct vector *x, double beta,
-			   struct svector *y);
-void iproc_design_ctx_dmuls(double alpha, enum trans_op trans,
-			    const iproc_design_ctx * ctx,
-			    const struct svector *x, double beta,
-			    struct svector *y);
 
 
 

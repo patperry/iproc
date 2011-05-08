@@ -12,7 +12,6 @@ static SEXP Riproc_loglik_type_tag;
 
 static R_CallMethodDef callMethods[] = {
 	{"Riproc_loglik_new", (DL_FUNC) & Riproc_loglik_new, 2},
-	{"Riproc_loglik_insert", (DL_FUNC) & Riproc_loglik_insert, 2},
 	{"Riproc_loglik_value", (DL_FUNC) & Riproc_loglik_value, 1},
 	{"Riproc_loglik_grad", (DL_FUNC) & Riproc_loglik_grad, 1},
 	{NULL, NULL, 0}
@@ -67,21 +66,6 @@ SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 	iproc_loglik_unref(loglik);
 	UNPROTECT(1);
 	return Rloglik;
-}
-
-SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor)
-{
-	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-	struct messages_iter *cursor = Riproc_to_cursor(Rcursor);
-	struct history *history = messages_iter_history(cursor);
-	ssize_t i, n = messages_iter_ntie(cursor);
-
-	for (i = 0; i < n; i++) {
-		const struct message *msg = messages_iter_current(cursor, i);
-		iproc_loglik_insert(loglik, history, msg);
-	}
-
-	return NULL_USER_OBJECT;
 }
 
 SEXP Riproc_loglik_value(SEXP Rloglik)

@@ -48,8 +48,9 @@ static void enron_setup(void **state)
 	has_loops = false;
 	vector_init(&intervals, 0);
 
-	design_init(&design, &senders, &receivers, has_reffects, has_loops,
-		    &intervals);
+	design_init(&design, &senders, &receivers, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_reffects(&design, has_reffects);
 	matrix_deinit(&enron_employees0);
 }
 
@@ -87,8 +88,9 @@ static void enron_reff_setup(void **state)
 	has_loops = false;
 	vector_init(&intervals, 0);
 	
-	design_init(&design, &senders, &receivers, has_reffects, has_loops,
-		    &intervals);
+	design_init(&design, &senders, &receivers, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_reffects(&design, has_reffects);
 	matrix_deinit(&enron_employees0);
 }
 
@@ -155,7 +157,7 @@ static void matrix_init_design0(struct matrix *x, const struct design *d,
 	
 	const struct actors *s = design_senders(d);
 	const struct actors *r = design_receivers(d);
-	bool has_reffects = design_has_reffects(d);
+	bool has_reffects = design_reffects(d);
 	struct matrix xstat, xreff;
 	
 	ssize_t nrecv = actors_size(r);

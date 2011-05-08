@@ -51,7 +51,6 @@
 		222FC40713607B5800E64FC9 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		222FC41113607C7900E64FC9 /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597405133D0AFB0022B52E /* actors.c */; };
 		222FC41313607C7900E64FC9 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
-		222FC41513607C7900E64FC9 /* design-ctx.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597407133D0AFB0022B52E /* design-ctx.c */; };
 		222FC41613607C7900E64FC9 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		222FC41813607C7900E64FC9 /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* fit.c */; };
 		222FC41A13607C7900E64FC9 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
@@ -89,7 +88,6 @@
 		22597403133D081B0022B52E /* matrix.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597401133D081A0022B52E /* matrix.h */; };
 		2259741C133D0AFB0022B52E /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597405133D0AFB0022B52E /* actors.c */; };
 		2259741D133D0AFB0022B52E /* actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597406133D0AFB0022B52E /* actors.h */; };
-		2259741E133D0AFB0022B52E /* design-ctx.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597407133D0AFB0022B52E /* design-ctx.c */; };
 		2259741F133D0AFB0022B52E /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		22597420133D0AFB0022B52E /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597409133D0AFB0022B52E /* design.h */; };
 		22597421133D0AFB0022B52E /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* fit.c */; };
@@ -125,8 +123,6 @@
 		22678934134CD75B001309F5 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22708BB013311B8E0055AD94 /* r-actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708B9E13311B8E0055AD94 /* r-actors.c */; };
 		22708BB113311B8E0055AD94 /* r-actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708B9F13311B8E0055AD94 /* r-actors.h */; };
-		22708BB213311B8E0055AD94 /* r-cursor.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA013311B8E0055AD94 /* r-cursor.c */; };
-		22708BB313311B8E0055AD94 /* r-cursor.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA113311B8E0055AD94 /* r-cursor.h */; };
 		22708BB513311B8E0055AD94 /* r-design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA313311B8E0055AD94 /* r-design.c */; };
 		22708BB613311B8E0055AD94 /* r-design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA413311B8E0055AD94 /* r-design.h */; };
 		22708BB713311B8E0055AD94 /* r-fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA513311B8E0055AD94 /* r-fit.c */; };
@@ -414,7 +410,6 @@
 		22597401133D081A0022B52E /* matrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = matrix.h; path = src/core/matrix.h; sourceTree = "<group>"; };
 		22597405133D0AFB0022B52E /* actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = actors.c; path = src/actors.c; sourceTree = "<group>"; };
 		22597406133D0AFB0022B52E /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = src/actors.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		22597407133D0AFB0022B52E /* design-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "design-ctx.c"; path = "src/design-ctx.c"; sourceTree = "<group>"; };
 		22597408133D0AFB0022B52E /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
 		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		2259740A133D0AFB0022B52E /* fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fit.c; path = src/fit.c; sourceTree = "<group>"; };
@@ -448,8 +443,6 @@
 		2267891C134CD66F001309F5 /* pqueue_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pqueue_test.c; path = tests/pqueue_test.c; sourceTree = "<group>"; };
 		22708B9E13311B8E0055AD94 /* r-actors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-actors.c"; path = "interfaces/R/src/r-actors.c"; sourceTree = "<group>"; };
 		22708B9F13311B8E0055AD94 /* r-actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-actors.h"; path = "interfaces/R/src/r-actors.h"; sourceTree = "<group>"; };
-		22708BA013311B8E0055AD94 /* r-cursor.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-cursor.c"; path = "interfaces/R/src/r-cursor.c"; sourceTree = "<group>"; };
-		22708BA113311B8E0055AD94 /* r-cursor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-cursor.h"; path = "interfaces/R/src/r-cursor.h"; sourceTree = "<group>"; };
 		22708BA313311B8E0055AD94 /* r-design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-design.c"; path = "interfaces/R/src/r-design.c"; sourceTree = "<group>"; };
 		22708BA413311B8E0055AD94 /* r-design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-design.h"; path = "interfaces/R/src/r-design.h"; sourceTree = "<group>"; };
 		22708BA513311B8E0055AD94 /* r-fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-fit.c"; path = "interfaces/R/src/r-fit.c"; sourceTree = "<group>"; };
@@ -658,8 +651,6 @@
 				22A2F8A1133158B000E97C79 /* config.h */,
 				22708B9E13311B8E0055AD94 /* r-actors.c */,
 				22708B9F13311B8E0055AD94 /* r-actors.h */,
-				22708BA013311B8E0055AD94 /* r-cursor.c */,
-				22708BA113311B8E0055AD94 /* r-cursor.h */,
 				22708BA313311B8E0055AD94 /* r-design.c */,
 				22708BA413311B8E0055AD94 /* r-design.h */,
 				22708BA513311B8E0055AD94 /* r-fit.c */,
@@ -680,21 +671,18 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				225CFDDD1373457E007B075D /* dyad-queue.c */,
-				225CFDDE1373457E007B075D /* dyad-queue.h */,
-				22286F0D136F36340015CC42 /* vnrecv.c */,
-				22286F0E136F36340015CC42 /* vnrecv.h */,
-				2259741A133D0AFB0022B52E /* vrecv.c */,
-				2259741B133D0AFB0022B52E /* vrecv.h */,
 				22EA3331136B440B00C5627F /* frame.c */,
 				22EA3332136B440B00C5627F /* frame.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
 				22C67AA41354FCC6006A81E8 /* cohort.c */,
 				22C67AA51354FCC7006A81E8 /* cohort.h */,
-				22597407133D0AFB0022B52E /* design-ctx.c */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
+				225CFDDD1373457E007B075D /* dyad-queue.c */,
+				225CFDDE1373457E007B075D /* dyad-queue.h */,
+				22597418133D0AFB0022B52E /* event-trace.c */,
+				22597419133D0AFB0022B52E /* event-trace.h */,
 				2259740A133D0AFB0022B52E /* fit.c */,
 				2259740B133D0AFB0022B52E /* fit.h */,
 				2259740C133D0AFB0022B52E /* history.c */,
@@ -709,8 +697,10 @@
 				22597415133D0AFB0022B52E /* model.h */,
 				22597416133D0AFB0022B52E /* sloglik.c */,
 				22597417133D0AFB0022B52E /* sloglik.h */,
-				22597418133D0AFB0022B52E /* event-trace.c */,
-				22597419133D0AFB0022B52E /* event-trace.h */,
+				22286F0D136F36340015CC42 /* vnrecv.c */,
+				22286F0E136F36340015CC42 /* vnrecv.h */,
+				2259741A133D0AFB0022B52E /* vrecv.c */,
+				2259741B133D0AFB0022B52E /* vrecv.h */,
 			);
 			name = IProc;
 			sourceTree = "<group>";
@@ -875,7 +865,6 @@
 				221FEEB8132EC8710000097B /* vector.h in Headers */,
 				22867A16132FDABD0090D617 /* f2c.h in Headers */,
 				22708BB113311B8E0055AD94 /* r-actors.h in Headers */,
-				22708BB313311B8E0055AD94 /* r-cursor.h in Headers */,
 				22708BB613311B8E0055AD94 /* r-design.h in Headers */,
 				22708BB813311B8E0055AD94 /* r-fit.h in Headers */,
 				22708BBB13311B8E0055AD94 /* r-loglik.h in Headers */,
@@ -1218,7 +1207,6 @@
 			files = (
 				222FC41113607C7900E64FC9 /* actors.c in Sources */,
 				222FC41313607C7900E64FC9 /* cohort.c in Sources */,
-				222FC41513607C7900E64FC9 /* design-ctx.c in Sources */,
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
 				222FC41813607C7900E64FC9 /* fit.c in Sources */,
 				222FC41A13607C7900E64FC9 /* history.c in Sources */,
@@ -1270,7 +1258,6 @@
 				225DAD64132FE4B700696C9B /* s_cmp.c in Sources */,
 				225DAD65132FE4B700696C9B /* s_copy.c in Sources */,
 				22708BB013311B8E0055AD94 /* r-actors.c in Sources */,
-				22708BB213311B8E0055AD94 /* r-cursor.c in Sources */,
 				22708BB513311B8E0055AD94 /* r-design.c in Sources */,
 				22708BB713311B8E0055AD94 /* r-fit.c in Sources */,
 				22708BB913311B8E0055AD94 /* r-init.c in Sources */,
@@ -1280,7 +1267,6 @@
 				22708BC013311B8E0055AD94 /* r-utils.c in Sources */,
 				22597402133D081B0022B52E /* matrix.c in Sources */,
 				2259741C133D0AFB0022B52E /* actors.c in Sources */,
-				2259741E133D0AFB0022B52E /* design-ctx.c in Sources */,
 				2259741F133D0AFB0022B52E /* design.c in Sources */,
 				22597421133D0AFB0022B52E /* fit.c in Sources */,
 				22597423133D0AFB0022B52E /* history.c in Sources */,

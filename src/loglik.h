@@ -1,9 +1,8 @@
 #ifndef _IPROC_LOGLIK_H
 #define _IPROC_LOGLIK_H
 
-#include <stdbool.h>
-
 #include "darray.h"
+#include "frame.h"
 #include "messages.h"
 #include "model.h"
 #include "refcount.h"
@@ -26,7 +25,7 @@ iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
 void iproc_loglik_unref(iproc_loglik * loglik);
 
 void iproc_loglik_insert(iproc_loglik * loglik,
-			 struct history * history,
+			 const struct frame *f,
 			 const struct message *msg);
 
 double iproc_loglik_value(iproc_loglik * loglik);

@@ -6,95 +6,16 @@
 #include <stdlib.h>
 #include "design.h"
 
-static void iproc_design_clear_svectors(struct darray *svectors)
-{
-	if (svectors) {
-		ssize_t i, n = darray_size(svectors);
-		for (i = 0; i < n; i++) {
-			struct svector *x =
-			    *(struct svector **)darray_at(svectors,
-							  i);
-			svector_free(x);
-		}
-		darray_resize(svectors, 0);
-	}
-}
-
-static void iproc_design_svectors_deinit(struct darray *svectors)
-{
-	if (svectors) {
-		iproc_design_clear_svectors(svectors);
-		darray_deinit(svectors);
-	}
-}
-
-static void iproc_design_ctx_free_dealloc(iproc_design_ctx * ctx)
-{
-	if (ctx) {
-		assert(darray_size(&ctx->dxs) == 0);
-		darray_deinit(&ctx->dxs);
-		free(ctx);
-	}
-}
-
-static void iproc_design_ctxs_deinit(struct darray *ctxs)
-{
-	if (ctxs) {
-		ssize_t i, n = darray_size(ctxs);
-		for (i = 0; i < n; i++) {
-			iproc_design_ctx *ctx =
-			    *(iproc_design_ctx **) darray_at(ctxs,
-							     i);
-			iproc_design_ctx_free_dealloc(ctx);
-		}
-		darray_deinit(ctxs);
-	}
-}
-
-static void iproc_design_vars_deinit(struct darray *vars)
-{
-	if (vars) {
-		ssize_t i, n = darray_size(vars);
-		for (i = 0; i < n; i++) {
-			iproc_design_var *var =
-			    *(iproc_design_var **) darray_at(vars,
-							     i);
-			if (var->free)
-				var->free(var);
-		}
-		darray_deinit(vars);
-	}
-}
-
 void design_deinit(struct design *design)
 {
 	assert(design);
-	iproc_design_svectors_deinit(&design->svectors);
-	iproc_design_ctxs_deinit(&design->ctxs);
-	iproc_design_vars_deinit(&design->vars);
+	refcount_deinit(&design->refcount);
 	actors_free(design->receivers);
 	actors_free(design->senders);
 }
 
-void
-iproc_design_var_init(iproc_design_var * var,
-		      ssize_t dim,
-		      void (*get_dxs) (iproc_design_var *,
-				       iproc_design_ctx * ctx,
-				       ssize_t),
-		      void (*free) (iproc_design_var *))
-{
-	assert(var);
-	assert(dim >= 0);
-
-	var->dim = dim;
-	var->get_dxs = get_dxs;
-	var->free = free;
-}
-
 bool design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, bool has_reffects, bool has_loops,
-		 const struct vector *intervals)
+		 struct actors *receivers, const struct vector *intervals)
 {
 	assert(design);
 	assert(senders);
@@ -108,21 +29,11 @@ bool design_init(struct design *design, struct actors *senders,
 	}
 #endif
 	     
-	ssize_t nreceivers = actors_size(receivers);
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 	
 	if (!darray_init(&design->design_dyad_vars, sizeof(struct design_dyad_var)))
 		goto fail_design_dyad_vars;
-	
-	if (!darray_init(&design->vars, sizeof(iproc_design_var *)))
-		goto fail_vars;
-	
-	if (!darray_init(&design->ctxs, sizeof(iproc_design_ctx *)))
-		goto fail_ctxs;
-	
-	if (!darray_init(&design->svectors, sizeof(struct svector *)))
-		goto fail_svectors;
 	
 	if (!refcount_init(&design->refcount))
 		goto fail_refcount;
@@ -130,38 +41,29 @@ bool design_init(struct design *design, struct actors *senders,
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
 	design->intervals = intervals;
-	design->has_reffects = has_reffects;
+	design->reffects = false;
 	design->ireffects = 0;
-	design->nreffects = has_reffects ? nreceivers : 0;
-	design->istatic = design->ireffects + design->nreffects;
+	design->istatic = 0;
 	design->nstatic = p * q;
 	design->idynamic = design->istatic + design->nstatic;
 	design->ndynamic = 0;
 	design->dim = design->idynamic + design->ndynamic;
-	design->has_loops = has_loops;
+	design->loops = false;
 	return true;
 	
 fail_refcount:
-	darray_deinit(&design->svectors);
-fail_svectors:
-	darray_deinit(&design->ctxs);
-fail_ctxs:
-	darray_deinit(&design->vars);
-fail_vars:
 	darray_deinit(&design->design_dyad_vars);
 fail_design_dyad_vars:
 	return false;
 }
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    bool has_reffects, bool has_loops,
 			    const struct vector *intervals)
 {
 	struct design *design = malloc(sizeof(*design));
 
 	if (design) {
-		if (design_init(design, senders, receivers, has_reffects, has_loops,
-				intervals))
+		if (design_init(design, senders, receivers, intervals))
 			return design;
 
 		free(design);
@@ -191,31 +93,17 @@ ssize_t design_dim(const struct design * design)
 	return design->dim;
 }
 
-void iproc_design_append(struct design * design, iproc_design_var * var)
-{
-	assert(design);
-	assert(var);
-	assert(var->dim >= 0);
-	assert(var->get_dxs);
-
-	// the old svectors are invalid since the dimension has changed
-	iproc_design_clear_svectors(&design->svectors);
-	darray_push_back(&design->vars, &var);
-	design->ndynamic += var->dim;
-	design->dim += var->dim;
-}
-
 static void
 design_mul0_reffects(double alpha,
 			   enum trans_op trans,
 			   const struct design * design,
 			   const struct vector *x, struct vector *y)
 {
-	if (!design->has_reffects)
+	if (!design->reffects)
 		return;
 
 	ssize_t off = design->ireffects;
-	ssize_t dim = design->nreffects;
+	ssize_t dim = design_nreceiver(design);
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub;
@@ -234,11 +122,11 @@ design_muls0_reffects(double alpha,
 			    const struct design * design,
 			    const struct svector *x, struct vector *y)
 {
-	if (!design->has_reffects)
+	if (!design->reffects)
 		return;
 
 	ssize_t off = design->ireffects;
-	ssize_t dim = design->nreffects;
+	ssize_t dim = design_nreceiver(design);
 	ssize_t end = off + dim;
 
 	if (trans == TRANS_NOTRANS) {
@@ -481,25 +369,54 @@ struct actors *design_receivers(const struct design *design)
 	return design->receivers;
 }
 
-bool design_has_reffects(const struct design *design)
-{
-	assert(design);
-	return design->has_reffects;
-}
-
-bool design_has_loops(const struct design *design)
-{
-	assert(design);
-	return design->has_loops;
-}
-
 const struct vector *design_intervals(const struct design *design)
 {
 	assert(design);
 	return design->intervals;
 }
 
-ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var)
+bool design_loops(const struct design *design)
+{
+	assert(design);
+	return design->loops;
+}
+
+void design_set_loops(struct design *design, bool loops)
+{
+	assert(design);
+	design->loops = loops;
+}
+
+bool design_reffects(const struct design *design)
+{
+	assert(design);
+	return design->reffects;
+}
+
+void design_set_reffects(struct design *design, bool reffects)
+{
+	assert(design);
+	
+	if (design->reffects == reffects)
+		return;
+	
+	ssize_t nrecv = design_nreceiver(design);
+	ssize_t delta = reffects ? nrecv : -nrecv;
+	
+	ssize_t i, n = darray_size(&design->design_dyad_vars);
+	struct design_dyad_var *var;
+	for (i = 0; i < n; i++) {
+		var = darray_at(&design->design_dyad_vars, i);
+		var->index += delta;
+	}
+
+	design->istatic += delta;
+	design->idynamic += delta;
+	design->dim += delta;
+	design->reffects = reffects;
+}
+
+bool design_add_dyad_var(struct design *design, struct dyad_var *var)
 {
 	assert(design);
 	assert(var);
@@ -512,8 +429,45 @@ ssize_t design_add_dyad_var(struct design *design, struct dyad_var *var)
 		design_var->var = var;
 		design->ndynamic += design_var->var->dim;
 		design->dim += design_var->var->dim;
-		return design_var->index;
+		return true;
+	}
+
+	return false;
+}
+
+ssize_t design_traits_index(const struct design *design)
+{
+	assert(design);
+	return design->istatic;
+}
+
+ssize_t design_reffects_index(const struct design *design)
+{
+	assert(design);
+
+	if (design_reffects(design))
+		return design->ireffects;
+	return -1;
+}
+
+static bool dyad_var_equals(const void *p1, const void *p2)
+{
+	const struct design_dyad_var *v1 = p1, *v2 = p2;
+	return v1->var == v2->var;
+}
+
+ssize_t design_dyad_var_index(const struct design *design, const struct dyad_var *var)
+{
+	assert(design);
+	assert(var);
+	
+	const struct design_dyad_var *key = container_of(&var, struct design_dyad_var, var);
+	const struct design_dyad_var *val = darray_find(&design->design_dyad_vars, key, dyad_var_equals);
+	
+	if (val) {
+		return val->index;
 	}
 
 	return -1;
 }
+

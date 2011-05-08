@@ -51,10 +51,12 @@ static void vnrecv_setup(void **state)
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, has_reffects, has_loops,
-		    &intervals);
+	design_init(&design, &senders, &receivers, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_reffects(&design, has_reffects);
 	vnrecv_init(&vnrecv, &design);
-	vnrecv_index = design_add_dyad_var(&design, &vnrecv.dyad_var);
+	design_add_dyad_var(&design, &vnrecv.dyad_var);
+	vnrecv_index = design_dyad_var_index(&design, &vnrecv.dyad_var);
 	frame_init(&frame, &design);
 }
 
@@ -124,10 +126,12 @@ static void vrecv_setup(void **state)
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_array(&intervals, intvls);
-	design_init(&design, &senders, &receivers, has_reffects, has_loops,
-		    &intervals);
+	design_init(&design, &senders, &receivers, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_reffects(&design, has_reffects);
 	vrecv_init(&vrecv, &design);
-	vrecv_index = design_add_dyad_var(&design, &vrecv.dyad_var);
+	design_add_dyad_var(&design, &vrecv.dyad_var);
+	vrecv_index = design_dyad_var_index(&design, &vrecv.dyad_var);
 	frame_init(&frame, &design);
 }
 

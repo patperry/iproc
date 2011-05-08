@@ -18,11 +18,8 @@ SEXP Riproc_design_nreceiver(SEXP Rdesign);
 SEXP Riproc_design_senders(SEXP Rdesign);
 SEXP Riproc_design_receivers(SEXP Rdesign);
 
-SEXP Riproc_design_mul(SEXP Rdesign, SEXP Rmatrix, SEXP Rsender, SEXP Rcursor);
-SEXP Riproc_design_tmul(SEXP Rdesign, SEXP Rmatrix, SEXP Rsender, SEXP Rcursor);
-
 /* Internal use only */
-struct design *Riproc_to_design(SEXP Rdesign);
-SEXP Riproc_from_design(struct design * design);
+const struct design *Riproc_to_design(SEXP Rdesign);
+SEXP Riproc_from_design(const struct design *design);
 
 #endif /* _RIPROC_DESIGN_H */

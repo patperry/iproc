@@ -10,7 +10,6 @@ void Riproc_loglik_init(DllInfo * info);
 
 /* External functions */
 SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages);
-SEXP Riproc_loglik_insert(SEXP Rloglik, SEXP Rcursor);
 SEXP Riproc_loglik_value(SEXP Rloglik);
 SEXP Riproc_loglik_grad(SEXP Rloglik);
 

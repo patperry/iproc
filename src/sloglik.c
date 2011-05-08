@@ -75,20 +75,19 @@ void iproc_sloglik_unref(iproc_sloglik * sll)
 	}
 }
 
-void
-iproc_sloglik_insert(iproc_sloglik * sll,
-		     struct history * history, ssize_t jrecv)
+void iproc_sloglik_insert(iproc_sloglik * sll,
+			  const struct frame *f, ssize_t jrecv)
 {
-	iproc_sloglik_insertm(sll, history, &jrecv, 1);
+	iproc_sloglik_insertm(sll, f, &jrecv, 1);
 }
 
-void
-iproc_sloglik_insertm(iproc_sloglik * sll,
-		      struct history * history, ssize_t *jrecv, ssize_t n)
+
+void iproc_sloglik_insertm(iproc_sloglik * sll,
+			   const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
 	ssize_t nreceiver = iproc_model_nreceiver(sll->model);
 	iproc_model_ctx *ctx =
-	    iproc_model_ctx_new(sll->model, sll->isend, history);
+	    iproc_model_ctx_new(sll->model, f, sll->isend);
 	struct svector *wt = svector_alloc(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
@@ -115,9 +114,8 @@ iproc_sloglik_insertm(iproc_sloglik * sll,
 	sll->f += scale1 * ((-lpbar) - sll->f);
 
 	// update observed variable diffs
-	iproc_design_ctx_dmuls(scale1 / n, TRANS_TRANS, ctx->design_ctx,
-			       wt, scale0, sll->dxobs);
-
+	frame_dmuls(scale1 / n, TRANS_TRANS, f, sll->isend,
+		    wt, scale0, sll->dxobs);
 	sll->gamma += scale1 * (ctx->gamma - sll->gamma);
 
 	svector_scale(sll->dp, scale0);

@@ -5,6 +5,7 @@
 #include "refcount.h"
 #include "darray.h"
 #include "design.h"
+#include "frame.h"
 #include "intmap.h"
 #include "vector.h"
 
@@ -132,7 +133,8 @@ struct _iproc_model {
 
 struct _iproc_model_ctx {
 	iproc_model *model;
-	iproc_design_ctx *design_ctx;
+	const struct frame *frame;
+	ssize_t isend;
 	iproc_group_model *group;
 
 	double gamma;
@@ -163,12 +165,12 @@ struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend);
 struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend);
 
 iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
-				     ssize_t isend, struct history * h);
+				     const struct frame *f, ssize_t isend);
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx);
 void iproc_model_ctx_unref(iproc_model_ctx * ctx);
 
-void iproc_model_ctx_set(iproc_model_ctx * ctx,
-			 ssize_t isend, struct history * h);
+void iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f,
+			 ssize_t isend);
 
 ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx);
 double iproc_model_ctx_prob(iproc_model_ctx * ctx, ssize_t jrecv);

@@ -66,7 +66,7 @@ SEXP Riproc_from_model(iproc_model * model)
 
 SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs, SEXP Rhas_loops)
 {
-	struct design *design = Riproc_to_design(Rdesign);
+	const struct design *design = Riproc_to_design(Rdesign);
 	struct vector coefs = Riproc_vector_view_sexp(Rcoefs);
 	Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
@@ -136,7 +136,7 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 	iproc_model *model = Riproc_to_model(Rmodel);
 	int i, n = GET_LENGTH(Risend);
 	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
-				      ? NULL : Riproc_to_cursor(Rcursor));
+				      ? NULL : Riproc_to_frame(Rcursor));
 	int nsender = (int)iproc_model_nsender(model);
 	int nreceiver = (int)iproc_model_nreceiver(model);
 	struct history *history = messages_iter_history(cursor);
