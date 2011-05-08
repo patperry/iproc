@@ -11,12 +11,16 @@ enum dyad_event_type {
 	DYAD_EVENT_MOVE = 1 << 1
 };
 
+struct dyad {
+	ssize_t isend;
+	ssize_t jrecv;
+};
+
 struct dyad_event {
 	ssize_t id;
 	enum dyad_event_type type;
+	struct dyad dyad;
 	double time;
-	ssize_t isend;
-	ssize_t jrecv;
 	intptr_t attr;
 	ssize_t intvl;
 };

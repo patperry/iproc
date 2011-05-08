@@ -4,8 +4,26 @@
 #include <stdint.h>
 #include "darray.h"
 #include "design.h"
+#include "hashset.h"
 #include "refcount.h"
 
+struct vrecv_active {
+	struct dyad dyad;
+	ssize_t id;
+	ssize_t intvl;
+};
+
+struct vrecv {
+	struct dyad_var dyad_var;
+	struct hashset active;
+};
+
+bool vrecv_init(struct vrecv *v, const struct design *d);
+void vrecv_deinit(struct vrecv *v);
+
+
+
+/* DEPRECATED */
 typedef struct _iproc_vrecip iproc_vrecip;
 
 struct _iproc_vrecip {

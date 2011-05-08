@@ -4,7 +4,6 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 #include "design.h"
-#include "vrecip.h"
 
 /* Call once to initialize library */
 void Riproc_design_init(DllInfo * info);

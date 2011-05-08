@@ -62,7 +62,7 @@
 		222FC42213607C7900E64FC9 /* model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* model.c */; };
 		222FC42413607C7900E64FC9 /* sloglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597416133D0AFB0022B52E /* sloglik.c */; };
 		222FC42613607C7900E64FC9 /* event-trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597418133D0AFB0022B52E /* event-trace.c */; };
-		222FC42813607C7900E64FC9 /* vrecip.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* vrecip.c */; };
+		222FC42813607C7900E64FC9 /* vrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* vrecv.c */; };
 		222FC42A13607C7900E64FC9 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
 		222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		222FC42E13607C7900E64FC9 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* array.c */; };
@@ -108,8 +108,8 @@
 		2259742E133D0AFB0022B52E /* sloglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597417133D0AFB0022B52E /* sloglik.h */; };
 		2259742F133D0AFB0022B52E /* event-trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597418133D0AFB0022B52E /* event-trace.c */; };
 		22597430133D0AFB0022B52E /* event-trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597419133D0AFB0022B52E /* event-trace.h */; };
-		22597431133D0AFB0022B52E /* vrecip.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* vrecip.c */; };
-		22597432133D0AFB0022B52E /* vrecip.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259741B133D0AFB0022B52E /* vrecip.h */; };
+		22597431133D0AFB0022B52E /* vrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* vrecv.c */; };
+		22597432133D0AFB0022B52E /* vrecv.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259741B133D0AFB0022B52E /* vrecv.h */; };
 		22597435133D0BD30022B52E /* pqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597433133D0BD20022B52E /* pqueue.c */; };
 		22597436133D0BD30022B52E /* pqueue.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597434133D0BD20022B52E /* pqueue.h */; };
 		225CFDDF1373457E007B075D /* dyad-queue.c in Sources */ = {isa = PBXBuildFile; fileRef = 225CFDDD1373457E007B075D /* dyad-queue.c */; };
@@ -433,8 +433,8 @@
 		22597417133D0AFB0022B52E /* sloglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sloglik.h; path = src/sloglik.h; sourceTree = "<group>"; };
 		22597418133D0AFB0022B52E /* event-trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "event-trace.c"; path = "src/event-trace.c"; sourceTree = "<group>"; };
 		22597419133D0AFB0022B52E /* event-trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "event-trace.h"; path = "src/event-trace.h"; sourceTree = "<group>"; };
-		2259741A133D0AFB0022B52E /* vrecip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vrecip.c; path = src/vrecip.c; sourceTree = "<group>"; };
-		2259741B133D0AFB0022B52E /* vrecip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vrecip.h; path = src/vrecip.h; sourceTree = "<group>"; };
+		2259741A133D0AFB0022B52E /* vrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vrecv.c; path = src/vrecv.c; sourceTree = "<group>"; };
+		2259741B133D0AFB0022B52E /* vrecv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vrecv.h; path = src/vrecv.h; sourceTree = "<group>"; };
 		22597433133D0BD20022B52E /* pqueue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pqueue.c; path = src/core/pqueue.c; sourceTree = "<group>"; };
 		22597434133D0BD20022B52E /* pqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pqueue.h; path = src/core/pqueue.h; sourceTree = "<group>"; };
 		225CFDDD1373457E007B075D /* dyad-queue.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dyad-queue.c"; path = "src/dyad-queue.c"; sourceTree = "<group>"; };
@@ -684,6 +684,8 @@
 				225CFDDE1373457E007B075D /* dyad-queue.h */,
 				22286F0D136F36340015CC42 /* vnrecv.c */,
 				22286F0E136F36340015CC42 /* vnrecv.h */,
+				2259741A133D0AFB0022B52E /* vrecv.c */,
+				2259741B133D0AFB0022B52E /* vrecv.h */,
 				22EA3331136B440B00C5627F /* frame.c */,
 				22EA3332136B440B00C5627F /* frame.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
@@ -709,8 +711,6 @@
 				22597417133D0AFB0022B52E /* sloglik.h */,
 				22597418133D0AFB0022B52E /* event-trace.c */,
 				22597419133D0AFB0022B52E /* event-trace.h */,
-				2259741A133D0AFB0022B52E /* vrecip.c */,
-				2259741B133D0AFB0022B52E /* vrecip.h */,
 			);
 			name = IProc;
 			sourceTree = "<group>";
@@ -894,7 +894,7 @@
 				2259742C133D0AFB0022B52E /* model.h in Headers */,
 				2259742E133D0AFB0022B52E /* sloglik.h in Headers */,
 				22597430133D0AFB0022B52E /* event-trace.h in Headers */,
-				22597432133D0AFB0022B52E /* vrecip.h in Headers */,
+				22597432133D0AFB0022B52E /* vrecv.h in Headers */,
 				22597436133D0BD30022B52E /* pqueue.h in Headers */,
 				2223CD11134D76F8004FA7F9 /* darray.h in Headers */,
 				221C5FDB134DB9BC0008B25B /* port.h in Headers */,
@@ -1229,7 +1229,7 @@
 				222FC42213607C7900E64FC9 /* model.c in Sources */,
 				222FC42413607C7900E64FC9 /* sloglik.c in Sources */,
 				222FC42613607C7900E64FC9 /* event-trace.c in Sources */,
-				222FC42813607C7900E64FC9 /* vrecip.c in Sources */,
+				222FC42813607C7900E64FC9 /* vrecv.c in Sources */,
 				222FC42A13607C7900E64FC9 /* hashset.c in Sources */,
 				222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */,
 				222FC42E13607C7900E64FC9 /* array.c in Sources */,
@@ -1291,7 +1291,7 @@
 				2259742B133D0AFB0022B52E /* model.c in Sources */,
 				2259742D133D0AFB0022B52E /* sloglik.c in Sources */,
 				2259742F133D0AFB0022B52E /* event-trace.c in Sources */,
-				22597431133D0AFB0022B52E /* vrecip.c in Sources */,
+				22597431133D0AFB0022B52E /* vrecv.c in Sources */,
 				22597435133D0BD30022B52E /* pqueue.c in Sources */,
 				2223CD10134D76F8004FA7F9 /* darray.c in Sources */,
 				221C5FED134E230D0008B25B /* array.c in Sources */,

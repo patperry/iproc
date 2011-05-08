@@ -39,8 +39,8 @@ libiproc_la_SOURCES = \
 	src/sloglik.h \
 	src/vnrecv.c \
 	src/vnrecv.h \
-	src/vrecip.c \
-	src/vrecip.h
+	src/vrecv.c \
+	src/vrecv.h
 
 libiproc_la_CPPFLAGS = \
 	-I./src/core \

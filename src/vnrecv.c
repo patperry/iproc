@@ -68,7 +68,7 @@ static bool vnrecv_handle_dyad_event (struct dyad_var *v,
 	assert(index >= 0);
 	assert(index <= design_dim(f->design) - v->dim);
 	
-	struct svector *dx = frame_dx(f, e->jrecv, e->isend);
+	struct svector *dx = frame_dx(f, e->dyad.jrecv, e->dyad.isend);
 	struct svector_pos pos;
 	double *val;
 	

@@ -97,13 +97,13 @@ bool dyad_queue_push(struct dyad_queue *queue, const struct message *msg)
 	e.tnext = msg->time;
 	e.event.type = DYAD_EVENT_INIT;
 	e.event.time = msg->time;
-	e.event.isend = msg->from;
+	e.event.dyad.isend = msg->from;
 	e.event.attr = msg->attr;
 	e.event.intvl = 0;
 	
 	for (ito = 0; ito < nto; ito++) {
 		e.event.id = queue->next_id++;		
-		e.event.jrecv = msg->to[ito];
+		e.event.dyad.jrecv = msg->to[ito];
 		
 		if (!pqueue_push(&queue->events, &e))
 			return false;

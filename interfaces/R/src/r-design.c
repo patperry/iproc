@@ -6,7 +6,7 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
-#include "vrecip.h"
+#include "vrecv.h"
 #include "r-utils.h"
 #include "r-actors.h"
 #include "r-cursor.h"
