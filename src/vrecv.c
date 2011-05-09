@@ -38,7 +38,6 @@ static bool vrecv_handle_dyad_event (struct dyad_var *v,
 	assert(udata);
 	
 	struct vrecv_frame *vf = udata;
-	struct vrecv *vrecv = container_of(v, struct vrecv, dyad_var);
 	const struct vrecv_active *key = container_of(&e->dyad, const struct vrecv_active, dyad);
 	struct vrecv_active *active;
 	struct svector *dx = frame_dx(f, e->dyad.jrecv, e->dyad.isend);

@@ -58,7 +58,8 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 static bool vnrecv_handle_dyad_event (struct dyad_var *v,
 				      const struct dyad_event *e,
 				      struct frame *f,
-				      ssize_t index)
+				      ssize_t index,
+				      void *udata)
 {
 	assert(v);
 	assert(v->dim >= 0);
