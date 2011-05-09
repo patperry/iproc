@@ -8,7 +8,6 @@
 
 #include "r-utils.h"
 #include "r-actors.h"
-#include "r-cursor.h"
 #include "r-design.h"
 #include "r-model.h"
 

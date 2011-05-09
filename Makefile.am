@@ -154,35 +154,8 @@ rpkg_sources = \
 	interfaces/R/inst/extdata/enron/employees.tsv \
 	interfaces/R/inst/extdata/enron/messages.tsv \
 	interfaces/R/inst/extdata/enron/recipients.tsv \
-	interfaces/R/inst/unitTests/common.loglik.R \
-	interfaces/R/inst/unitTests/common.loglik.all.R \
-	interfaces/R/inst/unitTests/common.loglik.groups.R \
-	interfaces/R/inst/unitTests/common.loglik.recip.R \
-	interfaces/R/inst/unitTests/common.model.R \
-	interfaces/R/inst/unitTests/common.model.all.R \
-	interfaces/R/inst/unitTests/common.model.groups.R \
-	interfaces/R/inst/unitTests/common.model.recip.R \
 	interfaces/R/inst/unitTests/runit.actors.R \
-	interfaces/R/inst/unitTests/runit.cursor.R \
-	interfaces/R/inst/unitTests/runit.design.all.R \
-	interfaces/R/inst/unitTests/runit.design.groups.R \
-	interfaces/R/inst/unitTests/runit.design.recip.R \
-	interfaces/R/inst/unitTests/runit.enron.R \
-	interfaces/R/inst/unitTests/runit.loglik.all.loops.R \
-	interfaces/R/inst/unitTests/runit.loglik.all.noloops.R \
-	interfaces/R/inst/unitTests/runit.loglik.groups.loops.R \
-	interfaces/R/inst/unitTests/runit.loglik.groups.noloops.R \
-	interfaces/R/inst/unitTests/runit.loglik.recip.loops.R \
-	interfaces/R/inst/unitTests/runit.loglik.recip.noloops.R \
-	interfaces/R/inst/unitTests/runit.messages.R \
-	interfaces/R/inst/unitTests/runit.model.all.loops.R \
-	interfaces/R/inst/unitTests/runit.model.all.noloops.R \
-	interfaces/R/inst/unitTests/runit.model.groups.loops.R \
-	interfaces/R/inst/unitTests/runit.model.groups.noloops.R \
-	interfaces/R/inst/unitTests/runit.model.recip.loops.R \
-	interfaces/R/inst/unitTests/runit.model.recip.noloops.R \
 	interfaces/R/R/actors.R \
-	interfaces/R/R/cursor.R \
 	interfaces/R/R/design.R \
 	interfaces/R/R/enron.R \
 	interfaces/R/R/fit.R \
@@ -198,8 +171,6 @@ rpkg_sources = \
 	interfaces/R/src/config.h \
 	interfaces/R/src/r-actors.c \
 	interfaces/R/src/r-actors.h \
-	interfaces/R/src/r-cursor.c \
-	interfaces/R/src/r-cursor.h \
 	interfaces/R/src/r-design.c \
 	interfaces/R/src/r-design.h \
 	interfaces/R/src/r-fit.c \

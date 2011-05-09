@@ -20,6 +20,6 @@ SEXP Riproc_design_receivers(SEXP Rdesign);
 
 /* Internal use only */
 struct design *Riproc_to_design(SEXP Rdesign);
-SEXP Riproc_from_design(const struct design *design);
+SEXP Riproc_from_design(struct design *design);
 
 #endif /* _RIPROC_DESIGN_H */

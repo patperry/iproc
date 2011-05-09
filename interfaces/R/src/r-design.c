@@ -13,7 +13,7 @@
 #include "r-actors.h"
 #include "r-design.h"
 
-static SEXP Riproc_design_rep_type_tag;
+static SEXP Riproc_design_type_tag;
 
 static R_CallMethodDef callMethods[] = {
 	{"Riproc_design_new", (DL_FUNC) & Riproc_design_new, 4},
@@ -32,125 +32,74 @@ struct design_params {
 	bool vnrecv;
 };
 
-struct design_rep {
-	struct refcount refcount;
-	struct vrecv vrecv;
-	struct vnrecv vnrecv;
-	struct design design;
-
-};
-
-static struct design_rep *design_rep_alloc(struct actors *senders,
-					   struct actors *receivers,
-					   const struct vector *intervals,
-					   const struct design_params *params)
+static struct design *design_alloc_params(struct actors *senders,
+					  struct actors *receivers,
+					  const struct vector *intervals,
+					  const struct design_params *params)
 {
 	assert(senders);
 	assert(receivers);
 	assert(intervals);
 	assert(params);
 
-	struct design_rep *rep;
+	struct design *design;
 
-	if (!(rep = malloc(sizeof(*rep))))
-		goto fail_malloc;
-	if (!refcount_init(&rep->refcount))
-		goto fail_refcount;
-	if (!design_init(&rep->design, senders, receivers, intervals))
-		goto fail_design;
+	if (!(design = design_alloc(senders, receivers, intervals)))
+		goto fail_alloc;
 
-	design_set_loops(&rep->design, params->loops);
-	design_set_reffects(&rep->design, params->reffects);
+	design_set_loops(design, params->loops);
+	design_set_reffects(design, params->reffects);
 
 	if (params->vrecv) {
-		if (!vrecv_init(&rep->vrecv, &rep->design))
-			goto fail_vrecv_init;
-		if (!design_add_dyad_var(&rep->design, &rep->vrecv.dyad_var))
-			goto fail_vrecv_add;
+		if (!design_add_var(design, VAR_TYPE_RECV))
+			goto fail_add_recv;
 	}
 
 	if (params->vnrecv) {
-		if (!vnrecv_init(&rep->vnrecv, &rep->design))
-			goto fail_vnrecv_init;
-		if (!design_add_dyad_var(&rep->design, &rep->vnrecv.dyad_var))
-			goto fail_vnrecv_add;
+		if (!design_add_var(design, VAR_TYPE_NRECV))
+			goto fail_add_nrecv;
 	}
 
-	return rep;
+	return design;
 
-fail_vnrecv_add:
-	if (params->vnrecv)
-		vnrecv_deinit(&rep->vnrecv);
-fail_vnrecv_init:
-fail_vrecv_add:
-	if (params->vrecv)
-		vrecv_deinit(&rep->vrecv);
-fail_vrecv_init:
-	design_deinit(&rep->design);
-fail_design:
-	refcount_deinit(&rep->refcount);
-fail_refcount:
-	free(rep);
-fail_malloc:
+fail_add_nrecv:
+fail_add_recv:
+	design_free(design);
+fail_alloc:
 	return NULL;
-}
-
-static struct design_rep *design_rep_ref(struct design_rep *rep)
-{
-	assert(rep);
-	if (refcount_get(&rep->refcount))
-		return rep;
-	return NULL;
-}
-
-static void design_rep_free(struct design_rep *rep)
-{
-	assert(rep);
-
-	if (!rep || !refcount_put(&rep->refcount, NULL))
-		return;
-
-	if (design_dyad_var_index(&rep->design, &rep->vnrecv.dyad_var) >= 0)
-		vnrecv_deinit(&rep->vnrecv);
-	if (design_dyad_var_index(&rep->design, &rep->vrecv.dyad_var) >= 0)
-		vrecv_deinit(&rep->vrecv);
-
-	design_deinit(&rep->design);
-	refcount_deinit(&rep->refcount);
-	free(rep);
 }
 
 void Riproc_design_init(DllInfo * info)
 {
-	Riproc_design_rep_type_tag = install("Riproc_design_rep_type_tag");
+	Riproc_design_type_tag = install("Riproc_design_type_tag");
 	R_registerRoutines(info, NULL, callMethods, NULL, NULL);
 }
 
 static void Riproc_design_free(SEXP Rdesign)
 {
-	struct design_rep *rep =
-	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag,
+	struct design *design =
+	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_type_tag,
 			    "design");
 
-	design_rep_free(rep);
+	design_free(design);
 }
 
 struct design *Riproc_to_design(SEXP Rdesign)
 {
-	struct design_rep *rep =
-	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag,
+	struct design *design =
+	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_type_tag,
 			    "design");
-	return &rep->design;
+	return design;
 }
 
-static SEXP Riproc_from_design_rep(struct design_rep *rep)
+SEXP Riproc_from_design(struct design *design)
 {
 	SEXP Rdesign, class;
 
-	design_rep_ref(rep);
+	design_ref(design);
 
 	PROTECT(Rdesign =
-		R_MakeExternalPtr(rep, Riproc_design_rep_type_tag, R_NilValue));
+		R_MakeExternalPtr(design, Riproc_design_type_tag, R_NilValue));
 	R_RegisterCFinalizer(Rdesign, Riproc_design_free);
 
 	/* set the class of the result */
@@ -160,13 +109,6 @@ static SEXP Riproc_from_design_rep(struct design_rep *rep)
 
 	UNPROTECT(2);
 	return Rdesign;
-}
-
-SEXP Riproc_from_design(const struct design * design)
-{
-	struct design_rep *rep =
-	    container_of(design, struct design_rep, design);
-	return Riproc_from_design_rep(rep);
 }
 
 SEXP
@@ -192,13 +134,12 @@ Riproc_design_new(SEXP Rsenders,
 	params.vrecv = false;
 	params.vnrecv = false;
 
-	struct design_rep *rep =
-	    design_rep_alloc(senders, receivers, intervals, &params);
+	struct design *design = design_alloc_params(senders, receivers, intervals, &params);
 
 	SEXP Rdesign;
 
-	PROTECT(Rdesign = Riproc_from_design_rep(rep));
-	design_rep_free(rep);
+	PROTECT(Rdesign = Riproc_from_design(design));
+	design_free(design);
 
 	UNPROTECT(1);
 	return Rdesign;

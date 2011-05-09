@@ -22,9 +22,7 @@ static bool has_loops;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
-static struct vnrecv vnrecv;
 static ssize_t vnrecv_index;
-static struct vrecv vrecv;
 static ssize_t vrecv_index;
 static struct frame frame;
 
@@ -54,16 +52,14 @@ static void vnrecv_setup(void **state)
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_reffects(&design, has_reffects);
-	vnrecv_init(&vnrecv, &design);
-	design_add_dyad_var(&design, &vnrecv.dyad_var);
-	vnrecv_index = design_dyad_var_index(&design, &vnrecv.dyad_var);
+	design_add_var(&design, VAR_TYPE_NRECV);
+	vnrecv_index = design_var_index(&design, VAR_TYPE_NRECV);
 	frame_init(&frame, &design);
 }
 
 static void vnrecv_teardown(void **state)
 {
 	frame_deinit(&frame);
-	vnrecv_deinit(&vnrecv);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 }
@@ -129,16 +125,14 @@ static void vrecv_setup(void **state)
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_reffects(&design, has_reffects);
-	vrecv_init(&vrecv, &design);
-	design_add_dyad_var(&design, &vrecv.dyad_var);
-	vrecv_index = design_dyad_var_index(&design, &vrecv.dyad_var);
+	design_add_var(&design, VAR_TYPE_RECV);
+	vrecv_index = design_var_index(&design, VAR_TYPE_RECV);
 	frame_init(&frame, &design);
 }
 
 static void vrecv_teardown(void **state)
 {
 	frame_deinit(&frame);
-	vrecv_deinit(&vrecv);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 }

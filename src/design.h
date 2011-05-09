@@ -73,26 +73,31 @@
  * a sparse vector.
  */
 
-struct frame;			// forward declaration
-struct dyad_var;
+struct frame;			// forward declarations
+struct design;
+struct design_var;
+struct frame_var;
 
-struct dyad_var {
-	ssize_t dim;
+struct var_type {
 	uint8_t dyad_event_mask;
-	bool (*handle_dyad_event) (struct dyad_var * v,
-				   const struct dyad_event * e,
-				   struct frame * f,
-				   ssize_t index, void *udata);
-	void *(*frame_alloc) (struct dyad_var * v, const struct frame * f);
-	void (*frame_free) (struct dyad_var * v, const struct frame * f,
-			    void *udata);
-	void (*frame_clear) (struct dyad_var * v, const struct frame * f,
-			     void *udata);
+	
+	bool (*init) (struct design_var *dv, const struct design *d);
+	void (*deinit) (struct design_var *dv);
+	
+	bool (*frame_init) (struct frame_var *fv, struct frame *f);
+	void (*frame_deinit) (struct frame_var *fv);
+	void (*frame_clear) (struct frame_var *fv);
+	
+	bool (*handle_dyad) (struct frame_var *fv,
+			     const struct dyad_event *e,
+			     struct frame *f);
 };
 
-struct design_dyad_var {
+struct design_var {
+	const struct var_type *type;
+	ssize_t dim;
 	ssize_t index;
-	struct dyad_var *var;
+	void *udata;
 };
 
 struct design {
@@ -106,7 +111,7 @@ struct design {
 	bool reffects;
 	bool loops;
 
-	struct darray design_dyad_vars;
+	struct darray vars;
 	struct refcount refcount;
 };
 
@@ -127,7 +132,7 @@ struct actors *design_receivers(const struct design *design);
 
 const struct vector *design_intervals(const struct design *design);
 
-bool design_add_dyad_var(struct design *design, struct dyad_var *var);
+bool design_add_var(struct design *design, const struct var_type *type);
 void design_set_loops(struct design *design, bool loops);
 bool design_loops(const struct design *design);
 void design_set_reffects(struct design *design, bool reffects);
@@ -135,8 +140,8 @@ bool design_reffects(const struct design *design);
 
 ssize_t design_traits_index(const struct design *design);
 ssize_t design_reffects_index(const struct design *design);
-ssize_t design_dyad_var_index(const struct design *design,
-			      const struct dyad_var *var);
+ssize_t design_var_index(const struct design *design,
+			 const struct var_type *type);
 
 void design_mul0(double alpha,
 		 enum trans_op trans,

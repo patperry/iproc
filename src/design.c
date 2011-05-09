@@ -13,6 +13,16 @@ void design_deinit(struct design *design)
 	vector_deinit(&design->intervals);
 	actors_free(design->receivers);
 	actors_free(design->senders);
+
+	ssize_t i, n = darray_size(&design->vars);
+	struct design_var *v;
+	for (i = 0; i < n; i++) {
+		v = darray_at(&design->vars, i);
+		if (v->type->deinit) {
+			v->type->deinit(v);
+		}
+	}
+	darray_deinit(&design->vars);
 }
 
 bool design_init(struct design *design, struct actors *senders,
@@ -33,9 +43,8 @@ bool design_init(struct design *design, struct actors *senders,
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 
-	if (!darray_init
-	    (&design->design_dyad_vars, sizeof(struct design_dyad_var)))
-		goto fail_design_dyad_vars;
+	if (!darray_init(&design->vars, sizeof(struct design_var)))
+		goto fail_vars;
 
 	if (!(design->senders = actors_ref(senders)))
 		goto fail_senders;
@@ -67,8 +76,8 @@ fail_intervals:
 fail_receivers:
 	actors_free(senders);
 fail_senders:
-	darray_deinit(&design->design_dyad_vars);
-fail_design_dyad_vars:
+	darray_deinit(&design->vars);
+fail_vars:
 	return false;
 }
 
@@ -414,10 +423,10 @@ void design_set_reffects(struct design *design, bool reffects)
 	ssize_t nrecv = design_nreceiver(design);
 	ssize_t delta = reffects ? nrecv : -nrecv;
 
-	ssize_t i, n = darray_size(&design->design_dyad_vars);
-	struct design_dyad_var *var;
+	ssize_t i, n = darray_size(&design->vars);
+	struct design_var *var;
 	for (i = 0; i < n; i++) {
-		var = darray_at(&design->design_dyad_vars, i);
+		var = darray_at(&design->vars, i);
 		var->index += delta;
 	}
 
@@ -427,20 +436,24 @@ void design_set_reffects(struct design *design, bool reffects)
 	design->reffects = reffects;
 }
 
-bool design_add_dyad_var(struct design *design, struct dyad_var *var)
+bool design_add_var(struct design *design, const struct var_type *type)
 {
 	assert(design);
-	assert(var);
-	assert(var->dim >= 0);
+	assert(type);
+	assert(type->init);
 
-	struct design_dyad_var *design_var;
-
-	if ((design_var = darray_push_back(&design->design_dyad_vars, NULL))) {
-		design_var->index = design->idynamic + design->ndynamic;
-		design_var->var = var;
-		design->ndynamic += design_var->var->dim;
-		design->dim += design_var->var->dim;
-		return true;
+	struct design_var *var;
+	
+	if ((var = darray_push_back(&design->vars, NULL))) {
+		if (type->init(var, design)) {
+			assert(var->dim >= 0);
+			var->index = design->idynamic + design->ndynamic;
+			var->type = type;
+			design->ndynamic += var->dim;
+			design->dim += var->dim;
+			return true;
+		}
+		darray_pop_back(&design->vars);
 	}
 
 	return false;
@@ -461,25 +474,25 @@ ssize_t design_reffects_index(const struct design *design)
 	return -1;
 }
 
-static bool dyad_var_equals(const void *p1, const void *p2)
+static bool design_var_equals(const void *p1, const void *p2)
 {
-	const struct design_dyad_var *v1 = p1, *v2 = p2;
-	return v1->var == v2->var;
+	const struct design_var *v1 = p1, *v2 = p2;
+	return v1->type == v2->type;
 }
 
-ssize_t design_dyad_var_index(const struct design *design,
-			      const struct dyad_var *var)
+ssize_t design_var_index(const struct design *design,
+			 const struct var_type *type)
 {
 	assert(design);
-	assert(var);
+	assert(type);
 
-	const struct design_dyad_var *key =
-	    container_of(&var, struct design_dyad_var, var);
-	const struct design_dyad_var *val =
-	    darray_find(&design->design_dyad_vars, key, dyad_var_equals);
+	const struct design_var *key =
+	    container_of(&type, struct design_var, type);
+	const struct design_var *var =
+	    darray_find(&design->vars, key, design_var_equals);
 
-	if (val) {
-		return val->index;
+	if (var) {
+		return var->index;
 	}
 
 	return -1;

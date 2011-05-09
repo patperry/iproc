@@ -8,12 +8,17 @@
 #include "pqueue.h"
 #include "design.h"
 
+struct frame_var {
+	struct design_var *design;
+	void *udata;
+};
+
 struct frame {
+	struct design *design;	
 	struct history history;
 	struct dyad_queue dyad_queue;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
-	struct design *design;
-	struct darray dyad_var_udata;
+	struct darray vars;
 	struct refcount refcount;
 };
 

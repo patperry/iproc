@@ -4,7 +4,6 @@
 #include "messages.h"
 #include "r-messages.h"
 #include "r-model.h"
-#include "r-cursor.h"
 #include "r-utils.h"
 #include "r-loglik.h"
 
