@@ -10,6 +10,7 @@ void design_deinit(struct design *design)
 {
 	assert(design);
 	refcount_deinit(&design->refcount);
+	vector_deinit(&design->intervals);
 	actors_free(design->receivers);
 	actors_free(design->senders);
 }
@@ -35,12 +36,18 @@ bool design_init(struct design *design, struct actors *senders,
 	if (!darray_init(&design->design_dyad_vars, sizeof(struct design_dyad_var)))
 		goto fail_design_dyad_vars;
 	
+	if (!(design->senders = actors_ref(senders)))
+		goto fail_senders;
+
+	if (!(design->receivers = actors_ref(receivers)))
+		goto fail_receivers;
+
+	if (!vector_init_copy(&design->intervals, intervals))
+		goto fail_intervals;
+	
 	if (!refcount_init(&design->refcount))
 		goto fail_refcount;
 	
-	design->senders = actors_ref(senders);
-	design->receivers = actors_ref(receivers);
-	design->intervals = intervals;
 	design->reffects = false;
 	design->ireffects = 0;
 	design->istatic = 0;
@@ -51,7 +58,14 @@ bool design_init(struct design *design, struct actors *senders,
 	design->loops = false;
 	return true;
 	
+	refcount_deinit(&design->refcount);
 fail_refcount:
+	vector_deinit(&design->intervals);
+fail_intervals:
+	actors_free(receivers);
+fail_receivers:
+	actors_free(senders);
+fail_senders:
 	darray_deinit(&design->design_dyad_vars);
 fail_design_dyad_vars:
 	return false;
@@ -75,13 +89,15 @@ struct design *design_alloc(struct actors *senders, struct actors *receivers,
 struct design *design_ref(struct design *design)
 {
 	assert(design);
-	refcount_get(&design->refcount);
-	return design;
+	if (refcount_get(&design->refcount))
+		return design;
+	return NULL;
 }
 
 void design_free(struct design * design)
 {
 	if (design && refcount_put(&design->refcount, NULL)) {
+		refcount_get(&design->refcount);
 		design_deinit(design);
 		free(design);
 	}
@@ -372,7 +388,7 @@ struct actors *design_receivers(const struct design *design)
 const struct vector *design_intervals(const struct design *design)
 {
 	assert(design);
-	return design->intervals;
+	return &design->intervals;
 }
 
 bool design_loops(const struct design *design)

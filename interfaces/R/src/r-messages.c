@@ -173,8 +173,6 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 		}
 	}
 
-	messages_iter_deinit(&it);
-
 	UNPROTECT(1);
 	return Rtime;
 }
@@ -198,8 +196,6 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 			*from++ = (int)msg->from + 1;
 		}
 	}
-
-	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rfrom;
@@ -233,8 +229,6 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	}
 	assert(imsg == n);
 
-	messages_iter_deinit(&it);
-
 	UNPROTECT(1);
 	return Rto;
 }
@@ -258,8 +252,6 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 			*nto++ = (int)msg->nto;
 		}
 	}
-
-	messages_iter_deinit(&it);
 
 	UNPROTECT(1);
 	return Rnto;

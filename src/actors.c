@@ -172,6 +172,7 @@ void actors_free(struct actors *a)
 		return;
 
 	if (refcount_put(&a->refcount, NULL)) {
+		refcount_get(&a->refcount);
 		actors_deinit(a);
 		free(a);
 	}
@@ -180,8 +181,9 @@ void actors_free(struct actors *a)
 struct actors *actors_ref(struct actors *actors)
 {
 	assert(actors);
-	refcount_get(&actors->refcount);
-	return actors;
+	if (refcount_get(&actors->refcount))
+		return actors;
+	return NULL;
 }
 
 ssize_t actors_size(const struct actors *a)

@@ -671,8 +671,6 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				22EA3331136B440B00C5627F /* frame.c */,
-				22EA3332136B440B00C5627F /* frame.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
 				22C67AA41354FCC6006A81E8 /* cohort.c */,
@@ -685,6 +683,8 @@
 				22597419133D0AFB0022B52E /* event-trace.h */,
 				2259740A133D0AFB0022B52E /* fit.c */,
 				2259740B133D0AFB0022B52E /* fit.h */,
+				22EA3331136B440B00C5627F /* frame.c */,
+				22EA3332136B440B00C5627F /* frame.h */,
 				2259740C133D0AFB0022B52E /* history.c */,
 				2259740D133D0AFB0022B52E /* history.h */,
 				2259740E133D0AFB0022B52E /* loglik.c */,

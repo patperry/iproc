@@ -34,10 +34,6 @@ struct messages_iter {
 	ssize_t offset;
 	ssize_t ntie;
 	struct message_rep *message_rep;
-
-	/* deprecated */
-	struct history *history;
-	bool finished;
 };
 
 bool messages_init(struct messages *msgs);
@@ -60,7 +56,6 @@ ssize_t messages_max_to(const struct messages * msgs);
 ssize_t messages_max_nto(const struct messages * msgs);
 
 struct messages_iter messages_iter(struct messages * msgs);
-void messages_iter_deinit(struct messages_iter *it);
 
 ssize_t messages_iter_ntie(struct messages_iter * it);
 struct message *messages_iter_current(struct messages_iter * it, ssize_t itie);
@@ -68,11 +63,6 @@ double messages_iter_current_time(struct messages_iter *it);
 
 void messages_iter_reset(struct messages_iter * it);
 bool messages_iter_advance(struct messages_iter * it);
-bool messages_iter_started(struct messages_iter * it);
-bool messages_iter_finished(struct messages_iter * it);
-
-/* DEPRECATED */
-struct history *messages_iter_history(struct messages_iter * it);
 
 
 

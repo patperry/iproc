@@ -81,8 +81,6 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 		}
 	}
 
-	messages_iter_deinit(&it);
-	
 	frame_deinit(&frame);
 	return loglik;
 }

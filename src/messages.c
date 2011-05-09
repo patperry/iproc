@@ -46,8 +46,9 @@ struct messages *messages_alloc()
 struct messages *messages_ref(struct messages * msgs)
 {
 	assert(msgs);
-	refcount_get(&msgs->refcount);
-	return msgs;
+	if (refcount_get(&msgs->refcount))
+		return msgs;
+	return NULL;
 }
 
 void messages_deinit(struct messages *msgs)
@@ -64,6 +65,7 @@ void messages_free(struct messages * msgs)
 		return;
 	
 	if (refcount_put(&msgs->refcount, NULL)) {
+		refcount_get(&msgs->refcount);
 		messages_deinit(msgs);
 		free(msgs);
 	}

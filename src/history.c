@@ -77,7 +77,6 @@ static struct event_trace *trace_array_get(double tcur,
 void history_deinit(struct history *history)
 {
 	assert(history);
-	refcount_deinit(&history->refcount);
 	trace_array_deinit(&history->recv);	
 	trace_array_deinit(&history->send);
 }
@@ -92,50 +91,14 @@ bool history_init(struct history *history)
 	if (!darray_init(&history->recv, sizeof(struct history_trace)))
 		goto fail_recv;
 	
-	if (!refcount_init(&history->refcount))
-		goto fail_refcount;
-	
 	history->tcur = -INFINITY;
 	return true;
 	
-fail_refcount:
 	darray_deinit(&history->recv);
 fail_recv:
 	darray_deinit(&history->send);
 fail_send:
 	return false;
-}
-
-struct history *history_alloc(void)
-{
-	struct history *history = malloc(sizeof(*history));
-
-	if (history) {
-		if (history_init(history))
-			return history;
-		free(history);
-	}
-	
-	return NULL;
-}
-
-struct history *history_ref(struct history * history)
-{
-	if (history) {
-		refcount_get(&history->refcount);
-	}
-	return history;
-}
-
-void history_free(struct history * history)
-{
-	if (!history)
-		return;
-	
-	if (refcount_put(&history->refcount, NULL)) {
-		history_deinit(history);
-		free(history);
-	}
 }
 
 void history_clear(struct history * history)

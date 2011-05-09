@@ -14,6 +14,7 @@ struct frame {
 	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
 	struct darray dyad_var_udata;
+	struct refcount refcount;
 };
 
 /* dX[t,i] */
@@ -25,6 +26,11 @@ struct send_frame {
 /* create/destroy */
 bool frame_init(struct frame *f, struct design *design);
 void frame_deinit(struct frame *f);
+
+struct frame *frame_alloc(struct design *design);
+struct frame *frame_ref(struct frame *f);
+void frame_free(struct frame *f);
+
 
 /* record a message event */
 bool frame_insert(struct frame *f, const struct message *msg);

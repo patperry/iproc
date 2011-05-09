@@ -22,7 +22,7 @@ static R_CallMethodDef callMethods[] = {
 	{"Riproc_model_dim", (DL_FUNC) & Riproc_model_dim, 1},
 	{"Riproc_model_nreceiver", (DL_FUNC) & Riproc_model_nreceiver, 1},
 	{"Riproc_model_nsender", (DL_FUNC) & Riproc_model_nsender, 1},
-	{"Riproc_model_log_probs", (DL_FUNC) & Riproc_model_log_probs, 3},
+	// {"Riproc_model_log_probs", (DL_FUNC) & Riproc_model_log_probs, 3},
 	{NULL, NULL, 0}
 };
 
@@ -66,7 +66,7 @@ SEXP Riproc_from_model(iproc_model * model)
 
 SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs, SEXP Rhas_loops)
 {
-	const struct design *design = Riproc_to_design(Rdesign);
+	struct design *design = Riproc_to_design(Rdesign);
 	struct vector coefs = Riproc_vector_view_sexp(Rcoefs);
 	Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
@@ -131,6 +131,7 @@ SEXP Riproc_model_has_loops(SEXP Rmodel)
 	}
 }
 
+/*
 SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 {
 	iproc_model *model = Riproc_to_model(Rmodel);
@@ -163,3 +164,4 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 	UNPROTECT(1);
 	return Rprobst;
 }
+ */

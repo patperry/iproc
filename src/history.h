@@ -29,9 +29,6 @@ struct history {
 	double tcur;
 	struct darray send;
 	struct darray recv;
-	
-	/* deprecated */
-	struct refcount refcount;
 };
 
 bool history_init(struct history *history);
@@ -47,12 +44,6 @@ ssize_t history_nsend(struct history * history);
 ssize_t history_nrecv(struct history * history);
 struct event_trace *history_send(struct history * history, ssize_t i);
 struct event_trace *history_recv(struct history * history, ssize_t j);
-
-
-/* deprecated */
-struct history *history_alloc(void);
-struct history *history_ref(struct history * history);
-void history_free(struct history * history);
 
 
 

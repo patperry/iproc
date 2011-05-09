@@ -56,6 +56,7 @@ static void enron_setup(void **state)
 
 static void enron_teardown(void **state)
 {
+	design_deinit(&design);
 	vector_deinit(&intervals);
 	actors_deinit(&receivers);
 	actors_deinit(&senders);
@@ -96,6 +97,7 @@ static void enron_reff_setup(void **state)
 
 static void enron_reff_teardown(void **state)
 {
+	design_deinit(&design);
 	vector_deinit(&intervals);
 	actors_deinit(&receivers);
 	actors_deinit(&senders);

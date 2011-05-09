@@ -34,17 +34,14 @@ struct design_params {
 
 struct design_rep {
 	struct refcount refcount;	
-	struct actors senders;
-	struct actors receivers;
-	struct vector intervals;
 	struct vrecv vrecv;
 	struct vnrecv vnrecv;
 	struct design design;
 
 };
 
-static struct design_rep *design_rep_alloc(const struct actors *senders,
-					   const struct actors *receivers,
+static struct design_rep *design_rep_alloc(struct actors *senders,
+					   struct actors *receivers,
 					   const struct vector *intervals,
 					   const struct design_params *params)
 {
@@ -59,13 +56,7 @@ static struct design_rep *design_rep_alloc(const struct actors *senders,
 		goto fail_malloc;
 	if (!refcount_init(&rep->refcount))
 		goto fail_refcount;
-	if (!actors_init_copy(&rep->senders, senders))
-		goto fail_senders;
-	if (!actors_init_copy(&rep->receivers, receivers))
-		goto fail_receivers;
-	if (!vector_init_copy(&rep->intervals, intervals))
-		goto fail_intervals;
-	if (!design_init(&rep->design, &rep->senders, &rep->receivers, &rep->intervals))
+	if (!design_init(&rep->design, senders, receivers, intervals))
 		goto fail_design;
 	
 	design_set_loops(&rep->design, params->loops);
@@ -97,12 +88,6 @@ fail_vrecv_add:
 fail_vrecv_init:
 	design_deinit(&rep->design);
 fail_design:
-	vector_deinit(&rep->intervals);
-fail_intervals:
-	actors_deinit(&rep->receivers);
-fail_receivers:
-	actors_deinit(&rep->senders);
-fail_senders:
 	refcount_deinit(&rep->refcount);
 fail_refcount:
 	free(rep);
@@ -131,9 +116,6 @@ static void design_rep_free(struct design_rep *rep)
 		vrecv_deinit(&rep->vrecv);
 
 	design_deinit(&rep->design);
-	vector_deinit(&rep->intervals);
-	actors_deinit(&rep->receivers);
-	actors_deinit(&rep->senders);
 	refcount_deinit(&rep->refcount);
 	free(rep);
 }
@@ -154,7 +136,7 @@ static void Riproc_design_free(SEXP Rdesign)
 	design_rep_free(rep);
 }
 
-const struct design *Riproc_to_design(SEXP Rdesign)
+struct design *Riproc_to_design(SEXP Rdesign)
 {
 	struct design_rep *rep =
 	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag, "design");

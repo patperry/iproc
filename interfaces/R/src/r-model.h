@@ -18,7 +18,7 @@ SEXP Riproc_model_dim(SEXP Rmodel);
 SEXP Riproc_model_nsender(SEXP Rmodel);
 SEXP Riproc_model_nreceiver(SEXP Rmodel);
 
-SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor);
+// SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor);
 
 /* Internal use only */
 iproc_model *Riproc_to_model(SEXP Rmodel);

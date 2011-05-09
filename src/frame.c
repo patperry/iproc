@@ -85,7 +85,7 @@ bool frame_init(struct frame *f, struct design *design)
 	if (!history_init(&f->history))
 	    goto fail_history;
 	
-	if (!dyad_queue_init(&f->dyad_queue, design->intervals))
+	if (!dyad_queue_init(&f->dyad_queue, &design->intervals))
 	    goto fail_dyad_queue;
 	
 	if (!intmap_init(&f->send_frames, sizeof(struct send_frame),
@@ -112,9 +112,18 @@ bool frame_init(struct frame *f, struct design *design)
 		}
 	}
 	
-	f->design = design;
-	return true;
+	if (!(f->design = design_ref(design)))
+		goto fail_design;
 	
+	if (!refcount_init(&f->refcount))
+		goto fail_refcount;
+	
+	return true;
+
+	refcount_deinit(&f->refcount);
+fail_refcount:
+	design_free(f->design);
+fail_design:
 fail_var_frame_alloc:
 	for (; i > 0; i--) {
 		var = darray_at(&design->design_dyad_vars, i - 1);
@@ -135,6 +144,45 @@ fail_history:
 }
 
 
+struct frame *frame_alloc(struct design *design)
+{
+	assert(design);
+
+	struct frame *f;
+	
+	if (!(f = malloc(sizeof(*f))))
+		goto fail_malloc;
+
+	if (!frame_init(f, design))
+		goto fail_init;
+	
+	return f;
+	
+fail_init:
+	free(f);
+fail_malloc:
+	return NULL;
+}
+
+struct frame *frame_ref(struct frame *f)
+{
+	assert(f);
+	
+	if (refcount_get(&f->refcount))
+		return f;
+		
+	return NULL;
+}
+
+void frame_free(struct frame *f)
+{
+	if (f && refcount_put(&f->refcount, NULL)) {
+		refcount_get(&f->refcount);
+		frame_deinit(f);
+		free(f);
+	}
+}
+
 void frame_deinit(struct frame *f)
 {
 	assert(f);
@@ -142,6 +190,9 @@ void frame_deinit(struct frame *f)
 	struct intmap_iter it;
 	struct send_frame *sf;
 
+	refcount_deinit(&f->refcount);
+	design_free(f->design);
+	
 	ssize_t i, n = darray_size(&f->design->design_dyad_vars);
 	struct design_dyad_var *var;
 	void *udata;

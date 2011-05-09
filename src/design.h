@@ -98,7 +98,7 @@ struct design_dyad_var {
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
-	const struct vector *intervals;
+	struct vector intervals;
 	ssize_t ireffects;
 	ssize_t istatic, nstatic;
 	ssize_t idynamic, ndynamic;
@@ -107,8 +107,6 @@ struct design {
 	bool loops;
 	
 	struct darray design_dyad_vars;
-
-	/* deprecated */
 	struct refcount refcount;
 };
 
