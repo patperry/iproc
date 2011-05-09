@@ -34,17 +34,16 @@ struct history {
 bool history_init(struct history *history);
 void history_deinit(struct history *history);
 
-void history_clear(struct history * history);
+void history_clear(struct history *history);
 
-double history_tcur(const struct history * history);
-bool history_advance_to(struct history * history, double t);
-bool history_insert(struct history *history, ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
+double history_tcur(const struct history *history);
+bool history_advance_to(struct history *history, double t);
+bool history_insert(struct history *history, ssize_t from, ssize_t *to,
+		    ssize_t nto, intptr_t attr);
 
-ssize_t history_nsend(struct history * history);
-ssize_t history_nrecv(struct history * history);
-struct event_trace *history_send(struct history * history, ssize_t i);
-struct event_trace *history_recv(struct history * history, ssize_t j);
-
-
+ssize_t history_nsend(struct history *history);
+ssize_t history_nrecv(struct history *history);
+struct event_trace *history_send(struct history *history, ssize_t i);
+struct event_trace *history_recv(struct history *history, ssize_t j);
 
 #endif /* _HISTORY_H */

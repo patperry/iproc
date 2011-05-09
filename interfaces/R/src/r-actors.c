@@ -78,7 +78,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	ssize_t dim = vector_dim(&traits0);
 	struct actors *actors = actors_alloc(dim);
 	SEXP Ractors;
-	
+
 	if (!actors)
 		error("could not allocate new actors object");
 

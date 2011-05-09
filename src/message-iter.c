@@ -5,12 +5,10 @@
 #include <stdlib.h>
 #include "messages.h"
 
-
-
-struct messages_iter messages_iter(struct messages * msgs)
+struct messages_iter messages_iter(struct messages *msgs)
 {
 	assert(msgs);
-	
+
 	struct messages_iter it;
 
 	it.messages = msgs;
@@ -19,7 +17,7 @@ struct messages_iter messages_iter(struct messages * msgs)
 	return it;
 }
 
-double messages_iter_current_time(struct messages_iter * it)
+double messages_iter_current_time(struct messages_iter *it)
 {
 	assert(it);
 	assert(0 <= it->offset && it->offset < messages_size(it->messages));
@@ -27,7 +25,7 @@ double messages_iter_current_time(struct messages_iter * it)
 	return it->message_rep->message.time;
 }
 
-ssize_t messages_iter_ntie(struct messages_iter * it)
+ssize_t messages_iter_ntie(struct messages_iter *it)
 {
 	assert(it);
 	assert(0 <= it->offset && it->offset < messages_size(it->messages));
@@ -47,7 +45,7 @@ struct message *messages_iter_current(struct messages_iter *it, ssize_t itie)
 
 }
 
-void messages_iter_reset(struct messages_iter * it)
+void messages_iter_reset(struct messages_iter *it)
 {
 	assert(it);
 
@@ -56,7 +54,7 @@ void messages_iter_reset(struct messages_iter * it)
 	it->ntie = 1;
 }
 
-bool messages_iter_advance(struct messages_iter * it)
+bool messages_iter_advance(struct messages_iter *it)
 {
 	assert(it);
 	assert(it->offset < messages_size(it->messages));
@@ -69,7 +67,8 @@ bool messages_iter_advance(struct messages_iter * it)
 	bool has_next = offset < n;
 
 	if (has_next) {
-		struct message_rep *message_rep = darray_at(message_reps, offset);
+		struct message_rep *message_rep =
+		    darray_at(message_reps, offset);
 		double time = message_rep[0].message.time;
 		ssize_t ntie_max = n - offset;
 		ssize_t ntie = 0;
@@ -77,14 +76,16 @@ bool messages_iter_advance(struct messages_iter * it)
 		do {
 			if (!it->messages->to_cached) {
 				ssize_t msg_ito = message_rep[ntie].ito;
-				ssize_t *msg_to = darray_at(recipients, msg_ito);
+				ssize_t *msg_to =
+				    darray_at(recipients, msg_ito);
 				message_rep[ntie].message.to = msg_to;
 			}
-			
+
 			/* not deprecated */
 			ntie++;
-		} while (ntie < ntie_max && message_rep[ntie].message.time == time);
-		
+		} while (ntie < ntie_max
+			 && message_rep[ntie].message.time == time);
+
 		it->ntie = ntie;
 		it->message_rep = message_rep;
 	} else {
@@ -94,4 +95,3 @@ bool messages_iter_advance(struct messages_iter * it)
 
 	return has_next;
 }
-

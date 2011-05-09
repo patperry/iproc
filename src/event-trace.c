@@ -9,14 +9,14 @@
 
 DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
-static bool events_init(struct events * events, ssize_t e)
+static bool events_init(struct events *events, ssize_t e)
 {
 	assert(events);
 	events->e = e;
 	return darray_init(&events->meta, sizeof(struct event_meta));
 }
 
-static void events_deinit(struct events * events)
+static void events_deinit(struct events *events)
 {
 	assert(events);
 	darray_deinit(&events->meta);
@@ -36,7 +36,8 @@ static void events_array_deinit(struct darray *events_array)
 	darray_deinit(events_array);
 }
 
-static ssize_t event_trace_find_index(const struct event_trace * trace, ssize_t e)
+static ssize_t event_trace_find_index(const struct event_trace *trace,
+				      ssize_t e)
 {
 	assert(trace);
 	return darray_binary_search(&trace->events, &e, ssize_compare);
@@ -49,7 +50,7 @@ void event_trace_deinit(struct event_trace *trace)
 	darray_deinit(&trace->pending);
 }
 
-void event_trace_free(struct event_trace * trace)
+void event_trace_free(struct event_trace *trace)
 {
 	if (trace) {
 		event_trace_deinit(trace);
@@ -60,13 +61,13 @@ void event_trace_free(struct event_trace * trace)
 bool event_trace_init(struct event_trace *trace)
 {
 	assert(trace);
-	
+
 	if (!darray_init(&trace->pending, sizeof(struct event)))
 		goto fail_pending;
-	
+
 	if (!darray_init(&trace->events, sizeof(struct events)))
 		goto fail_events;
-	
+
 	trace->tcur = -INFINITY;
 	return true;
 
@@ -88,8 +89,7 @@ struct event_trace *event_trace_alloc()
 	return NULL;
 }
 
-
-void event_trace_clear(struct event_trace * trace)
+void event_trace_clear(struct event_trace *trace)
 {
 	ssize_t i, n;
 
@@ -104,7 +104,7 @@ void event_trace_clear(struct event_trace * trace)
 	darray_clear(&trace->events);
 }
 
-bool event_trace_insert(struct event_trace * trace, ssize_t e, intptr_t attr)
+bool event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr)
 {
 	assert(trace);
 
@@ -125,7 +125,7 @@ bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert)
 			      darray_size(&trace->pending) + ninsert);
 }
 
-bool event_trace_advance_to(struct event_trace * trace, double t)
+bool event_trace_advance_to(struct event_trace *trace, double t)
 {
 	assert(trace);
 	assert(t >= event_trace_tcur(trace));
@@ -149,7 +149,8 @@ bool event_trace_advance_to(struct event_trace * trace, double t)
 
 			struct events new_events;
 			if (events_init(&new_events, event->e)) {
-				if (!darray_insert(events_array, pos, &new_events)) {
+				if (!darray_insert
+				    (events_array, pos, &new_events)) {
 					events_deinit(&new_events);
 					goto rollback;
 				}
@@ -164,30 +165,30 @@ bool event_trace_advance_to(struct event_trace * trace, double t)
 	darray_clear(&trace->pending);
 	trace->tcur = t;
 	return true;
-	
+
 rollback:
 	for (; i > 0; i--) {
 		struct event *event = darray_at(&trace->pending, i - 1);
-		ssize_t pos = event_trace_find_index(trace, event->e); // always exists
+		ssize_t pos = event_trace_find_index(trace, event->e);	// always exists
 		struct events *events = darray_at(events_array, pos);
 		darray_pop_back(&events->meta);
 	}
 	return false;
 }
 
-double event_trace_tcur(const struct event_trace * trace)
+double event_trace_tcur(const struct event_trace *trace)
 {
 	assert(trace);
 	return trace->tcur;
 }
 
-ssize_t event_trace_size(const struct event_trace * trace)
+ssize_t event_trace_size(const struct event_trace *trace)
 {
 	assert(trace);
 	return darray_size(&trace->events);
 }
 
-struct events *event_trace_lookup(const struct event_trace * trace, ssize_t e)
+struct events *event_trace_lookup(const struct event_trace *trace, ssize_t e)
 {
 	assert(trace);
 	struct events *events = NULL;
@@ -200,7 +201,7 @@ struct events *event_trace_lookup(const struct event_trace * trace, ssize_t e)
 	return events;
 }
 
-struct events *event_trace_at(const struct event_trace * trace, ssize_t i)
+struct events *event_trace_at(const struct event_trace *trace, ssize_t i)
 {
 	assert(trace);
 	assert(0 <= i);
@@ -209,7 +210,7 @@ struct events *event_trace_at(const struct event_trace * trace, ssize_t i)
 	return darray_at(&trace->events, i);
 }
 
-ssize_t events_id(const struct events * events)
+ssize_t events_id(const struct events *events)
 {
 	assert(events);
 	return events->e;
@@ -221,13 +222,13 @@ bool events_empty(const struct events *events)
 	return darray_empty(&events->meta);
 }
 
-ssize_t events_size(const struct events * events)
+ssize_t events_size(const struct events *events)
 {
 	assert(events);
 	return darray_size(&events->meta);
 }
 
-struct event_meta *events_at(const struct events * events, ssize_t i)
+struct event_meta *events_at(const struct events *events, ssize_t i)
 {
 	assert(events);
 	assert(i >= 0);
@@ -236,7 +237,7 @@ struct event_meta *events_at(const struct events * events, ssize_t i)
 	return darray_at(&events->meta, i);
 }
 
-struct event_meta *events_back(const struct events * events)
+struct event_meta *events_back(const struct events *events)
 {
 	assert(events);
 	assert(!events_empty(events));

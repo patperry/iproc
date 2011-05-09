@@ -33,7 +33,7 @@ struct design_params {
 };
 
 struct design_rep {
-	struct refcount refcount;	
+	struct refcount refcount;
 	struct vrecv vrecv;
 	struct vnrecv vnrecv;
 	struct design design;
@@ -49,19 +49,19 @@ static struct design_rep *design_rep_alloc(struct actors *senders,
 	assert(receivers);
 	assert(intervals);
 	assert(params);
-	
+
 	struct design_rep *rep;
-	
+
 	if (!(rep = malloc(sizeof(*rep))))
 		goto fail_malloc;
 	if (!refcount_init(&rep->refcount))
 		goto fail_refcount;
 	if (!design_init(&rep->design, senders, receivers, intervals))
 		goto fail_design;
-	
+
 	design_set_loops(&rep->design, params->loops);
 	design_set_reffects(&rep->design, params->reffects);
-	
+
 	if (params->vrecv) {
 		if (!vrecv_init(&rep->vrecv, &rep->design))
 			goto fail_vrecv_init;
@@ -75,9 +75,9 @@ static struct design_rep *design_rep_alloc(struct actors *senders,
 		if (!design_add_dyad_var(&rep->design, &rep->vnrecv.dyad_var))
 			goto fail_vnrecv_add;
 	}
-	
+
 	return rep;
-	
+
 fail_vnrecv_add:
 	if (params->vnrecv)
 		vnrecv_deinit(&rep->vnrecv);
@@ -106,10 +106,10 @@ static struct design_rep *design_rep_ref(struct design_rep *rep)
 static void design_rep_free(struct design_rep *rep)
 {
 	assert(rep);
-	
+
 	if (!rep || !refcount_put(&rep->refcount, NULL))
 		return;
-	
+
 	if (design_dyad_var_index(&rep->design, &rep->vnrecv.dyad_var) >= 0)
 		vnrecv_deinit(&rep->vnrecv);
 	if (design_dyad_var_index(&rep->design, &rep->vrecv.dyad_var) >= 0)
@@ -120,8 +120,6 @@ static void design_rep_free(struct design_rep *rep)
 	free(rep);
 }
 
-
-
 void Riproc_design_init(DllInfo * info)
 {
 	Riproc_design_rep_type_tag = install("Riproc_design_rep_type_tag");
@@ -131,7 +129,8 @@ void Riproc_design_init(DllInfo * info)
 static void Riproc_design_free(SEXP Rdesign)
 {
 	struct design_rep *rep =
-		Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag, "design");
+	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag,
+			    "design");
 
 	design_rep_free(rep);
 }
@@ -139,7 +138,8 @@ static void Riproc_design_free(SEXP Rdesign)
 struct design *Riproc_to_design(SEXP Rdesign)
 {
 	struct design_rep *rep =
-	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag, "design");
+	    Riproc_sexp2ptr(Rdesign, TRUE, Riproc_design_rep_type_tag,
+			    "design");
 	return &rep->design;
 }
 
@@ -162,9 +162,10 @@ static SEXP Riproc_from_design_rep(struct design_rep *rep)
 	return Rdesign;
 }
 
-SEXP Riproc_from_design(const struct design *design)
+SEXP Riproc_from_design(const struct design * design)
 {
-	struct design_rep *rep = container_of(design, struct design_rep, design);
+	struct design_rep *rep =
+	    container_of(design, struct design_rep, design);
 	return Riproc_from_design_rep(rep);
 }
 
@@ -177,11 +178,11 @@ Riproc_design_new(SEXP Rsenders,
 	struct actors *receivers = Riproc_to_actors(Rreceivers);
 	Rboolean receiver_effects = LOGICAL_VALUE(Rreceiver_effects);
 	bool has_loops = true;
-	
+
 	if (receiver_effects == NA_LOGICAL) {
 		error("'receiver.effects' value is NA");
 	}
-	
+
 	struct vector *intervals = malloc(sizeof(*intervals));
 	vector_init(intervals, 0);
 
@@ -190,8 +191,9 @@ Riproc_design_new(SEXP Rsenders,
 	params.reffects = receiver_effects;
 	params.vrecv = false;
 	params.vnrecv = false;
-	
-	struct design_rep *rep = design_rep_alloc(senders, receivers, intervals, &params);
+
+	struct design_rep *rep =
+	    design_rep_alloc(senders, receivers, intervals, &params);
 
 	SEXP Rdesign;
 

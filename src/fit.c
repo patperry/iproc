@@ -9,7 +9,7 @@
 
 int dcsrch_(double *stp, double *f, double *g,
 	    double *ftol, double *gtol, double *xtol, char *task,
-	    double *stpmin, double *stpmax, f77int * isave, double *dsave,
+	    double *stpmin, double *stpmax, f77int *isave, double *dsave,
 	    f77int task_len);
 
 static void

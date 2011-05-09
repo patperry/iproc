@@ -34,7 +34,7 @@ struct _iproc_fit {
 };
 
 iproc_fit *iproc_fit_new(iproc_model * model0,
-			 struct messages * messages, double penalty);
+			 struct messages *messages, double penalty);
 void iproc_fit_free(iproc_fit * fit);
 
 bool iproc_fit_converged(iproc_fit * fit, double abs_tol, double rel_tol);

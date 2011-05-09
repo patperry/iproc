@@ -208,8 +208,8 @@ void matrix_assign_copy(struct matrix *a, const struct matrix *src)
 	assert(matrix_nrow(a) == matrix_nrow(src));
 	assert(matrix_ncol(a) == matrix_ncol(src));
 
-	f77int m = (f77int) matrix_nrow(a);
-	f77int n = (f77int) matrix_ncol(a);
+	f77int m = (f77int)matrix_nrow(a);
+	f77int n = (f77int)matrix_ncol(a);
 	f77int i, j;
 
 	if (m == 0 || n == 0)
@@ -266,10 +266,9 @@ void matrix_fill_col(struct matrix *a, ssize_t j, double val)
 {
 	assert(a);
 	assert(0 <= j && j < matrix_ncol(a));
-	
+
 	ssize_t i, m = matrix_nrow(a);
-	
-	
+
 	for (i = 0; i < m; i++) {
 		matrix_set(a, i, j, val);
 	}
@@ -281,8 +280,7 @@ void matrix_fill_row(struct matrix *a, ssize_t i, double val)
 	assert(0 <= i && i < matrix_nrow(a));
 
 	ssize_t j, n = matrix_ncol(a);
-		
-	
+
 	for (j = 0; j < n; j++) {
 		matrix_set(a, i, j, val);
 	}
@@ -296,11 +294,11 @@ void matrix_set_row(struct matrix *a, ssize_t i, const double *src)
 
 	f77int n = (f77int)matrix_ncol(a);
 	const double *x = src;
-	f77int incx = 1;	
+	f77int incx = 1;
 	double *y = matrix_at(a, i, 0);
 	f77int incy = (f77int)matrix_lda(a);
-	
-	F77_FUNC(dcopy)(&n, x, &incx, y, &incy);
+
+	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
 }
 
 void matrix_get_row(const struct matrix *a, ssize_t i, double *dst)
@@ -308,14 +306,14 @@ void matrix_get_row(const struct matrix *a, ssize_t i, double *dst)
 	assert(a);
 	assert(0 <= i && i < matrix_nrow(a));
 	assert(dst || matrix_ncol(a) == 0);
-	
+
 	f77int n = (f77int)matrix_ncol(a);
 	const double *x = matrix_at(a, i, 0);
-	f77int incx = (f77int)matrix_lda(a);	
+	f77int incx = (f77int)matrix_lda(a);
 	double *y = dst;
 	f77int incy = 1;
-	
-	F77_FUNC(dcopy)(&n, x, &incx, y, &incy);
+
+	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
 }
 
 void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
@@ -328,14 +326,14 @@ void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
 
 	if (vector_empty(y))
 		return;
-	
+
 	f77int n = (f77int)matrix_ncol(x);
 	const double *px = matrix_at(x, i, 0);
-	f77int incx = (f77int)matrix_lda(x);	
+	f77int incx = (f77int)matrix_lda(x);
 	double *py = vector_front(y);
 	f77int incy = 1;
-	
-	F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
+
+	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
 void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
@@ -345,17 +343,17 @@ void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
 	assert(y);
 	assert(0 <= j && j < matrix_ncol(x));
 	assert(vector_dim(y) == matrix_nrow(x));
-	
+
 	if (vector_empty(y))
 		return;
-	
+
 	f77int n = (f77int)matrix_nrow(x);
 	const double *px = matrix_at(x, 0, j);
 	f77int incx = 1;
 	double *py = vector_front(y);
 	f77int incy = 1;
-	
-	F77_FUNC(daxpy)(&n, &alpha, px, &incx, py, &incy);
+
+	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
 void matrix_add(struct matrix *a, const struct matrix *src)
@@ -375,8 +373,8 @@ void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y)
 	assert(matrix_nrow(y) == matrix_nrow(x));
 	assert(matrix_ncol(y) == matrix_ncol(x));
 
-	f77int m = (f77int) matrix_nrow(y);
-	f77int n = (f77int) matrix_ncol(y);
+	f77int m = (f77int)matrix_nrow(y);
+	f77int n = (f77int)matrix_ncol(y);
 	f77int one = 1;
 	f77int j;
 
@@ -457,10 +455,10 @@ void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 	}
 
 	char *ptrans = (trans == TRANS_NOTRANS) ? "N" : "T";
-	f77int m = (f77int) matrix_nrow(a);
-	f77int n = (f77int) matrix_ncol(a);
+	f77int m = (f77int)matrix_nrow(a);
+	f77int n = (f77int)matrix_ncol(a);
 	void *pa = matrix_at(a, 0, 0);
-	f77int lda = (f77int) matrix_lda(a);
+	f77int lda = (f77int)matrix_lda(a);
 	void *px = vector_front(x);
 	f77int incx = 1;
 	void *py = vector_front(y);
@@ -484,11 +482,11 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 
 	char *ptransa = (trans == TRANS_NOTRANS) ? "N" : "T";
 	char *ptransb = "N";
-	f77int m = (f77int) matrix_nrow(y);
-	f77int n = (f77int) matrix_ncol(y);
-	f77int k = (f77int) ((trans == TRANS_NOTRANS)
-			     ? matrix_ncol(a)
-			     : matrix_nrow(a));
+	f77int m = (f77int)matrix_nrow(y);
+	f77int n = (f77int)matrix_ncol(y);
+	f77int k = (f77int)((trans == TRANS_NOTRANS)
+			    ? matrix_ncol(a)
+			    : matrix_nrow(a));
 
 	if (k == 0) {
 		matrix_scale(y, beta);
@@ -498,11 +496,11 @@ void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
 	}
 
 	void *pa = matrix_at(a, 0, 0);
-	f77int lda = (f77int) matrix_lda(a);
+	f77int lda = (f77int)matrix_lda(a);
 	void *pb = matrix_at(x, 0, 0);
-	f77int ldb = (f77int) matrix_lda(x);
+	f77int ldb = (f77int)matrix_lda(x);
 	void *pc = matrix_at(y, 0, 0);
-	f77int ldc = (f77int) matrix_lda(y);
+	f77int ldc = (f77int)matrix_lda(y);
 
 	F77_FUNC(dgemm) (ptransa, ptransb, &m, &n, &k,
 			 &alpha, pa, &lda, pb, &ldb, &beta, pc, &ldc);
@@ -518,24 +516,24 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 	assert(trans != TRANS_NOTRANS || vector_dim(y) == matrix_nrow(a));
 	assert(trans == TRANS_NOTRANS || svector_dim(x) == matrix_nrow(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == matrix_ncol(a));
-	
+
 	if (svector_size(x) == 0) {
 		vector_scale(y, beta);
 		return;
 	} else if (vector_empty(y)) {
 		return;
 	}
-	
+
 	struct svector_iter itx;
 	ssize_t i, j;
 	double x_i, x_j;
-	
+
 	if (beta == 0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1) {
 		vector_scale(y, beta);
 	}
-	
+
 	svector_iter_init(x, &itx);
 	while (svector_iter_advance(x, &itx)) {
 		if (trans == TRANS_NOTRANS) {
@@ -543,17 +541,16 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 			x_j = *svector_iter_current(x, &itx);
 			matrix_col_axpy(alpha * x_j, a, j, y);
 		} else {
-			
+
 			i = svector_iter_current_index(x, &itx);
 			x_i = *svector_iter_current(x, &itx);
 			matrix_row_axpy(alpha * x_i, a, i, y);
 		}
 	}
-	
+
 	svector_iter_deinit(x, &itx);
 
 }
-
 
 void
 matrix_update1(struct matrix *a,
@@ -568,14 +565,14 @@ matrix_update1(struct matrix *a,
 	if (vector_empty(x) || vector_empty(y))
 		return;
 
-	f77int m = (f77int) matrix_nrow(a);
-	f77int n = (f77int) matrix_ncol(a);
+	f77int m = (f77int)matrix_nrow(a);
+	f77int n = (f77int)matrix_ncol(a);
 	void *px = vector_front(x);
 	f77int incx = 1;
 	void *py = vector_front(y);
 	f77int incy = 1;
 	void *pa = matrix_at(a, 0, 0);
-	f77int lda = (f77int) matrix_lda(a);
+	f77int lda = (f77int)matrix_lda(a);
 
 	F77_FUNC(dger) (&m, &n, &alpha, px, &incx, py, &incy, pa, &lda);
 }

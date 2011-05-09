@@ -5,7 +5,6 @@
 #include "frame.h"
 #include "vnrecv.h"
 
-
 /*
 static bool insert(const struct dyad_var *dyad_var, const struct message *msg, struct frame *f, ssize_t index)
 {
@@ -54,28 +53,26 @@ static bool insert(const struct dyad_var *dyad_var, const struct message *msg, s
 }
 */
 
-
-static bool vnrecv_handle_dyad_event (struct dyad_var *v,
-				      const struct dyad_event *e,
-				      struct frame *f,
-				      ssize_t index,
-				      void *udata)
+static bool vnrecv_handle_dyad_event(struct dyad_var *v,
+				     const struct dyad_event *e,
+				     struct frame *f,
+				     ssize_t index, void *udata)
 {
 	assert(v);
 	assert(v->dim >= 0);
 	assert(e);
 	assert(f);
-	assert(f->design);	
+	assert(f->design);
 	assert(index >= 0);
 	assert(index <= design_dim(f->design) - v->dim);
-	
+
 	struct svector *dx = frame_dx(f, e->dyad.jrecv, e->dyad.isend);
 	struct svector_pos pos;
 	double *val;
-	
+
 	if (!dx)
 		return false;
-	
+
 	if (e->type == DYAD_EVENT_MOVE) {
 		val = svector_find(dx, index + e->intvl - 1, &pos);
 		assert(val);

@@ -26,16 +26,17 @@ bool design_init(struct design *design, struct actors *senders,
 #ifndef NDEBUG
 	ssize_t i, nintervals = vector_dim(intervals);
 	for (i = 1; i < nintervals; i++) {
-		assert(vector_get(intervals, i-1) < vector_get(intervals, i));
+		assert(vector_get(intervals, i - 1) < vector_get(intervals, i));
 	}
 #endif
-	     
+
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
-	
-	if (!darray_init(&design->design_dyad_vars, sizeof(struct design_dyad_var)))
+
+	if (!darray_init
+	    (&design->design_dyad_vars, sizeof(struct design_dyad_var)))
 		goto fail_design_dyad_vars;
-	
+
 	if (!(design->senders = actors_ref(senders)))
 		goto fail_senders;
 
@@ -44,10 +45,10 @@ bool design_init(struct design *design, struct actors *senders,
 
 	if (!vector_init_copy(&design->intervals, intervals))
 		goto fail_intervals;
-	
+
 	if (!refcount_init(&design->refcount))
 		goto fail_refcount;
-	
+
 	design->reffects = false;
 	design->ireffects = 0;
 	design->istatic = 0;
@@ -57,7 +58,7 @@ bool design_init(struct design *design, struct actors *senders,
 	design->dim = design->idynamic + design->ndynamic;
 	design->loops = false;
 	return true;
-	
+
 	refcount_deinit(&design->refcount);
 fail_refcount:
 	vector_deinit(&design->intervals);
@@ -94,7 +95,7 @@ struct design *design_ref(struct design *design)
 	return NULL;
 }
 
-void design_free(struct design * design)
+void design_free(struct design *design)
 {
 	if (design && refcount_put(&design->refcount, NULL)) {
 		refcount_get(&design->refcount);
@@ -103,7 +104,7 @@ void design_free(struct design * design)
 	}
 }
 
-ssize_t design_dim(const struct design * design)
+ssize_t design_dim(const struct design *design)
 {
 	assert(design);
 	return design->dim;
@@ -111,9 +112,9 @@ ssize_t design_dim(const struct design * design)
 
 static void
 design_mul0_reffects(double alpha,
-			   enum trans_op trans,
-			   const struct design * design,
-			   const struct vector *x, struct vector *y)
+		     enum trans_op trans,
+		     const struct design *design,
+		     const struct vector *x, struct vector *y)
 {
 	if (!design->reffects)
 		return;
@@ -134,9 +135,9 @@ design_mul0_reffects(double alpha,
 
 static void
 design_muls0_reffects(double alpha,
-			    enum trans_op trans,
-			    const struct design * design,
-			    const struct svector *x, struct vector *y)
+		      enum trans_op trans,
+		      const struct design *design,
+		      const struct svector *x, struct vector *y)
 {
 	if (!design->reffects)
 		return;
@@ -168,10 +169,9 @@ design_muls0_reffects(double alpha,
 
 static void
 design_mul0_static(double alpha,
-			 enum trans_op trans,
-			 const struct design * design,
-			 ssize_t isend, const struct vector *x,
-			 struct vector *y)
+		   enum trans_op trans,
+		   const struct design *design,
+		   ssize_t isend, const struct vector *x, struct vector *y)
 {
 	if (design->nstatic == 0)
 		return;
@@ -222,10 +222,9 @@ design_mul0_static(double alpha,
 
 static void
 design_muls0_static(double alpha,
-			  enum trans_op trans,
-			  const struct design * design,
-			  ssize_t isend, const struct svector *x,
-			  struct vector *y)
+		    enum trans_op trans,
+		    const struct design *design,
+		    ssize_t isend, const struct svector *x, struct vector *y)
 {
 	if (design->nstatic == 0)
 		return;
@@ -297,24 +296,22 @@ design_muls0_static(double alpha,
 
 void
 design_mul0(double alpha,
-		  enum trans_op trans,
-		  const struct design * design,
-		  ssize_t isend,
-		  const struct vector *x, double beta, struct vector *y)
+	    enum trans_op trans,
+	    const struct design *design,
+	    ssize_t isend,
+	    const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);
 	assert(isend < design_nsender(design));
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || vector_dim(x) == design_dim(design));
+	assert(trans != TRANS_NOTRANS || vector_dim(x) == design_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_nreceiver(design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == design_nreceiver(design));
-	assert(trans == TRANS_NOTRANS
-	       || vector_dim(y) == design_dim(design));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -329,24 +326,22 @@ design_mul0(double alpha,
 
 void
 design_muls0(double alpha,
-		   enum trans_op trans,
-		   const struct design * design,
-		   ssize_t isend,
-		   const struct svector *x, double beta, struct vector *y)
+	     enum trans_op trans,
+	     const struct design *design,
+	     ssize_t isend,
+	     const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);
 	assert(isend < design_nsender(design));
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
-	       || svector_dim(x) == design_dim(design));
+	assert(trans != TRANS_NOTRANS || svector_dim(x) == design_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_nreceiver(design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == design_nreceiver(design));
-	assert(trans == TRANS_NOTRANS
-	       || vector_dim(y) == design_dim(design));
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -412,13 +407,13 @@ bool design_reffects(const struct design *design)
 void design_set_reffects(struct design *design, bool reffects)
 {
 	assert(design);
-	
+
 	if (design->reffects == reffects)
 		return;
-	
+
 	ssize_t nrecv = design_nreceiver(design);
 	ssize_t delta = reffects ? nrecv : -nrecv;
-	
+
 	ssize_t i, n = darray_size(&design->design_dyad_vars);
 	struct design_dyad_var *var;
 	for (i = 0; i < n; i++) {
@@ -437,9 +432,9 @@ bool design_add_dyad_var(struct design *design, struct dyad_var *var)
 	assert(design);
 	assert(var);
 	assert(var->dim >= 0);
-	       
+
 	struct design_dyad_var *design_var;
-	
+
 	if ((design_var = darray_push_back(&design->design_dyad_vars, NULL))) {
 		design_var->index = design->idynamic + design->ndynamic;
 		design_var->var = var;
@@ -472,18 +467,20 @@ static bool dyad_var_equals(const void *p1, const void *p2)
 	return v1->var == v2->var;
 }
 
-ssize_t design_dyad_var_index(const struct design *design, const struct dyad_var *var)
+ssize_t design_dyad_var_index(const struct design *design,
+			      const struct dyad_var *var)
 {
 	assert(design);
 	assert(var);
-	
-	const struct design_dyad_var *key = container_of(&var, struct design_dyad_var, var);
-	const struct design_dyad_var *val = darray_find(&design->design_dyad_vars, key, dyad_var_equals);
-	
+
+	const struct design_dyad_var *key =
+	    container_of(&var, struct design_dyad_var, var);
+	const struct design_dyad_var *val =
+	    darray_find(&design->design_dyad_vars, key, dyad_var_equals);
+
 	if (val) {
 		return val->index;
 	}
 
 	return -1;
 }
-

@@ -152,7 +152,7 @@ void darray_fill_range(struct darray *a, ssize_t i, ssize_t n, const void *val)
 	memory_fill(darray_at(a, i), n, val, darray_elt_size(a));
 }
 
-static void * darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
+static void *darray_insert_space(struct darray *a, ssize_t i, ssize_t n)
 {
 	ssize_t size0 = a->size;
 	ssize_t size = size0 + n;
@@ -200,8 +200,7 @@ void *darray_insert_repeat(struct darray *a, ssize_t i, ssize_t n,
 	return res;
 }
 
-void *darray_insert_all(struct darray *a, ssize_t i, const void *ptr,
-			ssize_t n)
+void *darray_insert_all(struct darray *a, ssize_t i, const void *ptr, ssize_t n)
 {
 	assert(a);
 	assert(i >= 0);

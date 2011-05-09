@@ -11,7 +11,7 @@
 struct frame {
 	struct history history;
 	struct dyad_queue dyad_queue;
-	struct intmap send_frames; // (j, dX[t,i) pairs; dX is a 'struct send_frame'
+	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct design *design;
 	struct darray dyad_var_udata;
 	struct refcount refcount;
@@ -31,7 +31,6 @@ struct frame *frame_alloc(struct design *design);
 struct frame *frame_ref(struct frame *f);
 void frame_free(struct frame *f);
 
-
 /* record a message event */
 bool frame_insert(struct frame *f, const struct message *msg);
 
@@ -44,7 +43,6 @@ void frame_clear(struct frame *f);
 double frame_time(const struct frame *f);
 double frame_next_update(const struct frame *f);
 const struct history *frame_history(const struct frame *f);
-
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
 
@@ -61,7 +59,5 @@ bool frame_dmul(double alpha, enum trans_op trans,
 bool frame_dmuls(double alpha, enum trans_op trans,
 		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y);
-
-
 
 #endif /* _FRAME_H */

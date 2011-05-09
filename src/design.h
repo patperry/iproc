@@ -73,22 +73,22 @@
  * a sparse vector.
  */
 
-struct frame; // forward declaration
+struct frame;			// forward declaration
 struct dyad_var;
 
 struct dyad_var {
 	ssize_t dim;
 	uint8_t dyad_event_mask;
-	bool (*handle_dyad_event) (struct dyad_var *v,
-				   const struct dyad_event *e,
-				   struct frame *f,
-				   ssize_t index,
-				   void *udata);
-	void *(*frame_alloc) (struct dyad_var *v, const struct frame *f);
-	void (*frame_free) (struct dyad_var *v, const struct frame *f, void *udata);
-	void (*frame_clear) (struct dyad_var *v, const struct frame *f, void *udata);
+	bool (*handle_dyad_event) (struct dyad_var * v,
+				   const struct dyad_event * e,
+				   struct frame * f,
+				   ssize_t index, void *udata);
+	void *(*frame_alloc) (struct dyad_var * v, const struct frame * f);
+	void (*frame_free) (struct dyad_var * v, const struct frame * f,
+			    void *udata);
+	void (*frame_clear) (struct dyad_var * v, const struct frame * f,
+			     void *udata);
 };
-
 
 struct design_dyad_var {
 	ssize_t index;
@@ -105,30 +105,27 @@ struct design {
 	ssize_t dim;
 	bool reffects;
 	bool loops;
-	
+
 	struct darray design_dyad_vars;
 	struct refcount refcount;
 };
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
 			    const struct vector *intervals);
-struct design *design_ref(struct design * design);
-void design_free(struct design * design);
+struct design *design_ref(struct design *design);
+void design_free(struct design *design);
 
 bool design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct vector *intervals);
 void design_deinit(struct design *design);
 
-
-ssize_t design_dim(const struct design * design);
-ssize_t design_nsender(const struct design * design);
-ssize_t design_nreceiver(const struct design * design);
-struct actors *design_senders(const struct design * design);
-struct actors *design_receivers(const struct design * design);
-
+ssize_t design_dim(const struct design *design);
+ssize_t design_nsender(const struct design *design);
+ssize_t design_nreceiver(const struct design *design);
+struct actors *design_senders(const struct design *design);
+struct actors *design_receivers(const struct design *design);
 
 const struct vector *design_intervals(const struct design *design);
-
 
 bool design_add_dyad_var(struct design *design, struct dyad_var *var);
 void design_set_loops(struct design *design, bool loops);
@@ -138,22 +135,18 @@ bool design_reffects(const struct design *design);
 
 ssize_t design_traits_index(const struct design *design);
 ssize_t design_reffects_index(const struct design *design);
-ssize_t design_dyad_var_index(const struct design *design, const struct dyad_var *var);
-
+ssize_t design_dyad_var_index(const struct design *design,
+			      const struct dyad_var *var);
 
 void design_mul0(double alpha,
-		       enum trans_op trans,
-		       const struct design * design,
-		       ssize_t isend,
-		       const struct vector *x, double beta, struct vector *y);
+		 enum trans_op trans,
+		 const struct design *design,
+		 ssize_t isend,
+		 const struct vector *x, double beta, struct vector *y);
 void design_muls0(double alpha,
-			enum trans_op trans,
-			const struct design * design,
-			ssize_t isend,
-			const struct svector *x, double beta, struct vector *y);
-
-
-
-
+		  enum trans_op trans,
+		  const struct design *design,
+		  ssize_t isend,
+		  const struct svector *x, double beta, struct vector *y);
 
 #endif /* _DESIGN_H */

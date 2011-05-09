@@ -33,7 +33,7 @@ static void Riproc_cursor_free(SEXP Rcursor)
 	free(it);
 }
 
-SEXP Riproc_from_cursor(struct messages_iter * it)
+SEXP Riproc_from_cursor(struct messages_iter *it)
 {
 	SEXP Rcursor, class;
 

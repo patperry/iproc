@@ -81,13 +81,11 @@ void iproc_sloglik_insert(iproc_sloglik * sll,
 	iproc_sloglik_insertm(sll, f, &jrecv, 1);
 }
 
-
 void iproc_sloglik_insertm(iproc_sloglik * sll,
 			   const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
 	ssize_t nreceiver = iproc_model_nreceiver(sll->model);
-	iproc_model_ctx *ctx =
-	    iproc_model_ctx_new(sll->model, f, sll->isend);
+	iproc_model_ctx *ctx = iproc_model_ctx_new(sll->model, f, sll->isend);
 	struct svector *wt = svector_alloc(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
@@ -160,16 +158,15 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 
 	// (X[0,i])^T * sum{dP[t,i]}
 	design_muls0(scale, TRANS_TRANS,
-			   sll->model->design, sll->isend, sll->dp,
-			   1.0, dst_vector);
+		     sll->model->design, sll->isend, sll->dp, 1.0, dst_vector);
 
 	// sum{dxbar[t,i]}
 	svector_axpy(scale, sll->dxbar, dst_vector);
 
 	// - (X[0,i])^T n[i]
 	design_muls0(-scale / sll->nsend, TRANS_TRANS,
-			   sll->model->design, sll->isend, sll->nrecv,
-			   1.0, dst_vector);
+		     sll->model->design, sll->isend, sll->nrecv,
+		     1.0, dst_vector);
 
 	// -sum{dx[t,i,j]}
 	svector_axpy(-scale, sll->dxobs, dst_vector);

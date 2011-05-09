@@ -87,7 +87,7 @@ bool svector_set_basis(struct svector *v, ssize_t i)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
-	
+
 	svector_clear(v);
 	return svector_set(v, i, 1.0);
 }
@@ -137,9 +137,9 @@ void svector_clear_at(struct svector *v, ssize_t i)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
-	
+
 	struct svector_pos pos;
-	
+
 	if ((svector_find(v, i, &pos))) {
 		svector_erase(v, &pos);
 	}
@@ -280,12 +280,12 @@ bool svector_axpys(double scale, const struct svector *x, struct svector *y)
 		i = svector_iter_current_index(x, &itx);
 		val = *svector_iter_current(x, &itx);
 		yi = svector_at(y, i);
-		
+
 		if (!yi) {
 			ok = false;
 			break;
 		}
-		
+
 		*yi += scale * val;
 	}
 	svector_iter_deinit(x, &itx);
@@ -324,12 +324,13 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	return intmap_assign_copy(&dst->map, &src->map);
 }
 
-double *svector_find(const struct svector *v, ssize_t i, struct svector_pos *pos)
+double *svector_find(const struct svector *v, ssize_t i,
+		     struct svector_pos *pos)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 	assert(pos);
-	
+
 	return intmap_find(&v->map, i, &pos->map_pos);
 }
 
@@ -345,7 +346,7 @@ void svector_erase(struct svector *v, struct svector_pos *pos)
 {
 	assert(v);
 	assert(pos);
-	
+
 	intmap_erase(&v->map, &pos->map_pos);
 }
 

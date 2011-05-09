@@ -39,7 +39,6 @@ void pqueue_update_top(struct pqueue *q);
 bool pqueue_reserve(struct pqueue *q, ssize_t n);
 bool pqueue_reserve_push(struct pqueue *q, ssize_t npush);
 
-
 /* inline function definitions */
 bool pqueue_empty(const struct pqueue *q)
 {

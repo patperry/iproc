@@ -15,7 +15,7 @@ bool messages_init(struct messages *msgs)
 		goto fail_recipients;
 	if (!refcount_init(&msgs->refcount))
 		goto fail_refcount;
-	
+
 	msgs->tlast = -INFINITY;
 	msgs->max_to = -1;
 	msgs->max_from = -1;
@@ -34,7 +34,7 @@ fail_message_reps:
 struct messages *messages_alloc()
 {
 	struct messages *msgs = malloc(sizeof(*msgs));
-	
+
 	if (msgs) {
 		if (messages_init(msgs))
 			return msgs;
@@ -43,7 +43,7 @@ struct messages *messages_alloc()
 	return NULL;
 }
 
-struct messages *messages_ref(struct messages * msgs)
+struct messages *messages_ref(struct messages *msgs)
 {
 	assert(msgs);
 	if (refcount_get(&msgs->refcount))
@@ -59,11 +59,11 @@ void messages_deinit(struct messages *msgs)
 	darray_deinit(&msgs->recipients);
 }
 
-void messages_free(struct messages * msgs)
+void messages_free(struct messages *msgs)
 {
 	if (!msgs)
 		return;
-	
+
 	if (refcount_put(&msgs->refcount, NULL)) {
 		refcount_get(&msgs->refcount);
 		messages_deinit(msgs);
@@ -71,7 +71,7 @@ void messages_free(struct messages * msgs)
 	}
 }
 
-ssize_t messages_size(const struct messages * msgs)
+ssize_t messages_size(const struct messages *msgs)
 {
 	assert(msgs);
 	return darray_size(&msgs->message_reps);
@@ -87,9 +87,9 @@ struct message *messages_at(const struct messages *msgs, ssize_t i)
 {
 	assert(msgs);
 	assert(0 <= i && i < messages_size(msgs));
-	
+
 	struct message_rep *rep = darray_at(&msgs->message_reps, i);
-	
+
 	if (!msgs->to_cached) {
 		ssize_t msg_ito = rep->ito;
 		ssize_t *msg_to = darray_at(&msgs->recipients, msg_ito);
@@ -100,8 +100,7 @@ struct message *messages_at(const struct messages *msgs, ssize_t i)
 }
 
 bool messages_add(struct messages *msgs, double time,
-		  ssize_t from, ssize_t *to,
-		  ssize_t nto, intptr_t attr)
+		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
 {
 	assert(msgs);
 	assert(time >= messages_tlast(msgs));
@@ -116,44 +115,44 @@ bool messages_add(struct messages *msgs, double time,
 	if (!darray_reserve(message_reps, darray_size(message_reps) + 1)
 	    || !darray_reserve(recipients, darray_size(recipients) + nto))
 		return false;
-	
+
 	ssize_t ito = darray_size(recipients);
-	struct message_rep m = { { time, from, NULL, nto, attr }, ito };
+	struct message_rep m = { {time, from, NULL, nto, attr}, ito };
 	ssize_t i;
 
 	for (i = 0; i < nto; i++) {
 		assert(to[i] >= 0);
 
-		darray_push_back(recipients, to + i); // always succeeds
+		darray_push_back(recipients, to + i);	// always succeeds
 		if (to[i] > msgs->max_to)
 			msgs->max_to = to[i];
 	}
-	
+
 	if (from > msgs->max_from)
 		msgs->max_from = from;
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	darray_push_back(message_reps, &m); // always succeeds
+	darray_push_back(message_reps, &m);	// always succeeds
 	msgs->to_cached = false;
 	msgs->tlast = time;
-	
+
 	return true;
 }
 
-ssize_t messages_max_from(const struct messages * msgs)
+ssize_t messages_max_from(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_from;
 }
 
-ssize_t messages_max_to(const struct messages * msgs)
+ssize_t messages_max_to(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_to;
 }
 
-ssize_t messages_max_nto(const struct messages * msgs)
+ssize_t messages_max_nto(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_nto;

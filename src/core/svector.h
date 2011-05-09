@@ -44,9 +44,9 @@ double svector_dots(const struct svector *v1, const struct svector *v2);
 void svector_axpy(double scale, const struct svector *x, struct vector *y);
 bool svector_axpys(double scale, const struct svector *x, struct svector *y);
 
-
 /* position-based operations */
-double *svector_find(const struct svector *v, ssize_t i, struct svector_pos *pos);
+double *svector_find(const struct svector *v, ssize_t i,
+		     struct svector_pos *pos);
 double *svector_insert(struct svector *v, struct svector_pos *pos, double val);
 void svector_erase(struct svector *v, struct svector_pos *pos);
 

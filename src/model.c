@@ -7,7 +7,7 @@
 #include "util.h"
 
 static void
-compute_logprobs0(const struct design * design,
+compute_logprobs0(const struct design *design,
 		  ssize_t isend,
 		  const struct vector *coefs,
 		  struct vector *logprobs, double *logsumweight)
@@ -22,8 +22,7 @@ compute_logprobs0(const struct design * design,
 	 * multiplication, then unscaling after subtracting of the max value.  This
 	 * shouldn't be necessary in most (all?) real-world situations.
 	 */
-	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs,
-			  0.0, logprobs);
+	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs, 0.0, logprobs);
 
 	/* protect against overflow */
 	double max = vector_max(logprobs);
@@ -54,8 +53,7 @@ static bool cohort_model_init(struct cohort_model *cm,
 
 	/* compute initial covariate mean */
 	cm->xbar0 = vector_alloc(dim);
-	design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0,
-			  0.0, cm->xbar0);
+	design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0, 0.0, cm->xbar0);
 
 	return true;
 }
@@ -129,7 +127,7 @@ static bool insert_cohort_model(struct intmap *cohort_models,
 }
 
 static bool cohort_models_init(struct intmap *cohort_models,
-			       const struct design * design,
+			       const struct design *design,
 			       const struct vector *coefs)
 {
 	ssize_t i, nsender = design_nsender(design);
@@ -193,7 +191,7 @@ static void iproc_model_free(iproc_model * model)
 	}
 }
 
-iproc_model *iproc_model_new(struct design * design,
+iproc_model *iproc_model_new(struct design *design,
 			     struct vector *coefs, bool has_loops)
 {
 	assert(design);

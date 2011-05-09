@@ -28,8 +28,7 @@ struct actors *actors_ref(struct actors *a);
 void actors_free(struct actors *a);
 bool actors_init(struct actors *actors, ssize_t dim);
 bool actors_init_copy(struct actors *actors, const struct actors *src);
-bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
-			enum trans_op trans); // copies x
+bool actors_init_matrix(struct actors *actors, const struct matrix *matrix, enum trans_op trans);	// copies x
 void actors_deinit(struct actors *a);
 
 void actors_clear(struct actors *a);

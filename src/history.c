@@ -77,23 +77,23 @@ static struct event_trace *trace_array_get(double tcur,
 void history_deinit(struct history *history)
 {
 	assert(history);
-	trace_array_deinit(&history->recv);	
+	trace_array_deinit(&history->recv);
 	trace_array_deinit(&history->send);
 }
 
 bool history_init(struct history *history)
 {
 	assert(history);
-	
+
 	if (!darray_init(&history->send, sizeof(struct history_trace)))
 		goto fail_send;
-	
+
 	if (!darray_init(&history->recv, sizeof(struct history_trace)))
 		goto fail_recv;
-	
+
 	history->tcur = -INFINITY;
 	return true;
-	
+
 	darray_deinit(&history->recv);
 fail_recv:
 	darray_deinit(&history->send);
@@ -101,7 +101,7 @@ fail_send:
 	return false;
 }
 
-void history_clear(struct history * history)
+void history_clear(struct history *history)
 {
 	assert(history);
 	history->tcur = -INFINITY;
@@ -109,13 +109,13 @@ void history_clear(struct history * history)
 	trace_array_clear(&history->recv);
 }
 
-double history_tcur(const struct history * history)
+double history_tcur(const struct history *history)
 {
 	assert(history);
 	return history->tcur;
 }
 
-bool history_advance_to(struct history * history, double t)
+bool history_advance_to(struct history *history, double t)
 {
 	assert(history);
 	assert(history->tcur <= t);
@@ -124,7 +124,8 @@ bool history_advance_to(struct history * history, double t)
 	return true;
 }
 
-bool history_insert(struct history * history, ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
+bool history_insert(struct history *history, ssize_t from, ssize_t *to,
+		    ssize_t nto, intptr_t attr)
 {
 	assert(history);
 	assert(to || nto == 0);
@@ -133,7 +134,7 @@ bool history_insert(struct history * history, ssize_t from, ssize_t *to, ssize_t
 	struct event_trace *efrom = history_send(history, from);
 	if (!(efrom && event_trace_reserve_insert(efrom, nto)))
 		return false;
-	
+
 	ssize_t i;
 	for (i = 0; i < nto; i++) {
 		struct event_trace *eto = history_recv(history, to[i]);
@@ -146,23 +147,23 @@ bool history_insert(struct history * history, ssize_t from, ssize_t *to, ssize_t
 		event_trace_insert(efrom, to[i], attr);
 		event_trace_insert(eto, from, attr);
 	}
-	
+
 	return true;
 }
 
-ssize_t history_nsend(struct history * history)
+ssize_t history_nsend(struct history *history)
 {
 	assert(history);
 	return darray_size(&history->send);
 }
 
-ssize_t history_nrecv(struct history * history)
+ssize_t history_nrecv(struct history *history)
 {
 	assert(history);
 	return darray_size(&history->recv);
 }
 
-struct event_trace *history_send(struct history * history, ssize_t i)
+struct event_trace *history_send(struct history *history, ssize_t i)
 {
 	assert(history);
 	assert(0 <= i);
@@ -170,7 +171,7 @@ struct event_trace *history_send(struct history * history, ssize_t i)
 	return trace_array_get(history->tcur, &history->send, i);
 }
 
-struct event_trace *history_recv(struct history * history, ssize_t j)
+struct event_trace *history_recv(struct history *history, ssize_t j)
 {
 	assert(history);
 	assert(0 <= j);

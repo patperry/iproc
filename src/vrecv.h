@@ -12,7 +12,7 @@ struct vrecv_active {
 };
 
 struct vrecv_frame {
-	struct hashset active;	
+	struct hashset active;
 };
 
 struct vrecv {

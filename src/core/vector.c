@@ -107,7 +107,7 @@ void vector_assign_array(struct vector *v, const double *src)
 {
 	assert(v);
 	assert(src || vector_empty(v));
-	
+
 	array_assign_array(&v->array, src);
 }
 
@@ -171,7 +171,7 @@ void vector_scale(struct vector *vector, double scale)
 	if (vector_empty(vector))
 		return;
 
-	f77int n = (f77int) vector_dim(vector);
+	f77int n = (f77int)vector_dim(vector);
 	double alpha = scale;
 	void *px = vector_front(vector);
 	f77int incx = 1;
@@ -222,7 +222,7 @@ void vector_mul(struct vector *dst_vector, const struct vector *vector)
 	if (vector_empty(dst_vector))
 		return;
 
-	f77int n = (f77int) vector_dim(dst_vector);
+	f77int n = (f77int)vector_dim(dst_vector);
 	f77int k = 0;
 	double *px = vector_front(vector);
 	f77int incx = 1;
@@ -241,7 +241,7 @@ void vector_div(struct vector *dst_vector, const struct vector *vector)
 	if (vector_empty(dst_vector))
 		return;
 
-	f77int n = (f77int) vector_dim(dst_vector);
+	f77int n = (f77int)vector_dim(dst_vector);
 	f77int k = 0;
 	double *px = vector_front(vector);
 	f77int incx = 1;
@@ -260,7 +260,7 @@ void vector_axpy(double alpha, const struct vector *x, struct vector *y)
 	if (vector_empty(x))
 		return;
 
-	f77int n = (f77int) vector_dim(y);
+	f77int n = (f77int)vector_dim(y);
 	double *px = vector_front(x);
 	f77int incx = 1;
 	double *py = vector_front(y);
@@ -278,7 +278,7 @@ double vector_dot(const struct vector *vector1, const struct vector *vector2)
 	if (vector_empty(vector1))
 		return 0.0;
 
-	f77int n = (f77int) vector_dim(vector1);
+	f77int n = (f77int)vector_dim(vector1);
 	double *px = vector_front(vector1);
 	f77int incx = 1;
 	double *py = vector_front(vector2);
@@ -293,16 +293,16 @@ double vector_dist(const struct vector *v1, const struct vector *v2)
 	assert(v1);
 	assert(v2);
 	assert(vector_dim(v1) == vector_dim(v2));
-	
+
 	ssize_t i, n = vector_dim(v1);
 	double dist, dist2 = 0.0;
 	double delta;
-	
+
 	for (i = 0; i < n; i++) {
 		delta = vector_get(v1, i) - vector_get(v2, i);
 		dist2 += delta * delta;
 	}
-	
+
 	dist = sqrt(dist2);
 	return dist;
 }
@@ -314,7 +314,7 @@ double vector_norm(const struct vector *vector)
 	if (vector_empty(vector))
 		return 0.0;
 
-	f77int n = (f77int) vector_dim(vector);
+	f77int n = (f77int)vector_dim(vector);
 	void *px = vector_front(vector);
 	f77int incx = 1;
 
@@ -329,7 +329,7 @@ double vector_norm1(const struct vector *vector)
 	if (vector_empty(vector))
 		return 0.0;
 
-	f77int n = (f77int) vector_dim(vector);
+	f77int n = (f77int)vector_dim(vector);
 	void *px = vector_front(vector);
 	f77int incx = 1;
 
@@ -356,7 +356,7 @@ ssize_t vector_max_abs_index(const struct vector *vector)
 	assert(vector);
 	assert(!vector_empty(vector));
 
-	f77int n = (f77int) vector_dim(vector);
+	f77int n = (f77int)vector_dim(vector);
 	void *px = vector_front(vector);
 	f77int incx = 1;
 

@@ -146,7 +146,7 @@ struct _iproc_model_ctx {
 	struct refcount refcount;
 };
 
-iproc_model *iproc_model_new(struct design * design,
+iproc_model *iproc_model_new(struct design *design,
 			     struct vector *coefs, bool has_loops);
 iproc_model *iproc_model_ref(iproc_model * model);
 void iproc_model_unref(iproc_model * model);

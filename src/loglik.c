@@ -56,16 +56,14 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 {
 	assert(model);
 	assert(!messages
-	       || messages_max_from(messages) <
-	       iproc_model_nsender(model));
+	       || messages_max_from(messages) < iproc_model_nsender(model));
 	assert(!messages
-	       || messages_max_to(messages) <
-	       iproc_model_nreceiver(model));
+	       || messages_max_to(messages) < iproc_model_nreceiver(model));
 
 	iproc_loglik *loglik = iproc_loglik_new_empty(model);
 	struct frame frame;
 	frame_init(&frame, model->design);
-	
+
 	if (!messages)
 		return loglik;
 
@@ -75,7 +73,8 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 		ssize_t tie, ntie = messages_iter_ntie(&it);
 
 		for (tie = 0; tie < ntie; tie++) {
-			const struct message *msg = messages_iter_current(&it, tie);
+			const struct message *msg =
+			    messages_iter_current(&it, tie);
 			iproc_loglik_insert(loglik, &frame, msg);
 			frame_insert(&frame, msg);
 		}
@@ -122,8 +121,7 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 }
 
 void iproc_loglik_insert(iproc_loglik * loglik,
-			 const struct frame *f,
-			 const struct message *msg)
+			 const struct frame *f, const struct message *msg)
 {
 	iproc_sloglik *sll = iproc_loglik_sloglik(loglik, msg->from);
 	iproc_sloglik_insertm(sll, f, msg->to, msg->nto);

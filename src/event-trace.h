@@ -46,19 +46,19 @@ void event_trace_deinit(struct event_trace *trace);
 
 void event_trace_clear(struct event_trace *trace);
 
-bool event_trace_insert(struct event_trace * trace, ssize_t e, intptr_t attr);
-bool event_trace_advance_to(struct event_trace * trace, double time);
+bool event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr);
+bool event_trace_advance_to(struct event_trace *trace, double time);
 bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert);
 
-double event_trace_tcur(const struct event_trace * trace);
-ssize_t event_trace_size(const struct event_trace * trace);
-struct events *event_trace_at(const struct event_trace * trace, ssize_t i);
-struct events *event_trace_lookup(const struct event_trace * trace, ssize_t e);
+double event_trace_tcur(const struct event_trace *trace);
+ssize_t event_trace_size(const struct event_trace *trace);
+struct events *event_trace_at(const struct event_trace *trace, ssize_t i);
+struct events *event_trace_lookup(const struct event_trace *trace, ssize_t e);
 
-ssize_t events_id(const struct events * events);
+ssize_t events_id(const struct events *events);
 bool events_empty(const struct events *events);
-ssize_t events_size(const struct events * events);
-struct event_meta *events_at(const struct events * events, ssize_t i);
-struct event_meta *events_back(const struct events * events);
+ssize_t events_size(const struct events *events);
+struct event_meta *events_at(const struct events *events, ssize_t i);
+struct event_meta *events_back(const struct events *events);
 
 #endif /* _EVENT_TRACE_H */

@@ -57,18 +57,18 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 	ssize_t m = matrix_nrow(matrix);
 	ssize_t n = matrix_ncol(matrix);
 	ssize_t dim = trans == TRANS_NOTRANS ? n : m;
-	bool ok = false;	
-	
+	bool ok = false;
+
 	if (!actors_init(actors, dim))
 		return false;
-	
+
 	if (trans == TRANS_NOTRANS) {
 		struct vector row;
 		double *row_front;
-		ssize_t i;		
-	
+		ssize_t i;
+
 		if (vector_init(&row, n)) {
-			ok = true;			
+			ok = true;
 			row_front = n == 0 ? NULL : vector_front(&row);
 
 			for (i = 0; i < m; i++) {
@@ -83,7 +83,7 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 	} else {
 		struct vector col;
 		ssize_t j;
-		
+
 		ok = true;
 		for (j = 0; j < n; j++) {
 			vector_init_matrix_col(&col, matrix, j);
@@ -99,31 +99,29 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 	return ok;
 }
 
-
 bool actors_init_copy(struct actors *actors, const struct actors *src)
 {
 	assert(actors);
 	assert(src);
-	
+
 	if (!actors_init(actors, src->dim))
 		goto fail_init;
-	
+
 	ssize_t i, n = actors_size(src);
 	for (i = 0; i < n; i++) {
 		if (!actors_add(actors, actors_traits(src, i)))
 			goto fail_add;
 	}
-	
+
 	assert(actors_size(actors) == actors_cohorts_size(src));
 	assert(actors_cohorts_size(actors) == actors_cohorts_size(src));
-	
+
 	return true;
 fail_add:
 	actors_deinit(actors);
 fail_init:
 	return false;
 }
-
 
 static void cohorts_clear(struct hashset *cohorts)
 {
@@ -241,7 +239,7 @@ double actors_get(const struct actors *a, ssize_t actor_id, ssize_t j)
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_size(a));
 	assert(0 <= j && j < actors_dim(a));
-	
+
 	const struct vector *x = actors_traits(a, actor_id);
 	double val = vector_get(x, j);
 	return val;

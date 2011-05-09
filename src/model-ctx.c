@@ -171,8 +171,8 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	return ctx;
 }
 
-iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,const struct frame *f,
-				     ssize_t isend)
+iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
+				     const struct frame * f, ssize_t isend)
 {
 	assert(model);
 	assert(0 <= isend);

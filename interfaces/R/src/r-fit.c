@@ -38,8 +38,7 @@ Riproc_fit(SEXP Rmodel0,
 
 	if (messages_max_from(messages) >= iproc_model_nsender(model0)) {
 		error("message 'from' id outside sender range");
-	} else if (messages_max_to(messages) >=
-		   iproc_model_nreceiver(model0)) {
+	} else if (messages_max_to(messages) >= iproc_model_nreceiver(model0)) {
 		error("message 'to' id outside receiver range");
 	} else if (!(penalty >= 0.0 && isfinite(penalty))) {
 		error("value of 'penalty' must be >= 0 and finite");

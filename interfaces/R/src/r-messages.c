@@ -133,7 +133,8 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 		if (msg_from < 0)
 			error("'from' values must be positive");
 
-		messages_add(msgs, msg_time, msg_from, msg_to, msg_nto, msg_attr);
+		messages_add(msgs, msg_time, msg_from, msg_to, msg_nto,
+			     msg_attr);
 
 		tcur = msg_time;
 	}
@@ -216,7 +217,8 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 	while (messages_iter_advance(&it)) {
 		ntie = (int)messages_iter_ntie(&it);
 		for (i = 0; i < ntie; i++) {
-			const struct message *msg = messages_iter_current(&it, i);
+			const struct message *msg =
+			    messages_iter_current(&it, i);
 			nto = (int)msg->nto;
 			msg_to = msg->to;
 
