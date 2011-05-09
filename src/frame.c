@@ -92,9 +92,39 @@ bool frame_init(struct frame *f, struct design *design)
 			 alignof(struct send_frame)))
 		goto fail_send_frames;
 	
+	if (!(darray_init(&f->dyad_var_udata, sizeof(void *))
+	      && darray_reserve(&f->dyad_var_udata,
+				darray_size(&design->design_dyad_vars))))
+		goto fail_dyad_var_udata;
+	
+	darray_resize(&f->dyad_var_udata,
+		      darray_size(&design->design_dyad_vars));
+	
+	ssize_t i, n = darray_size(&design->design_dyad_vars);
+	struct design_dyad_var *var;
+	void *udata;
+	for (i = 0; i < n; i++) {
+		var = darray_at(&design->design_dyad_vars, i);
+		if (var->var->frame_alloc) {
+			if (!(udata = var->var->frame_alloc(var->var, f)))
+				goto fail_var_frame_alloc;
+			darray_set(&f->dyad_var_udata, i, &udata);
+		}
+	}
+	
 	f->design = design;
 	return true;
 	
+fail_var_frame_alloc:
+	for (; i > 0; i--) {
+		var = darray_at(&design->design_dyad_vars, i - 1);
+		if (var->var->frame_free) {
+			udata = *(void **)darray_at(&f->dyad_var_udata, i - 1);
+			var->var->frame_free(var->var, f, udata);
+		}
+	}
+	darray_deinit(&f->dyad_var_udata);
+fail_dyad_var_udata:
 	intmap_deinit(&f->send_frames);
 fail_send_frames:
 	dyad_queue_deinit(&f->dyad_queue);
@@ -112,6 +142,19 @@ void frame_deinit(struct frame *f)
 	struct intmap_iter it;
 	struct send_frame *sf;
 
+	ssize_t i, n = darray_size(&f->design->design_dyad_vars);
+	struct design_dyad_var *var;
+	void *udata;
+	for (i = 0; i < n; i++) {
+		var = darray_at(&f->design->design_dyad_vars, i);
+		if (var->var->frame_free) {
+			udata = *(void **)darray_at(&f->dyad_var_udata, i);
+			var->var->frame_free(var->var, f, udata);
+		}
+	}
+	
+	darray_deinit(&f->dyad_var_udata);
+	
 	intmap_iter_init(&f->send_frames, &it);
 	while (intmap_iter_advance(&f->send_frames, &it)) {
 		sf = intmap_iter_current(&f->send_frames, &it);
@@ -130,6 +173,18 @@ void frame_clear(struct frame *f)
 	
 	struct intmap_iter it;
 	struct send_frame *sf;
+	
+	ssize_t i, n = darray_size(&f->design->design_dyad_vars);
+	struct design_dyad_var *var;
+	void *udata;
+
+	for (i = 0; i < n; i++) {
+		var = darray_at(&f->design->design_dyad_vars, i);
+		if (var->var->frame_clear) {
+			udata = *(void **)darray_at(&f->dyad_var_udata, i);
+			var->var->frame_clear(var->var, f, udata);
+		}
+	}
 	
 	intmap_iter_init(&f->send_frames, &it);
 	while (intmap_iter_advance(&f->send_frames, &it)) {
@@ -229,7 +284,8 @@ bool frame_advance_to(struct frame *f, double t)
 	const struct darray *design_dyad_vars = &f->design->design_dyad_vars;
 	struct design_dyad_var *v;
 	ssize_t i, n = darray_size(design_dyad_vars);
-	const struct dyad_event *e;	
+	const struct dyad_event *e;
+	void *udata;
 	bool ok;
 
 	while (dyad_queue_next_update(&f->dyad_queue) < t) {
@@ -240,8 +296,8 @@ bool frame_advance_to(struct frame *f, double t)
 			if (!(v->var->handle_dyad_event
 			      && v->var->dyad_event_mask & e->type))
 				continue;
-			
-			ok = v->var->handle_dyad_event(v->var, e, f, v->index);
+			udata = *(void **)darray_at(&f->dyad_var_udata, i);
+			ok = v->var->handle_dyad_event(v->var, e, f, v->index, udata);
 			if (!ok)
 				return false;
 		}

@@ -150,6 +150,9 @@ bool vnrecv_init(struct vnrecv *v, const struct design *d)
 	v->dyad_var.dim = n + 1;
 	v->dyad_var.dyad_event_mask = DYAD_EVENT_INIT | DYAD_EVENT_MOVE;
 	v->dyad_var.handle_dyad_event = vnrecv_handle_dyad_event;
+	v->dyad_var.frame_alloc = NULL;
+	v->dyad_var.frame_free = NULL;
+	v->dyad_var.frame_clear = NULL;
 	return true;
 }
 

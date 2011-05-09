@@ -3,6 +3,7 @@
 
 #include "design.h"
 #include "hashset.h"
+#include "intmap.h"
 
 struct vrecv_active {
 	struct dyad dyad;
@@ -10,9 +11,12 @@ struct vrecv_active {
 	ssize_t intvl;
 };
 
+struct vrecv_frame {
+	struct hashset active;	
+};
+
 struct vrecv {
 	struct dyad_var dyad_var;
-	struct hashset active;
 };
 
 bool vrecv_init(struct vrecv *v, const struct design *d);

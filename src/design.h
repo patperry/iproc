@@ -82,7 +82,11 @@ struct dyad_var {
 	bool (*handle_dyad_event) (struct dyad_var *v,
 				   const struct dyad_event *e,
 				   struct frame *f,
-				   ssize_t index);
+				   ssize_t index,
+				   void *udata);
+	void *(*frame_alloc) (struct dyad_var *v, const struct frame *f);
+	void (*frame_free) (struct dyad_var *v, const struct frame *f, void *udata);
+	void (*frame_clear) (struct dyad_var *v, const struct frame *f, void *udata);
 };
 
 
