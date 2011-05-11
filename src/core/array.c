@@ -46,7 +46,7 @@ void array_init_slice(struct array *a, const struct array *parent,
 	assert(n >= 0);
 	assert(0 <= i && i <= array_size(parent) - n);
 
-	void *ptr = n == 0 ? NULL : array_at(parent, i);
+	void *ptr = n == 0 ? NULL : array_item(parent, i);
 
 	array_init_view(a, ptr, n, parent->elt_size);
 }
@@ -102,7 +102,7 @@ void array_swap(struct array *a, ssize_t i, ssize_t j)
 	assert(0 <= j && j < array_size(a));
 	assert(i != j);
 
-	memory_swap(array_at(a, i), array_at(a, j), array_elt_size(a));
+	memory_swap(array_item(a, i), array_item(a, j), array_elt_size(a));
 }
 
 void array_reverse(struct array *a)
@@ -138,31 +138,30 @@ void array_assign_copy(struct array *a, const struct array *src)
 	array_copy_to(src, array_front(a));
 }
 
-void *array_copy_to(const struct array *a, void *dst)
+void array_copy_to(const struct array *a, void *dst)
 {
 	assert(a);
 	assert(dst || array_size(a) == 0);
 
 	if (array_empty(a))
-		return dst;
+		return;
 
-	return memory_copy_to(array_front(a), array_size(a), dst,
-			      array_elt_size(a));
+	memory_copy_to(array_front(a), array_size(a), dst,
+		       array_elt_size(a));
 }
 
-void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
-			  void *dst)
+void array_get_range(const struct array *a, ssize_t i, ssize_t n,
+		     void *dst)
 {
 	assert(n >= 0);
 	assert(0 <= i && i <= array_size(a) - n);
 	assert(!array_overlaps(a, i, n, dst, n));
 
 	if (n == 0)
-		return dst;
+		return;
 
 	size_t nbytes = n * array_elt_size(a);
-	memcpy(dst, array_at(a, i), nbytes);
-	return (char *)dst + nbytes;
+	memcpy(dst, array_item(a, i), nbytes);
 }
 
 void array_fill(struct array *a, const void *val)
@@ -180,51 +179,61 @@ void array_fill_range(struct array *a, ssize_t i, ssize_t n, const void *val)
 	if (n == 0)
 		return;
 
-	memory_fill(array_at(a, i), n, val, array_elt_size(a));
+	memory_fill(array_item(a, i), n, val, array_elt_size(a));
 }
 
-bool array_contains(const struct array *a, const void *key, equals_fn equal)
+bool array_contains(const struct array *a, predicate_fn match, void *udata)
 {
 	assert(a);
-	assert(equal);
-	return array_find(a, key, equal);
+	assert(match);
+	return array_find(a, match, udata);
 }
 
-void *array_find(const struct array *a, const void *key, equals_fn equal)
+void *array_find(const struct array *a, predicate_fn match, void *udata)
 {
 	assert(a);
-	assert(equal);
+	assert(match);
 
 	if (array_empty(a))
 		return NULL;
 
-	return forward_find(array_front(a), array_size(a), key, equal,
+	return forward_find(array_front(a), array_size(a), match, udata,
 			    array_elt_size(a));
 }
 
-ssize_t array_find_index(const struct array *a, const void *key,
-			 equals_fn equal)
+ssize_t array_find_index(const struct array *a, predicate_fn match, void *udata)
 {
 	assert(a);
-	assert(equal);
+	assert(match);
 
 	if (array_empty(a))
 		return -1;
 
-	return forward_find_index(array_front(a), array_size(a), key, equal,
+	return forward_find_index(array_front(a), array_size(a), match, udata,
 				  array_elt_size(a));
 }
 
-ssize_t array_find_last_index(const struct array *a, const void *key,
-			      equals_fn equal)
+void *array_find_last(const struct array *a, predicate_fn match, void *udata)
 {
 	assert(a);
-	assert(equal);
+	assert(match);
+	
+	if (array_empty(a))
+		return NULL;
+	
+	return reverse_find(array_front(a), array_size(a), match, udata,
+			    array_elt_size(a));
+}
+
+ssize_t array_find_last_index(const struct array *a, predicate_fn match, void *udata)
+{
+	assert(a);
+	assert(match);
 
 	if (array_empty(a))
 		return -1;
 
-	return reverse_find_index(array_front(a), array_size(a), key, equal,
+	return reverse_find_index(array_front(a), array_size(a), match, udata,
 				  array_elt_size(a));
 }
 

@@ -53,8 +53,7 @@ libcore_la_SOURCES = \
 	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
-	src/core/darray.c \
-	src/core/darray.h \
+	src/core/delegate.h \
 	src/core/hash.c \
 	src/core/hash.h \
 	src/core/hashset.c \
@@ -65,6 +64,8 @@ libcore_la_SOURCES = \
 	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
+	src/core/list.c \
+	src/core/list.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/macconfig.h \
@@ -228,9 +229,9 @@ cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/darray_test
-tests_darray_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_darray_test_LDADD    = libcore.la $(cmockery_ldadd)
+check_PROGRAMS += tests/list_test
+tests_list_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_list_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/hashset_test
 tests_hashset_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)

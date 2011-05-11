@@ -39,7 +39,6 @@ void hashset_clear(struct hashset *s);
 /* informative */
 ssize_t hashset_size(const struct hashset *s);
 bool hashset_empty(const struct hashset *s);
-ssize_t hashset_max_size(const struct hashset *s);
 size_t hashset_elt_size(const struct hashset *s);
 static inline uint32_t hashset_hash(const struct hashset *s, const void *val);
 static inline bool hashset_equals(const struct hashset *s, const void *val1,

@@ -2,10 +2,10 @@
 #define _INTSET_H
 
 #include <stddef.h>
-#include "darray.h"
+#include "list.h"
 
 struct intset {
-	struct darray values;
+	struct list values;
 };
 
 struct intset_pos {
@@ -32,7 +32,6 @@ void intset_clear(struct intset *s);
 /* informative */
 bool intset_empty(const struct intset *s);
 ssize_t intset_size(const struct intset *s);
-ssize_t intset_max_size(const struct intset *s);
 intptr_t intset_min(const struct intset *s);
 intptr_t intset_max(const struct intset *s);
 bool intset_contains(const struct intset *s, intptr_t val);

@@ -9,6 +9,7 @@
 #include <stddef.h>		// sizeof, size_t
 #include <string.h>		// memcpy
 #include "compare.h"
+#include "delegate.h"
 
 struct array {
 	void *data;
@@ -32,20 +33,20 @@ void array_init_slice(struct array *a,
 /* assign, copy, fill */
 void array_assign_array(struct array *a, const void *src);
 void array_assign_copy(struct array *a, const struct array *src);
-void *array_copy_to(const struct array *a, void *dst);
-void *array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
-			  void *dst);
+void array_copy_to(const struct array *a, void *dst);
+void array_get_range(const struct array *a, ssize_t i, ssize_t n,
+		     void *dst);
 void array_fill(struct array *a, const void *val);
 void array_fill_range(struct array *a, ssize_t i, ssize_t n, const void *val);
 
 /* index */
-static inline void *array_at(const struct array *a, ssize_t i);
+static inline void *array_item(const struct array *a, ssize_t i);
 static inline void array_set(struct array *a, ssize_t i, const void *src);
 static inline void array_set_range(struct array *a,
 				   ssize_t i, ssize_t n, const void *src);
-#define array_front(a)           (array_at(a, 0))
+#define array_front(a)           (array_item(a, 0))
 #define array_set_front(a, val)  (array_set(a, 0, val))
-#define array_back(a)            (array_at(a, array_size(a) - 1))
+#define array_back(a)            (array_item(a, array_size(a) - 1))
 #define array_set_back(a, val)   (array_set(a, array_size(a) - 1, val))
 
 /* informative */
@@ -63,13 +64,11 @@ void array_swap(struct array *a, ssize_t i, ssize_t j);
 void array_reverse(struct array *a);
 
 /* searching, sorting */
-bool array_contains(const struct array *a, const void *key, equals_fn equal);
-void *array_find(const struct array *a, const void *key, equals_fn equal);
-ssize_t array_find_index(const struct array *a,
-			 const void *key, equals_fn equal);
-void *array_find_last(const struct array *a, const void *key, equals_fn equal);
-ssize_t array_find_last_index(const struct array *a,
-			      const void *key, equals_fn equal);
+bool array_contains(const struct array *a, predicate_fn match, void *udata);
+void *array_find(const struct array *a, predicate_fn match, void *udata);
+ssize_t array_find_index(const struct array *a, predicate_fn match, void *udata);
+void *array_find_last(const struct array *a, predicate_fn match, void *udata);
+ssize_t array_find_last_index(const struct array *a, predicate_fn match, void *udata);
 ssize_t array_binary_search(const struct array *a,
 			    const void *key, compare_fn compar);
 void array_sort(struct array *a, compare_fn compar);
@@ -112,7 +111,7 @@ bool array_overlaps(const struct array *a, ssize_t i, ssize_t n,
 		return false;
 
 	size_t elt_size = array_elt_size(a);
-	const void *begin1 = array_at(a, i);
+	const void *begin1 = array_item(a, i);
 	const void *end1 = (char *)begin1 + n * elt_size;
 	const void *begin2 = ptr;
 	const void *end2 = (char *)begin2 + nel * elt_size;
@@ -121,7 +120,7 @@ bool array_overlaps(const struct array *a, ssize_t i, ssize_t n,
 		|| (begin2 <= begin1 && begin1 < end2));
 }
 
-void *array_at(const struct array *a, ssize_t i)
+void *array_item(const struct array *a, ssize_t i)
 {
 	assert(0 <= i && i < array_size(a));
 	return (char *)a->data + i * a->elt_size;
@@ -146,7 +145,7 @@ void array_set_range(struct array *a, ssize_t i, ssize_t n, const void *src)
 		return;
 
 	size_t nbytes = n * array_elt_size(a);
-	memcpy(array_at(a, i), src, nbytes);
+	memcpy(array_item(a, i), src, nbytes);
 }
 
 #endif /* _ARRAY_H */

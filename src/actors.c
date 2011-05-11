@@ -22,7 +22,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 
 	bool ok;
 
-	ok = darray_init(&actors->actors, sizeof(struct actor));
+	ok = list_init(&actors->actors, sizeof(struct actor));
 	if (!ok)
 		goto fail_actors;
 
@@ -43,7 +43,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 fail_refcount:
 	hashset_deinit(&actors->cohorts);
 fail_cohorts:
-	darray_deinit(&actors->actors);
+	list_deinit(&actors->actors);
 fail_actors:
 	return false;
 }
@@ -138,7 +138,7 @@ static void cohorts_clear(struct hashset *cohorts)
 void actors_clear(struct actors *a)
 {
 	cohorts_clear(&a->cohorts);
-	darray_clear(&a->actors);
+	list_clear(&a->actors);
 }
 
 void actors_deinit(struct actors *a)
@@ -148,7 +148,7 @@ void actors_deinit(struct actors *a)
 	actors_clear(a);
 	refcount_deinit(&a->refcount);
 	hashset_deinit(&a->cohorts);
-	darray_deinit(&a->actors);
+	list_deinit(&a->actors);
 }
 
 struct actors *actors_alloc(ssize_t dim)
@@ -187,7 +187,7 @@ struct actors *actors_ref(struct actors *actors)
 ssize_t actors_size(const struct actors *a)
 {
 	assert(a);
-	return darray_size(&a->actors);
+	return list_count(&a->actors);
 }
 
 ssize_t actors_cohorts_size(const struct actors *a)
@@ -206,7 +206,7 @@ const struct actor *actors_at(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_size(a));
-	return darray_at(&a->actors, actor_id);
+	return list_item(&a->actors, actor_id);
 }
 
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
@@ -258,11 +258,11 @@ bool actors_add(struct actors *actors, const struct vector *traits)
 	if (!a.cohort)
 		goto fail_get_cohort;
 
-	ok = darray_push_back(&actors->actors, &a);
+	ok = list_add(&actors->actors, &a);
 	if (!ok)
-		goto fail_push_back;
+		goto fail_actors_add;
 
-	id = darray_size(&actors->actors) - 1;
+	id = list_count(&actors->actors) - 1;
 	ok = cohort_add(a.cohort, id);
 	if (!ok)
 		goto fail_cohort_add;
@@ -270,8 +270,8 @@ bool actors_add(struct actors *actors, const struct vector *traits)
 	goto out;
 
 fail_cohort_add:
-	darray_pop_back(&actors->actors);
-fail_push_back:
+	list_remove_at(&actors->actors, list_count(&actors->actors) - 1);
+fail_actors_add:
 fail_get_cohort:
 	ok = false;
 out:

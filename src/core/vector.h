@@ -21,7 +21,7 @@ void vector_init_slice(struct vector *v,
 /* assign, copy, fill */
 void vector_assign_array(struct vector *v, const double *src);
 void vector_assign_copy(struct vector *v, const struct vector *src);
-double *vector_copy_to(const struct vector *v, double *dst);
+void vector_copy_to(const struct vector *v, double *dst);
 
 void vector_fill(struct vector *v, double val);
 void vector_set_basis(struct vector *v, ssize_t i);

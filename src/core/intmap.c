@@ -109,12 +109,6 @@ ssize_t intmap_size(const struct intmap *m)
 	return hashset_size(&m->pairs);
 }
 
-ssize_t intmap_max_size(const struct intmap *m)
-{
-	assert(m);
-	return hashset_max_size(&m->pairs);
-}
-
 size_t intmap_elt_size(const struct intmap *m)
 {
 	assert(m);

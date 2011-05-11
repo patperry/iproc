@@ -39,7 +39,6 @@ void intmap_clear(struct intmap *m);
 /* informative */
 bool intmap_empty(const struct intmap *m);
 ssize_t intmap_size(const struct intmap *m);
-ssize_t intmap_max_size(const struct intmap *m);
 size_t intmap_elt_size(const struct intmap *m);
 size_t intmap_elt_align(const struct intmap *m);
 

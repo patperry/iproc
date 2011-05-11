@@ -183,11 +183,6 @@ bool hashset_empty(const struct hashset *s)
 	return hashset_size(s) == 0;
 }
 
-ssize_t hashset_max_size(const struct hashset *s)
-{
-	return MIN(sparsetable_max_size(&s->table), HT_MAX_SIZE);
-}
-
 size_t hashset_elt_size(const struct hashset *s)
 {
 	return sparsetable_elt_size(&s->table);
@@ -383,7 +378,6 @@ void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
 	assert(val);
 	assert(hashset_hash(s, val) == pos->hash);
 	assert(pos->has_insert);
-	assert(hashset_size(s) < hashset_max_size(s));
 
 	if (hashset_needs_grow_delta(s, 1)) {
 		if (hashset_grow_delta(s, 1)) {

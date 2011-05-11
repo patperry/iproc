@@ -18,7 +18,7 @@ struct frame {
 	struct history history;
 	struct dyad_queue dyad_queue;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
-	struct darray vars;
+	struct list vars;
 	struct refcount refcount;
 };
 

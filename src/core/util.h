@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include "compare.h"
+#include "delegate.h"
 
 #define MAX(x,y) ((y) > (x) ? (y) : (x))
 #define MIN(x,y) ((y) < (x) ? (y) : (x))
@@ -51,16 +52,16 @@ void *memory_reverse(void *begin, ssize_t size, size_t elt_size);
 
 void *forward_find(const void *begin,
 		   ssize_t size,
-		   const void *key, equals_fn equal, size_t elt_size);
+		   predicate_fn match, void *udata, size_t elt_size);
 ssize_t forward_find_index(const void *begin,
 			   ssize_t size,
-			   const void *key, equals_fn equal, size_t elt_size);
+			   predicate_fn match, void *udata, size_t elt_size);
 void *reverse_find(const void *begin,
 		   ssize_t size,
-		   const void *key, equals_fn equal, size_t elt_size);
+		   predicate_fn match, void *udata, size_t elt_size);
 ssize_t reverse_find_index(const void *begin,
 			   ssize_t size,
-			   const void *key, equals_fn equal, size_t elt_size);
+			   predicate_fn match, void *udata, size_t elt_size);
 void *sorted_find(const void *begin,
 		  ssize_t size,
 		  const void *key, compare_fn compar, size_t elt_size);

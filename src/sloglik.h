@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "darray.h"
+#include "list.h"
 #include "frame.h"
 #include "history.h"
 #include "model.h"

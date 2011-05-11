@@ -5,9 +5,9 @@
 #include <setjmp.h>
 #include <cmockery.h>
 
-#include "darray.h"
+#include "list.h"
 
-static struct darray darray;
+static struct list list;
 static ssize_t size;
 static ssize_t *elts;		// elements sorted in decending order
 
@@ -21,25 +21,25 @@ static void empty_setup(void **state)
 {
 	static ssize_t *empty_elts = NULL;
 
-	darray_init(&darray, sizeof(ssize_t));
+	list_init(&list, sizeof(ssize_t));
 	size = 0;
 	elts = empty_elts;
 }
 
 static void singleton_setup_fixture(void **state)
 {
-	print_message("singleton darray\n");
-	print_message("----------------\n");
+	print_message("singleton list\n");
+	print_message("--------------\n");
 }
 
 static void singleton_setup(void **state)
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
-	darray_init(&darray, sizeof(ssize_t));
+	list_init(&list, sizeof(ssize_t));
 	elts = singleton_elts;
 	size = 1;
-	darray_assign(&darray, singleton_elts, size);
+	list_assign_array(&list, singleton_elts, size);
 }
 
 /*
@@ -85,7 +85,7 @@ unsorted7_setup (void **state)
 
 static void teardown(void **state)
 {
-	darray_deinit(&darray);
+	list_deinit(&list);
 }
 
 static void teardown_fixture(void **state)
@@ -95,7 +95,7 @@ static void teardown_fixture(void **state)
 
 static void test_size(void **state)
 {
-	assert_int_equal(darray_size(&darray), size);
+	assert_int_equal(list_count(&list), size);
 }
 
 static void test_insert(void **state)
@@ -104,27 +104,27 @@ static void test_insert(void **state)
 	ssize_t val = 31337;
 
 	for (i = 0; i <= size; i++) {
-		struct darray a;
+		struct list a;
 
-		darray_init_copy(&a, &darray);
+		list_init_copy(&a, &list);
 
-		darray_insert(&a, i, &val);
+		list_insert(&a, i, &val);
 
-		assert_int_equal(darray_size(&a), size + 1);
+		assert_int_equal(list_count(&a), size + 1);
 		for (j = 0; j <= size; j++) {
 			if (j < i) {
-				assert_int_equal(*(ssize_t *)darray_at(&a, j),
+				assert_int_equal(*(ssize_t *)list_item(&a, j),
 						 elts[j]);
 			} else if (j == i) {
-				assert_int_equal(*(ssize_t *)darray_at(&a, j),
+				assert_int_equal(*(ssize_t *)list_item(&a, j),
 						 val);
 			} else {
-				assert_int_equal(*(ssize_t *)darray_at(&a, j),
+				assert_int_equal(*(ssize_t *)list_item(&a, j),
 						 elts[j - 1]);
 			}
 		}
 
-		darray_deinit(&a);
+		list_deinit(&a);
 	}
 }
 

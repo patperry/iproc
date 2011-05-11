@@ -259,7 +259,7 @@ double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j)
 	assert(0 <= i && i < matrix_nrow(a));
 	assert(0 <= j && j < matrix_ncol(a));
 
-	return array_at(&a->array, i + j * matrix_lda(a));
+	return array_item(&a->array, i + j * matrix_lda(a));
 }
 
 void matrix_fill_col(struct matrix *a, ssize_t j, double val)

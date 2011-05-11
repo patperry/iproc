@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "darray.h"
+#include "list.h"
 #include "hashset.h"
 #include "matrix.h"
 #include "refcount.h"
@@ -18,7 +18,7 @@ struct actor {
 
 struct actors {
 	ssize_t dim;
-	struct darray actors;
+	struct list actors;
 	struct hashset cohorts;
 	struct refcount refcount;
 };

@@ -123,12 +123,12 @@ void vector_assign_copy(struct vector *v, const struct vector *src)
 	vector_copy_to(src, vector_front(v));
 }
 
-double *vector_copy_to(const struct vector *v, double *dst)
+void vector_copy_to(const struct vector *v, double *dst)
 {
 	assert(v);
 	assert(dst || vector_dim(v) == 0);
 
-	return array_copy_to(&v->array, dst);
+	array_copy_to(&v->array, dst);
 }
 
 void vector_fill(struct vector *vector, double value)

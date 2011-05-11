@@ -646,20 +646,20 @@ ssize_t sparsetable_group_num(ssize_t i)
 struct sparsegroup *sparsetable_which_group(const struct sparsetable *t,
 					    ssize_t i)
 {
-	struct sparsegroup *groups = darray_front(&t->groups);
+	struct sparsegroup *groups = list_item(&t->groups, 0);
 	return &groups[sparsetable_group_num(i)];
 }
 
 bool sparsetable_init(struct sparsetable *t, ssize_t n, size_t elt_size)
 {
-	if (darray_init(&t->groups, sizeof(struct sparsegroup))) {
+	if (list_init(&t->groups, sizeof(struct sparsegroup))) {
 		t->table_size = 0;
 		t->num_buckets = 0;
 		t->elt_size = elt_size;
 		if (sparsetable_resize(t, n)) {
 			return true;
 		}
-		darray_deinit(&t->groups);
+		list_deinit(&t->groups);
 		return false;
 	}
 	return false;
@@ -675,8 +675,8 @@ bool sparsetable_init_copy(struct sparsetable *t, const struct sparsetable *src)
 	if (!sparsetable_init(t, n, elt_size))
 		goto fail_init;
 
-	groups = darray_front(&t->groups);
-	src_groups = darray_front(&src->groups);
+	groups = list_item(&t->groups, 0);
+	src_groups = list_item(&src->groups, 0);
 
 	for (i = 0; i < n; i++) {
 		if (!sparsegroup_assign_copy(groups + i, src_groups + i,
@@ -694,14 +694,14 @@ fail_init:
 
 void sparsetable_deinit(struct sparsetable *t)
 {
-	struct sparsegroup *groups = darray_front(&t->groups);
-	ssize_t i, n = darray_size(&t->groups);
+	struct sparsegroup *groups = list_item(&t->groups, 0);
+	ssize_t i, n = list_count(&t->groups);
 	size_t elt_size = t->elt_size;
 
 	for (i = 0; i < n; i++) {
 		sparsegroup_deinit(groups + i, elt_size);
 	}
-	darray_deinit(&t->groups);
+	list_deinit(&t->groups);
 }
 
 bool sparsetable_assign_copy(struct sparsetable *t,
@@ -719,8 +719,8 @@ bool sparsetable_assign_copy(struct sparsetable *t,
 
 void sparsetable_clear(struct sparsetable *t)
 {
-	struct sparsegroup *groups = darray_front(&t->groups);
-	ssize_t i, n = darray_size(&t->groups);
+	struct sparsegroup *groups = list_item(&t->groups, 0);
+	ssize_t i, n = list_count(&t->groups);
 	size_t elt_size = t->elt_size;
 
 	for (i = 0; i < n; i++) {
@@ -745,12 +745,6 @@ ssize_t sparsetable_size(const struct sparsetable *t)
 	return t->table_size;
 }
 
-ssize_t sparsetable_max_size(const struct sparsetable *t)
-{
-	ssize_t max_size = darray_max_size(&t->groups) * SPARSETABLE_GROUP_SIZE;
-	return (max_size <= 0 ? SSIZE_MAX : max_size);
-}
-
 size_t sparsetable_elt_size(const struct sparsetable *t)
 {
 	return t->elt_size;
@@ -758,39 +752,44 @@ size_t sparsetable_elt_size(const struct sparsetable *t)
 
 bool sparsetable_resize(struct sparsetable *t, ssize_t n)
 {
-	ssize_t num_groups0 = darray_size(&t->groups);
+	ssize_t num_groups0 = list_count(&t->groups);
 	ssize_t n0 = t->table_size;
 	ssize_t num_groups = sparsetable_num_groups(n);
-	ssize_t group = sparsetable_group_num(n);
 	ssize_t index = sparsetable_pos_in_group(n);
 	size_t elt_size = sparsetable_elt_size(t);
 	ssize_t i;
 	bool resize_ok;
 
-	if (num_groups < num_groups0) {
-		struct sparsegroup *groups = darray_front(&t->groups);
+	if (num_groups <= num_groups0) {
+		struct sparsegroup *g;
 
-		for (i = group + 1; i < num_groups0; i++) {
-			sparsegroup_deinit(&groups[i], elt_size);
+		for (i = num_groups; i < num_groups0; i++) {
+			g = list_item(&t->groups, i);
+			sparsegroup_deinit(g, elt_size);
 		}
+		
+		list_remove_range(&t->groups, num_groups,
+				  num_groups0 - num_groups);
+		resize_ok = true;
+	} else {
+		resize_ok = list_add_range(&t->groups, NULL,
+					   num_groups - num_groups0);
 	}
-	// the resize always succeeds when we shrink
-	resize_ok = darray_resize(&t->groups, sparsetable_num_groups(n));
-
+	
 	if (n < n0) {
 		// lower num_buckets, clear last group
-
+		
 		if (index > 0) {	// need to clear inside last group
-			struct sparsegroup *g = darray_back(&t->groups);
+			struct sparsegroup *g = list_item(&t->groups, list_count(&t->groups) - 1);
 			sparsegroup_remove_range(g, index,
 						 sparsegroup_size(g) - index,
 						 t->elt_size);
 		}
-
+		
 		t->num_buckets = 0;	// refigure # of used buckets
-		struct sparsegroup *groups = darray_front(&t->groups);
-		ssize_t i, n = darray_size(&t->groups);
-
+		struct sparsegroup *groups = list_item(&t->groups, 0);
+		ssize_t i, n = list_count(&t->groups);
+		
 		for (i = 0; i < n; i++) {
 			t->num_buckets += sparsegroup_count(&groups[i]);
 		}
@@ -891,7 +890,7 @@ void *sparsetable_find(const struct sparsetable *t, ssize_t index,
 	size_t elt_size = sparsetable_elt_size(t);
 
 	pos->index = index;
-	pos->group = darray_at(&t->groups, group_num);
+	pos->group = list_item(&t->groups, group_num);
 	return sparsegroup_find(pos->group, index_in_group, &pos->group_pos,
 				elt_size);
 }
@@ -932,7 +931,7 @@ void sparsetable_iter_init(const struct sparsetable *t,
 			   struct sparsetable_iter *it)
 {
 	it->index = -1;
-	it->group = darray_front(&t->groups);
+	it->group = list_item(&t->groups, 0);
 	sparsegroup_iter_init(it->group, &it->group_it);
 }
 

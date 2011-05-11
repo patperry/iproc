@@ -14,15 +14,15 @@ void design_deinit(struct design *design)
 	actors_free(design->receivers);
 	actors_free(design->senders);
 
-	ssize_t i, n = darray_size(&design->vars);
+	ssize_t i, n = list_count(&design->vars);
 	struct design_var *v;
 	for (i = 0; i < n; i++) {
-		v = darray_at(&design->vars, i);
+		v = list_item(&design->vars, i);
 		if (v->type->deinit) {
 			v->type->deinit(v);
 		}
 	}
-	darray_deinit(&design->vars);
+	list_deinit(&design->vars);
 }
 
 bool design_init(struct design *design, struct actors *senders,
@@ -43,7 +43,7 @@ bool design_init(struct design *design, struct actors *senders,
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 
-	if (!darray_init(&design->vars, sizeof(struct design_var)))
+	if (!list_init(&design->vars, sizeof(struct design_var)))
 		goto fail_vars;
 
 	if (!(design->senders = actors_ref(senders)))
@@ -76,7 +76,7 @@ fail_intervals:
 fail_receivers:
 	actors_free(senders);
 fail_senders:
-	darray_deinit(&design->vars);
+	list_deinit(&design->vars);
 fail_vars:
 	return false;
 }
@@ -423,10 +423,10 @@ void design_set_reffects(struct design *design, bool reffects)
 	ssize_t nrecv = design_nreceiver(design);
 	ssize_t delta = reffects ? nrecv : -nrecv;
 
-	ssize_t i, n = darray_size(&design->vars);
+	ssize_t i, n = list_count(&design->vars);
 	struct design_var *var;
 	for (i = 0; i < n; i++) {
-		var = darray_at(&design->vars, i);
+		var = list_item(&design->vars, i);
 		var->index += delta;
 	}
 
@@ -444,7 +444,7 @@ bool design_add_var(struct design *design, const struct var_type *type)
 
 	struct design_var *var;
 	
-	if ((var = darray_push_back(&design->vars, NULL))) {
+	if ((var = list_add(&design->vars, NULL))) {
 		if (type->init(var, design)) {
 			assert(var->dim >= 0);
 			var->index = design->idynamic + design->ndynamic;
@@ -453,7 +453,7 @@ bool design_add_var(struct design *design, const struct var_type *type)
 			design->dim += var->dim;
 			return true;
 		}
-		darray_pop_back(&design->vars);
+		list_remove_at(&design->vars, list_count(&design->vars));
 	}
 
 	return false;
@@ -486,10 +486,10 @@ ssize_t design_var_index(const struct design *design,
 	assert(design);
 	assert(type);
 
-	const struct design_var *key =
+	struct design_var *key =
 	    container_of(&type, struct design_var, type);
 	const struct design_var *var =
-	    darray_find(&design->vars, key, design_var_equals);
+	    list_find(&design->vars, (predicate_fn)design_var_equals, key);
 
 	if (var) {
 		return var->index;

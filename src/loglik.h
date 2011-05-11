@@ -1,7 +1,7 @@
 #ifndef _IPROC_LOGLIK_H
 #define _IPROC_LOGLIK_H
 
-#include "darray.h"
+#include "list.h"
 #include "frame.h"
 #include "messages.h"
 #include "model.h"
@@ -12,7 +12,7 @@ typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
 	iproc_model *model;
-	struct darray sloglik_array;
+	struct list sloglik_array;
 	struct vector *grad;
 	bool grad_cached;
 	ssize_t nsend;

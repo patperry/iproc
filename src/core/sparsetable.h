@@ -8,7 +8,7 @@
  */
 
 #include <stddef.h>		// sizeof, size_t
-#include "darray.h"
+#include "list.h"
 
 /* private */
 #define SPARSETABLE_GROUP_SIZE 48
@@ -32,7 +32,7 @@ struct sparsegroup_iter {
 
 /* public */
 struct sparsetable {
-	struct darray groups;	// our list of groups
+	struct list groups;	// our list of groups
 	ssize_t table_size;	// how many buckets they want
 	ssize_t num_buckets;	// number of non-empty buckets
 	size_t elt_size;

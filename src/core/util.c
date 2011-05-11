@@ -69,32 +69,35 @@ void *memory_reverse(void *begin, ssize_t size, size_t elt_size)
 	return (char *)begin + n * elt_size;
 }
 
-void *forward_find(const void *begin, ssize_t size, const void *key,
-		   equals_fn equal, size_t elt_size)
+void *forward_find(const void *begin,
+		   ssize_t size,
+		   predicate_fn match, void *udata, size_t elt_size)
+
 {
 	assert(size >= 0);
-	assert(equal);
+	assert(match);
 	assert(elt_size > 0);
 
 	const void *end = (char *)begin + size * elt_size;
 	const void *ptr;
 
 	for (ptr = begin; ptr < end; ptr = (char *)ptr + elt_size) {
-		if (equal(ptr, key))
+		if (match(ptr, udata))
 			return (void *)ptr;
 	}
 
 	return NULL;
 }
 
-ssize_t forward_find_index(const void *begin, ssize_t size, const void *key,
-			   equals_fn equal, size_t elt_size)
+ssize_t forward_find_index(const void *begin,
+			   ssize_t size,
+			   predicate_fn match, void *udata, size_t elt_size)
 {
 	assert(size >= 0);
-	assert(equal);
+	assert(match);
 	assert(elt_size > 0);
 
-	const void *ptr = forward_find(begin, size, key, equal, elt_size);
+	const void *ptr = forward_find(begin, size, match, udata, elt_size);
 
 	if (ptr) {
 		return ((char *)ptr - (char *)begin) / elt_size;
@@ -103,11 +106,12 @@ ssize_t forward_find_index(const void *begin, ssize_t size, const void *key,
 	return -1;
 }
 
-void *reverse_find(const void *begin, ssize_t size, const void *key,
-		   equals_fn equal, size_t elt_size)
+void *reverse_find(const void *begin,
+		   ssize_t size,
+		   predicate_fn match, void *udata, size_t elt_size)
 {
 	assert(size >= 0);
-	assert(equal);
+	assert(match);
 	assert(elt_size > 0);
 
 	const void *end = (char *)begin + size * elt_size;
@@ -115,21 +119,22 @@ void *reverse_find(const void *begin, ssize_t size, const void *key,
 
 	for (ptr = end; ptr > begin;) {
 		ptr = (char *)ptr - elt_size;
-		if (equal(ptr, key))
+		if (match(ptr, udata))
 			return (void *)ptr;
 	}
 
 	return NULL;
 }
 
-ssize_t reverse_find_index(const void *begin, ssize_t size, const void *key,
-			   equals_fn equal, size_t elt_size)
+ssize_t reverse_find_index(const void *begin,
+			   ssize_t size,
+			   predicate_fn match, void *udata, size_t elt_size)
 {
 	assert(size >= 0);
-	assert(equal);
+	assert(match);
 	assert(elt_size > 0);
 
-	const void *ptr = reverse_find(begin, size, key, equal, elt_size);
+	const void *ptr = reverse_find(begin, size, match, udata, elt_size);
 
 	if (ptr) {
 		return ((char *)ptr - (char *)begin) / elt_size;

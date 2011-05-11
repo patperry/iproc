@@ -3,7 +3,7 @@
 
 #include "actors.h"
 #include "history.h"
-#include "darray.h"
+#include "list.h"
 #include "dyad-queue.h"
 #include "matrix.h"
 #include "messages.h"
@@ -111,7 +111,7 @@ struct design {
 	bool reffects;
 	bool loops;
 
-	struct darray vars;
+	struct list vars;
 	struct refcount refcount;
 };
 

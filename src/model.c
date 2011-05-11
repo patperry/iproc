@@ -175,15 +175,15 @@ static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 static void iproc_model_free(iproc_model * model)
 {
 	if (model) {
-		ssize_t i, n = darray_size(&model->ctxs);
+		ssize_t i, n = list_count(&model->ctxs);
 
 		for (i = 0; i < n; i++) {
 			iproc_model_ctx *ctx =
-			    *(iproc_model_ctx **) darray_at(&model->ctxs,
+			    *(iproc_model_ctx **) list_item(&model->ctxs,
 							    i);
 			iproc_model_ctx_free_dealloc(ctx);
 		}
-		darray_deinit(&model->ctxs);
+		list_deinit(&model->ctxs);
 		cohort_models_deinit(&model->cohort_models);
 		vector_free(model->coefs);
 		design_free(model->design);
@@ -205,7 +205,7 @@ iproc_model *iproc_model_new(struct design *design,
 	model->coefs = vector_alloc_copy(coefs);
 	model->has_loops = has_loops;
 	cohort_models_init(&model->cohort_models, design, coefs);
-	darray_init(&model->ctxs, sizeof(iproc_model_ctx *));
+	list_init(&model->ctxs, sizeof(iproc_model_ctx *));
 	refcount_init(&model->refcount);
 
 	return model;
