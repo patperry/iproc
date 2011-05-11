@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "blas-private.h"
 #include "compare.h"
@@ -19,11 +20,12 @@ bool vector_init(struct vector *v, ssize_t n)
 	assert(n <= F77INT_MAX);
 	assert(n <= SSIZE_MAX / sizeof(double));
 
-	if (array_init(&v->array, n, sizeof(double))) {
-		return v;
+	if ((v->data = malloc(n * sizeof(v->data[0])))) {
+		v->dim = n;
+		v->owner = true;
+		return true;
 	}
-
-	return NULL;
+	return false;
 }
 
 void vector_init_view(struct vector *v, const double *ptr, ssize_t n)
@@ -32,7 +34,9 @@ void vector_init_view(struct vector *v, const double *ptr, ssize_t n)
 	assert(ptr || n == 0);
 	assert(n >= 0);
 
-	array_init_view(&v->array, ptr, n, sizeof(double));
+	v->data = (double *)ptr;
+	v->dim = n;
+	v->owner = false;
 }
 
 void vector_init_slice(struct vector *v,
@@ -92,7 +96,8 @@ struct vector *vector_alloc_copy(const struct vector *src)
 void vector_deinit(struct vector *v)
 {
 	assert(v);
-	array_deinit(&v->array);
+	if (v->owner)
+		free(v->data);
 }
 
 void vector_free(struct vector *v)
@@ -108,7 +113,7 @@ void vector_assign_array(struct vector *v, const double *src)
 	assert(v);
 	assert(src || vector_empty(v));
 
-	array_assign_array(&v->array, src);
+	memcpy(v->data, src, vector_dim(v) * sizeof(v->data[0]));
 }
 
 void vector_assign_copy(struct vector *v, const struct vector *src)
@@ -128,7 +133,7 @@ void vector_copy_to(const struct vector *v, double *dst)
 	assert(v);
 	assert(dst || vector_dim(v) == 0);
 
-	array_copy_to(&v->array, dst);
+	memcpy(dst, v->data, vector_dim(v) * sizeof(v->data[0]));
 }
 
 void vector_fill(struct vector *vector, double value)

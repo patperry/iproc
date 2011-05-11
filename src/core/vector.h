@@ -2,10 +2,11 @@
 #define _VECTOR_H
 
 #include <stddef.h>
-#include "array.h"
 
 struct vector {
-	struct array array;
+	double *data;
+	ssize_t dim;
+	bool owner;
 };
 
 /* create, destroy */
@@ -85,18 +86,18 @@ struct vector vector_slice(const struct vector *vector,
 /* inline function definitions */
 bool vector_empty(const struct vector *v)
 {
-	return array_empty(&v->array);
+	return !vector_dim(v);
 }
 
 ssize_t vector_dim(const struct vector *v)
 {
-	return array_size(&v->array);
+	return v->dim;
 }
 
 double *vector_at(const struct vector *v, ssize_t i)
 {
 	assert(0 <= i && i < vector_dim(v));
-	return (double *)array_front(&v->array) + i;
+	return &v->data[i];
 }
 
 double vector_get(const struct vector *v, ssize_t i)

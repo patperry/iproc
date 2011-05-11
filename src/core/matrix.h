@@ -1,12 +1,11 @@
 #ifndef _MATRIX_H
 #define _MATRIX_H
 
-#include "array.h"
 #include "svector.h"
 #include "vector.h"
 
 struct matrix {
-	struct array array;
+	struct vector data;
 	ssize_t nrow;
 	ssize_t ncol;
 	ssize_t lda;

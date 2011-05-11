@@ -14,7 +14,7 @@ bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 	assert(ncol >= 0);
 	assert(ncol == 0 || nrow <= SSIZE_MAX / ncol);
 
-	if (array_init(&a->array, nrow * ncol, sizeof(double))) {
+	if (vector_init(&a->data, nrow * ncol)) {
 		a->nrow = nrow;
 		a->ncol = ncol;
 		a->lda = MAX(1, nrow);
@@ -65,7 +65,7 @@ struct matrix *matrix_alloc_copy(const struct matrix *src)
 
 void matrix_deinit(struct matrix *a)
 {
-	array_deinit(&a->array);
+	vector_deinit(&a->data);
 }
 
 void matrix_free(struct matrix *a)
@@ -91,8 +91,8 @@ void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m,
 	assert(lda >= MAX(1, m));
 	assert(n <= SSIZE_MAX / lda);
 
-	ssize_t array_size = lda * n;
-	array_init_view(&a->array, ptr, array_size, sizeof(double));
+	ssize_t data_size = lda * n;
+	vector_init_view(&a->data, ptr, data_size);
 	a->nrow = m;
 	a->ncol = n;
 	a->lda = lda;
@@ -259,7 +259,7 @@ double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j)
 	assert(0 <= i && i < matrix_nrow(a));
 	assert(0 <= j && j < matrix_ncol(a));
 
-	return array_item(&a->array, i + j * matrix_lda(a));
+	return vector_at(&a->data, i + j * matrix_lda(a));
 }
 
 void matrix_fill_col(struct matrix *a, ssize_t j, double val)
