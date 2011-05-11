@@ -9,9 +9,9 @@ bool messages_init(struct messages *msgs)
 {
 	assert(msgs);
 
-	if (!list_init(&msgs->message_reps, sizeof(struct message_rep)))
+	if (!array_init(&msgs->message_reps, sizeof(struct message_rep)))
 		goto fail_message_reps;
-	if (!list_init(&msgs->recipients, sizeof(ssize_t)))
+	if (!array_init(&msgs->recipients, sizeof(ssize_t)))
 		goto fail_recipients;
 	if (!refcount_init(&msgs->refcount))
 		goto fail_refcount;
@@ -24,9 +24,9 @@ bool messages_init(struct messages *msgs)
 	return true;
 
 fail_refcount:
-	list_deinit(&msgs->recipients);
+	array_deinit(&msgs->recipients);
 fail_recipients:
-	list_deinit(&msgs->message_reps);
+	array_deinit(&msgs->message_reps);
 fail_message_reps:
 	return false;
 }
@@ -55,8 +55,8 @@ void messages_deinit(struct messages *msgs)
 {
 	assert(msgs);
 	refcount_deinit(&msgs->refcount);
-	list_deinit(&msgs->message_reps);
-	list_deinit(&msgs->recipients);
+	array_deinit(&msgs->message_reps);
+	array_deinit(&msgs->recipients);
 }
 
 void messages_free(struct messages *msgs)
@@ -74,7 +74,7 @@ void messages_free(struct messages *msgs)
 ssize_t messages_size(const struct messages *msgs)
 {
 	assert(msgs);
-	return list_count(&msgs->message_reps);
+	return array_count(&msgs->message_reps);
 }
 
 double messages_tlast(const struct messages *msgs)
@@ -88,11 +88,11 @@ struct message *messages_at(const struct messages *msgs, ssize_t i)
 	assert(msgs);
 	assert(0 <= i && i < messages_size(msgs));
 
-	struct message_rep *rep = list_item(&msgs->message_reps, i);
+	struct message_rep *rep = array_item(&msgs->message_reps, i);
 
 	if (!msgs->to_cached) {
 		ssize_t msg_ito = rep->ito;
-		ssize_t *msg_to = list_item(&msgs->recipients, msg_ito);
+		ssize_t *msg_to = array_item(&msgs->recipients, msg_ito);
 		rep->message.to = msg_to;
 	}
 
@@ -108,22 +108,22 @@ bool messages_add(struct messages *msgs, double time,
 	assert(nto >= 0);
 	assert(to || nto == 0);
 
-	struct list *message_reps = &msgs->message_reps;
-	struct list *recipients = &msgs->recipients;
+	struct array *message_reps = &msgs->message_reps;
+	struct array *recipients = &msgs->recipients;
 
 	// reserve space for new recipients and message_reps
-	if (!list_set_capacity(message_reps, list_count(message_reps) + 1)
-	    || !list_set_capacity(recipients, list_count(recipients) + nto))
+	if (!array_set_capacity(message_reps, array_count(message_reps) + 1)
+	    || !array_set_capacity(recipients, array_count(recipients) + nto))
 		return false;
 
-	ssize_t ito = list_count(recipients);
+	ssize_t ito = array_count(recipients);
 	struct message_rep m = { {time, from, NULL, nto, attr}, ito };
 	ssize_t i;
 
 	for (i = 0; i < nto; i++) {
 		assert(to[i] >= 0);
 
-		list_add(recipients, to + i);	// always succeeds
+		array_add(recipients, to + i);	// always succeeds
 		if (to[i] > msgs->max_to)
 			msgs->max_to = to[i];
 	}
@@ -133,7 +133,7 @@ bool messages_add(struct messages *msgs, double time,
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	list_add(message_reps, &m);	// always succeeds
+	array_add(message_reps, &m);	// always succeeds
 	msgs->to_cached = false;
 	msgs->tlast = time;
 
@@ -194,7 +194,7 @@ struct message *messages_iter_current(struct messages_iter *it, ssize_t itie)
 	assert(0 <= itie && itie < messages_iter_ntie(it));
 	
 	ssize_t i = it->offset + itie;
-	it->message_rep = list_item(&it->messages->message_reps, i);
+	it->message_rep = array_item(&it->messages->message_reps, i);
 	return &it->message_rep->message;
 	
 }
@@ -215,14 +215,14 @@ bool messages_iter_advance(struct messages_iter *it)
 	
 	ssize_t offset = it->offset + it->ntie;
 	
-	struct list *message_reps = &it->messages->message_reps;
-	struct list *recipients = &it->messages->recipients;
-	ssize_t n = list_count(message_reps);
+	struct array *message_reps = &it->messages->message_reps;
+	struct array *recipients = &it->messages->recipients;
+	ssize_t n = array_count(message_reps);
 	bool has_next = offset < n;
 	
 	if (has_next) {
 		struct message_rep *message_rep =
-		list_item(message_reps, offset);
+		array_item(message_reps, offset);
 		double time = message_rep[0].message.time;
 		ssize_t ntie_max = n - offset;
 		ssize_t ntie = 0;
@@ -231,7 +231,7 @@ bool messages_iter_advance(struct messages_iter *it)
 			if (!it->messages->to_cached) {
 				ssize_t msg_ito = message_rep[ntie].ito;
 				ssize_t *msg_to =
-				list_item(recipients, msg_ito);
+				array_item(recipients, msg_ito);
 				message_rep[ntie].message.to = msg_to;
 			}
 			

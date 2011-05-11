@@ -6,11 +6,11 @@
  * Define SSIZE_MAX, ssize_t, bool and assert before including this file.
  */
 
-#include "list.h"
+#include "array.h"
 #include "compare.h"
 
 struct pqueue {
-	struct list array;
+	struct array array;
 	compare_fn compare;
 };
 
@@ -46,18 +46,18 @@ bool pqueue_empty(const struct pqueue *q)
 
 ssize_t pqueue_size(const struct pqueue *q)
 {
-	return list_count(&q->array);
+	return array_count(&q->array);
 }
 
 size_t pqueue_elt_size(const struct pqueue *q)
 {
-	return list_elt_size(&q->array);
+	return array_elt_size(&q->array);
 }
 
 void *pqueue_top(const struct pqueue *q)
 {
 	assert(!pqueue_empty(q));
-	return list_item(&q->array, 0);
+	return array_item(&q->array, 0);
 }
 
 #endif /* _PQUEUE_H */

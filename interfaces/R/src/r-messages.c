@@ -7,7 +7,7 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 
-#include "list.h"
+#include "array.h"
 #include "r-utils.h"
 #include "r-messages.h"
 
@@ -65,24 +65,24 @@ SEXP Riproc_from_messages(struct messages * msgs)
 	return Rmsgs;
 }
 
-static ssize_t *copy_sexp_to_int64(struct list *dst, SEXP Rsrc)
+static ssize_t *copy_sexp_to_int64(struct array *dst, SEXP Rsrc)
 {
 	int i, n = GET_LENGTH(Rsrc);
 	int *src = INTEGER_POINTER(Rsrc);
 	int s;
 
-	list_add_range(dst, NULL, n);
+	array_add_range(dst, NULL, n);
 
 	for (i = 0; i < n; i++) {
 		s = src[i];
 		if (s <= 0)
 			error("'to' values must be positive");
 
-		*(ssize_t *)list_item(dst, i) = s - 1;
+		*(ssize_t *)array_item(dst, i) = s - 1;
 	}
 
 	if (n > 0) {
-		return list_item(dst, 0);
+		return array_item(dst, 0);
 	} else {
 		return NULL;
 	}
@@ -108,7 +108,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	if (!(GET_LENGTH(Rfrom) == n && GET_LENGTH(Rto) == n))
 		error("'time', 'from', and 'to' do not have same lengths");
 
-	struct list to_buf;
+	struct array to_buf;
 	double tcur = -INFINITY;
 	double msg_time;
 	ssize_t msg_from, msg_nto;
@@ -118,14 +118,14 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 	struct messages *msgs = messages_alloc();
 	SEXP Rmsgs, Rmsg_to;
 
-	list_init(&to_buf, sizeof(ssize_t));
+	array_init(&to_buf, sizeof(ssize_t));
 
 	for (i = 0; i < n; i++) {
 		msg_time = time[i];
 		msg_from = from[i] - 1;
 		Rmsg_to = VECTOR_ELT(Rto, i);
 		msg_to = copy_sexp_to_int64(&to_buf, Rmsg_to);
-		msg_nto = list_count(&to_buf);
+		msg_nto = array_count(&to_buf);
 
 		if (!(msg_time >= tcur))
 			error
@@ -141,7 +141,7 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 
 	PROTECT(Rmsgs = Riproc_from_messages(msgs));
 	messages_free(msgs);
-	list_deinit(&to_buf);
+	array_deinit(&to_buf);
 
 	UNPROTECT(1);
 	return Rmsgs;

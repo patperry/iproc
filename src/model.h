@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "refcount.h"
-#include "list.h"
+#include "array.h"
 #include "design.h"
 #include "frame.h"
 #include "intmap.h"
@@ -127,7 +127,7 @@ struct _iproc_model {
 	struct vector *coefs;
 	bool has_loops;
 	struct intmap cohort_models;
-	struct list ctxs;
+	struct array ctxs;
 	struct refcount refcount;
 };
 

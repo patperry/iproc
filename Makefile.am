@@ -49,6 +49,8 @@ libiproc_la_LIBADD = \
 	libminpack.la
 
 libcore_la_SOURCES = \
+	src/core/array.c \
+	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
 	src/core/delegate.h \
@@ -62,8 +64,6 @@ libcore_la_SOURCES = \
 	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
-	src/core/list.c \
-	src/core/list.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/macconfig.h \
@@ -229,9 +229,9 @@ cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/list_test
-tests_list_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_list_test_LDADD    = libcore.la $(cmockery_ldadd)
+check_PROGRAMS += tests/array_test
+tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
+tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/hashset_test
 tests_hashset_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)

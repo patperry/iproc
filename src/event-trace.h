@@ -1,7 +1,7 @@
 #ifndef _EVENT_TRACE_H
 #define _EVENT_TRACE_H
 
-#include "list.h"
+#include "array.h"
 
 /* An event trace is like a mini-history.  The two main uses for a trace are
  * for storing the events related to each sender, and storing the events
@@ -32,13 +32,13 @@ struct event {
 
 struct events {
 	ssize_t e;
-	struct list meta;
+	struct array meta;
 };
 
 struct event_trace {
 	double tcur;
-	struct list pending;
-	struct list events;
+	struct array pending;
+	struct array events;
 };
 
 bool event_trace_init(struct event_trace *trace);

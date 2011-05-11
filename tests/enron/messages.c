@@ -18,7 +18,7 @@ struct message_parse {
 	ssize_t id;
 	double time;
 	ssize_t sender_id;
-	struct list receiver_id;
+	struct array receiver_id;
 	intptr_t attr;
 	enum message_map_key map_key;
 	bool multiple_receivers;
@@ -26,7 +26,7 @@ struct message_parse {
 
 static bool message_parse_init(struct message_parse *parse, struct messages *messages)
 {
-	if (list_init(&parse->receiver_id, sizeof(ssize_t))) {
+	if (array_init(&parse->receiver_id, sizeof(ssize_t))) {
 		parse->messages = messages;
 		parse->id = -1;
 		parse->time = NAN;
@@ -41,7 +41,7 @@ static bool message_parse_init(struct message_parse *parse, struct messages *mes
 
 static void message_parse_deinit(struct message_parse *parse)
 {
-	list_deinit(&parse->receiver_id);
+	array_deinit(&parse->receiver_id);
 }
 
 static int parse_integer(void *ctx, long long integerVal)
@@ -75,7 +75,7 @@ static int parse_integer(void *ctx, long long integerVal)
 			}
 			
 			ssizeVal = ssizeVal - 1;
-			if (!list_add(&parse->receiver_id, &ssizeVal)) {
+			if (!array_add(&parse->receiver_id, &ssizeVal)) {
 				fprintf(stderr, "not enough memory");
 				return 0;
 			}
@@ -126,7 +126,7 @@ static int parse_start_map(void *ctx)
 	parse->id = -1;
 	parse->time = NAN;
 	parse->sender_id = -1;
-	list_clear(&parse->receiver_id);
+	array_clear(&parse->receiver_id);
 	parse->map_key = MAP_KEY_NONE;
 	parse->multiple_receivers = false;
 	return 1;
@@ -173,7 +173,7 @@ static int parse_end_map(void *ctx)
 		return 0;
 	}
 
-	if (!list_count(&parse->receiver_id)) {
+	if (!array_count(&parse->receiver_id)) {
 		fprintf(stderr, "missing receiver_id for message '%" SSIZE_FMT "'",
 			parse->id);
 		return 0;
@@ -188,8 +188,8 @@ static int parse_end_map(void *ctx)
 	if (!messages_add(parse->messages,
 			      parse->time,
 			      parse->sender_id,
-			      list_item(&parse->receiver_id, 0),
-			      list_count(&parse->receiver_id),
+			      array_item(&parse->receiver_id, 0),
+			      array_count(&parse->receiver_id),
 			      parse->attr)) {
 		fprintf(stderr, "not enough memory to insert message '%" SSIZE_FMT "'",
 			parse->id);

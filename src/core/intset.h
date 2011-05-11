@@ -2,10 +2,10 @@
 #define _INTSET_H
 
 #include <stddef.h>
-#include "list.h"
+#include "array.h"
 
 struct intset {
-	struct list values;
+	struct array values;
 };
 
 struct intset_pos {
@@ -23,8 +23,6 @@ bool intset_init_copy(struct intset *s, const struct intset *src);
 void intset_deinit(struct intset *s);
 
 /* assign, copy, clear */
-bool intset_assign(struct intset *s, const intptr_t *vals, ssize_t n);
-bool intset_assign_sorted(struct intset *s, const intptr_t *vals, ssize_t n);
 bool intset_assign_copy(struct intset *s, const struct intset *src);
 intptr_t *intset_copy_to(const struct intset *s, intptr_t *dst);
 void intset_clear(struct intset *s);

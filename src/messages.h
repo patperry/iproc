@@ -1,7 +1,7 @@
 #ifndef _MESSAGES_H
 #define _MESSAGES_H
 
-#include "list.h"
+#include "array.h"
 #include "history.h"
 #include "refcount.h"
 
@@ -19,8 +19,8 @@ struct message_rep {
 };
 
 struct messages {
-	struct list message_reps;
-	struct list recipients;
+	struct array message_reps;
+	struct array recipients;
 	struct refcount refcount;
 	double tlast;
 	ssize_t max_from;

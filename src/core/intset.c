@@ -11,7 +11,7 @@ bool intset_init(struct intset *s)
 {
 	assert(s);
 
-	if (list_init(&s->values, sizeof(intptr_t))) {
+	if (array_init(&s->values, sizeof(intptr_t))) {
 		return s;
 	}
 	return NULL;
@@ -35,53 +35,7 @@ void intset_deinit(struct intset *s)
 {
 	assert(s);
 
-	list_deinit(&s->values);
-}
-
-bool intset_assign(struct intset *s, const intptr_t *ptr, ssize_t n)
-{
-	assert(s);
-	assert(ptr || n == 0);
-
-	if (list_assign_array(&s->values, ptr, n)) {
-		list_sort(&s->values, intptr_compare);
-		return s;
-	}
-
-	return NULL;
-}
-
-bool intset_assign_sorted(struct intset *s, const intptr_t *ptr, ssize_t n)
-{
-	assert(s);
-	assert(ptr || n == 0);
-
-	struct list *values = &s->values;
-	ssize_t i;
-	intptr_t prev;
-
-	if (!list_set_capacity(values, n))
-		return NULL;
-
-	list_clear(values);
-
-	if (n == 0)
-		goto success;
-
-	prev = ptr[0];
-	list_add(values, &prev);
-
-	for (i = 1; i < n; i++) {
-		assert(ptr[i - 1] <= ptr[i]);
-
-		if (ptr[i] != prev) {
-			prev = ptr[i];
-			list_add(values, &prev);
-		}
-	}
-
-success:
-	return s;
+	array_deinit(&s->values);
 }
 
 bool intset_assign_copy(struct intset *s, const struct intset *src)
@@ -89,7 +43,7 @@ bool intset_assign_copy(struct intset *s, const struct intset *src)
 	assert(s);
 	assert(src);
 
-	if (list_assign_copy(&s->values, &src->values)) {
+	if (array_assign_copy(&s->values, &src->values)) {
 		return s;
 	}
 	return NULL;
@@ -112,7 +66,7 @@ intptr_t *intset_copy_to(const struct intset *s, intptr_t *dst)
 void intset_clear(struct intset *s)
 {
 	assert(s);
-	list_clear(&s->values);
+	array_clear(&s->values);
 }
 
 bool intset_empty(const struct intset *s)
@@ -124,21 +78,21 @@ bool intset_empty(const struct intset *s)
 ssize_t intset_size(const struct intset *s)
 {
 	assert(s);
-	return list_count(&s->values);
+	return array_count(&s->values);
 }
 
 intptr_t intset_min(const struct intset *s)
 {
 	assert(s);
 	assert(!intset_empty(s));
-	return *(intptr_t *)list_item(&s->values, 0);
+	return *(intptr_t *)array_item(&s->values, 0);
 }
 
 intptr_t intset_max(const struct intset *s)
 {
 	assert(s);
 	assert(!intset_empty(s));
-	return *(intptr_t *)list_item(&s->values, list_count(&s->values) - 1);
+	return *(intptr_t *)array_item(&s->values, array_count(&s->values) - 1);
 }
 
 bool intset_contains(const struct intset *s, intptr_t val)
@@ -206,7 +160,7 @@ bool intset_find(const struct intset *s, intptr_t val, struct intset_pos *pos)
 	assert(s);
 	assert(pos);
 
-	ssize_t index = list_binary_search(&s->values, &val, intptr_compare);
+	ssize_t index = array_binary_search(&s->values, &val, intptr_compare);
 	pos->value = val;
 
 	if (index >= 0) {
@@ -226,7 +180,7 @@ bool intset_insert(struct intset *s, const struct intset_pos *pos)
 	assert(pos->index == intset_size(s)
 	       || intset_at(s, pos->index) > pos->value);
 
-	return list_insert(&s->values, pos->index, &pos->value);
+	return array_insert(&s->values, pos->index, &pos->value);
 }
 
 void intset_erase(struct intset *s, const struct intset_pos *pos)
@@ -236,7 +190,7 @@ void intset_erase(struct intset *s, const struct intset_pos *pos)
 	assert(0 <= pos->index && pos->index < intset_size(s));
 	assert(intset_at(s, pos->index) == pos->value);
 
-	list_remove_at(&s->values, pos->index);
+	array_remove_at(&s->values, pos->index);
 }
 
 void intset_iter_init(const struct intset *s, struct intset_iter *it)
@@ -281,7 +235,7 @@ intptr_t intset_at(const struct intset *s, ssize_t index)
 	assert(index >= 0);
 	assert(index < intset_size(s));
 
-	return *(intptr_t *)list_item(&s->values, index);
+	return *(intptr_t *)array_item(&s->values, index);
 }
 
 ssize_t intset_index(const struct intset *s, intptr_t val)

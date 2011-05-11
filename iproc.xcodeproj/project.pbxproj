@@ -38,9 +38,9 @@
 		22221826136F1AD400F0C7D2 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22221827136F1AEC00F0C7D2 /* messages.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAE136A58230048244C /* messages.json */; };
 		2223C7A7135364A200601F58 /* trashstack.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223C7A6135364A200601F58 /* trashstack.h */; };
-		2223CD10134D76F8004FA7F9 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* list.c */; };
-		2223CD11134D76F8004FA7F9 /* list.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* list.h */; };
-		2223CD33134D8C6F004FA7F9 /* list_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD20134D8C11004FA7F9 /* list_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
+		2223CD10134D76F8004FA7F9 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
+		2223CD11134D76F8004FA7F9 /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* array.h */; };
+		2223CD33134D8C6F004FA7F9 /* array_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD20134D8C11004FA7F9 /* array_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		2223CD34134D8C88004FA7F9 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2223CD35134D8C88004FA7F9 /* libRiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 224D0557132EC113007F5646 /* libRiproc.dylib */; };
 		22286F0F136F36340015CC42 /* vnrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22286F0D136F36340015CC42 /* vnrecv.c */; };
@@ -64,7 +64,7 @@
 		222FC42A13607C7900E64FC9 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
 		222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		222FC42E13607C7900E64FC9 /* slice.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* slice.c */; };
-		222FC43113607C7900E64FC9 /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* list.c */; };
+		222FC43113607C7900E64FC9 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
 		222FC43313607C7900E64FC9 /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
 		222FC43513607C7900E64FC9 /* intmap.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C601E1352D36D0008B25B /* intmap.c */; };
 		222FC43713607C7900E64FC9 /* intset.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C601A1352B8580008B25B /* intset.c */; };
@@ -395,9 +395,9 @@
 		22221812136F1A8C00F0C7D2 /* frame_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = frame_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2222181C136F1AAA00F0C7D2 /* frame_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame_test.c; path = tests/frame_test.c; sourceTree = "<group>"; };
 		2223C7A6135364A200601F58 /* trashstack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trashstack.h; path = src/core/trashstack.h; sourceTree = "<group>"; };
-		2223CD0E134D76F8004FA7F9 /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = src/core/list.c; sourceTree = "<group>"; };
-		2223CD0F134D76F8004FA7F9 /* list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = list.h; path = src/core/list.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		2223CD20134D8C11004FA7F9 /* list_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list_test.c; path = tests/list_test.c; sourceTree = "<group>"; };
+		2223CD0E134D76F8004FA7F9 /* array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array.c; path = src/core/array.c; sourceTree = "<group>"; };
+		2223CD0F134D76F8004FA7F9 /* array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array.h; path = src/core/array.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		2223CD20134D8C11004FA7F9 /* array_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array_test.c; path = tests/array_test.c; sourceTree = "<group>"; };
 		2223CD26134D8C4D004FA7F9 /* darray_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = darray_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22286F0D136F36340015CC42 /* vnrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vnrecv.c; path = src/vnrecv.c; sourceTree = "<group>"; };
 		22286F0E136F36340015CC42 /* vnrecv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vnrecv.h; path = src/vnrecv.h; sourceTree = "<group>"; };
@@ -606,11 +606,11 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				2223CD0E134D76F8004FA7F9 /* array.c */,
+				2223CD0F134D76F8004FA7F9 /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
 				228C2FFE137A380400B5A3B9 /* delegate.h */,
-				2223CD0E134D76F8004FA7F9 /* list.c */,
-				2223CD0F134D76F8004FA7F9 /* list.h */,
 				221FEE74132EC8710000097B /* hash.c */,
 				221FEE75132EC8710000097B /* hash.h */,
 				22A88EBA135E6B6A006FE604 /* hashset.c */,
@@ -711,7 +711,7 @@
 				2267890A134CD594001309F5 /* cmockery */,
 				22D2DDAA136A57DD0048244C /* enron */,
 				22D2DD9413692A6A0048244C /* actors_test.c */,
-				2223CD20134D8C11004FA7F9 /* list_test.c */,
+				2223CD20134D8C11004FA7F9 /* array_test.c */,
 				22EA3325136B29AE00C5627F /* design_test.c */,
 				2222181C136F1AAA00F0C7D2 /* frame_test.c */,
 				222FC3F31360755C00E64FC9 /* hashset_test.c */,
@@ -886,7 +886,7 @@
 				22597430133D0AFB0022B52E /* event-trace.h in Headers */,
 				22597432133D0AFB0022B52E /* vrecv.h in Headers */,
 				22597436133D0BD30022B52E /* pqueue.h in Headers */,
-				2223CD11134D76F8004FA7F9 /* list.h in Headers */,
+				2223CD11134D76F8004FA7F9 /* array.h in Headers */,
 				221C5FDB134DB9BC0008B25B /* port.h in Headers */,
 				221C5FEE134E230D0008B25B /* slice.h in Headers */,
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
@@ -1191,7 +1191,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2223CD33134D8C6F004FA7F9 /* list_test.c in Sources */,
+				2223CD33134D8C6F004FA7F9 /* array_test.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1222,7 +1222,7 @@
 				222FC42A13607C7900E64FC9 /* hashset.c in Sources */,
 				222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */,
 				222FC42E13607C7900E64FC9 /* slice.c in Sources */,
-				222FC43113607C7900E64FC9 /* list.c in Sources */,
+				222FC43113607C7900E64FC9 /* array.c in Sources */,
 				222FC43313607C7900E64FC9 /* hash.c in Sources */,
 				222FC43513607C7900E64FC9 /* intmap.c in Sources */,
 				222FC43713607C7900E64FC9 /* intset.c in Sources */,
@@ -1279,7 +1279,7 @@
 				2259742F133D0AFB0022B52E /* event-trace.c in Sources */,
 				22597431133D0AFB0022B52E /* vrecv.c in Sources */,
 				22597435133D0BD30022B52E /* pqueue.c in Sources */,
-				2223CD10134D76F8004FA7F9 /* list.c in Sources */,
+				2223CD10134D76F8004FA7F9 /* array.c in Sources */,
 				221C5FED134E230D0008B25B /* slice.c in Sources */,
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C601C1352B8700008B25B /* intset.c in Sources */,

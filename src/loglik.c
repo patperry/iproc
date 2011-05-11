@@ -9,16 +9,16 @@
 static void iproc_loglik_free(iproc_loglik * loglik)
 {
 	if (loglik) {
-		struct list *array = &loglik->sloglik_array;
-		ssize_t i, n = list_count(array);
+		struct array *array = &loglik->sloglik_array;
+		ssize_t i, n = array_count(array);
 
 		for (i = 0; i < n; i++) {
 			iproc_sloglik *sll =
-			    *(iproc_sloglik **) list_item(array, i);
+			    *(iproc_sloglik **) array_item(array, i);
 			iproc_sloglik_unref(sll);
 		}
 
-		list_deinit(array);
+		array_deinit(array);
 		vector_free(loglik->grad);
 		iproc_model_unref(loglik->model);
 		free(loglik);
@@ -41,13 +41,13 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 	loglik->nrecv = 0;
 	refcount_init(&loglik->refcount);
 
-	if (!(list_init(&loglik->sloglik_array, sizeof(iproc_sloglik *))
+	if (!(array_init(&loglik->sloglik_array, sizeof(iproc_sloglik *))
 	      && loglik->grad)) {
 		iproc_loglik_free(loglik);
 		loglik = NULL;
 	}
 
-	list_add_range(&loglik->sloglik_array, NULL, nsender);
+	array_add_range(&loglik->sloglik_array, NULL, nsender);
 
 	return loglik;
 }
@@ -108,13 +108,13 @@ void iproc_loglik_unref(iproc_loglik * loglik)
 
 static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 {
-	struct list *array = &loglik->sloglik_array;
-	iproc_sloglik *sll = *(iproc_sloglik **) list_item(array, isend);
+	struct array *array = &loglik->sloglik_array;
+	iproc_sloglik *sll = *(iproc_sloglik **) array_item(array, isend);
 
 	if (!sll) {
 		iproc_model *model = loglik->model;
 		sll = iproc_sloglik_new(model, isend);
-		*(iproc_sloglik **) list_item(array, isend) = sll;
+		*(iproc_sloglik **) array_item(array, isend) = sll;
 	}
 
 	return sll;
@@ -135,13 +135,13 @@ double iproc_loglik_value(iproc_loglik * loglik)
 	if (!loglik)
 		return 0.0;
 
-	struct list *array = &loglik->sloglik_array;
-	ssize_t i, n = list_count(array);
+	struct array *array = &loglik->sloglik_array;
+	ssize_t i, n = array_count(array);
 	iproc_sloglik *sll;
 	double value = 0.0;
 
 	for (i = 0; i < n; i++) {
-		sll = *(iproc_sloglik **) list_item(array, i);
+		sll = *(iproc_sloglik **) array_item(array, i);
 		value += iproc_sloglik_value(sll);
 	}
 
@@ -152,13 +152,13 @@ static void
 iproc_vector_acc_loglik_grad_nocache(struct vector *dst_vector,
 				     double scale, iproc_loglik * loglik)
 {
-	struct list *array = &loglik->sloglik_array;
-	ssize_t nsend = list_count(array);
+	struct array *array = &loglik->sloglik_array;
+	ssize_t nsend = array_count(array);
 	ssize_t i;
 	iproc_sloglik *sll;
 
 	for (i = 0; i < nsend; i++) {
-		sll = *(iproc_sloglik **) list_item(array, i);
+		sll = *(iproc_sloglik **) array_item(array, i);
 		if (sll) {
 			struct vector *g = iproc_sloglik_grad(sll);
 			vector_axpy(scale, g, dst_vector);

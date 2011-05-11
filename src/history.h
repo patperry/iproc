@@ -1,7 +1,7 @@
 #ifndef _HISTORY_H
 #define _HISTORY_H
 
-#include "list.h"
+#include "array.h"
 #include "event-trace.h"
 #include "refcount.h"
 
@@ -27,8 +27,8 @@ struct history_trace {
 
 struct history {
 	double tcur;
-	struct list send;
-	struct list recv;
+	struct array send;
+	struct array recv;
 };
 
 bool history_init(struct history *history);

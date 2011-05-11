@@ -22,7 +22,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 
 	bool ok;
 
-	ok = list_init(&actors->actors, sizeof(struct actor));
+	ok = array_init(&actors->actors, sizeof(struct actor));
 	if (!ok)
 		goto fail_actors;
 
@@ -43,7 +43,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 fail_refcount:
 	hashset_deinit(&actors->cohorts);
 fail_cohorts:
-	list_deinit(&actors->actors);
+	array_deinit(&actors->actors);
 fail_actors:
 	return false;
 }
@@ -138,7 +138,7 @@ static void cohorts_clear(struct hashset *cohorts)
 void actors_clear(struct actors *a)
 {
 	cohorts_clear(&a->cohorts);
-	list_clear(&a->actors);
+	array_clear(&a->actors);
 }
 
 void actors_deinit(struct actors *a)
@@ -148,7 +148,7 @@ void actors_deinit(struct actors *a)
 	actors_clear(a);
 	refcount_deinit(&a->refcount);
 	hashset_deinit(&a->cohorts);
-	list_deinit(&a->actors);
+	array_deinit(&a->actors);
 }
 
 struct actors *actors_alloc(ssize_t dim)
@@ -187,7 +187,7 @@ struct actors *actors_ref(struct actors *actors)
 ssize_t actors_size(const struct actors *a)
 {
 	assert(a);
-	return list_count(&a->actors);
+	return array_count(&a->actors);
 }
 
 ssize_t actors_cohorts_size(const struct actors *a)
@@ -206,7 +206,7 @@ const struct actor *actors_at(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_size(a));
-	return list_item(&a->actors, actor_id);
+	return array_item(&a->actors, actor_id);
 }
 
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
@@ -258,11 +258,11 @@ bool actors_add(struct actors *actors, const struct vector *traits)
 	if (!a.cohort)
 		goto fail_get_cohort;
 
-	ok = list_add(&actors->actors, &a);
+	ok = array_add(&actors->actors, &a);
 	if (!ok)
 		goto fail_actors_add;
 
-	id = list_count(&actors->actors) - 1;
+	id = array_count(&actors->actors) - 1;
 	ok = cohort_add(a.cohort, id);
 	if (!ok)
 		goto fail_cohort_add;
@@ -270,7 +270,7 @@ bool actors_add(struct actors *actors, const struct vector *traits)
 	goto out;
 
 fail_cohort_add:
-	list_remove_at(&actors->actors, list_count(&actors->actors) - 1);
+	array_remove_at(&actors->actors, array_count(&actors->actors) - 1);
 fail_actors_add:
 fail_get_cohort:
 	ok = false;

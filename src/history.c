@@ -5,19 +5,19 @@
 #include <stdlib.h>
 #include "history.h"
 
-static bool trace_array_grow(struct list *array, ssize_t n)
+static bool trace_array_grow(struct array *array, ssize_t n)
 {
 	assert(array);
-	ssize_t nold = list_count(array);
+	ssize_t nold = array_count(array);
 	ssize_t i;
 	struct history_trace *ht;
 
 	if (n > nold) {
-		if (list_set_capacity(array, n)) {
+		if (array_set_capacity(array, n)) {
 			for (i = nold; i < n; i++) {
-				ht = list_insert(array, i, NULL);
+				ht = array_insert(array, i, NULL);
 				if (!event_trace_init(&ht->trace)) {
-					list_remove_at(array, i);
+					array_remove_at(array, i);
 					return false;
 				}
 			}
@@ -27,41 +27,41 @@ static bool trace_array_grow(struct list *array, ssize_t n)
 	return true;
 }
 
-static void trace_array_clear(struct list *array)
+static void trace_array_clear(struct array *array)
 {
 	assert(array);
-	ssize_t n = list_count(array);
+	ssize_t n = array_count(array);
 	ssize_t i;
 	struct history_trace *ht;
 
 	for (i = 0; i < n; i++) {
-		ht = list_item(array, i);
+		ht = array_item(array, i);
 		ht->tcur = -INFINITY;
 		event_trace_clear(&ht->trace);
 	}
 }
 
-static void trace_array_deinit(struct list *array)
+static void trace_array_deinit(struct array *array)
 {
-	ssize_t n = list_count(array);
+	ssize_t n = array_count(array);
 	ssize_t i;
 
 	for (i = 0; i < n; i++) {
-		struct history_trace *ht = list_item(array, i);
+		struct history_trace *ht = array_item(array, i);
 		event_trace_deinit(&ht->trace);
 	}
 
-	list_deinit(array);
+	array_deinit(array);
 }
 
 static struct event_trace *trace_array_get(double tcur,
-					   struct list *array, ssize_t i)
+					   struct array *array, ssize_t i)
 {
 	assert(array);
 	assert(i >= 0);
 
 	if (trace_array_grow(array, i + 1)) {
-		struct history_trace *ht = list_item(array, i);
+		struct history_trace *ht = array_item(array, i);
 		struct event_trace *t = &ht->trace;
 
 		if (ht->tcur != tcur) {
@@ -85,18 +85,18 @@ bool history_init(struct history *history)
 {
 	assert(history);
 
-	if (!list_init(&history->send, sizeof(struct history_trace)))
+	if (!array_init(&history->send, sizeof(struct history_trace)))
 		goto fail_send;
 
-	if (!list_init(&history->recv, sizeof(struct history_trace)))
+	if (!array_init(&history->recv, sizeof(struct history_trace)))
 		goto fail_recv;
 
 	history->tcur = -INFINITY;
 	return true;
 
-	list_deinit(&history->recv);
+	array_deinit(&history->recv);
 fail_recv:
-	list_deinit(&history->send);
+	array_deinit(&history->send);
 fail_send:
 	return false;
 }
@@ -154,13 +154,13 @@ bool history_insert(struct history *history, ssize_t from, ssize_t *to,
 ssize_t history_nsend(struct history *history)
 {
 	assert(history);
-	return list_count(&history->send);
+	return array_count(&history->send);
 }
 
 ssize_t history_nrecv(struct history *history)
 {
 	assert(history);
-	return list_count(&history->recv);
+	return array_count(&history->recv);
 }
 
 struct event_trace *history_send(struct history *history, ssize_t i)

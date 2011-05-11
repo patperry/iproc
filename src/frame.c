@@ -78,21 +78,21 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 	assert(frame);
 	assert(design);
 
-	if (!list_init(&frame->vars, sizeof(struct frame_var)))
+	if (!array_init(&frame->vars, sizeof(struct frame_var)))
 		goto fail_init;
 	
-	if (!list_set_capacity(&frame->vars, list_count(&design->vars)))
+	if (!array_set_capacity(&frame->vars, array_count(&design->vars)))
 		goto fail_reserve;
 	
-	list_add_range(&frame->vars, NULL, list_count(&design->vars));
+	array_add_range(&frame->vars, NULL, array_count(&design->vars));
 	
-	ssize_t i, n = list_count(&design->vars);
+	ssize_t i, n = array_count(&design->vars);
 	struct design_var *dv;
 	struct frame_var *fv;
 
 	for (i = 0; i < n; i++) {
-		dv = list_item(&design->vars, i);
-		fv = list_item(&frame->vars, i);
+		dv = array_item(&design->vars, i);
+		fv = array_item(&frame->vars, i);
 		fv->design = dv;
 		
 		if (fv->design->type->frame_init) {
@@ -105,13 +105,13 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 
 fail_var_init:
 	for (; i > 0; i--) {
-		fv = list_item(&frame->vars, i);
+		fv = array_item(&frame->vars, i);
 		if (fv->design->type->frame_deinit) {
 			fv->design->type->frame_deinit(fv);
 		}
 	}
 fail_reserve:
-	list_deinit(&frame->vars);
+	array_deinit(&frame->vars);
 fail_init:
 	return false;
 	
@@ -121,11 +121,11 @@ static void var_frames_deinit(struct frame *frame)
 {
 	assert(frame);
 
-	ssize_t i, n = list_count(&frame->vars);
+	ssize_t i, n = array_count(&frame->vars);
 	struct frame_var *fv;
 	
 	for (i = 0; i < n; i++) {
-		fv = list_item(&frame->vars, i);
+		fv = array_item(&frame->vars, i);
 		
 		if (fv->design->type->frame_deinit) {
 			fv->design->type->frame_deinit(fv);
@@ -138,11 +138,11 @@ static void var_frames_clear(struct frame *frame)
 {
 	assert(frame);
 	
-	ssize_t i, n = list_count(&frame->vars);
+	ssize_t i, n = array_count(&frame->vars);
 	struct frame_var *fv;
 	
 	for (i = 0; i < n; i++) {
-		fv = list_item(&frame->vars, i);
+		fv = array_item(&frame->vars, i);
 		
 		if (fv->design->type->frame_clear) {
 			fv->design->type->frame_clear(fv);
@@ -363,9 +363,9 @@ bool frame_advance_to(struct frame *f, double t)
 	if (!history_advance_to(&f->history, t))
 		return false;
 
-	const struct list *vars = &f->vars;
+	const struct array *vars = &f->vars;
 	struct frame_var *v;
-	ssize_t i, n = list_count(vars);
+	ssize_t i, n = array_count(vars);
 	const struct dyad_event *e;
 	bool ok;
 
@@ -373,7 +373,7 @@ bool frame_advance_to(struct frame *f, double t)
 		e = dyad_queue_top(&f->dyad_queue);
 
 		for (i = 0; i < n; i++) {
-			v = list_item(vars, i);
+			v = array_item(vars, i);
 			if (!(v->design->type->handle_dyad
 			      && v->design->type->dyad_event_mask & e->type))
 				continue;

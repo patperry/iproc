@@ -132,7 +132,7 @@ static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 {
 	if (ctx) {
 		iproc_model *model = ctx->model;
-		list_add(&model->ctxs, &ctx);
+		array_add(&model->ctxs, &ctx);
 		iproc_model_unref(model);
 	}
 }
@@ -179,12 +179,12 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 	assert(isend < iproc_model_nsender(model));
 
 	iproc_model_ctx *ctx;
-	struct list *ctxs = &model->ctxs;
+	struct array *ctxs = &model->ctxs;
 	ssize_t n;
 	
-	if ((n = list_count(ctxs))) {
-		ctx = *(iproc_model_ctx **) list_item(ctxs, n - 1);
-		list_remove_at(ctxs, n - 1);
+	if ((n = array_count(ctxs))) {
+		ctx = *(iproc_model_ctx **) array_item(ctxs, n - 1);
+		array_remove_at(ctxs, n - 1);
 		iproc_model_ref(model);
 		refcount_init(&ctx->refcount);
 		ctx->frame = NULL;
