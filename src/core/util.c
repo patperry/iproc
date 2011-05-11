@@ -4,6 +4,25 @@
 #include <string.h>
 #include "util.h"
 
+
+bool memory_overlaps(const void *ptr1, ssize_t n1,
+		     const void *ptr2, ssize_t n2, size_t elt_size)
+{
+	assert(n1 >= 0);
+	assert(n2 >= 0);
+	
+	if (n1 == 0 || n2 == 0)
+		return false;
+	
+	const void *begin1 = ptr1;
+	const void *end1 = (char *)begin1 + n1 * elt_size;
+	const void *begin2 = ptr2;
+	const void *end2 = (char *)begin2 + n2 * elt_size;
+	
+	return ((begin1 <= begin2 && begin2 < end1)
+		|| (begin2 <= begin1 && begin1 < end2));
+}
+
 void *memory_fill(void *begin, ssize_t size, const void *val, size_t elt_size)
 {
 	assert(begin || size == 0);

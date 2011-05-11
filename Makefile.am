@@ -49,8 +49,6 @@ libiproc_la_LIBADD = \
 	libminpack.la
 
 libcore_la_SOURCES = \
-	src/core/array.c \
-	src/core/array.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
 	src/core/delegate.h \
@@ -76,6 +74,8 @@ libcore_la_SOURCES = \
 	src/core/pqueue.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
+	src/core/slice.c \
+	src/core/slice.h \
 	src/core/sparsetable.c \
 	src/core/sparsetable.h \
 	src/core/svector.c \

@@ -49,6 +49,8 @@ void *memory_copy_to(const void *src, ssize_t size, void *dst, size_t elt_size);
 
 void memory_swap(void *val1, void *val2, size_t elt_size);
 void *memory_reverse(void *begin, ssize_t size, size_t elt_size);
+bool memory_overlaps(const void *ptr1, ssize_t n1,
+		     const void *ptr2, ssize_t n2, size_t elt_size);
 
 void *forward_find(const void *begin,
 		   ssize_t size,
