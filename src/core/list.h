@@ -8,15 +8,18 @@
 
 #include <stddef.h>		// sizeof, size_t
 #include <string.h>		// memcpy
-#include "array.h"
+#include "compare.h"
+#include "delegate.h"
 
 struct list {
-	struct array array;
+	void *data;
 	ssize_t count;
+	ssize_t capacity;
+	size_t elt_size;
 };
 
 /* create, destroy */
-struct list *list_init(struct list *l, size_t elt_size);
+bool list_init(struct list *l, size_t elt_size);
 bool list_init_copy(struct list *l, const struct list *src);
 void list_deinit(struct list *l);
 
@@ -25,18 +28,16 @@ bool list_assign_array(struct list *l, const void *ptr, ssize_t n);
 bool list_assign_copy(struct list *l, const struct list *src);
 
 /* properties */
-static inline ssize_t list_capacity(const struct list *a);
-bool list_set_capacity(struct list *a, ssize_t n);
-static inline ssize_t list_count(const struct list *a);
-static inline void *list_item(const struct list *a, ssize_t i);
+static inline ssize_t list_capacity(const struct list *l);
+bool list_set_capacity(struct list *l, ssize_t n);
+static inline ssize_t list_count(const struct list *l);
+static inline void *list_item(const struct list *l, ssize_t i);
 static inline void list_set_item(struct list *l, ssize_t i, const void *val);
-static inline size_t list_elt_size(const struct list *a);
-
-
+static inline size_t list_elt_size(const struct list *l);
 
 void list_copy_to(const struct list *l, void *dst);
-void list_get_range(const struct list *l, ssize_t i, ssize_t n,
-		    void *dst);
+void list_copy_range_to(const struct list *l, ssize_t i, ssize_t n,
+			void *dst);
 
 
 /* standard operations */
@@ -68,31 +69,33 @@ void list_sort(struct list *l, compare_fn compar);
 void list_reverse(struct list *l);
 
 /* inline function definitions */
-ssize_t list_count(const struct list *a)
+ssize_t list_count(const struct list *l)
 {
-	return a->count;
+	return l->count;
 }
 
-ssize_t list_capacity(const struct list *a)
+ssize_t list_capacity(const struct list *l)
 {
-	return array_size(&a->array);
+	return l->capacity;
 }
 
-size_t list_elt_size(const struct list *a)
+size_t list_elt_size(const struct list *l)
 {
-	return array_elt_size(&a->array);
+	return l->elt_size;
 }
 
-void *list_item(const struct list *a, ssize_t i)
+void *list_item(const struct list *l, ssize_t i)
 {
-	assert(0 <= i && i < list_count(a));
-	return array_item(&a->array, i);
+	assert(0 <= i && i < list_count(l));
+	return (char *)l->data + i * list_elt_size(l);
 }
 
 void list_set_item(struct list *l, ssize_t i, const void *val)
 {
 	assert(0 <= i && i < list_count(l));
-	array_set(&l->array, i, val);
+	
+	void *ptr = list_item(l, i);
+	memcpy(ptr, val, list_elt_size(l));
 }
 
 #endif /* _LIST_H */

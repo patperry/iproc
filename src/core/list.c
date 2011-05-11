@@ -30,17 +30,16 @@ static bool list_grow(struct list *l, ssize_t delta)
 	return list_set_capacity(l, n);
 }
 
-struct list *list_init(struct list *l, size_t elt_size)
+bool list_init(struct list *l, size_t elt_size)
 {
 	assert(l);
-	assert(elt_size > 0);
+	assert(elt_size >= 0);
 
-	if (array_init(&l->array, 0, elt_size)) {
-		l->count = 0;
-		return l;
-	}
-
-	return NULL;
+	l->data = NULL;
+	l->count = 0;
+	l->capacity = 0;
+	l->elt_size = elt_size;
+	return true;
 }
 
 bool list_init_copy(struct list *l, const struct list *src)
@@ -61,7 +60,7 @@ bool list_init_copy(struct list *l, const struct list *src)
 void list_deinit(struct list *l)
 {
 	assert(l);
-	array_deinit(&l->array);
+	free(l->data);
 }
 
 bool list_assign_array(struct list *l, const void *ptr, ssize_t n)
@@ -93,7 +92,14 @@ bool list_set_capacity(struct list *l, ssize_t n)
 	assert(l);
 	assert(n >= list_count(l));
 	
-	return array_reinit(&l->array, n, list_elt_size(l));
+	void *data1 = realloc(l->data, n * list_elt_size(l));
+	if (data1) {
+		l->data = data1;
+		l->capacity = n;
+		return true;
+	}
+	
+	return false;
 }
 
 void *list_add(struct list *l, const void *val)
@@ -144,6 +150,15 @@ void list_copy_to(const struct list *l, void *dst)
 	
 	memory_copy_to(list_item(l, 0), list_count(l), dst,
 		       list_elt_size(l));
+}
+
+void list_copy_range_to(const struct list *l, ssize_t i, ssize_t n, void *dst)
+{
+	assert(0 <= i && i <= list_count(l) - n);
+	if (n == 0)
+		return;
+	
+	memcpy(dst, list_item(l, i), n * list_elt_size(l));
 }
 
 /* MISSING equals */
@@ -210,13 +225,7 @@ ssize_t list_find_last_index(const struct list *l, predicate_fn match, void *uda
 /* MISSING for_each */
 /* MISSING get_enumerator */
 /* MISSING get_hash_code */
-
-void list_get_range(const struct list *l, ssize_t i, ssize_t n, void *dst)
-{
-	assert(0 <= i && i <= list_count(l) - n);
-	array_get_range(&l->array, i, n, dst);
-}
-
+/* MISSING get_range */
 /* MISSING index_of */
 
 void *list_insert(struct list *l, ssize_t i, const void *val)
@@ -238,6 +247,7 @@ void *list_insert_range(struct list *l, ssize_t i, const void *vals, ssize_t n)
 
 	char *res;
 	size_t elt_size = list_elt_size(l);
+	ssize_t c0 = list_count(l);
 	
 	if (n == 0)
 		return NULL;
@@ -245,8 +255,10 @@ void *list_insert_range(struct list *l, ssize_t i, const void *vals, ssize_t n)
 	if (!list_grow(l, n))
 		return NULL;
 	
-	res = array_item(&l->array, i);
-	memmove(res + n * elt_size, res, (list_count(l) - i) * elt_size);
+	l->count += n;
+	
+	res = list_item(l, i);
+	memmove(res + n * elt_size, res, (c0 - i) * elt_size);
 	
 	if (vals) {
 		memcpy(res, vals, n * elt_size);
@@ -254,8 +266,6 @@ void *list_insert_range(struct list *l, ssize_t i, const void *vals, ssize_t n)
 		memset(res, 0, n * elt_size);
 	}
 
-	l->count += n;
-	
 	return res;
 }
 
