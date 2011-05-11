@@ -18,12 +18,11 @@ struct slice {
 	size_t elt_size;
 };
 
-struct slice slice_make(const void *ptr, ssize_t n, size_t elt_size);
-void slice_init(struct slice *a, const void *data, ssize_t size,
-		size_t elt_size);
+static inline struct slice slice_make(const void *ptr, ssize_t n, size_t elt_size);
+static inline void slice_init(struct slice *a, const void *data, ssize_t size,
+			      size_t elt_size);
 
 /* assign, copy, fill */
-void slice_assign_copy(struct slice *a, const struct slice *src);
 void slice_copy_to(const struct slice *a, void *dst);
 void slice_fill(struct slice *a, const void *val);
 
@@ -32,7 +31,7 @@ void slice_fill(struct slice *a, const void *val);
 static inline ssize_t slice_count(const struct slice *a);
 static inline void *slice_item(const struct slice *a, ssize_t i);
 static inline void slice_set_item(struct slice *a, ssize_t i, const void *src);
-static inline size_t array_elt_size(const struct slice *a);
+static inline size_t slice_elt_size(const struct slice *a);
 
 /* operations */
 void slice_reverse(struct slice *a);
@@ -48,18 +47,44 @@ ssize_t slice_binary_search(const struct slice *a,
 void slice_sort(struct slice *a, compare_fn compar);
 
 /* inline function defs */
+struct slice slice_make(const void *ptr, ssize_t n, size_t elt_size)
+{
+	assert(ptr || n == 0);
+	assert(0 <= n && n <= SSIZE_MAX / MAX(1, elt_size));	
+	assert(elt_size >= 0);
+
+	struct slice a;
+	slice_init(&a, ptr, n, elt_size);
+	return a;
+}
+
+void slice_init(struct slice *a, const void *ptr, ssize_t n, size_t elt_size)
+{
+	assert(a);
+	assert(ptr || n == 0);
+	assert(0 <= n && n <= SSIZE_MAX / MAX(1, elt_size));	
+	assert(elt_size >= 0);
+	
+	a->data = (void *)ptr;
+	a->size = n;
+	a->elt_size = elt_size;
+}
+
 ssize_t slice_count(const struct slice *a)
 {
+	assert(a);
 	return a->size;
 }
 
-size_t array_elt_size(const struct slice *a)
+size_t slice_elt_size(const struct slice *a)
 {
+	assert(a);
 	return a->elt_size;
 }
 
 void *slice_item(const struct slice *a, ssize_t i)
 {
+	assert(a);
 	assert(0 <= i && i < slice_count(a));
 	return (char *)a->data + i * a->elt_size;
 
@@ -67,10 +92,11 @@ void *slice_item(const struct slice *a, ssize_t i)
 
 void slice_set_item(struct slice *a, ssize_t i, const void *src)
 {
+	assert(a);
 	assert(0 <= i && i < slice_count(a));
-	assert(!memory_overlaps(slice_item(a, i), 1, src, 1, array_elt_size(a)));
+	assert(!memory_overlaps(slice_item(a, i), 1, src, 1, slice_elt_size(a)));
 
-	memcpy(slice_item(a, i), src, array_elt_size(a));
+	memcpy(slice_item(a, i), src, slice_elt_size(a));
 }
 
 #endif /* _SLICE_H */
