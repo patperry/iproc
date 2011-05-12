@@ -1,6 +1,6 @@
 
 #include <assert.h> // assert
-#include <errno.h>  // ENOMEM
+#include <errno.h>  // EINVAL, ENOMEM
 #include <stdint.h> // SIZE_MAX
 #include <stddef.h> // size_t, NULL
 #include <stdlib.h> // malloc, realloc, free
@@ -47,7 +47,8 @@ typedef int (*comparator) (const void *x, const void *y, void *udata);
 
 #define MIN(a,b) ((a) <= (b) ? (a) : (b))
 
-
+#define SUCCESS 0
+#define FAILURE (-1)
 
 
 struct timsort {
@@ -160,15 +161,15 @@ static int timsort_init(struct timsort *ts, void *a, size_t len,
 		    len <   1542  ? 10 :
 		    len < 119151  ? 19 : 40);
         ts->runBase = malloc(stackLen * sizeof(ts->runBase[0]));
-        ts->runLen = malloc(stackLen * sizeof(ts->runBase[0]));
+        ts->runLen = malloc(stackLen * sizeof(ts->runLen[0]));
 
 	if (ts->tmp && ts->runBase && ts->runLen) {
-		return 0;
+		return SUCCESS;
 	} else {
 		free(ts->tmp);
 		free(ts->runBase);
 		free(ts->runLen);
-		return ENOMEM;
+		return FAILURE;
 	}
 }
 
@@ -188,7 +189,7 @@ int timsort(void *a, size_t nel, size_t width,
 	assert(width > 0);
 	assert(c);
 
-	int err = 0;
+	int err = SUCCESS;
 	size_t lo = 0;
 	size_t hi = nel;
         size_t nRemaining  = hi - lo;
@@ -449,7 +450,7 @@ static void pushRun(struct timsort *ts, size_t runBase, size_t runLen)
  */
 static int mergeCollapse(struct timsort *ts)
 {
-	int err = EXIT_SUCCESS;
+	int err = SUCCESS;
 	
         while (ts->stackSize > 1) {
 		size_t n = ts->stackSize - 2;
@@ -477,7 +478,7 @@ static int mergeCollapse(struct timsort *ts)
  */
 static int mergeForceCollapse(struct timsort *ts)
 {
-	int err = EXIT_SUCCESS;
+	int err = SUCCESS;
 	
         while (ts->stackSize > 1) {
 		size_t n = ts->stackSize - 2;
@@ -536,7 +537,7 @@ static int mergeAt(struct timsort *ts, size_t i)
         base1 += k;
         len1 -= k;
         if (len1 == 0)
-		return EXIT_SUCCESS;
+		return SUCCESS;
 
         /*
          * Find where the last element of run1 goes in run2. Subsequent elements
@@ -545,7 +546,7 @@ static int mergeAt(struct timsort *ts, size_t i)
         len2 = gallopLeft(ELEM(a, base1 + len1 - 1), a, base2, len2, len2 - 1, ts->c, ts->udata, width);
         assert(len2 >= 0);
         if (len2 == 0)
-		return EXIT_SUCCESS;
+		return SUCCESS;
 
         // Merge remaining runs, using tmp array with min(len1, len2) elements
         if (len1 <= len2)
@@ -760,7 +761,7 @@ static int mergeLo(struct timsort *ts, size_t base1, size_t len1, size_t base2, 
         if (--len2 == 0) {
 		// System.arraycopy(tmp, cursor1, a, dest, len1);
 		memcpy(ELEM(a, dest), ELEM(tmp, cursor1), len1 * width);
-		return EXIT_SUCCESS;
+		return SUCCESS;
         }
         if (len1 == 1) {
 		// System.arraycopy(a, cursor2, a, dest, len2);
@@ -768,7 +769,7 @@ static int mergeLo(struct timsort *ts, size_t base1, size_t len1, size_t base2, 
 
 		// a[dest + len2] = tmp[cursor1]; // Last elt of run 1 to end of merge
 		memcpy(ELEM(a, dest + len1), ELEM(tmp, cursor1), width);
-		return EXIT_SUCCESS;
+		return SUCCESS;
         }
 
         comparator compare = ts->c;          // Use local variable for performance
@@ -846,15 +847,14 @@ outer:
 		memcpy(ELEM(a, dest + len2), ELEM(tmp, cursor1), width); //  Last elt of run 1 to end of merge
 
         } else if (len1 == 0) {
-		assert(0 && "Comparison method violates its general contract!");
-		errno = EINVAL;
-		return EINVAL;
+		errno = EINVAL; // Comparison method violates its general contract
+		return FAILURE;
         } else {
 		assert(len2 == 0);
 		assert(len1 > 1);
 		memcpy(ELEM(a, dest), ELEM(tmp, cursor1), len1 * width);
         }
-	return EXIT_SUCCESS;
+	return SUCCESS;
 }
 
 
@@ -894,7 +894,7 @@ static int mergeHi(struct timsort *ts, size_t base1, size_t len1, size_t base2, 
         if (--len1 == 0) {
 		// System.arraycopy(tmp, 0, a, dest - (len2 - 1), len2);
 		memcpy(ELEM(a,  dest - (len2 - 1)), ELEM(tmp, 0), len2 * width);
-		return EXIT_SUCCESS;
+		return SUCCESS;
         }
         if (len2 == 1) {
 		dest -= len1;
@@ -903,7 +903,7 @@ static int mergeHi(struct timsort *ts, size_t base1, size_t len1, size_t base2, 
 		memcpy(ELEM(a, dest + 1), ELEM(a,  cursor1 + 1), len1 * width);
 		// a[dest] = tmp[cursor2];
 		memcpy(ELEM(a, dest), ELEM(tmp, cursor2), width);
-		return EXIT_SUCCESS;
+		return SUCCESS;
         }
 
         comparator compare = ts->c;          // Use local variable for performance
@@ -986,8 +986,8 @@ outer:
 		// a[dest] = tmp[cursor2];  // Move first elt of run2 to front of merge
 		memcpy(ELEM(a, dest), ELEM(tmp, cursor2), width);
         } else if (len2 == 0) {
-		assert(0 && "Comparison method violates its general contract!");
-		return EINVAL;
+		errno = EINVAL; // Comparison method violates its general contract
+		return FAILURE;
         } else {
 		assert(len1 == 0);
 		assert(len2 > 0);
@@ -995,7 +995,7 @@ outer:
 		memcpy(ELEM(a, dest - (len2 - 1)), ELEM(tmp, 0), len2 * width);
         }
 
-	return EXIT_SUCCESS;
+	return SUCCESS;
 }
 
 
