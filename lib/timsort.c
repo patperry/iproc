@@ -159,7 +159,57 @@ static int timsort_init(struct timsort *ts, void *a, size_t len,
 	 * computation below must be changed if MIN_MERGE is decreased.  See
 	 * the MIN_MERGE declaration above for more information.
 	 */
-	stackLen = (len < 120 ? 5 : len < 1542 ? 10 : len < 119151 ? 19 : 40);
+
+	/* POP:
+	 * In listsort.txt, Tim argues that the run lengths form a decreasing
+	 * sequence, and each run length is greater than the previous two.
+	 * Thus, lower bounds on the minimum runLen numbers on the stack are:
+	 *
+	 *   [     1
+	 *   ,     minRun
+	 *   , 1 * minRun + 1 = f[2] * (minRun + 1)  # (also, minRun + 2)
+	 *   , 2 * minRun + 2 = f[3] * (minRun + 1)
+	 *   , 3 * minRun + 3 = f[4] * (minRun + 1)
+	 *   , 5 * minRun + 5 = f[5] * (minRun + 1)
+	 *   , ...
+	 *   ],
+	 *
+	 * where f[i] are the Fibonacci numbers: 1, 1, 2, 3, 5, 8, ....
+	 *
+	 * Moreover, minRun >= MIN_MERGE / 2.  Also, not that the sum of the
+	 * run lenghts is less than or equal to the length of the array.
+	 *
+	 * An array with at most (f[1])        * (minRun + 1) elements can
+	 * have stack len at most 2;
+	 *  "    "     "  "   "   (f[1] + f[2]) * (minRun + 1)     "     " 
+	 *  "    "     "  "   "   3;
+	 *  "    "     "  "   "   (f[1] + f[2] + f[3]) * (minRun + 1)     "
+	 *  "    "     "  "   "   4.
+	 * ...
+	 *
+	 * Let F[n] = f[1] + ... + f[n].  A stack of length n can accomoduate
+	 * arrays of length (MIN_MERGE / 2 + 1) * F[n - 1].
+	 *
+	 * The value for 'stackLen', below, is determined by the following
+	 * table:
+	 *
+	 *     n    F[n-1]   ((MIN_MERGE / 2  + 1) * F[n-1])
+	 *   ------------------------------------------------
+	 *     5                     7                    119
+	 *    10                    88                   1496
+	 *    19                  6764                 114988
+	 *    40             165580140             2814862380
+	 *    87   1100087778366101930   18701492232223732810    # > 2^64 - 1
+	 *
+	 * Note that this is slightly more conservative than in the Java
+	 * implementation.  The discrepancy might be because the Java
+	 * implementation uses a more accurate lower bound.
+	 */
+	//stackLen = (len < 120 ? 5 : len < 1542 ? 10 : len < 119151 ? 19 : 40);
+	stackLen = (len <= 119 ? 5
+		    : len <= 1496 ? 10
+		    : len <= 114988 ? 19 : len <= 2814862380 ? 40 : 87);
+
 	ts->runBase = malloc(stackLen * sizeof(ts->runBase[0]));
 	ts->runLen = malloc(stackLen * sizeof(ts->runLen[0]));
 
@@ -183,9 +233,9 @@ static void timsort_deinit(struct timsort *ts)
 int timsort(void *a, size_t nel, size_t width,
 	    int (*c) (const void *, const void *, void *), void *udata)
 {
-	assert(a || !nel);
+	assert(a || !nel || !width);
 	assert(nel >= 0);
-	assert(width > 0);
+	assert(width >= 0);
 	assert(c);
 
 	int err = SUCCESS;
@@ -193,7 +243,7 @@ int timsort(void *a, size_t nel, size_t width,
 	size_t hi = nel;
 	size_t nRemaining = hi - lo;
 
-	if (nRemaining < 2)
+	if (nRemaining < 2 || !width)
 		return err;	// Arrays of size 0 and 1 are always sorted
 
 	// If array is small, do a "mini-TimSort" with no merges
@@ -271,10 +321,12 @@ static void binarySort(void *a, size_t lo, size_t hi, size_t start,
 {
 	assert(lo <= start && start <= hi);
 
+	char pivot[width];
+
 	if (start == lo)
 		start++;
 	for (; start < hi; start++) {
-		void *pivot = ELEM(a, start);
+		memcpy(pivot, ELEM(a, start), width);
 
 		// Set left (and right) to the index where a[start] (pivot) belongs
 		size_t left = lo;
@@ -317,9 +369,7 @@ static void binarySort(void *a, size_t lo, size_t hi, size_t start,
 			memmove(ELEM(a, left + 1), ELEM(a, left), n * width);
 		}
 		// a[left] = pivot;
-		assert(pivot == ELEM(a, start));
-		if (left != start)
-			memcpy(ELEM(a, left), pivot, width);
+		memcpy(ELEM(a, left), pivot, width);
 	}
 }
 
@@ -778,7 +828,7 @@ static int mergeLo(struct timsort *ts, size_t base1, size_t len1, size_t base2,
 		memcpy(ELEM(a, dest), ELEM(a, cursor2), len2 * width);
 
 		// a[dest + len2] = tmp[cursor1]; // Last elt of run 1 to end of merge
-		memcpy(ELEM(a, dest + len1), ELEM(tmp, cursor1), width);
+		memcpy(ELEM(a, dest + len2), ELEM(tmp, cursor1), width);
 		return SUCCESS;
 	}
 
@@ -901,7 +951,7 @@ static int mergeHi(struct timsort *ts, size_t base1, size_t len1, size_t base2,
 		return ENOMEM;
 
 	// System.arraycopy(a, base2, tmp, 0, len2);
-	memcpy(ELEM(tmp, 0), ELEM(a, base1), len2 * width);
+	memcpy(ELEM(tmp, 0), ELEM(a, base2), len2 * width);
 
 	size_t cursor1 = base1 + len1 - 1;	// Indexes into a
 	size_t cursor2 = len2 - 1;	// Indexes into tmp array
@@ -1047,7 +1097,8 @@ static void *ensureCapacity(struct timsort *ts, size_t minCapacity)
 		newSize |= newSize >> 4;
 		newSize |= newSize >> 8;
 		newSize |= newSize >> 16;
-		newSize |= newSize >> 32;
+		if (sizeof(newSize) > 4)
+			newSize |= newSize >> 32;
 
 		if (newSize < SIZE_MAX) {
 			newSize++;
