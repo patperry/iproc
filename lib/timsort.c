@@ -1020,6 +1020,7 @@ static void *ensureCapacity(struct timsort *ts, size_t minCapacity)
 		newSize |= newSize >> 4;
 		newSize |= newSize >> 8;
 		newSize |= newSize >> 16;
+		newSize |= newSize >> 32;
 
 		if (newSize < SIZE_MAX) {
 			newSize++;
