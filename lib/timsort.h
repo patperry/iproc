@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-
 /**
  * A stable, adaptive, iterative mergesort that requires far fewer than
  * n lg(n) comparisons when running on partially sorted arrays, while
@@ -57,8 +56,6 @@
  * @author Patrick O. Perry
  */
 int timsort(void *base, size_t nel, size_t width,
-	int (*compar) (const void *, const void *, void *),
-	void *udata);
-
+	    int (*compar) (const void *, const void *, void *), void *udata);
 
 #endif /* _TIMSORT_H */
