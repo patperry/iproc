@@ -183,6 +183,11 @@ int timsort(void *a, size_t nel, size_t width,
 	int (*c) (const void *, const void *, void *),
 	void *udata)
 {
+	assert(a || !nel);
+	assert(nel >= 0);
+	assert(width > 0);
+	assert(c);
+
 	int err = 0;
 	size_t lo = 0;
 	size_t hi = nel;
