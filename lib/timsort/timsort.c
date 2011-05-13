@@ -1,8 +1,25 @@
+/*
+ * Copyright (C) 2011 Patrick O. Perry
+ * Copyright (C) 2008 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 #include <assert.h>		// assert
-#include <errno.h>		// EINVAL, ENOMEM
-#include <stdint.h>		// SIZE_MAX
+#include <errno.h>		// EINVAL
 #include <stddef.h>		// size_t, NULL
+#include <stdint.h>		// SIZE_MAX
 #include <stdlib.h>		// malloc, realloc, free
 #include <string.h>		// memcpy, memmove
 #include "timsort.h"
@@ -805,7 +822,7 @@ static int mergeLo(struct timsort *ts, size_t base1, size_t len1, size_t base2,
 	void *a = ts->a;	// For performance
 	void *tmp = ensureCapacity(ts, len1);
 	if (!tmp)
-		return ENOMEM;
+		return FAILURE;
 
 	// System.arraycopy(a, base1, tmp, 0, len1);
 	memcpy(ELEM(tmp, 0), ELEM(a, base1), len1 * width);
@@ -948,7 +965,7 @@ static int mergeHi(struct timsort *ts, size_t base1, size_t len1, size_t base2,
 	void *a = ts->a;	// For performance
 	void *tmp = ensureCapacity(ts, len2);
 	if (!tmp)
-		return ENOMEM;
+		return FAILURE;
 
 	// System.arraycopy(a, base2, tmp, 0, len2);
 	memcpy(ELEM(tmp, 0), ELEM(a, base2), len2 * width);
