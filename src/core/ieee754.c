@@ -174,7 +174,16 @@ bool double_equals(const void *x, const void *y)
 
 int double_compare(const void *x, const void *y)
 {
-	return uint64_compare(x, y);
+	union double_uint64 xrep = { *(double *) x };
+	union double_uint64 yrep = { *(double *) y };
+
+	if (xrep.w & UINT64_C(0x8000000000000000)) { // x < 0
+		return uint64_compare(y, x); // if y >= 0, returns -1, else returns cmp(|y|, |x|)
+	} else if (yrep.w & UINT64_C(0x8000000000000000)) { // x >= 0, y < 0
+		return 1;
+	} else { // x >= 0, y >= 0
+		return uint64_compare(x, y);
+	}
 }
 
 int double_rcompare(const void *x, const void *y)
