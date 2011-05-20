@@ -3,16 +3,16 @@
 
 #include <stddef.h>
 
-typedef uint32_t (*hash_fn) (const void *key);
+typedef uint32_t (*hash_fn) (const void *key, void *udata);
 
 #define DEFINE_HASH_FN(name, t) \
-	static inline uint32_t name (const void *px) \
+	static inline uint32_t name (const void *px, void *udata)	\
 	{                        \
 		return memory_hash(px, sizeof(t)); \
 	}
 
 uint32_t memory_hash(const void *ptr, ssize_t n);
-uint32_t double_hash(const void *val);
+uint32_t double_hash(const void *val, void *udata);
 
 static inline void hash_combine(uint32_t *seedp, uint32_t hash);
 static inline void hash_finalize(uint32_t *hashp);

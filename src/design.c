@@ -443,7 +443,7 @@ bool design_add_var(struct design *design, const struct var_type *type)
 	assert(type->init);
 
 	struct design_var *var;
-	
+
 	if ((var = array_add(&design->vars, NULL))) {
 		if (type->init(var, design)) {
 			assert(var->dim >= 0);
@@ -486,10 +486,9 @@ ssize_t design_var_index(const struct design *design,
 	assert(design);
 	assert(type);
 
-	struct design_var *key =
-	    container_of(&type, struct design_var, type);
+	struct design_var *key = container_of(&type, struct design_var, type);
 	const struct design_var *var =
-	    array_find(&design->vars, (predicate_fn)design_var_equals, key);
+	    array_find(&design->vars, (predicate_fn) design_var_equals, key);
 
 	if (var) {
 		return var->index;

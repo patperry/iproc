@@ -11,14 +11,16 @@
 DEFINE_HASH_FN(int_hash, int)
 DEFINE_COMPARE_AND_EQUALS_FN(int_compare, int_equals, int)
 
-static uint32_t int_bad_hash(const void *x)
+static uint32_t int_bad_hash(const void *x, void *udata)
 {
 	return 1337;
 }
 
 static struct hashset set;
 static hash_fn hash;
+static void *hash_udata;
 static equals_fn equals;
+static void *equals_udata;
 static int *vals;
 static ssize_t size;
 
@@ -39,8 +41,10 @@ static void empty_setup(void **state)
 	static int *empty_vals = NULL;
 
 	hash = int_hash;
+	hash_udata = NULL;
 	equals = int_equals;
-	hashset_init(&set, hash, equals, sizeof(int));
+	equals_udata = NULL;
+	hashset_init(&set, hash, hash_udata, equals, equals_udata, sizeof(int));
 	
 	vals = empty_vals;
 	size = 0;
@@ -87,8 +91,10 @@ static void big_bad_setup_fixture(void **state)
 static void big_bad_setup(void **state)
 {
 	hash = int_bad_hash;
+	hash_udata = NULL;
 	equals = int_equals;
-	hashset_init(&set, hash, equals, sizeof(int));
+	equals_udata = NULL;
+	hashset_init(&set, hash, hash_udata, equals, equals_udata, sizeof(int));
 	
 	size = 151;
 	vals = malloc(size * sizeof(*vals));

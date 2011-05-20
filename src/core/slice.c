@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "timsort.h"
 #include "util.h"
 #include "slice.h"
 
@@ -64,23 +65,24 @@ ssize_t slice_find_index(const struct slice *a, predicate_fn match, void *udata)
 	if (!slice_count(a))
 		return -1;
 
-	return forward_find_index(slice_item(a, 0), slice_count(a), match, udata,
-				  slice_elt_size(a));
+	return forward_find_index(slice_item(a, 0), slice_count(a), match,
+				  udata, slice_elt_size(a));
 }
 
 void *slice_find_last(const struct slice *a, predicate_fn match, void *udata)
 {
 	assert(a);
 	assert(match);
-	
+
 	if (!slice_count(a))
 		return NULL;
-	
+
 	return reverse_find(slice_item(a, 0), slice_count(a), match, udata,
 			    slice_elt_size(a));
 }
 
-ssize_t slice_find_last_index(const struct slice *a, predicate_fn match, void *udata)
+ssize_t slice_find_last_index(const struct slice *a, predicate_fn match,
+			      void *udata)
 {
 	assert(a);
 	assert(match);
@@ -88,12 +90,12 @@ ssize_t slice_find_last_index(const struct slice *a, predicate_fn match, void *u
 	if (!slice_count(a))
 		return -1;
 
-	return reverse_find_index(slice_item(a, 0), slice_count(a), match, udata,
-				  slice_elt_size(a));
+	return reverse_find_index(slice_item(a, 0), slice_count(a), match,
+				  udata, slice_elt_size(a));
 }
 
 ssize_t slice_binary_search(const struct slice *a, const void *key,
-			    compare_fn compar)
+			    compare_fn compar, void *udata)
 {
 	assert(a);
 	assert(compar);
@@ -102,10 +104,10 @@ ssize_t slice_binary_search(const struct slice *a, const void *key,
 		return ~((ssize_t)0);
 
 	return binary_search(slice_item(a, 0), slice_count(a), key, compar,
-			     slice_elt_size(a));
+			     udata, slice_elt_size(a));
 }
 
-void slice_sort(struct slice *a, compare_fn compar)
+void slice_sort(struct slice *a, compare_fn compar, void *udata)
 {
 	assert(a);
 	assert(compar);
@@ -113,5 +115,8 @@ void slice_sort(struct slice *a, compare_fn compar)
 	if (!slice_count(a))
 		return;
 
-	qsort(slice_item(a, 0), slice_count(a), slice_elt_size(a), compar);
+	int err =
+	    timsort(slice_item(a, 0), slice_count(a), slice_elt_size(a), compar,
+		    udata);
+	assert(!err);		// TODO: better error handling
 }

@@ -66,10 +66,10 @@ ssize_t reverse_find_index(const void *begin,
 			   predicate_fn match, void *udata, size_t elt_size);
 void *sorted_find(const void *begin,
 		  ssize_t size,
-		  const void *key, compare_fn compar, size_t elt_size);
-ssize_t binary_search(const void *begin,
-		      ssize_t size,
-		      const void *key, compare_fn compar, size_t elt_size);
+		  const void *key, compare_fn compar, void *udata,
+		  size_t elt_size);
+ssize_t binary_search(const void *begin, ssize_t size, const void *key,
+		      compare_fn compar, void *udata, size_t elt_size);
 
 typedef void (*destroy_fn) (void *val);
 

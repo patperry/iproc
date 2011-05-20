@@ -49,6 +49,9 @@ libiproc_la_LIBADD = \
 	libminpack.la
 
 libcore_la_SOURCES = \
+	lib/timsort/timsort.h \
+	lib/timsort/timsort-impl.h \
+	lib/timsort/timsort.c \
 	src/core/array.c \
 	src/core/array.h \
 	src/core/blas-private.h \
@@ -85,6 +88,10 @@ libcore_la_SOURCES = \
 	src/core/util.c \
 	src/core/vector.c \
 	src/core/vector.h
+
+libcore_la_CPPFLAGS = \
+	-I./lib/timsort \
+	$(AM_CPPFLAGS)
 
 libcore_la_LIBADD = \
 	$(LAPACK_LIBS) \

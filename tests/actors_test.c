@@ -64,19 +64,19 @@ static void test_mul(void **state)
 	
 	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
 	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 
 	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, 1.0, &y);
 	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, -1.0, &y);
 	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 
 	actors_mul(2.0, TRANS_NOTRANS, &actors, &x, 2.0, &y);
 	matrix_mul(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	vector_deinit(&y1);
 	vector_deinit(&y);
@@ -100,19 +100,19 @@ static void test_tmul(void **state)
 	
 	actors_mul(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);
 	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_mul(1.0, TRANS_TRANS, &actors, &x, 1.0, &y);
 	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_mul(1.0, TRANS_TRANS, &actors, &x, -1.0, &y);
 	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_mul(2.0, TRANS_TRANS, &actors, &x, 2.0, &y);
 	matrix_mul(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	vector_deinit(&y1);
 	vector_deinit(&y);
@@ -138,19 +138,19 @@ static void test_muls(void **state)
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
 	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 1.0, &y);
 	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, -1.0, &y);
 	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(2.0, TRANS_NOTRANS, &actors, &x, 2.0, &y);
 	matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	vector_deinit(&y1);
 	vector_deinit(&y);
@@ -176,19 +176,19 @@ static void test_tmuls(void **state)
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);
 	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, 1.0, &y);
 	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, -1.0, &y);
 	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	actors_muls(2.0, TRANS_TRANS, &actors, &x, 2.0, &y);
 	matrix_muls(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	assert_true(vector_equals(&y, &y1, NULL));
 	
 	vector_deinit(&y1);
 	vector_deinit(&y);

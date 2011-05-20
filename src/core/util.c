@@ -4,21 +4,20 @@
 #include <string.h>
 #include "util.h"
 
-
 bool memory_overlaps(const void *ptr1, ssize_t n1,
 		     const void *ptr2, ssize_t n2, size_t elt_size)
 {
 	assert(n1 >= 0);
 	assert(n2 >= 0);
-	
+
 	if (n1 == 0 || n2 == 0)
 		return false;
-	
+
 	const void *begin1 = ptr1;
 	const void *end1 = (char *)begin1 + n1 * elt_size;
 	const void *begin2 = ptr2;
 	const void *end2 = (char *)begin2 + n2 * elt_size;
-	
+
 	return ((begin1 <= begin2 && begin2 < end1)
 		|| (begin2 <= begin1 && begin1 < end2));
 }
@@ -91,7 +90,6 @@ void *memory_reverse(void *begin, ssize_t size, size_t elt_size)
 void *forward_find(const void *begin,
 		   ssize_t size,
 		   predicate_fn match, void *udata, size_t elt_size)
-
 {
 	assert(size >= 0);
 	assert(match);
@@ -163,13 +161,13 @@ ssize_t reverse_find_index(const void *begin,
 }
 
 void *sorted_find(const void *begin, ssize_t size, const void *key,
-		  compare_fn compar, size_t elt_size)
+		  compare_fn compar, void *udata, size_t elt_size)
 {
 	assert(size >= 0);
 	assert(compar);
 	assert(elt_size > 0);
 
-	ssize_t i = binary_search(begin, size, key, compar, elt_size);
+	ssize_t i = binary_search(begin, size, key, compar, udata, elt_size);
 
 	if (i >= 0) {
 		return (char *)begin + i * elt_size;
@@ -179,7 +177,7 @@ void *sorted_find(const void *begin, ssize_t size, const void *key,
 }
 
 ssize_t binary_search(const void *begin, ssize_t size, const void *key,
-		      compare_fn compar, size_t elt_size)
+		      compare_fn compar, void *udata, size_t elt_size)
 {
 	assert(size >= 0);
 	assert(compar);
@@ -194,7 +192,7 @@ ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 	while (left < right) {
 		i = left + ((right - left) >> 1);
 		ptr = (char *)begin + i * elt_size;
-		cmp = compar(ptr, key);
+		cmp = compar(ptr, key, udata);
 
 		if (cmp < 0) {	// array[i] < key
 			left = i + 1;

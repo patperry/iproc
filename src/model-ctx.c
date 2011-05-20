@@ -181,7 +181,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 	iproc_model_ctx *ctx;
 	struct array *ctxs = &model->ctxs;
 	ssize_t n;
-	
+
 	if ((n = array_count(ctxs))) {
 		ctx = *(iproc_model_ctx **) array_item(ctxs, n - 1);
 		array_remove_at(ctxs, n - 1);

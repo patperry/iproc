@@ -211,7 +211,6 @@ static void test_mul0(void **state)
 		design_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
 		matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
-		assert_true(vector_equals(&y, &y1));
 		
 		design_mul0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
 		matrix_mul(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
@@ -357,7 +356,6 @@ static void test_muls0(void **state)
 		design_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
 		matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
-		assert_true(vector_equals(&y, &y1));
 		
 		design_muls0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
 		matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);

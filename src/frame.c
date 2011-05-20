@@ -80,12 +80,12 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 
 	if (!array_init(&frame->vars, sizeof(struct frame_var)))
 		goto fail_init;
-	
+
 	if (!array_set_capacity(&frame->vars, array_count(&design->vars)))
 		goto fail_reserve;
-	
+
 	array_add_range(&frame->vars, NULL, array_count(&design->vars));
-	
+
 	ssize_t i, n = array_count(&design->vars);
 	struct design_var *dv;
 	struct frame_var *fv;
@@ -94,13 +94,13 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 		dv = array_item(&design->vars, i);
 		fv = array_item(&frame->vars, i);
 		fv->design = dv;
-		
+
 		if (fv->design->type->frame_init) {
 			if (!dv->type->frame_init(fv, frame))
 				goto fail_var_init;
 		}
 	}
-	
+
 	return true;
 
 fail_var_init:
@@ -114,7 +114,7 @@ fail_reserve:
 	array_deinit(&frame->vars);
 fail_init:
 	return false;
-	
+
 }
 
 static void var_frames_deinit(struct frame *frame)
@@ -123,33 +123,31 @@ static void var_frames_deinit(struct frame *frame)
 
 	ssize_t i, n = array_count(&frame->vars);
 	struct frame_var *fv;
-	
+
 	for (i = 0; i < n; i++) {
 		fv = array_item(&frame->vars, i);
-		
+
 		if (fv->design->type->frame_deinit) {
 			fv->design->type->frame_deinit(fv);
 		}
 	}
 }
 
-
 static void var_frames_clear(struct frame *frame)
 {
 	assert(frame);
-	
+
 	ssize_t i, n = array_count(&frame->vars);
 	struct frame_var *fv;
-	
+
 	for (i = 0; i < n; i++) {
 		fv = array_item(&frame->vars, i);
-		
+
 		if (fv->design->type->frame_clear) {
 			fv->design->type->frame_clear(fv);
 		}
 	}
 }
-
 
 static bool send_frames_init(struct frame *f)
 {
@@ -163,7 +161,7 @@ static void send_frames_deinit(struct frame *f)
 	assert(f);
 	struct intmap_iter it;
 	struct send_frame *sf;
-	
+
 	intmap_iter_init(&f->send_frames, &it);
 	while (intmap_iter_advance(&f->send_frames, &it)) {
 		sf = intmap_iter_current(&f->send_frames, &it);
@@ -178,7 +176,7 @@ static void send_frames_clear(struct frame *f)
 	assert(f);
 	struct intmap_iter it;
 	struct send_frame *sf;
-	
+
 	intmap_iter_init(&f->send_frames, &it);
 	while (intmap_iter_advance(&f->send_frames, &it)) {
 		sf = intmap_iter_current(&f->send_frames, &it);
@@ -194,7 +192,7 @@ bool frame_init(struct frame *f, struct design *design)
 
 	if (!(f->design = design_ref(design)))
 		goto fail_design;
-	
+
 	if (!history_init(&f->history))
 		goto fail_history;
 
@@ -202,11 +200,11 @@ bool frame_init(struct frame *f, struct design *design)
 		goto fail_dyad_queue;
 
 	if (!send_frames_init(f))
-		 goto fail_send_frames;
+		goto fail_send_frames;
 
 	if (!var_frames_init(f, design))
 		goto fail_var_frames;
-	
+
 	if (!refcount_init(&f->refcount))
 		goto fail_refcount;
 

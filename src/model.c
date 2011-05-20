@@ -180,7 +180,7 @@ static void iproc_model_free(iproc_model * model)
 		for (i = 0; i < n; i++) {
 			iproc_model_ctx *ctx =
 			    *(iproc_model_ctx **) array_item(&model->ctxs,
-							    i);
+							     i);
 			iproc_model_ctx_free_dealloc(ctx);
 		}
 		array_deinit(&model->ctxs);

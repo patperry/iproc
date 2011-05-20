@@ -24,7 +24,7 @@ static void empty_setup(void **state)
 {
 	static ssize_t *empty_elts = NULL;
 
-	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
+	pqueue_init(&pqueue, ssize_compare, NULL, sizeof(ssize_t));
 	size = 0;
 	elts = empty_elts;
 }
@@ -39,7 +39,7 @@ static void singleton_setup(void **state)
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
-	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
+	pqueue_init(&pqueue, ssize_compare, NULL, sizeof(ssize_t));
 	elts = singleton_elts;
 	size = 1;
 	pqueue_push_all(&pqueue, elts, size);
@@ -55,7 +55,7 @@ static void sorted5_setup(void **state)
 {
 	static ssize_t sorted5_elts[] = { 5, 4, 3, 2, 1 };
 
-	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
+	pqueue_init(&pqueue, ssize_compare, NULL, sizeof(ssize_t));
 	elts = sorted5_elts;
 	size = 5;
 	pqueue_push_all(&pqueue, elts, size);
@@ -73,7 +73,7 @@ static void unsorted7_setup(void **state)
 	static ssize_t sorted7_elts[] = { 7, 6, 5, 4, 3, 2, 1 };
 	ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
 
-	pqueue_init(&pqueue, ssize_compare, sizeof(ssize_t));
+	pqueue_init(&pqueue, ssize_compare, NULL, sizeof(ssize_t));
 	elts = sorted7_elts;
 	size = 7;
 	pqueue_push_all(&pqueue, unsorted7_elts, size);

@@ -80,17 +80,16 @@ struct frame_var;
 
 struct var_type {
 	uint8_t dyad_event_mask;
-	
-	bool (*init) (struct design_var *dv, const struct design *d);
-	void (*deinit) (struct design_var *dv);
-	
-	bool (*frame_init) (struct frame_var *fv, struct frame *f);
-	void (*frame_deinit) (struct frame_var *fv);
-	void (*frame_clear) (struct frame_var *fv);
-	
-	bool (*handle_dyad) (struct frame_var *fv,
-			     const struct dyad_event *e,
-			     struct frame *f);
+
+	bool (*init) (struct design_var * dv, const struct design * d);
+	void (*deinit) (struct design_var * dv);
+
+	bool (*frame_init) (struct frame_var * fv, struct frame * f);
+	void (*frame_deinit) (struct frame_var * fv);
+	void (*frame_clear) (struct frame_var * fv);
+
+	bool (*handle_dyad) (struct frame_var * fv,
+			     const struct dyad_event * e, struct frame * f);
 };
 
 struct design_var {

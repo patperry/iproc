@@ -8,7 +8,7 @@ static bool vnrecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
 	assert(d);
-	
+
 	ssize_t n = vector_dim(design_intervals(d));
 	dv->dim = n + 1;
 	return true;
@@ -19,8 +19,8 @@ static void vnrecv_deinit(struct design_var *dv)
 	assert(dv);
 }
 
-static bool vnrecv_handle_dyad (struct frame_var *fv, const struct dyad_event *e,
-				struct frame *f)
+static bool vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
+			       struct frame *f)
 {
 	assert(fv);
 	assert(e);
@@ -57,9 +57,9 @@ static struct var_type VAR_TYPE_NRECV_REP = {
 	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
 	vnrecv_init,
 	vnrecv_deinit,
-	NULL, // frame_init,
-	NULL, // frame_deinit,
-	NULL, // frame_clear,
+	NULL,			// frame_init,
+	NULL,			// frame_deinit,
+	NULL,			// frame_clear,
 	vnrecv_handle_dyad
 };
 

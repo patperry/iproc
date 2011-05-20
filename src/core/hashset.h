@@ -10,7 +10,9 @@
 struct hashset {
 	struct sparsetable table;
 	hash_fn hash;
+	void *hash_udata;
 	equals_fn equals;
+	void *equals_udata;
 	ssize_t enlarge_threshold;	// (table size) * enlarge_factor
 	ssize_t shrink_threshold;	// (table size) * shrink_factor
 };
@@ -27,8 +29,8 @@ struct hashset_iter {
 	struct sparsetable_iter table_it;
 };
 
-bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
-		  size_t elt_size);
+bool hashset_init(struct hashset *s, hash_fn hash, void *hash_udata,
+		  equals_fn equals, void *equals_udata, size_t elt_size);
 bool hashset_init_copy(struct hashset *s, const struct hashset *src);
 void hashset_deinit(struct hashset *s);
 
@@ -74,14 +76,14 @@ void *hashset_iter_current(const struct hashset *s,
 static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
 {
 	// if (!s->hash) { return memory_hash(val, hashset_elt_size(s)); }
-	return s->hash(val);
+	return s->hash(val, s->hash_udata);
 }
 
 static inline bool hashset_equals(const struct hashset *s, const void *val1,
 				  const void *val2)
 {
 	// if (!s->equals) { return (memcmp(val1, val2, hashset_elt_size(s)) == 0); }
-	return s->equals(val1, val2);
+	return s->equals(val1, val2, s->equals_udata);
 }
 
 #endif /* _HASHSET_H */

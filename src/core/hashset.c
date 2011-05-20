@@ -72,7 +72,8 @@ static ssize_t hashset_bucket_count(const struct hashset *s)
 }
 
 static bool hashset_init_sized(struct hashset *s, hash_fn hash,
-			       equals_fn equals, ssize_t num_buckets,
+			       void *hash_udata, equals_fn equals,
+			       void *equals_udata, ssize_t num_buckets,
 			       size_t elt_size)
 {
 	assert(s);
@@ -83,16 +84,17 @@ static bool hashset_init_sized(struct hashset *s, hash_fn hash,
 
 	if (sparsetable_init(&s->table, num_buckets, elt_size)) {
 		s->hash = hash;
-		s->equals = equals;
-		hashset_reset_thresholds(s, num_buckets);
+		s->hash_udata = hash_udata, s->equals = equals;
+		s->equals_udata = equals_udata,
+		    hashset_reset_thresholds(s, num_buckets);
 		return true;
 	}
 
 	return false;
 }
 
-bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
-		  size_t elt_size)
+bool hashset_init(struct hashset *s, hash_fn hash, void *hash_udata,
+		  equals_fn equals, void *equals_udata, size_t elt_size)
 {
 	assert(s);
 	assert(hash);
@@ -100,7 +102,8 @@ bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 	assert(elt_size >= 0);
 
 	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
-	return hashset_init_sized(s, hash, equals, num_buckets, elt_size);
+	return hashset_init_sized(s, hash, hash_udata, equals, equals_udata,
+				  num_buckets, elt_size);
 }
 
 static bool hashset_init_copy_sized(struct hashset *s,
@@ -116,8 +119,9 @@ static bool hashset_init_copy_sized(struct hashset *s,
 	const void *val;
 	bool result = true;
 
-	if (!hashset_init_sized(s, src->hash, src->equals, num_buckets,
-				hashset_elt_size(src)))
+	if (!hashset_init_sized
+	    (s, src->hash, src->hash_udata, src->equals, src->equals_udata,
+	     num_buckets, hashset_elt_size(src)))
 		return false;
 
 	hashset_iter_init(src, &it);

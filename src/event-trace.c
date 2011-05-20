@@ -40,7 +40,7 @@ static ssize_t event_trace_find_index(const struct event_trace *trace,
 				      ssize_t e)
 {
 	assert(trace);
-	return array_binary_search(&trace->events, &e, ssize_compare);
+	return array_binary_search(&trace->events, &e, ssize_compare, NULL);
 }
 
 void event_trace_deinit(struct event_trace *trace)
@@ -122,7 +122,7 @@ bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert)
 	assert(trace);
 	assert(ninsert >= 0);
 	return array_set_capacity(&trace->pending,
-			      array_count(&trace->pending) + ninsert);
+				  array_count(&trace->pending) + ninsert);
 }
 
 bool event_trace_advance_to(struct event_trace *trace, double t)
@@ -147,7 +147,8 @@ bool event_trace_advance_to(struct event_trace *trace, double t)
 			pos = ~pos;
 
 			struct events *new_events;
-			if ((new_events = array_insert(&trace->events, pos, NULL))) {
+			if ((new_events =
+			     array_insert(&trace->events, pos, NULL))) {
 				if (!events_init(new_events, event->e)) {
 					array_remove_at(&trace->events, pos);
 					goto rollback;

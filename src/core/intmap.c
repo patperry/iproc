@@ -23,7 +23,8 @@ bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 	m->elt_align = elt_align;
 	m->val_offset = val_offset;
 
-	return hashset_init(&m->pairs, intptr_hash, intptr_equals, pair_size);
+	return hashset_init(&m->pairs, intptr_hash, NULL, intptr_equals, NULL,
+			    pair_size);
 }
 
 bool intmap_init_copy(struct intmap *m, const struct intmap *src)

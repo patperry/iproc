@@ -21,7 +21,7 @@ void Riproc_utils_init(DllInfo * info)
 SEXP Riproc_hash_numeric(SEXP x)
 {
 	struct vector view = Riproc_vector_view_sexp(x);
-	size_t hash = vector_hash(&view);
+	size_t hash = vector_hash(&view, NULL);
 	int int_hash = (int)(hash % INT_MAX);
 	return ScalarInteger(int_hash);
 }

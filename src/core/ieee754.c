@@ -167,26 +167,26 @@ DEFINE_COMPARE_AND_EQUALS_FN(uint64_compare, uint64_equals, uint64_t)
 /* compare using uint64_t instead of double to avoid dealing with NaN
  * comparisons; this relies on IEEE doubles being 8 bytes and lexicographically
  * ordered, and uint64_t having the same endianness and alignment as double */
-bool double_equals(const void *x, const void *y)
+bool double_equals(const void *x, const void *y, void *udata)
 {
-	return uint64_equals(x, y);
+	return uint64_equals(x, y, udata);
 }
 
-int double_compare(const void *x, const void *y)
+int double_compare(const void *x, const void *y, void *udata)
 {
-	union double_uint64 xrep = { *(double *) x };
-	union double_uint64 yrep = { *(double *) y };
+	union double_uint64 xrep = { *(double *)x };
+	union double_uint64 yrep = { *(double *)y };
 
-	if (xrep.w & UINT64_C(0x8000000000000000)) { // x < 0
-		return uint64_compare(y, x); // if y >= 0, returns -1, else returns cmp(|y|, |x|)
-	} else if (yrep.w & UINT64_C(0x8000000000000000)) { // x >= 0, y < 0
+	if (xrep.w & UINT64_C(0x8000000000000000)) {	// x < 0
+		return uint64_compare(y, x, udata);	// if y >= 0, returns -1, else returns cmp(|y|, |x|)
+	} else if (yrep.w & UINT64_C(0x8000000000000000)) {	// x >= 0, y < 0
 		return 1;
-	} else { // x >= 0, y >= 0
-		return uint64_compare(x, y);
+	} else {		// x >= 0, y >= 0
+		return uint64_compare(x, y, udata);
 	}
 }
 
-int double_rcompare(const void *x, const void *y)
+int double_rcompare(const void *x, const void *y, void *udata)
 {
-	return double_compare(y, x);
+	return double_compare(y, x, udata);
 }

@@ -22,14 +22,13 @@ struct vrecv_udata {
 	struct hashset active;
 };
 
-
-static uint32_t vrecv_active_hash(const void *x)
+static uint32_t vrecv_active_hash(const void *x, void *udata)
 {
 	const struct vrecv_active *active = x;
 	return memory_hash(&active->dyad, sizeof(active->dyad));
 }
 
-static bool vrecv_active_equals(const void *x, const void *y)
+static bool vrecv_active_equals(const void *x, const void *y, void *udata)
 {
 	const struct vrecv_active *a = x, *b = y;
 	return a->dyad.isend == b->dyad.isend && a->dyad.jrecv == b->dyad.jrecv;
@@ -54,19 +53,20 @@ static bool vrecv_frame_init(struct frame_var *fv, struct frame *f)
 {
 	assert(fv);
 	assert(f);
-	
+
 	struct vrecv_udata *udata;
-	
+
 	if (!(udata = malloc(sizeof(*udata))))
 		goto fail_malloc;
 
-	if (!hashset_init(&udata->active, vrecv_active_hash, vrecv_active_equals,
-			  sizeof(struct vrecv_active)))
+	if (!hashset_init
+	    (&udata->active, vrecv_active_hash, NULL, vrecv_active_equals, NULL,
+	     sizeof(struct vrecv_active)))
 		goto fail_active;
-	
+
 	fv->udata = udata;
 	return true;
-	
+
 	hashset_deinit(&udata->active);
 fail_active:
 	free(udata);
@@ -78,7 +78,7 @@ static void vrecv_frame_deinit(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
-	
+
 	struct vrecv_udata *udata = fv->udata;
 	hashset_deinit(&udata->active);
 	free(udata);
@@ -88,13 +88,13 @@ static void vrecv_frame_clear(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
-	
+
 	struct vrecv_udata *udata = fv->udata;
 	hashset_clear(&udata->active);
 }
 
-static bool vrecv_handle_dyad (struct frame_var *fv, const struct dyad_event *e,
-			       struct frame *f)
+static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
+			      struct frame *f)
 {
 	assert(fv);
 	assert(e);

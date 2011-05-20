@@ -767,29 +767,30 @@ bool sparsetable_resize(struct sparsetable *t, ssize_t n)
 			g = array_item(&t->groups, i);
 			sparsegroup_deinit(g, elt_size);
 		}
-		
+
 		array_remove_range(&t->groups, num_groups,
-				  num_groups0 - num_groups);
+				   num_groups0 - num_groups);
 		resize_ok = true;
 	} else {
 		resize_ok = array_add_range(&t->groups, NULL,
-					   num_groups - num_groups0);
+					    num_groups - num_groups0);
 	}
-	
+
 	if (n < n0) {
 		// lower num_buckets, clear last group
-		
+
 		if (index > 0) {	// need to clear inside last group
-			struct sparsegroup *g = array_item(&t->groups, array_count(&t->groups) - 1);
+			struct sparsegroup *g =
+			    array_item(&t->groups, array_count(&t->groups) - 1);
 			sparsegroup_remove_range(g, index,
 						 sparsegroup_size(g) - index,
 						 t->elt_size);
 		}
-		
+
 		t->num_buckets = 0;	// refigure # of used buckets
 		struct sparsegroup *groups = array_item(&t->groups, 0);
 		ssize_t i, n = array_count(&t->groups);
-		
+
 		for (i = 0; i < n; i++) {
 			t->num_buckets += sparsegroup_count(&groups[i]);
 		}
