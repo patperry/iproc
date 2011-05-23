@@ -4,16 +4,15 @@
 #include <stdlib.h>
 #include "actors.h"
 
-static uint32_t cohortp_traits_hash(const void *cohortp, void *udata)
+static uint32_t cohortp_traits_hash(const void *cohortp)
 {
-	return vector_hash(cohort_traits(*(struct cohort **)cohortp), udata);
+	return vector_hash(cohort_traits(*(struct cohort **)cohortp));
 }
 
-static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2,
-				  void *udata)
+static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2)
 {
 	return vector_equals(cohort_traits(*(struct cohort **)cohortp1),
-			     cohort_traits(*(struct cohort **)cohortp2), udata);
+			     cohort_traits(*(struct cohort **)cohortp2));
 }
 
 bool actors_init(struct actors *actors, ssize_t dim)
@@ -27,8 +26,8 @@ bool actors_init(struct actors *actors, ssize_t dim)
 	if (!ok)
 		goto fail_actors;
 
-	ok = hashset_init(&actors->cohorts, cohortp_traits_hash, NULL,
-			  cohortp_traits_equals, NULL, sizeof(struct cohort *));
+	ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
+			  cohortp_traits_equals, sizeof(struct cohort *));
 	if (!ok)
 		goto fail_cohorts;
 

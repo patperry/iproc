@@ -161,13 +161,13 @@ ssize_t reverse_find_index(const void *begin,
 }
 
 void *sorted_find(const void *begin, ssize_t size, const void *key,
-		  compare_fn compar, void *udata, size_t elt_size)
+		  compare_fn compar, size_t elt_size)
 {
 	assert(size >= 0);
 	assert(compar);
 	assert(elt_size > 0);
 
-	ssize_t i = binary_search(begin, size, key, compar, udata, elt_size);
+	ssize_t i = binary_search(begin, size, key, compar, elt_size);
 
 	if (i >= 0) {
 		return (char *)begin + i * elt_size;
@@ -177,7 +177,7 @@ void *sorted_find(const void *begin, ssize_t size, const void *key,
 }
 
 ssize_t binary_search(const void *begin, ssize_t size, const void *key,
-		      compare_fn compar, void *udata, size_t elt_size)
+		      compare_fn compar, size_t elt_size)
 {
 	assert(size >= 0);
 	assert(compar);
@@ -192,7 +192,7 @@ ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 	while (left < right) {
 		i = left + ((right - left) >> 1);
 		ptr = (char *)begin + i * elt_size;
-		cmp = compar(ptr, key, udata);
+		cmp = compar(ptr, key);
 
 		if (cmp < 0) {	// array[i] < key
 			left = i + 1;

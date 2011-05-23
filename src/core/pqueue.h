@@ -12,12 +12,10 @@
 struct pqueue {
 	struct array array;
 	compare_fn compare;
-	void *compare_udata;
 };
 
 /* create, destroy */
-bool pqueue_init(struct pqueue *q, compare_fn compar, void *compar_udata,
-		 size_t elt_size);
+bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size);
 bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src);
 void pqueue_deinit(struct pqueue *q);
 

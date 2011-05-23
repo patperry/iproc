@@ -117,7 +117,7 @@ void *array_add_range(struct array *a, const void *ptr, ssize_t n)
 }
 
 ssize_t array_binary_search(const struct array *a, const void *key,
-			    compare_fn compar, void *udata)
+			    compare_fn compar)
 {
 	assert(a);
 	assert(compar);
@@ -126,7 +126,7 @@ ssize_t array_binary_search(const struct array *a, const void *key,
 		return ~((ssize_t)0);
 
 	return binary_search(array_item(a, 0), array_count(a), key, compar,
-			     udata, array_elt_size(a));
+			     array_elt_size(a));
 }
 
 void array_clear(struct array *a)
@@ -311,14 +311,14 @@ void array_reverse(struct array *a)
 	memory_reverse(array_item(a, 0), array_count(a), array_elt_size(a));
 }
 
-void array_sort(struct array *a, compare_fn compar, void *udata)
+void array_sort(struct array *a, compare_fn compar)
 {
 	assert(a);
 	assert(compar);
 
 	int err =
-	    timsort(array_item(a, 0), array_count(a), array_elt_size(a), compar,
-		    udata);
+	    timsort(array_item(a, 0), array_count(a), array_elt_size(a),
+		    compar);
 	assert(!err);
 }
 

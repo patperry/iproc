@@ -6,8 +6,7 @@
 
 #include "pqueue.h"
 
-bool pqueue_init(struct pqueue *q, compare_fn compar, void *compar_udata,
-		 size_t elt_size)
+bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
 {
 	assert(q);
 	assert(compar);
@@ -15,7 +14,6 @@ bool pqueue_init(struct pqueue *q, compare_fn compar, void *compar_udata,
 
 	if (array_init(&q->array, elt_size)) {
 		q->compare = compar;
-		q->compare_udata = compar_udata;
 		return q;
 	}
 
@@ -29,7 +27,6 @@ bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
 
 	if (array_init_copy(&q->array, &src->array)) {
 		q->compare = src->compare;
-		q->compare_udata = src->compare_udata;
 		return q;
 	}
 
@@ -49,7 +46,6 @@ struct pqueue *pqueue_assign_copy(struct pqueue *q, const struct pqueue *src)
 
 	if (array_assign_copy(&q->array, &src->array)) {
 		q->compare = src->compare;
-		q->compare_udata = src->compare_udata;
 		return q;
 	}
 
@@ -76,7 +72,6 @@ bool pqueue_push(struct pqueue *q, const void *val)
 
 	struct array *array = &q->array;
 	compare_fn compare = q->compare;
-	void *udata = q->compare_udata;
 	ssize_t icur = array_count(array);
 
 	// make space for the new element
@@ -91,7 +86,7 @@ bool pqueue_push(struct pqueue *q, const void *val)
 		void *parent = array_item(array, iparent);
 
 		// if cur <= parent, heap condition is satisfied
-		if (compare(val, parent, udata) <= 0)
+		if (compare(val, parent) <= 0)
 			break;
 
 		// otherwise, swap(cur,parent)
@@ -138,7 +133,6 @@ void pqueue_pop(struct pqueue *q)
 
 	// swap the last element in the tree with the root, then heapify
 	compare_fn compare = q->compare;
-	void *udata = q->compare_udata;
 	void *cur = array_item(array, array_count(array) - 1);
 	ssize_t icur = 0;
 
@@ -152,7 +146,7 @@ void pqueue_pop(struct pqueue *q)
 		void *max;
 
 		// find the child with highest priority
-		if (iright == n || compare(right, left, udata) <= 0) {
+		if (iright == n || compare(right, left) <= 0) {
 			imax = ileft;
 			max = left;
 		} else {
@@ -161,7 +155,7 @@ void pqueue_pop(struct pqueue *q)
 		}
 
 		// stop if heap condition is satisfied
-		if (compare(max, cur, udata) <= 0)
+		if (compare(max, cur) <= 0)
 			break;
 
 		// otherwise swap current with maximum child
@@ -185,7 +179,6 @@ void pqueue_update_top(struct pqueue *q)
 	ssize_t n = array_count(array);
 	size_t elt_size = pqueue_elt_size(q);
 	compare_fn compare = q->compare;
-	void *udata = q->compare_udata;
 
 	// make a temporary copy of the old top
 	void *cur = alloca(elt_size);
@@ -207,7 +200,7 @@ void pqueue_update_top(struct pqueue *q)
 			ssize_t iright = ileft + 1;
 			void *right = array_item(array, iright);
 
-			if (compare(right, left, udata) <= 0) {
+			if (compare(right, left) <= 0) {
 				imax = ileft;
 				max = left;
 			} else {
@@ -217,7 +210,7 @@ void pqueue_update_top(struct pqueue *q)
 		}
 
 		// stop if heap condition is satisfied
-		if (compare(max, cur, udata) <= 0)
+		if (compare(max, cur) <= 0)
 			break;
 
 		// otherwise swap current with maximum child

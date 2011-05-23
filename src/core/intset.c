@@ -160,8 +160,7 @@ bool intset_find(const struct intset *s, intptr_t val, struct intset_pos *pos)
 	assert(s);
 	assert(pos);
 
-	ssize_t index =
-	    array_binary_search(&s->values, &val, intptr_compare, NULL);
+	ssize_t index = array_binary_search(&s->values, &val, intptr_compare);
 	pos->value = val;
 
 	if (index >= 0) {

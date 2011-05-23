@@ -95,7 +95,7 @@ ssize_t slice_find_last_index(const struct slice *a, predicate_fn match,
 }
 
 ssize_t slice_binary_search(const struct slice *a, const void *key,
-			    compare_fn compar, void *udata)
+			    compare_fn compar)
 {
 	assert(a);
 	assert(compar);
@@ -104,10 +104,10 @@ ssize_t slice_binary_search(const struct slice *a, const void *key,
 		return ~((ssize_t)0);
 
 	return binary_search(slice_item(a, 0), slice_count(a), key, compar,
-			     udata, slice_elt_size(a));
+			     slice_elt_size(a));
 }
 
-void slice_sort(struct slice *a, compare_fn compar, void *udata)
+void slice_sort(struct slice *a, compare_fn compar)
 {
 	assert(a);
 	assert(compar);
@@ -116,7 +116,7 @@ void slice_sort(struct slice *a, compare_fn compar, void *udata)
 		return;
 
 	int err =
-	    timsort(slice_item(a, 0), slice_count(a), slice_elt_size(a), compar,
-		    udata);
+	    timsort(slice_item(a, 0), slice_count(a), slice_elt_size(a),
+		    compar);
 	assert(!err);		// TODO: better error handling
 }

@@ -22,13 +22,13 @@ struct vrecv_udata {
 	struct hashset active;
 };
 
-static uint32_t vrecv_active_hash(const void *x, void *udata)
+static uint32_t vrecv_active_hash(const void *x)
 {
 	const struct vrecv_active *active = x;
 	return memory_hash(&active->dyad, sizeof(active->dyad));
 }
 
-static bool vrecv_active_equals(const void *x, const void *y, void *udata)
+static bool vrecv_active_equals(const void *x, const void *y)
 {
 	const struct vrecv_active *a = x, *b = y;
 	return a->dyad.isend == b->dyad.isend && a->dyad.jrecv == b->dyad.jrecv;
@@ -60,7 +60,7 @@ static bool vrecv_frame_init(struct frame_var *fv, struct frame *f)
 		goto fail_malloc;
 
 	if (!hashset_init
-	    (&udata->active, vrecv_active_hash, NULL, vrecv_active_equals, NULL,
+	    (&udata->active, vrecv_active_hash, vrecv_active_equals,
 	     sizeof(struct vrecv_active)))
 		goto fail_active;
 

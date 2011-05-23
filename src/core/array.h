@@ -57,8 +57,8 @@ void *array_find_last(const struct array *a, predicate_fn match, void *udata);
 ssize_t array_find_last_index(const struct array *a, predicate_fn match,
 			      void *udata);
 ssize_t array_binary_search(const struct array *a, const void *key,
-			    compare_fn compar, void *udata);
-void array_sort(struct array *a, compare_fn compar, void *udata);
+			    compare_fn compar);
+void array_sort(struct array *a, compare_fn compar);
 
 /* reverse */
 void array_reverse(struct array *a);

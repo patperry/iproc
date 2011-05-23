@@ -468,7 +468,7 @@ void vector_printf(const struct vector *v)
 	printf("\n}\n");
 }
 
-uint32_t vector_hash(const void *v, void *udata)
+uint32_t vector_hash(const void *v)
 {
 	const struct vector *vector = v;
 	uint32_t seed = 0;
@@ -476,7 +476,7 @@ uint32_t vector_hash(const void *v, void *udata)
 
 	for (i = 0; i < n; i++) {
 		double x = *vector_at(vector, i);
-		uint32_t hash_value = double_hash(&x, udata);
+		uint32_t hash_value = double_hash(&x);
 		hash_combine(&seed, hash_value);
 	}
 
@@ -485,7 +485,7 @@ uint32_t vector_hash(const void *v, void *udata)
 	return seed;
 }
 
-bool vector_equals(const void *v1, const void *v2, void *udata)
+bool vector_equals(const void *v1, const void *v2)
 {
 	const struct vector *vector1 = v1;
 	const struct vector *vector2 = v2;
@@ -510,7 +510,7 @@ bool vector_equals(const void *v1, const void *v2, void *udata)
 	return true;
 }
 
-int vector_compare(const void *x1, const void *x2, void *udata)
+int vector_compare(const void *x1, const void *x2)
 {
 	const struct vector *vector1 = x1;
 	const struct vector *vector2 = x2;
@@ -531,7 +531,7 @@ int vector_compare(const void *x1, const void *x2, void *udata)
 	ssize_t i, n = n1;
 
 	for (i = 0; i < n; i++) {
-		int cmp = double_compare(p1 + i, p2 + i, udata);
+		int cmp = double_compare(p1 + i, p2 + i);
 		if (cmp != 0)
 			return cmp;
 	}
@@ -539,7 +539,7 @@ int vector_compare(const void *x1, const void *x2, void *udata)
 	return 0;
 }
 
-int vector_ptr_compare(const void *px1, const void *px2, void *udata)
+int vector_ptr_compare(const void *px1, const void *px2)
 {
 	struct vector *const *pvector1 = px1;
 	struct vector *const *pvector2 = px2;
@@ -549,5 +549,5 @@ int vector_ptr_compare(const void *px1, const void *px2, void *udata)
 	if (!pvector2)
 		return +1;
 
-	return vector_compare(*pvector1, *pvector2, udata);
+	return vector_compare(*pvector1, *pvector2);
 }

@@ -1,8 +1,8 @@
 #ifndef _COMPARE_H
 #define _COMPARE_H
 
-typedef bool (*equals_fn) (const void *px, const void *py, void *udata);
-typedef int (*compare_fn) (const void *px, const void *py, void *udata);
+typedef bool (*equals_fn) (const void *px, const void *py);
+typedef int (*compare_fn) (const void *px, const void *py);
 
 /* Example use:
  * 
@@ -10,7 +10,7 @@ typedef int (*compare_fn) (const void *px, const void *py, void *udata);
  */
 
 #define DEFINE_COMPARE_FN(name, t) \
-        static inline int name (const void *px, const void *py, void *udata)	\
+        static inline int name (const void *px, const void *py)	\
         {                        \
             t x = *(t *)px;      \
             t y = *(t *)py;      \
@@ -25,7 +25,7 @@ typedef int (*compare_fn) (const void *px, const void *py, void *udata);
         }
 
 #define DEFINE_EQUALS_FN(name, t) \
-        static inline bool name (const void *px, const void *py, void *udata)	\
+        static inline bool name (const void *px, const void *py)	\
         {                        \
             t x = *(t *)px;      \
             t y = *(t *)py;      \

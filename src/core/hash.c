@@ -103,7 +103,7 @@ static uint32_t double_hash_impl(double v)
 	return seed;
 }
 
-uint32_t double_hash(const void *val, void *udata)
+uint32_t double_hash(const void *val)
 {
 	double v = *(double *)val;
 

@@ -40,7 +40,7 @@ static ssize_t event_trace_find_index(const struct event_trace *trace,
 				      ssize_t e)
 {
 	assert(trace);
-	return array_binary_search(&trace->events, &e, ssize_compare, NULL);
+	return array_binary_search(&trace->events, &e, ssize_compare);
 }
 
 void event_trace_deinit(struct event_trace *trace)

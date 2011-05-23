@@ -45,8 +45,8 @@ void *slice_find_last(const struct slice *a, predicate_fn match, void *udata);
 ssize_t slice_find_last_index(const struct slice *a, predicate_fn match,
 			      void *udata);
 ssize_t slice_binary_search(const struct slice *a, const void *key,
-			    compare_fn compar, void *udata);
-void slice_sort(struct slice *a, compare_fn compar, void *udata);
+			    compare_fn compar);
+void slice_sort(struct slice *a, compare_fn compar);
 
 /* inline function defs */
 struct slice slice_make(const void *ptr, ssize_t n, size_t elt_size)

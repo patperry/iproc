@@ -28,10 +28,10 @@ void vector_fill(struct vector *v, double val);
 void vector_set_basis(struct vector *v, ssize_t i);
 
 /* hash, compare */
-uint32_t vector_hash(const void *v, void *udata);
-bool vector_equals(const void *v1, const void *v2, void *udata);
-int vector_compare(const void *v1, const void *v2, void *udata);
-int vector_ptr_compare(const void *pv1, const void *pv2, void *udata);
+uint32_t vector_hash(const void *v);
+bool vector_equals(const void *v1, const void *v2);
+int vector_compare(const void *v1, const void *v2);
+int vector_ptr_compare(const void *pv1, const void *pv2);
 
 /* index */
 #define vector_front(v)          vector_at(v, 0)

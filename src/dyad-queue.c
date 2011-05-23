@@ -4,11 +4,11 @@
 #include "ieee754.h"
 #include "dyad-queue.h"
 
-static int dyad_queue_event_rcompare(const void *x, const void *y, void *udata)
+static int dyad_queue_event_rcompare(const void *x, const void *y)
 {
 	const struct dyad_queue_event *e = x;
 	const struct dyad_queue_event *f = y;
-	return double_rcompare(&e->tnext, &f->tnext, udata);
+	return double_rcompare(&e->tnext, &f->tnext);
 }
 
 bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
@@ -25,7 +25,7 @@ bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 	}
 #endif
 
-	if (!pqueue_init(&queue->events, dyad_queue_event_rcompare, NULL,
+	if (!pqueue_init(&queue->events, dyad_queue_event_rcompare,
 			 sizeof(struct dyad_queue_event)))
 		goto fail_events;
 
