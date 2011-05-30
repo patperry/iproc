@@ -45,23 +45,29 @@ void array_clear(struct array *a);
 void *array_insert(struct array *a, ssize_t i, const void *val);
 void *array_insert_range(struct array *a,
 			 ssize_t i, const void *vals, ssize_t n);
+bool array_remove(struct array *a, predicate_fn match, void *udata);
+ssize_t array_remove_all(struct array *a, predicate_fn match, void *udata);
 void array_remove_at(struct array *a, ssize_t i);
 void array_remove_range(struct array *a, ssize_t i, ssize_t n);
 
 /* searching, sorting */
 bool array_exists(const struct array *a, predicate_fn match, void *udata);
 void *array_find(const struct array *a, predicate_fn match, void *udata);
+ssize_t array_find_all(const struct array *a, predicate_fn match, void *udata,
+		       void *dst, ssize_t n);
 ssize_t array_find_index(const struct array *a, predicate_fn match,
 			 void *udata);
 void *array_find_last(const struct array *a, predicate_fn match, void *udata);
 ssize_t array_find_last_index(const struct array *a, predicate_fn match,
 			      void *udata);
+bool array_true_for_all(const struct array *a, predicate_fn match, void *udata);
+
 ssize_t array_binary_search(const struct array *a, const void *key,
 			    compare_fn compar);
-void array_sort(struct array *a, compare_fn compar);
-
-/* reverse */
 void array_reverse(struct array *a);
+void array_sort(struct array *a, compare_fn compar);
+void array_trim_excess(struct array *a);
+
 
 #define ARRAY_FOREACH(val, a) \
 	for ((val) = (a)->data; \

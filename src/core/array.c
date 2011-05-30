@@ -116,7 +116,7 @@ void array_clear(struct array *a)
 }
 
 /* UNNECESSARY contains */
-/* MISSING convert_all */
+/* UNNECESSARY convert_all */
 
 void array_copy_to(const struct array *a, void *dst)
 {
@@ -162,7 +162,33 @@ void *array_find(const struct array *a, predicate_fn match, void *udata)
 
 }
 
-/* MISSING find_all */
+ssize_t array_find_all(const struct array *a, predicate_fn match, void *udata,
+		       void *dst, ssize_t n)
+{
+	assert(a);
+	assert(match);
+	assert(dst || n == 0);
+
+	size_t elt_size = array_elt_size(a);
+	ssize_t c = array_count(a);
+	ssize_t m = 0;
+	ssize_t i;
+	const void *val;
+
+	for (i = 0; i < c; i++) {
+		val = array_item(a, i);
+		if (match(val, udata)) {
+			m++;
+			if (n > 0) {
+				memcpy(dst, val, elt_size);
+				dst += elt_size;
+				n--;
+			}
+		}
+	}
+
+	return m;
+}
 
 ssize_t array_find_index(const struct array *a, predicate_fn match, void *udata)
 {
@@ -204,7 +230,7 @@ ssize_t array_find_last_index(const struct array *a, predicate_fn match,
 /* UNNECESSARY for_each */
 /* UNNECESSARY get_enumerator */
 /* MISSING get_hash_code */
-/* MISSING get_range */
+/* UNNECESSARY get_range */
 /* UNNECESSARY index_of */
 
 void *array_insert(struct array *a, ssize_t i, const void *val)
@@ -248,8 +274,42 @@ void *array_insert_range(struct array *l, ssize_t i, const void *vals,
 }
 
 /* UNNECESSARY last_index_of */
-/* MISSING remove */
-/* MISSING remove_all */
+
+bool array_remove(struct array *a, predicate_fn match, void *udata)
+{
+	assert(a);
+	assert(match);
+
+	ssize_t i = array_find_index(a, match, udata);
+
+	if (i >= 0) {
+		array_remove_at(a, i);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+ssize_t array_remove_all(struct array *a, predicate_fn match, void *udata)
+{
+	assert(a);
+	assert(match);
+
+	ssize_t r = 0;
+	ssize_t n = array_count(a);
+	ssize_t i;
+	const void *val;
+
+	for (i = n; i > 0; i--) {
+		val = array_item(a, i - 1);
+		if (match(val, udata)) {
+			array_remove_at(a, i - 1);
+			r++;
+		}
+	}
+
+	return r;
+}
 
 void array_remove_at(struct array *a, ssize_t i)
 {
@@ -294,13 +354,34 @@ void array_sort(struct array *a, compare_fn compar)
 	assert(a);
 	assert(compar);
 
-	int err =
-	    timsort(array_item(a, 0), array_count(a), array_elt_size(a),
-		    compar);
+	int err = timsort(array_item(a, 0), array_count(a), array_elt_size(a),
+			  compar);
 	assert(!err);
 }
 
 /* UNNECESSARY to_array */
-/* MISSING to_string */
-/* MISSING trim_excess */
-/* MISSING true_for_all */
+/* UNNECESSARY to_string */
+
+void array_trim_excess(struct array *a)
+{
+	assert(a);
+	array_set_capacity(a, array_count(a));
+}
+
+bool array_true_for_all(const struct array *a, predicate_fn match, void *udata)
+{
+	assert(a);
+	assert(match);
+
+	ssize_t n = array_count(a);
+	ssize_t i;
+	const void *val;
+
+	for (i = 0; i < n; i++) {
+		val = array_item(a, i);
+		if (!match(val, udata))
+			return false;
+	}
+
+	return true;
+}
