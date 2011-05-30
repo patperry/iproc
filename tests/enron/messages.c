@@ -26,17 +26,15 @@ struct message_parse {
 
 static bool message_parse_init(struct message_parse *parse, struct messages *messages)
 {
-	if (array_init(&parse->receiver_id, sizeof(ssize_t))) {
-		parse->messages = messages;
-		parse->id = -1;
-		parse->time = NAN;
-		parse->sender_id = -1;
-		parse->attr = 0;
-		parse->map_key = MAP_KEY_NONE;
-		parse->multiple_receivers = false;
-		return true;
-	}
-	return false;
+	array_init(&parse->receiver_id, sizeof(ssize_t));
+	parse->messages = messages;
+	parse->id = -1;
+	parse->time = NAN;
+	parse->sender_id = -1;
+	parse->attr = 0;
+	parse->map_key = MAP_KEY_NONE;
+	parse->multiple_receivers = false;
+	return true;
 }
 
 static void message_parse_deinit(struct message_parse *parse)

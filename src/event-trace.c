@@ -13,7 +13,8 @@ static bool events_init(struct events *events, ssize_t e)
 {
 	assert(events);
 	events->e = e;
-	return array_init(&events->meta, sizeof(struct event_meta));
+	array_init(&events->meta, sizeof(struct event_meta));
+	return true;
 }
 
 static void events_deinit(struct events *events)
@@ -62,19 +63,10 @@ bool event_trace_init(struct event_trace *trace)
 {
 	assert(trace);
 
-	if (!array_init(&trace->pending, sizeof(struct event)))
-		goto fail_pending;
-
-	if (!array_init(&trace->events, sizeof(struct events)))
-		goto fail_events;
-
+	array_init(&trace->pending, sizeof(struct event));
+	array_init(&trace->events, sizeof(struct events));
 	trace->tcur = -INFINITY;
 	return true;
-
-fail_events:
-	array_deinit(&trace->pending);
-fail_pending:
-	return false;
 }
 
 struct event_trace *event_trace_alloc()
@@ -121,8 +113,9 @@ bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert)
 {
 	assert(trace);
 	assert(ninsert >= 0);
-	return array_set_capacity(&trace->pending,
-				  array_count(&trace->pending) + ninsert);
+	array_set_capacity(&trace->pending,
+			   array_count(&trace->pending) + ninsert);
+	return true;
 }
 
 bool event_trace_advance_to(struct event_trace *trace, double t)

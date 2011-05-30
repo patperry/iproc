@@ -11,10 +11,8 @@ bool intset_init(struct intset *s)
 {
 	assert(s);
 
-	if (array_init(&s->values, sizeof(intptr_t))) {
-		return s;
-	}
-	return NULL;
+	array_init(&s->values, sizeof(intptr_t));
+	return true;
 }
 
 bool intset_init_copy(struct intset *s, const struct intset *src)
@@ -43,10 +41,8 @@ bool intset_assign_copy(struct intset *s, const struct intset *src)
 	assert(s);
 	assert(src);
 
-	if (array_assign_copy(&s->values, &src->values)) {
-		return s;
-	}
-	return NULL;
+	array_assign_copy(&s->values, &src->values);
+	return true;
 }
 
 intptr_t *intset_copy_to(const struct intset *s, intptr_t *dst)

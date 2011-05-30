@@ -12,12 +12,9 @@ bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
 	assert(compar);
 	assert(elt_size > 0);
 
-	if (array_init(&q->array, elt_size)) {
-		q->compare = compar;
-		return q;
-	}
-
-	return NULL;
+	array_init(&q->array, elt_size);
+	q->compare = compar;
+	return true;
 }
 
 bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
@@ -25,12 +22,9 @@ bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
 	assert(q);
 	assert(src);
 
-	if (array_init_copy(&q->array, &src->array)) {
-		q->compare = src->compare;
-		return q;
-	}
-
-	return NULL;
+	array_init_copy(&q->array, &src->array);
+	q->compare = src->compare;
+	return true;
 }
 
 void pqueue_deinit(struct pqueue *q)
@@ -44,12 +38,9 @@ struct pqueue *pqueue_assign_copy(struct pqueue *q, const struct pqueue *src)
 	assert(q);
 	assert(src);
 
-	if (array_assign_copy(&q->array, &src->array)) {
-		q->compare = src->compare;
-		return q;
-	}
-
-	return NULL;
+	array_assign_copy(&q->array, &src->array);
+	q->compare = src->compare;
+	return q;
 }
 
 void pqueue_copy_to(const struct pqueue *q, void *dst)
@@ -75,9 +66,6 @@ bool pqueue_push(struct pqueue *q, const void *val)
 	ssize_t icur = array_count(array);
 
 	// make space for the new element
-	if (!array_set_capacity(array, icur + 1))
-		return false;
-
 	array_add(array, NULL);
 
 	// while current element has a parent:
@@ -226,7 +214,8 @@ bool pqueue_reserve(struct pqueue *q, ssize_t n)
 {
 	assert(q);
 	assert(n >= 0);
-	return array_set_capacity(&q->array, n);
+	array_set_capacity(&q->array, n);
+	return true;
 }
 
 bool pqueue_reserve_push(struct pqueue *q, ssize_t npush)

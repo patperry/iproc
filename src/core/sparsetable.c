@@ -652,17 +652,16 @@ struct sparsegroup *sparsetable_which_group(const struct sparsetable *t,
 
 bool sparsetable_init(struct sparsetable *t, ssize_t n, size_t elt_size)
 {
-	if (array_init(&t->groups, sizeof(struct sparsegroup))) {
-		t->table_size = 0;
-		t->num_buckets = 0;
-		t->elt_size = elt_size;
-		if (sparsetable_resize(t, n)) {
-			return true;
-		}
+	array_init(&t->groups, sizeof(struct sparsegroup));
+	t->table_size = 0;
+	t->num_buckets = 0;
+	t->elt_size = elt_size;
+	if (sparsetable_resize(t, n)) {
+		return true;
+	} else {
 		array_deinit(&t->groups);
 		return false;
 	}
-	return false;
 }
 
 bool sparsetable_init_copy(struct sparsetable *t, const struct sparsetable *src)

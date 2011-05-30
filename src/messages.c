@@ -9,10 +9,8 @@ bool messages_init(struct messages *msgs)
 {
 	assert(msgs);
 
-	if (!array_init(&msgs->message_reps, sizeof(struct message_rep)))
-		goto fail_message_reps;
-	if (!array_init(&msgs->recipients, sizeof(ssize_t)))
-		goto fail_recipients;
+	array_init(&msgs->message_reps, sizeof(struct message_rep));
+	array_init(&msgs->recipients, sizeof(ssize_t));
 	if (!refcount_init(&msgs->refcount))
 		goto fail_refcount;
 
@@ -25,9 +23,7 @@ bool messages_init(struct messages *msgs)
 
 fail_refcount:
 	array_deinit(&msgs->recipients);
-fail_recipients:
 	array_deinit(&msgs->message_reps);
-fail_message_reps:
 	return false;
 }
 
@@ -110,11 +106,6 @@ bool messages_add(struct messages *msgs, double time,
 
 	struct array *message_reps = &msgs->message_reps;
 	struct array *recipients = &msgs->recipients;
-
-	// reserve space for new recipients and message_reps
-	if (!array_set_capacity(message_reps, array_count(message_reps) + 1)
-	    || !array_set_capacity(recipients, array_count(recipients) + nto))
-		return false;
 
 	ssize_t ito = array_count(recipients);
 	struct message_rep m = { {time, from, NULL, nto, attr}, ito };

@@ -13,13 +13,12 @@ static bool trace_array_grow(struct array *array, ssize_t n)
 	struct history_trace *ht;
 
 	if (n > nold) {
-		if (array_set_capacity(array, n)) {
-			for (i = nold; i < n; i++) {
-				ht = array_insert(array, i, NULL);
-				if (!event_trace_init(&ht->trace)) {
-					array_remove_at(array, i);
-					return false;
-				}
+		array_set_capacity(array, n);
+		for (i = nold; i < n; i++) {
+			ht = array_insert(array, i, NULL);
+			if (!event_trace_init(&ht->trace)) {
+				array_remove_at(array, i);
+				return false;
 			}
 		}
 	}
@@ -85,20 +84,10 @@ bool history_init(struct history *history)
 {
 	assert(history);
 
-	if (!array_init(&history->send, sizeof(struct history_trace)))
-		goto fail_send;
-
-	if (!array_init(&history->recv, sizeof(struct history_trace)))
-		goto fail_recv;
-
+	array_init(&history->send, sizeof(struct history_trace));
+	array_init(&history->recv, sizeof(struct history_trace));
 	history->tcur = -INFINITY;
 	return true;
-
-	array_deinit(&history->recv);
-fail_recv:
-	array_deinit(&history->send);
-fail_send:
-	return false;
 }
 
 void history_clear(struct history *history)

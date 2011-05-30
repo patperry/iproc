@@ -22,9 +22,7 @@ bool actors_init(struct actors *actors, ssize_t dim)
 
 	bool ok;
 
-	ok = array_init(&actors->actors, sizeof(struct actor));
-	if (!ok)
-		goto fail_actors;
+	array_init(&actors->actors, sizeof(struct actor));
 
 	ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
 			  cohortp_traits_equals, sizeof(struct cohort *));
@@ -44,7 +42,6 @@ fail_refcount:
 	hashset_deinit(&actors->cohorts);
 fail_cohorts:
 	array_deinit(&actors->actors);
-fail_actors:
 	return false;
 }
 

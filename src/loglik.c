@@ -40,9 +40,8 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 	loglik->nsend = 0;
 	loglik->nrecv = 0;
 	refcount_init(&loglik->refcount);
-
-	if (!(array_init(&loglik->sloglik_array, sizeof(iproc_sloglik *))
-	      && loglik->grad)) {
+	array_init(&loglik->sloglik_array, sizeof(iproc_sloglik *));
+	if (!(loglik->grad)) {
 		iproc_loglik_free(loglik);
 		loglik = NULL;
 	}

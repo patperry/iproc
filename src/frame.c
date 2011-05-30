@@ -78,11 +78,8 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 	assert(frame);
 	assert(design);
 
-	if (!array_init(&frame->vars, sizeof(struct frame_var)))
-		goto fail_init;
-
-	if (!array_set_capacity(&frame->vars, array_count(&design->vars)))
-		goto fail_reserve;
+	array_init(&frame->vars, sizeof(struct frame_var));
+	array_set_capacity(&frame->vars, array_count(&design->vars));
 
 	array_add_range(&frame->vars, NULL, array_count(&design->vars));
 
@@ -110,11 +107,8 @@ fail_var_init:
 			fv->design->type->frame_deinit(fv);
 		}
 	}
-fail_reserve:
 	array_deinit(&frame->vars);
-fail_init:
 	return false;
-
 }
 
 static void var_frames_deinit(struct frame *frame)

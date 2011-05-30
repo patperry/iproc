@@ -19,14 +19,14 @@ struct array {
 };
 
 /* create, destroy */
-bool array_init(struct array *a, size_t elt_size);
-bool array_init_copy(struct array *a, const struct array *src);
-bool array_assign_copy(struct array *a, const struct array *src);
+void array_init(struct array *a, size_t elt_size);
+void array_init_copy(struct array *a, const struct array *src);
+void array_assign_copy(struct array *a, const struct array *src);
 void array_deinit(struct array *a);
 
 /* properties */
 static inline ssize_t array_capacity(const struct array *a);
-bool array_set_capacity(struct array *a, ssize_t n);
+void array_set_capacity(struct array *a, ssize_t n);
 static inline ssize_t array_count(const struct array *a);
 static inline void *array_item(const struct array *a, ssize_t i);
 static inline void array_set_item(struct array *a, ssize_t i, const void *val);
@@ -38,7 +38,7 @@ void array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
 
 /* standard operations */
 
-// insert operations return pionters to the newly created space
+// insert operations return pointers to the newly created space
 void *array_add(struct array *a, const void *val);
 void *array_add_range(struct array *a, const void *ptr, ssize_t n);
 void array_clear(struct array *a);

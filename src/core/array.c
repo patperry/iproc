@@ -11,7 +11,7 @@
 #define MIN_CAPACITY_DELTA 4
 
 // 0, 1, 5, 11, 20, 34, 55, 86, 133, 203, 308, ...
-static bool array_grow(struct array *a, ssize_t delta)
+static void array_grow(struct array *a, ssize_t delta)
 {
 	assert(a);
 	assert(delta >= 0);
@@ -28,10 +28,10 @@ static bool array_grow(struct array *a, ssize_t delta)
 		n = (n <= nmax - inc) ? n + inc : nmax;
 	}
 
-	return array_set_capacity(a, n);
+	array_set_capacity(a, n);
 }
 
-bool array_init(struct array *a, size_t elt_size)
+void array_init(struct array *a, size_t elt_size)
 {
 	assert(a);
 	assert(elt_size >= 0);
@@ -40,64 +40,44 @@ bool array_init(struct array *a, size_t elt_size)
 	a->count = 0;
 	a->capacity = 0;
 	a->elt_size = elt_size;
-	return true;
 }
 
-bool array_init_copy(struct array *a, const struct array *src)
+void array_init_copy(struct array *a, const struct array *src)
 {
 	assert(a);
 	assert(src);
 
-	if (!array_init(a, array_elt_size(src)))
-		goto fail_init;
-
-	if (!array_assign_copy(a, src))
-		goto fail_assign_copy;
-
-	return true;
-
-fail_assign_copy:
-	array_deinit(a);
-fail_init:
-	return false;
+	array_init(a, array_elt_size(src));
+	array_assign_copy(a, src);
 }
 
-bool array_assign_copy(struct array *a, const struct array *src)
+void array_assign_copy(struct array *a, const struct array *src)
 {
 	assert(a);
 	assert(src);
 
 	ssize_t n = array_count(src);
 
-	if (array_count(a) >= n || array_set_capacity(a, n)) {
-		array_clear(a);
-		if (n > 0)
-			array_add_range(a, array_item(src, 0), n);
-		return true;
-	}
-
-	return false;
+	array_clear(a);
+	array_set_capacity(a, n);
+	if (n > 0)
+		array_add_range(a, array_item(src, 0), n);
 }
 
 void array_deinit(struct array *a)
 {
 	assert(a);
-	free(a->data);
+	xfree(a->data);
 }
 
-bool array_set_capacity(struct array *a, ssize_t n)
+void array_set_capacity(struct array *a, ssize_t n)
 {
 	assert(a);
 	assert(n >= array_count(a));
 
-	void *data1 = realloc(a->data, n * array_elt_size(a));
-	if (data1) {
-		a->data = data1;
-		a->capacity = n;
-		return true;
-	}
-
-	return false;
+	void *data1 = xrealloc(a->data, n * array_elt_size(a));
+	a->data = data1;
+	a->capacity = n;
 }
 
 void *array_add(struct array *a, const void *val)
@@ -135,7 +115,7 @@ void array_clear(struct array *a)
 	a->count = 0;
 }
 
-/* MISSING contains */
+/* UNNECESSARY contains */
 /* MISSING convert_all */
 
 void array_copy_to(const struct array *a, void *dst)
@@ -221,11 +201,11 @@ ssize_t array_find_last_index(const struct array *a, predicate_fn match,
 				  udata, array_elt_size(a));
 }
 
-/* MISSING for_each */
-/* MISSING get_enumerator */
+/* UNNECESSARY for_each */
+/* UNNECESSARY get_enumerator */
 /* MISSING get_hash_code */
 /* MISSING get_range */
-/* MISSING index_of */
+/* UNNECESSARY index_of */
 
 void *array_insert(struct array *a, ssize_t i, const void *val)
 {
@@ -252,9 +232,7 @@ void *array_insert_range(struct array *l, ssize_t i, const void *vals,
 	if (n == 0)
 		return NULL;
 
-	if (!array_grow(l, n))
-		return NULL;
-
+	array_grow(l, n);
 	l->count += n;
 
 	res = array_item(l, i);
@@ -269,7 +247,7 @@ void *array_insert_range(struct array *l, ssize_t i, const void *vals,
 	return res;
 }
 
-/* MISSING last_index_of */
+/* UNNECESSARY last_index_of */
 /* MISSING remove */
 /* MISSING remove_all */
 

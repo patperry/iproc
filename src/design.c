@@ -43,8 +43,7 @@ bool design_init(struct design *design, struct actors *senders,
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 
-	if (!array_init(&design->vars, sizeof(struct design_var)))
-		goto fail_vars;
+	array_init(&design->vars, sizeof(struct design_var));
 
 	if (!(design->senders = actors_ref(senders)))
 		goto fail_senders;
@@ -77,7 +76,6 @@ fail_receivers:
 	actors_free(senders);
 fail_senders:
 	array_deinit(&design->vars);
-fail_vars:
 	return false;
 }
 
