@@ -330,6 +330,8 @@ void *sparsegroup_insert(struct sparsegroup *g,
 
 	if (val) {
 		memcpy(res, val, elt_size);
+	} else {
+		memset(res, 0, elt_size);
 	}
 
 	return res;
@@ -343,8 +345,11 @@ void *sparsegroup_replace(struct sparsegroup *g,
 
 	void *res = (char *)g->group + pos->offset * elt_size;
 
-	if (val)
+	if (val) {
 		memcpy(res, val, elt_size);
+	} else {
+		memset(res, 0, elt_size);
+	}
 
 	return res;
 }
@@ -356,7 +361,6 @@ void sparsegroup_erase(struct sparsegroup *g,
 
 	if (g->num_buckets == 1) {
 		sparsegroup_free_group(g, elt_size);
-		g->group = NULL;
 	} else {
 		memmove((char *)g->group + pos->offset * elt_size,
 			(char *)g->group + (pos->offset + 1) * elt_size,
