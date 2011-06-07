@@ -31,6 +31,7 @@ static inline ssize_t array_count(const struct array *a);
 static inline void *array_item(const struct array *a, ssize_t i);
 static inline void array_set_item(struct array *a, ssize_t i, const void *val);
 static inline size_t array_elt_size(const struct array *a);
+static inline void *array_to_ptr(const struct array *a);
 
 void array_copy_to(const struct array *a, void *dst);
 void array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
@@ -40,7 +41,7 @@ void array_copy_range_to(const struct array *a, ssize_t i, ssize_t n,
 
 // insert operations return pointers to the newly created space
 void *array_add(struct array *a, const void *val);
-void *array_add_range(struct array *a, const void *ptr, ssize_t n);
+void *array_add_range(struct array *a, const void *vals, ssize_t n);
 void array_clear(struct array *a);
 void *array_insert(struct array *a, ssize_t i, const void *val);
 void *array_insert_range(struct array *a,
@@ -87,6 +88,11 @@ ssize_t array_capacity(const struct array *a)
 size_t array_elt_size(const struct array *a)
 {
 	return a->elt_size;
+}
+
+void *array_to_ptr(const struct array *a)
+{
+	return (void *)a->data;
 }
 
 void *array_item(const struct array *a, ssize_t i)

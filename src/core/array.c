@@ -87,13 +87,13 @@ void *array_add(struct array *a, const void *val)
 	return array_insert(a, array_count(a), val);
 }
 
-void *array_add_range(struct array *a, const void *ptr, ssize_t n)
+void *array_add_range(struct array *a, const void *vals, ssize_t n)
 {
 	assert(a);
 	assert(n >= 0);
 	assert(n <= SSIZE_MAX - array_count(a));
 
-	return array_insert_range(a, array_count(a), ptr, n);
+	return array_insert_range(a, array_count(a), vals, n);
 }
 
 ssize_t array_binary_search(const struct array *a, const void *key,
@@ -181,7 +181,7 @@ ssize_t array_find_all(const struct array *a, predicate_fn match, void *udata,
 			m++;
 			if (n > 0) {
 				memcpy(dst, val, elt_size);
-				dst += elt_size;
+				dst = (char *)dst + elt_size;
 				n--;
 			}
 		}

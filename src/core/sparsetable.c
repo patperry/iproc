@@ -121,6 +121,7 @@ static void sparsegroup_bmset(struct sparsegroup *g, ssize_t i);
 static void sparsegroup_bmclear(struct sparsegroup *g, ssize_t i);
 static int sparsegroup_dtest(const struct sparsegroup *g, ssize_t i);
 static void sparsegroup_dset(struct sparsegroup *g, ssize_t i);
+static void sparsegroup_dclear(struct sparsegroup *g, ssize_t i);
 
 /* group alloc/free */
 static void sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
@@ -144,14 +145,12 @@ static void sparsegroup_assign_copy(struct sparsegroup *g,
 				    const struct sparsegroup *src,
 				    size_t elt_size);
 static void sparsegroup_clear(struct sparsegroup *g, size_t elt_size);
+static void sparsegroup_clear_tail(struct sparsegroup *g, ssize_t i,
+				   size_t elt_size);
 
 /* informative */
 static ssize_t sparsegroup_count(const struct sparsegroup *g);
 static ssize_t sparsegroup_size(const struct sparsegroup *g);
-
-/* modification */
-static ssize_t sparsegroup_remove_range(struct sparsegroup *g, ssize_t i,
-					ssize_t n, size_t elt_size);
 
 /* position-based interface */
 static void *sparsegroup_find(const struct sparsegroup *g, ssize_t index,
@@ -202,6 +201,11 @@ int sparsegroup_dtest(const struct sparsegroup *g, ssize_t i)
 void sparsegroup_dset(struct sparsegroup *g, ssize_t i)
 {
 	g->deleted[charbit(i)] |= modbit(i);
+}
+
+void sparsegroup_dclear(struct sparsegroup *g, ssize_t i)
+{
+	g->deleted[charbit(i)] &= ~modbit(i);
 }
 
 /* group alloc/free */
@@ -268,6 +272,22 @@ void sparsegroup_clear(struct sparsegroup *g, size_t elt_size)
 	g->num_buckets = 0;
 }
 
+void sparsegroup_clear_tail(struct sparsegroup *g, ssize_t i, size_t elt_size)
+{
+	assert(0 <= i && i <= sparsegroup_size(g));
+
+	ssize_t n = sparsegroup_size(g);
+	ssize_t offset = sparsegroup_index_to_offset(g, i);
+
+	for (; i < n; i++) {
+		sparsegroup_bmclear(g, i);
+		sparsegroup_dclear(g, i);
+	}
+
+	sparsegroup_realloc_group(g, offset, elt_size);
+	g->num_buckets = offset;
+}
+
 /* informative */
 ssize_t sparsegroup_count(const struct sparsegroup *g)
 {
@@ -277,26 +297,6 @@ ssize_t sparsegroup_count(const struct sparsegroup *g)
 ssize_t sparsegroup_size(const struct sparsegroup *g)
 {
 	return SPARSETABLE_GROUP_SIZE;
-}
-
-// This could be more efficient, but then we'd need to figure
-// out if we spanned groups or not.  Doesn't seem worth it.
-ssize_t sparsegroup_remove_range(struct sparsegroup *g, ssize_t i, ssize_t n,
-				 size_t elt_size)
-{
-	assert(n >= 0);
-	assert(0 <= i && i <= sparsegroup_size(g) - n);
-
-	ssize_t res = 0;
-	struct sparsegroup_pos pos;
-
-	for (; i < n; i++) {
-		if (sparsegroup_find(g, i, &pos, elt_size)) {
-			sparsegroup_erase(g, &pos, elt_size);
-			res++;
-		}
-	}
-	return res;
 }
 
 /* position-based interface */
@@ -452,7 +452,7 @@ ssize_t sparsetable_group_num(ssize_t i)
 struct sparsegroup *sparsetable_which_group(const struct sparsetable *t,
 					    ssize_t i)
 {
-	struct sparsegroup *groups = array_item(&t->groups, 0);
+	struct sparsegroup *groups = array_to_ptr(&t->groups);
 	return &groups[sparsetable_group_num(i)];
 }
 
@@ -536,16 +536,13 @@ size_t sparsetable_elt_size(const struct sparsetable *t)
 
 void sparsetable_set_size(struct sparsetable *t, ssize_t n)
 {
-	ssize_t num_groups0 = array_count(&t->groups);
-	ssize_t n0 = t->table_size;
-	ssize_t num_groups = sparsetable_num_groups(n);
-	ssize_t index = sparsetable_pos_in_group(n);
 	size_t elt_size = sparsetable_elt_size(t);
-	ssize_t i;
+	ssize_t num_groups0 = array_count(&t->groups);
+	ssize_t num_groups = sparsetable_num_groups(n);
+	ssize_t i, n0, index;
+	struct sparsegroup *g;
 
 	if (num_groups <= num_groups0) {
-		struct sparsegroup *g;
-
 		for (i = num_groups; i < num_groups0; i++) {
 			g = array_item(&t->groups, i);
 			assert(!sparsegroup_count(g));
@@ -554,20 +551,23 @@ void sparsetable_set_size(struct sparsetable *t, ssize_t n)
 
 		array_remove_range(&t->groups, num_groups,
 				   num_groups0 - num_groups);
+
+		n0 = t->table_size;
+		index = sparsetable_pos_in_group(n);
+
+		if (n < n0 && index > 0) {	// lower num_buckets, clear last group
+			assert(array_count(&t->groups) == num_groups);
+			g = array_item(&t->groups, num_groups - 1);
+			assert(sparsegroup_index_to_offset(g, index) ==
+			       sparsegroup_count(g));
+			sparsegroup_clear_tail(g, index, elt_size);
+		}
 	} else {
 		array_add_range(&t->groups, NULL, num_groups - num_groups0);
-		// no need to init groups since add_range zeros space
-	}
 
-	if (n < n0) {
-		// lower num_buckets, clear last group
-
-		if (index > 0) {	// make sure nothing remains in last group
-			struct sparsegroup *g =
-			    array_item(&t->groups, array_count(&t->groups) - 1);
-			assert(!sparsegroup_remove_range(g, index,
-							 sparsegroup_size(g) -
-							 index, t->elt_size));
+		for (i = num_groups0; i < num_groups; i++) {
+			g = array_item(&t->groups, i);
+			sparsegroup_init(g);
 		}
 	}
 
@@ -577,12 +577,11 @@ void sparsetable_set_size(struct sparsetable *t, ssize_t n)
 void *sparsetable_find(const struct sparsetable *t, ssize_t index,
 		       struct sparsetable_pos *pos)
 {
-	ssize_t group_num = sparsetable_group_num(index);
 	ssize_t index_in_group = sparsetable_pos_in_group(index);
 	size_t elt_size = sparsetable_elt_size(t);
 
 	pos->index = index;
-	pos->group = array_item(&t->groups, group_num);
+	pos->group = sparsetable_which_group(t, index);
 	return sparsegroup_find(pos->group, index_in_group, &pos->group_pos,
 				elt_size);
 }

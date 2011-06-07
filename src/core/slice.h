@@ -32,6 +32,7 @@ static inline ssize_t slice_count(const struct slice *a);
 static inline void *slice_item(const struct slice *a, ssize_t i);
 static inline void slice_set_item(struct slice *a, ssize_t i, const void *src);
 static inline size_t slice_elt_size(const struct slice *a);
+static inline void *slice_to_ptr(const struct slice *a);
 
 /* operations */
 void slice_reverse(struct slice *a);
@@ -82,6 +83,12 @@ size_t slice_elt_size(const struct slice *a)
 {
 	assert(a);
 	return a->elt_size;
+}
+
+void *slice_to_ptr(const struct slice *a)
+{
+	assert(a);
+	return (void *)a->data;
 }
 
 void *slice_item(const struct slice *a, ssize_t i)
