@@ -60,35 +60,22 @@ struct sparsetable_iter {
 	for ((it) = sparsetable_iter_make(t); sparsetable_iter_advance(&(it));)
 
 /* constructors */
-bool sparsetable_init(struct sparsetable *t, ssize_t n, size_t elt_size);
-bool sparsetable_init_copy(struct sparsetable *t,
+void sparsetable_init(struct sparsetable *t, ssize_t n, size_t elt_size);
+void sparsetable_init_copy(struct sparsetable *t,
 			   const struct sparsetable *src);
 void sparsetable_deinit(struct sparsetable *t);
 
 /* assign, copy, clear */
-bool sparsetable_assign_copy(struct sparsetable *t,
+void sparsetable_assign_copy(struct sparsetable *t,
 			     const struct sparsetable *src);
 void sparsetable_clear(struct sparsetable *t);
 
-/* informative */
-ssize_t sparsetable_empty(const struct sparsetable *t);	// returns size == 0, NOT count == 0
+/* properties */
 ssize_t sparsetable_count(const struct sparsetable *t);
 ssize_t sparsetable_size(const struct sparsetable *t);
-ssize_t sparsetable_max_size(const struct sparsetable *t);
+void sparsetable_set_size(struct sparsetable *t, ssize_t n);
 size_t sparsetable_elt_size(const struct sparsetable *t);
 
-bool sparsetable_contains(const struct sparsetable *t, ssize_t index);
-void *sparsetable_lookup(const struct sparsetable *t, ssize_t index);
-void *sparsetable_lookup_with(const struct sparsetable *t, ssize_t index,
-			      const void *val0);
-
-/* modification */
-bool sparsetable_add(struct sparsetable *t, ssize_t index, const void *val);
-ssize_t sparsetable_add_all(struct sparsetable *t, ssize_t *indexes,
-			    const void *vals, ssize_t n);
-void sparsetable_remove(struct sparsetable *t, ssize_t index);
-void sparsetable_remove_all(struct sparsetable *t, ssize_t *indexes, ssize_t n);
-bool sparsetable_resize(struct sparsetable *t, ssize_t n);
 
 /* position-based interface */
 void *sparsetable_find(const struct sparsetable *t, ssize_t index,

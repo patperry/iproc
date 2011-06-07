@@ -81,14 +81,11 @@ static bool hashset_init_sized(struct hashset *s, hash_fn hash,
 	assert(num_buckets >= HT_MIN_BUCKETS);
 	assert(elt_size >= 0);
 
-	if (sparsetable_init(&s->table, num_buckets, elt_size)) {
-		s->hash = hash;
-		s->equals = equals;
-		hashset_reset_thresholds(s, num_buckets);
-		return true;
-	}
-
-	return false;
+	sparsetable_init(&s->table, num_buckets, elt_size);
+	s->hash = hash;
+	s->equals = equals;
+	hashset_reset_thresholds(s, num_buckets);
+	return true;
 }
 
 bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
@@ -166,8 +163,8 @@ void hashset_clear(struct hashset *s)
 
 	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
 
-	sparsetable_resize(&s->table, num_buckets);
-	sparsetable_clear(&s->table);
+	sparsetable_clear(&s->table);	
+	sparsetable_set_size(&s->table, num_buckets);
 	hashset_reset_thresholds(s, num_buckets);
 }
 
