@@ -128,7 +128,8 @@ static void sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
 static void sparsegroup_free_group(struct sparsegroup *g, size_t elt_size);
 
 /* indexing */
-static ssize_t sparsegroup_index_to_offset(const struct sparsegroup *g, ssize_t index);
+static ssize_t sparsegroup_index_to_offset(const struct sparsegroup *g,
+					   ssize_t index);
 static ssize_t sparsegroup_offset_to_index(const struct sparsegroup *g,
 					   ssize_t offset);
 
@@ -168,8 +169,8 @@ static bool sparsegroup_deleted(const struct sparsegroup *g,
 				const struct sparsegroup_pos *pos);
 
 /* iteration */
-static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup *g,
-						     size_t elt_size);
+static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup
+						     *g, size_t elt_size);
 static void sparsegroup_iter_reset(const struct sparsegroup *g,
 				   struct sparsegroup_iter *it,
 				   size_t elt_size);
@@ -253,7 +254,7 @@ void sparsegroup_assign_copy(struct sparsegroup *g,
 		sparsegroup_realloc_group(g, src->num_buckets, elt_size);
 		memcpy(g->group, src->group, sizeof(g->group));
 	}
-	
+
 	memcpy(g->bitmap, src->bitmap, sizeof(g->bitmap));
 	memcpy(g->deleted, src->deleted, sizeof(g->deleted));
 	g->num_buckets = src->num_buckets;
@@ -375,7 +376,8 @@ bool sparsegroup_deleted(const struct sparsegroup *g,
 }
 
 /* iteration */
-static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup *g, size_t elt_size)
+static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup
+						     *g, size_t elt_size)
 {
 	struct sparsegroup_iter it;
 	sparsegroup_iter_reset(g, &it, elt_size);
@@ -383,10 +385,9 @@ static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup *g
 }
 
 static void sparsegroup_iter_reset(const struct sparsegroup *g,
-				   struct sparsegroup_iter *it,
-				   size_t elt_size)
+				   struct sparsegroup_iter *it, size_t elt_size)
 {
-	it->val = (char *)g->group - elt_size;	
+	it->val = (char *)g->group - elt_size;
 	it->pos.index = -1;
 	it->pos.offset = -1;
 }
@@ -478,7 +479,8 @@ void sparsetable_init_copy(struct sparsetable *t, const struct sparsetable *src)
 		src_groups = array_item(&src->groups, 0);
 
 		for (i = 0; i < n; i++) {
-			sparsegroup_assign_copy(groups + i, src_groups + i, elt_size);
+			sparsegroup_assign_copy(groups + i, src_groups + i,
+						elt_size);
 		}
 	}
 
@@ -564,8 +566,8 @@ void sparsetable_set_size(struct sparsetable *t, ssize_t n)
 			struct sparsegroup *g =
 			    array_item(&t->groups, array_count(&t->groups) - 1);
 			assert(!sparsegroup_remove_range(g, index,
-							 sparsegroup_size(g) - index,
-							 t->elt_size));
+							 sparsegroup_size(g) -
+							 index, t->elt_size));
 		}
 	}
 
@@ -619,7 +621,7 @@ bool sparsetable_deleted(const struct sparsetable *t,
 struct sparsetable_iter sparsetable_iter_make(const struct sparsetable *t)
 {
 	assert(t);
-	
+
 	struct sparsetable_iter it;
 	it.table = t;
 	sparsetable_iter_reset(&it);
@@ -627,7 +629,6 @@ struct sparsetable_iter sparsetable_iter_make(const struct sparsetable *t)
 }
 
 void sparsetable_iter_reset(struct sparsetable_iter *it)
-			    
 {
 	size_t elt_size = sparsetable_elt_size(it->table);
 
@@ -646,15 +647,16 @@ bool sparsetable_iter_advance(struct sparsetable_iter *it)
 		return false;
 
 	group_idx0 = SPARSEGROUP_IDX(it->group_it);
-	group_adv = sparsegroup_iter_advance(it->group, &it->group_it, elt_size);
-
+	group_adv =
+	    sparsegroup_iter_advance(it->group, &it->group_it, elt_size);
 
 	while (!group_adv) {
 		it->index += sparsegroup_size(it->group) - group_idx0 - 1;
 
 		if (it->index < sparsetable_size(it->table)) {
 			it->group++;
-			it->group_it = sparsegroup_iter_make(it->group, elt_size);
+			it->group_it =
+			    sparsegroup_iter_make(it->group, elt_size);
 			group_idx0 = -1;
 			group_adv = sparsegroup_iter_advance(it->group,
 							     &it->group_it,
@@ -664,7 +666,7 @@ bool sparsetable_iter_advance(struct sparsetable_iter *it)
 			return false;
 		}
 	}
-	
+
 	skip = SPARSEGROUP_IDX(it->group_it) - group_idx0;
 	it->index += skip;
 	assert(skip > 0);

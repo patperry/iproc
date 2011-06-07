@@ -30,7 +30,6 @@ struct hashset_iter {
 #define HASHSET_FOREACH(it, set) \
 	for ((it) = hashset_iter_make(set); hashset_iter_advance(&(it));)
 
-
 bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 		  size_t elt_size);
 bool hashset_init_copy(struct hashset *s, const struct hashset *src);

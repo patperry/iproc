@@ -272,4 +272,3 @@ bool intmap_iter_advance(struct intmap_iter *it)
 	assert(it);
 	return hashset_iter_advance(&it->pairs_it);
 }
-

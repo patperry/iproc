@@ -33,7 +33,6 @@ struct intmap_iter {
 #define INTMAP_FOREACH(it, m) \
 	for ((it) = intmap_iter_make(m); intmap_iter_advance(&(it));)
 
-
 /* create, destroy */
 bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align);
 bool intmap_init_copy(struct intmap *m, const struct intmap *src);

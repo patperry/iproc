@@ -115,8 +115,7 @@ void slice_sort(struct slice *a, compare_fn compar)
 	if (!slice_count(a))
 		return;
 
-	int err =
-	    timsort(slice_item(a, 0), slice_count(a), slice_elt_size(a),
-		    compar);
+	int err = timsort(slice_item(a, 0), slice_count(a), slice_elt_size(a),
+			  compar);
 	assert(!err);		// TODO: better error handling
 }

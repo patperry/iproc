@@ -68,7 +68,6 @@ void array_reverse(struct array *a);
 void array_sort(struct array *a, compare_fn compar);
 void array_trim_excess(struct array *a);
 
-
 #define ARRAY_FOREACH(val, a) \
 	for ((val) = (a)->data; \
 	     (val) < (void *)((char *)(a)->data + (a)->count * (a)->elt_size); \

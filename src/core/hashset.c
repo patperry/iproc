@@ -163,7 +163,7 @@ void hashset_clear(struct hashset *s)
 
 	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
 
-	sparsetable_clear(&s->table);	
+	sparsetable_clear(&s->table);
 	sparsetable_set_size(&s->table, num_buckets);
 	hashset_reset_thresholds(s, num_buckets);
 }

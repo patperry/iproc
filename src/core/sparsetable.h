@@ -26,7 +26,7 @@ struct sparsegroup_pos {
 };
 
 struct sparsegroup_iter {
-	void   *val;
+	void *val;
 	struct sparsegroup_pos pos;
 };
 
@@ -49,7 +49,7 @@ struct sparsetable_pos {
 
 struct sparsetable_iter {
 	const struct sparsetable *table;
-	struct sparsegroup *group;	
+	struct sparsegroup *group;
 	ssize_t index;
 	struct sparsegroup_iter group_it;
 };
@@ -75,7 +75,6 @@ ssize_t sparsetable_count(const struct sparsetable *t);
 ssize_t sparsetable_size(const struct sparsetable *t);
 void sparsetable_set_size(struct sparsetable *t, ssize_t n);
 size_t sparsetable_elt_size(const struct sparsetable *t);
-
 
 /* position-based interface */
 void *sparsetable_find(const struct sparsetable *t, ssize_t index,
