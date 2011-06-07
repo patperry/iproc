@@ -123,12 +123,10 @@ fail_init:
 static void cohorts_clear(struct hashset *cohorts)
 {
 	struct hashset_iter it;
-	hashset_iter_init(cohorts, &it);
-	while (hashset_iter_advance(cohorts, &it)) {
-		struct cohort **cp = hashset_iter_current(cohorts, &it);
+	HASHSET_FOREACH(it, cohorts) {
+		struct cohort **cp = HASHSET_VAL(it);
 		cohort_free(*cp);
 	}
-	hashset_iter_deinit(cohorts, &it);
 	hashset_clear(cohorts);
 }
 
@@ -308,11 +306,9 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		vector_scale(y, beta);
 	}
 
-	hashset_iter_init(&a->cohorts, &it);
 	if (trans == TRANS_NOTRANS) {
-		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
-								    &it);
+		HASHSET_FOREACH(it, &a->cohorts) {
+			c = *(struct cohort **)HASHSET_VAL(it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dot(row, x);
 
@@ -324,9 +320,8 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			cohort_iter_deinit(c, &c_it);
 		}
 	} else {
-		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
-								    &it);
+		HASHSET_FOREACH(it, &a->cohorts) {
+			c = *(struct cohort **)HASHSET_VAL(it);
 			row = cohort_traits(c);
 			scale = 0.0;
 
@@ -341,7 +336,6 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		}
 
 	}
-	hashset_iter_deinit(&a->cohorts, &it);
 }
 
 void
@@ -372,10 +366,8 @@ actors_muls(double alpha,
 	}
 
 	if (trans == TRANS_NOTRANS) {
-		hashset_iter_init(&a->cohorts, &it);
-		while (hashset_iter_advance(&a->cohorts, &it)) {
-			c = *(struct cohort **)hashset_iter_current(&a->cohorts,
-								    &it);
+		HASHSET_FOREACH(it, &a->cohorts) {
+			c = *(struct cohort **)HASHSET_VAL(it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * svector_dot(x, row);
 
@@ -386,7 +378,6 @@ actors_muls(double alpha,
 			}
 			cohort_iter_deinit(c, &c_it);
 		}
-		hashset_iter_deinit(&a->cohorts, &it);
 	} else {
 		/* NOTE: this could potentially be made more effecient by
 		 * using the cohort structure.  Below, we assume that

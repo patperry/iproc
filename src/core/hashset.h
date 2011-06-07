@@ -26,6 +26,10 @@ struct hashset_pos {
 struct hashset_iter {
 	struct sparsetable_iter table_it;
 };
+#define HASHSET_VAL(it) SPARSETABLE_VAL((it).table_it)
+#define HASHSET_FOREACH(it, set) \
+	for ((it) = hashset_iter_make(set); hashset_iter_advance(&(it));)
+
 
 bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 		  size_t elt_size);
@@ -64,12 +68,9 @@ void *hashset_replace(struct hashset *s, struct hashset_pos *pos,
 void hashset_erase(struct hashset *s, struct hashset_pos *pos);
 
 /* iteration */
-void hashset_iter_init(const struct hashset *s, struct hashset_iter *it);
-void hashset_iter_deinit(const struct hashset *s, struct hashset_iter *it);
-void hashset_iter_reset(const struct hashset *s, struct hashset_iter *it);
-bool hashset_iter_advance(const struct hashset *s, struct hashset_iter *it);
-void *hashset_iter_current(const struct hashset *s,
-			   const struct hashset_iter *it);
+struct hashset_iter hashset_iter_make(const struct hashset *s);
+void hashset_iter_reset(struct hashset_iter *it);
+bool hashset_iter_advance(struct hashset_iter *it);
 
 static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
 {

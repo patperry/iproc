@@ -67,13 +67,12 @@ void *intmap_copy_vals_to(const struct intmap *m, void *dst)
 	struct intmap_iter it;
 	const void *val;
 
-	intmap_iter_init(m, &it);
-	while (intmap_iter_advance(m, &it)) {
-		val = intmap_iter_current(m, &it);
+	INTMAP_FOREACH(it, m) {
+		val = INTMAP_VAL(it);
 		memcpy(dst, val, elt_size);
 		dst = (char *)dst + elt_size;
 	}
-	intmap_iter_deinit(m, &it);
+
 	return dst;
 }
 
@@ -83,11 +82,11 @@ intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 	assert(dst || intmap_empty(m));
 
 	struct intmap_iter it;
-	intmap_iter_init(m, &it);
-	while (intmap_iter_advance(m, &it)) {
-		*dst++ = intmap_iter_current_key(m, &it);
+
+	INTMAP_FOREACH(it, m) {
+		*dst++ = INTMAP_KEY(it);
 	}
-	intmap_iter_deinit(m, &it);
+
 	return dst;
 }
 
@@ -253,50 +252,24 @@ void intmap_erase(struct intmap *m, struct intmap_pos *pos)
 	hashset_erase(&m->pairs, &pos->pairs_pos);
 }
 
-void intmap_iter_init(const struct intmap *m, struct intmap_iter *it)
+struct intmap_iter intmap_iter_make(const struct intmap *m)
 {
 	assert(m);
-	assert(it);
-	hashset_iter_init(&m->pairs, &it->pairs_it);
+	struct intmap_iter it;
+	it.map = m;
+	it.pairs_it = hashset_iter_make(&m->pairs);
+	return it;
 }
 
-void intmap_iter_deinit(const struct intmap *m, struct intmap_iter *it)
+void intmap_iter_reset(struct intmap_iter *it)
 {
-	assert(m);
 	assert(it);
-	hashset_iter_deinit(&m->pairs, &it->pairs_it);
+	hashset_iter_reset(&it->pairs_it);
 }
 
-void intmap_iter_reset(const struct intmap *m, struct intmap_iter *it)
+bool intmap_iter_advance(struct intmap_iter *it)
 {
-	assert(m);
 	assert(it);
-	hashset_iter_reset(&m->pairs, &it->pairs_it);
+	return hashset_iter_advance(&it->pairs_it);
 }
 
-bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it)
-{
-	assert(m);
-	assert(it);
-
-	return hashset_iter_advance(&m->pairs, &it->pairs_it);
-}
-
-void *intmap_iter_current(const struct intmap *m, const struct intmap_iter *it)
-{
-	assert(m);
-	assert(it);
-
-	void *pair = hashset_iter_current(&m->pairs, &it->pairs_it);
-	return (char *)pair + m->val_offset;
-}
-
-intptr_t intmap_iter_current_key(const struct intmap *m,
-				 const struct intmap_iter *it)
-{
-	assert(m);
-	assert(it);
-
-	void *pair = hashset_iter_current(&m->pairs, &it->pairs_it);
-	return *(intptr_t *)pair;
-}

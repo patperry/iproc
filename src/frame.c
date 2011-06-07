@@ -27,12 +27,10 @@ static void send_frame_deinit(struct send_frame *sf)
 	struct intmap_iter it;
 	struct svector *dx;
 
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+		dx = INTMAP_VAL(it);
 		svector_deinit(dx);
 	}
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
 	intmap_deinit(&sf->jrecv_dxs);
 }
 
@@ -43,12 +41,10 @@ static void send_frame_clear(struct send_frame *sf)
 	struct intmap_iter it;
 	struct svector *dx;
 
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+		dx = INTMAP_VAL(it);
 		svector_deinit(dx);
 	}
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
 	intmap_clear(&sf->jrecv_dxs);
 }
 
@@ -156,12 +152,10 @@ static void send_frames_deinit(struct frame *f)
 	struct intmap_iter it;
 	struct send_frame *sf;
 
-	intmap_iter_init(&f->send_frames, &it);
-	while (intmap_iter_advance(&f->send_frames, &it)) {
-		sf = intmap_iter_current(&f->send_frames, &it);
+	INTMAP_FOREACH(it, &f->send_frames) {
+		sf = INTMAP_VAL(it);
 		send_frame_deinit(sf);
 	}
-	intmap_iter_deinit(&f->send_frames, &it);
 	intmap_deinit(&f->send_frames);
 }
 
@@ -171,12 +165,10 @@ static void send_frames_clear(struct frame *f)
 	struct intmap_iter it;
 	struct send_frame *sf;
 
-	intmap_iter_init(&f->send_frames, &it);
-	while (intmap_iter_advance(&f->send_frames, &it)) {
-		sf = intmap_iter_current(&f->send_frames, &it);
+	INTMAP_FOREACH(it, &f->send_frames) {
+		sf = INTMAP_VAL(it);
 		send_frame_clear(sf);
 	}
-	intmap_iter_deinit(&f->send_frames, &it);
 }
 
 bool frame_init(struct frame *f, struct design *design)
@@ -489,11 +481,9 @@ bool frame_dmul(double alpha, enum trans_op trans,
 	const struct svector *dx;
 	bool ok = true;
 
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		jrecv = intmap_iter_current_key(&sf->jrecv_dxs, &it);
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+		jrecv = INTMAP_KEY(it);
+		dx = INTMAP_VAL(it);
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dot(dx, x);
 			double *yjrecv = svector_at(y, jrecv);
@@ -517,8 +507,6 @@ bool frame_dmul(double alpha, enum trans_op trans,
 			}
 		}
 	}
-
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
 
 	return ok;
 }
@@ -563,11 +551,9 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 	const struct svector *dx;
 	bool ok = true;
 
-	intmap_iter_init(&sf->jrecv_dxs, &it);
-
-	while (intmap_iter_advance(&sf->jrecv_dxs, &it)) {
-		jrecv = intmap_iter_current_key(&sf->jrecv_dxs, &it);
-		dx = intmap_iter_current(&sf->jrecv_dxs, &it);
+	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+		jrecv = INTMAP_KEY(it);
+		dx = INTMAP_VAL(it);
 
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dots(dx, x);
@@ -592,8 +578,6 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 			}
 		}
 	}
-
-	intmap_iter_deinit(&sf->jrecv_dxs, &it);
 
 	return ok;
 }

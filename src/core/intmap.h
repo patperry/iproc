@@ -22,8 +22,17 @@ struct intmap_pos {
 };
 
 struct intmap_iter {
+	const struct intmap *map;
 	struct hashset_iter pairs_it;
 };
+
+#define INTMAP_KEY(it) \
+	(*(const intptr_t *)HASHSET_VAL((it).pairs_it))
+#define INTMAP_VAL(it) \
+	((void *)((char *)HASHSET_VAL((it).pairs_it) + (it).map->val_offset))
+#define INTMAP_FOREACH(it, m) \
+	for ((it) = intmap_iter_make(m); intmap_iter_advance(&(it));)
+
 
 /* create, destroy */
 bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align);
@@ -61,12 +70,8 @@ void *intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val);
 void intmap_erase(struct intmap *m, struct intmap_pos *pos);
 
 /* iteration */
-void intmap_iter_init(const struct intmap *m, struct intmap_iter *it);
-void intmap_iter_deinit(const struct intmap *m, struct intmap_iter *it);
-void intmap_iter_reset(const struct intmap *m, struct intmap_iter *it);
-bool intmap_iter_advance(const struct intmap *m, struct intmap_iter *it);
-void *intmap_iter_current(const struct intmap *m, const struct intmap_iter *it);
-intptr_t intmap_iter_current_key(const struct intmap *m,
-				 const struct intmap_iter *it);
+struct intmap_iter intmap_iter_make(const struct intmap *m);
+void intmap_iter_reset(struct intmap_iter *it);
+bool intmap_iter_advance(struct intmap_iter *it);
 
 #endif /* _intmap_H */

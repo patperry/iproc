@@ -120,9 +120,8 @@ static bool hashset_init_copy_sized(struct hashset *s,
 	    (s, src->hash, src->equals, num_buckets, hashset_elt_size(src)))
 		return false;
 
-	hashset_iter_init(src, &it);
-	while (hashset_iter_advance(src, &it)) {
-		val = hashset_iter_current(src, &it);
+	HASHSET_FOREACH(it, src) {
+		val = HASHSET_VAL(it);
 		if (!hashset_add(s, val)) {
 			result = false;
 			hashset_deinit(s);
@@ -130,7 +129,6 @@ static bool hashset_init_copy_sized(struct hashset *s,
 		}
 
 	}
-	hashset_iter_deinit(src, &it);
 	return result;
 }
 
@@ -419,28 +417,19 @@ void hashset_erase(struct hashset *s, struct hashset_pos *pos)
 	}
 }
 
-void hashset_iter_init(const struct hashset *s, struct hashset_iter *it)
+struct hashset_iter hashset_iter_make(const struct hashset *s)
 {
-	sparsetable_iter_init(&s->table, &it->table_it);
+	struct hashset_iter it;
+	it.table_it = sparsetable_iter_make(&s->table);
+	return it;
 }
 
-void hashset_iter_deinit(const struct hashset *s, struct hashset_iter *it)
+void hashset_iter_reset(struct hashset_iter *it)
 {
-	sparsetable_iter_deinit(&s->table, &it->table_it);
+	sparsetable_iter_reset(&it->table_it);
 }
 
-void hashset_iter_reset(const struct hashset *s, struct hashset_iter *it)
+bool hashset_iter_advance(struct hashset_iter *it)
 {
-	sparsetable_iter_reset(&s->table, &it->table_it);
-}
-
-bool hashset_iter_advance(const struct hashset *s, struct hashset_iter *it)
-{
-	return sparsetable_iter_skip(&s->table, &it->table_it);
-}
-
-void *hashset_iter_current(const struct hashset *s,
-			   const struct hashset_iter *it)
-{
-	return sparsetable_iter_current(&s->table, &it->table_it);
+	return sparsetable_iter_advance(&it->table_it);
 }

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "util.h"
 #include "sparsetable.h"
 
 static ssize_t charbit(ssize_t i)
@@ -123,37 +124,30 @@ static void sparsegroup_dset(struct sparsegroup *g, ssize_t i);
 static void sparsegroup_dclear(struct sparsegroup *g, ssize_t i);
 
 /* group alloc/free */
-static bool sparsegroup_allocate_group(struct sparsegroup *g, ssize_t n,
-				       size_t elt_size);
-static bool sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
+static void sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
 				      size_t elt_size);
 static void sparsegroup_free_group(struct sparsegroup *g, size_t elt_size);
 
 /* indexing */
-ssize_t sparsegroup_index_to_offset(const struct sparsegroup *g, ssize_t index);
-ssize_t sparsegroup_offset_to_index(const struct sparsegroup *g,
-				    ssize_t offset);
+static ssize_t sparsegroup_index_to_offset(const struct sparsegroup *g, ssize_t index);
+static ssize_t sparsegroup_offset_to_index(const struct sparsegroup *g,
+					   ssize_t offset);
 
 /* public functions */
 
 /* constructors */
-static bool sparsegroup_init(struct sparsegroup *g);
-static bool sparsegroup_init_copy(struct sparsegroup *g,
-				  const struct sparsegroup *src,
-				  size_t elt_size);
+static void sparsegroup_init(struct sparsegroup *g);
 static void sparsegroup_deinit(struct sparsegroup *g, size_t elt_size);
 
 /* assign, clear */
-static bool sparsegroup_assign_copy(struct sparsegroup *g,
+static void sparsegroup_assign_copy(struct sparsegroup *g,
 				    const struct sparsegroup *src,
 				    size_t elt_size);
 static void sparsegroup_clear(struct sparsegroup *g, size_t elt_size);
 
 /* informative */
-static bool sparsegroup_empty(const struct sparsegroup *g);
 static ssize_t sparsegroup_count(const struct sparsegroup *g);
 static ssize_t sparsegroup_size(const struct sparsegroup *g);
-static ssize_t sparsegroup_max_size(const struct sparsegroup *g);
 static bool sparsegroup_contains(const struct sparsegroup *g,
 				 ssize_t index, size_t elt_size);
 static void *sparsegroup_lookup(const struct sparsegroup *g, ssize_t index,
@@ -164,16 +158,8 @@ static void *sparsegroup_lookup_with(const struct sparsegroup *g, ssize_t index,
 /* modification */
 static bool sparsegroup_add(struct sparsegroup *g, ssize_t index,
 			    const void *val, size_t elt_size);
-static ssize_t sparsegroup_add_all(struct sparsegroup *g,
-				   ssize_t *indexes,
-				   const void *vals, ssize_t n,
-				   size_t elt_size);
 static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
 			       size_t elt_size);
-static void sparsegroup_remove_preserve(struct sparsegroup *g, ssize_t index,
-					size_t elt_size);
-static void sparsegroup_remove_all(struct sparsegroup *g, ssize_t *indexes,
-				   ssize_t n, size_t elt_size);
 static void sparsegroup_remove_range(struct sparsegroup *g, ssize_t i,
 				     ssize_t n, size_t elt_size);
 
@@ -193,22 +179,14 @@ static bool sparsegroup_deleted(const struct sparsegroup *g,
 				const struct sparsegroup_pos *pos);
 
 /* iteration */
-static void sparsegroup_iter_init(const struct sparsegroup *g,
-				  struct sparsegroup_iter *it);
-static void sparsegroup_iter_deinit(const struct sparsegroup *g,
-				    struct sparsegroup_iter *it);
+static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup *g,
+						     size_t elt_size);
 static void sparsegroup_iter_reset(const struct sparsegroup *g,
-				   struct sparsegroup_iter *it);
+				   struct sparsegroup_iter *it,
+				   size_t elt_size);
 static bool sparsegroup_iter_advance(const struct sparsegroup *g,
 				     struct sparsegroup_iter *it,
 				     size_t elt_size);
-static ssize_t sparsegroup_iter_skip(const struct sparsegroup *g,
-				     struct sparsegroup_iter *it,
-				     size_t elt_size);
-static void *sparsegroup_iter_current(const struct sparsegroup *g,
-				      const struct sparsegroup_iter *it);
-static ssize_t sparsegroup_iter_index(const struct sparsegroup *g,
-				      const struct sparsegroup_iter *it);
 
 /* bitmap manipulation */
 int sparsegroup_bmtest(const struct sparsegroup *g, ssize_t i)
@@ -242,25 +220,15 @@ void sparsegroup_dclear(struct sparsegroup *g, ssize_t i)
 }
 
 /* group alloc/free */
-bool sparsegroup_allocate_group(struct sparsegroup *g, ssize_t n,
-				size_t elt_size)
-{
-	g->group = malloc(n * elt_size);
-	return g->group;
-}
-
-bool sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
+void sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
 			       size_t elt_size)
 {
-	void *retval = realloc(g->group, n * elt_size);
-	if (retval)
-		g->group = retval;
-	return retval;
+	g->group = xrealloc(g->group, n * elt_size);
 }
 
 void sparsegroup_free_group(struct sparsegroup *g, size_t elt_size)
 {
-	free(g->group);
+	xfree(g->group);
 	g->group = NULL;
 }
 
@@ -276,31 +244,12 @@ ssize_t sparsegroup_offset_to_index(const struct sparsegroup *g, ssize_t offset)
 }
 
 /* constructors */
-bool sparsegroup_init(struct sparsegroup *g)
+void sparsegroup_init(struct sparsegroup *g)
 {
 	g->group = NULL;
 	g->num_buckets = 0;
 	memset(g->bitmap, 0, sizeof(g->bitmap));
 	memset(g->deleted, 0, sizeof(g->deleted));
-	return true;
-}
-
-static bool sparsegroup_init_copy(struct sparsegroup *g,
-				  const struct sparsegroup *src,
-				  size_t elt_size)
-{
-	if (src->num_buckets) {
-		g->num_buckets = src->num_buckets;
-		if (!sparsegroup_allocate_group(g, g->num_buckets, elt_size))
-			return false;
-	} else {
-		g->group = NULL;
-		g->num_buckets = 0;
-	}
-
-	memcpy(g->bitmap, src->bitmap, sizeof(g->bitmap));
-	memcpy(g->deleted, src->deleted, sizeof(g->deleted));
-	return true;
 }
 
 void sparsegroup_deinit(struct sparsegroup *g, size_t elt_size)
@@ -309,23 +258,21 @@ void sparsegroup_deinit(struct sparsegroup *g, size_t elt_size)
 }
 
 /* assign, clear */
-bool sparsegroup_assign_copy(struct sparsegroup *g,
+void sparsegroup_assign_copy(struct sparsegroup *g,
 			     const struct sparsegroup *src, size_t elt_size)
 {
 	if (g == src)
-		return true;
+		return;
 	if (src->num_buckets == 0) {
 		sparsegroup_free_group(g, elt_size);
-	} else if (sparsegroup_realloc_group(g, src->num_buckets, elt_size)) {
-		memcpy(g->group, src->group, sizeof(g->group));
 	} else {
-		return false;
+		sparsegroup_realloc_group(g, src->num_buckets, elt_size);
+		memcpy(g->group, src->group, sizeof(g->group));
 	}
-
+	
 	memcpy(g->bitmap, src->bitmap, sizeof(g->bitmap));
 	memcpy(g->deleted, src->deleted, sizeof(g->deleted));
 	g->num_buckets = src->num_buckets;
-	return true;
 }
 
 void sparsegroup_clear(struct sparsegroup *g, size_t elt_size)
@@ -337,22 +284,12 @@ void sparsegroup_clear(struct sparsegroup *g, size_t elt_size)
 }
 
 /* informative */
-bool sparsegroup_empty(const struct sparsegroup *g)
-{
-	return sparsegroup_size(g) == 0;
-}
-
 ssize_t sparsegroup_count(const struct sparsegroup *g)
 {
 	return g->num_buckets;
 }
 
 ssize_t sparsegroup_size(const struct sparsegroup *g)
-{
-	return SPARSETABLE_GROUP_SIZE;
-}
-
-ssize_t sparsegroup_max_size(const struct sparsegroup *g)
 {
 	return SPARSETABLE_GROUP_SIZE;
 }
@@ -391,30 +328,6 @@ static bool sparsegroup_add(struct sparsegroup *g, ssize_t index,
 	}
 }
 
-static ssize_t sparsegroup_add_all(struct sparsegroup *g,
-				   ssize_t *indexes,
-				   const void *vals, ssize_t n, size_t elt_size)
-{
-	assert(n >= 0);
-
-	struct sparsegroup_pos pos;
-	ssize_t i;
-
-	for (i = 0; i < n; i++) {
-		if (sparsegroup_find(g, indexes[i], &pos, elt_size)) {
-			sparsegroup_replace(g, &pos,
-					    (char *)vals + i * elt_size,
-					    elt_size);
-
-		} else {
-			if (!sparsegroup_insert
-			    (g, &pos, (char *)vals + i * elt_size, elt_size))
-				break;
-		}
-	}
-	return i;
-}
-
 static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
 			       size_t elt_size)
 {
@@ -422,24 +335,6 @@ static void sparsegroup_remove(struct sparsegroup *g, ssize_t index,
 
 	if (sparsegroup_find(g, index, &pos, elt_size)) {
 		sparsegroup_erase(g, &pos, elt_size);
-	}
-}
-
-static void sparsegroup_remove_preserve(struct sparsegroup *g, ssize_t index,
-					size_t elt_size)
-{
-	int dbit = sparsegroup_dtest(g, index);
-	sparsegroup_remove(g, index, elt_size);
-	if (!dbit)
-		sparsegroup_dclear(g, index);
-}
-
-static void sparsegroup_remove_all(struct sparsegroup *g,
-				   ssize_t *indexes, ssize_t n, size_t elt_size)
-{
-	ssize_t i;
-	for (i = 0; i < n; i++) {
-		sparsegroup_remove(g, indexes[i], elt_size);
 	}
 }
 
@@ -478,8 +373,7 @@ void *sparsegroup_insert(struct sparsegroup *g,
 {
 	assert(!sparsegroup_bmtest(g, pos->index));
 
-	if (!sparsegroup_realloc_group(g, g->num_buckets + 1, elt_size))
-		return NULL;
+	sparsegroup_realloc_group(g, g->num_buckets + 1, elt_size);
 
 	memmove((char *)g->group + (pos->offset + 1) * elt_size,
 		(char *)g->group + pos->offset * elt_size,
@@ -538,69 +432,37 @@ bool sparsegroup_deleted(const struct sparsegroup *g,
 }
 
 /* iteration */
-static void sparsegroup_iter_init(const struct sparsegroup *g,
-				  struct sparsegroup_iter *it)
+static struct sparsegroup_iter sparsegroup_iter_make(const struct sparsegroup *g, size_t elt_size)
 {
-	sparsegroup_iter_reset(g, it);
-}
-
-static void sparsegroup_iter_deinit(const struct sparsegroup *g,
-				    struct sparsegroup_iter *it)
-{
+	struct sparsegroup_iter it;
+	sparsegroup_iter_reset(g, &it, elt_size);
+	return it;
 }
 
 static void sparsegroup_iter_reset(const struct sparsegroup *g,
-				   struct sparsegroup_iter *it)
+				   struct sparsegroup_iter *it,
+				   size_t elt_size)
 {
+	it->val = (char *)g->group - elt_size;	
 	it->pos.index = -1;
 	it->pos.offset = -1;
-	it->val = NULL;
 }
 
 static bool sparsegroup_iter_advance(const struct sparsegroup *g,
 				     struct sparsegroup_iter *it,
 				     size_t elt_size)
 {
-	if (it->pos.index < sparsegroup_size(g)) {
-		it->val = sparsegroup_find(g, it->pos.index + 1, &it->pos,
-					   elt_size);
-		return true;
-	} else {
-		it->pos.offset = sparsegroup_count(g);
-		it->val = NULL;
-		return false;
-	}
-}
-
-static ssize_t sparsegroup_iter_skip(const struct sparsegroup *g,
-				     struct sparsegroup_iter *it,
-				     size_t elt_size)
-{
 	it->pos.offset++;
 	if (it->pos.offset < sparsegroup_count(g)) {
-		ssize_t index0 = it->pos.index;
 		it->pos.index = sparsegroup_offset_to_index(g, it->pos.offset);
-		it->val = (char *)g->group + it->pos.offset * elt_size;
-		return it->pos.index - index0;
+		it->val = (char *)it->val + elt_size;
+		assert(it->val == (char *)g->group + it->pos.offset * elt_size);
+		return true;
 	} else {
 		it->pos.index = sparsegroup_size(g);
 		it->val = NULL;
-		return 0;
+		return false;
 	}
-}
-
-static void *sparsegroup_iter_current(const struct sparsegroup *g,
-				      const struct sparsegroup_iter *it)
-{
-	assert(it->pos.index >= 0);
-	assert(it->pos.index < sparsegroup_size(g));
-	return it->val;
-}
-
-static ssize_t sparsegroup_iter_index(const struct sparsegroup *g,
-				      const struct sparsegroup_iter *it)
-{
-	return it->pos.index;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -678,15 +540,11 @@ bool sparsetable_init_copy(struct sparsetable *t, const struct sparsetable *src)
 	src_groups = array_item(&src->groups, 0);
 
 	for (i = 0; i < n; i++) {
-		if (!sparsegroup_assign_copy(groups + i, src_groups + i,
-					     elt_size))
-			goto fail_assign;
+		sparsegroup_assign_copy(groups + i, src_groups + i, elt_size);
 	}
 
 	t->num_buckets = src->num_buckets;
 	return true;
-fail_assign:
-	sparsetable_deinit(t);
 fail_init:
 	return false;
 }
@@ -831,19 +689,6 @@ bool sparsetable_add(struct sparsetable *t, ssize_t index, const void *val)
 	}
 }
 
-static void sparsetable_remove_preserve(struct sparsetable *t, ssize_t index)
-{
-	struct sparsetable_pos pos;
-	int dbit;
-
-	if (sparsetable_find(t, index, &pos)) {
-		dbit = sparsegroup_dtest(pos.group, pos.group_pos.index);
-		sparsetable_erase(t, &pos);
-		if (!dbit)
-			sparsegroup_dclear(pos.group, pos.group_pos.index);
-	}
-}
-
 ssize_t sparsetable_add_all(struct sparsetable *t, ssize_t *indexes,
 			    const void *vals, ssize_t n)
 {
@@ -927,91 +772,57 @@ bool sparsetable_deleted(const struct sparsetable *t,
 }
 
 /* iteration */
-void sparsetable_iter_init(const struct sparsetable *t,
-			   struct sparsetable_iter *it)
+struct sparsetable_iter sparsetable_iter_make(const struct sparsetable *t)
 {
+	assert(t);
+	
+	struct sparsetable_iter it;
+	it.table = t;
+	sparsetable_iter_reset(&it);
+	return it;
+}
+
+void sparsetable_iter_reset(struct sparsetable_iter *it)
+			    
+{
+	size_t elt_size = sparsetable_elt_size(it->table);
+
 	it->index = -1;
-	it->group = array_item(&t->groups, 0);
-	sparsegroup_iter_init(it->group, &it->group_it);
+	it->group = array_item(&it->table->groups, 0);
+	it->group_it = sparsegroup_iter_make(it->group, elt_size);
 }
 
-void sparsetable_iter_deinit(const struct sparsetable *t,
-			     struct sparsetable_iter *it)
+bool sparsetable_iter_advance(struct sparsetable_iter *it)
 {
-	sparsegroup_iter_deinit(it->group, &it->group_it);
-}
+	size_t elt_size = sparsetable_elt_size(it->table);
+	bool group_adv;
+	ssize_t group_idx0, skip;
 
-void sparsetable_iter_reset(const struct sparsetable *t,
-			    struct sparsetable_iter *it)
-{
-	sparsetable_iter_deinit(t, it);
-	sparsetable_iter_init(t, it);
-}
+	if (it->index == sparsetable_size(it->table))
+		return false;
 
-bool sparsetable_iter_advance(const struct sparsetable *t,
-			      struct sparsetable_iter *it)
-{
-	size_t elt_size = sparsetable_elt_size(t);
+	group_idx0 = SPARSEGROUP_IDX(it->group_it);
+	group_adv = sparsegroup_iter_advance(it->group, &it->group_it, elt_size);
 
-	it->index++;
 
-	if (it->index < sparsetable_size(t)) {
-		if (!sparsegroup_iter_advance
-		    (it->group, &it->group_it, elt_size)) {
-			sparsegroup_iter_deinit(it->group, &it->group_it);
+	while (!group_adv) {
+		it->index += sparsegroup_size(it->group) - group_idx0 - 1;
+
+		if (it->index < sparsetable_size(it->table)) {
 			it->group++;
-			sparsegroup_iter_init(it->group, &it->group_it);
-			sparsegroup_iter_advance(it->group, &it->group_it,
-						 elt_size);
-		}
-		return true;
-	}
-	return false;
-}
-
-ssize_t sparsetable_iter_skip(const struct sparsetable *t,
-			      struct sparsetable_iter *it)
-{
-	size_t elt_size = sparsetable_elt_size(t);
-	ssize_t group_skip = 0;
-	ssize_t group_index0;
-	ssize_t index0 = it->index;
-
-	if (it->index == sparsetable_size(t))
-		return 0;
-
-	group_index0 = sparsegroup_iter_index(it->group, &it->group_it);
-	group_skip = sparsegroup_iter_skip(it->group, &it->group_it, elt_size);
-
-	while (group_skip == 0) {
-		it->index += sparsegroup_size(it->group) - group_index0 - 1;
-
-		if (it->index < sparsetable_size(t)) {
-			sparsegroup_iter_deinit(it->group, &it->group_it);
-			it->group++;
-			sparsegroup_iter_init(it->group, &it->group_it);
-			group_index0 = -1;
-			group_skip = sparsegroup_iter_skip(it->group,
-							   &it->group_it,
-							   elt_size);
+			it->group_it = sparsegroup_iter_make(it->group, elt_size);
+			group_idx0 = -1;
+			group_adv = sparsegroup_iter_advance(it->group,
+							     &it->group_it,
+							     elt_size);
 		} else {
-			it->index = sparsetable_size(t);
-			return 0;
+			it->index = sparsetable_size(it->table);
+			return false;
 		}
 	}
-
-	it->index += group_skip;
-	return it->index - index0;
-}
-
-void *sparsetable_iter_current(const struct sparsetable *t,
-			       const struct sparsetable_iter *it)
-{
-	return sparsegroup_iter_current(it->group, &it->group_it);
-}
-
-ssize_t sparsetable_iter_index(const struct sparsetable *t,
-			       const struct sparsetable_iter *it)
-{
-	return it->index;
+	
+	skip = SPARSEGROUP_IDX(it->group_it) - group_idx0;
+	it->index += skip;
+	assert(skip > 0);
+	return true;
 }

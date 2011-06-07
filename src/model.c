@@ -94,13 +94,10 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 	struct intmap_iter it;
 	struct cohort_model *cm;
 
-	intmap_iter_init(cohort_models, &it);
-	while (intmap_iter_advance(cohort_models, &it)) {
-		cm = *(struct cohort_model **)intmap_iter_current(cohort_models,
-								  &it);
+	INTMAP_FOREACH(it, cohort_models) {
+		cm = *(struct cohort_model **)INTMAP_VAL(it);
 		cohort_model_deinit(cm);
 	}
-	intmap_iter_deinit(cohort_models, &it);
 	intmap_deinit(cohort_models);
 }
 

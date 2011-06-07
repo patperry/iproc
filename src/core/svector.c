@@ -352,27 +352,25 @@ void svector_erase(struct svector *v, struct svector_pos *pos)
 
 void svector_iter_init(const struct svector *v, struct svector_iter *it)
 {
-	intmap_iter_init(&v->map, &it->map_it);
+	it->map_it = intmap_iter_make(&v->map);
 }
 
 bool svector_iter_advance(const struct svector *v, struct svector_iter *it)
 {
-	return intmap_iter_advance(&v->map, &it->map_it);
+	return intmap_iter_advance(&it->map_it);
 }
 
 double *svector_iter_current(const struct svector *v, struct svector_iter *it)
 {
-	return intmap_iter_current(&v->map, &it->map_it);
+	return INTMAP_VAL(it->map_it);
 }
 
 ssize_t svector_iter_current_index(const struct svector *v,
 				   struct svector_iter *it)
 {
-	return (ssize_t)intmap_iter_current_key(&v->map, &it->map_it);
+	return (ssize_t)INTMAP_KEY(it->map_it);
 }
 
 void svector_iter_deinit(const struct svector *v, struct svector_iter *it)
 {
-	intmap_iter_deinit(&v->map, &it->map_it);
-
 }

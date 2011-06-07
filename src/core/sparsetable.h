@@ -26,9 +26,12 @@ struct sparsegroup_pos {
 };
 
 struct sparsegroup_iter {
+	void   *val;
 	struct sparsegroup_pos pos;
-	void *val;
 };
+
+#define SPARSEGROUP_VAL(it) ((it).val)
+#define SPARSEGROUP_IDX(it) ((it).pos.index)
 
 /* public */
 struct sparsetable {
@@ -45,10 +48,16 @@ struct sparsetable_pos {
 };
 
 struct sparsetable_iter {
+	const struct sparsetable *table;
+	struct sparsegroup *group;	
 	ssize_t index;
-	struct sparsegroup *group;
 	struct sparsegroup_iter group_it;
 };
+
+#define SPARSETABLE_VAL(it) SPARSEGROUP_VAL((it).group_it)
+#define SPARSETABLE_IDX(it) SPARSEGROUP_VAL((it).index)
+#define SPARSETABLE_FOREACH(it, t) \
+	for ((it) = sparsetable_iter_make(t); sparsetable_iter_advance(&(it));)
 
 /* constructors */
 bool sparsetable_init(struct sparsetable *t, ssize_t n, size_t elt_size);
@@ -94,19 +103,8 @@ bool sparsetable_deleted(const struct sparsetable *t,
 			 const struct sparsetable_pos *pos);
 
 /* iteration */
-void sparsetable_iter_init(const struct sparsetable *t,
-			   struct sparsetable_iter *it);
-void sparsetable_iter_deinit(const struct sparsetable *t,
-			     struct sparsetable_iter *it);
-void sparsetable_iter_reset(const struct sparsetable *t,
-			    struct sparsetable_iter *it);
-bool sparsetable_iter_advance(const struct sparsetable *t,
-			      struct sparsetable_iter *it);
-ssize_t sparsetable_iter_skip(const struct sparsetable *t,
-			      struct sparsetable_iter *it);
-void *sparsetable_iter_current(const struct sparsetable *t,
-			       const struct sparsetable_iter *it);
-ssize_t sparsetable_iter_index(const struct sparsetable *t,
-			       const struct sparsetable_iter *it);
+struct sparsetable_iter sparsetable_iter_make(const struct sparsetable *t);
+void sparsetable_iter_reset(struct sparsetable_iter *it);
+bool sparsetable_iter_advance(struct sparsetable_iter *it);
 
 #endif /* _SPARSETABLE_H */
