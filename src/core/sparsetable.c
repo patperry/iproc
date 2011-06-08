@@ -159,8 +159,8 @@ static void *sparsegroup_insert(struct sparsegroup *g,
 				const struct sparsegroup_pos *pos,
 				const void *val, size_t elt_size);
 static void sparsegroup_remove_at(struct sparsegroup *g,
-			      const struct sparsegroup_pos *pos,
-			      size_t elt_size);
+				  const struct sparsegroup_pos *pos,
+				  size_t elt_size);
 static bool sparsegroup_deleted(const struct sparsegroup *g,
 				const struct sparsegroup_pos *pos);
 
@@ -335,7 +335,7 @@ void *sparsegroup_insert(struct sparsegroup *g,
 }
 
 void sparsegroup_remove_at(struct sparsegroup *g,
-		       const struct sparsegroup_pos *pos, size_t elt_size)
+			   const struct sparsegroup_pos *pos, size_t elt_size)
 {
 	assert(sparsegroup_bmtest(g, pos->index));
 
@@ -581,9 +581,11 @@ void *sparsetable_insert(struct sparsetable *t,
 	return res;
 }
 
-void sparsetable_remove_at(struct sparsetable *t, const struct sparsetable_pos *pos)
+void sparsetable_remove_at(struct sparsetable *t,
+			   const struct sparsetable_pos *pos)
 {
-	sparsegroup_remove_at(pos->group, &pos->group_pos, sparsetable_elt_size(t));
+	sparsegroup_remove_at(pos->group, &pos->group_pos,
+			      sparsetable_elt_size(t));
 	t->num_buckets--;
 }
 

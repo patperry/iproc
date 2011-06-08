@@ -46,14 +46,12 @@ static inline uint32_t hashset_hash(const struct hashset *s, const void *val);
 void *hashset_item(const struct hashset *s, const void *key);
 void *hashset_set_item(struct hashset *s, const void *key);
 
-
 /* methods */
 void *hashset_add(struct hashset *s, const void *key);
 void hashset_clear(struct hashset *s);
 bool hashset_contains(const struct hashset *s, const void *key);
 bool hashset_remove(struct hashset *s, const void *key);
 void hashset_trim_excess(struct hashset *s);
-
 
 /* position-based operations */
 void *hashset_find(const struct hashset *s, const void *key,
@@ -62,12 +60,10 @@ void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
 		     const void *key);
 void hashset_remove_at(struct hashset *s, struct hashset_pos *pos);
 
-
 /* iteration */
 struct hashset_iter hashset_iter_make(const struct hashset *s);
 void hashset_iter_reset(struct hashset_iter *it);
 bool hashset_iter_advance(struct hashset_iter *it);
-
 
 /* static method definitions */
 ssize_t hashset_count(const struct hashset *s)

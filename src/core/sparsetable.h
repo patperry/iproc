@@ -82,7 +82,7 @@ void *sparsetable_find(const struct sparsetable *t, ssize_t index,
 void *sparsetable_insert(struct sparsetable *t,
 			 const struct sparsetable_pos *pos, const void *val);
 void sparsetable_remove_at(struct sparsetable *t,
-		       const struct sparsetable_pos *pos);
+			   const struct sparsetable_pos *pos);
 bool sparsetable_deleted(const struct sparsetable *t,
 			 const struct sparsetable_pos *pos);
 

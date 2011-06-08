@@ -141,7 +141,7 @@ bool intmap_add(struct intmap *m, intptr_t key, const void *val)
 
 	struct intmap_pos pos;
 	void *dst;
-	
+
 	if ((dst = intmap_find(m, key, &pos))) {
 		assert(*(intptr_t *)((char *)dst - m->val_offset) == key);
 		memcpy(dst, val, intmap_elt_size(m));
