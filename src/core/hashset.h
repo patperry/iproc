@@ -12,7 +12,6 @@ struct hashset {
 	hash_fn hash;
 	equals_fn equals;
 	ssize_t enlarge_threshold;	// (table size) * enlarge_factor
-	ssize_t shrink_threshold;	// (table size) * shrink_factor
 };
 
 struct hashset_pos {
@@ -30,32 +29,31 @@ struct hashset_iter {
 #define HASHSET_FOREACH(it, set) \
 	for ((it) = hashset_iter_make(set); hashset_iter_advance(&(it));)
 
-bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
+/* create, destroy */
+void hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 		  size_t elt_size);
-bool hashset_init_copy(struct hashset *s, const struct hashset *src);
+void hashset_init_copy(struct hashset *s, const struct hashset *src);
+void hashset_assign_copy(struct hashset *s, const struct hashset *src);
 void hashset_deinit(struct hashset *s);
 
-/* assign, copy, clear */
-bool hashset_assign_copy(struct hashset *s, const struct hashset *src);
-void hashset_clear(struct hashset *s);
-
-/* informative */
-ssize_t hashset_size(const struct hashset *s);
-bool hashset_empty(const struct hashset *s);
-size_t hashset_elt_size(const struct hashset *s);
-static inline uint32_t hashset_hash(const struct hashset *s, const void *val);
+/* properties */
+static inline ssize_t hashset_count(const struct hashset *s);
+static inline size_t hashset_elt_size(const struct hashset *s);
 static inline bool hashset_equals(const struct hashset *s, const void *val1,
 				  const void *val2);
+static inline uint32_t hashset_hash(const struct hashset *s, const void *val);
 
-/* modification */
+void *hashset_item(const struct hashset *s, const void *key);
+void *hashset_set_item(struct hashset *s, const void *key);
+
+
+/* methods */
+void *hashset_add(struct hashset *s, const void *val);
+void hashset_clear(struct hashset *s);
 bool hashset_contains(const struct hashset *s, const void *key);
-void *hashset_lookup(const struct hashset *s, const void *key);
-void *hashset_lookup_with(const struct hashset *s, const void *key,
-			  const void *val0);
-bool hashset_add(struct hashset *s, const void *val);
-ssize_t hashset_add_all(struct hashset *s, const void *vals, ssize_t n);
-void hashset_remove(struct hashset *s, const void *key);
-void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n);
+bool hashset_remove(struct hashset *s, const void *key);
+void hashset_trim_excess(struct hashset *s);
+
 
 /* position-based operations */
 void *hashset_find(const struct hashset *s, const void *key,
@@ -66,22 +64,33 @@ void *hashset_replace(struct hashset *s, struct hashset_pos *pos,
 		      const void *val);
 void hashset_erase(struct hashset *s, struct hashset_pos *pos);
 
+
 /* iteration */
 struct hashset_iter hashset_iter_make(const struct hashset *s);
 void hashset_iter_reset(struct hashset_iter *it);
 bool hashset_iter_advance(struct hashset_iter *it);
 
-static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
+
+/* static method definitions */
+ssize_t hashset_count(const struct hashset *s)
 {
-	// if (!s->hash) { return memory_hash(val, hashset_elt_size(s)); }
-	return s->hash(val);
+	return sparsetable_count(&s->table);
+}
+
+size_t hashset_elt_size(const struct hashset *s)
+{
+	return sparsetable_elt_size(&s->table);
 }
 
 static inline bool hashset_equals(const struct hashset *s, const void *val1,
 				  const void *val2)
 {
-	// if (!s->equals) { return (memcmp(val1, val2, hashset_elt_size(s)) == 0); }
 	return s->equals(val1, val2);
+}
+
+static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
+{
+	return s->hash(val);
 }
 
 #endif /* _HASHSET_H */

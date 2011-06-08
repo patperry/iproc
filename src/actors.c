@@ -24,10 +24,8 @@ bool actors_init(struct actors *actors, ssize_t dim)
 
 	array_init(&actors->actors, sizeof(struct actor));
 
-	ok = hashset_init(&actors->cohorts, cohortp_traits_hash,
-			  cohortp_traits_equals, sizeof(struct cohort *));
-	if (!ok)
-		goto fail_cohorts;
+	hashset_init(&actors->cohorts, cohortp_traits_hash,
+		     cohortp_traits_equals, sizeof(struct cohort *));
 
 	ok = refcount_init(&actors->refcount);
 	if (!ok)
@@ -40,7 +38,6 @@ bool actors_init(struct actors *actors, ssize_t dim)
 	refcount_deinit(&actors->refcount);
 fail_refcount:
 	hashset_deinit(&actors->cohorts);
-fail_cohorts:
 	array_deinit(&actors->actors);
 	return false;
 }
@@ -188,7 +185,7 @@ ssize_t actors_size(const struct actors *a)
 ssize_t actors_cohorts_size(const struct actors *a)
 {
 	assert(a);
-	return hashset_size(&a->cohorts);
+	return hashset_count(&a->cohorts);
 }
 
 ssize_t actors_dim(const struct actors *actors)

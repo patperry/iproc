@@ -59,17 +59,11 @@ static bool vrecv_frame_init(struct frame_var *fv, struct frame *f)
 	if (!(udata = malloc(sizeof(*udata))))
 		goto fail_malloc;
 
-	if (!hashset_init
-	    (&udata->active, vrecv_active_hash, vrecv_active_equals,
-	     sizeof(struct vrecv_active)))
-		goto fail_active;
+	hashset_init(&udata->active, vrecv_active_hash, vrecv_active_equals,
+		     sizeof(struct vrecv_active));
 
 	fv->udata = udata;
 	return true;
-
-	hashset_deinit(&udata->active);
-fail_active:
-	free(udata);
 fail_malloc:
 	return false;
 }
@@ -125,7 +119,7 @@ static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 
 		return false;
 	} else {		// e->type == DYAD_EVENT_MOVE
-		active = hashset_lookup(&udata->active, key);
+		active = hashset_item(&udata->active, key);
 		assert(active);
 
 		if (active->id == e->id) {

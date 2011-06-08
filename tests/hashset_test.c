@@ -20,7 +20,7 @@ static struct hashset set;
 static hash_fn hash;
 static equals_fn equals;
 static int *vals;
-static ssize_t size;
+static ssize_t count;
 
 
 static void empty_setup_fixture(void **state)
@@ -43,7 +43,7 @@ static void empty_setup(void **state)
 	hashset_init(&set, hash, equals, sizeof(int));
 	
 	vals = empty_vals;
-	size = 0;
+	count = 0;
 }
 
 static void empty_teardown(void **state)
@@ -61,15 +61,14 @@ static void big_setup(void **state)
 {
 	empty_setup(state);
 	
-	size = 555;
-	vals = malloc(size * sizeof(*vals));
+	count = 555;
+	vals = malloc(count * sizeof(*vals));
 	ssize_t i;
 	
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < count; i++) {
 		vals[i] = (int)i;
+		hashset_add(&set, &vals[i]);
 	}
-
-	hashset_add_all(&set, vals, size);
 }
 
 static void big_teardown(void **state)
@@ -90,15 +89,14 @@ static void big_bad_setup(void **state)
 	equals = int_equals;
 	hashset_init(&set, hash, equals, sizeof(int));
 	
-	size = 151;
-	vals = malloc(size * sizeof(*vals));
+	count = 151;
+	vals = malloc(count * sizeof(*vals));
 	ssize_t i;
 	
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < count; i++) {
 		vals[i] = (int)i;
+		hashset_add(&set, &vals[i]);
 	}
-	
-	hashset_add_all(&set, vals, size);
 }
 
 static void big_bad_teardown(void **state)
@@ -108,20 +106,15 @@ static void big_bad_teardown(void **state)
 }
 
 
-static void test_size(void **state)
+static void test_count(void **state)
 {
-	assert_int_equal(hashset_size(&set), size);
-	if (size == 0) {
-		assert_true(hashset_empty(&set));
-	} else {
-		assert_false(hashset_empty(&set));
-	}
+	assert_int_equal(hashset_count(&set), count);
 }
 
 static void test_clear(void **state)
 {
 	hashset_clear(&set);
-	assert_true(hashset_empty(&set));
+	assert_true(hashset_count(&set) == 0);
 }
 
 static void test_lookup(void **state)
@@ -129,9 +122,9 @@ static void test_lookup(void **state)
 	ssize_t i;
 	const int *val;
 	
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < count; i++) {
 		assert_true(hashset_contains(&set, &vals[i]));
-		val = hashset_lookup(&set, &vals[i]);
+		val = hashset_item(&set, &vals[i]);
 		assert_true(val);
 		assert_int_equal(*val, vals[i]);
 	}
@@ -142,9 +135,9 @@ static void test_add(void **state)
 	int val = 31337;
 	
 	hashset_add(&set, &val);
-	assert_int_equal(hashset_size(&set), size + 1);
+	assert_int_equal(hashset_count(&set), count + 1);
 	assert_true(hashset_contains(&set, &val));
-	assert_int_equal(*(int *)hashset_lookup(&set, &val), val);
+	assert_int_equal(*(int *)hashset_item(&set, &val), val);
 }
 
 static void test_add_existing(void **state)
@@ -153,9 +146,9 @@ static void test_add_existing(void **state)
 	
 	hashset_add(&set, &val);
 	hashset_add(&set, &val);
-	assert_int_equal(hashset_size(&set), size + 1);
+	assert_int_equal(hashset_count(&set), count + 1);
 	assert_true(hashset_contains(&set, &val));
-	assert_int_equal(*(int *)hashset_lookup(&set, &val), val);
+	assert_int_equal(*(int *)hashset_item(&set, &val), val);
 }
 
 static void test_remove(void **state)
@@ -164,34 +157,34 @@ static void test_remove(void **state)
 	
 	hashset_add(&set, &val);
 	hashset_remove(&set, &val);
-	assert_int_equal(hashset_size(&set), size);	
+	assert_int_equal(hashset_count(&set), count);	
 	assert_false(hashset_contains(&set, &val));
-	assert_false(hashset_lookup(&set, &val));
+	assert_false(hashset_item(&set, &val));
 }
 
 static void test_remove_hard(void **state)
 {
 	ssize_t i, j;
 	
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < count; i++) {
 		hashset_remove(&set, &vals[i]);
-		assert_int_equal(hashset_size(&set), size - i - 1);
+		assert_int_equal(hashset_count(&set), count - i - 1);
 		for (j = 0; j <= i; j++) {
 			assert_false(hashset_contains(&set, &vals[j]));
 		}
-		for (; j < size; j++) {
+		for (; j < count; j++) {
 			assert_true(hashset_contains(&set, &vals[j]));
-			assert_int_equal(*(int *)hashset_lookup(&set, &vals[j]), vals[j]);
+			assert_int_equal(*(int *)hashset_item(&set, &vals[j]), vals[j]);
 		}
 	}
-	assert_true(hashset_empty(&set));
+	assert_true(hashset_count(&set) == 0);
 }
 
 int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),
-		unit_test_setup_teardown(test_size, empty_setup, empty_teardown),
+		unit_test_setup_teardown(test_count, empty_setup, empty_teardown),
 		unit_test_setup_teardown(test_clear, empty_setup, empty_teardown),
 		unit_test_setup_teardown(test_lookup, empty_setup, empty_teardown),		
 		unit_test_setup_teardown(test_add, empty_setup, empty_teardown),
@@ -200,7 +193,7 @@ int main(int argc, char **argv)
 		unit_test_teardown(empty_suite, teardown_fixture),
 
 		unit_test_setup(big_suite, big_setup_fixture),
-		unit_test_setup_teardown(test_size, big_setup, big_teardown),
+		unit_test_setup_teardown(test_count, big_setup, big_teardown),
 		unit_test_setup_teardown(test_clear, big_setup, big_teardown),		
 		unit_test_setup_teardown(test_lookup, big_setup, big_teardown),		
 		unit_test_setup_teardown(test_add, big_setup, big_teardown),
@@ -210,7 +203,7 @@ int main(int argc, char **argv)
 		unit_test_teardown(big_suite, teardown_fixture),
 
 		unit_test_setup(big_bad_suite, big_bad_setup_fixture),
-		unit_test_setup_teardown(test_size, big_bad_setup, big_bad_teardown),
+		unit_test_setup_teardown(test_count, big_bad_setup, big_bad_teardown),
 		unit_test_setup_teardown(test_clear, big_bad_setup, big_bad_teardown),				
 		unit_test_setup_teardown(test_lookup, big_bad_setup, big_bad_teardown),		
 		unit_test_setup_teardown(test_add, big_bad_setup, big_teardown),

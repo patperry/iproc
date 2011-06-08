@@ -45,7 +45,6 @@ intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst);
 void intmap_clear(struct intmap *m);
 
 /* informative */
-bool intmap_empty(const struct intmap *m);
 ssize_t intmap_size(const struct intmap *m);
 size_t intmap_elt_size(const struct intmap *m);
 size_t intmap_elt_align(const struct intmap *m);

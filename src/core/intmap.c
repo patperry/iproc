@@ -23,7 +23,8 @@ bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 	m->elt_align = elt_align;
 	m->val_offset = val_offset;
 
-	return hashset_init(&m->pairs, intptr_hash, intptr_equals, pair_size);
+	hashset_init(&m->pairs, intptr_hash, intptr_equals, pair_size);
+	return true;
 }
 
 bool intmap_init_copy(struct intmap *m, const struct intmap *src)
@@ -34,7 +35,8 @@ bool intmap_init_copy(struct intmap *m, const struct intmap *src)
 	m->elt_size = src->elt_size;
 	m->elt_align = src->elt_align;
 	m->val_offset = src->val_offset;
-	return hashset_init_copy(&m->pairs, &src->pairs);
+	hashset_init_copy(&m->pairs, &src->pairs);
+	return true;
 }
 
 void intmap_deinit(struct intmap *m)
@@ -48,20 +50,17 @@ bool intmap_assign_copy(struct intmap *m, const struct intmap *src)
 	assert(m);
 	assert(src);
 
-	if (hashset_assign_copy(&m->pairs, &src->pairs)) {
-		m->elt_size = src->elt_size;
-		m->elt_align = src->elt_align;
-		m->val_offset = src->val_offset;
-		return true;
-
-	}
-	return false;
+	hashset_assign_copy(&m->pairs, &src->pairs);
+	m->elt_size = src->elt_size;
+	m->elt_align = src->elt_align;
+	m->val_offset = src->val_offset;
+	return true;
 }
 
 void *intmap_copy_vals_to(const struct intmap *m, void *dst)
 {
 	assert(m);
-	assert(dst || intmap_empty(m));
+	assert(dst || !intmap_size(m));
 
 	size_t elt_size = intmap_elt_size(m);
 	struct intmap_iter it;
@@ -79,7 +78,7 @@ void *intmap_copy_vals_to(const struct intmap *m, void *dst)
 intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 {
 	assert(m);
-	assert(dst || intmap_empty(m));
+	assert(dst || !intmap_size(m));
 
 	struct intmap_iter it;
 
@@ -96,16 +95,10 @@ void intmap_clear(struct intmap *m)
 	hashset_clear(&m->pairs);
 }
 
-bool intmap_empty(const struct intmap *m)
-{
-	assert(m);
-	return hashset_empty(&m->pairs);
-}
-
 ssize_t intmap_size(const struct intmap *m)
 {
 	assert(m);
-	return hashset_size(&m->pairs);
+	return hashset_count(&m->pairs);
 }
 
 size_t intmap_elt_size(const struct intmap *m)

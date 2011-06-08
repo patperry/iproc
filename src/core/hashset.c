@@ -14,12 +14,6 @@
  */
 #define HT_OCCUPANCY_PCT 80	// (out of 100);
 
-/* How empty we let the table get before we resize lower, by default.
- * (0.0 means never resize lower.)
- * It should be less than OCCUPANCY_PCT / 2 or we thrash resizing
- */
-#define HT_EMPTY_PCT	(0.4 * HT_OCCUPANCY_PCT)
-
 /* Minimum size we're willing to let hashtables be.
  * Must be a power of two, and at least 4.
  * Note, however, that for a given hashtable, the initial size is a
@@ -34,7 +28,7 @@
 #define HT_DEFAULT_STARTING_BUCKETS	32
 
 #define HT_ENLARGE_FACTOR	(HT_OCCUPANCY_PCT / 100.0)
-#define HT_SHRINK_FACTOR	(HT_EMPTY_PCT / 100.0)
+
 
 /* The number of buckets must be a power of 2.  This is the largest 
  * power of 2 that a ssize_t can hold.
@@ -59,11 +53,10 @@ static ssize_t min_buckets(ssize_t num_elts, ssize_t min_buckets_wanted)
 	return sz;
 }
 
-/* Reset the enlarge and shrink thresholds */
+/* Reset the enlarge threshold */
 static void hashset_reset_thresholds(struct hashset *s, ssize_t num_buckets)
 {
 	s->enlarge_threshold = num_buckets * HT_ENLARGE_FACTOR;
-	s->shrink_threshold = num_buckets * HT_SHRINK_FACTOR;
 }
 
 static ssize_t hashset_bucket_count(const struct hashset *s)
@@ -71,7 +64,9 @@ static ssize_t hashset_bucket_count(const struct hashset *s)
 	return sparsetable_size(&s->table);
 }
 
-static bool hashset_init_sized(struct hashset *s, hash_fn hash,
+
+
+static void hashset_init_sized(struct hashset *s, hash_fn hash,
 			       equals_fn equals, ssize_t num_buckets,
 			       size_t elt_size)
 {
@@ -85,22 +80,11 @@ static bool hashset_init_sized(struct hashset *s, hash_fn hash,
 	s->hash = hash;
 	s->equals = equals;
 	hashset_reset_thresholds(s, num_buckets);
-	return true;
 }
 
-bool hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
-		  size_t elt_size)
-{
-	assert(s);
-	assert(hash);
-	assert(equals);
-	assert(elt_size >= 0);
 
-	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
-	return hashset_init_sized(s, hash, equals, num_buckets, elt_size);
-}
 
-static bool hashset_init_copy_sized(struct hashset *s,
+static void hashset_init_copy_sized(struct hashset *s,
 				    const struct hashset *src,
 				    ssize_t num_buckets)
 {
@@ -111,32 +95,69 @@ static bool hashset_init_copy_sized(struct hashset *s,
 
 	struct hashset_iter it;
 	const void *val;
-	bool result = true;
 
-	if (!hashset_init_sized
-	    (s, src->hash, src->equals, num_buckets, hashset_elt_size(src)))
-		return false;
+	hashset_init_sized(s, src->hash, src->equals, num_buckets,
+			   hashset_elt_size(src));
 
 	HASHSET_FOREACH(it, src) {
 		val = HASHSET_VAL(it);
-		if (!hashset_add(s, val)) {
-			result = false;
-			hashset_deinit(s);
-			break;
-		}
-
+		hashset_add(s, val);
 	}
-	return result;
 }
 
-bool hashset_init_copy(struct hashset *s, const struct hashset *src)
+static bool hashset_needs_grow_delta(const struct hashset *s, ssize_t delta)
+{
+	assert(delta >= 0);
+	assert(sparsetable_count(&s->table) <= HT_MAX_SIZE - delta);
+	
+	if (hashset_bucket_count(s) >= HT_MIN_BUCKETS
+	    && sparsetable_count(&s->table) + delta <= s->enlarge_threshold) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+/* the implementation is simpler than in sparsehashtable.h since we don't
+ * store deleted keys */
+static void hashset_grow_delta(struct hashset *s, ssize_t delta)
+{
+	ssize_t num_nonempty = sparsetable_count(&s->table);
+	ssize_t bucket_count = hashset_bucket_count(s);
+	ssize_t resize_to = min_buckets(num_nonempty + delta, bucket_count);
+	
+	struct hashset copy;
+	hashset_init_copy_sized(&copy, s, resize_to);
+	hashset_deinit(s);
+	*s = copy;
+}
+
+void hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
+		  size_t elt_size)
+{
+	assert(s);
+	assert(hash);
+	assert(equals);
+	assert(elt_size >= 0);
+	
+	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
+	hashset_init_sized(s, hash, equals, num_buckets, elt_size);
+}
+
+void hashset_init_copy(struct hashset *s, const struct hashset *src)
 {
 	assert(s);
 	assert(src);
 	assert(s != src);
 
 	ssize_t num_buckets = hashset_bucket_count(src);
-	return hashset_init_copy_sized(s, src, num_buckets);
+	hashset_init_copy_sized(s, src, num_buckets);
+}
+
+void hashset_assign_copy(struct hashset *s, const struct hashset *src)
+{
+	hashset_deinit(s);	
+	hashset_init_copy(s, src);
 }
 
 void hashset_deinit(struct hashset *s)
@@ -145,16 +166,31 @@ void hashset_deinit(struct hashset *s)
 	sparsetable_deinit(&s->table);
 }
 
-bool hashset_assign_copy(struct hashset *s, const struct hashset *src)
+void *hashset_item(const struct hashset *s, const void *key)
 {
-	struct hashset tmp;
+	struct hashset_pos pos;
+	return hashset_find(s, key, &pos);
+}
 
-	if (hashset_init_copy(&tmp, src)) {
-		hashset_deinit(s);
-		*s = tmp;
-		return true;
+void *hashset_set_item(struct hashset *s, const void *key)
+{
+	struct hashset_pos pos;
+	if (hashset_find(s, key, &pos)) {
+		return hashset_replace(s, &pos, key);
+	} else {
+		return hashset_insert(s, &pos, key);
 	}
-	return false;
+
+}
+
+void *hashset_add(struct hashset *s, const void *val)
+{
+	struct hashset_pos pos;
+	if (hashset_find(s, val, &pos)) {
+		return NULL;
+	} else {
+		return hashset_insert(s, &pos, val);
+	}
 }
 
 void hashset_clear(struct hashset *s)
@@ -168,153 +204,58 @@ void hashset_clear(struct hashset *s)
 	hashset_reset_thresholds(s, num_buckets);
 }
 
-ssize_t hashset_size(const struct hashset *s)
-{
-	return sparsetable_count(&s->table);
-}
-
-bool hashset_empty(const struct hashset *s)
-{
-	return hashset_size(s) == 0;
-}
-
-size_t hashset_elt_size(const struct hashset *s)
-{
-	return sparsetable_elt_size(&s->table);
-}
-
-static bool hashset_needs_shrink(const struct hashset *s)
-{
-	ssize_t num_remain = sparsetable_count(&s->table);
-	ssize_t shrink_threshold = s->shrink_threshold;
-	ssize_t bucket_count = hashset_bucket_count(s);
-
-	/* If you construct a hashtable with < HT_DEFAULT_STARTING_BUCKETS,
-	 * we'll never shrink until you get relatively big, and we'll never
-	 * shrink below HT_DEFAULT_STARTING_BUCKETS.  Otherwise, something
-	 * like "dense_hash_set<int> x; x.insert(4); x.erase(4);" will
-	 * shrink us down to HT_MIN_BUCKETS buckets, which is too small.
-	 */
-	return (num_remain < shrink_threshold &&
-		bucket_count > HT_DEFAULT_STARTING_BUCKETS);
-}
-
-static bool hashset_shrink(struct hashset *s)
-{
-	assert(hashset_needs_shrink(s));
-
-	ssize_t num_remain = sparsetable_count(&s->table);
-	ssize_t bucket_count = hashset_bucket_count(s);
-	double shrink_factor = HT_SHRINK_FACTOR;
-	ssize_t sz = bucket_count / 2;	// find how much we should shrink
-
-	while (sz > HT_DEFAULT_STARTING_BUCKETS &&
-	       num_remain < (ssize_t)(sz * shrink_factor)) {
-		sz /= 2;	// stay a power of 2
-	}
-
-	struct hashset copy;
-	if (hashset_init_copy_sized(&copy, s, sz)) {
-		hashset_deinit(s);
-		*s = copy;
-		return true;
-	}
-
-	return false;
-}
-
-static bool hashset_needs_grow_delta(const struct hashset *s, ssize_t delta)
-{
-	assert(delta >= 0);
-	assert(sparsetable_count(&s->table) <= HT_MAX_SIZE - delta);
-
-	if (hashset_bucket_count(s) >= HT_MIN_BUCKETS
-	    && sparsetable_count(&s->table) + delta <= s->enlarge_threshold) {
-		return false;
-	} else {
-		return true;
-	}
-}
-
-/* the implementation is simpler than in sparsehashtable.h since we don't
- * store deleted keys */
-static bool hashset_grow_delta(struct hashset *s, ssize_t delta)
-{
-	ssize_t num_nonempty = sparsetable_count(&s->table);
-	ssize_t bucket_count = hashset_bucket_count(s);
-	ssize_t resize_to = min_buckets(num_nonempty + delta, bucket_count);
-
-	struct hashset copy;
-	if (hashset_init_copy_sized(&copy, s, resize_to)) {
-		hashset_deinit(s);
-		*s = copy;
-		return true;
-	}
-
-	return false;
-}
-
 bool hashset_contains(const struct hashset *s, const void *key)
 {
-	return hashset_lookup(s, key);
+	return hashset_item(s, key);
 }
 
-void *hashset_lookup(const struct hashset *s, const void *key)
-{
-	return hashset_lookup_with(s, key, NULL);
-}
+/* MISSING copy_to */
+/* INVALID create_set_comparer */
+/* MISSING equals */
+/* MISSING except_with */
+/* INVALID finalize */
+/* UNNECESSARY get_enumerator (iter_make) */
+/* MISSING get_hash_code */
+/* UNNECESSARY get_object_data */
+/* INVALID get_type */
+/* MISSING intersect_with */
+/* MISSING is_proper_subset_of */
+/* MISSING is_proper_superset_of */
+/* MISSING is_subset_of */
+/* MISSING is_superset_of */
+/* UNNESSARY memberwise_clone (assign_copy) */
+/* INVALID on_deserialization */
+/* MISSING overlaps */
 
-void *hashset_lookup_with(const struct hashset *s, const void *key,
-			  const void *val0)
+bool hashset_remove(struct hashset *s, const void *key)
 {
+	bool found;
+	
 	struct hashset_pos pos;
-	void *val = hashset_find(s, key, &pos);
-	return val ? val : (void *)val0;
-}
-
-bool hashset_add(struct hashset *s, const void *val)
-{
-	struct hashset_pos pos;
-	if (hashset_find(s, val, &pos)) {
-		hashset_replace(s, &pos, val);
-		assert(hashset_contains(s, val));
-		return true;
-	} else {
-		return hashset_insert(s, &pos, val);
-	}
-}
-
-ssize_t hashset_add_all(struct hashset *s, const void *vals, ssize_t n)
-{
-	size_t elt_size = hashset_elt_size(s);
-	ssize_t i;
-
-	for (i = 0; i < n; i++, vals = (char *)vals + elt_size) {
-		if (!hashset_add(s, vals))
-			break;
-	}
-
-	return i;
-}
-
-void hashset_remove(struct hashset *s, const void *key)
-{
-	struct hashset_pos pos;
-	if (hashset_find(s, key, &pos)) {
+	if ((found = hashset_find(s, key, &pos))) {
 		hashset_erase(s, &pos);
 	}
 	assert(!hashset_contains(s, key));
+	return found;
 }
 
-void hashset_remove_all(struct hashset *s, const void *keys, ssize_t n)
+/* MISSING remove_where */
+/* MISSING set_equals */
+/* MISSING symmetric_except_with */
+/* MISSING to_string */
+
+void hashset_trim_excess(struct hashset *s)
 {
-	size_t elt_size = hashset_elt_size(s);
-	ssize_t i;
-
-	for (i = 0; i < n; i++, keys = (char *)keys + elt_size) {
-		hashset_remove(s, keys);
-	}
+	ssize_t count = sparsetable_count(&s->table);
+	ssize_t resize_to = min_buckets(count, 0);
+	
+	struct hashset copy;
+	hashset_init_copy_sized(&copy, s, resize_to);
+	hashset_deinit(s);
+	*s = copy;
 }
+
+/* MISSING union_with */
 
 void *hashset_find(const struct hashset *s, const void *key,
 		   struct hashset_pos *pos)
@@ -372,16 +313,13 @@ void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
 	assert(!pos->has_existing);
 	assert(val);
 	assert(hashset_hash(s, val) == pos->hash);
-	assert(pos->has_insert);
 
 	if (hashset_needs_grow_delta(s, 1)) {
-		if (hashset_grow_delta(s, 1)) {
-			hashset_find(s, val, pos);	// need to recompute pos
-		} else {
-			return NULL;
-		}
+		hashset_grow_delta(s, 1);
+		hashset_find(s, val, pos);	// need to recompute pos
 	}
 
+	assert(pos->has_insert);
 	return sparsetable_insert(&s->table, &pos->insert, val);
 }
 
@@ -409,9 +347,6 @@ void hashset_erase(struct hashset *s, struct hashset_pos *pos)
 {
 	assert(pos->has_existing);
 	sparsetable_erase(&s->table, &pos->existing);
-	if (hashset_needs_shrink(s)) {
-		hashset_shrink(s);	// ok if this fails
-	}
 }
 
 struct hashset_iter hashset_iter_make(const struct hashset *s)
