@@ -140,9 +140,12 @@ bool intmap_add(struct intmap *m, intptr_t key, const void *val)
 	assert(val || intmap_elt_size(m) == 0);
 
 	struct intmap_pos pos;
-	if (intmap_find(m, key, &pos)) {
-		intmap_replace(m, &pos, val);
-		return true;
+	void *dst;
+	
+	if ((dst = intmap_find(m, key, &pos))) {
+		assert(*(intptr_t *)((char *)dst - m->val_offset) == key);
+		memcpy(dst, val, intmap_elt_size(m));
+		return dst;
 	} else {
 		return intmap_insert(m, &pos, val);
 	}
@@ -221,28 +224,12 @@ void *intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val)
 	return res;
 }
 
-void *intmap_replace(struct intmap *m, struct intmap_pos *pos, const void *val)
-{
-	assert(m);
-	assert(pos);
-
-	void *pair = hashset_replace(&m->pairs, &pos->pairs_pos, &pos->key);
-	void *res = NULL;
-
-	if (pair) {
-		res = (char *)pair + m->val_offset;
-		if (val)
-			memcpy(res, val, m->elt_size);
-	}
-	return res;
-}
-
 void intmap_erase(struct intmap *m, struct intmap_pos *pos)
 {
 	assert(m);
 	assert(pos);
 
-	hashset_erase(&m->pairs, &pos->pairs_pos);
+	hashset_remove_at(&m->pairs, &pos->pairs_pos);
 }
 
 struct intmap_iter intmap_iter_make(const struct intmap *m)

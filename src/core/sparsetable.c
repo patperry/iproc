@@ -158,10 +158,7 @@ static void *sparsegroup_find(const struct sparsegroup *g, ssize_t index,
 static void *sparsegroup_insert(struct sparsegroup *g,
 				const struct sparsegroup_pos *pos,
 				const void *val, size_t elt_size);
-static void *sparsegroup_replace(struct sparsegroup *g,
-				 const struct sparsegroup_pos *pos,
-				 const void *val, size_t elt_size);
-static void sparsegroup_erase(struct sparsegroup *g,
+static void sparsegroup_remove_at(struct sparsegroup *g,
 			      const struct sparsegroup_pos *pos,
 			      size_t elt_size);
 static bool sparsegroup_deleted(const struct sparsegroup *g,
@@ -337,24 +334,7 @@ void *sparsegroup_insert(struct sparsegroup *g,
 	return res;
 }
 
-void *sparsegroup_replace(struct sparsegroup *g,
-			  const struct sparsegroup_pos *pos,
-			  const void *val, size_t elt_size)
-{
-	assert(sparsegroup_bmtest(g, pos->index));
-
-	void *res = (char *)g->group + pos->offset * elt_size;
-
-	if (val) {
-		memcpy(res, val, elt_size);
-	} else {
-		memset(res, 0, elt_size);
-	}
-
-	return res;
-}
-
-void sparsegroup_erase(struct sparsegroup *g,
+void sparsegroup_remove_at(struct sparsegroup *g,
 		       const struct sparsegroup_pos *pos, size_t elt_size)
 {
 	assert(sparsegroup_bmtest(g, pos->index));
@@ -601,16 +581,9 @@ void *sparsetable_insert(struct sparsetable *t,
 	return res;
 }
 
-void *sparsetable_replace(struct sparsetable *t,
-			  const struct sparsetable_pos *pos, const void *val)
+void sparsetable_remove_at(struct sparsetable *t, const struct sparsetable_pos *pos)
 {
-	return sparsegroup_replace(pos->group, &pos->group_pos, val,
-				   sparsetable_elt_size(t));
-}
-
-void sparsetable_erase(struct sparsetable *t, const struct sparsetable_pos *pos)
-{
-	sparsegroup_erase(pos->group, &pos->group_pos, sparsetable_elt_size(t));
+	sparsegroup_remove_at(pos->group, &pos->group_pos, sparsetable_elt_size(t));
 	t->num_buckets--;
 }
 
