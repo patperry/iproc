@@ -121,7 +121,7 @@ static void cohorts_clear(struct hashset *cohorts)
 {
 	struct hashset_iter it;
 	HASHSET_FOREACH(it, cohorts) {
-		struct cohort **cp = HASHSET_VAL(it);
+		struct cohort **cp = HASHSET_KEY(it);
 		cohort_free(*cp);
 	}
 	hashset_clear(cohorts);
@@ -305,7 +305,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 
 	if (trans == TRANS_NOTRANS) {
 		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_VAL(it);
+			c = *(struct cohort **)HASHSET_KEY(it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dot(row, x);
 
@@ -318,7 +318,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		}
 	} else {
 		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_VAL(it);
+			c = *(struct cohort **)HASHSET_KEY(it);
 			row = cohort_traits(c);
 			scale = 0.0;
 
@@ -364,7 +364,7 @@ actors_muls(double alpha,
 
 	if (trans == TRANS_NOTRANS) {
 		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_VAL(it);
+			c = *(struct cohort **)HASHSET_KEY(it);
 			row = cohort_traits(c);
 			alpha_dot = alpha * svector_dot(x, row);
 

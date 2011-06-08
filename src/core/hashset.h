@@ -25,7 +25,7 @@ struct hashset_pos {
 struct hashset_iter {
 	struct sparsetable_iter table_it;
 };
-#define HASHSET_VAL(it) SPARSETABLE_VAL((it).table_it)
+#define HASHSET_KEY(it) SPARSETABLE_VAL((it).table_it)
 #define HASHSET_FOREACH(it, set) \
 	for ((it) = hashset_iter_make(set); hashset_iter_advance(&(it));)
 
@@ -39,9 +39,9 @@ void hashset_deinit(struct hashset *s);
 /* properties */
 static inline ssize_t hashset_count(const struct hashset *s);
 static inline size_t hashset_elt_size(const struct hashset *s);
-static inline bool hashset_equals(const struct hashset *s, const void *val1,
-				  const void *val2);
-static inline uint32_t hashset_hash(const struct hashset *s, const void *val);
+static inline bool hashset_equals(const struct hashset *s, const void *key1,
+				  const void *key2);
+static inline uint32_t hashset_hash(const struct hashset *s, const void *key);
 
 void *hashset_item(const struct hashset *s, const void *key);
 void *hashset_set_item(struct hashset *s, const void *key);
@@ -76,15 +76,15 @@ size_t hashset_elt_size(const struct hashset *s)
 	return sparsetable_elt_size(&s->table);
 }
 
-static inline bool hashset_equals(const struct hashset *s, const void *val1,
-				  const void *val2)
+static inline bool hashset_equals(const struct hashset *s, const void *key1,
+				  const void *key2)
 {
-	return s->equals(val1, val2);
+	return s->equals(key1, key2);
 }
 
-static inline uint32_t hashset_hash(const struct hashset *s, const void *val)
+static inline uint32_t hashset_hash(const struct hashset *s, const void *key)
 {
-	return s->hash(val);
+	return s->hash(key);
 }
 
 #endif /* _HASHSET_H */

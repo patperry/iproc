@@ -89,14 +89,14 @@ static void hashset_init_copy_sized(struct hashset *s,
 	assert(num_buckets >= HT_MIN_BUCKETS);
 
 	struct hashset_iter it;
-	const void *val;
+	const void *key;
 
 	hashset_init_sized(s, src->hash, src->equals, num_buckets,
 			   hashset_elt_size(src));
 
 	HASHSET_FOREACH(it, src) {
-		val = HASHSET_VAL(it);
-		hashset_add(s, val);
+		key = HASHSET_KEY(it);
+		hashset_add(s, key);
 	}
 }
 
@@ -289,7 +289,7 @@ void *hashset_find(const struct hashset *s, const void *key,
 	uint32_t hash = hashset_hash(s, key);
 	ssize_t bucknum = hash & bucket_count_minus_one;
 	struct sparsetable_pos table_pos;
-	void *val;
+	void *ptr;
 	bool deleted;
 
 	pos->hash = hash;
@@ -297,31 +297,31 @@ void *hashset_find(const struct hashset *s, const void *key,
 	pos->has_existing = false;
 
 	for (num_probes = 0; num_probes < bucket_count; num_probes++) {
-		val = sparsetable_find(table, bucknum, &table_pos);
+		ptr = sparsetable_find(table, bucknum, &table_pos);
 		deleted = sparsetable_deleted(table, &table_pos);
-		if (!val && !deleted) {	// bucket is empty
+		if (!ptr && !deleted) {	// bucket is empty
 			if (!pos->has_insert) {	// found no prior place to insert
 				pos->insert = table_pos;
 				pos->has_insert = true;
 			}
 			pos->has_existing = false;
 			return NULL;
-		} else if (!val && deleted) {	// keep searching, but mark to insert
+		} else if (!ptr && deleted) {	// keep searching, but mark to insert
 			if (!pos->has_insert) {
 				pos->insert = table_pos;
 				pos->has_insert = true;
 			}
-		} else if (hashset_equals(s, key, val)) {
+		} else if (hashset_equals(s, key, ptr)) {
 			pos->existing = table_pos;
 			pos->has_existing = true;
-			return val;
+			return ptr;
 		}
 		bucknum =
 		    (bucknum +
 		     JUMP_(key, num_probes + 1)) & bucket_count_minus_one;
 	}
 
-	return NULL;		// table is full and val is not present
+	return NULL;		// table is full and key is not present
 }
 
 void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
