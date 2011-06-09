@@ -250,20 +250,13 @@ bool actors_add(struct actors *actors, const struct vector *traits)
 	if (!a.cohort)
 		goto fail_get_cohort;
 
-	ok = array_add(&actors->actors, &a);
-	if (!ok)
-		goto fail_actors_add;
+	array_add(&actors->actors, &a);
 
 	id = array_count(&actors->actors) - 1;
-	ok = cohort_add(a.cohort, id);
-	if (!ok)
-		goto fail_cohort_add;
-
+	cohort_add(a.cohort, id);
+	ok = true;
 	goto out;
 
-fail_cohort_add:
-	array_remove_at(&actors->actors, array_count(&actors->actors) - 1);
-fail_actors_add:
 fail_get_cohort:
 	ok = false;
 out:

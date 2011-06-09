@@ -379,7 +379,7 @@
 		221C5FF0134EB7E50008B25B /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = src/core/util.c; sourceTree = "<group>"; };
 		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
 		221C601A1352B8580008B25B /* intset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intset.c; path = src/core/intset.c; sourceTree = "<group>"; };
-		221C601B1352B85D0008B25B /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = src/core/intset.h; sourceTree = "<group>"; };
+		221C601B1352B85D0008B25B /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = src/core/intset.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221C601E1352D36D0008B25B /* intmap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intmap.c; path = src/core/intmap.c; sourceTree = "<group>"; };
 		221C601F1352D3720008B25B /* intmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intmap.h; path = src/core/intmap.h; sourceTree = "<group>"; };
 		221FEE6D132EC8710000097B /* blas-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "blas-private.h"; path = "src/core/blas-private.h"; sourceTree = "<group>"; };

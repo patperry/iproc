@@ -32,10 +32,8 @@ bool cohort_init(struct cohort *c, const struct vector *x)
 	assert(x);
 
 	if (vector_init_copy(&c->traits, x)) {
-		if (intset_init(&c->members)) {
-			return c;
-		}
-		vector_deinit(&c->traits);
+		intset_init(&c->members);
+		return c;
 	}
 	return NULL;
 }
@@ -62,13 +60,13 @@ const struct vector *cohort_traits(const struct cohort *c)
 bool cohort_empty(const struct cohort *c)
 {
 	assert(c);
-	return intset_empty(&c->members);
+	return !intset_count(&c->members);
 }
 
 ssize_t cohort_size(const struct cohort *c)
 {
 	assert(c);
-	return intset_size(&c->members);
+	return intset_count(&c->members);
 }
 
 bool cohort_contains(const struct cohort *c, ssize_t id)
@@ -99,21 +97,20 @@ void cohort_iter_init(const struct cohort *c, struct cohort_iter *it)
 {
 	assert(c);
 	assert(it);
-	intset_iter_init(&c->members, &it->members_it);
+	it->members_it = intset_iter_make(&c->members);
 }
 
 void cohort_iter_deinit(const struct cohort *c, struct cohort_iter *it)
 {
 	assert(c);
 	assert(it);
-	intset_iter_deinit(&c->members, &it->members_it);
 }
 
 bool cohort_iter_advance(const struct cohort *c, struct cohort_iter *it)
 {
 	assert(c);
 	assert(it);
-	return intset_iter_advance(&c->members, &it->members_it);
+	return intset_iter_advance(&it->members_it);
 }
 
 ssize_t cohort_iter_current(const struct cohort *c,
@@ -121,5 +118,5 @@ ssize_t cohort_iter_current(const struct cohort *c,
 {
 	assert(c);
 	assert(it);
-	return (ssize_t)intset_iter_current(&c->members, &it->members_it);
+	return (ssize_t)INTSET_KEY(it->members_it);
 }
