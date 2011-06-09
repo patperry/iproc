@@ -31,11 +31,9 @@ bool cohort_init(struct cohort *c, const struct vector *x)
 	assert(c);
 	assert(x);
 
-	if (vector_init_copy(&c->traits, x)) {
-		intset_init(&c->members);
-		return c;
-	}
-	return NULL;
+	vector_init_copy(&c->traits, x);
+	intset_init(&c->members);
+	return c;
 }
 
 void cohort_deinit(struct cohort *c)

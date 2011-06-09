@@ -14,13 +14,11 @@ bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 	assert(ncol >= 0);
 	assert(ncol == 0 || nrow <= SSIZE_MAX / ncol);
 
-	if (vector_init(&a->data, nrow * ncol)) {
-		a->nrow = nrow;
-		a->ncol = ncol;
-		a->lda = MAX(1, nrow);
-		return true;
-	}
-	return false;
+	vector_init(&a->data, nrow * ncol);
+	a->nrow = nrow;
+	a->ncol = ncol;
+	a->lda = MAX(1, nrow);
+	return true;
 }
 
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol)
@@ -324,7 +322,7 @@ void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
 	assert(0 <= i && i < matrix_nrow(x));
 	assert(vector_dim(y) == matrix_ncol(x));
 
-	if (vector_empty(y))
+	if (!vector_dim(y))
 		return;
 
 	f77int n = (f77int)matrix_ncol(x);
@@ -344,7 +342,7 @@ void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
 	assert(0 <= j && j < matrix_ncol(x));
 	assert(vector_dim(y) == matrix_nrow(x));
 
-	if (vector_empty(y))
+	if (!vector_dim(y))
 		return;
 
 	f77int n = (f77int)matrix_nrow(x);
@@ -447,10 +445,10 @@ void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 	assert(trans == TRANS_NOTRANS || vector_dim(x) == matrix_nrow(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == matrix_ncol(a));
 
-	if (vector_empty(x)) {
+	if (!vector_dim(x)) {
 		vector_scale(y, beta);
 		return;
-	} else if (vector_empty(y)) {
+	} else if (!vector_dim(y)) {
 		return;
 	}
 
@@ -520,7 +518,7 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 	if (svector_size(x) == 0) {
 		vector_scale(y, beta);
 		return;
-	} else if (vector_empty(y)) {
+	} else if (!vector_dim(y)) {
 		return;
 	}
 
@@ -562,7 +560,7 @@ matrix_update1(struct matrix *a,
 	assert(matrix_nrow(a) == vector_dim(x));
 	assert(matrix_ncol(a) == vector_dim(y));
 
-	if (vector_empty(x) || vector_empty(y))
+	if (!vector_dim(x) || !vector_dim(y))
 		return;
 
 	f77int m = (f77int)matrix_nrow(a);

@@ -15,8 +15,8 @@ bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 {
 	assert(queue);
 	assert(intervals);
-	assert(vector_empty(intervals) || vector_get_front(intervals) > 0.0);
-	assert(vector_empty(intervals)
+	assert(!vector_dim(intervals) || vector_get_front(intervals) > 0.0);
+	assert(!vector_dim(intervals)
 	       || vector_get_back(intervals) < INFINITY);
 #ifndef NDEBUG
 	ssize_t i;

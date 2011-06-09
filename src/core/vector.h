@@ -10,8 +10,9 @@ struct vector {
 };
 
 /* create, destroy */
-bool vector_init(struct vector *v, ssize_t n);
-bool vector_init_copy(struct vector *v, const struct vector *src);
+void vector_init(struct vector *v, ssize_t n);
+void vector_init_copy(struct vector *v, const struct vector *src);
+void vector_assign_copy(struct vector *v, const struct vector *src);
 void vector_deinit(struct vector *v);
 
 /* views */
@@ -21,7 +22,7 @@ void vector_init_slice(struct vector *v,
 
 /* assign, copy, fill */
 void vector_assign_array(struct vector *v, const double *src);
-void vector_assign_copy(struct vector *v, const struct vector *src);
+
 void vector_copy_to(const struct vector *v, double *dst);
 
 void vector_fill(struct vector *v, double val);
@@ -45,7 +46,6 @@ static inline double vector_get(const struct vector *v, ssize_t i);
 static inline void vector_set(struct vector *v, ssize_t i, double val);
 
 /* informative */
-static inline bool vector_empty(const struct vector *v);
 static inline ssize_t vector_dim(const struct vector *v);
 
 /* arithmetic operations */
@@ -84,11 +84,6 @@ struct vector vector_slice(const struct vector *vector,
 			   ssize_t index, ssize_t dim);
 
 /* inline function definitions */
-bool vector_empty(const struct vector *v)
-{
-	return !vector_dim(v);
-}
-
 ssize_t vector_dim(const struct vector *v)
 {
 	return v->dim;

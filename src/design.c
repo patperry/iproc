@@ -51,8 +51,7 @@ bool design_init(struct design *design, struct actors *senders,
 	if (!(design->receivers = actors_ref(receivers)))
 		goto fail_receivers;
 
-	if (!vector_init_copy(&design->intervals, intervals))
-		goto fail_intervals;
+	vector_init_copy(&design->intervals, intervals);
 
 	if (!refcount_init(&design->refcount))
 		goto fail_refcount;
@@ -70,7 +69,6 @@ bool design_init(struct design *design, struct actors *senders,
 	refcount_deinit(&design->refcount);
 fail_refcount:
 	vector_deinit(&design->intervals);
-fail_intervals:
 	actors_free(receivers);
 fail_receivers:
 	actors_free(senders);

@@ -61,19 +61,18 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 		double *row_front;
 		ssize_t i;
 
-		if (vector_init(&row, n)) {
-			ok = true;
-			row_front = n == 0 ? NULL : vector_front(&row);
+		vector_init(&row, n);
+		ok = true;
+		row_front = n == 0 ? NULL : vector_front(&row);
 
-			for (i = 0; i < m; i++) {
-				matrix_get_row(matrix, i, row_front);
-				if (!actors_add(actors, &row)) {
-					ok = false;
-					break;
-				}
+		for (i = 0; i < m; i++) {
+			matrix_get_row(matrix, i, row_front);
+			if (!actors_add(actors, &row)) {
+				ok = false;
+				break;
 			}
-			vector_deinit(&row);
 		}
+		vector_deinit(&row);
 	} else {
 		struct vector col;
 		ssize_t j;

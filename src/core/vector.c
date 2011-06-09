@@ -1,32 +1,59 @@
 #include "port.h"
 
 #include <assert.h>
-#include <inttypes.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
+
 #include "blas-private.h"
 #include "compare.h"
 #include "hash.h"
 #include "ieee754.h"
+#include "util.h"
 #include "vector.h"
 
-bool vector_init(struct vector *v, ssize_t n)
+void vector_init(struct vector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
 	assert(n <= F77INT_MAX);
 	assert(n <= SSIZE_MAX / sizeof(double));
 
-	if ((v->data = malloc(n * sizeof(v->data[0])))) {
-		v->dim = n;
-		v->owner = true;
-		return true;
-	}
-	return false;
+	v->data = xcalloc(n, sizeof(v->data[0]));
+	v->dim = n;
+	v->owner = true;
 }
+
+void vector_init_copy(struct vector *v, const struct vector *src)
+{
+	assert(v);
+	assert(src);
+	
+	vector_init(v, vector_dim(src));
+	vector_assign_copy(v, src);
+}
+
+void vector_assign_copy(struct vector *v, const struct vector *src)
+{
+	assert(v);
+	assert(src);
+	assert(vector_dim(v) == vector_dim(src));
+	
+	if (!vector_dim(v))
+		return;
+	
+	vector_copy_to(src, vector_front(v));
+}
+
+void vector_deinit(struct vector *v)
+{
+	assert(v);
+	if (v->owner)
+		xfree(v->data);
+}
+
 
 void vector_init_view(struct vector *v, const double *ptr, ssize_t n)
 {
@@ -56,77 +83,38 @@ void vector_init_slice(struct vector *v,
 	vector_init_view(v, ptr, n);
 }
 
-bool vector_init_copy(struct vector *v, const struct vector *src)
-{
-	assert(v);
-	assert(src);
-
-	if (vector_init(v, vector_dim(src))) {
-		vector_assign_copy(v, src);
-		return v;
-	}
-
-	return NULL;
-}
-
 struct vector *vector_alloc(ssize_t n)
 {
-	struct vector *v = malloc(sizeof(*v));
-
-	if (vector_init(v, n)) {
-		return v;
-	}
-
-	free(v);
-	return NULL;
+	struct vector *v = xcalloc(1, sizeof(*v));
+	vector_init(v, n);
+	return v;
 }
 
 struct vector *vector_alloc_copy(const struct vector *src)
 {
-	struct vector *v = malloc(sizeof(*v));
+	struct vector *v = xcalloc(1, sizeof(*v));
 
-	if (vector_init_copy(v, src)) {
-		return v;
-	}
-
-	free(v);
-	return NULL;
+	vector_init_copy(v, src);
+	return v;
 }
 
-void vector_deinit(struct vector *v)
-{
-	assert(v);
-	if (v->owner)
-		free(v->data);
-}
 
 void vector_free(struct vector *v)
 {
 	if (v) {
 		vector_deinit(v);
-		free(v);
+		xfree(v);
 	}
 }
 
 void vector_assign_array(struct vector *v, const double *src)
 {
 	assert(v);
-	assert(src || vector_empty(v));
+	assert(src || !vector_dim(v));
 
 	memcpy(v->data, src, vector_dim(v) * sizeof(v->data[0]));
 }
 
-void vector_assign_copy(struct vector *v, const struct vector *src)
-{
-	assert(v);
-	assert(src);
-	assert(vector_dim(v) == vector_dim(src));
-
-	if (vector_empty(v))
-		return;
-
-	vector_copy_to(src, vector_front(v));
-}
 
 void vector_copy_to(const struct vector *v, double *dst)
 {
@@ -140,7 +128,7 @@ void vector_fill(struct vector *vector, double value)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return;
 
 	ssize_t n = vector_dim(vector);
@@ -173,7 +161,7 @@ void vector_scale(struct vector *vector, double scale)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return;
 
 	f77int n = (f77int)vector_dim(vector);
@@ -188,7 +176,7 @@ void vector_shift(struct vector *vector, double shift)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return;
 
 	ssize_t n = vector_dim(vector);
@@ -224,7 +212,7 @@ void vector_mul(struct vector *dst_vector, const struct vector *vector)
 	assert(vector);
 	assert(vector_dim(dst_vector) == vector_dim(vector));
 
-	if (vector_empty(dst_vector))
+	if (!vector_dim(dst_vector))
 		return;
 
 	f77int n = (f77int)vector_dim(dst_vector);
@@ -243,7 +231,7 @@ void vector_div(struct vector *dst_vector, const struct vector *vector)
 	assert(vector);
 	assert(vector_dim(dst_vector) == vector_dim(vector));
 
-	if (vector_empty(dst_vector))
+	if (!vector_dim(dst_vector))
 		return;
 
 	f77int n = (f77int)vector_dim(dst_vector);
@@ -262,7 +250,7 @@ void vector_axpy(double alpha, const struct vector *x, struct vector *y)
 	assert(y);
 	assert(vector_dim(x) == vector_dim(y));
 
-	if (vector_empty(x))
+	if (!vector_dim(x))
 		return;
 
 	f77int n = (f77int)vector_dim(y);
@@ -280,7 +268,7 @@ double vector_dot(const struct vector *vector1, const struct vector *vector2)
 	assert(vector2);
 	assert(vector_dim(vector1) == vector_dim(vector2));
 
-	if (vector_empty(vector1))
+	if (!vector_dim(vector1))
 		return 0.0;
 
 	f77int n = (f77int)vector_dim(vector1);
@@ -316,7 +304,7 @@ double vector_norm(const struct vector *vector)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return 0.0;
 
 	f77int n = (f77int)vector_dim(vector);
@@ -331,7 +319,7 @@ double vector_norm1(const struct vector *vector)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return 0.0;
 
 	f77int n = (f77int)vector_dim(vector);
@@ -346,7 +334,7 @@ double vector_max_abs(const struct vector *vector)
 {
 	assert(vector);
 
-	if (vector_empty(vector))
+	if (!vector_dim(vector))
 		return 0.0;
 
 	ssize_t i = vector_max_abs_index(vector);
@@ -359,7 +347,7 @@ double vector_max_abs(const struct vector *vector)
 ssize_t vector_max_abs_index(const struct vector *vector)
 {
 	assert(vector);
-	assert(!vector_empty(vector));
+	assert(vector_dim(vector));
 
 	f77int n = (f77int)vector_dim(vector);
 	void *px = vector_front(vector);
@@ -374,7 +362,7 @@ ssize_t vector_max_abs_index(const struct vector *vector)
 ssize_t vector_max_index(const struct vector *vector)
 {
 	assert(vector);
-	assert(!vector_empty(vector));
+	assert(vector_dim(vector));
 
 	ssize_t n = vector_dim(vector);
 	ssize_t i, imax;
@@ -405,7 +393,7 @@ double vector_max(const struct vector *vector)
 {
 	assert(vector);
 
-	if (vector_empty(vector)) {
+	if (!vector_dim(vector)) {
 		return -INFINITY;
 	} else {
 		ssize_t i = vector_max_index(vector);
