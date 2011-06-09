@@ -173,8 +173,7 @@ bool frame_init(struct frame *f, struct design *design)
 	if (!history_init(&f->history))
 		goto fail_history;
 
-	if (!dyad_queue_init(&f->dyad_queue, &design->intervals))
-		goto fail_dyad_queue;
+	dyad_queue_init(&f->dyad_queue, &design->intervals);
 
 	if (!send_frames_init(f))
 		goto fail_send_frames;
@@ -190,7 +189,6 @@ fail_var_frames:
 	send_frames_deinit(f);
 fail_send_frames:
 	dyad_queue_deinit(&f->dyad_queue);
-fail_dyad_queue:
 	history_deinit(&f->history);
 fail_history:
 	design_free(f->design);

@@ -11,7 +11,7 @@ static int dyad_queue_event_rcompare(const void *x, const void *y)
 	return double_rcompare(&e->tnext, &f->tnext);
 }
 
-bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
+void dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 {
 	assert(queue);
 	assert(intervals);
@@ -25,16 +25,11 @@ bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 	}
 #endif
 
-	if (!pqueue_init(&queue->events, dyad_queue_event_rcompare,
-			 sizeof(struct dyad_queue_event)))
-		goto fail_events;
+	pqueue_init(&queue->events, dyad_queue_event_rcompare,
+		    sizeof(struct dyad_queue_event));
 
 	queue->intervals = intervals;
 	queue->next_id = 0;
-	return true;
-
-fail_events:
-	return false;
 }
 
 void dyad_queue_deinit(struct dyad_queue *queue)
@@ -53,13 +48,13 @@ void dyad_queue_clear(struct dyad_queue *queue)
 bool dyad_queue_empty(const struct dyad_queue *queue)
 {
 	assert(queue);
-	return pqueue_empty(&queue->events);
+	return !pqueue_count(&queue->events);
 }
 
 ssize_t dyad_queue_size(const struct dyad_queue *queue)
 {
 	assert(queue);
-	return pqueue_size(&queue->events);
+	return pqueue_count(&queue->events);
 }
 
 double dyad_queue_next_update(const struct dyad_queue *queue)

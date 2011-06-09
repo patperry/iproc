@@ -6,7 +6,7 @@
 
 #include "pqueue.h"
 
-bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
+void pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
 {
 	assert(q);
 	assert(compar);
@@ -14,17 +14,15 @@ bool pqueue_init(struct pqueue *q, compare_fn compar, size_t elt_size)
 
 	array_init(&q->array, elt_size);
 	q->compare = compar;
-	return true;
 }
 
-bool pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
+void pqueue_init_copy(struct pqueue *q, const struct pqueue *src)
 {
 	assert(q);
 	assert(src);
 
 	array_init_copy(&q->array, &src->array);
 	q->compare = src->compare;
-	return true;
 }
 
 void pqueue_deinit(struct pqueue *q)
@@ -33,14 +31,13 @@ void pqueue_deinit(struct pqueue *q)
 	array_deinit(&q->array);
 }
 
-struct pqueue *pqueue_assign_copy(struct pqueue *q, const struct pqueue *src)
+void pqueue_assign_copy(struct pqueue *q, const struct pqueue *src)
 {
 	assert(q);
 	assert(src);
 
 	array_assign_copy(&q->array, &src->array);
 	q->compare = src->compare;
-	return q;
 }
 
 void pqueue_copy_to(const struct pqueue *q, void *dst)
@@ -88,30 +85,10 @@ bool pqueue_push(struct pqueue *q, const void *val)
 	return true;
 }
 
-bool pqueue_push_all(struct pqueue *q, const void *src, ssize_t n)
-{
-	assert(q);
-	assert(src || n == 0);
-	assert(n >= 0);
-
-	// make space for the new elements
-	if (!pqueue_reserve_push(q, n))
-		return false;
-
-	size_t elt_size = pqueue_elt_size(q);
-	const void *end = (char *)src + n * elt_size;
-
-	for (; src < end; src = (char *)src + elt_size) {
-		pqueue_push(q, src);
-	}
-
-	return true;
-}
-
 void pqueue_pop(struct pqueue *q)
 {
 	assert(q);
-	assert(!pqueue_empty(q));
+	assert(pqueue_count(q));
 
 	struct array *array = &q->array;
 	ssize_t n = array_count(array) - 1;
@@ -161,7 +138,7 @@ out:
 void pqueue_update_top(struct pqueue *q)
 {
 	assert(q);
-	assert(!pqueue_empty(q));
+	assert(pqueue_count(q));
 
 	struct array *array = &q->array;
 	ssize_t n = array_count(array);
@@ -210,18 +187,10 @@ void pqueue_update_top(struct pqueue *q)
 	array_set_item(array, icur, cur);
 }
 
-bool pqueue_reserve(struct pqueue *q, ssize_t n)
+bool pqueue_set_capacity(struct pqueue *q, ssize_t n)
 {
 	assert(q);
 	assert(n >= 0);
 	array_set_capacity(&q->array, n);
 	return true;
-}
-
-bool pqueue_reserve_push(struct pqueue *q, ssize_t npush)
-{
-	assert(q);
-	assert(npush >= 0);
-
-	return pqueue_reserve(q, pqueue_size(q) + npush);
 }

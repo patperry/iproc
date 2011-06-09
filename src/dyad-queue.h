@@ -52,7 +52,7 @@ struct triad_event {
 	ssize_t intvl1, intvl2;
 };
 
-bool dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals);
+void dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals);
 void dyad_queue_deinit(struct dyad_queue *queue);
 void dyad_queue_clear(struct dyad_queue *queue);
 
