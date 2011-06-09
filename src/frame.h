@@ -51,17 +51,17 @@ const struct history *frame_history(const struct frame *f);
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
 
-bool frame_mul(double alpha, enum trans_op trans,
+void frame_mul(double alpha, enum trans_op trans,
 	       const struct frame *f, ssize_t isend,
 	       const struct vector *x, double beta, struct vector *y);
-bool frame_muls(double alpha, enum trans_op trans,
+void frame_muls(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct svector *x, double beta, struct vector *y);
 
-bool frame_dmul(double alpha, enum trans_op trans,
+void frame_dmul(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct vector *x, double beta, struct svector *y);
-bool frame_dmuls(double alpha, enum trans_op trans,
+void frame_dmuls(double alpha, enum trans_op trans,
 		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y);
 

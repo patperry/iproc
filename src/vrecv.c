@@ -131,9 +131,9 @@ static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	}
 
 move:
-	svector_clear_at(dx, index + active->intvl);
+	svector_remove(dx, index + active->intvl);
 init:
-	if (!svector_set(dx, index + e->intvl, 1.0))
+	if (!svector_set_item(dx, index + e->intvl, 1.0))
 		return false;
 	active->id = e->id;
 	active->intvl = e->intvl;

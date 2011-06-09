@@ -102,10 +102,10 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 		double lp = iproc_model_ctx_logprob(ctx, jrecv[i]);
 		lpbar += (lp - lpbar) / (i + 1);
 
-		*svector_at(wt, jrecv[i]) += 1.0;
+		*svector_item_ptr(wt, jrecv[i]) += 1.0;
 
 		// update number of receives
-		*svector_at(sll->nrecv, jrecv[i]) += 1.0;
+		*svector_item_ptr(sll->nrecv, jrecv[i]) += 1.0;
 	}
 
 	// update log likelihood

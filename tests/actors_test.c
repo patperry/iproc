@@ -133,7 +133,7 @@ static void test_muls(void **state)
 	
 	for (i = 0; i < p; i++) {
 		if (i % 2 == 0)
-			svector_set(&x, i, (7 * i) % 5 - 2);
+			svector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
@@ -171,7 +171,7 @@ static void test_tmuls(void **state)
 	
 	for (i = 0; i < n; i++) {
 		if (i % 3 == 0)
-			svector_set(&x, i, (3 * i + 1) % 5 - 2);
+			svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);

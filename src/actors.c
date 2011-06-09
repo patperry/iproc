@@ -373,15 +373,13 @@ actors_muls(double alpha,
 		 * the sparsity in x is more important.
 		 */
 		struct svector_iter itx;
-		svector_iter_init(x, &itx);
-		while (svector_iter_advance(x, &itx)) {
-			id = svector_iter_current_index(x, &itx);
-			entry = *svector_iter_current(x, &itx);
+		SVECTOR_FOREACH(itx, x) {
+			id = SVECTOR_IDX(itx);
+			entry = SVECTOR_VAL(itx);
 			row = actors_traits(a, id);
 			vector_axpy(alpha * entry, row, y);
 
 		}
-		svector_iter_deinit(x, &itx);
 	}
 }
 

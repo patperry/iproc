@@ -19,7 +19,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 	/* compute the changes in weights */
 	frame_dmul(1.0, TRANS_NOTRANS, f, isend, coefs, 0.0, deta);
 	if (!has_loops) {
-		svector_set(deta, isend, -INFINITY);
+		svector_set_item(deta, isend, -INFINITY);
 	}
 
 	/* compute the scale for the weight differences */
@@ -36,12 +36,11 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 
 	/* compute the log sums of the positive and negative differences in weights */
 	struct svector_iter it;
-	svector_iter_init(deta, &it);
-	while (svector_iter_advance(deta, &it)) {
+	SVECTOR_FOREACH(it, deta) {
 		//      for (i = 0; i < nnz; i++) {
-		ssize_t jrecv = svector_iter_current_index(deta, &it);
+		ssize_t jrecv = SVECTOR_IDX(it);
 		double lp0 = *vector_at(log_p0, jrecv);
-		double dlw = *svector_iter_current(deta, &it);
+		double dlw = SVECTOR_VAL(it);
 		double log_abs_dw;
 
 		/* When w > w0:
@@ -58,7 +57,6 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 			logsumexp_insert(&neg, log_abs_dw);
 		}
 	}
-	svector_iter_deinit(deta, &it);
 
 	double log_sum_abs_dw_p = logsumexp_value(&pos);
 	double log_sum_abs_dw_n = logsumexp_value(&neg);
@@ -97,16 +95,14 @@ compute_active_probs(struct vector *log_p0,
 
 	svector_assign_copy(p_active, deta);
 
-	svector_iter_init(p_active, &it);
-	while (svector_iter_advance(p_active, &it)) {
-		jrecv = svector_iter_current_index(p_active, &it);
+	SVECTOR_FOREACH(it, p_active) {
+		jrecv = SVECTOR_IDX(it);
 		lp0_j = *vector_at(log_p0, jrecv);
-		p_j = svector_iter_current(p_active, &it);
+		p_j = SVECTOR_PTR(it);
 		deta_j = *p_j;
 		lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
 		*p_j = exp(lp_j);
 	}
-	svector_iter_deinit(p_active, &it);
 }
 
 static void
@@ -116,16 +112,14 @@ compute_prob_diffs(struct vector *p0, double gamma, struct svector *p_active)
 	double p0_j, dp_j, *p_j;
 	struct svector_iter it;
 
-	svector_iter_init(p_active, &it);
-	while (svector_iter_advance(p_active, &it)) {
-		jrecv = svector_iter_current_index(p_active, &it);
+	SVECTOR_FOREACH(it, p_active) {
+		jrecv = SVECTOR_IDX(it);
 		p0_j = *vector_at(p0, jrecv);
-		p_j = svector_iter_current(p_active, &it);
+		p_j = SVECTOR_PTR(it);
 		dp_j = *p_j - gamma * p0_j;
 		*p_j = dp_j;
 
 	}
-	svector_iter_deinit(p_active, &it);
 }
 
 static void iproc_model_ctx_free(iproc_model_ctx * ctx)
@@ -287,7 +281,7 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv)
 
 	double log_gamma = ctx->log_gamma;
 	double log_p0 = *vector_at(ctx->group->log_p0, jrecv);
-	double deta = svector_get(ctx->deta, jrecv);
+	double deta = svector_item(ctx->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);
 }

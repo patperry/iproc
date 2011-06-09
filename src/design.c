@@ -156,15 +156,13 @@ design_muls0_reffects(double alpha,
 		ssize_t i;
 		double x_i;
 
-		svector_iter_init(x, &itx);
-		while (svector_iter_advance(x, &itx)) {
-			i = svector_iter_current_index(x, &itx);
+		SVECTOR_FOREACH(itx, x) {
+			i = SVECTOR_IDX(itx);
 			if (off <= i && i < end) {
-				x_i = *svector_iter_current(x, &itx);
+				x_i = SVECTOR_VAL(itx);
 				*vector_at(y, i) += alpha * x_i;
 			}
 		}
-		svector_iter_deinit(x, &itx);
 	} else {
 		struct vector ysub;
 		vector_init_slice(&ysub, y, off, dim);
@@ -257,20 +255,18 @@ design_muls0_static(double alpha,
 
 		vector_fill(z, 0.0);
 
-		svector_iter_init(x, &itx);
-		while (svector_iter_advance(x, &itx)) {
-			ix = svector_iter_current_index(x, &itx);
+		SVECTOR_FOREACH(itx, x) {
+			ix = SVECTOR_IDX(itx);
 			if (ix < ix_begin || ix >= ix_end)
 				continue;
 
 			ij = imaxdiv(ix - ix_begin, p);
 			i = ij.rem;	/* ix % p */
 			j = ij.quot;	/* ix / p */
-			x_ij = *svector_iter_current(x, &itx);
+			x_ij = SVECTOR_VAL(itx);
 			s_i = *vector_at(s, i);
 			*vector_at(z, j) += x_ij * s_i;
 		}
-		svector_iter_deinit(x, &itx);
 
 		vector_scale(z, alpha);
 

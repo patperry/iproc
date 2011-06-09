@@ -515,7 +515,7 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 	assert(trans == TRANS_NOTRANS || svector_dim(x) == matrix_nrow(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == matrix_ncol(a));
 
-	if (svector_size(x) == 0) {
+	if (svector_count(x) == 0) {
 		vector_scale(y, beta);
 		return;
 	} else if (!vector_dim(y)) {
@@ -532,22 +532,18 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 		vector_scale(y, beta);
 	}
 
-	svector_iter_init(x, &itx);
-	while (svector_iter_advance(x, &itx)) {
+	SVECTOR_FOREACH(itx, x) {
 		if (trans == TRANS_NOTRANS) {
-			j = svector_iter_current_index(x, &itx);
-			x_j = *svector_iter_current(x, &itx);
+			j = SVECTOR_IDX(itx);
+			x_j = SVECTOR_VAL(itx);
 			matrix_col_axpy(alpha * x_j, a, j, y);
 		} else {
 
-			i = svector_iter_current_index(x, &itx);
-			x_i = *svector_iter_current(x, &itx);
+			i = SVECTOR_IDX(itx);
+			x_i = SVECTOR_VAL(itx);
 			matrix_row_axpy(alpha * x_i, a, i, y);
 		}
 	}
-
-	svector_iter_deinit(x, &itx);
-
 }
 
 void

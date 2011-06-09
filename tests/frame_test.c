@@ -176,9 +176,9 @@ static void test_vrecv(void **state)
 				tmsg = matrix_get(&tlast, (jrecv + j) % nrecv, isend);
 				delta = t - tmsg;
 				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
-					assert_true(svector_get(&y, jrecv) == 1.0);
+					assert_true(svector_item(&y, jrecv) == 1.0);
 				} else {
-					assert_true(svector_get(&y, (jrecv + j) % nrecv) == 0.0);
+					assert_true(svector_item(&y, (jrecv + j) % nrecv) == 0.0);
 				}
 			}
 		}

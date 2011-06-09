@@ -293,7 +293,7 @@ static void test_tmuls0(void **state)
 		
 		for (i = 0; i < n; i++) {
 			if (i % 3 == 0)
-				svector_set(&x, i, (3 * i + 1) % 5 - 2);
+				svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 		}
 		
 		design_muls0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);
@@ -342,7 +342,7 @@ static void test_muls0(void **state)
 
 		for (i = 0; i < p; i++) {
 			if (i % 2 == 0)
-				svector_set(&x, i, (7 * i) % 5 - 2);
+				svector_set_item(&x, i, (7 * i) % 5 - 2);
 		}
 		
 		design_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);

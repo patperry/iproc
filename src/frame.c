@@ -54,14 +54,9 @@ static struct svector *send_frame_dx(struct send_frame *sf, ssize_t jrecv)
 		return dx;
 	}
 
-	if ((dx = intmap_insert(&sf->jrecv_dxs, &pos, NULL))) {
-		if (svector_init(dx, design_dim(sf->frame->design))) {
-			return dx;
-		}
-		intmap_remove_at(&sf->jrecv_dxs, &pos);
-	}
-
-	return NULL;
+	dx = intmap_insert(&sf->jrecv_dxs, &pos, NULL);
+	svector_init(dx, design_dim(sf->frame->design));
+	return dx;
 }
 
 static bool var_frames_init(struct frame *frame, struct design *design)
@@ -369,7 +364,7 @@ bool frame_advance_to(struct frame *f, double t)
 	return true;
 }
 
-bool frame_mul(double alpha, enum trans_op trans,
+void frame_mul(double alpha, enum trans_op trans,
 	       const struct frame *f, ssize_t isend,
 	       const struct vector *x, double beta, struct vector *y)
 {
@@ -388,21 +383,15 @@ bool frame_mul(double alpha, enum trans_op trans,
 	       || vector_dim(y) == design_dim(f->design));
 
 	struct svector diffprod;
-	bool ok = false;
 
-	if (svector_init(&diffprod, vector_dim(y))) {
-		if (frame_dmul(alpha, trans, f, isend, x, 0.0, &diffprod)) {
-			design_mul0(alpha, trans, f->design, isend, x, beta, y);
-			svector_axpy(1.0, &diffprod, y);
-			ok = true;
-		}
-		svector_deinit(&diffprod);
-	}
-
-	return ok;
+	svector_init(&diffprod, vector_dim(y));
+	frame_dmul(alpha, trans, f, isend, x, 0.0, &diffprod);
+	design_mul0(alpha, trans, f->design, isend, x, beta, y);
+	svector_axpy(1.0, &diffprod, y);
+	svector_deinit(&diffprod);
 }
 
-bool frame_muls(double alpha, enum trans_op trans,
+void frame_muls(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct svector *x, double beta, struct vector *y)
 {
@@ -421,23 +410,15 @@ bool frame_muls(double alpha, enum trans_op trans,
 	       || vector_dim(y) == design_dim(f->design));
 
 	struct svector diffprod;
-	bool ok = false;
 
-	if (svector_init(&diffprod, vector_dim(y))) {
-		if (frame_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod)) {
-			design_muls0(alpha, trans, f->design, isend, x, beta,
-				     y);
-			svector_axpy(1.0, &diffprod, y);
-			ok = true;
-		}
-
-		svector_deinit(&diffprod);
-	}
-
-	return ok;
+	svector_init(&diffprod, vector_dim(y));
+	frame_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod);
+	design_muls0(alpha, trans, f->design, isend, x, beta, y);
+	svector_axpy(1.0, &diffprod, y);
+	svector_deinit(&diffprod);
 }
 
-bool frame_dmul(double alpha, enum trans_op trans,
+void frame_dmul(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct vector *x, double beta, struct svector *y)
 {
@@ -466,28 +447,22 @@ bool frame_dmul(double alpha, enum trans_op trans,
 	ssize_t ndynamic = design->ndynamic;
 
 	if (ndynamic == 0)
-		return true;
+		return;
 
 	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
 	if (!sf)
-		return true;
+		return;
 
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
-	bool ok = true;
 
 	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
 		jrecv = INTMAP_KEY(it);
 		dx = INTMAP_VAL(it);
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dot(dx, x);
-			double *yjrecv = svector_at(y, jrecv);
-			if (!yjrecv) {
-				ok = false;
-				break;
-			}
-
+			double *yjrecv = svector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
 		} else {
 			double xjrecv = *vector_at(x, jrecv);
@@ -497,17 +472,12 @@ bool frame_dmul(double alpha, enum trans_op trans,
 
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * xjrecv;
-			if (!svector_axpys(jscale, dx, y)) {
-				ok = false;
-				break;
-			}
+			svector_axpys(jscale, dx, y);
 		}
 	}
-
-	return ok;
 }
 
-bool frame_dmuls(double alpha, enum trans_op trans,
+void frame_dmuls(double alpha, enum trans_op trans,
 		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y)
 {
@@ -536,16 +506,15 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 	ssize_t ndynamic = design->ndynamic;
 
 	if (ndynamic == 0)
-		return true;
+		return;
 
 	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
 	if (!sf)
-		return true;
+		return;
 
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
-	bool ok = true;
 
 	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
 		jrecv = INTMAP_KEY(it);
@@ -553,27 +522,17 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 
 		if (trans == TRANS_NOTRANS) {
 			double dot = svector_dots(dx, x);
-			double *yjrecv = svector_at(y, jrecv);
-			if (!yjrecv) {
-				ok = false;
-				break;
-			}
-
+			double *yjrecv = svector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
 		} else {
-			double xjrecv = svector_get(x, jrecv);
+			double xjrecv = svector_item(x, jrecv);
 
 			if (xjrecv == 0.0)
 				continue;
 
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * xjrecv;
-			if (!svector_axpys(jscale, dx, y)) {
-				ok = false;
-				break;
-			}
+			svector_axpys(jscale, dx, y);
 		}
 	}
-
-	return ok;
 }

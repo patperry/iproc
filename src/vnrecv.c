@@ -42,10 +42,10 @@ static bool vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 		assert(val);
 		*val -= 1.0;
 		if (*val == 0.0)
-			svector_erase(dx, &pos);
+			svector_remove_at(dx, &pos);
 	}
 
-	val = svector_at(dx, index + e->intvl);
+	val = svector_item_ptr(dx, index + e->intvl);
 	if (!val)
 		return false;
 
