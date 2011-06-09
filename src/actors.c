@@ -261,12 +261,10 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dot(row, x);
 
-			cohort_iter_init(c, &c_it);
-			while (cohort_iter_advance(c, &c_it)) {
-				id = cohort_iter_current(c, &c_it);
+			COHORT_FOREACH(c_it, c) {
+				id = COHORT_KEY(c_it);
 				*vector_item_ptr(y, id) += alpha_dot;
 			}
-			cohort_iter_deinit(c, &c_it);
 		}
 	} else {
 		HASHSET_FOREACH(it, &a->cohorts) {
@@ -274,12 +272,10 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			row = cohort_traits(c);
 			scale = 0.0;
 
-			cohort_iter_init(c, &c_it);
-			while (cohort_iter_advance(c, &c_it)) {
-				id = cohort_iter_current(c, &c_it);
+			COHORT_FOREACH(c_it, c) {
+				id = COHORT_KEY(c_it);
 				scale += *vector_item_ptr(x, id);
 			}
-			cohort_iter_deinit(c, &c_it);
 
 			vector_axpy(alpha * scale, row, y);
 		}
@@ -320,12 +316,10 @@ actors_muls(double alpha,
 			row = cohort_traits(c);
 			alpha_dot = alpha * svector_dot(x, row);
 
-			cohort_iter_init(c, &c_it);
-			while (cohort_iter_advance(c, &c_it)) {
-				id = cohort_iter_current(c, &c_it);
+			COHORT_FOREACH(c_it, c) {
+				id = COHORT_KEY(c_it);
 				*vector_item_ptr(y, id) += alpha_dot;
 			}
-			cohort_iter_deinit(c, &c_it);
 		}
 	} else {
 		/* NOTE: this could potentially be made more effecient by
