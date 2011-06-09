@@ -108,7 +108,22 @@ bool intmap_contains_key(const struct intmap *m, intptr_t key)
 	return intmap_find(m, key, &pos);
 }
 
-intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
+bool intmap_contains_val(const struct intmap *m, predicate_fn match_val,
+			 void *udata)
+{
+	assert(m);
+	assert(match_val);
+
+	struct intmap_iter it;
+	INTMAP_FOREACH(it, m) {
+		if (match_val(INTMAP_VAL(it), udata))
+			return true;
+	}
+
+	return false;
+}
+
+void intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 {
 	assert(m);
 	assert(dst || !intmap_count(m));
@@ -118,11 +133,9 @@ intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst)
 	INTMAP_FOREACH(it, m) {
 		*dst++ = INTMAP_KEY(it);
 	}
-
-	return dst;
 }
 
-void *intmap_copy_vals_to(const struct intmap *m, void *dst)
+void intmap_copy_vals_to(const struct intmap *m, void *dst)
 {
 	assert(m);
 	assert(dst || !intmap_count(m));
@@ -136,8 +149,6 @@ void *intmap_copy_vals_to(const struct intmap *m, void *dst)
 		memcpy(dst, val, elt_size);
 		dst = (char *)dst + elt_size;
 	}
-
-	return dst;
 }
 
 bool intmap_remove(struct intmap *m, intptr_t key)

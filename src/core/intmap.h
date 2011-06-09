@@ -52,8 +52,10 @@ void *intmap_set_item(struct intmap *m, intptr_t key, const void *val);
 void *intmap_add(struct intmap *m, intptr_t key, const void *val);
 void intmap_clear(struct intmap *m);
 bool intmap_contains_key(const struct intmap *m, intptr_t key);
-intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst);
-void *intmap_copy_vals_to(const struct intmap *m, void *dst);
+bool intmap_contains_val(const struct intmap *m, predicate_fn match_val,
+			 void *udata);
+void intmap_copy_keys_to(const struct intmap *m, intptr_t *dst);
+void intmap_copy_vals_to(const struct intmap *m, void *dst);
 bool intmap_remove(struct intmap *m, intptr_t key);
 
 /* position-based operations */
