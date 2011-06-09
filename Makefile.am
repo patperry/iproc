@@ -83,7 +83,6 @@ libcore_la_SOURCES = \
 	src/core/sparsetable.h \
 	src/core/svector.c \
 	src/core/svector.h \
-	src/core/trashstack.h \
 	src/core/util.h \
 	src/core/util.c \
 	src/core/vector.c \

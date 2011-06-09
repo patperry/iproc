@@ -37,7 +37,6 @@
 		22221825136F1AD400F0C7D2 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22221826136F1AD400F0C7D2 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22221827136F1AEC00F0C7D2 /* messages.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAE136A58230048244C /* messages.json */; };
-		2223C7A7135364A200601F58 /* trashstack.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223C7A6135364A200601F58 /* trashstack.h */; };
 		2223CD10134D76F8004FA7F9 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
 		2223CD11134D76F8004FA7F9 /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* array.h */; };
 		2223CD33134D8C6F004FA7F9 /* array_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD20134D8C11004FA7F9 /* array_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
@@ -400,7 +399,6 @@
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		22221812136F1A8C00F0C7D2 /* frame_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = frame_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2222181C136F1AAA00F0C7D2 /* frame_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame_test.c; path = tests/frame_test.c; sourceTree = "<group>"; };
-		2223C7A6135364A200601F58 /* trashstack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trashstack.h; path = src/core/trashstack.h; sourceTree = "<group>"; };
 		2223CD0E134D76F8004FA7F9 /* array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array.c; path = src/core/array.c; sourceTree = "<group>"; };
 		2223CD0F134D76F8004FA7F9 /* array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array.h; path = src/core/array.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		2223CD20134D8C11004FA7F9 /* array_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array_test.c; path = tests/array_test.c; sourceTree = "<group>"; };
@@ -646,7 +644,6 @@
 				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
-				2223C7A6135364A200601F58 /* trashstack.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
 				221FEE8E132EC8710000097B /* vector.c */,
@@ -922,7 +919,6 @@
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
 				221C601D1352B8700008B25B /* intset.h in Headers */,
 				221C60211352D3820008B25B /* intmap.h in Headers */,
-				2223C7A7135364A200601F58 /* trashstack.h in Headers */,
 				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
 				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
 				22A88EBD135E6B6A006FE604 /* hashset.h in Headers */,
