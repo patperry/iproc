@@ -198,8 +198,7 @@ bool enron_employee_matrix_init_fread(struct matrix *employees, FILE *stream)
 	ssize_t p = EMPLOYEES_DIM;
 	
 	parse.matrix = employees;
-	if (!matrix_init(parse.matrix, n, p))
-		return false;
+	matrix_init(parse.matrix, n, p);
 	
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *) &parse);
 	yajl_config(hand, yajl_allow_comments, 1);

@@ -18,8 +18,9 @@ enum trans_op {
 };
 
 /* create, destroy */
-bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
-bool matrix_init_copy(struct matrix *a, const struct matrix *src);
+void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
+void matrix_init_copy(struct matrix *a, const struct matrix *src);
+void matrix_assign_copy(struct matrix *a, const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
 /* views */
@@ -38,7 +39,7 @@ void vector_init_matrix_col(struct vector *v, const struct matrix *a,
 			    ssize_t j);
 
 /* assign, copy, fill */
-void matrix_assign_copy(struct matrix *a, const struct matrix *src);
+
 void matrix_fill(struct matrix *a, double value);
 void matrix_assign_identity(struct matrix *a);
 

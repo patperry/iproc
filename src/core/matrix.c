@@ -7,7 +7,7 @@
 #include "util.h"
 #include "matrix.h"
 
-bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
+void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 {
 	assert(a);
 	assert(nrow >= 0);
@@ -18,47 +18,63 @@ bool matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 	a->nrow = nrow;
 	a->ncol = ncol;
 	a->lda = MAX(1, nrow);
-	return true;
 }
 
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol)
 {
-	struct matrix *a;
-
-	if ((a = malloc(sizeof(*a)))) {
-		if (matrix_init(a, nrow, ncol)) {
-			return a;
-		}
-		free(a);
-	}
-	return NULL;
+	struct matrix *a = xcalloc(1, sizeof(*a));
+	matrix_init(a, nrow, ncol);
+	return a;
 }
 
-bool matrix_init_copy(struct matrix *a, const struct matrix *src)
+void matrix_init_copy(struct matrix *a, const struct matrix *src)
 {
 	assert(a);
 	assert(src);
 
 	ssize_t nrow = matrix_nrow(src);
 	ssize_t ncol = matrix_ncol(src);
-	if (matrix_init(a, nrow, ncol)) {
-		matrix_assign_copy(a, src);
-		return true;
+	matrix_init(a, nrow, ncol);
+	matrix_assign_copy(a, src);
+}
+
+void matrix_assign_copy(struct matrix *a, const struct matrix *src)
+{
+	assert(a);
+	assert(src);
+	assert(matrix_nrow(a) == matrix_nrow(src));
+	assert(matrix_ncol(a) == matrix_ncol(src));
+	
+	f77int m = (f77int)matrix_nrow(a);
+	f77int n = (f77int)matrix_ncol(a);
+	f77int i, j;
+	
+	if (m == 0 || n == 0)
+		return;
+	
+	if (matrix_lda(a) == m && matrix_lda(src) == m) {
+		f77int mn = m * n;
+		f77int one = 1;
+		
+		F77_FUNC(dcopy) (&mn, matrix_at(src, 0, 0),
+				 &one, matrix_at(a, 0, 0), &one);
+	} else {
+		double value;
+		
+		for (j = 0; j < n; j++) {
+			for (i = 0; i < m; i++) {
+				value = matrix_get(src, i, j);
+				matrix_set(a, i, j, value);
+			}
+		}
 	}
-	return false;
 }
 
 struct matrix *matrix_alloc_copy(const struct matrix *src)
 {
-	struct matrix *a;
-
-	if ((a = malloc(sizeof(*a)))) {
-		if (matrix_init_copy(a, src)) {
-			return a;
-		}
-		free(a);
-	}
-	return NULL;
+	struct matrix *a = xcalloc(1, sizeof(*a));
+	matrix_init_copy(a, src);
+	return a;
 }
 
 void matrix_deinit(struct matrix *a)
@@ -70,7 +86,7 @@ void matrix_free(struct matrix *a)
 {
 	if (a) {
 		matrix_deinit(a);
-		free(a);
+		xfree(a);
 	}
 }
 
@@ -197,38 +213,6 @@ void matrix_assign_identity(struct matrix *a)
 		matrix_set(a, i, i, 1.0);
 	}
 
-}
-
-void matrix_assign_copy(struct matrix *a, const struct matrix *src)
-{
-	assert(a);
-	assert(src);
-	assert(matrix_nrow(a) == matrix_nrow(src));
-	assert(matrix_ncol(a) == matrix_ncol(src));
-
-	f77int m = (f77int)matrix_nrow(a);
-	f77int n = (f77int)matrix_ncol(a);
-	f77int i, j;
-
-	if (m == 0 || n == 0)
-		return;
-
-	if (matrix_lda(a) == m && matrix_lda(src) == m) {
-		f77int mn = m * n;
-		f77int one = 1;
-
-		F77_FUNC(dcopy) (&mn, matrix_at(src, 0, 0),
-				 &one, matrix_at(a, 0, 0), &one);
-	} else {
-		double value;
-
-		for (j = 0; j < n; j++) {
-			for (i = 0; i < m; i++) {
-				value = matrix_get(src, i, j);
-				matrix_set(a, i, j, value);
-			}
-		}
-	}
 }
 
 double matrix_get(const struct matrix *a, ssize_t i, ssize_t j)
