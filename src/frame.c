@@ -9,15 +9,10 @@ static bool send_frame_init(struct send_frame *sf, struct frame *f)
 {
 	assert(sf);
 
-	if (!intmap_init(&sf->jrecv_dxs, sizeof(struct svector),
-			 alignof(struct svector)))
-		 goto fail_jrecv_dxs;
-
+	intmap_init(&sf->jrecv_dxs, sizeof(struct svector),
+		    alignof(struct svector));
 	sf->frame = f;
 	return true;
-
-fail_jrecv_dxs:
-	return false;
 }
 
 static void send_frame_deinit(struct send_frame *sf)
@@ -63,7 +58,7 @@ static struct svector *send_frame_dx(struct send_frame *sf, ssize_t jrecv)
 		if (svector_init(dx, design_dim(sf->frame->design))) {
 			return dx;
 		}
-		intmap_erase(&sf->jrecv_dxs, &pos);
+		intmap_remove_at(&sf->jrecv_dxs, &pos);
 	}
 
 	return NULL;
@@ -142,8 +137,9 @@ static void var_frames_clear(struct frame *frame)
 static bool send_frames_init(struct frame *f)
 {
 	assert(f);
-	return intmap_init(&f->send_frames, sizeof(struct send_frame),
-			   alignof(struct send_frame));
+	intmap_init(&f->send_frames, sizeof(struct send_frame),
+		    alignof(struct send_frame));
+	return true;
 }
 
 static void send_frames_deinit(struct frame *f)
@@ -317,7 +313,7 @@ static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
 		if (send_frame_init(sf, f))
 			return sf;
 
-		intmap_erase(&f->send_frames, &pos);
+		intmap_remove_at(&f->send_frames, &pos);
 	}
 
 	return NULL;
@@ -472,7 +468,7 @@ bool frame_dmul(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return true;
 
-	const struct send_frame *sf = intmap_lookup(&f->send_frames, isend);
+	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
 	if (!sf)
 		return true;
 
@@ -542,7 +538,7 @@ bool frame_dmuls(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return true;
 
-	const struct send_frame *sf = intmap_lookup(&f->send_frames, isend);
+	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
 	if (!sf)
 		return true;
 

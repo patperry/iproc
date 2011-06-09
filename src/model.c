@@ -129,9 +129,8 @@ static bool cohort_models_init(struct intmap *cohort_models,
 {
 	ssize_t i, nsender = design_nsender(design);
 
-	if (!intmap_init(cohort_models, sizeof(struct cohort_model *),
-			 alignof(struct cohort_model *)))
-		 return false;
+	intmap_init(cohort_models, sizeof(struct cohort_model *),
+		    alignof(struct cohort_model *));
 
 	/* We have to loop over all senders, not over all cohorts, because we
 	 * need a representative sender for each group when we call
@@ -156,7 +155,7 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
 	const struct design *design = iproc_model_design(model);
 	const struct actors *senders = design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
-	return *(struct cohort_model **)intmap_lookup(&model->cohort_models, c);
+	return *(struct cohort_model **)intmap_item(&model->cohort_models, c);
 }
 
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)

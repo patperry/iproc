@@ -34,41 +34,62 @@ struct intmap_iter {
 	for ((it) = intmap_iter_make(m); intmap_iter_advance(&(it));)
 
 /* create, destroy */
-bool intmap_init(struct intmap *m, size_t elt_size, size_t elt_align);
-bool intmap_init_copy(struct intmap *m, const struct intmap *src);
+void intmap_init(struct intmap *m, size_t elt_size, size_t elt_align);
+void intmap_init_copy(struct intmap *m, const struct intmap *src);
+void intmap_assign_copy(struct intmap *m, const struct intmap *src);
 void intmap_deinit(struct intmap *m);
 
-/* assign, copy, clear */
-bool intmap_assign_copy(struct intmap *m, const struct intmap *src);
-void *intmap_copy_vals_to(const struct intmap *m, void *dst);
-intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst);
+/* properties */
+static inline ssize_t intmap_count(const struct intmap *m);
+static inline size_t intmap_elt_size(const struct intmap *m);
+static inline size_t intmap_elt_align(const struct intmap *m);
+
+void *intmap_item(const struct intmap *m, intptr_t key);
+void *intmap_set_item(struct intmap *m, intptr_t key, const void *val);
+
+
+/* methods */
+void *intmap_add(struct intmap *m, intptr_t key, const void *val);
 void intmap_clear(struct intmap *m);
-
-/* informative */
-ssize_t intmap_size(const struct intmap *m);
-size_t intmap_elt_size(const struct intmap *m);
-size_t intmap_elt_align(const struct intmap *m);
-
 bool intmap_contains(const struct intmap *m, intptr_t key);
-void *intmap_lookup(const struct intmap *m, intptr_t key);
-void *intmap_lookup_with(const struct intmap *m, intptr_t key,
-			 const void *val0);
+intptr_t *intmap_copy_keys_to(const struct intmap *m, intptr_t *dst);
+void *intmap_copy_vals_to(const struct intmap *m, void *dst);
 
-/* modification */
-bool intmap_add(struct intmap *m, intptr_t key, const void *val);
-ssize_t intmap_add_all(struct intmap *m, const intptr_t *keys,
-		       const void *vals, ssize_t n);
-void intmap_remove(struct intmap *m, intptr_t key);
-void intmap_remove_all(struct intmap *m, const intptr_t *keys, ssize_t n);
+
+
+
+
+
+
+bool intmap_remove(struct intmap *m, intptr_t key);
 
 /* position-based operations */
 void *intmap_find(const struct intmap *m, intptr_t key, struct intmap_pos *pos);
 void *intmap_insert(struct intmap *m, struct intmap_pos *pos, const void *val);
-void intmap_erase(struct intmap *m, struct intmap_pos *pos);
+void intmap_remove_at(struct intmap *m, struct intmap_pos *pos);
 
 /* iteration */
 struct intmap_iter intmap_iter_make(const struct intmap *m);
 void intmap_iter_reset(struct intmap_iter *it);
 bool intmap_iter_advance(struct intmap_iter *it);
+
+/* inline function definitions */
+ssize_t intmap_count(const struct intmap *m)
+{
+	assert(m);
+	return hashset_count(&m->pairs);
+}
+
+size_t intmap_elt_size(const struct intmap *m)
+{
+	assert(m);
+	return m->elt_size;
+}
+
+size_t intmap_elt_align(const struct intmap *m)
+{
+	assert(m);
+	return m->elt_align;
+}
 
 #endif /* _intmap_H */

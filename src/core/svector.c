@@ -31,11 +31,9 @@ bool svector_init(struct svector *v, ssize_t n)
 	assert(n >= 0);
 	assert(n <= INTPTR_MAX);
 
-	if (intmap_init(&v->map, sizeof(double), alignof(double))) {
-		v->dim = n;
-		return true;
-	}
-	return false;
+	intmap_init(&v->map, sizeof(double), alignof(double));
+	v->dim = n;
+	return true;
 }
 
 struct svector *svector_alloc_copy(const struct svector *src)
@@ -57,11 +55,9 @@ bool svector_init_copy(struct svector *v, const struct svector *src)
 	assert(v);
 	assert(src);
 
-	if (intmap_init_copy(&v->map, &src->map)) {
-		v->dim = src->dim;
-		return true;
-	}
-	return false;
+	intmap_init_copy(&v->map, &src->map);
+	v->dim = src->dim;
+	return true;
 }
 
 void svector_free(struct svector *v)
@@ -104,8 +100,8 @@ double svector_get(const struct svector *v, ssize_t i)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	double val0 = 0.0;
-	return *(double *)intmap_lookup_with(&v->map, i, &val0);
+	double *ptr = intmap_item(&v->map, i);
+	return ptr ? *ptr : 0.0;
 }
 
 bool svector_set(struct svector *v, ssize_t i, double val)
@@ -114,7 +110,8 @@ bool svector_set(struct svector *v, ssize_t i, double val)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	return intmap_add(&v->map, i, &val);
+	intmap_set_item(&v->map, i, &val);
+	return true;
 }
 
 double *svector_at(struct svector *v, ssize_t i)
@@ -160,7 +157,7 @@ void svector_scale(struct svector *v, double scale)
 ssize_t svector_size(const struct svector *v)
 {
 	assert(v);
-	return intmap_size(&v->map);
+	return intmap_count(&v->map);
 }
 
 double svector_max(const struct svector *v)
@@ -321,7 +318,8 @@ bool svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
 
-	return intmap_assign_copy(&dst->map, &src->map);
+	intmap_assign_copy(&dst->map, &src->map);
+	return true;
 }
 
 double *svector_find(const struct svector *v, ssize_t i,
@@ -347,7 +345,7 @@ void svector_erase(struct svector *v, struct svector_pos *pos)
 	assert(v);
 	assert(pos);
 
-	intmap_erase(&v->map, &pos->map_pos);
+	intmap_remove_at(&v->map, &pos->map_pos);
 }
 
 void svector_iter_init(const struct svector *v, struct svector_iter *it)
