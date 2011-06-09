@@ -15,13 +15,13 @@ void dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 {
 	assert(queue);
 	assert(intervals);
-	assert(!vector_dim(intervals) || vector_get_front(intervals) > 0.0);
+	assert(!vector_dim(intervals) || vector_item(intervals, 0) > 0.0);
 	assert(!vector_dim(intervals)
-	       || vector_get_back(intervals) < INFINITY);
+	       || vector_item(intervals, vector_dim(intervals) - 1) < INFINITY);
 #ifndef NDEBUG
 	ssize_t i;
 	for (i = 1; i < vector_dim(intervals); i++) {
-		assert(vector_get(intervals, i - 1) < vector_get(intervals, i));
+		assert(vector_item(intervals, i - 1) < vector_item(intervals, i));
 	}
 #endif
 
@@ -118,7 +118,7 @@ void dyad_queue_pop(struct dyad_queue *queue)
 		pqueue_pop(&queue->events);
 	} else {
 		t0 = e->event.time;
-		dt = vector_get(queue->intervals, e->event.intvl);
+		dt = vector_item(queue->intervals, e->event.intvl);
 
 		e->tnext = t0 + dt;
 		e->event.type = DYAD_EVENT_MOVE;

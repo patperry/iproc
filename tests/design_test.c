@@ -37,10 +37,9 @@ static void enron_teardown_fixture(void **state)
 
 static void enron_setup(void **state)
 {
-	struct matrix enron_employees0;
-
-	matrix_init_slice_cols(&enron_employees0, &enron_employees, 1,
-			       matrix_ncol(&enron_employees) - 1);
+	struct matrix enron_employees0 =
+	    matrix_slice_cols(&enron_employees, 1,
+			      matrix_ncol(&enron_employees) - 1);
 	actors_init_matrix(&senders, &enron_employees, TRANS_NOTRANS);
 	actors_init_matrix(&receivers, &enron_employees0, TRANS_NOTRANS);	
 	dim = actors_dim(&senders) * actors_dim(&receivers);
@@ -77,10 +76,9 @@ static void enron_reff_teardown_fixture(void **state)
 
 static void enron_reff_setup(void **state)
 {
-	struct matrix enron_employees0;
-	
-	matrix_init_slice_cols(&enron_employees0, &enron_employees, 1,
-			       matrix_ncol(&enron_employees) - 1);
+	struct matrix enron_employees0 =
+	    matrix_slice_cols(&enron_employees, 1,
+			      matrix_ncol(&enron_employees) - 1);
 	actors_init_matrix(&senders, &enron_employees, TRANS_NOTRANS);
 	actors_init_matrix(&receivers, &enron_employees0, TRANS_NOTRANS);	
 	dim = (actors_size(&receivers)
@@ -172,9 +170,9 @@ static void matrix_init_design0(struct matrix *x, const struct design *d,
 	ssize_t dim =  istat + nstat;
 	
 	matrix_init(x, nrecv, dim);
-	matrix_init_slice_cols(&xreff, x, ireff, nreff);
+	xreff = matrix_slice_cols(x, ireff, nreff);
 	matrix_assign_reffects(&xreff, r, has_reffects);
-	matrix_init_slice_cols(&xstat, x, istat, nstat);
+	xstat = matrix_slice_cols(x, istat, nstat);
 	matrix_assign_static(&xstat, s, r, isend);
 }
 
@@ -197,7 +195,7 @@ static void test_mul0(void **state)
 		matrix_init_design0(&matrix, &design, isend);
 	
 		for (i = 0; i < p; i++) {
-			vector_set(&x, i, (7 * i) % 5 - 2);
+			vector_set_item(&x, i, (7 * i) % 5 - 2);
 		}
 		
 		design_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);
@@ -244,7 +242,7 @@ static void test_tmul0(void **state)
 		matrix_init_design0(&matrix, &design, isend);
 		
 		for (i = 0; i < n; i++) {
-			vector_set(&x, i, (3 * i + 1) % 5 - 2);
+			vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 		}
 		
 		design_mul0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);

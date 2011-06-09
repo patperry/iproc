@@ -73,8 +73,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	if (!(n > 0))
 		error("must specify at least one actor");
 
-	struct vector traits0;
-	vector_init_matrix_col(&traits0, &traits_t, 0);
+	struct vector traits0 = matrix_col(&traits_t, 0);
 	ssize_t dim = vector_dim(&traits0);
 	struct actors *actors = actors_alloc(dim);
 	SEXP Ractors;
@@ -122,7 +121,7 @@ SEXP Riproc_actors_traits(SEXP Ractors, SEXP Ractor_ids)
 		if (!(0 <= id && id < size))
 			error("actor id out of range");
 
-		vector_init_matrix_col(&dst, &xt, i);
+		dst = matrix_col(&xt, i);
 		src = actors_traits(actors, id);
 
 		vector_assign_copy(&dst, src);
@@ -152,8 +151,8 @@ SEXP Riproc_actors_mul(SEXP Ractors, SEXP Rmatrix)
 
 	int j;
 	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &view, j);
-		vector_init_matrix_col(&dst, &result, j);
+		col = matrix_col(&view, j);
+		dst = matrix_col(&result, j);
 		actors_mul(1.0, TRANS_NOTRANS, actors, &col, 0.0, &dst);
 	}
 
@@ -181,8 +180,8 @@ SEXP Riproc_actors_tmul(SEXP Ractors, SEXP Rmatrix)
 
 	int j;
 	for (j = 0; j < ncol; j++) {
-		vector_init_matrix_col(&col, &view, j);
-		vector_init_matrix_col(&dst, &result, j);
+		col = matrix_col(&view, j);
+		dst = matrix_col(&result, j);
 		actors_mul(1.0, TRANS_TRANS, actors, &col, 0.0, &dst);
 	}
 

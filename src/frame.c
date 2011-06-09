@@ -459,7 +459,7 @@ void frame_dmul(double alpha, enum trans_op trans,
 			double *yjrecv = svector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
 		} else {
-			double xjrecv = *vector_at(x, jrecv);
+			double xjrecv = *vector_item_ptr(x, jrecv);
 
 			if (xjrecv == 0.0)
 				continue;

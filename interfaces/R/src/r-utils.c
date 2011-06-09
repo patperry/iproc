@@ -77,9 +77,7 @@ struct vector Riproc_vector_view_sexp(SEXP Rvector)
 {
 	int n = GET_LENGTH(Rvector);
 	double *data = NUMERIC_POINTER(Rvector);
-	struct vector view;
-	vector_init_view(&view, data, n);
-	return view;
+	return vector_make(data, n);
 }
 
 struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix)
@@ -90,12 +88,14 @@ struct matrix Riproc_matrix_view_sexp(SEXP Rmatrix)
 		int nrow = INTEGER(GET_DIM(Rmatrix))[0];
 		int ncol = INTEGER(GET_DIM(Rmatrix))[1];
 		double *data = NUMERIC_POINTER(Rmatrix);
-		matrix_init_view(&view, data, nrow, ncol);
+		struct vector v = vector_make(data, nrow * ncol);
+		return matrix_make(&v, nrow, ncol);
 	} else {
 		int nrow = GET_LENGTH(Rmatrix);
 		int ncol = 1;
 		double *data = NUMERIC_POINTER(Rmatrix);
-		matrix_init_view(&view, data, nrow, ncol);
+		struct vector v = vector_make(data, nrow * ncol);
+		return matrix_make(&v, nrow, ncol);
 	}
 
 	return view;

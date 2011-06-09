@@ -47,7 +47,7 @@ void actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 		ssize_t i;
 
 		vector_init(&row, n);
-		row_front = n == 0 ? NULL : vector_front(&row);
+		row_front = vector_to_ptr(&row);
 
 		for (i = 0; i < m; i++) {
 			matrix_get_row(matrix, i, row_front);
@@ -59,7 +59,7 @@ void actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 		ssize_t j;
 
 		for (j = 0; j < n; j++) {
-			vector_init_matrix_col(&col, matrix, j);
+			col = matrix_col(matrix, j);
 			actors_add(actors, &col);
 		}
 	}
@@ -192,7 +192,7 @@ double actors_get(const struct actors *a, ssize_t actor_id, ssize_t j)
 	assert(0 <= j && j < actors_dim(a));
 
 	const struct vector *x = actors_traits(a, actor_id);
-	double val = vector_get(x, j);
+	double val = vector_item(x, j);
 	return val;
 }
 
@@ -264,7 +264,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
-				*vector_at(y, id) += alpha_dot;
+				*vector_item_ptr(y, id) += alpha_dot;
 			}
 			cohort_iter_deinit(c, &c_it);
 		}
@@ -277,7 +277,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
-				scale += *vector_at(x, id);
+				scale += *vector_item_ptr(x, id);
 			}
 			cohort_iter_deinit(c, &c_it);
 
@@ -323,7 +323,7 @@ actors_muls(double alpha,
 			cohort_iter_init(c, &c_it);
 			while (cohort_iter_advance(c, &c_it)) {
 				id = cohort_iter_current(c, &c_it);
-				*vector_at(y, id) += alpha_dot;
+				*vector_item_ptr(y, id) += alpha_dot;
 			}
 			cohort_iter_deinit(c, &c_it);
 		}
@@ -371,8 +371,8 @@ actors_matmul(double alpha,
 	struct vector ycol;
 
 	for (j = 0; j < m; j++) {
-		vector_init_matrix_col(&xcol, x, j);
-		vector_init_matrix_col(&ycol, y, j);
+		xcol = matrix_col(x, j);
+		ycol = matrix_col(y, j);
 		actors_mul(alpha, trans, a, &xcol, 1.0, &ycol);
 	}
 }

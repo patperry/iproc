@@ -59,7 +59,7 @@ static void test_mul(void **state)
 	vector_init(&y1, n);
 	
 	for (i = 0; i < p; i++) {
-		vector_set(&x, i, (7 * i) % 5 - 2);
+		vector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 	
 	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
@@ -95,7 +95,7 @@ static void test_tmul(void **state)
 	vector_init(&y1, p);
 	
 	for (i = 0; i < n; i++) {
-		vector_set(&x, i, (3 * i + 1) % 5 - 2);
+		vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 	
 	actors_mul(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);

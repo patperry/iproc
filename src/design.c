@@ -36,7 +36,7 @@ bool design_init(struct design *design, struct actors *senders,
 #ifndef NDEBUG
 	ssize_t i, nintervals = vector_dim(intervals);
 	for (i = 1; i < nintervals; i++) {
-		assert(vector_get(intervals, i - 1) < vector_get(intervals, i));
+		assert(vector_item(intervals, i - 1) < vector_item(intervals, i));
 	}
 #endif
 
@@ -122,12 +122,10 @@ design_mul0_reffects(double alpha,
 	ssize_t dim = design_nreceiver(design);
 
 	if (trans == TRANS_NOTRANS) {
-		struct vector xsub;
-		vector_init_slice(&xsub, x, off, dim);
+		struct vector xsub = vector_slice(x, off, dim);
 		vector_axpy(alpha, &xsub, y);
 	} else {
-		struct vector ysub;
-		vector_init_slice(&ysub, y, off, dim);
+		struct vector ysub = vector_slice(y, off, dim);
 		vector_axpy(alpha, x, &ysub);
 	}
 }
@@ -154,12 +152,11 @@ design_muls0_reffects(double alpha,
 			i = SVECTOR_IDX(itx);
 			if (off <= i && i < end) {
 				x_i = SVECTOR_VAL(itx);
-				*vector_at(y, i) += alpha * x_i;
+				*vector_item_ptr(y, i) += alpha * x_i;
 			}
 		}
 	} else {
-		struct vector ysub;
-		vector_init_slice(&ysub, y, off, dim);
+		struct vector ysub = vector_slice(y, off, dim);
 		svector_axpy(alpha, x, &ysub);
 	}
 }
@@ -183,12 +180,10 @@ design_mul0_static(double alpha,
 	struct vector *z = vector_alloc(q);
 
 	if (trans == TRANS_NOTRANS) {
-		struct vector xsub;
-		vector_init_slice(&xsub, x, ix_begin, nstatic);
+		struct vector xsub = vector_slice(x, ix_begin, nstatic);
 
 		/* z := alpha t(x) s */
-		struct matrix xmat;
-		matrix_init_view_vector(&xmat, &xsub, p, q);
+		struct matrix xmat = matrix_make(&xsub, p, q);
 
 		matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
 
@@ -199,17 +194,10 @@ design_mul0_static(double alpha,
 		actors_mul(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
-		struct vector ysub;
-		vector_init_slice(&ysub, y, ix_begin, nstatic);
-
-		struct matrix ymat;
-		matrix_init_view_vector(&ymat, &ysub, p, q);
-
-		struct matrix smat;
-		matrix_init_view_vector(&smat, s, p, 1);
-
-		struct matrix zmat;
-		matrix_init_view_vector(&zmat, z, 1, q);
+		struct vector ysub = vector_slice(y, ix_begin, nstatic);
+		struct matrix ymat = matrix_make(&ysub, p, q);
+		struct matrix smat = matrix_make(s, p, 1);
+		struct matrix zmat = matrix_make(z, 1, q);
 
 		matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	}
@@ -258,8 +246,8 @@ design_muls0_static(double alpha,
 			i = ij.rem;	/* ix % p */
 			j = ij.quot;	/* ix / p */
 			x_ij = SVECTOR_VAL(itx);
-			s_i = *vector_at(s, i);
-			*vector_at(z, j) += x_ij * s_i;
+			s_i = *vector_item_ptr(s, i);
+			*vector_item_ptr(z, j) += x_ij * s_i;
 		}
 
 		vector_scale(z, alpha);
@@ -271,17 +259,10 @@ design_muls0_static(double alpha,
 		actors_muls(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
 		/* y := y + s \otimes z */
-		struct vector ysub;
-		vector_init_slice(&ysub, y, ix_begin, nstatic);
-
-		struct matrix ymat;
-		matrix_init_view_vector(&ymat, &ysub, p, q);
-
-		struct matrix smat;
-		matrix_init_view_vector(&smat, s, p, 1);
-
-		struct matrix zmat;
-		matrix_init_view_vector(&zmat, z, 1, q);
+		struct vector ysub = vector_slice(y, ix_begin, nstatic);
+		struct matrix ymat = matrix_make(&ysub, p, q);
+		struct matrix smat = matrix_make(s, p, 1);
+		struct matrix zmat = matrix_make(z, 1, q);
 
 		matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	}

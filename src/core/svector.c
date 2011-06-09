@@ -176,7 +176,7 @@ double svector_dot(const struct svector *x, const struct vector *y)
 	SVECTOR_FOREACH(itx, x) {
 		i = SVECTOR_IDX(itx);
 		valx = SVECTOR_VAL(itx);
-		valy = *vector_at(y, i);
+		valy = *vector_item_ptr(y, i);
 		dot += valx * valy;
 	}
 
@@ -196,7 +196,7 @@ void svector_axpy(double scale, const struct svector *x, struct vector *y)
 	SVECTOR_FOREACH(itx, x) {
 		i = SVECTOR_IDX(itx);
 		val = SVECTOR_VAL(itx);
-		*vector_at(y, i) += scale * val;
+		*vector_item_ptr(y, i) += scale * val;
 	}
 }
 

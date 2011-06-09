@@ -95,7 +95,7 @@ static void test_vnrecv(void **state)
 		isend = msg ? msg->from : 0;
 		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert_true(vector_get(&y, jrecv) == matrix_get(&xnrecv, jrecv, isend));
+			assert_true(vector_item(&y, jrecv) == matrix_get(&xnrecv, jrecv, isend));
 		}
 		
 		ntie = messages_iter_ntie(&it);
@@ -118,10 +118,11 @@ static void vrecv_setup(void **state)
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
+	struct vector vintvls = vector_make(intvls, 3);
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 3);
-	vector_assign_array(&intervals, intvls);
+	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_reffects(&design, has_reffects);
@@ -166,8 +167,8 @@ static void test_vrecv(void **state)
 		jrecv = msg ? msg->to[0] : 0;
 		
 		for (i = 0; i <= n; i++) {
-			tlo = i == 0 ? 0 : vector_get(&intervals, i - 1);
-			thi = i == n ? INFINITY : vector_get(&intervals, i);
+			tlo = i == 0 ? 0 : vector_item(&intervals, i - 1);
+			thi = i == n ? INFINITY : vector_item(&intervals, i);
 			
 			svector_set_basis(&x, vrecv_index + i);
 			frame_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);

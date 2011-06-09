@@ -90,70 +90,63 @@ void matrix_free(struct matrix *a)
 	}
 }
 
-void matrix_init_view(struct matrix *a, const double *ptr, ssize_t m, ssize_t n)
+struct matrix matrix_make(const struct vector *v, ssize_t m, ssize_t n)
 {
-	matrix_init_view_with_lda(a, ptr, m, n, MAX(1, m));
+	return matrix_make_with_lda(v, m, n, MAX(1, m));
 }
 
-void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m,
-			       ssize_t n, ssize_t lda)
+struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n, ssize_t lda)
 {
-	assert(a);
-	assert(ptr || m == 0 || n == 0);
-	assert(m >= 0);
-	assert(n >= 0);
-	assert(lda >= MAX(1, m));
-	assert(n <= SSIZE_MAX / lda);
-
-	ssize_t data_size = lda * n;
-	vector_init_view(&a->data, ptr, data_size);
-	a->nrow = m;
-	a->ncol = n;
-	a->lda = lda;
-
-}
-
-void matrix_init_view_vector(struct matrix *a, const struct vector *v,
-			     ssize_t m, ssize_t n)
-{
-	assert(a);
 	assert(v);
 	assert(m >= 0);
 	assert(n >= 0);
-	assert(m == 0 || n <= vector_dim(v) / m);
+	assert(lda >= MAX(1, m));	
+	assert(n <= SSIZE_MAX / lda);	
+	assert(vector_dim(v) == lda * n);
 
-	const double *ptr = m > 0 && n > 0 ? vector_front(v) : NULL;
-	matrix_init_view(a, ptr, m, n);
+	struct matrix a;
+	a.data = *v;
+	a.nrow = m;
+	a.ncol = n;
+	a.lda = lda;
+	return a;
 }
 
-void matrix_init_slice(struct matrix *a, const struct matrix *parent,
-		       ssize_t i, ssize_t j, ssize_t m, ssize_t n)
+struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m, ssize_t n)
 {
 	assert(a);
-	assert(parent);
 	assert(i >= 0);
 	assert(j >= 0);
 	assert(m >= 0);
 	assert(n >= 0);
-	assert(i <= matrix_nrow(parent) - m);
-	assert(j <= matrix_ncol(parent) - n);
+	assert(i <= matrix_nrow(a) - m);
+	assert(j <= matrix_ncol(a) - n);
 
-	const double *ptr = (m > 0 && n > 0) ? matrix_at(parent, i, j) : NULL;
-	ssize_t lda = matrix_lda(parent);
+	const double *ptr = (m > 0 && n > 0) ? matrix_at(a, i, j) : NULL;
+	ssize_t lda = matrix_lda(a);
+	struct vector v = vector_make(ptr, lda * n);
 
-	matrix_init_view_with_lda(a, ptr, m, n, lda);
+	return matrix_make_with_lda(&v, m, n, lda);
 }
 
-void matrix_init_slice_cols(struct matrix *a, const struct matrix *parent,
-			    ssize_t j, ssize_t n)
+struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n)
 {
 	assert(a);
-	assert(parent);
 	assert(j >= 0);
 	assert(n >= 0);
-	assert(j <= matrix_ncol(parent) - n);
+	assert(j <= matrix_ncol(a) - n);
 
-	matrix_init_slice(a, parent, 0, j, matrix_nrow(parent), n);
+	return matrix_slice(a, 0, j, matrix_nrow(a), n);
+}
+
+struct vector matrix_col(const struct matrix *a, ssize_t j)
+{
+	assert(0 <= j && j < matrix_ncol(a));
+
+	ssize_t m = matrix_nrow(a);
+	double *ptr = m != 0 ? matrix_at(a, 0, j) : NULL;
+	
+	return vector_make(ptr, m);
 }
 
 ssize_t matrix_nrow(const struct matrix *a)
@@ -241,7 +234,7 @@ double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j)
 	assert(0 <= i && i < matrix_nrow(a));
 	assert(0 <= j && j < matrix_ncol(a));
 
-	return vector_at(&a->data, i + j * matrix_lda(a));
+	return vector_item_ptr(&a->data, i + j * matrix_lda(a));
 }
 
 void matrix_fill_col(struct matrix *a, ssize_t j, double val)
@@ -312,7 +305,7 @@ void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
 	f77int n = (f77int)matrix_ncol(x);
 	const double *px = matrix_at(x, i, 0);
 	f77int incx = (f77int)matrix_lda(x);
-	double *py = vector_front(y);
+	double *py = vector_to_ptr(y);
 	f77int incy = 1;
 
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
@@ -332,7 +325,7 @@ void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
 	f77int n = (f77int)matrix_nrow(x);
 	const double *px = matrix_at(x, 0, j);
 	f77int incx = 1;
-	double *py = vector_front(y);
+	double *py = vector_to_ptr(y);
 	f77int incy = 1;
 
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
@@ -387,7 +380,7 @@ void matrix_scale(struct matrix *a, double scale)
 	ssize_t j;
 
 	for (j = 0; j < n; j++) {
-		vector_init_matrix_col(&col, a, j);
+		col = matrix_col(a, j);
 		vector_scale(&col, scale);
 	}
 }
@@ -403,20 +396,11 @@ void matrix_scale_rows(struct matrix *a, const struct vector *scale)
 	ssize_t j;
 
 	for (j = 0; j < n; j++) {
-		vector_init_matrix_col(&col, a, j);
+		col = matrix_col(a, j);
 		vector_mul(&col, scale);
 	}
 }
 
-void vector_init_matrix_col(struct vector *v, const struct matrix *a, ssize_t j)
-{
-	assert(0 <= j && j < matrix_ncol(a));
-	ssize_t m = matrix_nrow(a);
-	double *ptr = m != 0 ? matrix_at(a, 0, j) : NULL;
-
-	vector_init_view(v, ptr, m);
-
-}
 
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y)
@@ -441,9 +425,9 @@ void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 	f77int n = (f77int)matrix_ncol(a);
 	void *pa = matrix_at(a, 0, 0);
 	f77int lda = (f77int)matrix_lda(a);
-	void *px = vector_front(x);
+	void *px = vector_to_ptr(x);
 	f77int incx = 1;
-	void *py = vector_front(y);
+	void *py = vector_to_ptr(y);
 	f77int incy = 1;
 
 	F77_FUNC(dgemv) (ptrans, &m, &n, &alpha, pa, &lda,
@@ -545,9 +529,9 @@ matrix_update1(struct matrix *a,
 
 	f77int m = (f77int)matrix_nrow(a);
 	f77int n = (f77int)matrix_ncol(a);
-	void *px = vector_front(x);
+	void *px = vector_to_ptr(x);
 	f77int incx = 1;
-	void *py = vector_front(y);
+	void *py = vector_to_ptr(y);
 	f77int incy = 1;
 	void *pa = matrix_at(a, 0, 0);
 	f77int lda = (f77int)matrix_lda(a);

@@ -24,19 +24,11 @@ void matrix_assign_copy(struct matrix *a, const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
 /* views */
-void matrix_init_view(struct matrix *a, const double *ptr, ssize_t m,
-		      ssize_t n);
-void matrix_init_view_with_lda(struct matrix *a, const double *ptr, ssize_t m,
-			       ssize_t n, ssize_t lda);
-void matrix_init_view_vector(struct matrix *a, const struct vector *v,
-			     ssize_t m, ssize_t n);
-void matrix_init_slice(struct matrix *a, const struct matrix *parent, ssize_t i,
-		       ssize_t j, ssize_t m, ssize_t n);
-void matrix_init_slice_cols(struct matrix *a, const struct matrix *parent,
-			    ssize_t j, ssize_t n);
-
-void vector_init_matrix_col(struct vector *v, const struct matrix *a,
-			    ssize_t j);
+struct matrix matrix_make(const struct vector *v, ssize_t m, ssize_t n);
+struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n, ssize_t lda);
+struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m, ssize_t n);
+struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n);
+struct vector matrix_col(const struct matrix *a, ssize_t j);
 
 /* assign, copy, fill */
 
