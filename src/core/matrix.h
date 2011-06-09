@@ -24,33 +24,34 @@ void matrix_assign_copy(struct matrix *a, const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
 /* views */
-struct matrix matrix_make(const struct vector *v, ssize_t m, ssize_t n);
-struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n, ssize_t lda);
-struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m, ssize_t n);
-struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n);
-struct vector matrix_col(const struct matrix *a, ssize_t j);
+static inline struct matrix matrix_make(const struct vector *v, ssize_t m, ssize_t n);
+static inline struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n, ssize_t lda);
+static inline struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m, ssize_t n);
+static inline struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n);
+static inline struct vector matrix_col(const struct matrix *a, ssize_t j);
+
+/* properties */
+static inline ssize_t matrix_nrow(const struct matrix *a);
+static inline ssize_t matrix_ncol(const struct matrix *a);
+static inline ssize_t matrix_lda(const struct matrix *a);
+static inline ssize_t matrix_count(const struct matrix *a);
+static inline double *matrix_to_ptr(const struct matrix *a);
+
+static inline double matrix_item(const struct matrix *a, ssize_t i, ssize_t j);
+static inline double *matrix_item_ptr(const struct matrix *a, ssize_t i, ssize_t j);
+static inline void matrix_set_item(struct matrix *a, ssize_t i, ssize_t j, double val);
+
 
 /* assign, copy, fill */
-
 void matrix_fill(struct matrix *a, double value);
 void matrix_assign_identity(struct matrix *a);
 
-/* indexing */
-double matrix_get(const struct matrix *a, ssize_t i, ssize_t j);
-void matrix_set(struct matrix *a, ssize_t i, ssize_t j, double val);
-double *matrix_at(const struct matrix *a, ssize_t i, ssize_t j);
 
 void matrix_fill_col(struct matrix *a, ssize_t j, double val);
 void matrix_fill_row(struct matrix *a, ssize_t i, double val);
 void matrix_set_row(struct matrix *a, ssize_t i, const double *src);
 void matrix_get_row(const struct matrix *a, ssize_t i, double *dst);
 
-/* informative */
-ssize_t matrix_nrow(const struct matrix *a);
-ssize_t matrix_ncol(const struct matrix *a);
-ssize_t matrix_lda(const struct matrix *a);
-ssize_t matrix_size(const struct matrix *a);
-bool matrix_empty(const struct matrix *a);
 
 /* arithmetic */
 void matrix_scale(struct matrix *a, double scale);
@@ -79,5 +80,126 @@ void matrix_update1(struct matrix *a,
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol);
 struct matrix *matrix_alloc_copy(const struct matrix *src);
 void matrix_free(struct matrix *a);
+
+
+/* inline function definitions */
+struct matrix matrix_make(const struct vector *v, ssize_t m, ssize_t n)
+{
+	return matrix_make_with_lda(v, m, n, MAX(1, m));
+}
+
+struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n, ssize_t lda)
+{
+	assert(v);
+	assert(m >= 0);
+	assert(n >= 0);
+	assert(lda >= MAX(1, m));	
+	assert(n <= SSIZE_MAX / lda);	
+	assert(vector_dim(v) == lda * n);
+	
+	struct matrix a;
+	a.data = *v;
+	a.nrow = m;
+	a.ncol = n;
+	a.lda = lda;
+	return a;
+}
+
+struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m, ssize_t n)
+{
+	assert(a);
+	assert(i >= 0);
+	assert(j >= 0);
+	assert(m >= 0);
+	assert(n >= 0);
+	assert(i <= matrix_nrow(a) - m);
+	assert(j <= matrix_ncol(a) - n);
+	
+	const double *ptr = (m > 0 && n > 0) ? matrix_item_ptr(a, i, j) : NULL;
+	ssize_t lda = matrix_lda(a);
+	struct vector v = vector_make(ptr, lda * n);
+	
+	return matrix_make_with_lda(&v, m, n, lda);
+}
+
+struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n)
+{
+	assert(a);
+	assert(j >= 0);
+	assert(n >= 0);
+	assert(j <= matrix_ncol(a) - n);
+	
+	return matrix_slice(a, 0, j, matrix_nrow(a), n);
+}
+
+struct vector matrix_col(const struct matrix *a, ssize_t j)
+{
+	assert(0 <= j && j < matrix_ncol(a));
+	
+	ssize_t m = matrix_nrow(a);
+	double *ptr = m != 0 ? matrix_item_ptr(a, 0, j) : NULL;
+	
+	return vector_make(ptr, m);
+}
+
+ssize_t matrix_nrow(const struct matrix *a)
+{
+	assert(a);
+	return a->nrow;
+}
+
+ssize_t matrix_ncol(const struct matrix *a)
+{
+	assert(a);
+	return a->ncol;
+}
+
+ssize_t matrix_lda(const struct matrix *a)
+{
+	assert(a);
+	return a->lda;
+}
+
+ssize_t matrix_count(const struct matrix *a)
+{
+	assert(a);
+	return matrix_nrow(a) * matrix_ncol(a);
+}
+
+double *matrix_to_ptr(const struct matrix *a)
+{
+	assert(a);
+	return vector_to_ptr(&a->data);
+}
+
+double matrix_item(const struct matrix *a, ssize_t i, ssize_t j)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	assert(0 <= j && j < matrix_ncol(a));
+	
+	double *ptr = matrix_item_ptr(a, i, j);
+	return *ptr;
+}
+
+double *matrix_item_ptr(const struct matrix *a, ssize_t i, ssize_t j)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	assert(0 <= j && j < matrix_ncol(a));
+	
+	return vector_item_ptr(&a->data, i + j * matrix_lda(a));
+}
+
+void matrix_set_item(struct matrix *a, ssize_t i, ssize_t j, double val)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	assert(0 <= j && j < matrix_ncol(a));
+	
+	double *ptr = matrix_item_ptr(a, i, j);
+	*ptr = val;
+}
+
 
 #endif /* _MATRIX_H */

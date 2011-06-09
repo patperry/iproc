@@ -95,7 +95,7 @@ static void test_vnrecv(void **state)
 		isend = msg ? msg->from : 0;
 		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert_true(vector_item(&y, jrecv) == matrix_get(&xnrecv, jrecv, isend));
+			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 		}
 		
 		ntie = messages_iter_ntie(&it);
@@ -104,7 +104,7 @@ static void test_vnrecv(void **state)
 			frame_insert(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				*matrix_at(&xnrecv, msg->from, msg->to[ito]) += 1.0;
+				*matrix_item_ptr(&xnrecv, msg->from, msg->to[ito]) += 1.0;
 			}
 		}
 	}
@@ -174,7 +174,7 @@ static void test_vrecv(void **state)
 			frame_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 			for (j = 0; j < 1; j++) {
-				tmsg = matrix_get(&tlast, (jrecv + j) % nrecv, isend);
+				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);
 				delta = t - tmsg;
 				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
 					assert_true(svector_item(&y, jrecv) == 1.0);
@@ -189,7 +189,7 @@ static void test_vrecv(void **state)
 			frame_insert(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				*matrix_at(&tlast, msg->from, msg->to[ito]) = msg->time;
+				*matrix_item_ptr(&tlast, msg->from, msg->to[ito]) = msg->time;
 			}
 		}
 	}

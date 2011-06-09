@@ -130,14 +130,14 @@ static int parse_end_map(void *ctx)
 	
 	matrix_fill_row(matrix, i, 0.0);
 	
-	matrix_set(matrix, i, 0, 1.0); // intercept
+	matrix_set_item(matrix, i, 0, 1.0); // intercept
 	
 	switch (parse->department) {
 		case DEPARTMENT_LEGAL:
-			matrix_set(matrix, i, 1, 1.0);
+			matrix_set_item(matrix, i, 1, 1.0);
 			break;
 		case DEPARTMENT_TRADING:
-			matrix_set(matrix, i, 2, 1.0);
+			matrix_set_item(matrix, i, 2, 1.0);
 			break;
 		case DEPARTMENT_OTHER:
 			break;
@@ -148,7 +148,7 @@ static int parse_end_map(void *ctx)
 	
 	switch (parse->gender) {
 		case GENDER_FEMALE:
-			matrix_set(matrix, i, 3, 1.0);
+			matrix_set_item(matrix, i, 3, 1.0);
 			break;
 		case GENDER_MALE:
 			break;
@@ -159,7 +159,7 @@ static int parse_end_map(void *ctx)
 	
 	switch (parse->seniority) {
 		case SENIORITY_JUNIOR:
-			matrix_set(matrix, i, 4, 1.0);
+			matrix_set_item(matrix, i, 4, 1.0);
 			break;
 		case SENIORITY_SENIOR:
 			break;

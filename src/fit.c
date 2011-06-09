@@ -204,7 +204,7 @@ static void update_hess(iproc_fit * fit)
 		matrix_fill(H, 0.0);
 
 		for (i = 0; i < n; i++) {
-			matrix_set(H, i, i, scale);
+			matrix_set_item(H, i, i, scale);
 		}
 
 		fit->inv_hess = H;

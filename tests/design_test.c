@@ -130,7 +130,7 @@ static void matrix_assign_static(struct matrix *x,
 			jvar = js + jr * ps;			
 			for (irecv = 0; irecv < nrecv; irecv++) {
 				rj = actors_get(r, irecv, jr);
-				matrix_set(x, irecv, jvar, sj * rj);
+				matrix_set_item(x, irecv, jvar, sj * rj);
 			}
 		}
 	}
