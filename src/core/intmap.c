@@ -84,7 +84,7 @@ void *intmap_add(struct intmap *m, intptr_t key, const void *val)
 {
 	assert(m);
 	assert(val || intmap_elt_size(m) == 0);
-	assert(!intmap_contains(m, key));
+	assert(!intmap_contains_key(m, key));
 
 	struct intmap_pos pos;
 
@@ -98,7 +98,7 @@ void intmap_clear(struct intmap *m)
 	hashset_clear(&m->pairs);
 }
 
-bool intmap_contains(const struct intmap *m, intptr_t key)
+bool intmap_contains_key(const struct intmap *m, intptr_t key)
 {
 	assert(m);
 	struct intmap_pos pos;

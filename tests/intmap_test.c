@@ -51,7 +51,7 @@ static void test_add(void **state)
 	char val = 'a';
 	intmap_add(&map, key, &val);
 	assert_int_equal(intmap_count(&map), count + 1);
-	assert_true(intmap_contains(&map, key));
+	assert_true(intmap_contains_key(&map, key));
 	assert_int_equal(*(char *)intmap_item(&map, key), val);
 }
 
@@ -64,11 +64,11 @@ static void test_add_hard(void **state)
 		val = (char)(5 * i + 1);
 		intmap_add(&map, i, &val);
 		assert_int_equal(intmap_count(&map), count + i + 1);
-		assert_true(intmap_contains(&map, i));
+		assert_true(intmap_contains_key(&map, i));
 		assert_int_equal(*(char *)intmap_item(&map, i), val);
 		
 		for (j = 0; j < i; j++) {
-			assert_true(intmap_contains(&map, j));
+			assert_true(intmap_contains_key(&map, j));
 			assert_int_equal(*(char *)intmap_item(&map, j),
 					 (char)(5 * j + 1));
 			
