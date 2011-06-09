@@ -17,7 +17,8 @@ void vector_deinit(struct vector *v);
 
 /* views */
 static inline struct vector vector_make(const double *ptr, ssize_t n);
-static inline struct vector vector_slice(const struct vector *v, ssize_t i, ssize_t n);
+static inline struct vector vector_slice(const struct vector *v, ssize_t i,
+					 ssize_t n);
 
 /* properties */
 static inline ssize_t vector_dim(const struct vector *v);
@@ -71,14 +72,12 @@ struct vector *vector_alloc(ssize_t n);
 struct vector *vector_alloc_copy(const struct vector *v);
 void vector_free(struct vector *v);
 
-
-
 /* inline function definitions */
 struct vector vector_make(const double *ptr, ssize_t n)
 {
 	assert(ptr || n == 0);
 	assert(n >= 0);
-	
+
 	struct vector v;
 	v.data = (double *)ptr;
 	v.dim = n;
@@ -91,7 +90,7 @@ struct vector vector_slice(const struct vector *v, ssize_t i, ssize_t n)
 	assert(v);
 	assert(n >= 0);
 	assert(0 <= i && i <= vector_dim(v) - n);
-	
+
 	return vector_make(v->data + i, n);
 }
 

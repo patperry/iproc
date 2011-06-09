@@ -51,7 +51,7 @@ void svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(dst);
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
-	
+
 	intmap_assign_copy(&dst->map, &src->map);
 }
 
@@ -97,11 +97,11 @@ double *svector_item_ptr(struct svector *v, ssize_t i)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
-	
+
 	struct intmap_pos pos;
 	double zero = 0.0;
 	double *val;
-	
+
 	if ((val = intmap_find(&v->map, i, &pos))) {
 		return val;
 	} else {
@@ -302,7 +302,7 @@ void svector_remove_at(struct svector *v, struct svector_pos *pos)
 
 struct svector_iter svector_iter_make(const struct svector *v)
 {
-	assert(v);	
+	assert(v);
 	struct svector_iter it;
 	it.map_it = intmap_iter_make(&v->map);
 	return it;
@@ -310,7 +310,7 @@ struct svector_iter svector_iter_make(const struct svector *v)
 
 bool svector_iter_advance(struct svector_iter *it)
 {
-	assert(it);	
+	assert(it);
 	return intmap_iter_advance(&it->map_it);
 }
 

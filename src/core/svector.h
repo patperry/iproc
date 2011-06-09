@@ -81,6 +81,4 @@ ssize_t svector_count(const struct svector *v)
 	return intmap_count(&v->map);
 }
 
-
-
 #endif /* _SVECTOR_H */

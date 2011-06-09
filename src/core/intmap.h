@@ -47,7 +47,6 @@ static inline size_t intmap_elt_align(const struct intmap *m);
 void *intmap_item(const struct intmap *m, intptr_t key);
 void *intmap_set_item(struct intmap *m, intptr_t key, const void *val);
 
-
 /* methods */
 void *intmap_add(struct intmap *m, intptr_t key, const void *val);
 void intmap_clear(struct intmap *m);

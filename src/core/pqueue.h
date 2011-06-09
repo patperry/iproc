@@ -20,7 +20,6 @@ void pqueue_init_copy(struct pqueue *q, const struct pqueue *src);
 void pqueue_assign_copy(struct pqueue *q, const struct pqueue *src);
 void pqueue_deinit(struct pqueue *q);
 
-
 void pqueue_copy_to(const struct pqueue *q, void *dst);
 void pqueue_clear(struct pqueue *q);
 

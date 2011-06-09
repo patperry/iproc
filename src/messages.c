@@ -6,7 +6,6 @@
 #include "util.h"
 #include "messages.h"
 
-
 void messages_init(struct messages *msgs)
 {
 	assert(msgs);

@@ -44,23 +44,23 @@ void matrix_assign_copy(struct matrix *a, const struct matrix *src)
 	assert(src);
 	assert(matrix_nrow(a) == matrix_nrow(src));
 	assert(matrix_ncol(a) == matrix_ncol(src));
-	
+
 	f77int m = (f77int)matrix_nrow(a);
 	f77int n = (f77int)matrix_ncol(a);
 	f77int i, j;
-	
+
 	if (m == 0 || n == 0)
 		return;
-	
+
 	if (matrix_lda(a) == m && matrix_lda(src) == m) {
 		f77int mn = m * n;
 		f77int one = 1;
-		
+
 		F77_FUNC(dcopy) (&mn, matrix_item_ptr(src, 0, 0),
 				 &one, matrix_item_ptr(a, 0, 0), &one);
 	} else {
 		double value;
-		
+
 		for (j = 0; j < n; j++) {
 			for (i = 0; i < m; i++) {
 				value = matrix_item(src, i, j);
@@ -284,7 +284,6 @@ void matrix_scale_rows(struct matrix *a, const struct vector *scale)
 		vector_mul(&col, scale);
 	}
 }
-
 
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y)

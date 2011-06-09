@@ -6,7 +6,6 @@ DEFINE_COMPARE_FN(intptr_compare, intptr_t)
 
 static intptr_t intset_at(const struct intset *s, ssize_t index);
 
-
 void intset_init(struct intset *s)
 {
 	assert(s);
@@ -27,7 +26,7 @@ void intset_assign_copy(struct intset *s, const struct intset *src)
 {
 	assert(s);
 	assert(src);
-	
+
 	array_assign_copy(&s->keys, &src->keys);
 }
 
@@ -43,11 +42,11 @@ bool intset_add(struct intset *s, intptr_t key)
 	assert(s);
 	bool notfound;
 	struct intset_pos pos;
-	
+
 	if ((notfound = !intset_find(s, key, &pos))) {
 		intset_insert(s, &pos);
 	}
-	return notfound;		// already in set
+	return notfound;	// already in set
 }
 
 void intset_clear(struct intset *s)
@@ -59,7 +58,7 @@ void intset_clear(struct intset *s)
 bool intset_contains(const struct intset *s, intptr_t key)
 {
 	assert(s);
-	
+
 	struct intset_pos pos;
 	return intset_find(s, key, &pos);
 }
@@ -68,7 +67,7 @@ void intset_copy_to(const struct intset *s, intptr_t *dst)
 {
 	assert(s);
 	assert(dst || !intset_count(s));
-	
+
 	struct intset_iter it;
 	INTSET_FOREACH(it, s) {
 		*dst++ = INTSET_KEY(it);
@@ -128,7 +127,7 @@ void intset_remove_at(struct intset *s, const struct intset_pos *pos)
 struct intset_iter intset_iter_make(const struct intset *s)
 {
 	assert(s);
-	
+
 	struct intset_iter it;
 	it.set = s;
 	intset_iter_reset(&it);

@@ -22,7 +22,6 @@ struct intset_iter {
 #define INTSET_FOREACH(it, set) \
 	for ((it) = intset_iter_make(set); intset_iter_advance(&(it));)
 
-
 /* create, destroy */
 void intset_init(struct intset *s);
 void intset_init_copy(struct intset *s, const struct intset *src);
@@ -49,13 +48,11 @@ struct intset_iter intset_iter_make(const struct intset *s);
 void intset_iter_reset(struct intset_iter *it);
 bool intset_iter_advance(struct intset_iter *it);
 
-
 /* inline function definitions */
 ssize_t intset_count(const struct intset *s)
 {
 	assert(s);
 	return array_count(&s->keys);
 }
-
 
 #endif /* _INTSET_H */

@@ -36,7 +36,8 @@ bool design_init(struct design *design, struct actors *senders,
 #ifndef NDEBUG
 	ssize_t i, nintervals = vector_dim(intervals);
 	for (i = 1; i < nintervals; i++) {
-		assert(vector_item(intervals, i - 1) < vector_item(intervals, i));
+		assert(vector_item(intervals, i - 1) <
+		       vector_item(intervals, i));
 	}
 #endif
 

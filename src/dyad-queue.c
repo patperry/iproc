@@ -21,7 +21,8 @@ void dyad_queue_init(struct dyad_queue *queue, const struct vector *intervals)
 #ifndef NDEBUG
 	ssize_t i;
 	for (i = 1; i < vector_dim(intervals); i++) {
-		assert(vector_item(intervals, i - 1) < vector_item(intervals, i));
+		assert(vector_item(intervals, i - 1) <
+		       vector_item(intervals, i));
 	}
 #endif
 

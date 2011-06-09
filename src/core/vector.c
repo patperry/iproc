@@ -30,7 +30,7 @@ void vector_init_copy(struct vector *v, const struct vector *src)
 {
 	assert(v);
 	assert(src);
-	
+
 	vector_init(v, vector_dim(src));
 	vector_assign_copy(v, src);
 }
@@ -40,10 +40,10 @@ void vector_assign_copy(struct vector *v, const struct vector *src)
 	assert(v);
 	assert(src);
 	assert(vector_dim(v) == vector_dim(src));
-	
+
 	if (!vector_dim(v))
 		return;
-	
+
 	vector_copy_to(src, vector_to_ptr(v));
 }
 
@@ -68,7 +68,6 @@ struct vector *vector_alloc_copy(const struct vector *src)
 	vector_init_copy(v, src);
 	return v;
 }
-
 
 void vector_free(struct vector *v)
 {
@@ -405,7 +404,8 @@ void vector_printf(const struct vector *v)
 		if (*vector_item_ptr(v, i) == 0.0)
 			continue;
 
-		printf("\n         %" SSIZE_FMT ", %.8f", i, *vector_item_ptr(v, i));
+		printf("\n         %" SSIZE_FMT ", %.8f", i,
+		       *vector_item_ptr(v, i));
 	}
 	printf("\n       }");
 	printf("\n}\n");
