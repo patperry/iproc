@@ -3,40 +3,30 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include "util.h"
 #include "messages.h"
 
-bool messages_init(struct messages *msgs)
+
+void messages_init(struct messages *msgs)
 {
 	assert(msgs);
 
 	array_init(&msgs->message_reps, sizeof(struct message_rep));
 	array_init(&msgs->recipients, sizeof(ssize_t));
-	if (!refcount_init(&msgs->refcount))
-		goto fail_refcount;
+	refcount_init(&msgs->refcount);
 
 	msgs->tlast = -INFINITY;
 	msgs->max_to = -1;
 	msgs->max_from = -1;
 	msgs->max_nto = 0;
 	msgs->to_cached = false;
-	return true;
-
-fail_refcount:
-	array_deinit(&msgs->recipients);
-	array_deinit(&msgs->message_reps);
-	return false;
 }
 
 struct messages *messages_alloc()
 {
-	struct messages *msgs = malloc(sizeof(*msgs));
-
-	if (msgs) {
-		if (messages_init(msgs))
-			return msgs;
-		free(msgs);
-	}
-	return NULL;
+	struct messages *msgs = xcalloc(1, sizeof(*msgs));
+	messages_init(msgs);
+	return msgs;
 }
 
 struct messages *messages_ref(struct messages *msgs)
@@ -63,7 +53,7 @@ void messages_free(struct messages *msgs)
 	if (refcount_put(&msgs->refcount, NULL)) {
 		refcount_get(&msgs->refcount);
 		messages_deinit(msgs);
-		free(msgs);
+		xfree(msgs);
 	}
 }
 

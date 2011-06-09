@@ -235,8 +235,7 @@ bool enron_messages_init_fread(struct messages *messages, FILE *stream)
 	
 	struct message_parse parse;
 	
-	if (!messages_init(messages))
-		return false;
+	messages_init(messages);
 	
 	if (!message_parse_init(&parse, messages)) {
 		messages_deinit(messages);

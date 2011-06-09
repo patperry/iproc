@@ -82,9 +82,7 @@ SEXP Riproc_actors_new(SEXP Rtraits_t)
 	if (!actors)
 		error("could not allocate new actors object");
 
-	if (!actors_init_matrix(actors, &traits_t, TRANS_TRANS))
-		error("could not allocate space for %d actors with dim %d",
-		      n, dim);
+	actors_init_matrix(actors, &traits_t, TRANS_TRANS);
 
 	PROTECT(Ractors = Riproc_from_actors(actors));
 	actors_free(actors);

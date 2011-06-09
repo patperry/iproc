@@ -36,7 +36,7 @@ struct messages_iter {
 	struct message_rep *message_rep;
 };
 
-bool messages_init(struct messages *msgs);
+void messages_init(struct messages *msgs);
 void messages_deinit(struct messages *msgs);
 
 struct messages *messages_alloc();

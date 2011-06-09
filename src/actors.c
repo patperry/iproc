@@ -15,34 +15,21 @@ static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2)
 			     cohort_traits(*(struct cohort **)cohortp2));
 }
 
-bool actors_init(struct actors *actors, ssize_t dim)
+void actors_init(struct actors *actors, ssize_t dim)
 {
 	assert(actors);
 	assert(dim >= 0);
-
-	bool ok;
 
 	array_init(&actors->actors, sizeof(struct actor));
 
 	hashset_init(&actors->cohorts, cohortp_traits_hash,
 		     cohortp_traits_equals, sizeof(struct cohort *));
 
-	ok = refcount_init(&actors->refcount);
-	if (!ok)
-		goto fail_refcount;
-	/* end of old */
-
+	refcount_init(&actors->refcount);
 	actors->dim = dim;
-	return true;
-
-	refcount_deinit(&actors->refcount);
-fail_refcount:
-	hashset_deinit(&actors->cohorts);
-	array_deinit(&actors->actors);
-	return false;
 }
 
-bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
+void actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 			enum trans_op trans)
 {
 	assert(actors);
@@ -51,10 +38,8 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 	ssize_t m = matrix_nrow(matrix);
 	ssize_t n = matrix_ncol(matrix);
 	ssize_t dim = trans == TRANS_NOTRANS ? n : m;
-	bool ok = false;
 
-	if (!actors_init(actors, dim))
-		return false;
+	actors_init(actors, dim);
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector row;
@@ -62,58 +47,38 @@ bool actors_init_matrix(struct actors *actors, const struct matrix *matrix,
 		ssize_t i;
 
 		vector_init(&row, n);
-		ok = true;
 		row_front = n == 0 ? NULL : vector_front(&row);
 
 		for (i = 0; i < m; i++) {
 			matrix_get_row(matrix, i, row_front);
-			if (!actors_add(actors, &row)) {
-				ok = false;
-				break;
-			}
+			actors_add(actors, &row);
 		}
 		vector_deinit(&row);
 	} else {
 		struct vector col;
 		ssize_t j;
 
-		ok = true;
 		for (j = 0; j < n; j++) {
 			vector_init_matrix_col(&col, matrix, j);
-			if (!actors_add(actors, &col)) {
-				ok = false;
-				break;
-			}
+			actors_add(actors, &col);
 		}
 	}
-
-	if (!ok)
-		actors_deinit(actors);
-	return ok;
 }
 
-bool actors_init_copy(struct actors *actors, const struct actors *src)
+void actors_init_copy(struct actors *actors, const struct actors *src)
 {
 	assert(actors);
 	assert(src);
 
-	if (!actors_init(actors, src->dim))
-		goto fail_init;
+	actors_init(actors, src->dim);
 
 	ssize_t i, n = actors_size(src);
 	for (i = 0; i < n; i++) {
-		if (!actors_add(actors, actors_traits(src, i)))
-			goto fail_add;
+		actors_add(actors, actors_traits(src, i));
 	}
 
 	assert(actors_size(actors) == actors_cohorts_size(src));
 	assert(actors_cohorts_size(actors) == actors_cohorts_size(src));
-
-	return true;
-fail_add:
-	actors_deinit(actors);
-fail_init:
-	return false;
 }
 
 static void cohorts_clear(struct hashset *cohorts)
@@ -145,14 +110,9 @@ void actors_deinit(struct actors *a)
 struct actors *actors_alloc(ssize_t dim)
 {
 	assert(dim >= 0);
-	struct actors *actors;
-
-	if ((actors = malloc(sizeof(*actors)))) {
-		if (actors_init(actors, dim))
-			return actors;
-		free(actors);
-	}
-	return NULL;
+	struct actors *actors = xcalloc(1, sizeof(*actors));
+	actors_init(actors, dim);
+	return actors;
 }
 
 void actors_free(struct actors *a)
@@ -163,7 +123,7 @@ void actors_free(struct actors *a)
 	if (refcount_put(&a->refcount, NULL)) {
 		refcount_get(&a->refcount);
 		actors_deinit(a);
-		free(a);
+		xfree(a);
 	}
 }
 

@@ -2,11 +2,10 @@
 #include <assert.h>
 #include "refcount.h"
 
-bool refcount_init(struct refcount *refcount)
+void refcount_init(struct refcount *refcount)
 {
 	assert(refcount);
 	refcount_set(refcount, 1);
-	return true;
 }
 
 void refcount_deinit(struct refcount *refcount)

@@ -52,9 +52,7 @@ bool design_init(struct design *design, struct actors *senders,
 		goto fail_receivers;
 
 	vector_init_copy(&design->intervals, intervals);
-
-	if (!refcount_init(&design->refcount))
-		goto fail_refcount;
+	refcount_init(&design->refcount);
 
 	design->reffects = false;
 	design->ireffects = 0;
@@ -66,10 +64,6 @@ bool design_init(struct design *design, struct actors *senders,
 	design->loops = false;
 	return true;
 
-	refcount_deinit(&design->refcount);
-fail_refcount:
-	vector_deinit(&design->intervals);
-	actors_free(receivers);
 fail_receivers:
 	actors_free(senders);
 fail_senders:

@@ -182,14 +182,10 @@ bool frame_init(struct frame *f, struct design *design)
 	if (!var_frames_init(f, design))
 		goto fail_var_frames;
 
-	if (!refcount_init(&f->refcount))
-		goto fail_refcount;
-
+	refcount_init(&f->refcount);
 	return true;
 
 	refcount_deinit(&f->refcount);
-fail_refcount:
-	var_frames_deinit(f);
 fail_var_frames:
 	send_frames_deinit(f);
 fail_send_frames:
