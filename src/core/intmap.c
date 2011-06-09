@@ -66,14 +66,17 @@ void *intmap_item(const struct intmap *m, intptr_t key)
 void *intmap_set_item(struct intmap *m, intptr_t key, const void *val)
 {
 	assert(m);
-	assert(val || intmap_elt_size(m) == 0);
 
 	struct intmap_pos pos;
 	void *dst;
 
 	if ((dst = intmap_find(m, key, &pos))) {
 		assert(*(intptr_t *)((char *)dst - m->val_offset) == key);
-		memcpy(dst, val, intmap_elt_size(m));
+		if (val) {
+			memcpy(dst, val, intmap_elt_size(m));
+		} else {
+			memset(dst, 0, intmap_elt_size(m));
+		}
 		return dst;
 	} else {
 		return intmap_insert(m, &pos, val);
