@@ -226,15 +226,14 @@ const struct history *frame_history(const struct frame *f)
 	return &f->history;
 }
 
-bool frame_insert(struct frame *f, const struct message *msg)
+void frame_insert(struct frame *f, const struct message *msg)
 {
 	assert(f);
 	assert(msg);
 	assert(msg->time == frame_time(f));
 
-	return (history_insert
-		(&f->history, msg->from, msg->to, msg->nto, msg->attr)
-		&& dyad_queue_push(&f->dyad_queue, msg));
+	history_insert(&f->history, msg->from, msg->to, msg->nto, msg->attr);
+	dyad_queue_push(&f->dyad_queue, msg);
 }
 
 static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
@@ -262,16 +261,15 @@ struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 	return send_frame_dx(sf, jrecv);
 }
 
-bool frame_advance_to(struct frame *f, double t)
+void frame_advance_to(struct frame *f, double t)
 {
 	assert(f);
 	assert(t >= frame_time(f));
 
 	if (t == frame_time(f))
-		return true;
+		return;
 
-	if (!history_advance_to(&f->history, t))
-		return false;
+	history_advance_to(&f->history, t);
 
 	const struct array *vars = &f->vars;
 	struct frame_var *v;
@@ -292,8 +290,6 @@ bool frame_advance_to(struct frame *f, double t)
 
 		dyad_queue_pop(&f->dyad_queue);
 	}
-
-	return true;
 }
 
 void frame_mul(double alpha, enum trans_op trans,

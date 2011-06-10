@@ -37,10 +37,10 @@ struct frame *frame_ref(struct frame *f);
 void frame_free(struct frame *f);
 
 /* record a message event */
-bool frame_insert(struct frame *f, const struct message *msg);
+void frame_insert(struct frame *f, const struct message *msg);
 
 /* advance time */
-bool frame_advance_to(struct frame *f, double t);
+void frame_advance_to(struct frame *f, double t);
 
 void frame_clear(struct frame *f);
 

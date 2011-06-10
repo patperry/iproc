@@ -41,14 +41,13 @@ struct event_trace {
 	struct array events;
 };
 
-bool event_trace_init(struct event_trace *trace);
+void event_trace_init(struct event_trace *trace);
 void event_trace_deinit(struct event_trace *trace);
 
 void event_trace_clear(struct event_trace *trace);
 
-bool event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr);
-bool event_trace_advance_to(struct event_trace *trace, double time);
-bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert);
+void event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr);
+void event_trace_advance_to(struct event_trace *trace, double time);
 
 double event_trace_tcur(const struct event_trace *trace);
 ssize_t event_trace_size(const struct event_trace *trace);

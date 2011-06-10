@@ -78,7 +78,7 @@ const struct dyad_event *dyad_queue_top(const struct dyad_queue *queue)
 	return &top->event;
 }
 
-bool dyad_queue_push(struct dyad_queue *queue, const struct message *msg)
+void dyad_queue_push(struct dyad_queue *queue, const struct message *msg)
 {
 	assert(queue);
 	assert(msg);
@@ -101,11 +101,8 @@ bool dyad_queue_push(struct dyad_queue *queue, const struct message *msg)
 		e.event.id = queue->next_id++;
 		e.event.dyad.jrecv = msg->to[ito];
 
-		if (!pqueue_push(&queue->events, &e))
-			return false;
+		pqueue_push(&queue->events, &e);
 	}
-
-	return true;
 }
 
 void dyad_queue_pop(struct dyad_queue *queue)

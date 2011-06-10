@@ -37,8 +37,8 @@ void history_deinit(struct history *history);
 void history_clear(struct history *history);
 
 double history_tcur(const struct history *history);
-bool history_advance_to(struct history *history, double t);
-bool history_insert(struct history *history, ssize_t from, ssize_t *to,
+void history_advance_to(struct history *history, double t);
+void history_insert(struct history *history, ssize_t from, ssize_t *to,
 		    ssize_t nto, intptr_t attr);
 
 ssize_t history_nsend(struct history *history);

@@ -5,16 +5,16 @@
 #include <string.h>
 #include <assert.h>
 #include "compare.h"
+#include "util.h"
 #include "event-trace.h"
 
 DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
-static bool events_init(struct events *events, ssize_t e)
+static void events_init(struct events *events, ssize_t e)
 {
 	assert(events);
 	events->e = e;
 	array_init(&events->meta, sizeof(struct event_meta));
-	return true;
 }
 
 static void events_deinit(struct events *events)
@@ -55,30 +55,24 @@ void event_trace_free(struct event_trace *trace)
 {
 	if (trace) {
 		event_trace_deinit(trace);
-		free(trace);
+		xfree(trace);
 	}
 }
 
-bool event_trace_init(struct event_trace *trace)
+void event_trace_init(struct event_trace *trace)
 {
 	assert(trace);
 
 	array_init(&trace->pending, sizeof(struct event));
 	array_init(&trace->events, sizeof(struct events));
 	trace->tcur = -INFINITY;
-	return true;
 }
 
 struct event_trace *event_trace_alloc()
 {
-	struct event_trace *trace = malloc(sizeof(*trace));
-
-	if (trace) {
-		if (event_trace_init(trace))
-			return trace;
-		free(trace);
-	}
-	return NULL;
+	struct event_trace *trace = xcalloc(1, sizeof(*trace));
+	event_trace_init(trace);
+	return trace;
 }
 
 void event_trace_clear(struct event_trace *trace)
@@ -96,7 +90,7 @@ void event_trace_clear(struct event_trace *trace)
 	array_clear(&trace->events);
 }
 
-bool event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr)
+void event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr)
 {
 	assert(trace);
 
@@ -106,19 +100,10 @@ bool event_trace_insert(struct event_trace *trace, ssize_t e, intptr_t attr)
 	event.meta.time = event_trace_tcur(trace);
 	event.meta.attr = attr;
 
-	return array_add(&trace->pending, &event);
+	array_add(&trace->pending, &event);
 }
 
-bool event_trace_reserve_insert(struct event_trace *trace, ssize_t ninsert)
-{
-	assert(trace);
-	assert(ninsert >= 0);
-	array_set_capacity(&trace->pending,
-			   array_count(&trace->pending) + ninsert);
-	return true;
-}
-
-bool event_trace_advance_to(struct event_trace *trace, double t)
+void event_trace_advance_to(struct event_trace *trace, double t)
 {
 	assert(trace);
 	assert(t >= event_trace_tcur(trace));
@@ -126,7 +111,7 @@ bool event_trace_advance_to(struct event_trace *trace, double t)
 	double t0 = trace->tcur;
 
 	if (t == t0)
-		return true;
+		return;
 
 	ssize_t i, n = array_count(&trace->pending);
 
@@ -139,33 +124,16 @@ bool event_trace_advance_to(struct event_trace *trace, double t)
 		if (pos < 0) {
 			pos = ~pos;
 
-			struct events *new_events;
-			if ((new_events =
-			     array_insert(&trace->events, pos, NULL))) {
-				if (!events_init(new_events, event->e)) {
-					array_remove_at(&trace->events, pos);
-					goto rollback;
-				}
-			}
+			struct events *new_events = array_insert(&trace->events, pos, NULL);
+			events_init(new_events, event->e);
 		}
 		// Add the new meta-data
 		struct events *events = array_item(&trace->events, pos);
 
-		if (!array_add(&events->meta, &event->meta))
-			goto rollback;
+		array_add(&events->meta, &event->meta);
 	}
 	array_clear(&trace->pending);
 	trace->tcur = t;
-	return true;
-
-rollback:
-	for (; i > 0; i--) {
-		struct event *event = array_item(&trace->pending, i - 1);
-		ssize_t pos = event_trace_find_index(trace, event->e);	// always exists
-		struct events *events = array_item(&trace->events, pos);
-		array_remove_at(&events->meta, array_count(&events->meta) - 1);
-	}
-	return false;
 }
 
 double event_trace_tcur(const struct event_trace *trace)
