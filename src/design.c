@@ -86,12 +86,6 @@ void design_free(struct design *design)
 	}
 }
 
-ssize_t design_dim(const struct design *design)
-{
-	assert(design);
-	return design->dim;
-}
-
 static void
 design_mul0_reffects(double alpha,
 		     enum trans_op trans,
@@ -313,43 +307,6 @@ design_muls0(double alpha,
 	design_muls0_static(alpha, trans, design, isend, x, y);
 }
 
-ssize_t design_nsender(const struct design *design)
-{
-	assert(design);
-	const struct actors *senders = design_senders(design);
-	return actors_count(senders);
-}
-
-ssize_t design_nreceiver(const struct design *design)
-{
-	assert(design);
-	const struct actors *receivers = design_receivers(design);
-	return actors_count(receivers);
-}
-
-struct actors *design_senders(const struct design *design)
-{
-	assert(design);
-	return design->senders;
-}
-
-struct actors *design_receivers(const struct design *design)
-{
-	assert(design);
-	return design->receivers;
-}
-
-const struct vector *design_intervals(const struct design *design)
-{
-	assert(design);
-	return &design->intervals;
-}
-
-bool design_loops(const struct design *design)
-{
-	assert(design);
-	return design->loops;
-}
 
 void design_set_loops(struct design *design, bool loops)
 {
@@ -386,27 +343,20 @@ void design_set_reffects(struct design *design, bool reffects)
 	design->reffects = reffects;
 }
 
-bool design_add_var(struct design *design, const struct var_type *type)
+void design_add_var(struct design *design, const struct var_type *type)
 {
 	assert(design);
 	assert(type);
 	assert(type->init);
 
-	struct design_var *var;
+	struct design_var *var = array_add(&design->vars, NULL);
 
-	if ((var = array_add(&design->vars, NULL))) {
-		if (type->init(var, design)) {
-			assert(var->dim >= 0);
-			var->index = design->idynamic + design->ndynamic;
-			var->type = type;
-			design->ndynamic += var->dim;
-			design->dim += var->dim;
-			return true;
-		}
-		array_remove_at(&design->vars, array_count(&design->vars));
-	}
-
-	return false;
+	type->init(var, design);
+	assert(var->dim >= 0);
+	var->index = design->idynamic + design->ndynamic;
+	var->type = type;
+	design->ndynamic += var->dim;
+	design->dim += var->dim;
 }
 
 ssize_t design_traits_index(const struct design *design)

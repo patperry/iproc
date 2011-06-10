@@ -80,14 +80,13 @@ void history_deinit(struct history *history)
 	trace_array_deinit(&history->send);
 }
 
-bool history_init(struct history *history)
+void history_init(struct history *history)
 {
 	assert(history);
 
 	array_init(&history->send, sizeof(struct history_trace));
 	array_init(&history->recv, sizeof(struct history_trace));
 	history->tcur = -INFINITY;
-	return true;
 }
 
 void history_clear(struct history *history)

@@ -42,31 +42,17 @@ static struct design *design_alloc_params(struct actors *senders,
 	assert(intervals);
 	assert(params);
 
-	struct design *design;
-
-	if (!(design = design_alloc(senders, receivers, intervals)))
-		goto fail_alloc;
+	struct design *design = design_alloc(senders, receivers, intervals);
 
 	design_set_loops(design, params->loops);
 	design_set_reffects(design, params->reffects);
-
 	if (params->vrecv) {
-		if (!design_add_var(design, VAR_TYPE_RECV))
-			goto fail_add_recv;
+		design_add_var(design, VAR_TYPE_RECV);
 	}
-
 	if (params->vnrecv) {
-		if (!design_add_var(design, VAR_TYPE_NRECV))
-			goto fail_add_nrecv;
+		design_add_var(design, VAR_TYPE_NRECV);
 	}
-
 	return design;
-
-fail_add_nrecv:
-fail_add_recv:
-	design_free(design);
-fail_alloc:
-	return NULL;
 }
 
 void Riproc_design_init(DllInfo * info)

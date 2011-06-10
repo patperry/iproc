@@ -4,14 +4,13 @@
 #include "frame.h"
 #include "vnrecv.h"
 
-static bool vnrecv_init(struct design_var *dv, const struct design *d)
+static void vnrecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
 	assert(d);
 
 	ssize_t n = vector_dim(design_intervals(d));
 	dv->dim = n + 1;
-	return true;
 }
 
 static void vnrecv_deinit(struct design_var *dv)
@@ -19,7 +18,7 @@ static void vnrecv_deinit(struct design_var *dv)
 	assert(dv);
 }
 
-static bool vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
+static void vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 			       struct frame *f)
 {
 	assert(fv);
@@ -34,8 +33,6 @@ static bool vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	struct svector_pos pos;
 	double *val;
 
-	if (!dx)
-		return false;
 
 	if (e->type == DYAD_EVENT_MOVE) {
 		val = svector_find(dx, index + e->intvl - 1, &pos);
@@ -46,11 +43,7 @@ static bool vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	}
 
 	val = svector_item_ptr(dx, index + e->intvl);
-	if (!val)
-		return false;
-
 	*val += 1.0;
-	return true;
 }
 
 static struct var_type VAR_TYPE_NRECV_REP = {

@@ -34,14 +34,13 @@ static bool vrecv_active_equals(const void *x, const void *y)
 	return a->dyad.isend == b->dyad.isend && a->dyad.jrecv == b->dyad.jrecv;
 }
 
-static bool vrecv_init(struct design_var *dv, const struct design *d)
+static void vrecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
 	assert(d);
 
 	ssize_t n = vector_dim(design_intervals(d));
 	dv->dim = n + 1;
-	return true;
 }
 
 static void vrecv_deinit(struct design_var *dv)
@@ -49,23 +48,15 @@ static void vrecv_deinit(struct design_var *dv)
 	assert(dv);
 }
 
-static bool vrecv_frame_init(struct frame_var *fv, struct frame *f)
+static void vrecv_frame_init(struct frame_var *fv, struct frame *f)
 {
 	assert(fv);
 	assert(f);
 
-	struct vrecv_udata *udata;
-
-	if (!(udata = malloc(sizeof(*udata))))
-		goto fail_malloc;
-
+	struct vrecv_udata *udata = xcalloc(1, sizeof(*udata));
 	hashset_init(&udata->active, vrecv_active_hash, vrecv_active_equals,
 		     sizeof(struct vrecv_active));
-
 	fv->udata = udata;
-	return true;
-fail_malloc:
-	return false;
 }
 
 static void vrecv_frame_deinit(struct frame_var *fv)
@@ -87,7 +78,7 @@ static void vrecv_frame_clear(struct frame_var *fv)
 	hashset_clear(&udata->active);
 }
 
-static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
+static void vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 			      struct frame *f)
 {
 	assert(fv);
@@ -105,19 +96,14 @@ static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	struct vrecv_active *active;
 	struct svector *dx = frame_dx(f, e->dyad.jrecv, e->dyad.isend);
 
-	if (!dx)
-		return false;
-
 	if (e->type == DYAD_EVENT_INIT) {
 		struct hashset_pos pos;
 
 		if ((active = hashset_find(&udata->active, key, &pos)))
 			goto move;
 
-		if ((active = hashset_insert(&udata->active, &pos, key)))
-			goto init;
-
-		return false;
+		active = hashset_insert(&udata->active, &pos, key);
+		goto init;
 	} else {		// e->type == DYAD_EVENT_MOVE
 		active = hashset_item(&udata->active, key);
 		assert(active);
@@ -126,18 +112,16 @@ static bool vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 			assert(active->intvl == e->intvl - 1);
 			goto move;
 		}
-
-		return true;
+		goto out;
 	}
-
 move:
 	svector_remove(dx, index + active->intvl);
 init:
-	if (!svector_set_item(dx, index + e->intvl, 1.0))
-		return false;
+	svector_set_item(dx, index + e->intvl, 1.0);
 	active->id = e->id;
 	active->intvl = e->intvl;
-	return true;
+out:
+	return;
 }
 
 static struct var_type VAR_TYPE_RECV_REP = {

@@ -31,7 +31,7 @@ struct history {
 	struct array recv;
 };
 
-bool history_init(struct history *history);
+void history_init(struct history *history);
 void history_deinit(struct history *history);
 
 void history_clear(struct history *history);

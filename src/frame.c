@@ -5,14 +5,13 @@
 #include "ieee754.h"
 #include "frame.h"
 
-static bool send_frame_init(struct send_frame *sf, struct frame *f)
+static void send_frame_init(struct send_frame *sf, struct frame *f)
 {
 	assert(sf);
 
 	intmap_init(&sf->jrecv_dxs, sizeof(struct svector),
 		    alignof(struct svector));
 	sf->frame = f;
-	return true;
 }
 
 static void send_frame_deinit(struct send_frame *sf)
@@ -59,7 +58,7 @@ static struct svector *send_frame_dx(struct send_frame *sf, ssize_t jrecv)
 	return dx;
 }
 
-static bool var_frames_init(struct frame *frame, struct design *design)
+static void var_frames_init(struct frame *frame, struct design *design)
 {
 	assert(frame);
 	assert(design);
@@ -79,22 +78,9 @@ static bool var_frames_init(struct frame *frame, struct design *design)
 		fv->design = dv;
 
 		if (fv->design->type->frame_init) {
-			if (!dv->type->frame_init(fv, frame))
-				goto fail_var_init;
+			dv->type->frame_init(fv, frame);
 		}
 	}
-
-	return true;
-
-fail_var_init:
-	for (; i > 0; i--) {
-		fv = array_item(&frame->vars, i);
-		if (fv->design->type->frame_deinit) {
-			fv->design->type->frame_deinit(fv);
-		}
-	}
-	array_deinit(&frame->vars);
-	return false;
 }
 
 static void var_frames_deinit(struct frame *frame)
@@ -129,12 +115,11 @@ static void var_frames_clear(struct frame *frame)
 	}
 }
 
-static bool send_frames_init(struct frame *f)
+static void send_frames_init(struct frame *f)
 {
 	assert(f);
 	intmap_init(&f->send_frames, sizeof(struct send_frame),
 		    alignof(struct send_frame));
-	return true;
 }
 
 static void send_frames_deinit(struct frame *f)
@@ -162,58 +147,26 @@ static void send_frames_clear(struct frame *f)
 	}
 }
 
-bool frame_init(struct frame *f, struct design *design)
+void frame_init(struct frame *f, struct design *design)
 {
 	assert(f);
 	assert(design);
 
-	if (!(f->design = design_ref(design)))
-		goto fail_design;
-
-	if (!history_init(&f->history))
-		goto fail_history;
-
+	f->design = design_ref(design);
+	history_init(&f->history);
 	dyad_queue_init(&f->dyad_queue, &design->intervals);
-
-	if (!send_frames_init(f))
-		goto fail_send_frames;
-
-	if (!var_frames_init(f, design))
-		goto fail_var_frames;
-
+	send_frames_init(f);
+	var_frames_init(f, design);
 	refcount_init(&f->refcount);
-	return true;
-
-	refcount_deinit(&f->refcount);
-fail_var_frames:
-	send_frames_deinit(f);
-fail_send_frames:
-	dyad_queue_deinit(&f->dyad_queue);
-	history_deinit(&f->history);
-fail_history:
-	design_free(f->design);
-fail_design:
-	return false;
 }
 
 struct frame *frame_alloc(struct design *design)
 {
 	assert(design);
 
-	struct frame *f;
-
-	if (!(f = malloc(sizeof(*f))))
-		goto fail_malloc;
-
-	if (!frame_init(f, design))
-		goto fail_init;
-
+	struct frame *f = xcalloc(1, sizeof(*f));
+	frame_init(f, design);
 	return f;
-
-fail_init:
-	free(f);
-fail_malloc:
-	return NULL;
 }
 
 struct frame *frame_ref(struct frame *f)
@@ -228,7 +181,7 @@ void frame_free(struct frame *f)
 	if (f && refcount_put(&f->refcount, NULL)) {
 		refcount_get(&f->refcount);
 		frame_deinit(f);
-		free(f);
+		xfree(f);
 	}
 }
 
@@ -292,17 +245,11 @@ static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
 	struct intmap_pos pos;
 	struct send_frame *sf;
 
-	if ((sf = intmap_find(&f->send_frames, isend, &pos)))
-		return sf;
-
-	if ((sf = intmap_insert(&f->send_frames, &pos, NULL))) {
-		if (send_frame_init(sf, f))
-			return sf;
-
-		intmap_remove_at(&f->send_frames, &pos);
+	if (!(sf = intmap_find(&f->send_frames, isend, &pos))) {
+		sf = intmap_insert(&f->send_frames, &pos, NULL);
+		send_frame_init(sf, f);
 	}
-
-	return NULL;
+	return sf;
 }
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
@@ -312,10 +259,7 @@ struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 	assert(0 <= jrecv && jrecv < design_nreceiver(f->design));
 
 	struct send_frame *sf = frame_send_frame(f, isend);
-	if (sf) {
-		return send_frame_dx(sf, jrecv);
-	}
-	return NULL;
+	return send_frame_dx(sf, jrecv);
 }
 
 bool frame_advance_to(struct frame *f, double t)
@@ -333,7 +277,6 @@ bool frame_advance_to(struct frame *f, double t)
 	struct frame_var *v;
 	ssize_t i, n = array_count(vars);
 	const struct dyad_event *e;
-	bool ok;
 
 	while (dyad_queue_next_update(&f->dyad_queue) < t) {
 		e = dyad_queue_top(&f->dyad_queue);
@@ -344,9 +287,7 @@ bool frame_advance_to(struct frame *f, double t)
 			      && v->design->type->dyad_event_mask & e->type))
 				continue;
 
-			ok = v->design->type->handle_dyad(v, e, f);
-			if (!ok)
-				return false;
+			v->design->type->handle_dyad(v, e, f);
 		}
 
 		dyad_queue_pop(&f->dyad_queue);

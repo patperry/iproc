@@ -29,7 +29,7 @@ struct send_frame {
 };
 
 /* create/destroy */
-bool frame_init(struct frame *f, struct design *design);
+void frame_init(struct frame *f, struct design *design);
 void frame_deinit(struct frame *f);
 
 struct frame *frame_alloc(struct design *design);

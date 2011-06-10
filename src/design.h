@@ -81,14 +81,14 @@ struct frame_var;
 struct var_type {
 	uint8_t dyad_event_mask;
 
-	bool (*init) (struct design_var * dv, const struct design * d);
+	void (*init) (struct design_var * dv, const struct design * d);
 	void (*deinit) (struct design_var * dv);
 
-	bool (*frame_init) (struct frame_var * fv, struct frame * f);
+	void (*frame_init) (struct frame_var * fv, struct frame * f);
 	void (*frame_deinit) (struct frame_var * fv);
 	void (*frame_clear) (struct frame_var * fv);
 
-	bool (*handle_dyad) (struct frame_var * fv,
+	void (*handle_dyad) (struct frame_var * fv,
 			     const struct dyad_event * e, struct frame * f);
 };
 
@@ -123,17 +123,16 @@ void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct vector *intervals);
 void design_deinit(struct design *design);
 
-ssize_t design_dim(const struct design *design);
-ssize_t design_nsender(const struct design *design);
-ssize_t design_nreceiver(const struct design *design);
-struct actors *design_senders(const struct design *design);
-struct actors *design_receivers(const struct design *design);
+static inline ssize_t design_dim(const struct design *design);
+static inline ssize_t design_nsender(const struct design *design);
+static inline ssize_t design_nreceiver(const struct design *design);
+static inline struct actors *design_senders(const struct design *design);
+static inline struct actors *design_receivers(const struct design *design);
+static inline const struct vector *design_intervals(const struct design *design);
 
-const struct vector *design_intervals(const struct design *design);
-
-bool design_add_var(struct design *design, const struct var_type *type);
+void design_add_var(struct design *design, const struct var_type *type);
 void design_set_loops(struct design *design, bool loops);
-bool design_loops(const struct design *design);
+static inline bool design_loops(const struct design *design);
 void design_set_reffects(struct design *design, bool reffects);
 bool design_reffects(const struct design *design);
 
@@ -152,5 +151,52 @@ void design_muls0(double alpha,
 		  const struct design *design,
 		  ssize_t isend,
 		  const struct svector *x, double beta, struct vector *y);
+
+
+/* inline funciton definitions */
+ssize_t design_dim(const struct design *design)
+{
+	assert(design);
+	return design->dim;
+}
+
+ssize_t design_nsender(const struct design *design)
+{
+	assert(design);
+	const struct actors *senders = design_senders(design);
+	return actors_count(senders);
+}
+
+ssize_t design_nreceiver(const struct design *design)
+{
+	assert(design);
+	const struct actors *receivers = design_receivers(design);
+	return actors_count(receivers);
+}
+
+struct actors *design_senders(const struct design *design)
+{
+	assert(design);
+	return design->senders;
+}
+
+struct actors *design_receivers(const struct design *design)
+{
+	assert(design);
+	return design->receivers;
+}
+
+const struct vector *design_intervals(const struct design *design)
+{
+	assert(design);
+	return &design->intervals;
+}
+
+bool design_loops(const struct design *design)
+{
+	assert(design);
+	return design->loops;
+}
+
 
 #endif /* _DESIGN_H */
