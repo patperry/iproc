@@ -31,7 +31,7 @@ static void enron_teardown_fixture(void **state)
 static void enron_setup(void **state)
 {
 	matrix_init_copy(&matrix, &employees);
-	actors_init_matrix(&actors, &matrix, TRANS_NOTRANS);
+	actors_init_matrix(&actors, TRANS_NOTRANS, &matrix);
 }
 
 static void enron_teardown(void **state)
@@ -42,9 +42,9 @@ static void enron_teardown(void **state)
 
 static void enron_test_size(void **state)
 {
-	assert_int_equal(actors_size(&actors), matrix_nrow(&matrix));
+	assert_int_equal(actors_count(&actors), matrix_nrow(&matrix));
 	assert_int_equal(actors_dim(&actors), matrix_ncol(&matrix));
-	assert_int_equal(actors_cohorts_size(&actors), 12);
+	assert_int_equal(actors_cohorts_count(&actors), 12);
 }
 
 static void test_mul(void **state)

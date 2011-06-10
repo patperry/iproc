@@ -4,7 +4,7 @@
 #include "util.h"
 #include "cohort.h"
 
-struct cohort *cohort_new(const struct vector *x)
+struct cohort *cohort_alloc(const struct vector *x)
 {
 	assert(x);
 

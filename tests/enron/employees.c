@@ -266,7 +266,7 @@ bool enron_employees_init(struct actors *employees)
 	bool ok = false;
 
 	if (enron_employee_matrix_init(&x)) {
-		actors_init_matrix(employees, &x, TRANS_NOTRANS);
+		actors_init_matrix(employees, TRANS_NOTRANS, &x);
 		ok = true;
 	}
 

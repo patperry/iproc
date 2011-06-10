@@ -22,7 +22,7 @@ struct cohort_iter {
 
 
 /* create, destroy */
-struct cohort *cohort_new(const struct vector *x);	// copies x
+struct cohort *cohort_alloc(const struct vector *x);	// copies x
 void cohort_free(struct cohort *c);
 void cohort_init(struct cohort *c, const struct vector *x);	// copies x
 void cohort_deinit(struct cohort *c);

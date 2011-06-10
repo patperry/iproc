@@ -119,7 +119,7 @@ struct design *design_alloc(struct actors *senders, struct actors *receivers,
 struct design *design_ref(struct design *design);
 void design_free(struct design *design);
 
-bool design_init(struct design *design, struct actors *senders,
+void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct vector *intervals);
 void design_deinit(struct design *design);
 

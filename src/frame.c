@@ -219,11 +219,8 @@ fail_malloc:
 struct frame *frame_ref(struct frame *f)
 {
 	assert(f);
-
-	if (refcount_get(&f->refcount))
-		return f;
-
-	return NULL;
+	refcount_get(&f->refcount);
+	return f;
 }
 
 void frame_free(struct frame *f)

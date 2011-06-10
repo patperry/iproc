@@ -25,7 +25,7 @@ void design_deinit(struct design *design)
 	array_deinit(&design->vars);
 }
 
-bool design_init(struct design *design, struct actors *senders,
+void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct vector *intervals)
 {
 	assert(design);
@@ -46,11 +46,8 @@ bool design_init(struct design *design, struct actors *senders,
 
 	array_init(&design->vars, sizeof(struct design_var));
 
-	if (!(design->senders = actors_ref(senders)))
-		goto fail_senders;
-
-	if (!(design->receivers = actors_ref(receivers)))
-		goto fail_receivers;
+	design->senders = actors_ref(senders);
+	design->receivers = actors_ref(receivers);
 
 	vector_init_copy(&design->intervals, intervals);
 	refcount_init(&design->refcount);
@@ -63,36 +60,21 @@ bool design_init(struct design *design, struct actors *senders,
 	design->ndynamic = 0;
 	design->dim = design->idynamic + design->ndynamic;
 	design->loops = false;
-	return true;
-
-fail_receivers:
-	actors_free(senders);
-fail_senders:
-	array_deinit(&design->vars);
-	return false;
 }
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
 			    const struct vector *intervals)
 {
-	struct design *design = malloc(sizeof(*design));
-
-	if (design) {
-		if (design_init(design, senders, receivers, intervals))
-			return design;
-
-		free(design);
-	}
-
-	return NULL;
+	struct design *design = xcalloc(1, sizeof(*design));
+	design_init(design, senders, receivers, intervals);
+	return design;
 }
 
 struct design *design_ref(struct design *design)
 {
 	assert(design);
-	if (refcount_get(&design->refcount))
-		return design;
-	return NULL;
+	refcount_get(&design->refcount);
+	return design;
 }
 
 void design_free(struct design *design)
@@ -100,7 +82,7 @@ void design_free(struct design *design)
 	if (design && refcount_put(&design->refcount, NULL)) {
 		refcount_get(&design->refcount);
 		design_deinit(design);
-		free(design);
+		xfree(design);
 	}
 }
 
@@ -335,14 +317,14 @@ ssize_t design_nsender(const struct design *design)
 {
 	assert(design);
 	const struct actors *senders = design_senders(design);
-	return actors_size(senders);
+	return actors_count(senders);
 }
 
 ssize_t design_nreceiver(const struct design *design)
 {
 	assert(design);
 	const struct actors *receivers = design_receivers(design);
-	return actors_size(receivers);
+	return actors_count(receivers);
 }
 
 struct actors *design_senders(const struct design *design)

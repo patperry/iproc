@@ -40,8 +40,8 @@ static void enron_setup(void **state)
 	struct matrix enron_employees0 =
 	    matrix_slice_cols(&enron_employees, 1,
 			      matrix_ncol(&enron_employees) - 1);
-	actors_init_matrix(&senders, &enron_employees, TRANS_NOTRANS);
-	actors_init_matrix(&receivers, &enron_employees0, TRANS_NOTRANS);	
+	actors_init_matrix(&senders, TRANS_NOTRANS, &enron_employees);
+	actors_init_matrix(&receivers, TRANS_NOTRANS, &enron_employees0);
 	dim = actors_dim(&senders) * actors_dim(&receivers);
 	has_reffects = false;
 	has_loops = false;
@@ -79,9 +79,9 @@ static void enron_reff_setup(void **state)
 	struct matrix enron_employees0 =
 	    matrix_slice_cols(&enron_employees, 1,
 			      matrix_ncol(&enron_employees) - 1);
-	actors_init_matrix(&senders, &enron_employees, TRANS_NOTRANS);
-	actors_init_matrix(&receivers, &enron_employees0, TRANS_NOTRANS);	
-	dim = (actors_size(&receivers)
+	actors_init_matrix(&senders, TRANS_NOTRANS, &enron_employees);
+	actors_init_matrix(&receivers, TRANS_NOTRANS, &enron_employees0);
+	dim = (actors_count(&receivers)
 	       + actors_dim(&senders) * actors_dim(&receivers));
 	has_reffects = true;
 	has_loops = false;
@@ -105,8 +105,8 @@ static void enron_reff_teardown(void **state)
 static void test_size(void **state)
 {
 	assert_int_equal(design_dim(&design), dim);
-	assert_int_equal(design_nsender(&design), actors_size(&senders));
-	assert_int_equal(design_nreceiver(&design), actors_size(&receivers));
+	assert_int_equal(design_nsender(&design), actors_count(&senders));
+	assert_int_equal(design_nreceiver(&design), actors_count(&receivers));
 }
 
 static void matrix_assign_static(struct matrix *x,
@@ -116,20 +116,23 @@ static void matrix_assign_static(struct matrix *x,
 {
 	ssize_t irecv, jvar, nrecv, js, jr, ps, pr;
 	double sj, rj;
+	const struct vector *xs, *xr;
 	
-	nrecv = actors_size(r);
+	nrecv = actors_count(r);
 	ps = actors_dim(s);
 	pr = actors_dim(r);
+	xs = actors_traits(s, isend);
 	
 	assert(matrix_nrow(x) == nrecv);
 	assert(matrix_ncol(x) == ps * pr);
 
 	for (js = 0; js < ps; js++) {
-		sj = actors_get(s, isend, js);
+		sj = vector_item(xs, js);
 		for (jr = 0; jr < pr; jr++) {
 			jvar = js + jr * ps;			
 			for (irecv = 0; irecv < nrecv; irecv++) {
-				rj = actors_get(r, irecv, jr);
+				xr = actors_traits(r, irecv);
+				rj = vector_item(xr, jr);
 				matrix_set_item(x, irecv, jvar, sj * rj);
 			}
 		}
@@ -140,10 +143,10 @@ static void matrix_assign_reffects(struct matrix *x,
 				   const struct actors *r,
 				   bool has_reffects)
 {
-	assert(matrix_nrow(x) == actors_size(r));	
+	assert(matrix_nrow(x) == actors_count(r));	
 
 	if (has_reffects) {
-		assert(matrix_ncol(x) == actors_size(r));
+		assert(matrix_ncol(x) == actors_count(r));
 		matrix_assign_identity(x);
 	} else {
 		assert(matrix_ncol(x) == 0);
@@ -160,7 +163,7 @@ static void matrix_init_design0(struct matrix *x, const struct design *d,
 	bool has_reffects = design_reffects(d);
 	struct matrix xstat, xreff;
 	
-	ssize_t nrecv = actors_size(r);
+	ssize_t nrecv = actors_count(r);
 	ssize_t ps = actors_dim(s);
 	ssize_t pr = actors_dim(r);
 	ssize_t ireff = 0;
@@ -190,7 +193,7 @@ static void test_mul0(void **state)
 	vector_init(&y, n);
 	vector_init(&y1, n);
 	
-	nsend = actors_size(&senders);
+	nsend = actors_count(&senders);
 	for (isend = 0; isend < nsend; isend += 10) {
 		matrix_init_design0(&matrix, &design, isend);
 	
@@ -237,7 +240,7 @@ static void test_tmul0(void **state)
 	vector_init(&y, p);
 	vector_init(&y1, p);
 	
-	nsend = actors_size(&senders);
+	nsend = actors_count(&senders);
 	for (isend = 1; isend < nsend; isend += 11) {
 		matrix_init_design0(&matrix, &design, isend);
 		
@@ -285,7 +288,7 @@ static void test_tmuls0(void **state)
 	vector_init(&y, p);
 	vector_init(&y1, p);
 	
-	nsend = actors_size(&senders);
+	nsend = actors_count(&senders);
 	for (isend = 2; isend < nsend; isend += 12) {
 		matrix_init_design0(&matrix, &design, isend);
 		
@@ -334,7 +337,7 @@ static void test_muls0(void **state)
 	vector_init(&y, n);
 	vector_init(&y1, n);
 	
-	nsend = actors_size(&senders);
+	nsend = actors_count(&senders);
 	for (isend = 3; isend < nsend; isend += 13) {
 		matrix_init_design0(&matrix, &design, isend);
 

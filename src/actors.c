@@ -29,8 +29,8 @@ void actors_init(struct actors *actors, ssize_t dim)
 	actors->dim = dim;
 }
 
-void actors_init_matrix(struct actors *actors, const struct matrix *matrix,
-			enum trans_op trans)
+void actors_init_matrix(struct actors *actors,  enum trans_op trans,
+			const struct matrix *matrix)
 {
 	assert(actors);
 	assert(matrix);
@@ -72,13 +72,13 @@ void actors_init_copy(struct actors *actors, const struct actors *src)
 
 	actors_init(actors, src->dim);
 
-	ssize_t i, n = actors_size(src);
+	ssize_t i, n = actors_count(src);
 	for (i = 0; i < n; i++) {
 		actors_add(actors, actors_traits(src, i));
 	}
 
-	assert(actors_size(actors) == actors_cohorts_size(src));
-	assert(actors_cohorts_size(actors) == actors_cohorts_size(src));
+	assert(actors_count(actors) == actors_cohorts_count(src));
+	assert(actors_cohorts_count(actors) == actors_cohorts_count(src));
 }
 
 static void cohorts_clear(struct hashset *cohorts)
@@ -130,39 +130,20 @@ void actors_free(struct actors *a)
 struct actors *actors_ref(struct actors *actors)
 {
 	assert(actors);
-	if (refcount_get(&actors->refcount))
-		return actors;
-	return NULL;
+	refcount_get(&actors->refcount);
+	return actors;
 }
 
-ssize_t actors_size(const struct actors *a)
+const struct actor *actors_item(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
-	return array_count(&a->actors);
-}
-
-ssize_t actors_cohorts_size(const struct actors *a)
-{
-	assert(a);
-	return hashset_count(&a->cohorts);
-}
-
-ssize_t actors_dim(const struct actors *actors)
-{
-	assert(actors);
-	return actors->dim;
-}
-
-const struct actor *actors_at(const struct actors *a, ssize_t actor_id)
-{
-	assert(a);
-	assert(0 <= actor_id && actor_id < actors_size(a));
+	assert(0 <= actor_id && actor_id < actors_count(a));
 	return array_item(&a->actors, actor_id);
 }
 
 const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
 {
-	return actors_at(a, actor_id)->cohort;
+	return actors_item(a, actor_id)->cohort;
 }
 
 static struct cohort *actors_get_cohort(struct actors *actors,
@@ -176,58 +157,32 @@ static struct cohort *actors_get_cohort(struct actors *actors,
 	if ((cohortp = hashset_find(&actors->cohorts, &key, &pos)))
 		return *cohortp;
 
-	if ((new_cohort = cohort_new(traits))) {
-		if (hashset_insert(&actors->cohorts, &pos, &new_cohort)) {
-			return new_cohort;
-		}
-		cohort_free(new_cohort);
-	}
-	return NULL;
+	new_cohort = cohort_alloc(traits);
+	hashset_insert(&actors->cohorts, &pos, &new_cohort);
+	return new_cohort;
 }
 
-double actors_get(const struct actors *a, ssize_t actor_id, ssize_t j)
-{
-	assert(a);
-	assert(0 <= actor_id && actor_id < actors_size(a));
-	assert(0 <= j && j < actors_dim(a));
-
-	const struct vector *x = actors_traits(a, actor_id);
-	double val = vector_item(x, j);
-	return val;
-}
-
-bool actors_add(struct actors *actors, const struct vector *traits)
+void actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);
 	assert(vector_dim(traits) == actors_dim(actors));
 
 	struct actor a;
 	ssize_t id;
-	bool ok;
 
 	a.cohort = actors_get_cohort(actors, traits);
-	if (!a.cohort)
-		goto fail_get_cohort;
-
 	array_add(&actors->actors, &a);
 
 	id = array_count(&actors->actors) - 1;
 	cohort_add(a.cohort, id);
-	ok = true;
-	goto out;
-
-fail_get_cohort:
-	ok = false;
-out:
-	return ok;
 }
 
 const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
-	assert(0 <= actor_id && actor_id < actors_size(a));
+	assert(0 <= actor_id && actor_id < actors_count(a));
 
-	const struct actor *actor = actors_at(a, actor_id);
+	const struct actor *actor = actors_item(a, actor_id);
 	return cohort_traits(actor->cohort);
 }
 
@@ -238,8 +193,8 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS || vector_dim(x) == actors_size(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_count(a));
+	assert(trans == TRANS_NOTRANS || vector_dim(x) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
@@ -293,8 +248,8 @@ actors_muls(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || svector_dim(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS || svector_dim(x) == actors_size(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_count(a));
+	assert(trans == TRANS_NOTRANS || svector_dim(x) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
 
 	const struct vector *row;
@@ -347,8 +302,8 @@ actors_matmul(double alpha,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || matrix_nrow(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == actors_size(a));
-	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == actors_size(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == actors_count(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == actors_dim(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 

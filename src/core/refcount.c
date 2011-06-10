@@ -2,6 +2,9 @@
 #include <assert.h>
 #include "refcount.h"
 
+#define REFCOUNT_MAX INT_MAX
+
+
 void refcount_init(struct refcount *refcount)
 {
 	assert(refcount);
@@ -22,15 +25,11 @@ void refcount_set(struct refcount *refcount, int count)
 	refcount->count = count;
 }
 
-bool refcount_get(struct refcount *refcount)
+void refcount_get(struct refcount *refcount)
 {
 	assert(refcount);
-
-	if (refcount->count == REFCOUNT_MAX)
-		return false;
-
+	assert(refcount->count < REFCOUNT_MAX);
 	refcount->count++;
-	return true;
 }
 
 bool refcount_put(struct refcount *refcount,

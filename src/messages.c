@@ -31,9 +31,8 @@ struct messages *messages_alloc()
 struct messages *messages_ref(struct messages *msgs)
 {
 	assert(msgs);
-	if (refcount_get(&msgs->refcount))
-		return msgs;
-	return NULL;
+	refcount_get(&msgs->refcount);
+	return msgs;
 }
 
 void messages_deinit(struct messages *msgs)

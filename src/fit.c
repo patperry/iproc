@@ -108,7 +108,7 @@ static void linesearch(iproc_fit * fit)
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
 	struct design *design = design_ref(model->design);
-	int has_loops = model->has_loops;
+	bool has_loops = model->has_loops;
 	iproc_loglik *loglik = fit->loglik;
 
 	struct vector *search_dir = fit->search_dir;
