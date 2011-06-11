@@ -8,6 +8,7 @@
 #include <R_ext/Rdynload.h>
 
 #include "array.h"
+#include "messages.h"
 #include "r-utils.h"
 #include "r-messages.h"
 
@@ -164,11 +165,11 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 	PROTECT(Rtime = NEW_NUMERIC(n));
 	double *time = NUMERIC_POINTER(Rtime);
 
-	struct messages_iter it = messages_iter(msgs);
+	struct messages_iter it;
 
-	while (messages_iter_advance(&it)) {
-		t = messages_iter_current_time(&it);
-		ntie = (int)messages_iter_ntie(&it);
+	MESSAGES_FOREACH(it, msgs) {
+		t = MESSAGES_TIME(it);
+		ntie = (int)MESSAGES_COUNT(it);
 		for (i = 0; i < ntie; i++) {
 			*time++ = t;
 		}
@@ -187,13 +188,13 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 	PROTECT(Rfrom = NEW_INTEGER(n));
 	int *from = INTEGER_POINTER(Rfrom);
 
-	struct messages_iter it = messages_iter(msgs);
+	struct messages_iter it;
 	const struct message *msg;
 
-	while (messages_iter_advance(&it)) {
-		ntie = (int)messages_iter_ntie(&it);
+	MESSAGES_FOREACH(it, msgs) {
+		ntie = (int)MESSAGES_COUNT(it);
 		for (i = 0; i < ntie; i++) {
-			msg = messages_iter_current(&it, i);
+			msg = MESSAGES_VAL(it, i);
 			*from++ = (int)msg->from + 1;
 		}
 	}
@@ -211,14 +212,13 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 
 	PROTECT(Rto = NEW_LIST(n));
 
-	struct messages_iter it = messages_iter(msgs);
+	struct messages_iter it;
 	imsg = 0;
 
-	while (messages_iter_advance(&it)) {
-		ntie = (int)messages_iter_ntie(&it);
+	MESSAGES_FOREACH(it, msgs) {
+		ntie = (int)MESSAGES_COUNT(it);
 		for (i = 0; i < ntie; i++) {
-			const struct message *msg =
-			    messages_iter_current(&it, i);
+			const struct message *msg = MESSAGES_VAL(it, i);
 			nto = (int)msg->nto;
 			msg_to = msg->to;
 
@@ -244,13 +244,13 @@ SEXP Riproc_messages_nto(SEXP Rmsgs)
 	PROTECT(Rnto = NEW_INTEGER(n));
 	int *nto = INTEGER_POINTER(Rnto);
 
-	struct messages_iter it = messages_iter(msgs);
+	struct messages_iter it;
 	const struct message *msg;
 
-	while (messages_iter_advance(&it)) {
-		ntie = (int)messages_iter_ntie(&it);
+	MESSAGES_FOREACH(it, msgs) {
+		ntie = (int)MESSAGES_COUNT(it);
 		for (i = 0; i < ntie; i++) {
-			msg = messages_iter_current(&it, i);
+			msg = MESSAGES_VAL(it, i);
 			*nto++ = (int)msg->nto;
 		}
 	}

@@ -307,7 +307,6 @@ design_muls0(double alpha,
 	design_muls0_static(alpha, trans, design, isend, x, y);
 }
 
-
 void design_set_loops(struct design *design, bool loops)
 {
 	assert(design);

@@ -73,7 +73,7 @@ static void test_vnrecv(void **state)
 	ssize_t isend;
 	ssize_t jrecv, nrecv = design_nreceiver(&design);
 	const struct message *msg = NULL;
-	struct messages_iter it = messages_iter(&messages);	
+	struct messages_iter it;
 	struct matrix xnrecv;
 	struct vector x, y;
 	
@@ -88,8 +88,8 @@ static void test_vnrecv(void **state)
 	
 	isend = 0;
 	
-	while (messages_iter_advance(&it)) {
-		t = messages_iter_current_time(&it);
+	MESSAGES_FOREACH(it, &messages) {
+		t = MESSAGES_TIME(it);
 		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
@@ -98,9 +98,9 @@ static void test_vnrecv(void **state)
 			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 		}
 		
-		ntie = messages_iter_ntie(&it);
+		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
-			msg = messages_iter_current(&it, itie);
+			msg = MESSAGES_VAL(it, itie);
 			frame_insert(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
@@ -147,7 +147,7 @@ static void test_vrecv(void **state)
 	ssize_t isend;
 	ssize_t jrecv, j, nrecv = design_nreceiver(&design);
 	const struct message *msg = NULL;
-	struct messages_iter it = messages_iter(&messages);	
+	struct messages_iter it;
 	struct matrix tlast;
 	struct svector x, y;
 	double delta, tmsg, tlo, thi;
@@ -159,8 +159,8 @@ static void test_vrecv(void **state)
 	svector_init(&x, design_dim(&design));
 	svector_init(&y, design_nreceiver(&design));
 	
-	while (messages_iter_advance(&it)) {
-		t = messages_iter_current_time(&it);
+	MESSAGES_FOREACH(it, &messages) {
+		t = MESSAGES_TIME(it);
 		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
@@ -183,9 +183,9 @@ static void test_vrecv(void **state)
 				}
 			}
 		}
-		ntie = messages_iter_ntie(&it);
+		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
-			msg = messages_iter_current(&it, itie);
+			msg = MESSAGES_VAL(it, itie);
 			frame_insert(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {

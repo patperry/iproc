@@ -44,9 +44,8 @@ void frame_advance_to(struct frame *f, double t);
 
 void frame_clear(struct frame *f);
 
-/* time of the next change */
 double frame_time(const struct frame *f);
-double frame_next_update(const struct frame *f);
+double frame_next_update(const struct frame *f);	/* time of the next change */
 const struct history *frame_history(const struct frame *f);
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);

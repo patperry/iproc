@@ -29,7 +29,7 @@ void actors_init(struct actors *actors, ssize_t dim)
 	actors->dim = dim;
 }
 
-void actors_init_matrix(struct actors *actors,  enum trans_op trans,
+void actors_init_matrix(struct actors *actors, enum trans_op trans,
 			const struct matrix *matrix)
 {
 	assert(actors);

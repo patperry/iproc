@@ -128,7 +128,8 @@ static inline ssize_t design_nsender(const struct design *design);
 static inline ssize_t design_nreceiver(const struct design *design);
 static inline struct actors *design_senders(const struct design *design);
 static inline struct actors *design_receivers(const struct design *design);
-static inline const struct vector *design_intervals(const struct design *design);
+static inline const struct vector *design_intervals(const struct design
+						    *design);
 
 void design_add_var(struct design *design, const struct var_type *type);
 void design_set_loops(struct design *design, bool loops);
@@ -151,7 +152,6 @@ void design_muls0(double alpha,
 		  const struct design *design,
 		  ssize_t isend,
 		  const struct svector *x, double beta, struct vector *y);
-
 
 /* inline funciton definitions */
 ssize_t design_dim(const struct design *design)
@@ -197,6 +197,5 @@ bool design_loops(const struct design *design)
 	assert(design);
 	return design->loops;
 }
-
 
 #endif /* _DESIGN_H */

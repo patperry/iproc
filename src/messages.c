@@ -137,7 +137,7 @@ ssize_t messages_max_nto(const struct messages *msgs)
 	return msgs->max_nto;
 }
 
-struct messages_iter messages_iter(struct messages *msgs)
+struct messages_iter messages_iter_make(struct messages *msgs)
 {
 	assert(msgs);
 
@@ -147,34 +147,6 @@ struct messages_iter messages_iter(struct messages *msgs)
 	messages_iter_reset(&it);
 
 	return it;
-}
-
-double messages_iter_current_time(struct messages_iter *it)
-{
-	assert(it);
-	assert(0 <= it->offset && it->offset < messages_size(it->messages));
-
-	return it->message_rep->message.time;
-}
-
-ssize_t messages_iter_ntie(struct messages_iter *it)
-{
-	assert(it);
-	assert(0 <= it->offset && it->offset < messages_size(it->messages));
-
-	return it->ntie;
-}
-
-struct message *messages_iter_current(struct messages_iter *it, ssize_t itie)
-{
-	assert(it);
-	assert(0 <= it->offset && it->offset < messages_size(it->messages));
-	assert(0 <= itie && itie < messages_iter_ntie(it));
-
-	ssize_t i = it->offset + itie;
-	it->message_rep = array_item(&it->messages->message_reps, i);
-	return &it->message_rep->message;
-
 }
 
 void messages_iter_reset(struct messages_iter *it)
@@ -213,7 +185,6 @@ bool messages_iter_advance(struct messages_iter *it)
 				message_rep[ntie].message.to = msg_to;
 			}
 
-			/* not deprecated */
 			ntie++;
 		} while (ntie < ntie_max
 			 && message_rep[ntie].message.time == time);

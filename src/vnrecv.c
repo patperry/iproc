@@ -33,7 +33,6 @@ static void vnrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	struct svector_pos pos;
 	double *val;
 
-
 	if (e->type == DYAD_EVENT_MOVE) {
 		val = svector_find(dx, index + e->intvl - 1, &pos);
 		assert(val);

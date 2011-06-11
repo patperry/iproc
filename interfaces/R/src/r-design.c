@@ -78,7 +78,7 @@ struct design *Riproc_to_design(SEXP Rdesign)
 	return design;
 }
 
-SEXP Riproc_from_design(struct design *design)
+SEXP Riproc_from_design(struct design * design)
 {
 	SEXP Rdesign, class;
 
@@ -120,7 +120,8 @@ Riproc_design_new(SEXP Rsenders,
 	params.vrecv = false;
 	params.vnrecv = false;
 
-	struct design *design = design_alloc_params(senders, receivers, intervals, &params);
+	struct design *design =
+	    design_alloc_params(senders, receivers, intervals, &params);
 
 	SEXP Rdesign;
 

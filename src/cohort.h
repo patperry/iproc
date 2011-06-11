@@ -20,7 +20,6 @@ struct cohort_iter {
 #define COHORT_FOREACH(it, c) \
 	for ((it) = cohort_iter_make(c); cohort_iter_advance(&(it));)
 
-
 /* create, destroy */
 struct cohort *cohort_alloc(const struct vector *x);	// copies x
 void cohort_free(struct cohort *c);
@@ -44,7 +43,6 @@ struct cohort_iter cohort_iter_make(const struct cohort *c);
 bool cohort_iter_advance(struct cohort_iter *it);
 void cohort_iter_reset(struct cohort_iter *it);
 
-
 /* inline funcion definitions */
 ssize_t cohort_dim(const struct cohort *c)
 {
@@ -57,6 +55,5 @@ ssize_t cohort_count(const struct cohort *c)
 	assert(c);
 	return intset_count(&c->members);
 }
-
 
 #endif /* _COHORT */

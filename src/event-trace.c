@@ -124,7 +124,8 @@ void event_trace_advance_to(struct event_trace *trace, double t)
 		if (pos < 0) {
 			pos = ~pos;
 
-			struct events *new_events = array_insert(&trace->events, pos, NULL);
+			struct events *new_events =
+			    array_insert(&trace->events, pos, NULL);
 			events_init(new_events, event->e);
 		}
 		// Add the new meta-data

@@ -66,14 +66,13 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 	if (!messages)
 		return loglik;
 
-	struct messages_iter it = messages_iter(messages);
+	struct messages_iter it;
 
-	while (messages_iter_advance(&it)) {
-		ssize_t tie, ntie = messages_iter_ntie(&it);
+	MESSAGES_FOREACH(it, messages) {
+		ssize_t tie, ntie = MESSAGES_COUNT(it);
 
 		for (tie = 0; tie < ntie; tie++) {
-			const struct message *msg =
-			    messages_iter_current(&it, tie);
+			const struct message *msg = MESSAGES_VAL(it, tie);
 			iproc_loglik_insert(loglik, &frame, msg);
 			frame_insert(&frame, msg);
 		}
