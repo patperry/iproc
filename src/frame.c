@@ -5,6 +5,13 @@
 #include "ieee754.h"
 #include "frame.h"
 
+static int frame_event_rcompare(const void *x1, const void *x2)
+{
+	const struct frame_event *e1 = x1;
+	const struct frame_event *e2 = x2;
+	return double_rcompare(&e1->time, &e2->time);
+}
+
 static void send_frame_init(struct send_frame *sf, struct frame *f)
 {
 	assert(sf);
@@ -154,10 +161,11 @@ void frame_init(struct frame *f, struct design *design)
 
 	f->design = design_ref(design);
 	history_init(&f->history);
-	dyad_queue_init(&f->dyad_queue, &design->intervals);
 	send_frames_init(f);
 	var_frames_init(f, design);
+	pqueue_init(&f->events, frame_event_rcompare, sizeof(struct frame_event));
 	refcount_init(&f->refcount);
+	f->next_event_id = 0;
 }
 
 struct frame *frame_alloc(struct design *design)
@@ -190,9 +198,9 @@ void frame_deinit(struct frame *f)
 	assert(f);
 
 	refcount_deinit(&f->refcount);
+	pqueue_deinit(&f->events);
 	var_frames_deinit(f);
 	send_frames_deinit(f);
-	dyad_queue_deinit(&f->dyad_queue);
 	history_deinit(&f->history);
 	design_free(f->design);
 }
@@ -202,22 +210,16 @@ void frame_clear(struct frame *f)
 	assert(f);
 
 	history_clear(&f->history);
-	dyad_queue_clear(&f->dyad_queue);
 	send_frames_clear(f);
 	var_frames_clear(f);
+	pqueue_clear(&f->events);
+	f->next_event_id = 0;
 }
 
 double frame_time(const struct frame *f)
 {
 	assert(f);
 	return history_tcur(&f->history);
-}
-
-double frame_next_update(const struct frame *f)
-{
-	assert(f);
-
-	return dyad_queue_next_update(&f->dyad_queue);
 }
 
 const struct history *frame_history(const struct frame *f)
@@ -233,7 +235,15 @@ void frame_insert(struct frame *f, const struct message *msg)
 	assert(msg->time == frame_time(f));
 
 	history_insert(&f->history, msg->from, msg->to, msg->nto, msg->attr);
-	dyad_queue_push(&f->dyad_queue, msg);
+	
+	struct frame_event e;
+	e.type = MESSAGE_EVENT;
+	e.time = msg->time;
+	e.meta.message.from = msg->from;
+	e.meta.message.to = msg->to;
+	e.meta.message.nto = msg->nto;
+	e.meta.message.attr = msg->attr;
+	frame_event_push(f, &e);
 }
 
 static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
@@ -266,30 +276,155 @@ void frame_advance_to(struct frame *f, double t)
 	assert(f);
 	assert(t >= frame_time(f));
 
-	if (t == frame_time(f))
-		return;
+	double tnext;
 
+	while ((tnext = frame_event_next(f)) < t) {
+		history_advance_to(&f->history, tnext);
+		frame_event_pop(f);
+	}
+	
 	history_advance_to(&f->history, t);
+}
 
+double frame_event_next(const struct frame *f)
+{
+	assert(f);
+	
+	if (pqueue_count(&f->events)) {
+		return ((struct frame_event *)pqueue_top(&f->events))->time;
+	} else {
+		return INFINITY;
+	}
+}
+
+ssize_t frame_event_push(struct frame *f, struct frame_event *e)
+{
+	assert(f);
+	assert(e);
+	
+	if (e->id < 0)
+		e->id = f->next_event_id++;
+	pqueue_push(&f->events, e);
+	return e->id;
+}
+
+static void pop_message_event(struct frame *f)
+{
+	assert(f);
+	assert(pqueue_count(&f->events));
+	assert(((struct frame_event *)pqueue_top(&f->events))->type == MESSAGE_EVENT);
+	
+	struct frame_event *fe = pqueue_top(&f->events);
+	struct message_event_meta *meta = &fe->meta.message;
+	
+	ssize_t ito, nto = meta->nto;
+	struct frame_event e;
+	
+	e.type = DYAD_EVENT_INIT;
+	e.time = fe->time;
+	e.meta.dyad.msg_time = fe->time;
+	e.meta.dyad.msg_dyad.isend = meta->from;
+	e.meta.dyad.msg_attr = meta->attr;
+	e.meta.dyad.intvl = 0;
+	
+	for (ito = 0; ito < nto; ito++) {
+		e.id = -1;
+		e.meta.dyad.msg_dyad.jrecv = meta->to[ito];
+		frame_event_push(f, &e);
+	}
+	
+	pqueue_pop(&f->events);
+}
+
+static void pop_dyad_event(struct frame *f)
+{
+	assert(f);
+	assert(pqueue_count(&f->events));
+	assert(((struct frame_event *)pqueue_top(&f->events))->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
+	
+	struct frame_event *fe = pqueue_top(&f->events);
+	struct dyad_event_meta *meta = &fe->meta.dyad;
+	double t0, dt;
+		
+	if (meta->intvl == vector_dim(&f->design->intervals)) {
+		pqueue_pop(&f->events);
+	} else {
+		t0 = meta->msg_time;
+		dt = vector_item(&f->design->intervals, meta->intvl);
+		
+		fe->time = t0 + dt;
+		fe->type = DYAD_EVENT_MOVE;
+		meta->intvl++;
+		
+		pqueue_update_top(&f->events);
+	}
+
+}
+
+static void pop_dyad_var_event(struct frame *f)
+{
+	assert(f);
+	assert(pqueue_count(&f->events));
+	assert(((struct frame_event *)pqueue_top(&f->events))->type == DYAD_VAR_EVENT);
+
+	struct frame_event *fe = pqueue_top(&f->events);
+	struct dyad_var_event_meta *meta = &fe->meta.dyad_var;
+	struct svector_pos pos;
+	double *ptr;
+	struct svector *dx;
+	
+	dx = frame_dx(f, meta->item.isend, meta->item.jrecv);
+	if ((ptr = svector_find(dx, meta->index, &pos))) {
+		*ptr += meta->delta;
+		if (*ptr == 0.0)
+			svector_remove_at(dx, &pos);
+	} else {
+		svector_insert(dx, &pos, meta->delta);
+	}
+	
+	pqueue_pop(&f->events);
+}
+
+void frame_event_pop(struct frame *f)
+{
+	assert(f);
+
+	struct frame_event *e = pqueue_top(&f->events);
+	
+	
 	const struct array *vars = &f->vars;
 	struct frame_var *v;
 	ssize_t i, n = array_count(vars);
-	const struct dyad_event *e;
-
-	while (dyad_queue_next_update(&f->dyad_queue) < t) {
-		e = dyad_queue_top(&f->dyad_queue);
-
-		for (i = 0; i < n; i++) {
-			v = array_item(vars, i);
-			if (!(v->design->type->handle_dyad
-			      && v->design->type->dyad_event_mask & e->type))
-				continue;
-
-			v->design->type->handle_dyad(v, e, f);
-		}
-
-		dyad_queue_pop(&f->dyad_queue);
+	
+	for (i = 0; i < n; i++) {
+		v = array_item(vars, i);
+		if (!(v->design->type->handle_event
+		      && v->design->type->event_mask & e->type))
+			continue;
+			
+		v->design->type->handle_event(v, e, f);
 	}
+	
+	switch(e->type) {
+	case MESSAGE_EVENT:
+		pop_message_event(f);
+		break;
+	case DYAD_EVENT_INIT:
+	case DYAD_EVENT_MOVE:
+		pop_dyad_event(f);
+		break;
+	case TRIAD_EVENT_INIT:
+	case TRIAD_EVENT_MOVE1:			
+	case TRIAD_EVENT_MOVE2:
+		assert(0 && "Not implemented");
+	case DYAD_VAR_EVENT:
+		pop_dyad_var_event(f);
+		break;
+	case SENDER_VAR_EVENT:
+		assert(0 && "Not implemented");
+		break;
+	}
+
 }
 
 void frame_mul(double alpha, enum trans_op trans,

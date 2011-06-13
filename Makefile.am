@@ -16,8 +16,6 @@ libiproc_la_SOURCES = \
 	src/cohort.h \
 	src/design.c \
 	src/design.h \
-	src/dyad-queue.c \
-	src/dyad-queue.h \
 	src/event-trace.c \
 	src/event-trace.h \
 	src/fit.c \

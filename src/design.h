@@ -4,7 +4,6 @@
 #include "actors.h"
 #include "history.h"
 #include "array.h"
-#include "dyad-queue.h"
 #include "matrix.h"
 #include "messages.h"
 #include "refcount.h"
@@ -74,12 +73,14 @@
  */
 
 struct frame;			// forward declarations
+struct frame_event;
 struct design;
 struct design_var;
 struct frame_var;
 
+
 struct var_type {
-	uint8_t dyad_event_mask;
+	uint8_t event_mask;
 
 	void (*init) (struct design_var * dv, const struct design * d);
 	void (*deinit) (struct design_var * dv);
@@ -88,8 +89,8 @@ struct var_type {
 	void (*frame_deinit) (struct frame_var * fv);
 	void (*frame_clear) (struct frame_var * fv);
 
-	void (*handle_dyad) (struct frame_var * fv,
-			     const struct dyad_event * e, struct frame * f);
+	void (*handle_event) (struct frame_var *fv,
+			      const struct frame_event *e, struct frame * f);
 };
 
 struct design_var {

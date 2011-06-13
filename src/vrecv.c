@@ -78,8 +78,9 @@ static void vrecv_frame_clear(struct frame_var *fv)
 	hashset_clear(&udata->active);
 }
 
-static void vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
-			      struct frame *f)
+static void vrecv_handle_event(struct frame_var *fv,
+			       const struct frame_event *e,
+			       struct frame *f)
 {
 	assert(fv);
 	assert(e);
@@ -88,14 +89,22 @@ static void vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 	assert(fv->design->index >= 0);
 	assert(fv->design->index <= design_dim(f->design) - fv->design->dim);
 	assert(fv->udata);
+	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
 
+	const struct dyad_event_meta *meta = &e->meta.dyad;
+	
 	ssize_t index = fv->design->index;
 	struct vrecv_udata *udata = fv->udata;
 	const struct vrecv_active *key =
-	    container_of(&e->dyad, const struct vrecv_active, dyad);
+	    container_of(&meta->msg_dyad, const struct vrecv_active, dyad);
 	struct vrecv_active *active;
-	struct svector *dx = frame_dx(f, e->dyad.jrecv, e->dyad.isend);
 
+	struct frame_event dx;
+	dx.type = DYAD_VAR_EVENT;
+	dx.time = e->time;
+	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
+	dx.meta.dyad_var.item.jrecv = meta->msg_dyad.isend;
+		
 	if (e->type == DYAD_EVENT_INIT) {
 		struct hashset_pos pos;
 
@@ -109,17 +118,22 @@ static void vrecv_handle_dyad(struct frame_var *fv, const struct dyad_event *e,
 		assert(active);
 
 		if (active->id == e->id) {
-			assert(active->intvl == e->intvl - 1);
+			assert(active->intvl == meta->intvl - 1);
 			goto move;
 		}
 		goto out;
 	}
 move:
-	svector_remove(dx, index + active->intvl);
+	dx.meta.dyad_var.index = index + active->intvl;
+	dx.meta.dyad_var.delta = -1.0;
+	frame_event_push(f, &dx);
 init:
-	svector_set_item(dx, index + e->intvl, 1.0);
+	dx.meta.dyad_var.index = index + meta->intvl;
+	dx.meta.dyad_var.delta = +1.0;
+	frame_event_push(f, &dx);
+
 	active->id = e->id;
-	active->intvl = e->intvl;
+	active->intvl = meta->intvl;
 out:
 	return;
 }
@@ -131,7 +145,7 @@ static struct var_type VAR_TYPE_RECV_REP = {
 	vrecv_frame_init,
 	vrecv_frame_deinit,
 	vrecv_frame_clear,
-	vrecv_handle_dyad
+	vrecv_handle_event
 };
 
 const struct var_type *VAR_TYPE_RECV = &VAR_TYPE_RECV_REP;

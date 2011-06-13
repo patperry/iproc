@@ -23,6 +23,11 @@ struct actors {
 	struct refcount refcount;
 };
 
+struct dyad {
+	ssize_t isend;
+	ssize_t jrecv;
+};
+
 struct actors *actors_alloc(ssize_t dim);
 struct actors *actors_ref(struct actors *a);
 void actors_free(struct actors *a);
