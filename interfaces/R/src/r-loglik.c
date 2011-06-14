@@ -56,7 +56,7 @@ SEXP Riproc_from_loglik(iproc_loglik * loglik)
 
 SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
+	struct model *model = Riproc_to_model(Rmodel);
 	struct messages *messages = (Rmessages == NULL_USER_OBJECT
 				     ? NULL : Riproc_to_messages(Rmessages));
 	iproc_loglik *loglik = iproc_loglik_new(model, messages);

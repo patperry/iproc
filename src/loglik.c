@@ -25,10 +25,10 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 	}
 }
 
-static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
+static iproc_loglik *iproc_loglik_new_empty(struct model * model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
-	struct design *design = iproc_model_design(model);
+	struct design *design = model_design(model);
 	ssize_t nsender = design_nsender(design);
 
 	if (!loglik)
@@ -51,13 +51,13 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 	return loglik;
 }
 
-iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
+iproc_loglik *iproc_loglik_new(struct model * model, struct messages * messages)
 {
 	assert(model);
 	assert(!messages
-	       || messages_max_from(messages) < iproc_model_nsender(model));
+	       || messages_max_from(messages) < model_sender_count(model));
 	assert(!messages
-	       || messages_max_to(messages) < iproc_model_nreceiver(model));
+	       || messages_max_to(messages) < model_receiver_count(model));
 
 	iproc_loglik *loglik = iproc_loglik_new_empty(model);
 	struct frame frame;
@@ -110,7 +110,7 @@ static iproc_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
 	iproc_sloglik *sll = *(iproc_sloglik **) array_item(array, isend);
 
 	if (!sll) {
-		iproc_model *model = loglik->model;
+		struct model *model = loglik->model;
 		sll = iproc_sloglik_new(model, isend);
 		*(iproc_sloglik **) array_item(array, isend) = sll;
 	}

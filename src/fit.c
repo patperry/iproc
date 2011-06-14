@@ -16,7 +16,7 @@ static void
 eval_objective(iproc_loglik * loglik,
 	       double penalty, double *valuep, struct vector *grad)
 {
-	iproc_model *model = loglik->model;
+	struct model *model = loglik->model;
 	struct vector *coefs = &model->coefs;
 
 	double n = loglik->nrecv;
@@ -35,7 +35,7 @@ eval_objective(iproc_loglik * loglik,
 
 static bool iproc_fit_init(iproc_fit * fit)
 {
-	ssize_t dim = iproc_model_dim(fit->model);
+	ssize_t dim = model_dim(fit->model);
 
 	fit->inv_hess = NULL;
 	fit->x0 = vector_alloc(dim);
@@ -58,14 +58,14 @@ static bool iproc_fit_init(iproc_fit * fit)
 	return true;
 }
 
-iproc_fit *iproc_fit_new(iproc_model * model0,
+iproc_fit *iproc_fit_new(struct model * model0,
 			 struct messages * messages, double penalty)
 {
 	assert(model0);
 	assert(messages);
 	assert(penalty >= 0.0);
-	assert(messages_max_from(messages) < iproc_model_nsender(model0));
-	assert(messages_max_to(messages) < iproc_model_nreceiver(model0));
+	assert(messages_max_from(messages) < model_sender_count(model0));
+	assert(messages_max_to(messages) < model_receiver_count(model0));
 
 	iproc_fit *fit = malloc(sizeof(*fit));
 	if (!fit)
@@ -104,7 +104,7 @@ static void linesearch(iproc_fit * fit)
 {
 	assert(fit);
 
-	iproc_model *model = fit->model;
+	struct model *model = fit->model;
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
 	struct design *design = design_ref(model->design);

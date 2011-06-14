@@ -102,9 +102,6 @@
  *         xbar[t,i] = gamma * xbar[0,i] + (X[0,i])^T * dP[t,i] + dxbar[t,i].
  */
 
-typedef struct cohort_model iproc_group_model;
-typedef struct model iproc_model;
-typedef struct _iproc_model_ctx iproc_model_ctx;
 
 /* Two senders, i1 and i2, are in the same group if and only if their
  * covariates agree at time 0, i.e.
@@ -129,30 +126,25 @@ struct cohort_model {
 #endif
 };
 
+struct send_model {
+	struct model *model;
+	ssize_t isend;
+	struct svector deta;
+	struct svector dp;
+	struct svector dxbar;
+};
+
 struct model {
 	struct design *design;
 	struct vector coefs;
 	struct intmap cohort_models;
+	struct intmap send_models;
 	
 	
 	struct array ctxs;
 	struct refcount refcount;
 };
 
-struct _iproc_model_ctx {
-	iproc_model *model;
-	const struct frame *frame;
-	ssize_t isend;
-	iproc_group_model *group;
-
-	double gamma;
-	double log_gamma;
-	struct svector deta;
-	struct svector dp;
-	struct svector dxbar;
-
-	struct refcount refcount;
-};
 
 void model_init(struct model *model,
 		struct design *design,
@@ -160,28 +152,44 @@ void model_init(struct model *model,
 void model_deinit(struct model *model);
 
 
-/* deprecated */
+
 struct model *model_alloc(struct design *design,
 			  const struct vector *coefs);
 struct model *model_ref(struct model *model);
 void model_free(struct model *model);
 
-
-
-struct design *iproc_model_design(iproc_model * model);
-struct vector *iproc_model_coefs(iproc_model * model);
-bool iproc_model_has_loops(iproc_model * model);
-ssize_t iproc_model_nsender(iproc_model * model);
-ssize_t iproc_model_nreceiver(iproc_model * model);
-ssize_t iproc_model_dim(iproc_model * model);
+struct design *model_design(const struct model *model);
+struct vector *model_coefs(const struct model *model);
+ssize_t model_sender_count(const struct model * model);
+ssize_t model_receiver_count(const struct model * model);
+ssize_t model_dim(const struct model *model);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-iproc_group_model *iproc_model_send_group(iproc_model * model, ssize_t isend);
-struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend);
-struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend);
-struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend);
+struct vector *model_logprobs0(const struct model *model, ssize_t isend);
+struct vector *model_probs0(const struct model *model, ssize_t isend);
+struct vector *model_mean0(const struct model *model, ssize_t isend);
 
-iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
+
+
+/* DEPRECATED */
+typedef struct _iproc_model_ctx iproc_model_ctx;
+
+struct _iproc_model_ctx {
+	struct model *model;
+	const struct frame *frame;
+	ssize_t isend;
+	const struct vector *log_p0;
+	
+	double gamma;
+	double log_gamma;
+	struct svector deta;
+	struct svector dp;
+	struct svector dxbar;
+	
+	struct refcount refcount;
+};
+
+iproc_model_ctx *iproc_model_ctx_new(struct model *model,
 				     const struct frame *f, ssize_t isend);
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx);
 void iproc_model_ctx_unref(iproc_model_ctx * ctx);
@@ -195,11 +203,5 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv);
 void iproc_model_ctx_get_probs(iproc_model_ctx * ctx, struct vector *probs);
 void iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx,
 				  struct vector *logprobs);
-
-/*
-void                iproc_vector_acc_diffmean (struct vector    *dst_vector,
-                                               double           scale,
-                                               iproc_model_ctx *ctx);
-*/
 
 #endif /* _IPROC_MODEL_H */

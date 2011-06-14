@@ -32,18 +32,18 @@ void Riproc_model_init(DllInfo * info)
 
 static void Riproc_model_free(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
+	struct model *model = Riproc_to_model(Rmodel);
 	model_free(model);
 }
 
-iproc_model *Riproc_to_model(SEXP Rmodel)
+struct model *Riproc_to_model(SEXP Rmodel)
 {
-	iproc_model *model =
+	struct model *model =
 	    Riproc_sexp2ptr(Rmodel, FALSE, Riproc_model_type_tag, "model");
 	return model;
 }
 
-SEXP Riproc_from_model(iproc_model * model)
+SEXP Riproc_from_model(struct model * model)
 {
 	SEXP Rmodel, class;
 
@@ -70,7 +70,7 @@ SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs)
 	if (design_dim(design) != vector_dim(&coefs))
 		error("design and coefs have different dimensions");
 
-	iproc_model *model = model_alloc(design, &coefs);
+	struct model *model = model_alloc(design, &coefs);
 	SEXP Rmodel;
 
 	PROTECT(Rmodel = Riproc_from_model(model));
@@ -82,54 +82,44 @@ SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs)
 
 SEXP Riproc_model_dim(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
-	int dim = (int)iproc_model_dim(model);
+	struct model *model = Riproc_to_model(Rmodel);
+	int dim = (int)model_dim(model);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_model_nsender(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
-	int n = (int)iproc_model_nsender(model);
+	struct model *model = Riproc_to_model(Rmodel);
+	int n = (int)model_sender_count(model);
 	return ScalarInteger(n);
 }
 
 SEXP Riproc_model_nreceiver(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
-	int n = (int)iproc_model_nreceiver(model);
+	struct model *model = Riproc_to_model(Rmodel);
+	int n = (int)model_receiver_count(model);
 	return ScalarInteger(n);
 }
 
 SEXP Riproc_model_design(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
-	struct design *design = iproc_model_design(model);
+	struct model *model = Riproc_to_model(Rmodel);
+	struct design *design = model_design(model);
 	return Riproc_from_design(design);
 }
 
 SEXP Riproc_model_coefs(SEXP Rmodel)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
-	struct vector *coefs = iproc_model_coefs(model);
+	struct model *model = Riproc_to_model(Rmodel);
+	struct vector *coefs = model_coefs(model);
 
 	return Riproc_vector_new_copy(coefs);
-}
-
-SEXP Riproc_model_has_loops(SEXP Rmodel)
-{
-	iproc_model *model = Riproc_to_model(Rmodel);
-	if (iproc_model_has_loops(model)) {
-		return ScalarLogical(TRUE);
-	} else {
-		return ScalarLogical(FALSE);
-	}
 }
 
 /*
 SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 {
-	iproc_model *model = Riproc_to_model(Rmodel);
+	struct model *model = Riproc_to_model(Rmodel);
 	int i, n = GET_LENGTH(Risend);
 	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_frame(Rcursor));

@@ -18,7 +18,7 @@
 typedef struct _iproc_fit iproc_fit;
 
 struct _iproc_fit {
-	iproc_model *model;
+	struct model *model;
 	struct messages *messages;
 	double penalty;
 	iproc_loglik *loglik;
@@ -33,7 +33,7 @@ struct _iproc_fit {
 	double step;
 };
 
-iproc_fit *iproc_fit_new(iproc_model * model0,
+iproc_fit *iproc_fit_new(struct model * model0,
 			 struct messages *messages, double penalty);
 void iproc_fit_free(iproc_fit * fit);
 

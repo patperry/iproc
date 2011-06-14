@@ -11,7 +11,7 @@
 typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
-	iproc_model *model;
+	struct model *model;
 	struct array sloglik_array;
 	struct vector *grad;
 	bool grad_cached;
@@ -20,7 +20,7 @@ struct _iproc_loglik {
 	struct refcount refcount;
 };
 
-iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages *messages);
+iproc_loglik *iproc_loglik_new(struct model * model, struct messages *messages);
 iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
 void iproc_loglik_unref(iproc_loglik * loglik);
 

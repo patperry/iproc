@@ -6,6 +6,23 @@
 #include "model.h"
 #include "util.h"
 
+/* DEPRECATED */
+static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
+{
+	if (ctx) {
+		svector_deinit(&ctx->dxbar);
+		svector_deinit(&ctx->dp);
+		svector_deinit(&ctx->deta);
+		free(ctx);
+	}
+}
+
+
+
+
+static void send_model_init(struct send_model *sm, struct model *m, ssize_t isend);
+static void send_model_deinit(struct send_model *sm);
+
 static void cohort_model_init(struct cohort_model *cm,
 			      const struct design *design,
 			      ssize_t isend, const struct vector *coefs)
@@ -113,6 +130,21 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 	intmap_deinit(cohort_models);
 }
 
+static struct cohort_model *model_cohort_model(const struct model *model,
+					       ssize_t isend)
+{
+	assert(model);
+	assert(isend >= 0);
+	assert(isend < model_sender_count(model));
+	
+	const struct design *design = model_design(model);
+	const struct actors *senders = design_senders(design);
+	intptr_t c = (intptr_t)actors_cohort(senders, isend);
+	struct cohort_model *cm = intmap_item(&model->cohort_models, c);
+	
+	assert(cm);
+	return cm;
+}
 
 void model_init(struct model *model, struct design *design,
 		const struct vector *coefs)
@@ -127,18 +159,12 @@ void model_init(struct model *model, struct design *design,
 	model->design = design_ref(design);
 	vector_init_copy(&model->coefs, coefs);
 	cohort_models_init(&model->cohort_models, design, coefs);
+	intmap_init(&model->send_models, sizeof(struct send_model),
+		    alignof(struct send_model));
+
+	
 	array_init(&model->ctxs, sizeof(iproc_model_ctx *));
 	refcount_init(&model->refcount);
-}
-
-static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
-{
-	if (ctx) {
-		svector_deinit(&ctx->dxbar);
-		svector_deinit(&ctx->dp);
-		svector_deinit(&ctx->deta);
-		free(ctx);
-	}
 }
 
 void model_deinit(struct model *model)
@@ -153,25 +179,18 @@ void model_deinit(struct model *model)
 	array_deinit(&model->ctxs);
 	
 	refcount_deinit(&model->refcount);
+	
+	struct intmap_iter it;
+	INTMAP_FOREACH(it, &model->send_models) {
+		send_model_deinit(INTMAP_VAL(it));
+	}
+	
+	intmap_deinit(&model->send_models);
 	cohort_models_deinit(&model->cohort_models);
 	vector_deinit(&model->coefs);
 	design_free(model->design);
 }
 
-
-
-
-struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
-{
-	assert(model);
-	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
-
-	const struct design *design = iproc_model_design(model);
-	const struct actors *senders = design_senders(design);
-	intptr_t c = (intptr_t)actors_cohort(senders, isend);
-	return intmap_item(&model->cohort_models, c);
-}
 
 
 struct model *model_alloc(struct design *design,
@@ -183,7 +202,7 @@ struct model *model_alloc(struct design *design,
 	assert(design_nreceiver(design) > 0);
 	assert(!design_loops(design) || design_nreceiver(design) > 1);
 
-	iproc_model *model = xcalloc(1, sizeof(*model));
+	struct model *model = xcalloc(1, sizeof(*model));
 	model_init(model, design, coefs);
 	return model;
 }
@@ -205,74 +224,86 @@ void model_free(struct model *model)
 	}
 }
 
-struct design *iproc_model_design(iproc_model * model)
+
+
+void send_model_init(struct send_model *sm, struct model *m, ssize_t isend)
+{
+	assert(sm);
+	assert(m);
+	assert(0 <= isend && isend < model_sender_count(m));
+	
+	sm->model = m;
+	sm->isend = isend;
+	svector_init(&sm->deta, model_receiver_count(m));
+	svector_init(&sm->dp, model_receiver_count(m));
+	svector_init(&sm->dxbar, model_receiver_count(m));
+}
+
+void send_model_deinit(struct send_model *sm)
+{
+	assert(sm);
+	svector_deinit(&sm->dxbar);
+	svector_deinit(&sm->dp);
+	svector_deinit(&sm->deta);
+}
+
+
+struct design *model_design(const struct model *model)
 {
 	assert(model);
 	return model->design;
 }
 
-struct vector *iproc_model_coefs(iproc_model * model)
+struct vector *model_coefs(const struct model *model)
 {
 	assert(model);
-	return &model->coefs;
+	return &((struct model *)model)->coefs;
 }
 
-bool iproc_model_has_loops(iproc_model * model)
+ssize_t model_sender_count(const struct model *model)
 {
 	assert(model);
-	return design_loops(model->design);
-}
-
-ssize_t iproc_model_nsender(iproc_model * model)
-{
-	assert(model);
-	struct design *design = iproc_model_design(model);
+	struct design *design = model_design(model);
 	return design_nsender(design);
 }
 
-ssize_t iproc_model_nreceiver(iproc_model * model)
+ssize_t model_receiver_count(const struct model *model)
 {
 	assert(model);
-	struct design *design = iproc_model_design(model);
+	struct design *design = model_design(model);
 	return design_nreceiver(design);
 }
 
-ssize_t iproc_model_dim(iproc_model * model)
+ssize_t model_dim(const struct model *model)
 {
 	assert(model);
-	struct design *design = iproc_model_design(model);
+	struct design *design = model_design(model);
 	return design_dim(design);
 }
 
-struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend)
+struct vector *model_logprobs0(const struct model *model, ssize_t isend)
 {
 	assert(model);
-	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
+	assert(0 <= isend && isend < model_sender_count(model));
 
-	iproc_group_model *group = iproc_model_send_group(model, isend);
-	assert(group);
-	return &group->log_p0;
+	struct cohort_model *cm = model_cohort_model(model, isend);
+	return &cm->log_p0;
 }
 
-struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend)
+struct vector *model_probs0(const struct model *model, ssize_t isend)
 {
 	assert(model);
-	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
+	assert(0 <= isend && isend < model_sender_count(model));
 
-	iproc_group_model *group = iproc_model_send_group(model, isend);
-	assert(group);
-	return &group->p0;
+	struct cohort_model *cm = model_cohort_model(model, isend);
+	return &cm->p0;
 }
 
-struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend)
+struct vector *model_mean0(const struct model *model, ssize_t isend)
 {
 	assert(model);
-	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
+	assert(0 <= isend && isend < model_sender_count(model));
 
-	iproc_group_model *group = iproc_model_send_group(model, isend);
-	assert(group);
-	return &group->xbar0;
+	struct cohort_model *cm = model_cohort_model(model, isend);
+	return &cm->xbar0;
 }

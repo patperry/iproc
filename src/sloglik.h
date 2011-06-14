@@ -56,7 +56,7 @@ typedef struct _iproc_sloglik iproc_sloglik;
 struct _iproc_sloglik {
 	struct refcount refcount;
 
-	iproc_model *model;
+	struct model *model;
 	ssize_t isend;
 
 	double f;
@@ -72,7 +72,7 @@ struct _iproc_sloglik {
 	struct svector *dxbar;
 };
 
-iproc_sloglik *iproc_sloglik_new(iproc_model * model, ssize_t isend);
+iproc_sloglik *iproc_sloglik_new(struct model * model, ssize_t isend);
 iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
 void iproc_sloglik_unref(iproc_sloglik * sll);
 

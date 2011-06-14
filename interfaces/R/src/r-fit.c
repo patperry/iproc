@@ -27,7 +27,7 @@ Riproc_fit(SEXP Rmodel0,
 	   SEXP Rpenalty,
 	   SEXP Rreltol, SEXP Rabstol, SEXP Rmaxit, SEXP Rtrace, SEXP Rreport)
 {
-	iproc_model *model0 = Riproc_to_model(Rmodel0);
+	struct model *model0 = Riproc_to_model(Rmodel0);
 	struct messages *messages = Riproc_to_messages(Rmessages);
 	double penalty = REAL(Rpenalty)[0];
 	double reltol = REAL(Rreltol)[0];
@@ -36,9 +36,9 @@ Riproc_fit(SEXP Rmodel0,
 	bool trace = LOGICAL_VALUE(Rtrace);
 	int report = INTEGER_VALUE(Rreport);
 
-	if (messages_max_from(messages) >= iproc_model_nsender(model0)) {
+	if (messages_max_from(messages) >= model_sender_count(model0)) {
 		error("message 'from' id outside sender range");
-	} else if (messages_max_to(messages) >= iproc_model_nreceiver(model0)) {
+	} else if (messages_max_to(messages) >= model_receiver_count(model0)) {
 		error("message 'to' id outside receiver range");
 	} else if (!(penalty >= 0.0 && isfinite(penalty))) {
 		error("value of 'penalty' must be >= 0 and finite");

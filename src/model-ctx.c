@@ -11,11 +11,12 @@
 
 static void
 compute_weight_changes(const struct frame *f, ssize_t isend,
-		       bool has_loops,
-		       struct vector *coefs,
-		       struct vector *log_p0,
+		       const struct vector *coefs,
+		       const struct vector *log_p0,
 		       struct svector *deta, double *gamma, double *log_gamma)
 {
+	bool has_loops = design_loops(f->design);
+
 	/* compute the changes in weights */
 	frame_dmul(1.0, TRANS_NOTRANS, f, isend, coefs, 0.0, deta);
 	if (!has_loops) {
@@ -85,7 +86,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
  * sparsity pattern.
  */
 static void
-compute_active_probs(struct vector *log_p0,
+compute_active_probs(const struct vector *log_p0,
 		     double log_gamma,
 		     struct svector *deta, struct svector *p_active)
 {
@@ -106,7 +107,7 @@ compute_active_probs(struct vector *log_p0,
 }
 
 static void
-compute_prob_diffs(struct vector *p0, double gamma, struct svector *p_active)
+compute_prob_diffs(const struct vector *p0, double gamma, struct svector *p_active)
 {
 	ssize_t jrecv;
 	double p0_j, dp_j, *p_j;
@@ -125,30 +126,30 @@ compute_prob_diffs(struct vector *p0, double gamma, struct svector *p_active)
 static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 {
 	if (ctx) {
-		iproc_model *model = ctx->model;
+		struct model *model = ctx->model;
 		array_add(&model->ctxs, &ctx);
 		model_free(model);
 	}
 }
 
-static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
+static iproc_model_ctx *iproc_model_ctx_new_alloc(struct model * model,
 						  const struct frame *f,
 						  ssize_t isend)
 {
 	assert(model);
 	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
+	assert(isend < model_sender_count(model));
 
 	iproc_model_ctx *ctx = malloc(sizeof(*ctx));
 	if (!ctx)
 		return NULL;
 
-	ssize_t nreceiver = iproc_model_nreceiver(model);
-	ssize_t dim = iproc_model_dim(model);
+	ssize_t nreceiver = model_receiver_count(model);
+	ssize_t dim = model_dim(model);
 
 	ctx->model = model_ref(model);
 	ctx->frame = NULL;
-	ctx->group = NULL;
+	ctx->log_p0 = NULL;
 
 	svector_init(&ctx->deta, nreceiver);
 	svector_init(&ctx->dp, nreceiver);
@@ -160,12 +161,12 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	return ctx;
 }
 
-iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
+iproc_model_ctx *iproc_model_ctx_new(struct model * model,
 				     const struct frame * f, ssize_t isend)
 {
 	assert(model);
 	assert(0 <= isend);
-	assert(isend < iproc_model_nsender(model));
+	assert(isend < model_sender_count(model));
 
 	iproc_model_ctx *ctx;
 	struct array *ctxs = &model->ctxs;
@@ -193,26 +194,26 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f, ssize_t isend)
 	assert(ctx);
 	assert(ctx->model);
 	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(ctx->model));
+	assert(isend < model_sender_count(ctx->model));
 
 	svector_clear(&ctx->deta);
 	svector_clear(&ctx->dp);
 	svector_clear(&ctx->dxbar);
 
-	iproc_model *model = ctx->model;
-	struct vector *coefs = iproc_model_coefs(model);
-	bool has_loops = iproc_model_has_loops(model);
-	iproc_group_model *group = iproc_model_send_group(model, isend);
+	struct model *model = ctx->model;
+	const struct vector *coefs = model_coefs(model);
+	const struct vector *log_p0 = model_logprobs0(model, isend);
+	const struct vector *p0 = model_probs0(model, isend);
 
 	ctx->frame = f;
 	ctx->isend = isend;
-	ctx->group = group;
+	ctx->log_p0 = log_p0;
 
-	compute_weight_changes(f, isend, has_loops, coefs, &group->log_p0,
+	compute_weight_changes(f, isend, coefs, log_p0,
 			       &ctx->deta, &ctx->gamma, &ctx->log_gamma);
-	compute_active_probs(&group->log_p0, ctx->log_gamma, &ctx->deta, &ctx->dp);
+	compute_active_probs(log_p0, ctx->log_gamma, &ctx->deta, &ctx->dp);
 	frame_dmuls(1.0, TRANS_TRANS, f, isend, &ctx->dp, 0.0, &ctx->dxbar);
-	compute_prob_diffs(&group->p0, ctx->gamma, &ctx->dp);
+	compute_prob_diffs(p0, ctx->gamma, &ctx->dp);
 }
 
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx)
@@ -240,8 +241,8 @@ void iproc_model_ctx_unref(iproc_model_ctx * ctx)
 ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx)
 {
 	assert(ctx);
-	iproc_model *model = ctx->model;
-	ssize_t nreceiver = iproc_model_nreceiver(model);
+	struct model *model = ctx->model;
+	ssize_t nreceiver = model_receiver_count(model);
 	return nreceiver;
 }
 
@@ -275,7 +276,7 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv)
 	 */
 
 	double log_gamma = ctx->log_gamma;
-	double log_p0 = *vector_item_ptr(&ctx->group->log_p0, jrecv);
+	double log_p0 = *vector_item_ptr(ctx->log_p0, jrecv);
 	double deta = svector_item(&ctx->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);

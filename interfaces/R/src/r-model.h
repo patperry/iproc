@@ -20,7 +20,7 @@ SEXP Riproc_model_nreceiver(SEXP Rmodel);
 // SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor);
 
 /* Internal use only */
-iproc_model *Riproc_to_model(SEXP Rmodel);
-SEXP Riproc_from_model(iproc_model * model);
+struct model *Riproc_to_model(SEXP Rmodel);
+SEXP Riproc_from_model(struct model *model);
 
 #endif /* _RIPROC_MODEL_H */

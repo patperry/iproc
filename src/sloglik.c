@@ -20,14 +20,14 @@ static void iproc_sloglik_free(iproc_sloglik * sll)
 	}
 }
 
-iproc_sloglik *iproc_sloglik_new(iproc_model * model, ssize_t isend)
+iproc_sloglik *iproc_sloglik_new(struct model * model, ssize_t isend)
 {
 	iproc_sloglik *sll = malloc(sizeof(*sll));
 	if (!sll)
 		return NULL;
 
-	ssize_t n = iproc_model_nreceiver(model);
-	ssize_t p = iproc_model_dim(model);
+	ssize_t n = model_receiver_count(model);
+	ssize_t p = model_dim(model);
 
 	sll->model = model_ref(model);
 	sll->isend = isend;
@@ -84,7 +84,7 @@ void iproc_sloglik_insert(iproc_sloglik * sll,
 void iproc_sloglik_insertm(iproc_sloglik * sll,
 			   const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
-	ssize_t nreceiver = iproc_model_nreceiver(sll->model);
+	ssize_t nreceiver = model_receiver_count(sll->model);
 	iproc_model_ctx *ctx = iproc_model_ctx_new(sll->model, f, sll->isend);
 	struct svector *wt = svector_alloc(nreceiver);
 	double ntot = sll->nsend + n;
@@ -150,11 +150,10 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 	if (!sll)
 		return;
 
-	iproc_group_model *group =
-	    iproc_model_send_group(sll->model, sll->isend);
+	const struct vector *xbar0 = model_mean0(sll->model, sll->isend);
 
 	// sum{gamma[t,i]} * xbar[0,i]
-	vector_axpy(scale * sll->gamma, &group->xbar0, dst_vector);
+	vector_axpy(scale * sll->gamma, xbar0, dst_vector);
 
 	// (X[0,i])^T * sum{dP[t,i]}
 	design_muls0(scale, TRANS_TRANS,
