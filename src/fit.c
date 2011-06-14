@@ -71,7 +71,7 @@ iproc_fit *iproc_fit_new(iproc_model * model0,
 	if (!fit)
 		return NULL;
 
-	fit->model = iproc_model_ref(model0);
+	fit->model = model_ref(model0);
 	fit->messages = messages_ref(messages);
 	fit->penalty = penalty;
 	fit->loglik = NULL;
@@ -95,7 +95,7 @@ void iproc_fit_free(iproc_fit * fit)
 		vector_free(fit->x0);
 		matrix_free(fit->inv_hess);
 		messages_free(fit->messages);
-		iproc_model_unref(fit->model);
+		model_free(fit->model);
 		free(fit);
 	}
 }
@@ -108,7 +108,6 @@ static void linesearch(iproc_fit * fit)
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
 	struct design *design = design_ref(model->design);
-	bool has_loops = model->has_loops;
 	iproc_loglik *loglik = fit->loglik;
 
 	struct vector *search_dir = fit->search_dir;
@@ -144,8 +143,8 @@ static void linesearch(iproc_fit * fit)
 		vector_assign_copy(x, x0);
 		vector_axpy(stp, search_dir, x);
 
-		iproc_model_unref(model);
-		model = iproc_model_new(design, x, has_loops);
+		model_free(model);
+		model = model_alloc(design, x);
 
 		/* Update the loglik, value, and gradient */
 		iproc_loglik_unref(loglik);

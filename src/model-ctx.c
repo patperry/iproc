@@ -127,7 +127,7 @@ static void iproc_model_ctx_free(iproc_model_ctx * ctx)
 	if (ctx) {
 		iproc_model *model = ctx->model;
 		array_add(&model->ctxs, &ctx);
-		iproc_model_unref(model);
+		model_free(model);
 	}
 }
 
@@ -146,7 +146,7 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	ssize_t nreceiver = iproc_model_nreceiver(model);
 	ssize_t dim = iproc_model_dim(model);
 
-	ctx->model = iproc_model_ref(model);
+	ctx->model = model_ref(model);
 	ctx->frame = NULL;
 	ctx->group = NULL;
 
@@ -174,7 +174,7 @@ iproc_model_ctx *iproc_model_ctx_new(iproc_model * model,
 	if ((n = array_count(ctxs))) {
 		ctx = *(iproc_model_ctx **) array_item(ctxs, n - 1);
 		array_remove_at(ctxs, n - 1);
-		iproc_model_ref(model);
+		model_ref(model);
 		refcount_init(&ctx->refcount);
 		ctx->frame = NULL;
 		iproc_model_ctx_set(ctx, f, isend);

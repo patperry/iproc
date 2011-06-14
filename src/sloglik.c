@@ -15,7 +15,7 @@ static void iproc_sloglik_free(iproc_sloglik * sll)
 		svector_free(sll->dxobs);
 		svector_free(sll->nrecv);
 		vector_free(sll->grad);
-		iproc_model_unref(sll->model);
+		model_free(sll->model);
 		free(sll);
 	}
 }
@@ -29,7 +29,7 @@ iproc_sloglik *iproc_sloglik_new(iproc_model * model, ssize_t isend)
 	ssize_t n = iproc_model_nreceiver(model);
 	ssize_t p = iproc_model_dim(model);
 
-	sll->model = iproc_model_ref(model);
+	sll->model = model_ref(model);
 	sll->isend = isend;
 
 	sll->f = 0.0;

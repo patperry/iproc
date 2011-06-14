@@ -6,86 +6,98 @@
 #include "model.h"
 #include "util.h"
 
-static void
-compute_logprobs0(const struct design *design,
-		  ssize_t isend,
-		  const struct vector *coefs,
-		  struct vector *logprobs, double *logsumweight)
+static void cohort_model_init(struct cohort_model *cm,
+			      const struct design *design,
+			      ssize_t isend, const struct vector *coefs)
 {
+	assert(cm);
 	assert(design);
+	assert(0 <= isend && isend < design_nsender(design));
 	assert(coefs);
-	assert(logprobs);
-	assert(logsumweight);
-
-	/* NOTE: should we worry about overflow in the multiplication?  It is possible
-	 * to gaurd against said overflow by scaling the coefficient vector before the
-	 * multiplication, then unscaling after subtracting of the max value.  This
-	 * shouldn't be necessary in most (all?) real-world situations.
-	 */
-	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs, 0.0, logprobs);
-
-	/* protect against overflow */
-	double max = vector_max(logprobs);
-	vector_shift(logprobs, -max);
+	
+	ssize_t nreceiver = design_nreceiver(design);
+	ssize_t dim = design_dim(design);
 
 	/* The probabilities are p[i] = w[i] / sum(w[j]), so
 	 * log(p[i]) = log(w[i]) - log(sum(w[j])).
 	 */
-	double log_sum_exp = vector_log_sum_exp(logprobs);
-	vector_shift(logprobs, -log_sum_exp);
-	*logsumweight = log_sum_exp + max;
-}
 
-static bool cohort_model_init(struct cohort_model *cm,
-			      const struct design *design,
-			      ssize_t isend, const struct vector *coefs)
-{
-	ssize_t nreceiver = design_nreceiver(design);
-	ssize_t dim = design_dim(design);
-
-	/* compute initial log(probs) */
+	/* NOTE: should we worry about overflow in the multiplication? 
+	 * It is possible to gaurd against said overflow by computing a
+	 * scaled version of eta0: scale the coefficient vector before the
+	 * multiplication, then unscale when computing p0.  This
+	 * shouldn't be necessary in most (all?) real-world situations.
+	 */
+	
+	/* log_p0, eta0 */
 	vector_init(&cm->log_p0, nreceiver);
-	compute_logprobs0(design, isend, coefs, &cm->log_p0, &cm->log_W0);
-
-	/* compute initial probs */
+	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs, 0.0, &cm->log_p0);
+#ifndef NDEGUG
+	vector_init_copy(&cm->eta0, &cm->log_p0);
+#endif
+	double max = vector_max(&cm->log_p0); /* protect against overflow */
+	vector_shift(&cm->log_p0, -max);
+	double lse = vector_log_sum_exp(&cm->log_p0);
+	vector_shift(&cm->log_p0, -lse);
+	
+	/* log_W0 */
+	cm->log_W0 = lse + max;
+	
+	/* p0 */
 	vector_init_copy(&cm->p0, &cm->log_p0);
 	vector_exp(&cm->p0);
-
-	/* compute initial covariate mean */
+	
+	/* xbar0 */
 	vector_init(&cm->xbar0, dim);
 	design_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0, &cm->xbar0);
 
-	return true;
-}
+#ifndef NDEBUG
+	/* W0 */
+	cm->W0 = exp(cm->log_W0);
 
-static struct cohort_model *cohort_model_alloc(const struct design *design,
-					       ssize_t isend,
-					       const struct vector *coefs)
-{
-	struct cohort_model *cm;
+	/* w0 */
+	vector_init_copy(&cm->w0, &cm->p0);
+	vector_scale(&cm->w0, cm->W0);
+#endif
 
-	if ((cm = malloc(sizeof(*cm)))) {
-		if (cohort_model_init(cm, design, isend, coefs))
-			return cm;
-		free(cm);
-	}
-	return NULL;
 }
 
 static void cohort_model_deinit(struct cohort_model *cm)
 {
 	assert(cm);
+#ifndef NDEBUG
+	vector_deinit(&cm->w0);
+	vector_deinit(&cm->eta0);	
+#endif
 	vector_deinit(&cm->xbar0);
 	vector_deinit(&cm->log_p0);
 	vector_deinit(&cm->p0);
-
 }
 
-static void cohort_model_free(struct cohort_model *cm)
+static void cohort_models_init(struct intmap *cohort_models,
+			       const struct design *design,
+			       const struct vector *coefs)
 {
-	if (cm) {
-		cohort_model_deinit(cm);
-		free(cm);
+	const struct actors *senders = design_senders(design);
+	ssize_t isend, nsend = actors_count(senders);
+	struct intmap_pos pos;
+	struct cohort_model *cm;
+	intptr_t c;
+	
+	intmap_init(cohort_models, sizeof(struct cohort_model),
+		    alignof(struct cohort_model));
+
+	/* We have to loop over all senders, not over all cohorts, because we
+	 * need a representative sender for each group when we call
+	 * iproc_design_ctx_new(design, NULL, i).
+	 */
+	for (isend = 0; isend < nsend; isend++) {
+		c = (intptr_t)actors_cohort(senders, isend);
+		if (intmap_find(cohort_models, c, &pos))
+			continue;
+		
+		cm = intmap_insert(cohort_models, &pos, NULL);
+		cohort_model_init(cm, design, isend, coefs);
 	}
 }
 
@@ -93,69 +105,30 @@ static void cohort_models_deinit(struct intmap *cohort_models)
 {
 	struct intmap_iter it;
 	struct cohort_model *cm;
-
+	
 	INTMAP_FOREACH(it, cohort_models) {
-		cm = *(struct cohort_model **)INTMAP_VAL(it);
+		cm = INTMAP_VAL(it);
 		cohort_model_deinit(cm);
 	}
 	intmap_deinit(cohort_models);
 }
 
-static bool insert_cohort_model(struct intmap *cohort_models,
-				const struct design *design,
-				ssize_t isend, const struct vector *coefs)
-{
-	const struct actors *senders = design_senders(design);
-	intptr_t c = (intptr_t)actors_cohort(senders, isend);
-	struct intmap_pos pos;
-	struct cohort_model *cm;
 
-	if (intmap_find(cohort_models, c, &pos))
-		return true;
-
-	if ((cm = cohort_model_alloc(design, isend, coefs))) {
-		if (intmap_insert(cohort_models, &pos, &cm)) {
-			return true;
-		}
-
-		cohort_model_free(cm);
-	}
-	return false;
-}
-
-static bool cohort_models_init(struct intmap *cohort_models,
-			       const struct design *design,
-			       const struct vector *coefs)
-{
-	ssize_t i, nsender = design_nsender(design);
-
-	intmap_init(cohort_models, sizeof(struct cohort_model *),
-		    alignof(struct cohort_model *));
-
-	/* We have to loop over all senders, not over all cohorts, because we
-	 * need a representative sender for each group when we call
-	 * iproc_design_ctx_new(design, NULL, i).
-	 */
-	for (i = 0; i < nsender; i++) {
-		if (!insert_cohort_model(cohort_models, design, i, coefs))
-			goto fail;
-	}
-	return true;
-fail:
-	cohort_models_deinit(cohort_models);
-	return false;
-}
-
-struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
+void model_init(struct model *model, struct design *design,
+		const struct vector *coefs)
 {
 	assert(model);
-	assert(isend >= 0);
-	assert(isend < iproc_model_nsender(model));
-
-	const struct design *design = iproc_model_design(model);
-	const struct actors *senders = design_senders(design);
-	intptr_t c = (intptr_t)actors_cohort(senders, isend);
-	return *(struct cohort_model **)intmap_item(&model->cohort_models, c);
+	assert(design);
+	assert(coefs);
+	assert(design_dim(design) == vector_dim(coefs));
+	assert(design_nreceiver(design) > 0);
+	assert(!design_loops(design) || design_nreceiver(design) > 1);
+	
+	model->design = design_ref(design);
+	vector_init_copy(&model->coefs, coefs);
+	cohort_models_init(&model->cohort_models, design, coefs);
+	array_init(&model->ctxs, sizeof(iproc_model_ctx *));
+	refcount_init(&model->refcount);
 }
 
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
@@ -168,65 +141,68 @@ static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 	}
 }
 
-static void iproc_model_free(iproc_model * model)
+void model_deinit(struct model *model)
 {
-	if (model) {
-		ssize_t i, n = array_count(&model->ctxs);
+	assert(model);
 
-		for (i = 0; i < n; i++) {
-			iproc_model_ctx *ctx =
-			    *(iproc_model_ctx **) array_item(&model->ctxs,
-							     i);
-			iproc_model_ctx_free_dealloc(ctx);
-		}
-		array_deinit(&model->ctxs);
-		cohort_models_deinit(&model->cohort_models);
-		vector_deinit(&model->coefs);
-		design_free(model->design);
-		free(model);
+	/* DEPRECATED */
+	iproc_model_ctx *ctx;
+	ARRAY_FOREACH(ctx, &model->ctxs) {
+		iproc_model_ctx_free_dealloc(ctx);
 	}
+	array_deinit(&model->ctxs);
+	
+	refcount_deinit(&model->refcount);
+	cohort_models_deinit(&model->cohort_models);
+	vector_deinit(&model->coefs);
+	design_free(model->design);
 }
 
-iproc_model *iproc_model_new(struct design *design,
-			     struct vector *coefs, bool has_loops)
+
+
+
+struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
+{
+	assert(model);
+	assert(isend >= 0);
+	assert(isend < iproc_model_nsender(model));
+
+	const struct design *design = iproc_model_design(model);
+	const struct actors *senders = design_senders(design);
+	intptr_t c = (intptr_t)actors_cohort(senders, isend);
+	return intmap_item(&model->cohort_models, c);
+}
+
+
+struct model *model_alloc(struct design *design,
+			  const struct vector *coefs)
 {
 	assert(design);
 	assert(coefs);
 	assert(design_dim(design) == vector_dim(coefs));
 	assert(design_nreceiver(design) > 0);
-	assert(!has_loops || design_nreceiver(design) > 1);
+	assert(!design_loops(design) || design_nreceiver(design) > 1);
 
-	iproc_model *model = malloc(sizeof(*model));
-	model->design = design_ref(design);
-	vector_init_copy(&model->coefs, coefs);
-	model->has_loops = has_loops;
-	cohort_models_init(&model->cohort_models, design, coefs);
-	array_init(&model->ctxs, sizeof(iproc_model_ctx *));
-	refcount_init(&model->refcount);
-
+	iproc_model *model = xcalloc(1, sizeof(*model));
+	model_init(model, design, coefs);
 	return model;
 }
 
-iproc_model *iproc_model_ref(iproc_model * model)
+
+struct model *model_ref(struct model *model)
 {
-	if (model) {
+	assert(model);
+	refcount_get(&model->refcount);
+	return model;
+}
+
+void model_free(struct model *model)
+{
+	if (model && refcount_put(&model->refcount, NULL)) {
 		refcount_get(&model->refcount);
+		model_deinit(model);
+		xfree(model);
 	}
-	return model;
-}
-
-static void iproc_model_release(struct refcount *refcount)
-{
-	iproc_model *model = container_of(refcount, iproc_model, refcount);
-	iproc_model_free(model);
-}
-
-void iproc_model_unref(iproc_model * model)
-{
-	if (!model)
-		return;
-
-	refcount_put(&model->refcount, iproc_model_release);
 }
 
 struct design *iproc_model_design(iproc_model * model)
@@ -244,7 +220,7 @@ struct vector *iproc_model_coefs(iproc_model * model)
 bool iproc_model_has_loops(iproc_model * model)
 {
 	assert(model);
-	return model->has_loops;
+	return design_loops(model->design);
 }
 
 ssize_t iproc_model_nsender(iproc_model * model)

@@ -14,10 +14,9 @@
 static SEXP Riproc_model_type_tag;
 
 static R_CallMethodDef callMethods[] = {
-	{"Riproc_model_new", (DL_FUNC) & Riproc_model_new, 3},
+	{"Riproc_model_new", (DL_FUNC) & Riproc_model_new, 2},
 	{"Riproc_model_design", (DL_FUNC) & Riproc_model_design, 1},
 	{"Riproc_model_coefs", (DL_FUNC) & Riproc_model_coefs, 1},
-	{"Riproc_model_has_loops", (DL_FUNC) & Riproc_model_has_loops, 1},
 	{"Riproc_model_dim", (DL_FUNC) & Riproc_model_dim, 1},
 	{"Riproc_model_nreceiver", (DL_FUNC) & Riproc_model_nreceiver, 1},
 	{"Riproc_model_nsender", (DL_FUNC) & Riproc_model_nsender, 1},
@@ -34,7 +33,7 @@ void Riproc_model_init(DllInfo * info)
 static void Riproc_model_free(SEXP Rmodel)
 {
 	iproc_model *model = Riproc_to_model(Rmodel);
-	iproc_model_unref(model);
+	model_free(model);
 }
 
 iproc_model *Riproc_to_model(SEXP Rmodel)
@@ -48,7 +47,7 @@ SEXP Riproc_from_model(iproc_model * model)
 {
 	SEXP Rmodel, class;
 
-	iproc_model_ref(model);
+	model_ref(model);
 
 	PROTECT(Rmodel =
 		R_MakeExternalPtr(model, Riproc_model_type_tag, R_NilValue));
@@ -63,22 +62,19 @@ SEXP Riproc_from_model(iproc_model * model)
 	return Rmodel;
 }
 
-SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs, SEXP Rhas_loops)
+SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs)
 {
 	struct design *design = Riproc_to_design(Rdesign);
 	struct vector coefs = Riproc_vector_view_sexp(Rcoefs);
-	Rboolean has_loops = LOGICAL_VALUE(Rhas_loops);
 
 	if (design_dim(design) != vector_dim(&coefs))
 		error("design and coefs have different dimensions");
-	if (has_loops == NA_LOGICAL)
-		error("has.loops is be NA");
 
-	iproc_model *model = iproc_model_new(design, &coefs, has_loops);
+	iproc_model *model = model_alloc(design, &coefs);
 	SEXP Rmodel;
 
 	PROTECT(Rmodel = Riproc_from_model(model));
-	iproc_model_unref(model);
+	model_free(model);
 
 	UNPROTECT(1);
 	return Rmodel;

@@ -20,7 +20,7 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 
 		array_deinit(array);
 		vector_free(loglik->grad);
-		iproc_model_unref(loglik->model);
+		model_free(loglik->model);
 		free(loglik);
 	}
 }
@@ -34,7 +34,7 @@ static iproc_loglik *iproc_loglik_new_empty(iproc_model * model)
 	if (!loglik)
 		return NULL;
 
-	loglik->model = iproc_model_ref(model);
+	loglik->model = model_ref(model);
 	loglik->grad = vector_alloc(design_dim(design));
 	loglik->grad_cached = false;
 	loglik->nsend = 0;

@@ -103,7 +103,7 @@
  */
 
 typedef struct cohort_model iproc_group_model;
-typedef struct _iproc_model iproc_model;
+typedef struct model iproc_model;
 typedef struct _iproc_model_ctx iproc_model_ctx;
 
 /* Two senders, i1 and i2, are in the same group if and only if their
@@ -120,13 +120,21 @@ struct cohort_model {
 	struct vector p0;
 	struct vector log_p0;
 	struct vector xbar0;
+
+	/* debug */
+#ifndef NDEBUG
+	double W0;
+	struct vector eta0;
+	struct vector w0;
+#endif
 };
 
-struct _iproc_model {
+struct model {
 	struct design *design;
 	struct vector coefs;
-	bool has_loops;
 	struct intmap cohort_models;
+	
+	
 	struct array ctxs;
 	struct refcount refcount;
 };
@@ -146,10 +154,19 @@ struct _iproc_model_ctx {
 	struct refcount refcount;
 };
 
-iproc_model *iproc_model_new(struct design *design,
-			     struct vector *coefs, bool has_loops);
-iproc_model *iproc_model_ref(iproc_model * model);
-void iproc_model_unref(iproc_model * model);
+void model_init(struct model *model,
+		struct design *design,
+		const struct vector *coefs);
+void model_deinit(struct model *model);
+
+
+/* deprecated */
+struct model *model_alloc(struct design *design,
+			  const struct vector *coefs);
+struct model *model_ref(struct model *model);
+void model_free(struct model *model);
+
+
 
 struct design *iproc_model_design(iproc_model * model);
 struct vector *iproc_model_coefs(iproc_model * model);

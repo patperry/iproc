@@ -1,12 +1,8 @@
 
-model.default <- function(design, coef, has.loops = FALSE) {
+model.default <- function(design, coef) {
     coef <- as.numeric(coef)
-    has.loops <- as.logical(has.loops)
 
-    if (length(has.loops) != 1)
-        stop("'has.loops' should have length 1")
-    
-    model <- .Call("Riproc_model_new", design, coef, has.loops);
+    model <- .Call("Riproc_model_new", design, coef)
     attr(model, "attributes.design") <- attributes(design)
     model
 }
@@ -20,10 +16,6 @@ iproc.design.model <- function(object, ...) {
 
 coef.model <- function(model) {
     .Call("Riproc_model_coefs", model)
-}
-
-has.loops.model <- function(model) {
-    .Call("Riproc_model_has_loops", model)
 }
 
 dim.model <- function(model) {
