@@ -4,7 +4,6 @@
 
 #define REFCOUNT_MAX INT_MAX
 
-
 void refcount_init(struct refcount *refcount)
 {
 	assert(refcount);

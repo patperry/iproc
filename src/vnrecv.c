@@ -19,8 +19,7 @@ static void vnrecv_deinit(struct design_var *dv)
 }
 
 static void vnrecv_handle_event(struct frame_var *fv,
-				const struct frame_event *e,
-				struct frame *f)
+				const struct frame_event *e, struct frame *f)
 {
 	assert(fv);
 	assert(e);
@@ -32,19 +31,19 @@ static void vnrecv_handle_event(struct frame_var *fv,
 
 	const struct dyad_event_meta *meta = &e->meta.dyad;
 	struct frame_event dx;
-	
+
 	dx.type = DYAD_VAR_EVENT;
 	dx.time = e->time;
 	dx.id = -1;
 	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
 	dx.meta.dyad_var.item.jrecv = meta->msg_dyad.isend;
-	
+
 	if (e->type == DYAD_EVENT_MOVE) {
 		dx.meta.dyad_var.index = fv->design->index + meta->intvl - 1;
 		dx.meta.dyad_var.delta = -1.0;
 		frame_events_add(f, &dx);
 	}
-	
+
 	dx.meta.dyad_var.index = fv->design->index + meta->intvl;
 	dx.meta.dyad_var.delta = 1.0;
 	frame_events_add(f, &dx);

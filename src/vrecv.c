@@ -79,8 +79,7 @@ static void vrecv_frame_clear(struct frame_var *fv)
 }
 
 static void vrecv_handle_event(struct frame_var *fv,
-			       const struct frame_event *e,
-			       struct frame *f)
+			       const struct frame_event *e, struct frame *f)
 {
 	assert(fv);
 	assert(e);
@@ -92,7 +91,7 @@ static void vrecv_handle_event(struct frame_var *fv,
 	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
 
 	const struct dyad_event_meta *meta = &e->meta.dyad;
-	
+
 	ssize_t index = fv->design->index;
 	struct vrecv_udata *udata = fv->udata;
 	const struct vrecv_active *key =
@@ -105,7 +104,7 @@ static void vrecv_handle_event(struct frame_var *fv,
 	dx.id = -1;
 	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
 	dx.meta.dyad_var.item.jrecv = meta->msg_dyad.isend;
-		
+
 	if (e->type == DYAD_EVENT_INIT) {
 		struct hashset_pos pos;
 

@@ -9,7 +9,6 @@
 #include "pqueue.h"
 #include "design.h"
 
-
 enum frame_event_type {
 	MESSAGE_EVENT = 1 << 0,
 	DYAD_EVENT_INIT = 1 << 1,
@@ -77,7 +76,7 @@ struct frame {
 	struct history history;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
-	struct array events;	
+	struct array events;
 	struct pqueue future_events;
 	ssize_t next_event_id;
 	struct refcount refcount;
@@ -132,6 +131,6 @@ void frame_dmuls(double alpha, enum trans_op trans,
 		 const struct svector *x, double beta, struct svector *y);
 
 /* debugging */
-void fprintf_event(FILE *restrict stream, const struct frame_event *e);
+void fprintf_event(FILE * restrict stream, const struct frame_event *e);
 
 #endif /* _FRAME_H */

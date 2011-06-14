@@ -5,14 +5,14 @@
 #include "ieee754.h"
 #include "frame.h"
 
-void fprintf_event(FILE *stream, const struct frame_event *e)
+void fprintf_event(FILE * stream, const struct frame_event *e)
 {
 	assert(e);
 	ssize_t i;
-	
+
 	fprintf(stream, "{\n");
-	fprintf(stream, "  id: %"SSIZE_FMT"\n", e->id);
-	fprintf(stream, "  time: %"SSIZE_FMT"\n", (ssize_t)(e->time));
+	fprintf(stream, "  id: %" SSIZE_FMT "\n", e->id);
+	fprintf(stream, "  time: %" SSIZE_FMT "\n", (ssize_t)(e->time));
 	fprintf(stream, "  type: %s\n",
 		e->type == MESSAGE_EVENT ? "MESSAGE_EVENT" :
 		e->type == DYAD_EVENT_INIT ? "DYAD_EVENT_INIT" :
@@ -21,17 +21,16 @@ void fprintf_event(FILE *stream, const struct frame_event *e)
 		e->type == TRIAD_EVENT_MOVE1 ? "TRIAD_EVENT_MOVE1" :
 		e->type == TRIAD_EVENT_MOVE2 ? "TRIAD_EVENT_MOVE2" :
 		e->type == SENDER_VAR_EVENT ? "SENDER_VAR_EVENT" :
-		e->type == DYAD_VAR_EVENT ? "DYAD_VAR_EVENT" :
-		"(undefined)");
-	switch(e->type) {
+		e->type == DYAD_VAR_EVENT ? "DYAD_VAR_EVENT" : "(undefined)");
+	switch (e->type) {
 	case MESSAGE_EVENT:
-		fprintf(stream, "  %"SSIZE_FMT, e->meta.message.from);
+		fprintf(stream, "  %" SSIZE_FMT, e->meta.message.from);
 		fprintf(stream, " -> [");
 		for (i = 0; i < e->meta.message.nto; i++) {
-			fprintf(stream, " %"SSIZE_FMT, e->meta.message.to[i]);
+			fprintf(stream, " %" SSIZE_FMT, e->meta.message.to[i]);
 		}
 		fprintf(stream, " ]");
-		fprintf(stream, " (%"SSIZE_FMT")\n", e->meta.message.attr);
+		fprintf(stream, " (%" SSIZE_FMT ")\n", e->meta.message.attr);
 		break;
 	default:
 		break;
@@ -199,7 +198,8 @@ void frame_init(struct frame *f, struct design *design)
 	send_frames_init(f);
 	var_frames_init(f, design);
 	array_init(&f->events, sizeof(struct frame_event));
-	pqueue_init(&f->future_events, frame_event_rcompare, sizeof(struct frame_event));
+	pqueue_init(&f->future_events, frame_event_rcompare,
+		    sizeof(struct frame_event));
 	refcount_init(&f->refcount);
 	f->next_event_id = 0;
 }
@@ -299,17 +299,17 @@ static void notify_listeners(struct frame *f, const struct frame_event *e)
 	assert(f);
 	assert(e);
 	assert(frame_time(f) == e->time);
-	
+
 	const struct array *vars = &f->vars;
 	struct frame_var *v;
 	ssize_t i, n = array_count(vars);
-	
+
 	for (i = 0; i < n; i++) {
 		v = array_item(vars, i);
 		if (!(v->design->type->handle_event
 		      && v->design->type->event_mask & e->type))
 			continue;
-		
+
 		v->design->type->handle_event(v, e, f);
 	}
 }
@@ -319,25 +319,25 @@ static void process_message_event(struct frame *f, const struct frame_event *fe)
 	assert(f);
 	assert(fe->time == frame_time(f));
 	assert(fe->type == MESSAGE_EVENT);
-	
+
 	const struct message_event_meta *meta = &fe->meta.message;
-	
+
 	ssize_t ito, nto = meta->nto;
 	struct frame_event e;
-	
+
 	e.type = DYAD_EVENT_INIT;
 	e.time = fe->time;
 	e.meta.dyad.msg_time = fe->time;
 	e.meta.dyad.msg_dyad.isend = meta->from;
 	e.meta.dyad.msg_attr = meta->attr;
 	e.meta.dyad.intvl = 0;
-	
+
 	for (ito = 0; ito < nto; ito++) {
 		e.id = -1;
 		e.meta.dyad.msg_dyad.jrecv = meta->to[ito];
 		frame_events_add(f, &e);
 	}
-	
+
 	assert(history_tcur(&f->history) == fe->time);
 	history_add(&f->history, meta->from, meta->to, meta->nto, meta->attr);
 }
@@ -347,27 +347,28 @@ static void process_dyad_event(struct frame *f, const struct frame_event *fe)
 	assert(f);
 	assert(fe->time == frame_time(f));
 	assert(fe->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
-	
+
 	const struct dyad_event_meta *meta = &fe->meta.dyad;
 	double t0, dt;
-		
+
 	if (meta->intvl == vector_dim(&f->design->intervals)) {
 		/* pass */
 	} else {
 		struct frame_event e = *fe;
 		t0 = meta->msg_time;
 		dt = vector_item(&f->design->intervals, meta->intvl);
-		
+
 		e.time = t0 + dt;
 		e.type = DYAD_EVENT_MOVE;
 		/* preserve e.id */
 		e.meta.dyad.intvl++;
-		
+
 		frame_events_add(f, &e);
 	}
 }
 
-static void process_dyad_var_event(struct frame *f, const struct frame_event *fe)
+static void process_dyad_var_event(struct frame *f,
+				   const struct frame_event *fe)
 {
 	assert(f);
 	assert(fe->time == frame_time(f));
@@ -377,7 +378,7 @@ static void process_dyad_var_event(struct frame *f, const struct frame_event *fe
 	struct svector_pos pos;
 	double *ptr;
 	struct svector *dx;
-	
+
 	dx = frame_dx(f, meta->item.isend, meta->item.jrecv);
 	if ((ptr = svector_find(dx, meta->index, &pos))) {
 		*ptr += meta->delta;
@@ -395,8 +396,8 @@ static void process_event(struct frame *f, const struct frame_event *e)
 
 	array_add(&f->events, e);
 	notify_listeners(f, e);
-	
-	switch(e->type) {
+
+	switch (e->type) {
 	case MESSAGE_EVENT:
 		process_message_event(f, e);
 		break;
@@ -405,7 +406,7 @@ static void process_event(struct frame *f, const struct frame_event *e)
 		process_dyad_event(f, e);
 		break;
 	case TRIAD_EVENT_INIT:
-	case TRIAD_EVENT_MOVE1:			
+	case TRIAD_EVENT_MOVE1:
 	case TRIAD_EVENT_MOVE2:
 		assert(0 && "Not implemented");
 	case DYAD_VAR_EVENT:
@@ -421,25 +422,25 @@ ssize_t frame_events_add(struct frame *f, struct frame_event *e)
 {
 	assert(f);
 	assert(e);
-	
+
 	if (e->id < 0)
 		e->id = f->next_event_id++;
-	
+
 	if (e->time == frame_time(f)) {
 		process_event(f, e);
 	} else {
 		pqueue_push(&f->future_events, e);
 	}
-	
+
 	return e->id;
 }
 
 double frame_next_change(const struct frame *f)
 {
 	assert(f);
-	
+
 	if (pqueue_count(&f->future_events)) {
-		const struct frame_event *e = pqueue_top(&f->future_events);		
+		const struct frame_event *e = pqueue_top(&f->future_events);
 		return e->time;
 	} else {
 		return INFINITY;
@@ -450,13 +451,13 @@ void frame_advance(struct frame *f)
 {
 	assert(f);
 	assert(frame_time(f) < INFINITY);
-	
+
 	double t = frame_next_change(f);
 	const struct frame_event *pe;
 
 	history_advance_to(&f->history, t);
 	assert(frame_time(f) == t);
-	
+
 	array_clear(&f->events);
 
 	while (pqueue_count(&f->future_events)
@@ -473,7 +474,7 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(f);
 	assert(msg);
 	assert(msg->time >= frame_time(f));
-	
+
 	struct frame_event e;
 	e.type = MESSAGE_EVENT;
 	e.time = msg->time;
@@ -490,7 +491,7 @@ struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 	assert(f);
 	assert(0 <= isend && isend < design_nsender(f->design));
 	assert(0 <= jrecv && jrecv < design_nreceiver(f->design));
-	
+
 	struct send_frame *sf = frame_send_frame(f, isend);
 	return send_frame_dx(sf, jrecv);
 }

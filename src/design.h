@@ -78,7 +78,6 @@ struct design;
 struct design_var;
 struct frame_var;
 
-
 struct var_type {
 	uint8_t event_mask;
 
@@ -89,8 +88,8 @@ struct var_type {
 	void (*frame_deinit) (struct frame_var * fv);
 	void (*frame_clear) (struct frame_var * fv);
 
-	void (*handle_event) (struct frame_var *fv,
-			      const struct frame_event *e, struct frame * f);
+	void (*handle_event) (struct frame_var * fv,
+			      const struct frame_event * e, struct frame * f);
 };
 
 struct design_var {

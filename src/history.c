@@ -100,7 +100,7 @@ void history_advance_to(struct history *history, double t)
 }
 
 void history_add(struct history *history, ssize_t from, ssize_t *to,
-		    ssize_t nto, intptr_t attr)
+		 ssize_t nto, intptr_t attr)
 {
 	assert(history);
 	assert(to || nto == 0);

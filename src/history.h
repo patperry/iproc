@@ -39,7 +39,7 @@ void history_clear(struct history *history);
 double history_tcur(const struct history *history);
 void history_advance_to(struct history *history, double t);
 void history_add(struct history *history, ssize_t from, ssize_t *to,
-		    ssize_t nto, intptr_t attr);
+		 ssize_t nto, intptr_t attr);
 
 ssize_t history_nsend(struct history *history);
 ssize_t history_nrecv(struct history *history);

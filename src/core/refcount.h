@@ -4,7 +4,6 @@
 #include <limits.h>
 #include "util.h"
 
-
 struct refcount {
 	int count;
 };
