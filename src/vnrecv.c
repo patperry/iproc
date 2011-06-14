@@ -35,18 +35,19 @@ static void vnrecv_handle_event(struct frame_var *fv,
 	
 	dx.type = DYAD_VAR_EVENT;
 	dx.time = e->time;
+	dx.id = -1;
 	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
 	dx.meta.dyad_var.item.jrecv = meta->msg_dyad.isend;
 	
 	if (e->type == DYAD_EVENT_MOVE) {
 		dx.meta.dyad_var.index = fv->design->index + meta->intvl - 1;
 		dx.meta.dyad_var.delta = -1.0;
-		frame_event_push(f, &dx);
+		frame_events_add(f, &dx);
 	}
 	
 	dx.meta.dyad_var.index = fv->design->index + meta->intvl;
 	dx.meta.dyad_var.delta = 1.0;
-	frame_event_push(f, &dx);
+	frame_events_add(f, &dx);
 }
 
 static struct var_type VAR_TYPE_NRECV_REP = {

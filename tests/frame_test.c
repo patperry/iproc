@@ -90,7 +90,8 @@ static void test_vnrecv(void **state)
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance_to(&frame, t);
+		while (frame_next_change(&frame) <= t)
+			frame_advance(&frame);
 		
 		isend = msg ? msg->from : 0;
 		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
@@ -101,7 +102,7 @@ static void test_vnrecv(void **state)
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_insert(&frame, msg);
+			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
 				*matrix_item_ptr(&xnrecv, msg->from, msg->to[ito]) += 1.0;
@@ -161,7 +162,8 @@ static void test_vrecv(void **state)
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance_to(&frame, t);
+		while (frame_next_change(&frame) <= t)
+			frame_advance(&frame);
 		
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
@@ -176,7 +178,8 @@ static void test_vrecv(void **state)
 			for (j = 0; j < 1; j++) {
 				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);
 				delta = t - tmsg;
-				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
+				if (isfinite(tmsg) && tlo <= delta && delta < thi) {
+					assert(svector_item(&y, jrecv) == 1.0);
 					assert_true(svector_item(&y, jrecv) == 1.0);
 				} else {
 					assert_true(svector_item(&y, (jrecv + j) % nrecv) == 0.0);
@@ -186,7 +189,7 @@ static void test_vrecv(void **state)
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_insert(&frame, msg);
+			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
 				*matrix_item_ptr(&tlast, msg->from, msg->to[ito]) = msg->time;

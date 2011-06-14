@@ -74,7 +74,7 @@ iproc_loglik *iproc_loglik_new(iproc_model * model, struct messages * messages)
 		for (tie = 0; tie < ntie; tie++) {
 			const struct message *msg = MESSAGES_VAL(it, tie);
 			iproc_loglik_insert(loglik, &frame, msg);
-			frame_insert(&frame, msg);
+			frame_add(&frame, msg);
 		}
 	}
 

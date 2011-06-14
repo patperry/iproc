@@ -496,7 +496,7 @@
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EA3325136B29AE00C5627F /* design_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_test.c; path = tests/design_test.c; sourceTree = "<group>"; };
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
-		22EA3332136B440B00C5627F /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; };
+		22EA3332136B440B00C5627F /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22EA3337136B4CEC00C5627F /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = tests/enron/messages.c; sourceTree = "<group>"; };
 		22FFF12313871A8B003DDA26 /* timsort-impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "timsort-impl.h"; path = "lib/timsort/timsort-impl.h"; sourceTree = "<group>"; };
 		22FFF12413871A8B003DDA26 /* timsort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = timsort.c; path = lib/timsort/timsort.c; sourceTree = "<group>"; };

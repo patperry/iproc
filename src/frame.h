@@ -1,6 +1,7 @@
 #ifndef _FRAME_H
 #define _FRAME_H
 
+#include <stdio.h>
 #include "actors.h"
 #include "messages.h"
 #include "history.h"
@@ -76,7 +77,8 @@ struct frame {
 	struct history history;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
-	struct pqueue events;
+	struct array events;	
+	struct pqueue future_events;
 	ssize_t next_event_id;
 	struct refcount refcount;
 };
@@ -94,26 +96,25 @@ void frame_deinit(struct frame *f);
 struct frame *frame_alloc(struct design *design);
 struct frame *frame_ref(struct frame *f);
 void frame_free(struct frame *f);
+void frame_clear(struct frame *f);
+
+/* add a message/advance time  */
+void frame_add(struct frame *f, const struct message *msg);
+void frame_advance(struct frame *f);
+double frame_next_change(const struct frame *f);
+
+/* add a future or current event */
+ssize_t frame_events_add(struct frame *f, struct frame_event *e);
 
 /* current time/history */
 double frame_time(const struct frame *f);
 const struct history *frame_history(const struct frame *f);
 
-/* record a message event */
-void frame_insert(struct frame *f, const struct message *msg);
+/* current events */
+ssize_t frame_events_count(const struct frame *f);
+struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
-
-void frame_clear(struct frame *f);
-
-/* access/process frame events */
-double frame_event_next(const struct frame *f);
-ssize_t frame_event_push(struct frame *f, struct frame_event *e);
-void frame_event_pop(struct frame *f);
-
-
-
-
-
+/* current covariates */
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
 
 void frame_mul(double alpha, enum trans_op trans,
@@ -130,9 +131,7 @@ void frame_dmuls(double alpha, enum trans_op trans,
 		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y);
 
-/* deprecated */
-void frame_advance_to(struct frame *f, double t);
-double frame_next_update(const struct frame *f);	/* time of the next change */
-
+/* debugging */
+void fprintf_event(FILE *restrict stream, const struct frame_event *e);
 
 #endif /* _FRAME_H */
