@@ -44,16 +44,16 @@ static bool cohort_model_init(struct cohort_model *cm,
 	ssize_t dim = design_dim(design);
 
 	/* compute initial log(probs) */
-	cm->log_p0 = vector_alloc(nreceiver);
-	compute_logprobs0(design, isend, coefs, cm->log_p0, &cm->log_W0);
+	vector_init(&cm->log_p0, nreceiver);
+	compute_logprobs0(design, isend, coefs, &cm->log_p0, &cm->log_W0);
 
 	/* compute initial probs */
-	cm->p0 = vector_alloc_copy(cm->log_p0);
-	vector_exp(cm->p0);
+	vector_init_copy(&cm->p0, &cm->log_p0);
+	vector_exp(&cm->p0);
 
 	/* compute initial covariate mean */
-	cm->xbar0 = vector_alloc(dim);
-	design_mul0(1.0, TRANS_TRANS, design, isend, cm->p0, 0.0, cm->xbar0);
+	vector_init(&cm->xbar0, dim);
+	design_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0, &cm->xbar0);
 
 	return true;
 }
@@ -75,9 +75,9 @@ static struct cohort_model *cohort_model_alloc(const struct design *design,
 static void cohort_model_deinit(struct cohort_model *cm)
 {
 	assert(cm);
-	vector_free(cm->xbar0);
-	vector_free(cm->log_p0);
-	vector_free(cm->p0);
+	vector_deinit(&cm->xbar0);
+	vector_deinit(&cm->log_p0);
+	vector_deinit(&cm->p0);
 
 }
 
@@ -161,9 +161,9 @@ struct cohort_model *iproc_model_send_group(iproc_model * model, ssize_t isend)
 static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
 {
 	if (ctx) {
-		svector_free(ctx->dxbar);
-		svector_free(ctx->dp);
-		svector_free(ctx->deta);
+		svector_deinit(&ctx->dxbar);
+		svector_deinit(&ctx->dp);
+		svector_deinit(&ctx->deta);
 		free(ctx);
 	}
 }
@@ -181,7 +181,7 @@ static void iproc_model_free(iproc_model * model)
 		}
 		array_deinit(&model->ctxs);
 		cohort_models_deinit(&model->cohort_models);
-		vector_free(model->coefs);
+		vector_deinit(&model->coefs);
 		design_free(model->design);
 		free(model);
 	}
@@ -198,7 +198,7 @@ iproc_model *iproc_model_new(struct design *design,
 
 	iproc_model *model = malloc(sizeof(*model));
 	model->design = design_ref(design);
-	model->coefs = vector_alloc_copy(coefs);
+	vector_init_copy(&model->coefs, coefs);
 	model->has_loops = has_loops;
 	cohort_models_init(&model->cohort_models, design, coefs);
 	array_init(&model->ctxs, sizeof(iproc_model_ctx *));
@@ -238,7 +238,7 @@ struct design *iproc_model_design(iproc_model * model)
 struct vector *iproc_model_coefs(iproc_model * model)
 {
 	assert(model);
-	return model->coefs;
+	return &model->coefs;
 }
 
 bool iproc_model_has_loops(iproc_model * model)
@@ -276,7 +276,7 @@ struct vector *iproc_model_logprobs0(iproc_model * model, ssize_t isend)
 
 	iproc_group_model *group = iproc_model_send_group(model, isend);
 	assert(group);
-	return group->log_p0;
+	return &group->log_p0;
 }
 
 struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend)
@@ -287,7 +287,7 @@ struct vector *iproc_model_probs0(iproc_model * model, ssize_t isend)
 
 	iproc_group_model *group = iproc_model_send_group(model, isend);
 	assert(group);
-	return group->p0;
+	return &group->p0;
 }
 
 struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend)
@@ -298,5 +298,5 @@ struct vector *iproc_model_mean0(iproc_model * model, ssize_t isend)
 
 	iproc_group_model *group = iproc_model_send_group(model, isend);
 	assert(group);
-	return group->xbar0;
+	return &group->xbar0;
 }

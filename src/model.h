@@ -117,14 +117,14 @@ typedef struct _iproc_model_ctx iproc_model_ctx;
  */
 struct cohort_model {
 	double log_W0;
-	struct vector *p0;
-	struct vector *log_p0;
-	struct vector *xbar0;
+	struct vector p0;
+	struct vector log_p0;
+	struct vector xbar0;
 };
 
 struct _iproc_model {
 	struct design *design;
-	struct vector *coefs;
+	struct vector coefs;
 	bool has_loops;
 	struct intmap cohort_models;
 	struct array ctxs;
@@ -139,9 +139,9 @@ struct _iproc_model_ctx {
 
 	double gamma;
 	double log_gamma;
-	struct svector *deta;
-	struct svector *dp;
-	struct svector *dxbar;
+	struct svector deta;
+	struct svector dp;
+	struct svector dxbar;
 
 	struct refcount refcount;
 };

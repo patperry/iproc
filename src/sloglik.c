@@ -117,10 +117,10 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 	sll->gamma += scale1 * (ctx->gamma - sll->gamma);
 
 	svector_scale(sll->dp, scale0);
-	svector_axpys(scale1, ctx->dp, sll->dp);
+	svector_axpys(scale1, &ctx->dp, sll->dp);
 
 	svector_scale(sll->dxbar, scale0);
-	svector_axpys(scale1, ctx->dxbar, sll->dxbar);
+	svector_axpys(scale1, &ctx->dxbar, sll->dxbar);
 
 	// update number of sends
 	sll->nsend += n;
@@ -154,7 +154,7 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 	    iproc_model_send_group(sll->model, sll->isend);
 
 	// sum{gamma[t,i]} * xbar[0,i]
-	vector_axpy(scale * sll->gamma, group->xbar0, dst_vector);
+	vector_axpy(scale * sll->gamma, &group->xbar0, dst_vector);
 
 	// (X[0,i])^T * sum{dP[t,i]}
 	design_muls0(scale, TRANS_TRANS,

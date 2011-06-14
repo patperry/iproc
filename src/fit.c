@@ -17,7 +17,7 @@ eval_objective(iproc_loglik * loglik,
 	       double penalty, double *valuep, struct vector *grad)
 {
 	iproc_model *model = loglik->model;
-	struct vector *coefs = model->coefs;
+	struct vector *coefs = &model->coefs;
 
 	double n = loglik->nrecv;
 	double ll_value = iproc_loglik_value(loglik);
@@ -51,7 +51,7 @@ static bool iproc_fit_init(iproc_fit * fit)
 		return false;
 
 	eval_objective(fit->loglik, fit->penalty, &fit->value, fit->grad);
-	vector_assign_copy(fit->x, fit->model->coefs);
+	vector_assign_copy(fit->x, &fit->model->coefs);
 	fit->value0 = NAN;
 	fit->step = 1.0;
 

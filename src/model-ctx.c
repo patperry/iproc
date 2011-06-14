@@ -150,16 +150,11 @@ static iproc_model_ctx *iproc_model_ctx_new_alloc(iproc_model * model,
 	ctx->frame = NULL;
 	ctx->group = NULL;
 
-	ctx->deta = svector_alloc(nreceiver);
-	ctx->dp = svector_alloc(nreceiver);
-	ctx->dxbar = svector_alloc(dim);
-
+	svector_init(&ctx->deta, nreceiver);
+	svector_init(&ctx->dp, nreceiver);
+	svector_init(&ctx->dxbar, dim);
 	refcount_init(&ctx->refcount);
 
-	if (!(ctx->deta && ctx->dp && ctx->dxbar)) {
-		iproc_model_ctx_free(ctx);
-		return NULL;
-	}
 
 	iproc_model_ctx_set(ctx, f, isend);
 	return ctx;
@@ -200,9 +195,9 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f, ssize_t isend)
 	assert(isend >= 0);
 	assert(isend < iproc_model_nsender(ctx->model));
 
-	svector_clear(ctx->deta);
-	svector_clear(ctx->dp);
-	svector_clear(ctx->dxbar);
+	svector_clear(&ctx->deta);
+	svector_clear(&ctx->dp);
+	svector_clear(&ctx->dxbar);
 
 	iproc_model *model = ctx->model;
 	struct vector *coefs = iproc_model_coefs(model);
@@ -213,11 +208,11 @@ iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f, ssize_t isend)
 	ctx->isend = isend;
 	ctx->group = group;
 
-	compute_weight_changes(f, isend, has_loops, coefs, group->log_p0,
-			       ctx->deta, &ctx->gamma, &ctx->log_gamma);
-	compute_active_probs(group->log_p0, ctx->log_gamma, ctx->deta, ctx->dp);
-	frame_dmuls(1.0, TRANS_TRANS, f, isend, ctx->dp, 0.0, ctx->dxbar);
-	compute_prob_diffs(group->p0, ctx->gamma, ctx->dp);
+	compute_weight_changes(f, isend, has_loops, coefs, &group->log_p0,
+			       &ctx->deta, &ctx->gamma, &ctx->log_gamma);
+	compute_active_probs(&group->log_p0, ctx->log_gamma, &ctx->deta, &ctx->dp);
+	frame_dmuls(1.0, TRANS_TRANS, f, isend, &ctx->dp, 0.0, &ctx->dxbar);
+	compute_prob_diffs(&group->p0, ctx->gamma, &ctx->dp);
 }
 
 iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx)
@@ -280,8 +275,8 @@ double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv)
 	 */
 
 	double log_gamma = ctx->log_gamma;
-	double log_p0 = *vector_item_ptr(ctx->group->log_p0, jrecv);
-	double deta = svector_item(ctx->deta, jrecv);
+	double log_p0 = *vector_item_ptr(&ctx->group->log_p0, jrecv);
+	double deta = svector_item(&ctx->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);
 }
