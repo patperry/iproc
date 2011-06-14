@@ -71,7 +71,7 @@ void array_trim_excess(struct array *a);
 
 #define ARRAY_FOREACH(val, a) \
 	for ((val) = (a)->data; \
-	     (val) < (void *)((char *)(a)->data + (a)->count * (a)->elt_size); \
+	     (char *)(val) < ((char *)(a)->data + (a)->count * (a)->elt_size); \
 	     (val)++)
 
 /* inline function definitions */
