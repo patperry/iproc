@@ -128,10 +128,10 @@ static void cohort_model_init(struct cohort_model *cm,
 {
 	assert(cm);
 	assert(design);
-	assert(0 <= isend && isend < design_nsender(design));
+	assert(0 <= isend && isend < design_sender_count(design));
 	assert(coefs);
 	
-	ssize_t nreceiver = design_nreceiver(design);
+	ssize_t nreceiver = design_receiver_count(design);
 	ssize_t dim = design_dim(design);
 
 	/* The probabilities are p[i] = w[i] / sum(w[j]), so
@@ -343,8 +343,8 @@ void model_init(struct model *model, struct design *design,
 	assert(design);
 	assert(coefs);
 	assert(design_dim(design) == vector_dim(coefs));
-	assert(design_nreceiver(design) > 0);
-	assert(!design_loops(design) || design_nreceiver(design) > 1);
+	assert(design_receiver_count(design) > 0);
+	assert(!design_loops(design) || design_receiver_count(design) > 1);
 	
 	model->design = design_ref(design);
 	vector_init_copy(&model->coefs, coefs);
@@ -379,8 +379,8 @@ struct model *model_alloc(struct design *design,
 	assert(design);
 	assert(coefs);
 	assert(design_dim(design) == vector_dim(coefs));
-	assert(design_nreceiver(design) > 0);
-	assert(!design_loops(design) || design_nreceiver(design) > 1);
+	assert(design_receiver_count(design) > 0);
+	assert(!design_loops(design) || design_receiver_count(design) > 1);
 
 	struct model *model = xcalloc(1, sizeof(*model));
 	model_init(model, design, coefs);
@@ -420,14 +420,14 @@ ssize_t model_sender_count(const struct model *model)
 {
 	assert(model);
 	struct design *design = model_design(model);
-	return design_nsender(design);
+	return design_sender_count(design);
 }
 
 ssize_t model_receiver_count(const struct model *model)
 {
 	assert(model);
 	struct design *design = model_design(model);
-	return design_nreceiver(design);
+	return design_receiver_count(design);
 }
 
 ssize_t model_dim(const struct model *model)

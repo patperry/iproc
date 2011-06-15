@@ -96,7 +96,7 @@ design_mul0_reffects(double alpha,
 		return;
 
 	ssize_t off = design->ireffects;
-	ssize_t dim = design_nreceiver(design);
+	ssize_t dim = design_receiver_count(design);
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
@@ -117,7 +117,7 @@ design_muls0_reffects(double alpha,
 		return;
 
 	ssize_t off = design->ireffects;
-	ssize_t dim = design_nreceiver(design);
+	ssize_t dim = design_receiver_count(design);
 	ssize_t end = off + dim;
 
 	if (trans == TRANS_NOTRANS) {
@@ -256,14 +256,14 @@ design_mul0(double alpha,
 {
 	assert(design);
 	assert(isend >= 0);
-	assert(isend < design_nsender(design));
+	assert(isend < design_sender_count(design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || vector_dim(x) == design_dim(design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == design_nreceiver(design));
+	       || vector_dim(y) == design_receiver_count(design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == design_nreceiver(design));
+	       || vector_dim(x) == design_receiver_count(design));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_dim(design));
 
 	/* y := beta y */
@@ -286,14 +286,14 @@ design_muls0(double alpha,
 {
 	assert(design);
 	assert(isend >= 0);
-	assert(isend < design_nsender(design));
+	assert(isend < design_sender_count(design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS || svector_dim(x) == design_dim(design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == design_nreceiver(design));
+	       || vector_dim(y) == design_receiver_count(design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == design_nreceiver(design));
+	       || svector_dim(x) == design_receiver_count(design));
 	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_dim(design));
 
 	/* y := beta y */
@@ -326,7 +326,7 @@ void design_set_reffects(struct design *design, bool reffects)
 	if (design->reffects == reffects)
 		return;
 
-	ssize_t nrecv = design_nreceiver(design);
+	ssize_t nrecv = design_receiver_count(design);
 	ssize_t delta = reffects ? nrecv : -nrecv;
 
 	ssize_t i, n = array_count(&design->vars);

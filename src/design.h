@@ -124,8 +124,8 @@ void design_init(struct design *design, struct actors *senders,
 void design_deinit(struct design *design);
 
 static inline ssize_t design_dim(const struct design *design);
-static inline ssize_t design_nsender(const struct design *design);
-static inline ssize_t design_nreceiver(const struct design *design);
+static inline ssize_t design_sender_count(const struct design *design);
+static inline ssize_t design_receiver_count(const struct design *design);
 static inline struct actors *design_senders(const struct design *design);
 static inline struct actors *design_receivers(const struct design *design);
 static inline const struct vector *design_intervals(const struct design
@@ -160,14 +160,14 @@ ssize_t design_dim(const struct design *design)
 	return design->dim;
 }
 
-ssize_t design_nsender(const struct design *design)
+ssize_t design_sender_count(const struct design *design)
 {
 	assert(design);
 	const struct actors *senders = design_senders(design);
 	return actors_count(senders);
 }
 
-ssize_t design_nreceiver(const struct design *design)
+ssize_t design_receiver_count(const struct design *design)
 {
 	assert(design);
 	const struct actors *receivers = design_receivers(design);

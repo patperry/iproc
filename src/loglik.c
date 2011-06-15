@@ -29,7 +29,7 @@ static iproc_loglik *iproc_loglik_new_empty(struct model * model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
 	struct design *design = model_design(model);
-	ssize_t nsender = design_nsender(design);
+	ssize_t nsender = design_sender_count(design);
 
 	if (!loglik)
 		return NULL;

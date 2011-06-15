@@ -269,7 +269,7 @@ const struct history *frame_history(const struct frame *f)
 static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
 {
 	assert(f);
-	assert(0 <= isend && isend < design_nsender(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
 
 	struct intmap_pos pos;
 	struct send_frame *sf;
@@ -489,8 +489,8 @@ void frame_add(struct frame *f, const struct message *msg)
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 {
 	assert(f);
-	assert(0 <= isend && isend < design_nsender(f->design));
-	assert(0 <= jrecv && jrecv < design_nreceiver(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
+	assert(0 <= jrecv && jrecv < design_receiver_count(f->design));
 
 	struct send_frame *sf = frame_send_frame(f, isend);
 	return send_frame_dx(sf, jrecv);
@@ -502,15 +502,15 @@ void frame_mul(double alpha, enum trans_op trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_nsender(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(x) == design_dim(f->design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == design_nreceiver(f->design));
+	       || vector_dim(y) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == design_nreceiver(f->design));
+	       || vector_dim(x) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_dim(f->design));
 
@@ -529,15 +529,15 @@ void frame_muls(double alpha, enum trans_op trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_nsender(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
 	       || svector_dim(x) == design_dim(f->design));
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(y) == design_nreceiver(f->design));
+	       || vector_dim(y) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == design_nreceiver(f->design));
+	       || svector_dim(x) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_dim(f->design));
 
@@ -556,15 +556,15 @@ void frame_dmul(double alpha, enum trans_op trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_nsender(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(x) == design_dim(f->design));
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(y) == design_nreceiver(f->design));
+	       || svector_dim(y) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || vector_dim(x) == design_nreceiver(f->design));
+	       || vector_dim(x) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(y) == design_dim(f->design));
 
@@ -615,15 +615,15 @@ void frame_dmuls(double alpha, enum trans_op trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_nsender(f->design));
+	assert(0 <= isend && isend < design_sender_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
 	       || svector_dim(x) == design_dim(f->design));
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(y) == design_nreceiver(f->design));
+	       || svector_dim(y) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(x) == design_nreceiver(f->design));
+	       || svector_dim(x) == design_receiver_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(y) == design_dim(f->design));
 
