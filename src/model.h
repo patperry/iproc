@@ -129,9 +129,13 @@ struct cohort_model {
 struct send_model {
 	struct model *model;
 	ssize_t isend;
+	const struct vector *log_p0;
+	double gamma;
+	double log_gamma;
 	struct svector deta;
 	struct svector dp;
 	struct svector dxbar;
+	bool cached;
 };
 
 struct model {
@@ -169,6 +173,15 @@ struct vector *model_logprobs0(const struct model *model, ssize_t isend);
 struct vector *model_probs0(const struct model *model, ssize_t isend);
 struct vector *model_mean0(const struct model *model, ssize_t isend);
 
+void model_clear(struct model *m);
+void model_update(struct model *m, const struct frame_event *e);
+
+struct send_model *model_send_model(struct model *m, const struct frame *f, ssize_t isend);
+ssize_t send_model_receiver_count(const struct send_model *sm);
+double send_model_logprob(const struct send_model *sm, ssize_t jrecv);
+double send_model_prob(const struct send_model *sm, ssize_t jrecv);
+void send_model_get_logprobs(const struct send_model *sm, struct vector *logprobs);
+void send_model_get_probs(const struct send_model *sm, struct vector *probs);
 
 
 /* DEPRECATED */
@@ -179,7 +192,6 @@ struct _iproc_model_ctx {
 	const struct frame *frame;
 	ssize_t isend;
 	const struct vector *log_p0;
-	
 	double gamma;
 	double log_gamma;
 	struct svector deta;
