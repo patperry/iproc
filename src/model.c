@@ -302,10 +302,10 @@ static void send_model_init(struct send_model *sm, struct model *m, ssize_t isen
 	
 	sm->model = m;
 	sm->isend = isend;
-	sm->log_p0 = model_logprobs0(m, isend);
+	sm->cohort = model_cohort_model(m, isend);
 	svector_init(&sm->deta, model_receiver_count(m));
 	svector_init(&sm->dp, model_receiver_count(m));
-	svector_init(&sm->dxbar, model_receiver_count(m));
+	svector_init(&sm->dxbar, model_dim(m));
 
 	send_model_clear(sm);
 }
@@ -562,7 +562,7 @@ double send_model_logprob(const struct send_model *sm, ssize_t jrecv)
 	 */
 	
 	double log_gamma = sm->log_gamma;
-	double log_p0 = *vector_item_ptr(sm->log_p0, jrecv);
+	double log_p0 = *vector_item_ptr(&sm->cohort->log_p0, jrecv);
 	double deta = svector_item(&sm->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);

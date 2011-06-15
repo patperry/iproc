@@ -31,4 +31,5 @@
 /tests/frame_test
 /tests/hashset_test
 /tests/intmap_test
+/tests/model_test
 /tests/pqueue_test

@@ -260,6 +260,10 @@ check_PROGRAMS += tests/frame_test
 tests_frame_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
 tests_frame_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
+check_PROGRAMS += tests/model_test
+tests_model_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
+tests_model_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+
 
 TESTS = \
 	$(check_PROGRAMS)

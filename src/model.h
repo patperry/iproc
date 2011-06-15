@@ -129,7 +129,7 @@ struct cohort_model {
 struct send_model {
 	struct model *model;
 	ssize_t isend;
-	const struct vector *log_p0;
+	const struct cohort_model *cohort;
 	double gamma;
 	double log_gamma;
 	struct svector deta;
