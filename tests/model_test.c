@@ -100,7 +100,6 @@ static void test_probs(void **state)
 	vector_init(&logprobs, nrecv);	
 
 	MESSAGES_FOREACH(it, &messages) {
-		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
 		while (frame_next_change(&frame) <= t) {
@@ -131,13 +130,13 @@ static void test_probs(void **state)
 			vector_exp(&probs);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
+				double lp0 = send_model_logprob(sm, jrecv);
+				double lp1 = vector_item(&logprobs, jrecv);
+				assert_in_range(double_eqrel(lp0, lp1), 49, DBL_MANT_DIG);
+				
 				double p0 = send_model_prob(sm, jrecv);
 				double p1 = vector_item(&probs, jrecv);
-				if (fabs(p0 - p1) >= 1e-3) {
-					
-					printf("p0: %.4f  p1: %.4f (%d)\n", p0, p1, double_eqrel(p0, p1));
-				}
-				//assert_in_range(double_eqrel(p0/pmax, p1/pmax), 6, DBL_MANT_DIG);
+				assert_in_range(double_eqrel(p0, p1), 47, DBL_MANT_DIG);
 			}
 
 		}
