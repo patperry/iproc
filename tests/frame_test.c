@@ -90,12 +90,12 @@ static void test_vnrecv(void **state)
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		while (frame_next_change(&frame) <= t)
-			frame_advance(&frame);
+		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
 		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
+			assert(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 		}
 		
@@ -162,8 +162,7 @@ static void test_vrecv(void **state)
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		while (frame_next_change(&frame) <= t)
-			frame_advance(&frame);
+		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
@@ -178,7 +177,7 @@ static void test_vrecv(void **state)
 			for (j = 0; j < 1; j++) {
 				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);
 				delta = t - tmsg;
-				if (isfinite(tmsg) && tlo <= delta && delta < thi) {
+				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
 					assert(svector_item(&y, jrecv) == 1.0);
 					assert_true(svector_item(&y, jrecv) == 1.0);
 				} else {

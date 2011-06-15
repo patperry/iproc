@@ -21,7 +21,6 @@ void fprintf_event(FILE * stream, const struct frame_event *e)
 		e->type == SENDER_VAR_EVENT ? "SENDER_VAR_EVENT" :
 		e->type == DYAD_VAR_EVENT ? "DYAD_VAR_EVENT" : "(undefined)");
 	fprintf(stream, "}\n");
-
 }
 
 static int frame_event_rcompare(const void *x1, const void *x2)
@@ -299,7 +298,7 @@ static void notify_listeners(struct frame *f, const struct frame_event *e)
 	}
 }
 
-static void process_dyad_event(struct frame *f, const struct frame_event *fe)
+static void dyad_event_before(struct frame *f, const struct frame_event *fe)
 {
 	assert(f);
 	assert(fe->time == frame_time(f));
@@ -324,8 +323,8 @@ static void process_dyad_event(struct frame *f, const struct frame_event *fe)
 	}
 }
 
-static void process_dyad_var_event(struct frame *f,
-				   const struct frame_event *fe)
+static void dyad_var_event_after(struct frame *f,
+				 const struct frame_event *fe)
 {
 	assert(f);
 	assert(fe->time == frame_time(f));
@@ -346,31 +345,49 @@ static void process_dyad_var_event(struct frame *f,
 	}
 }
 
-static void process_event(struct frame *f, const struct frame_event *e)
+static void event_before(struct frame *f, const struct frame_event *e)
 {
 	assert(f);
 	assert(e->time == frame_time(f));
 
-	array_add(&f->events, e);
 	notify_listeners(f, e);
 
 	switch (e->type) {
 	case DYAD_EVENT_INIT:
 	case DYAD_EVENT_MOVE:
-		process_dyad_event(f, e);
+		dyad_event_before(f, e);
 		break;
 	case TRIAD_EVENT_INIT:
 	case TRIAD_EVENT_MOVE1:
 	case TRIAD_EVENT_MOVE2:
 		assert(0 && "Not implemented");
 	case DYAD_VAR_EVENT:
-		process_dyad_var_event(f, e);
-		break;
 	case SENDER_VAR_EVENT:
-		assert(0 && "Not implemented");
 		break;
 	}
 }
+
+static void event_after(struct frame *f, const struct frame_event *e)
+{
+	assert(f);
+	assert(e->time == frame_time(f));
+	
+	switch (e->type) {
+		case DYAD_EVENT_INIT:
+		case DYAD_EVENT_MOVE:
+		case TRIAD_EVENT_INIT:
+		case TRIAD_EVENT_MOVE1:
+		case TRIAD_EVENT_MOVE2:
+			break;
+		case DYAD_VAR_EVENT:
+			dyad_var_event_after(f, e);
+			break;
+		case SENDER_VAR_EVENT:
+			assert(0 && "Not implemented");
+			break;
+	}
+}
+
 
 ssize_t frame_events_add(struct frame *f, struct frame_event *e)
 {
@@ -381,7 +398,8 @@ ssize_t frame_events_add(struct frame *f, struct frame_event *e)
 		e->id = f->next_event_id++;
 
 	if (e->time == frame_time(f)) {
-		process_event(f, e);
+		array_add(&f->events, e);
+		event_before(f, e);
 	} else {
 		pqueue_push(&f->future_events, e);
 	}
@@ -407,28 +425,53 @@ void frame_advance(struct frame *f)
 	assert(frame_time(f) < INFINITY);
 
 	double t = frame_next_change(f);
-	const struct frame_event *pe;
+	const struct frame_event *e;
 
-	history_advance_to(&f->history, t);
-	assert(frame_time(f) == t);
-
+	ARRAY_FOREACH(e, &f->events) {
+		event_after(f, e);
+	}
 	array_clear(&f->events);
 
+	history_advance_to(&f->history, t);
+
 	while (pqueue_count(&f->future_events)
-	       && (pe = pqueue_top(&f->future_events))->time == t) {
+	       && (e = pqueue_top(&f->future_events))->time == t) {
 		// need to copy from top; process_event may invalidate pe */
-		struct frame_event e = *pe;
-		process_event(f, &e);
+		struct frame_event ecopy = *e;
+		array_add(&f->events, &ecopy);
+		event_before(f, &ecopy);
 		pqueue_pop(&f->future_events);
 	}
+	
+	assert(frame_time(f) == t);
+}
+
+void frame_advance_to(struct frame *f, double t)
+{
+	assert(f);
+	assert(t >= frame_time(f));
+	
+	while (frame_next_change(f) <= t) {
+		frame_advance(f);
+	}
+	
+	if (frame_time(f) < t) {
+		const struct frame_event *e;
+		ARRAY_FOREACH(e, &f->events) {
+			event_after(f, e);
+		}
+		array_clear(&f->events);
+		history_advance_to(&f->history, t);
+	}
+	
+	assert(frame_time(f) == t);
 }
 
 void frame_add(struct frame *f, const struct message *msg)
 {
 	assert(f);
 	assert(msg);
-	assert(msg->time >= frame_time(f));
-	assert(msg->time <= frame_next_change(f));
+	assert(msg->time == frame_time(f));
 
 	ssize_t ito, nto = msg->nto;
 	struct frame_event e;
@@ -446,7 +489,7 @@ void frame_add(struct frame *f, const struct message *msg)
 		frame_events_add(f, &e);
 	}
 		
-	history_advance_to(&f->history, msg->time);
+	assert(history_tcur(&f->history) == msg->time);
 	history_add(&f->history, msg->from, msg->to, msg->nto, msg->attr);
 }
 

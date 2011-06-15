@@ -168,7 +168,7 @@ struct vector *model_probs0(const struct model *model, ssize_t isend);
 struct vector *model_mean0(const struct model *model, ssize_t isend);
 
 void model_clear(struct model *m);
-void model_update(struct model *m, const struct frame_event *e);
+void model_update(struct model *m, const struct frame *f);
 
 struct send_model *model_send_model(struct model *m, const struct frame *f, ssize_t isend);
 ssize_t send_model_receiver_count(const struct send_model *sm);

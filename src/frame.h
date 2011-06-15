@@ -99,6 +99,7 @@ void frame_clear(struct frame *f);
 /* add a message/advance time  */
 void frame_add(struct frame *f, const struct message *msg);
 void frame_advance(struct frame *f);
+void frame_advance_to(struct frame *f, double t);
 double frame_next_change(const struct frame *f);
 
 /* add a future or current event */

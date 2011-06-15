@@ -89,7 +89,6 @@ static void test_probs(void **state)
 	struct send_model *sm;
 	struct vector eta, probs, logprobs;
 	struct messages_iter it;
-	const struct frame_event *e;
 	const struct message *msg = NULL;
 	double t;
 	ssize_t isend, jrecv, nrecv;
@@ -105,15 +104,12 @@ static void test_probs(void **state)
 		t = MESSAGES_TIME(it);
 		
 		while (frame_next_change(&frame) <= t) {
-			frame_advance(&frame);
-			n = frame_events_count(&frame);
-			for (i = 0; i < n; i++) {
-				e = frame_events_item(&frame, i);
-				
-				if (e->type & (SENDER_VAR_EVENT | DYAD_VAR_EVENT)) {
-					model_update(&model, e);
-				}
-			}
+			model_update(&model, &frame);
+			frame_advance(&frame);			
+		}
+		if (frame_time(&frame) < t) {
+			model_update(&model, &frame);
+			frame_advance_to(&frame, t);			
 		}
 		
 		n = MESSAGES_COUNT(it);

@@ -510,7 +510,7 @@ static void process_dyad_var_event(struct model *m,
 	}*/
 }
 
-void model_update(struct model *m, const struct frame_event *e)
+static void model_update_with(struct model *m, const struct frame_event *e)
 {
 	assert(m);
 	assert(e);
@@ -521,6 +521,20 @@ void model_update(struct model *m, const struct frame_event *e)
 		break;
 	default:
 		break; /* pass */
+	}
+}
+
+void model_update(struct model *m, const struct frame *f)
+{
+	assert(m);
+	assert(f);
+	
+	const struct frame_event *e;
+	
+	ARRAY_FOREACH(e, &f->events) {
+		if (e->type & (SENDER_VAR_EVENT | DYAD_VAR_EVENT)) {
+			model_update_with(m, e);
+		}
 	}
 }
 
