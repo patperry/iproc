@@ -8,13 +8,11 @@
 void fprintf_event(FILE * stream, const struct frame_event *e)
 {
 	assert(e);
-	ssize_t i;
 
 	fprintf(stream, "{\n");
 	fprintf(stream, "  id: %" SSIZE_FMT "\n", e->id);
 	fprintf(stream, "  time: %" SSIZE_FMT "\n", (ssize_t)(e->time));
 	fprintf(stream, "  type: %s\n",
-		e->type == MESSAGE_EVENT ? "MESSAGE_EVENT" :
 		e->type == DYAD_EVENT_INIT ? "DYAD_EVENT_INIT" :
 		e->type == DYAD_EVENT_MOVE ? "DYAD_EVENT_MOVE" :
 		e->type == TRIAD_EVENT_INIT ? "TRIAD_EVENT_INIT" :
@@ -22,19 +20,6 @@ void fprintf_event(FILE * stream, const struct frame_event *e)
 		e->type == TRIAD_EVENT_MOVE2 ? "TRIAD_EVENT_MOVE2" :
 		e->type == SENDER_VAR_EVENT ? "SENDER_VAR_EVENT" :
 		e->type == DYAD_VAR_EVENT ? "DYAD_VAR_EVENT" : "(undefined)");
-	switch (e->type) {
-	case MESSAGE_EVENT:
-		fprintf(stream, "  %" SSIZE_FMT, e->meta.message.from);
-		fprintf(stream, " -> [");
-		for (i = 0; i < e->meta.message.nto; i++) {
-			fprintf(stream, " %" SSIZE_FMT, e->meta.message.to[i]);
-		}
-		fprintf(stream, " ]");
-		fprintf(stream, " (%" SSIZE_FMT ")\n", e->meta.message.attr);
-		break;
-	default:
-		break;
-	}
 	fprintf(stream, "}\n");
 
 }
@@ -314,34 +299,6 @@ static void notify_listeners(struct frame *f, const struct frame_event *e)
 	}
 }
 
-static void process_message_event(struct frame *f, const struct frame_event *fe)
-{
-	assert(f);
-	assert(fe->time == frame_time(f));
-	assert(fe->type == MESSAGE_EVENT);
-
-	const struct message_event_meta *meta = &fe->meta.message;
-
-	ssize_t ito, nto = meta->nto;
-	struct frame_event e;
-
-	e.type = DYAD_EVENT_INIT;
-	e.time = fe->time;
-	e.meta.dyad.msg_time = fe->time;
-	e.meta.dyad.msg_dyad.isend = meta->from;
-	e.meta.dyad.msg_attr = meta->attr;
-	e.meta.dyad.intvl = 0;
-
-	for (ito = 0; ito < nto; ito++) {
-		e.id = -1;
-		e.meta.dyad.msg_dyad.jrecv = meta->to[ito];
-		frame_events_add(f, &e);
-	}
-
-	assert(history_tcur(&f->history) == fe->time);
-	history_add(&f->history, meta->from, meta->to, meta->nto, meta->attr);
-}
-
 static void process_dyad_event(struct frame *f, const struct frame_event *fe)
 {
 	assert(f);
@@ -398,9 +355,6 @@ static void process_event(struct frame *f, const struct frame_event *e)
 	notify_listeners(f, e);
 
 	switch (e->type) {
-	case MESSAGE_EVENT:
-		process_message_event(f, e);
-		break;
 	case DYAD_EVENT_INIT:
 	case DYAD_EVENT_MOVE:
 		process_dyad_event(f, e);
@@ -474,16 +428,26 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(f);
 	assert(msg);
 	assert(msg->time >= frame_time(f));
+	assert(msg->time <= frame_next_change(f));
 
+	ssize_t ito, nto = msg->nto;
 	struct frame_event e;
-	e.type = MESSAGE_EVENT;
+		
+	e.type = DYAD_EVENT_INIT;
 	e.time = msg->time;
-	e.id = -1;
-	e.meta.message.from = msg->from;
-	e.meta.message.to = msg->to;
-	e.meta.message.nto = msg->nto;
-	e.meta.message.attr = msg->attr;
-	frame_events_add(f, &e);
+	e.meta.dyad.msg_time = msg->time;
+	e.meta.dyad.msg_dyad.isend = msg->from;
+	e.meta.dyad.msg_attr = msg->attr;
+	e.meta.dyad.intvl = 0;
+		
+	for (ito = 0; ito < nto; ito++) {
+		e.id = -1;
+		e.meta.dyad.msg_dyad.jrecv = msg->to[ito];
+		frame_events_add(f, &e);
+	}
+		
+	history_advance_to(&f->history, msg->time);
+	history_add(&f->history, msg->from, msg->to, msg->nto, msg->attr);
 }
 
 struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)

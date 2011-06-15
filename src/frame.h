@@ -10,7 +10,6 @@
 #include "design.h"
 
 enum frame_event_type {
-	MESSAGE_EVENT = 1 << 0,
 	DYAD_EVENT_INIT = 1 << 1,
 	DYAD_EVENT_MOVE = 1 << 2,
 	TRIAD_EVENT_INIT = 1 << 3,
@@ -76,7 +75,7 @@ struct frame {
 	struct history history;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
-	struct array events;
+	struct array events; // events that happen immediately after the current time
 	struct pqueue future_events;
 	ssize_t next_event_id;
 	struct refcount refcount;
