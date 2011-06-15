@@ -260,7 +260,7 @@ static void send_model_clear(struct send_model *sm)
 		double p0 = vector_item(&cm->p0, isend);
 		
 		sm->gamma = 1.0 / (1.0 - p0);
-		sm->log_gamma = log1p(-p0);
+		sm->log_gamma = -log1p(-p0);
 		
 		svector_set_item(&sm->deta, isend, -INFINITY);
 		svector_set_item(&sm->dp, isend, -p0 / (1.0 - p0));
