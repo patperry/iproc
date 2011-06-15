@@ -143,9 +143,6 @@ struct model {
 	struct vector coefs;
 	struct intmap cohort_models;
 	struct intmap send_models;
-	
-	
-	struct array ctxs;
 	struct refcount refcount;
 };
 
@@ -154,9 +151,6 @@ void model_init(struct model *model,
 		struct design *design,
 		const struct vector *coefs);
 void model_deinit(struct model *model);
-
-
-
 struct model *model_alloc(struct design *design,
 			  const struct vector *coefs);
 struct model *model_ref(struct model *model);
@@ -182,38 +176,5 @@ double send_model_logprob(const struct send_model *sm, ssize_t jrecv);
 double send_model_prob(const struct send_model *sm, ssize_t jrecv);
 void send_model_get_logprobs(const struct send_model *sm, struct vector *logprobs);
 void send_model_get_probs(const struct send_model *sm, struct vector *probs);
-
-
-/* DEPRECATED */
-typedef struct _iproc_model_ctx iproc_model_ctx;
-
-struct _iproc_model_ctx {
-	struct model *model;
-	const struct frame *frame;
-	ssize_t isend;
-	const struct vector *log_p0;
-	double gamma;
-	double log_gamma;
-	struct svector deta;
-	struct svector dp;
-	struct svector dxbar;
-	
-	struct refcount refcount;
-};
-
-iproc_model_ctx *iproc_model_ctx_new(struct model *model,
-				     const struct frame *f, ssize_t isend);
-iproc_model_ctx *iproc_model_ctx_ref(iproc_model_ctx * ctx);
-void iproc_model_ctx_unref(iproc_model_ctx * ctx);
-
-void iproc_model_ctx_set(iproc_model_ctx * ctx, const struct frame *f,
-			 ssize_t isend);
-
-ssize_t iproc_model_ctx_nreceiver(iproc_model_ctx * ctx);
-double iproc_model_ctx_prob(iproc_model_ctx * ctx, ssize_t jrecv);
-double iproc_model_ctx_logprob(iproc_model_ctx * ctx, ssize_t jrecv);
-void iproc_model_ctx_get_probs(iproc_model_ctx * ctx, struct vector *probs);
-void iproc_model_ctx_get_logprobs(iproc_model_ctx * ctx,
-				  struct vector *logprobs);
 
 #endif /* _IPROC_MODEL_H */

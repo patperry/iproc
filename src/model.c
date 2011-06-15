@@ -7,17 +7,6 @@
 #include "model.h"
 #include "util.h"
 
-/* DEPRECATED */
-static void iproc_model_ctx_free_dealloc(iproc_model_ctx * ctx)
-{
-	if (ctx) {
-		svector_deinit(&ctx->dxbar);
-		svector_deinit(&ctx->dp);
-		svector_deinit(&ctx->deta);
-		free(ctx);
-	}
-}
-
 static void
 compute_weight_changes(const struct frame *f, ssize_t isend,
 		       const struct vector *coefs,
@@ -131,8 +120,6 @@ compute_prob_diffs(const struct vector *p0, double gamma, struct svector *p_acti
 		
 	}
 }
-
-
 
 
 static void cohort_model_init(struct cohort_model *cm,
@@ -364,9 +351,6 @@ void model_init(struct model *model, struct design *design,
 	cohort_models_init(&model->cohort_models, design, coefs);
 	intmap_init(&model->send_models, sizeof(struct send_model),
 		    alignof(struct send_model));
-
-	
-	array_init(&model->ctxs, sizeof(iproc_model_ctx *));
 	refcount_init(&model->refcount);
 }
 
@@ -374,13 +358,6 @@ void model_deinit(struct model *model)
 {
 	assert(model);
 
-	/* DEPRECATED */
-	iproc_model_ctx *ctx;
-	ARRAY_FOREACH(ctx, &model->ctxs) {
-		iproc_model_ctx_free_dealloc(ctx);
-	}
-	array_deinit(&model->ctxs);
-	
 	refcount_deinit(&model->refcount);
 	
 	struct intmap_iter it;

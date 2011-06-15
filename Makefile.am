@@ -28,7 +28,6 @@ libiproc_la_SOURCES = \
 	src/loglik.h \
 	src/messages.c \
 	src/messages.h \
-	src/model-ctx.c \
 	src/model.c \
 	src/model.h \
 	src/sloglik.c \

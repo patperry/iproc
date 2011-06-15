@@ -85,7 +85,7 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 			   const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
 	ssize_t nreceiver = model_receiver_count(sll->model);
-	iproc_model_ctx *ctx = iproc_model_ctx_new(sll->model, f, sll->isend);
+	struct send_model *sm = model_send_model(sll->model, f, sll->isend);
 	struct svector *wt = svector_alloc(nreceiver);
 	double ntot = sll->nsend + n;
 	double scale1 = n / ntot;
@@ -99,7 +99,7 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 		assert(jrecv[i] >= 0);
 		assert(jrecv[i] < nreceiver);
 
-		double lp = iproc_model_ctx_logprob(ctx, jrecv[i]);
+		double lp = send_model_logprob(sm, jrecv[i]);
 		lpbar += (lp - lpbar) / (i + 1);
 
 		*svector_item_ptr(wt, jrecv[i]) += 1.0;
@@ -114,19 +114,18 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 	// update observed variable diffs
 	frame_dmuls(scale1 / n, TRANS_TRANS, f, sll->isend,
 		    wt, scale0, sll->dxobs);
-	sll->gamma += scale1 * (ctx->gamma - sll->gamma);
+	sll->gamma += scale1 * (sm->gamma - sll->gamma);
 
 	svector_scale(sll->dp, scale0);
-	svector_axpys(scale1, &ctx->dp, sll->dp);
+	svector_axpys(scale1, &sm->dp, sll->dp);
 
 	svector_scale(sll->dxbar, scale0);
-	svector_axpys(scale1, &ctx->dxbar, sll->dxbar);
+	svector_axpys(scale1, &sm->dxbar, sll->dxbar);
 
 	// update number of sends
 	sll->nsend += n;
 
 	svector_free(wt);
-	iproc_model_ctx_unref(ctx);
 }
 
 double iproc_sloglik_value(iproc_sloglik * sll)

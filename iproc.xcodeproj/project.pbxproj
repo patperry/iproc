@@ -55,7 +55,6 @@
 		222FC41A13607C7900E64FC9 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
 		222FC41C13607C7900E64FC9 /* loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* loglik.c */; };
 		222FC41F13607C7900E64FC9 /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
-		222FC42113607C7900E64FC9 /* model-ctx.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597413133D0AFB0022B52E /* model-ctx.c */; };
 		222FC42213607C7900E64FC9 /* model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* model.c */; };
 		222FC42413607C7900E64FC9 /* sloglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597416133D0AFB0022B52E /* sloglik.c */; };
 		222FC42613607C7900E64FC9 /* event-trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597418133D0AFB0022B52E /* event-trace.c */; };
@@ -96,7 +95,6 @@
 		22597426133D0AFB0022B52E /* loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740F133D0AFB0022B52E /* loglik.h */; };
 		22597428133D0AFB0022B52E /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
 		22597429133D0AFB0022B52E /* messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597412133D0AFB0022B52E /* messages.h */; };
-		2259742A133D0AFB0022B52E /* model-ctx.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597413133D0AFB0022B52E /* model-ctx.c */; };
 		2259742B133D0AFB0022B52E /* model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* model.c */; };
 		2259742C133D0AFB0022B52E /* model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597415133D0AFB0022B52E /* model.h */; };
 		2259742D133D0AFB0022B52E /* sloglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597416133D0AFB0022B52E /* sloglik.c */; };
@@ -420,7 +418,6 @@
 		2259740F133D0AFB0022B52E /* loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = loglik.h; path = src/loglik.h; sourceTree = "<group>"; };
 		22597411133D0AFB0022B52E /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = src/messages.c; sourceTree = "<group>"; };
 		22597412133D0AFB0022B52E /* messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = messages.h; path = src/messages.h; sourceTree = "<group>"; };
-		22597413133D0AFB0022B52E /* model-ctx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "model-ctx.c"; path = "src/model-ctx.c"; sourceTree = "<group>"; };
 		22597414133D0AFB0022B52E /* model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model.c; path = src/model.c; sourceTree = "<group>"; };
 		22597415133D0AFB0022B52E /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = src/model.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597416133D0AFB0022B52E /* sloglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sloglik.c; path = src/sloglik.c; sourceTree = "<group>"; };
@@ -690,7 +687,6 @@
 				2259740F133D0AFB0022B52E /* loglik.h */,
 				22597411133D0AFB0022B52E /* messages.c */,
 				22597412133D0AFB0022B52E /* messages.h */,
-				22597413133D0AFB0022B52E /* model-ctx.c */,
 				22597414133D0AFB0022B52E /* model.c */,
 				22597415133D0AFB0022B52E /* model.h */,
 				22597416133D0AFB0022B52E /* sloglik.c */,
@@ -1232,7 +1228,6 @@
 				222FC41A13607C7900E64FC9 /* history.c in Sources */,
 				222FC41C13607C7900E64FC9 /* loglik.c in Sources */,
 				222FC41F13607C7900E64FC9 /* messages.c in Sources */,
-				222FC42113607C7900E64FC9 /* model-ctx.c in Sources */,
 				222FC42213607C7900E64FC9 /* model.c in Sources */,
 				222FC42413607C7900E64FC9 /* sloglik.c in Sources */,
 				222FC42613607C7900E64FC9 /* event-trace.c in Sources */,
@@ -1291,7 +1286,6 @@
 				22597423133D0AFB0022B52E /* history.c in Sources */,
 				22597425133D0AFB0022B52E /* loglik.c in Sources */,
 				22597428133D0AFB0022B52E /* messages.c in Sources */,
-				2259742A133D0AFB0022B52E /* model-ctx.c in Sources */,
 				2259742B133D0AFB0022B52E /* model.c in Sources */,
 				2259742D133D0AFB0022B52E /* sloglik.c in Sources */,
 				2259742F133D0AFB0022B52E /* event-trace.c in Sources */,

@@ -123,8 +123,8 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 	int i, n = GET_LENGTH(Risend);
 	struct messages_iter *cursor = (Rcursor == NULL_USER_OBJECT
 				      ? NULL : Riproc_to_frame(Rcursor));
-	int nsender = (int)iproc_model_nsender(model);
-	int nreceiver = (int)iproc_model_nreceiver(model);
+	int nsender = (int)model_sender_count(model);
+	int nreceiver = (int)model_nreceiver_count(model);
 	struct history *history = messages_iter_history(cursor);
 
 	SEXP Rprobst;
@@ -138,12 +138,11 @@ SEXP Riproc_model_log_probs(SEXP Rmodel, SEXP Risend, SEXP Rcursor)
 		if (isend < 0 || isend >= nsender)
 			error("invalid sender");
 
-		iproc_model_ctx *ctx =
-		    iproc_model_ctx_new(model, isend, history);
+		struct send_model *sm =
+		    model_send_model(model, isend, history);
 		vector_init_matrix_col(&dst, &probst, i);
 
-		iproc_model_ctx_get_logprobs(ctx, &dst);
-		iproc_model_ctx_unref(ctx);
+		send_model_get_logprobs(sm, &dst);
 	}
 
 	UNPROTECT(1);
