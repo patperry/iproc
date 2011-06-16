@@ -481,7 +481,7 @@ static void process_recv_var_event(struct model *m,
 	assert(m);
 	assert(e->type == RECV_VAR_EVENT);
 	
-	const struct dyad_var_event_meta *meta = &e->meta.dyad_var;
+	const struct recv_var_event_meta *meta = &e->meta.recv_var;
 	ssize_t isend = meta->item.isend;
 	struct send_model *sm = model_send_model_raw(m, isend);
 	sm->cached = false;

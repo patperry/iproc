@@ -40,13 +40,13 @@ struct triad_event_meta {
 	ssize_t intvl1, intvl2;
 };
 
-struct sender_var_event_meta {
+struct send_var_event_meta {
 	ssize_t item;
 	ssize_t index;
 	double delta;
 };
 
-struct dyad_var_event_meta {
+struct recv_var_event_meta {
 	struct dyad item;
 	ssize_t index;
 	double delta;
@@ -60,8 +60,8 @@ struct frame_event {
 		struct message_event_meta message;
 		struct dyad_event_meta dyad;
 		struct triad_event_meta triad;
-		struct sender_var_event_meta sender_var;
-		struct dyad_var_event_meta dyad_var;
+		struct send_var_event_meta send_var;
+		struct recv_var_event_meta recv_var;
 	} meta;
 };
 
@@ -78,6 +78,7 @@ struct frame {
 	struct array events; // events that happen immediately after the current time
 	struct pqueue future_events;
 	ssize_t next_event_id;
+	struct matrix send_xt;
 	struct refcount refcount;
 };
 
@@ -114,7 +115,15 @@ ssize_t frame_events_count(const struct frame *f);
 struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
 /* current covariates */
+struct vector frame_send_x(struct frame *f, ssize_t isend);
 struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
+
+void frame_send_mul(double alpha, enum trans_op trans,
+		    const struct frame *f,
+		    const struct vector *x, double beta, struct vector *y);
+void frame_send_muls(double alpha, enum trans_op trans,
+		     const struct frame *f,
+		     const struct svector *x, double beta, struct vector *y);
 
 void frame_recv_mul(double alpha, enum trans_op trans,
 		    const struct frame *f, ssize_t isend,

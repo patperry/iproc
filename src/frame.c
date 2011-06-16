@@ -184,8 +184,11 @@ void frame_init(struct frame *f, struct design *design)
 	array_init(&f->events, sizeof(struct frame_event));
 	pqueue_init(&f->future_events, frame_event_rcompare,
 		    sizeof(struct frame_event));
+	matrix_init(&f->send_xt, design_send_dim(design),
+		    design_send_count(design));
 	refcount_init(&f->refcount);
-	f->next_event_id = 0;
+
+	frame_clear(f);
 }
 
 struct frame *frame_alloc(struct design *design)
@@ -218,6 +221,7 @@ void frame_deinit(struct frame *f)
 	assert(f);
 
 	refcount_deinit(&f->refcount);
+	matrix_deinit(&f->send_xt);
 	pqueue_deinit(&f->future_events);
 	array_deinit(&f->events);
 	var_frames_deinit(f);
@@ -236,6 +240,27 @@ void frame_clear(struct frame *f)
 	array_clear(&f->events);
 	pqueue_clear(&f->future_events);
 	f->next_event_id = 0;
+		
+	const struct actors *senders = design_senders(f->design);
+	ssize_t ieff = design_send_effects_index(f->design);
+	ssize_t itraits = design_send_traits_index(f->design);
+	ssize_t ntraits = actors_dim(senders);
+	ssize_t nsend = design_send_count(f->design);
+	ssize_t isend;
+
+	matrix_fill(&f->send_xt, 0.0);	
+	
+	for (isend = 0; isend < nsend; isend++) {
+		const struct vector *xi = actors_traits(senders, isend);
+		struct vector col = matrix_col(&f->send_xt, isend);
+		struct vector dst = vector_slice(&col, itraits, ntraits);
+		
+		vector_assign_copy(&dst, xi);
+		
+		if (design_send_effects(f->design)) {
+			matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
+		}
+	}
 }
 
 double frame_time(const struct frame *f)
@@ -323,6 +348,21 @@ static void dyad_event_before(struct frame *f, const struct frame_event *fe)
 	}
 }
 
+static void send_var_event_after(struct frame *f,
+				 const struct frame_event *fe)
+{
+	assert(f);
+	assert(fe->time == frame_time(f));
+	assert(fe->type == SEND_VAR_EVENT);
+	
+	const struct send_var_event_meta *meta = &fe->meta.send_var;
+	ssize_t isend = meta->item;
+	ssize_t index = meta->index;
+	double delta = meta->delta;
+	double *ptr = matrix_item_ptr(&f->send_xt, index, isend);
+	*ptr += delta;
+}
+
 static void recv_var_event_after(struct frame *f,
 				 const struct frame_event *fe)
 {
@@ -330,7 +370,7 @@ static void recv_var_event_after(struct frame *f,
 	assert(fe->time == frame_time(f));
 	assert(fe->type == RECV_VAR_EVENT);
 
-	const struct dyad_var_event_meta *meta = &fe->meta.dyad_var;
+	const struct recv_var_event_meta *meta = &fe->meta.recv_var;
 	struct svector_pos pos;
 	double *ptr;
 	struct svector *dx;
@@ -361,8 +401,8 @@ static void event_before(struct frame *f, const struct frame_event *e)
 	case TRIAD_EVENT_MOVE1:
 	case TRIAD_EVENT_MOVE2:
 		assert(0 && "Not implemented");
+	case SEND_VAR_EVENT:			
 	case RECV_VAR_EVENT:
-	case SEND_VAR_EVENT:
 		break;
 	}
 }
@@ -373,21 +413,20 @@ static void event_after(struct frame *f, const struct frame_event *e)
 	assert(e->time == frame_time(f));
 	
 	switch (e->type) {
-		case DYAD_EVENT_INIT:
-		case DYAD_EVENT_MOVE:
-		case TRIAD_EVENT_INIT:
-		case TRIAD_EVENT_MOVE1:
-		case TRIAD_EVENT_MOVE2:
-			break;
-		case RECV_VAR_EVENT:
-			recv_var_event_after(f, e);
-			break;
-		case SEND_VAR_EVENT:
-			assert(0 && "Not implemented");
-			break;
+	case DYAD_EVENT_INIT:
+	case DYAD_EVENT_MOVE:
+	case TRIAD_EVENT_INIT:
+	case TRIAD_EVENT_MOVE1:
+	case TRIAD_EVENT_MOVE2:
+		break;
+	case SEND_VAR_EVENT:
+		send_var_event_after(f, e);
+		break;
+	case RECV_VAR_EVENT:
+		recv_var_event_after(f, e);
+		break;
 	}
 }
-
 
 ssize_t frame_events_add(struct frame *f, struct frame_event *e)
 {
@@ -493,6 +532,15 @@ void frame_add(struct frame *f, const struct message *msg)
 	history_add(&f->history, msg->from, msg->to, msg->nto, msg->attr);
 }
 
+
+struct vector frame_send_x(struct frame *f, ssize_t isend)
+{
+	assert(f);
+	assert(0 <= isend && isend < design_send_count(f->design));
+	
+	return matrix_col(&f->send_xt, isend);
+}
+
 struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 {
 	assert(f);
@@ -501,6 +549,48 @@ struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 
 	struct send_frame *sf = frame_send_frame(f, isend);
 	return send_frame_dx(sf, jrecv);
+}
+
+void frame_send_mul(double alpha, enum trans_op trans,
+		    const struct frame *f,
+		    const struct vector *x, double beta, struct vector *y)
+{
+	assert(f);
+	assert(f->design);
+	assert(x);
+	assert(y);
+	assert(trans != TRANS_NOTRANS
+	       || vector_dim(x) == design_send_dim(f->design));
+	assert(trans != TRANS_NOTRANS
+	       || vector_dim(y) == design_send_count(f->design));
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(x) == design_send_count(f->design));
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_send_dim(f->design));
+	
+	enum trans_op transt = (trans == TRANS_NOTRANS ? TRANS_TRANS : TRANS_NOTRANS);
+	matrix_mul(alpha, transt, &f->send_xt, x, beta, y);
+}
+
+void frame_send_muls(double alpha, enum trans_op trans,
+		     const struct frame *f,
+		     const struct svector *x, double beta, struct vector *y)
+{
+	assert(f);
+	assert(f->design);
+	assert(x);
+	assert(y);
+	assert(trans != TRANS_NOTRANS
+	       || svector_dim(x) == design_send_dim(f->design));
+	assert(trans != TRANS_NOTRANS
+	       || vector_dim(y) == design_send_count(f->design));
+	assert(trans == TRANS_NOTRANS
+	       || svector_dim(x) == design_send_count(f->design));
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_send_dim(f->design));
+	
+	enum trans_op transt = (trans == TRANS_NOTRANS ? TRANS_TRANS : TRANS_NOTRANS);
+	matrix_muls(alpha, transt, &f->send_xt, x, beta, y);
 }
 
 void frame_recv_mul(double alpha, enum trans_op trans,

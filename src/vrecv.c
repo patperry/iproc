@@ -102,8 +102,8 @@ static void vrecv_handle_event(struct frame_var *fv,
 	dx.type = RECV_VAR_EVENT;
 	dx.time = e->time;
 	dx.id = -1;
-	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
-	dx.meta.dyad_var.item.jrecv = meta->msg_dyad.isend;
+	dx.meta.recv_var.item.isend = meta->msg_dyad.jrecv;
+	dx.meta.recv_var.item.jrecv = meta->msg_dyad.isend;
 
 	if (e->type == DYAD_EVENT_INIT) {
 		struct hashset_pos pos;
@@ -124,12 +124,12 @@ static void vrecv_handle_event(struct frame_var *fv,
 		goto out;
 	}
 move:
-	dx.meta.dyad_var.index = index + active->intvl;
-	dx.meta.dyad_var.delta = -1.0;
+	dx.meta.recv_var.index = index + active->intvl;
+	dx.meta.recv_var.delta = -1.0;
 	frame_events_add(f, &dx);
 init:
-	dx.meta.dyad_var.index = index + meta->intvl;
-	dx.meta.dyad_var.delta = +1.0;
+	dx.meta.recv_var.index = index + meta->intvl;
+	dx.meta.recv_var.delta = +1.0;
 	frame_events_add(f, &dx);
 
 	active->id = e->id;
