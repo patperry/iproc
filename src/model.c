@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include "ieee754.h"
 #include "logsumexp.h"
 #include "model.h"
 #include "util.h"
@@ -278,22 +279,20 @@ static void recv_model_update(struct recv_model *rm, const struct frame *f)
 	assert(rm);
 	assert(f);
 
-	svector_clear(&rm->deta);
 	svector_clear(&rm->dp);
 	svector_clear(&rm->dxbar);
 
-	struct model *model = rm->model;
 	ssize_t isend = rm->isend;
-	const struct vector *coefs = model_coefs(model);
 	const struct vector *log_p0 = recv_model_logprobs0(rm);
 	const struct vector *p0 = recv_model_probs0(rm);
+	
+	//compute_weight_changes(f, rm->isend, model_coefs(rm->model), log_p0,
+	//		       &rm->deta, &rm->gamma, &rm->log_gamma);
 
-	compute_weight_changes(f, isend, coefs, log_p0,
-			       &rm->deta, &rm->gamma, &rm->log_gamma);
 	compute_active_probs(log_p0, rm->log_gamma, &rm->deta, &rm->dp);
 	frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &rm->dp, 0.0, &rm->dxbar);
 	compute_prob_diffs(p0, rm->gamma, &rm->dp);
-	rm->cached = true;
+	rm->cached = true;	
 }
 
 static void recv_model_init(struct recv_model *rm, struct model *m,
@@ -470,32 +469,31 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	assert(e->type == RECV_VAR_EVENT);
 
 	const struct recv_var_event_meta *meta = &e->meta.recv_var;
-	ssize_t isend = meta->item.isend;
-	struct recv_model *rm = model_recv_model_raw(m, isend);
-	rm->cached = false;
+	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
+	const struct cohort_model *cm = rm->cohort;	
+	const struct vector *coefs = model_coefs(m);	
 
-	/*
-	   const struct cohort_model *cm = model_cohort_model(m, isend);
-	   ssize_t jrecv = meta->item.jrecv;
-	   struct svector_pos pos;
-	   double *ptr;
+	ssize_t jrecv = meta->item.jrecv;
+	double *pdeta = svector_item_ptr(&rm->deta, jrecv);
 
-	   ssize_t index = meta->index;
-	   double beta = vector_item(model_coefs(m), index);
-	   double dx = meta->delta;
-	   double deta_j = beta * dx;
-	   double p0 = rm->gamma * vector_item(&cm->p0, jrecv);
+	ssize_t index = meta->index;
+	double dx = meta->delta;
+	double deta = vector_item(coefs, index) * dx;
 
-	   ptr = svector_find(&rm->deta, jrecv, &pos);
-	   if (!ptr) {
-	   svector_insert(&rm->deta, &pos, deta_j);
-	   } else {
-	   p0 += svector_item(&rm->dp, jrecv);
-	   *ptr += deta_j;
-	   if (*ptr == 0.0) {
-	   svector_remove_at(&rm->deta, &pos);
-	   }
-	   } */
+	double gamma0 = rm->gamma;
+	double log_gamma0 = rm->log_gamma;
+	double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
+	// double log_p0 = log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta);
+
+	double adj = p0 * expm1(deta);
+	double gamma = gamma0 / (1.0 + adj);
+	double log_gamma = log_gamma0 - log1p(adj);
+	
+	rm->gamma = gamma;
+	rm->log_gamma = log_gamma;
+	*pdeta += deta;
+	
+	rm->cached = false;	
 }
 
 static void model_update_with(struct model *m, const struct frame_event *e)
