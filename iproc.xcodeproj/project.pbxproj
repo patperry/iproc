@@ -80,6 +80,10 @@
 		222FC45813608F4200E64FC9 /* vecLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 221FEEE8132ED2B40000097B /* vecLib.framework */; };
 		223BFE4713AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
 		223BFE4813AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
+		223BFE4A13AAA2EC00835B8F /* sv-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 223BFE4913AAA2EC00835B8F /* sv-nrecv.c */; };
+		223BFE4B13AAA2EC00835B8F /* sv-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 223BFE4913AAA2EC00835B8F /* sv-nrecv.c */; };
+		223BFE4D13AAA40100835B8F /* sv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 223BFE4C13AAA40100835B8F /* sv-irecv.c */; };
+		223BFE4E13AAA40100835B8F /* sv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 223BFE4C13AAA40100835B8F /* sv-irecv.c */; };
 		225973FF133CE9AD0022B52E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		22597402133D081B0022B52E /* matrix.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597400133D081A0022B52E /* matrix.c */; };
 		22597403133D081B0022B52E /* matrix.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597401133D081A0022B52E /* matrix.h */; };
@@ -435,6 +439,8 @@
 		222FC3F913607B2100E64FC9 /* hashset_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hashset_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		223BFE4613AA98F200835B8F /* vars.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vars.h; path = src/vars.h; sourceTree = "<group>"; };
+		223BFE4913AAA2EC00835B8F /* sv-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sv-nrecv.c"; path = "src/sv-nrecv.c"; sourceTree = "<group>"; };
+		223BFE4C13AAA40100835B8F /* sv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sv-irecv.c"; path = "src/sv-irecv.c"; sourceTree = "<group>"; };
 		224D0557132EC113007F5646 /* libRiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libRiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		225973FD133CE9AD0022B52E /* compare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compare.h; path = src/core/compare.h; sourceTree = "<group>"; };
 		22597400133D081A0022B52E /* matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = matrix.c; path = src/core/matrix.c; sourceTree = "<group>"; };
@@ -735,8 +741,10 @@
 				22597415133D0AFB0022B52E /* model.h */,
 				22597416133D0AFB0022B52E /* sloglik.c */,
 				22597417133D0AFB0022B52E /* sloglik.h */,
-				22286F0D136F36340015CC42 /* rv-nrecv.c */,
 				2259741A133D0AFB0022B52E /* rv-irecv.c */,
+				22286F0D136F36340015CC42 /* rv-nrecv.c */,
+				223BFE4C13AAA40100835B8F /* sv-irecv.c */,
+				223BFE4913AAA2EC00835B8F /* sv-nrecv.c */,
 				223BFE4613AA98F200835B8F /* vars.h */,
 			);
 			name = IProc;
@@ -1319,6 +1327,8 @@
 				22EA3334136B440B00C5627F /* frame.c in Sources */,
 				22286F10136F36340015CC42 /* rv-nrecv.c in Sources */,
 				22FFF12913871A8B003DDA26 /* timsort.c in Sources */,
+				223BFE4B13AAA2EC00835B8F /* sv-nrecv.c in Sources */,
+				223BFE4E13AAA40100835B8F /* sv-irecv.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1367,6 +1377,8 @@
 				22EA3333136B440B00C5627F /* frame.c in Sources */,
 				22286F0F136F36340015CC42 /* rv-nrecv.c in Sources */,
 				22FFF12813871A8B003DDA26 /* timsort.c in Sources */,
+				223BFE4A13AAA2EC00835B8F /* sv-nrecv.c in Sources */,
+				223BFE4D13AAA40100835B8F /* sv-irecv.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
