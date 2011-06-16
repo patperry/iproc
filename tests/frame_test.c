@@ -10,8 +10,7 @@
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
-#include "vnrecv.h"
-#include "vrecv.h"
+#include "vars.h"
 #include "frame.h"
 
 
@@ -22,8 +21,8 @@ static bool has_loops;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
-static ssize_t vnrecv_index;
-static ssize_t vrecv_index;
+static ssize_t rv_nrecv_index;
+static ssize_t rv_irecv_index;
 static struct frame frame;
 
 
@@ -44,7 +43,7 @@ static void enron_teardown_fixture(void **state)
 	print_message("\n\n");
 }
 
-static void vnrecv_setup(void **state)
+static void rv_nrecv_setup(void **state)
 {
 	has_reffects = false;
 	has_loops = false;
@@ -52,21 +51,19 @@ static void vnrecv_setup(void **state)
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, VAR_TYPE_NRECV);
-	vnrecv_index = design_recv_var_index(&design, VAR_TYPE_NRECV);
+	design_add_recv_var(&design, RECV_VAR_NRECV);
+	rv_nrecv_index = design_recv_var_index(&design, RECV_VAR_NRECV);
 	frame_init(&frame, &design);
 }
 
-static void vnrecv_teardown(void **state)
+static void rv_nrecv_teardown(void **state)
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 }
 
-
-
-static void test_vnrecv(void **state)
+static void test_rv_nrecv(void **state)
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -83,7 +80,7 @@ static void test_vnrecv(void **state)
 	matrix_fill(&xnrecv, 0.0);
 
 	vector_init(&x, design_recv_dim(&design));
-	vector_set_basis(&x, vnrecv_index);
+	vector_set_basis(&x, rv_nrecv_index);
 	vector_init(&y, design_recv_count(&design));
 	
 	isend = 0;
@@ -113,8 +110,7 @@ static void test_vnrecv(void **state)
 	matrix_deinit(&xnrecv);
 }
 
-
-static void vrecv_setup(void **state)
+static void rv_irecv_setup(void **state)
 {
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
@@ -127,12 +123,12 @@ static void vrecv_setup(void **state)
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, VAR_TYPE_RECV);
-	vrecv_index = design_recv_var_index(&design, VAR_TYPE_RECV);
+	design_add_recv_var(&design, RECV_VAR_IRECV);
+	rv_irecv_index = design_recv_var_index(&design, RECV_VAR_IRECV);
 	frame_init(&frame, &design);
 }
 
-static void vrecv_teardown(void **state)
+static void rv_irecv_teardown(void **state)
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
@@ -140,8 +136,7 @@ static void vrecv_teardown(void **state)
 }
 
 
-
-static void test_vrecv(void **state)
+static void test_rv_irecv(void **state)
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -171,7 +166,7 @@ static void test_vrecv(void **state)
 			tlo = i == 0 ? 0 : vector_item(&intervals, i - 1);
 			thi = i == n ? INFINITY : vector_item(&intervals, i);
 			
-			svector_set_basis(&x, vrecv_index + i);
+			svector_set_basis(&x, rv_irecv_index + i);
 			frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 			for (j = 0; j < 1; j++) {
@@ -204,8 +199,8 @@ int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
-		unit_test_setup_teardown(test_vnrecv, vnrecv_setup, vnrecv_teardown),
-		unit_test_setup_teardown(test_vrecv, vrecv_setup, vrecv_teardown),		
+		unit_test_setup_teardown(test_rv_nrecv, rv_nrecv_setup, rv_nrecv_teardown),
+		unit_test_setup_teardown(test_rv_irecv, rv_irecv_setup, rv_irecv_teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);

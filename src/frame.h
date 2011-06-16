@@ -65,10 +65,6 @@ struct frame_event {
 	} meta;
 };
 
-struct frame_var {
-	struct design_var *design;
-	void *udata;
-};
 
 struct frame {
 	struct design *design;

@@ -10,31 +10,31 @@
 #include "hashset.h"
 #include "intmap.h"
 #include "util.h"
-#include "vrecv.h"
+#include "vars.h"
 
-struct vrecv_active {
+struct irecv_active {
 	struct dyad dyad;
 	ssize_t id;
 	ssize_t intvl;
 };
 
-struct vrecv_udata {
+struct irecv_udata {
 	struct hashset active;
 };
 
-static uint32_t vrecv_active_hash(const void *x)
+static uint32_t irecv_active_hash(const void *x)
 {
-	const struct vrecv_active *active = x;
+	const struct irecv_active *active = x;
 	return memory_hash(&active->dyad, sizeof(active->dyad));
 }
 
-static bool vrecv_active_equals(const void *x, const void *y)
+static bool irecv_active_equals(const void *x, const void *y)
 {
-	const struct vrecv_active *a = x, *b = y;
+	const struct irecv_active *a = x, *b = y;
 	return a->dyad.isend == b->dyad.isend && a->dyad.jrecv == b->dyad.jrecv;
 }
 
-static void vrecv_init(struct design_var *dv, const struct design *d)
+static void irecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
 	assert(d);
@@ -43,42 +43,42 @@ static void vrecv_init(struct design_var *dv, const struct design *d)
 	dv->dim = n + 1;
 }
 
-static void vrecv_deinit(struct design_var *dv)
+static void irecv_deinit(struct design_var *dv)
 {
 	assert(dv);
 }
 
-static void vrecv_frame_init(struct frame_var *fv, struct frame *f)
+static void irecv_frame_init(struct frame_var *fv, struct frame *f)
 {
 	assert(fv);
 	assert(f);
 
-	struct vrecv_udata *udata = xcalloc(1, sizeof(*udata));
-	hashset_init(&udata->active, vrecv_active_hash, vrecv_active_equals,
-		     sizeof(struct vrecv_active));
+	struct irecv_udata *udata = xcalloc(1, sizeof(*udata));
+	hashset_init(&udata->active, irecv_active_hash, irecv_active_equals,
+		     sizeof(struct irecv_active));
 	fv->udata = udata;
 }
 
-static void vrecv_frame_deinit(struct frame_var *fv)
+static void irecv_frame_deinit(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
 
-	struct vrecv_udata *udata = fv->udata;
+	struct irecv_udata *udata = fv->udata;
 	hashset_deinit(&udata->active);
 	free(udata);
 }
 
-static void vrecv_frame_clear(struct frame_var *fv)
+static void irecv_frame_clear(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
 
-	struct vrecv_udata *udata = fv->udata;
+	struct irecv_udata *udata = fv->udata;
 	hashset_clear(&udata->active);
 }
 
-static void vrecv_handle_event(struct frame_var *fv,
+static void irecv_handle_event(struct frame_var *fv,
 			       const struct frame_event *e, struct frame *f)
 {
 	assert(fv);
@@ -94,10 +94,10 @@ static void vrecv_handle_event(struct frame_var *fv,
 	const struct dyad_event_meta *meta = &e->meta.dyad;
 
 	ssize_t index = fv->design->index;
-	struct vrecv_udata *udata = fv->udata;
-	const struct vrecv_active *key =
+	struct irecv_udata *udata = fv->udata;
+	const struct irecv_active *key =
 	    container_of(&meta->msg_dyad, const struct vrecv_active, dyad);
-	struct vrecv_active *active;
+	struct irecv_active *active;
 
 	struct frame_event dx;
 	dx.type = RECV_VAR_EVENT;
@@ -139,14 +139,14 @@ out:
 	return;
 }
 
-static struct var_type VAR_TYPE_RECV_REP = {
+static struct var_type RECV_VAR_IRECV_REP = {
 	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
-	vrecv_init,
-	vrecv_deinit,
-	vrecv_frame_init,
-	vrecv_frame_deinit,
-	vrecv_frame_clear,
-	vrecv_handle_event
+	irecv_init,
+	irecv_deinit,
+	irecv_frame_init,
+	irecv_frame_deinit,
+	irecv_frame_clear,
+	irecv_handle_event
 };
 
-const struct var_type *VAR_TYPE_RECV = &VAR_TYPE_RECV_REP;
+const struct var_type *RECV_VAR_IRECV = &RECV_VAR_IRECV_REP;

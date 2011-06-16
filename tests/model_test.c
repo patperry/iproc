@@ -13,8 +13,7 @@
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
-#include "vnrecv.h"
-#include "vrecv.h"
+#include "vars.h"
 #include "frame.h"
 #include "model.h"
 
@@ -60,7 +59,7 @@ static void basic_setup(void **state)
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, VAR_TYPE_RECV);
+	design_add_recv_var(&design, RECV_VAR_IRECV);
 	frame_init(&frame, &design);
 	vector_init(&coefs, design_recv_dim(&design));
 	

@@ -30,12 +30,11 @@ libiproc_la_SOURCES = \
 	src/messages.h \
 	src/model.c \
 	src/model.h \
+	src/rv-nrecv.c \
+	src/rv-irecv.c \
 	src/sloglik.c \
 	src/sloglik.h \
-	src/vnrecv.c \
-	src/vnrecv.h \
-	src/vrecv.c \
-	src/vrecv.h
+	src/vars.h
 
 libiproc_la_CPPFLAGS = \
 	-I./src/core \

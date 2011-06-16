@@ -2,9 +2,9 @@
 #include <assert.h>
 
 #include "frame.h"
-#include "vnrecv.h"
+#include "vars.h"
 
-static void vnrecv_init(struct design_var *dv, const struct design *d)
+static void nrecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
 	assert(d);
@@ -13,13 +13,13 @@ static void vnrecv_init(struct design_var *dv, const struct design *d)
 	dv->dim = n + 1;
 }
 
-static void vnrecv_deinit(struct design_var *dv)
+static void nrecv_deinit(struct design_var *dv)
 {
 	assert(dv);
 }
 
-static void vnrecv_handle_event(struct frame_var *fv,
-				const struct frame_event *e, struct frame *f)
+static void nrecv_handle_event(struct frame_var *fv,
+			       const struct frame_event *e, struct frame *f)
 {
 	assert(fv);
 	assert(e);
@@ -50,14 +50,14 @@ static void vnrecv_handle_event(struct frame_var *fv,
 	frame_events_add(f, &dx);
 }
 
-static struct var_type VAR_TYPE_NRECV_REP = {
+static struct var_type RECV_VAR_NRECV_REP = {
 	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
-	vnrecv_init,
-	vnrecv_deinit,
+	nrecv_init,
+	nrecv_deinit,
 	NULL,			// frame_init,
 	NULL,			// frame_deinit,
 	NULL,			// frame_clear,
-	vnrecv_handle_event
+	nrecv_handle_event
 };
 
-const struct var_type *VAR_TYPE_NRECV = &VAR_TYPE_NRECV_REP;
+const struct var_type *RECV_VAR_NRECV = &RECV_VAR_NRECV_REP;

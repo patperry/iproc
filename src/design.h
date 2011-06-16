@@ -9,6 +9,7 @@
 #include "refcount.h"
 #include "svector.h"
 #include "vector.h"
+#include "vars.h"
 
 /* I. Introduction
  * ---------------
@@ -72,32 +73,6 @@
  * a sparse vector.
  */
 
-struct frame;			// forward declarations
-struct frame_event;
-struct design;
-struct design_var;
-struct frame_var;
-
-struct var_type {
-	uint8_t event_mask;
-
-	void (*init) (struct design_var * dv, const struct design * d);
-	void (*deinit) (struct design_var * dv);
-
-	void (*frame_init) (struct frame_var * fv, struct frame * f);
-	void (*frame_deinit) (struct frame_var * fv);
-	void (*frame_clear) (struct frame_var * fv);
-
-	void (*handle_event) (struct frame_var * fv,
-			      const struct frame_event * e, struct frame * f);
-};
-
-struct design_var {
-	const struct var_type *type;
-	ssize_t dim;
-	ssize_t index;
-	void *udata;
-};
 
 struct design {
 	struct actors *senders;

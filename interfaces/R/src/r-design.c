@@ -7,8 +7,7 @@
 #include <R_ext/Rdynload.h>
 
 #include "actors.h"
-#include "vrecv.h"
-#include "vnrecv.h"
+#include "vars.h"
 #include "r-utils.h"
 #include "r-actors.h"
 #include "r-design.h"
@@ -28,8 +27,8 @@ static R_CallMethodDef callMethods[] = {
 struct design_params {
 	bool loops;
 	bool reffects;
-	bool vrecv;
-	bool vnrecv;
+	bool rv_irecv;
+	bool rv_nrecv;
 };
 
 static struct design *design_alloc_params(struct actors *senders,
@@ -46,11 +45,11 @@ static struct design *design_alloc_params(struct actors *senders,
 
 	design_set_loops(design, params->loops);
 	design_set_recv_effects(design, params->reffects);
-	if (params->vrecv) {
-		design_add_recv_var(design, VAR_TYPE_RECV);
+	if (params->rv_irecv) {
+		design_add_recv_var(design, RECV_VAR_IRECV);
 	}
-	if (params->vnrecv) {
-		design_add_recv_var(design, VAR_TYPE_NRECV);
+	if (params->rv_nrecv) {
+		design_add_recv_var(design, RECV_VAR_NRECV);
 	}
 	return design;
 }
@@ -117,8 +116,8 @@ Riproc_design_new(SEXP Rsenders,
 	struct design_params params;
 	params.loops = has_loops;
 	params.reffects = receiver_effects;
-	params.vrecv = false;
-	params.vnrecv = false;
+	params.rv_irecv = false;
+	params.rv_nrecv = false;
 
 	struct design *design =
 	    design_alloc_params(senders, receivers, intervals, &params);
