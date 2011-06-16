@@ -102,15 +102,24 @@ struct design_var {
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
+	bool loops;
+	
 	struct vector intervals;
+	
+	struct array send_vars;
+	bool seffects;	
+	ssize_t iseffects;
+	ssize_t isstatic, nsstatic;
+	ssize_t isdynamic, nsdynamic;
+	ssize_t sdim;
+
+	struct array recv_vars;
+	bool reffects;	
 	ssize_t ireffects;
 	ssize_t irstatic, nrstatic;
 	ssize_t irdynamic, nrdynamic;
-	ssize_t dim;
-	bool reffects;
-	bool loops;
+	ssize_t rdim;
 
-	struct array recv_vars;
 	struct refcount refcount;
 };
 
@@ -123,9 +132,10 @@ void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct vector *intervals);
 void design_deinit(struct design *design);
 
-static inline ssize_t design_dim(const struct design *design);
-static inline ssize_t design_sender_count(const struct design *design);
-static inline ssize_t design_receiver_count(const struct design *design);
+static inline ssize_t design_send_dim(const struct design *design);
+static inline ssize_t design_recv_dim(const struct design *design);
+static inline ssize_t design_send_count(const struct design *design);
+static inline ssize_t design_recv_count(const struct design *design);
 static inline struct actors *design_senders(const struct design *design);
 static inline struct actors *design_receivers(const struct design *design);
 static inline const struct vector *design_intervals(const struct design
@@ -133,13 +143,29 @@ static inline const struct vector *design_intervals(const struct design
 
 static inline bool design_loops(const struct design *design);
 void design_set_loops(struct design *design, bool loops);
+
+bool design_send_effects(const struct design *design);
+void design_set_send_effects(struct design *design, bool seffects);
+void design_add_send_var(struct design *design, const struct var_type *type);
+ssize_t design_send_traits_index(const struct design *design);
+ssize_t design_send_effects_index(const struct design *design);
+ssize_t design_send_var_index(const struct design *design,
+			      const struct var_type *type);
+
+void design_send_mul0(double alpha,
+		      enum trans_op trans,
+		      const struct design *design,
+		      const struct vector *x, double beta, struct vector *y);
+void design_send_muls0(double alpha,
+		       enum trans_op trans,
+		       const struct design *design,
+		       const struct svector *x, double beta, struct vector *y);
+
 bool design_recv_effects(const struct design *design);
 void design_set_recv_effects(struct design *design, bool reffects);
 void design_add_recv_var(struct design *design, const struct var_type *type);
-
-
-ssize_t design_recv_traits_index(const struct design *design);
 ssize_t design_recv_effects_index(const struct design *design);
+ssize_t design_recv_traits_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,
 			      const struct var_type *type);
 
@@ -155,20 +181,26 @@ void design_recv_muls0(double alpha,
 		       const struct svector *x, double beta, struct vector *y);
 
 /* inline funciton definitions */
-ssize_t design_dim(const struct design *design)
+ssize_t design_send_dim(const struct design *design)
 {
 	assert(design);
-	return design->dim;
+	return design->sdim;
 }
 
-ssize_t design_sender_count(const struct design *design)
+ssize_t design_recv_dim(const struct design *design)
+{
+	assert(design);
+	return design->rdim;
+}
+
+ssize_t design_send_count(const struct design *design)
 {
 	assert(design);
 	const struct actors *senders = design_senders(design);
 	return actors_count(senders);
 }
 
-ssize_t design_receiver_count(const struct design *design)
+ssize_t design_recv_count(const struct design *design)
 {
 	assert(design);
 	const struct actors *receivers = design_receivers(design);

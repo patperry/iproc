@@ -67,7 +67,7 @@ SEXP Riproc_model_new(SEXP Rdesign, SEXP Rcoefs)
 	struct design *design = Riproc_to_design(Rdesign);
 	struct vector coefs = Riproc_vector_view_sexp(Rcoefs);
 
-	if (design_dim(design) != vector_dim(&coefs))
+	if (design_recv_dim(design) != vector_dim(&coefs))
 		error("design and coefs have different dimensions");
 
 	struct model *model = model_alloc(design, &coefs);

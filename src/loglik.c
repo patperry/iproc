@@ -29,13 +29,13 @@ static iproc_loglik *iproc_loglik_new_empty(struct model * model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
 	struct design *design = model_design(model);
-	ssize_t nsender = design_sender_count(design);
+	ssize_t nsender = design_send_count(design);
 
 	if (!loglik)
 		return NULL;
 
 	loglik->model = model_ref(model);
-	loglik->grad = vector_alloc(design_dim(design));
+	loglik->grad = vector_alloc(design_recv_dim(design));
 	loglik->grad_cached = false;
 	loglik->nsend = 0;
 	loglik->nrecv = 0;

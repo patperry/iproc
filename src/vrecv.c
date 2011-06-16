@@ -86,7 +86,7 @@ static void vrecv_handle_event(struct frame_var *fv,
 	assert(f);
 	assert(fv->design);
 	assert(fv->design->index >= 0);
-	assert(fv->design->index <= design_dim(f->design) - fv->design->dim);
+	assert(fv->design->index <= design_recv_dim(f->design) - fv->design->dim);
 	assert(fv->udata);
 	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
 

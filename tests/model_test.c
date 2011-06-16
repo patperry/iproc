@@ -62,7 +62,7 @@ static void basic_setup(void **state)
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, VAR_TYPE_RECV);
 	frame_init(&frame, &design);
-	vector_init(&coefs, design_dim(&design));
+	vector_init(&coefs, design_recv_dim(&design));
 	
 	for (i = 0; i < vector_dim(&coefs); i++) {
 		double val = (i % 5 == 0 ? -2.0 :
@@ -94,7 +94,7 @@ static void test_probs(void **state)
 	ssize_t isend, jrecv, nrecv;
 	ssize_t i, n;
 	
-	nrecv = design_receiver_count(&design);
+	nrecv = design_recv_count(&design);
 	vector_init(&eta, nrecv);	
 	vector_init(&probs, nrecv);
 	vector_init(&logprobs, nrecv);	

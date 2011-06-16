@@ -71,7 +71,7 @@ static void test_vnrecv(void **state)
 	double t;
 	ssize_t itie, ntie, ito;
 	ssize_t isend;
-	ssize_t jrecv, nrecv = design_receiver_count(&design);
+	ssize_t jrecv, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnrecv;
@@ -79,12 +79,12 @@ static void test_vnrecv(void **state)
 	
 	
 	
-	matrix_init(&xnrecv, design_sender_count(&design), design_receiver_count(&design));
+	matrix_init(&xnrecv, design_send_count(&design), design_recv_count(&design));
 	matrix_fill(&xnrecv, 0.0);
 
-	vector_init(&x, design_dim(&design));
+	vector_init(&x, design_recv_dim(&design));
 	vector_set_basis(&x, vnrecv_index);
-	vector_init(&y, design_receiver_count(&design));
+	vector_init(&y, design_recv_count(&design));
 	
 	isend = 0;
 	
@@ -146,7 +146,7 @@ static void test_vrecv(void **state)
 	double t;
 	ssize_t itie, ntie, ito;
 	ssize_t isend;
-	ssize_t jrecv, j, nrecv = design_receiver_count(&design);
+	ssize_t jrecv, j, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
@@ -154,11 +154,11 @@ static void test_vrecv(void **state)
 	double delta, tmsg, tlo, thi;
 	ssize_t i, n = vector_dim(&intervals);
 	
-	matrix_init(&tlast, design_sender_count(&design), design_receiver_count(&design));
+	matrix_init(&tlast, design_send_count(&design), design_recv_count(&design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	svector_init(&x, design_dim(&design));
-	svector_init(&y, design_receiver_count(&design));
+	svector_init(&x, design_recv_dim(&design));
+	svector_init(&y, design_recv_count(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);

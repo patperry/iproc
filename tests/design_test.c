@@ -104,9 +104,9 @@ static void enron_reff_teardown(void **state)
 
 static void test_size(void **state)
 {
-	assert_int_equal(design_dim(&design), dim);
-	assert_int_equal(design_sender_count(&design), actors_count(&senders));
-	assert_int_equal(design_receiver_count(&design), actors_count(&receivers));
+	assert_int_equal(design_recv_dim(&design), dim);
+	assert_int_equal(design_send_count(&design), actors_count(&senders));
+	assert_int_equal(design_recv_count(&design), actors_count(&receivers));
 }
 
 static void matrix_assign_static(struct matrix *x,
@@ -156,7 +156,7 @@ static void matrix_assign_reffects(struct matrix *x,
 static void matrix_init_design0(struct matrix *x, const struct design *d,
 				ssize_t isend)
 {
-	assert(0 <= isend && isend < design_sender_count(d));
+	assert(0 <= isend && isend < design_send_count(d));
 	
 	const struct actors *s = design_senders(d);
 	const struct actors *r = design_receivers(d);
@@ -186,8 +186,8 @@ static void test_mul0(void **state)
 	struct vector x, y, y1;	
 	ssize_t isend, nsend, i, n, p;
 	
-	n = design_receiver_count(&design);
-	p = design_dim(&design);
+	n = design_recv_count(&design);
+	p = design_recv_dim(&design);
 	
 	vector_init(&x, p);
 	vector_init(&y, n);
@@ -233,8 +233,8 @@ static void test_tmul0(void **state)
 	struct vector x, y, y1;	
 	ssize_t isend, nsend, i, n, p;
 	
-	n = design_receiver_count(&design);
-	p = design_dim(&design);
+	n = design_recv_count(&design);
+	p = design_recv_dim(&design);
 	
 	vector_init(&x, n);
 	vector_init(&y, p);
@@ -281,8 +281,8 @@ static void test_tmuls0(void **state)
 	struct vector y, y1;	
 	ssize_t isend, nsend, i, n, p;
 	
-	n = design_receiver_count(&design);
-	p = design_dim(&design);
+	n = design_recv_count(&design);
+	p = design_recv_dim(&design);
 	
 	svector_init(&x, n);
 	vector_init(&y, p);
@@ -330,8 +330,8 @@ static void test_muls0(void **state)
 	struct vector y, y1;	
 	ssize_t isend, nsend, i, n, p;
 	
-	n = design_receiver_count(&design);
-	p = design_dim(&design);
+	n = design_recv_count(&design);
+	p = design_recv_dim(&design);
 	
 	svector_init(&x, p);
 	vector_init(&y, n);

@@ -135,21 +135,21 @@ Riproc_design_new(SEXP Rsenders,
 SEXP Riproc_design_dim(SEXP Rdesign)
 {
 	const struct design *design = Riproc_to_design(Rdesign);
-	int dim = (int)design_dim(design);
+	int dim = (int)design_recv_dim(design);
 	return ScalarInteger(dim);
 }
 
 SEXP Riproc_design_nsender(SEXP Rdesign)
 {
 	const struct design *design = Riproc_to_design(Rdesign);
-	int nsender = (int)design_sender_count(design);
+	int nsender = (int)design_send_count(design);
 	return ScalarInteger(nsender);
 }
 
 SEXP Riproc_design_nreceiver(SEXP Rdesign)
 {
 	const struct design *design = Riproc_to_design(Rdesign);
-	int nreceiver = (int)design_receiver_count(design);
+	int nreceiver = (int)design_recv_count(design);
 	return ScalarInteger(nreceiver);
 }
 
