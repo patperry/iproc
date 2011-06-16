@@ -45,12 +45,12 @@ static struct design *design_alloc_params(struct actors *senders,
 	struct design *design = design_alloc(senders, receivers, intervals);
 
 	design_set_loops(design, params->loops);
-	design_set_reffects(design, params->reffects);
+	design_set_recv_effects(design, params->reffects);
 	if (params->vrecv) {
-		design_add_var(design, VAR_TYPE_RECV);
+		design_add_recv_var(design, VAR_TYPE_RECV);
 	}
 	if (params->vnrecv) {
-		design_add_var(design, VAR_TYPE_NRECV);
+		design_add_recv_var(design, VAR_TYPE_NRECV);
 	}
 	return design;
 }

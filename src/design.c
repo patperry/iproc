@@ -14,15 +14,15 @@ void design_deinit(struct design *design)
 	actors_free(design->receivers);
 	actors_free(design->senders);
 
-	ssize_t i, n = array_count(&design->vars);
+	ssize_t i, n = array_count(&design->recv_vars);
 	struct design_var *v;
 	for (i = 0; i < n; i++) {
-		v = array_item(&design->vars, i);
+		v = array_item(&design->recv_vars, i);
 		if (v->type->deinit) {
 			v->type->deinit(v);
 		}
 	}
-	array_deinit(&design->vars);
+	array_deinit(&design->recv_vars);
 }
 
 void design_init(struct design *design, struct actors *senders,
@@ -44,7 +44,7 @@ void design_init(struct design *design, struct actors *senders,
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 
-	array_init(&design->vars, sizeof(struct design_var));
+	array_init(&design->recv_vars, sizeof(struct design_var));
 
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
@@ -54,11 +54,11 @@ void design_init(struct design *design, struct actors *senders,
 
 	design->reffects = false;
 	design->ireffects = 0;
-	design->istatic = 0;
-	design->nstatic = p * q;
-	design->idynamic = design->istatic + design->nstatic;
-	design->ndynamic = 0;
-	design->dim = design->idynamic + design->ndynamic;
+	design->irstatic = 0;
+	design->nrstatic = p * q;
+	design->irdynamic = design->irstatic + design->nrstatic;
+	design->nrdynamic = 0;
+	design->dim = design->irdynamic + design->nrdynamic;
 	design->loops = false;
 }
 
@@ -87,7 +87,7 @@ void design_free(struct design *design)
 }
 
 static void
-design_mul0_reffects(double alpha,
+design_recv_mul0_effects(double alpha,
 		     enum trans_op trans,
 		     const struct design *design,
 		     const struct vector *x, struct vector *y)
@@ -108,7 +108,7 @@ design_mul0_reffects(double alpha,
 }
 
 static void
-design_muls0_reffects(double alpha,
+design_recv_muls0_effects(double alpha,
 		      enum trans_op trans,
 		      const struct design *design,
 		      const struct svector *x, struct vector *y)
@@ -139,20 +139,20 @@ design_muls0_reffects(double alpha,
 }
 
 static void
-design_mul0_static(double alpha,
+design_recv_mul0_static(double alpha,
 		   enum trans_op trans,
 		   const struct design *design,
 		   ssize_t isend, const struct vector *x, struct vector *y)
 {
-	if (design->nstatic == 0)
+	if (design->nrstatic == 0)
 		return;
 
 	const struct actors *senders = design_senders(design);
 	const struct actors *receivers = design_receivers(design);
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
-	ssize_t ix_begin = design->istatic;
-	ssize_t nstatic = design->nstatic;
+	ssize_t ix_begin = design->irstatic;
+	ssize_t nstatic = design->nrstatic;
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_alloc(q);
 
@@ -183,20 +183,20 @@ design_mul0_static(double alpha,
 }
 
 static void
-design_muls0_static(double alpha,
+design_recv_muls0_static(double alpha,
 		    enum trans_op trans,
 		    const struct design *design,
 		    ssize_t isend, const struct svector *x, struct vector *y)
 {
-	if (design->nstatic == 0)
+	if (design->nrstatic == 0)
 		return;
 
 	const struct actors *senders = design_senders(design);
 	const struct actors *receivers = design_receivers(design);
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
-	ssize_t ix_begin = design->istatic;
-	ssize_t nstatic = design->nstatic;
+	ssize_t ix_begin = design->irstatic;
+	ssize_t nstatic = design->nrstatic;
 	ssize_t ix_end = ix_begin + nstatic;
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_alloc(q);
@@ -248,7 +248,7 @@ design_muls0_static(double alpha,
 }
 
 void
-design_mul0(double alpha,
+design_recv_mul0(double alpha,
 	    enum trans_op trans,
 	    const struct design *design,
 	    ssize_t isend,
@@ -273,12 +273,12 @@ design_mul0(double alpha,
 		vector_scale(y, beta);
 	}
 
-	design_mul0_reffects(alpha, trans, design, x, y);
-	design_mul0_static(alpha, trans, design, isend, x, y);
+	design_recv_mul0_effects(alpha, trans, design, x, y);
+	design_recv_mul0_static(alpha, trans, design, isend, x, y);
 }
 
 void
-design_muls0(double alpha,
+design_recv_muls0(double alpha,
 	     enum trans_op trans,
 	     const struct design *design,
 	     ssize_t isend,
@@ -303,8 +303,8 @@ design_muls0(double alpha,
 		vector_scale(y, beta);
 	}
 
-	design_muls0_reffects(alpha, trans, design, x, y);
-	design_muls0_static(alpha, trans, design, isend, x, y);
+	design_recv_muls0_effects(alpha, trans, design, x, y);
+	design_recv_muls0_static(alpha, trans, design, isend, x, y);
 }
 
 void design_set_loops(struct design *design, bool loops)
@@ -313,13 +313,13 @@ void design_set_loops(struct design *design, bool loops)
 	design->loops = loops;
 }
 
-bool design_reffects(const struct design *design)
+bool design_recv_effects(const struct design *design)
 {
 	assert(design);
 	return design->reffects;
 }
 
-void design_set_reffects(struct design *design, bool reffects)
+void design_set_recv_effects(struct design *design, bool reffects)
 {
 	assert(design);
 
@@ -329,46 +329,46 @@ void design_set_reffects(struct design *design, bool reffects)
 	ssize_t nrecv = design_receiver_count(design);
 	ssize_t delta = reffects ? nrecv : -nrecv;
 
-	ssize_t i, n = array_count(&design->vars);
+	ssize_t i, n = array_count(&design->recv_vars);
 	struct design_var *var;
 	for (i = 0; i < n; i++) {
-		var = array_item(&design->vars, i);
+		var = array_item(&design->recv_vars, i);
 		var->index += delta;
 	}
 
-	design->istatic += delta;
-	design->idynamic += delta;
+	design->irstatic += delta;
+	design->irdynamic += delta;
 	design->dim += delta;
 	design->reffects = reffects;
 }
 
-void design_add_var(struct design *design, const struct var_type *type)
+void design_add_recv_var(struct design *design, const struct var_type *type)
 {
 	assert(design);
 	assert(type);
 	assert(type->init);
 
-	struct design_var *var = array_add(&design->vars, NULL);
+	struct design_var *var = array_add(&design->recv_vars, NULL);
 
 	type->init(var, design);
 	assert(var->dim >= 0);
-	var->index = design->idynamic + design->ndynamic;
+	var->index = design->irdynamic + design->nrdynamic;
 	var->type = type;
-	design->ndynamic += var->dim;
+	design->nrdynamic += var->dim;
 	design->dim += var->dim;
 }
 
-ssize_t design_traits_index(const struct design *design)
+ssize_t design_recv_traits_index(const struct design *design)
 {
 	assert(design);
-	return design->istatic;
+	return design->irstatic;
 }
 
-ssize_t design_reffects_index(const struct design *design)
+ssize_t design_recv_effects_index(const struct design *design)
 {
 	assert(design);
 
-	if (design_reffects(design))
+	if (design_recv_effects(design))
 		return design->ireffects;
 	return -1;
 }
@@ -379,7 +379,7 @@ static bool design_var_equals(const void *p1, const void *p2)
 	return v1->type == v2->type;
 }
 
-ssize_t design_var_index(const struct design *design,
+ssize_t design_recv_var_index(const struct design *design,
 			 const struct var_type *type)
 {
 	assert(design);
@@ -387,7 +387,7 @@ ssize_t design_var_index(const struct design *design,
 
 	struct design_var *key = container_of(&type, struct design_var, type);
 	const struct design_var *var =
-	    array_find(&design->vars, (predicate_fn) design_var_equals, key);
+	    array_find(&design->recv_vars, (predicate_fn) design_var_equals, key);
 
 	if (var) {
 		return var->index;

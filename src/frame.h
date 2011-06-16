@@ -15,8 +15,8 @@ enum frame_event_type {
 	TRIAD_EVENT_INIT = 1 << 3,
 	TRIAD_EVENT_MOVE1 = 1 << 4,
 	TRIAD_EVENT_MOVE2 = 1 << 5,
-	SENDER_VAR_EVENT = 1 << 6,
-	DYAD_VAR_EVENT = 1 << 7
+	SEND_VAR_EVENT = 1 << 6,
+	RECV_VAR_EVENT = 1 << 7
 };
 
 struct message_event_meta {
@@ -114,21 +114,21 @@ ssize_t frame_events_count(const struct frame *f);
 struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
 /* current covariates */
-struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
+struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
 
-void frame_mul(double alpha, enum trans_op trans,
-	       const struct frame *f, ssize_t isend,
-	       const struct vector *x, double beta, struct vector *y);
-void frame_muls(double alpha, enum trans_op trans,
-		const struct frame *f, ssize_t isend,
-		const struct svector *x, double beta, struct vector *y);
+void frame_recv_mul(double alpha, enum trans_op trans,
+		    const struct frame *f, ssize_t isend,
+		    const struct vector *x, double beta, struct vector *y);
+void frame_recv_muls(double alpha, enum trans_op trans,
+		     const struct frame *f, ssize_t isend,
+		     const struct svector *x, double beta, struct vector *y);
 
-void frame_dmul(double alpha, enum trans_op trans,
-		const struct frame *f, ssize_t isend,
-		const struct vector *x, double beta, struct svector *y);
-void frame_dmuls(double alpha, enum trans_op trans,
-		 const struct frame *f, ssize_t isend,
-		 const struct svector *x, double beta, struct svector *y);
+void frame_recv_dmul(double alpha, enum trans_op trans,
+		     const struct frame *f, ssize_t isend,
+		     const struct vector *x, double beta, struct svector *y);
+void frame_recv_dmuls(double alpha, enum trans_op trans,
+		      const struct frame *f, ssize_t isend,
+		      const struct svector *x, double beta, struct svector *y);
 
 /* debugging */
 void fprintf_event(FILE * restrict stream, const struct frame_event *e);

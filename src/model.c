@@ -16,7 +16,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 	bool has_loops = design_loops(f->design);
 	
 	/* compute the changes in weights */
-	frame_dmul(1.0, TRANS_NOTRANS, f, isend, coefs, 0.0, deta);
+	frame_recv_dmul(1.0, TRANS_NOTRANS, f, isend, coefs, 0.0, deta);
 	if (!has_loops) {
 		svector_set_item(deta, isend, -INFINITY);
 	}
@@ -147,7 +147,7 @@ static void cohort_model_init(struct cohort_model *cm,
 	
 	/* log_p0, eta0 */
 	vector_init(&cm->log_p0, nreceiver);
-	design_mul0(1.0, TRANS_NOTRANS, design, isend, coefs, 0.0, &cm->log_p0);
+	design_recv_mul0(1.0, TRANS_NOTRANS, design, isend, coefs, 0.0, &cm->log_p0);
 #ifndef NDEGUG
 	vector_init_copy(&cm->eta0, &cm->log_p0);
 #endif
@@ -165,7 +165,7 @@ static void cohort_model_init(struct cohort_model *cm,
 	
 	/* xbar0 */
 	vector_init(&cm->xbar0, dim);
-	design_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0, &cm->xbar0);
+	design_recv_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0, &cm->xbar0);
 
 #ifndef NDEBUG
 	/* W0 */
@@ -289,7 +289,7 @@ static void send_model_update(struct send_model *sm, const struct frame *f)
 	compute_weight_changes(f, isend, coefs, log_p0,
 			       &sm->deta, &sm->gamma, &sm->log_gamma);
 	compute_active_probs(log_p0, sm->log_gamma, &sm->deta, &sm->dp);
-	frame_dmuls(1.0, TRANS_TRANS, f, isend, &sm->dp, 0.0, &sm->dxbar);
+	frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &sm->dp, 0.0, &sm->dxbar);
 	compute_prob_diffs(p0, sm->gamma, &sm->dp);
 	sm->cached = true;
 }
@@ -475,11 +475,11 @@ void model_clear(struct model *m)
 	}
 }
 
-static void process_dyad_var_event(struct model *m,
+static void process_recv_var_event(struct model *m,
 				   const struct frame_event *e)
 {
 	assert(m);
-	assert(e->type == DYAD_VAR_EVENT);
+	assert(e->type == RECV_VAR_EVENT);
 	
 	const struct dyad_var_event_meta *meta = &e->meta.dyad_var;
 	ssize_t isend = meta->item.isend;
@@ -516,8 +516,8 @@ static void model_update_with(struct model *m, const struct frame_event *e)
 	assert(e);
 	
 	switch (e->type) {
-	case DYAD_VAR_EVENT:
-		process_dyad_var_event(m, e);
+	case RECV_VAR_EVENT:
+		process_recv_var_event(m, e);
 		break;
 	default:
 		break; /* pass */
@@ -532,7 +532,7 @@ void model_update(struct model *m, const struct frame *f)
 	const struct frame_event *e;
 	
 	ARRAY_FOREACH(e, &f->events) {
-		if (e->type & (SENDER_VAR_EVENT | DYAD_VAR_EVENT)) {
+		if (e->type & (SEND_VAR_EVENT | RECV_VAR_EVENT)) {
 			model_update_with(m, e);
 		}
 	}

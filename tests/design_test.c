@@ -49,7 +49,7 @@ static void enron_setup(void **state)
 
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
-	design_set_reffects(&design, has_reffects);
+	design_set_recv_effects(&design, has_reffects);
 	matrix_deinit(&enron_employees0);
 }
 
@@ -89,7 +89,7 @@ static void enron_reff_setup(void **state)
 	
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
-	design_set_reffects(&design, has_reffects);
+	design_set_recv_effects(&design, has_reffects);
 	matrix_deinit(&enron_employees0);
 }
 
@@ -160,7 +160,7 @@ static void matrix_init_design0(struct matrix *x, const struct design *d,
 	
 	const struct actors *s = design_senders(d);
 	const struct actors *r = design_receivers(d);
-	bool has_reffects = design_reffects(d);
+	bool has_reffects = design_recv_effects(d);
 	struct matrix xstat, xreff;
 	
 	ssize_t nrecv = actors_count(r);
@@ -201,19 +201,19 @@ static void test_mul0(void **state)
 			vector_set_item(&x, i, (7 * i) % 5 - 2);
 		}
 		
-		design_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);
+		design_recv_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);
 		matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, 1.0, &y);
+		design_recv_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, 1.0, &y);
 		matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
+		design_recv_mul0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
 		matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_mul0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
+		design_recv_mul0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
 		matrix_mul(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
@@ -248,19 +248,19 @@ static void test_tmul0(void **state)
 			vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 		}
 		
-		design_mul0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);
+		design_recv_mul0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);
 		matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_mul0(1.0, TRANS_TRANS, &design, isend, &x, 1.0, &y);
+		design_recv_mul0(1.0, TRANS_TRANS, &design, isend, &x, 1.0, &y);
 		matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_mul0(1.0, TRANS_TRANS, &design, isend, &x, -1.0, &y);
+		design_recv_mul0(1.0, TRANS_TRANS, &design, isend, &x, -1.0, &y);
 		matrix_mul(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_mul0(2.0, TRANS_TRANS, &design, isend, &x, 2.0, &y);
+		design_recv_mul0(2.0, TRANS_TRANS, &design, isend, &x, 2.0, &y);
 		matrix_mul(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -297,19 +297,19 @@ static void test_tmuls0(void **state)
 				svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 		}
 		
-		design_muls0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);
+		design_recv_muls0(1.0, TRANS_TRANS, &design, isend, &x, 0.0, &y);
 		matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_muls0(1.0, TRANS_TRANS, &design, isend, &x, 1.0, &y);
+		design_recv_muls0(1.0, TRANS_TRANS, &design, isend, &x, 1.0, &y);
 		matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_muls0(1.0, TRANS_TRANS, &design, isend, &x, -1.0, &y);
+		design_recv_muls0(1.0, TRANS_TRANS, &design, isend, &x, -1.0, &y);
 		matrix_muls(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_muls0(2.0, TRANS_TRANS, &design, isend, &x, 2.0, &y);
+		design_recv_muls0(2.0, TRANS_TRANS, &design, isend, &x, 2.0, &y);
 		matrix_muls(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -346,19 +346,19 @@ static void test_muls0(void **state)
 				svector_set_item(&x, i, (7 * i) % 5 - 2);
 		}
 		
-		design_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);
+		design_recv_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, 0.0, &y);
 		matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, 1.0, &y);
+		design_recv_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, 1.0, &y);
 		matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);
 		
-		design_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
+		design_recv_muls0(1.0, TRANS_NOTRANS, &design, isend, &x, -1.0, &y);
 		matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-		design_muls0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
+		design_recv_muls0(2.0, TRANS_NOTRANS, &design, isend, &x, 2.0, &y);
 		matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
 		assert_true(vector_dist(&y, &y1) == 0.0);		
 		

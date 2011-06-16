@@ -18,8 +18,8 @@ void fprintf_event(FILE * stream, const struct frame_event *e)
 		e->type == TRIAD_EVENT_INIT ? "TRIAD_EVENT_INIT" :
 		e->type == TRIAD_EVENT_MOVE1 ? "TRIAD_EVENT_MOVE1" :
 		e->type == TRIAD_EVENT_MOVE2 ? "TRIAD_EVENT_MOVE2" :
-		e->type == SENDER_VAR_EVENT ? "SENDER_VAR_EVENT" :
-		e->type == DYAD_VAR_EVENT ? "DYAD_VAR_EVENT" : "(undefined)");
+		e->type == SEND_VAR_EVENT ? "SEND_VAR_EVENT" :
+		e->type == RECV_VAR_EVENT ? "RECV_VAR_EVENT" : "(undefined)");
 	fprintf(stream, "}\n");
 }
 
@@ -89,16 +89,16 @@ static void var_frames_init(struct frame *frame, struct design *design)
 	assert(design);
 
 	array_init(&frame->vars, sizeof(struct frame_var));
-	array_set_capacity(&frame->vars, array_count(&design->vars));
+	array_set_capacity(&frame->vars, array_count(&design->recv_vars));
 
-	array_add_range(&frame->vars, NULL, array_count(&design->vars));
+	array_add_range(&frame->vars, NULL, array_count(&design->recv_vars));
 
-	ssize_t i, n = array_count(&design->vars);
+	ssize_t i, n = array_count(&design->recv_vars);
 	struct design_var *dv;
 	struct frame_var *fv;
 
 	for (i = 0; i < n; i++) {
-		dv = array_item(&design->vars, i);
+		dv = array_item(&design->recv_vars, i);
 		fv = array_item(&frame->vars, i);
 		fv->design = dv;
 
@@ -323,19 +323,19 @@ static void dyad_event_before(struct frame *f, const struct frame_event *fe)
 	}
 }
 
-static void dyad_var_event_after(struct frame *f,
+static void recv_var_event_after(struct frame *f,
 				 const struct frame_event *fe)
 {
 	assert(f);
 	assert(fe->time == frame_time(f));
-	assert(fe->type == DYAD_VAR_EVENT);
+	assert(fe->type == RECV_VAR_EVENT);
 
 	const struct dyad_var_event_meta *meta = &fe->meta.dyad_var;
 	struct svector_pos pos;
 	double *ptr;
 	struct svector *dx;
 
-	dx = frame_dx(f, meta->item.isend, meta->item.jrecv);
+	dx = frame_recv_dx(f, meta->item.isend, meta->item.jrecv);
 	if ((ptr = svector_find(dx, meta->index, &pos))) {
 		*ptr += meta->delta;
 		if (*ptr == 0.0)
@@ -361,8 +361,8 @@ static void event_before(struct frame *f, const struct frame_event *e)
 	case TRIAD_EVENT_MOVE1:
 	case TRIAD_EVENT_MOVE2:
 		assert(0 && "Not implemented");
-	case DYAD_VAR_EVENT:
-	case SENDER_VAR_EVENT:
+	case RECV_VAR_EVENT:
+	case SEND_VAR_EVENT:
 		break;
 	}
 }
@@ -379,10 +379,10 @@ static void event_after(struct frame *f, const struct frame_event *e)
 		case TRIAD_EVENT_MOVE1:
 		case TRIAD_EVENT_MOVE2:
 			break;
-		case DYAD_VAR_EVENT:
-			dyad_var_event_after(f, e);
+		case RECV_VAR_EVENT:
+			recv_var_event_after(f, e);
 			break;
-		case SENDER_VAR_EVENT:
+		case SEND_VAR_EVENT:
 			assert(0 && "Not implemented");
 			break;
 	}
@@ -493,7 +493,7 @@ void frame_add(struct frame *f, const struct message *msg)
 	history_add(&f->history, msg->from, msg->to, msg->nto, msg->attr);
 }
 
-struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
+struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_sender_count(f->design));
@@ -503,7 +503,7 @@ struct svector *frame_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 	return send_frame_dx(sf, jrecv);
 }
 
-void frame_mul(double alpha, enum trans_op trans,
+void frame_recv_mul(double alpha, enum trans_op trans,
 	       const struct frame *f, ssize_t isend,
 	       const struct vector *x, double beta, struct vector *y)
 {
@@ -524,13 +524,13 @@ void frame_mul(double alpha, enum trans_op trans,
 	struct svector diffprod;
 
 	svector_init(&diffprod, vector_dim(y));
-	frame_dmul(alpha, trans, f, isend, x, 0.0, &diffprod);
-	design_mul0(alpha, trans, f->design, isend, x, beta, y);
+	frame_recv_dmul(alpha, trans, f, isend, x, 0.0, &diffprod);
+	design_recv_mul0(alpha, trans, f->design, isend, x, beta, y);
 	svector_axpy(1.0, &diffprod, y);
 	svector_deinit(&diffprod);
 }
 
-void frame_muls(double alpha, enum trans_op trans,
+void frame_recv_muls(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct svector *x, double beta, struct vector *y)
 {
@@ -551,13 +551,13 @@ void frame_muls(double alpha, enum trans_op trans,
 	struct svector diffprod;
 
 	svector_init(&diffprod, vector_dim(y));
-	frame_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod);
-	design_muls0(alpha, trans, f->design, isend, x, beta, y);
+	frame_recv_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod);
+	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);
 	svector_axpy(1.0, &diffprod, y);
 	svector_deinit(&diffprod);
 }
 
-void frame_dmul(double alpha, enum trans_op trans,
+void frame_recv_dmul(double alpha, enum trans_op trans,
 		const struct frame *f, ssize_t isend,
 		const struct vector *x, double beta, struct svector *y)
 {
@@ -583,7 +583,7 @@ void frame_dmul(double alpha, enum trans_op trans,
 	}
 
 	struct design *design = f->design;
-	ssize_t ndynamic = design->ndynamic;
+	ssize_t ndynamic = design->nrdynamic;
 
 	if (ndynamic == 0)
 		return;
@@ -616,7 +616,7 @@ void frame_dmul(double alpha, enum trans_op trans,
 	}
 }
 
-void frame_dmuls(double alpha, enum trans_op trans,
+void frame_recv_dmuls(double alpha, enum trans_op trans,
 		 const struct frame *f, ssize_t isend,
 		 const struct svector *x, double beta, struct svector *y)
 {
@@ -642,7 +642,7 @@ void frame_dmuls(double alpha, enum trans_op trans,
 	}
 
 	struct design *design = f->design;
-	ssize_t ndynamic = design->ndynamic;
+	ssize_t ndynamic = design->nrdynamic;
 
 	if (ndynamic == 0)
 		return;

@@ -51,9 +51,9 @@ static void vnrecv_setup(void **state)
 	vector_init(&intervals, 0);
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
-	design_set_reffects(&design, has_reffects);
-	design_add_var(&design, VAR_TYPE_NRECV);
-	vnrecv_index = design_var_index(&design, VAR_TYPE_NRECV);
+	design_set_recv_effects(&design, has_reffects);
+	design_add_recv_var(&design, VAR_TYPE_NRECV);
+	vnrecv_index = design_recv_var_index(&design, VAR_TYPE_NRECV);
 	frame_init(&frame, &design);
 }
 
@@ -93,7 +93,7 @@ static void test_vnrecv(void **state)
 		frame_advance_to(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
 			assert(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
@@ -126,9 +126,9 @@ static void vrecv_setup(void **state)
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
-	design_set_reffects(&design, has_reffects);
-	design_add_var(&design, VAR_TYPE_RECV);
-	vrecv_index = design_var_index(&design, VAR_TYPE_RECV);
+	design_set_recv_effects(&design, has_reffects);
+	design_add_recv_var(&design, VAR_TYPE_RECV);
+	vrecv_index = design_recv_var_index(&design, VAR_TYPE_RECV);
 	frame_init(&frame, &design);
 }
 
@@ -172,7 +172,7 @@ static void test_vrecv(void **state)
 			thi = i == n ? INFINITY : vector_item(&intervals, i);
 			
 			svector_set_basis(&x, vrecv_index + i);
-			frame_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+			frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 			for (j = 0; j < 1; j++) {
 				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);

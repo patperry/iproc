@@ -32,7 +32,7 @@ static void vnrecv_handle_event(struct frame_var *fv,
 	const struct dyad_event_meta *meta = &e->meta.dyad;
 	struct frame_event dx;
 
-	dx.type = DYAD_VAR_EVENT;
+	dx.type = RECV_VAR_EVENT;
 	dx.time = e->time;
 	dx.id = -1;
 	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;

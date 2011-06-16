@@ -59,8 +59,8 @@ static void basic_setup(void **state)
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
-	design_set_reffects(&design, has_reffects);
-	design_add_var(&design, VAR_TYPE_RECV);
+	design_set_recv_effects(&design, has_reffects);
+	design_add_recv_var(&design, VAR_TYPE_RECV);
 	frame_init(&frame, &design);
 	vector_init(&coefs, design_dim(&design));
 	
@@ -117,7 +117,7 @@ static void test_probs(void **state)
 			isend = msg->from;
 			sm = model_send_model(&model, &frame, isend);
 			
-			frame_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
+			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
 			
 			if (!design_loops(&design))
 				vector_set_item(&eta, isend, -INFINITY);

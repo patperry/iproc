@@ -99,7 +99,7 @@ static void vrecv_handle_event(struct frame_var *fv,
 	struct vrecv_active *active;
 
 	struct frame_event dx;
-	dx.type = DYAD_VAR_EVENT;
+	dx.type = RECV_VAR_EVENT;
 	dx.time = e->time;
 	dx.id = -1;
 	dx.meta.dyad_var.item.isend = meta->msg_dyad.jrecv;
