@@ -131,11 +131,11 @@ static void test_probs(void **state)
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = recv_model_logprob(rm, jrecv);
 				double lp1 = vector_item(&logprobs, jrecv);
-				assert_in_range(double_eqrel(lp0, lp1), 48, DBL_MANT_DIG);
+				assert_in_range(double_eqrel(lp0, lp1), 49, DBL_MANT_DIG);
 				
 				double p0 = recv_model_prob(rm, jrecv);
 				double p1 = vector_item(&probs, jrecv);
-				assert_in_range(double_eqrel(p0, p1), 46, DBL_MANT_DIG);
+				assert_in_range(double_eqrel(p0, p1), 47, DBL_MANT_DIG);
 			}
 
 		}

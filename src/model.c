@@ -482,12 +482,13 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 
 	double gamma0 = rm->gamma;
 	double log_gamma0 = rm->log_gamma;
-	double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
-	// double log_p0 = log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta);
-
-	double adj = p0 * expm1(deta);
-	double gamma = gamma0 / (1.0 + adj);
-	double log_gamma = log_gamma0 - log1p(adj);
+	// double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
+	double log_p0 = log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta);
+	double p0 = exp(log_p0);
+	double p = exp(log_p0 + deta);
+	double dp = p - p0;
+	double gamma = gamma0 / (1.0 + dp);
+	double log_gamma = log_gamma0 - log1p(dp);
 	
 	rm->gamma = gamma;
 	rm->log_gamma = log_gamma;
