@@ -8,9 +8,9 @@
 
 void design_deinit(struct design *design)
 {
-	assert(design);	
+	assert(design);
 	struct design_var *v;
-	
+
 	refcount_deinit(&design->refcount);
 
 	ARRAY_FOREACH(v, &design->recv_vars) {
@@ -19,14 +19,14 @@ void design_deinit(struct design *design)
 		}
 	}
 	array_deinit(&design->recv_vars);
-	
+
 	ARRAY_FOREACH(v, &design->send_vars) {
 		if (v->type->deinit) {
 			v->type->deinit(v);
 		}
 	}
 	array_deinit(&design->send_vars);
-	
+
 	vector_deinit(&design->intervals);
 	actors_free(design->receivers);
 	actors_free(design->senders);
@@ -53,11 +53,11 @@ void design_init(struct design *design, struct actors *senders,
 
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
-	design->loops = false;	
+	design->loops = false;
 
 	vector_init_copy(&design->intervals, intervals);
 
-	array_init(&design->send_vars, sizeof(struct design_var));	
+	array_init(&design->send_vars, sizeof(struct design_var));
 	design->seffects = false;
 	design->iseffects = 0;
 	design->isstatic = 0;
@@ -66,7 +66,7 @@ void design_init(struct design *design, struct actors *senders,
 	design->nsdynamic = 0;
 	design->sdim = design->isdynamic + design->nsdynamic;
 
-	array_init(&design->recv_vars, sizeof(struct design_var));	
+	array_init(&design->recv_vars, sizeof(struct design_var));
 	design->reffects = false;
 	design->ireffects = 0;
 	design->irstatic = 0;
@@ -74,7 +74,7 @@ void design_init(struct design *design, struct actors *senders,
 	design->irdynamic = design->irstatic + design->nrstatic;
 	design->nrdynamic = 0;
 	design->rdim = design->irdynamic + design->nrdynamic;
-	
+
 	refcount_init(&design->refcount);
 }
 
@@ -102,7 +102,6 @@ void design_free(struct design *design)
 	}
 }
 
-
 static void
 design_mul0_effects(double alpha,
 		    enum trans_op trans,
@@ -111,7 +110,7 @@ design_mul0_effects(double alpha,
 {
 	ssize_t off = ieffects;
 	ssize_t dim = neffects;
-	
+
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
 		vector_axpy(alpha, &xsub, y);
@@ -129,7 +128,7 @@ design_send_mul0_effects(double alpha,
 {
 	if (!design->seffects)
 		return;
-	
+
 	ssize_t off = design->iseffects;
 	ssize_t dim = design_send_count(design);
 	design_mul0_effects(alpha, trans, off, dim, x, y);
@@ -137,9 +136,9 @@ design_send_mul0_effects(double alpha,
 
 static void
 design_recv_mul0_effects(double alpha,
-		     enum trans_op trans,
-		     const struct design *design,
-		     const struct vector *x, struct vector *y)
+			 enum trans_op trans,
+			 const struct design *design,
+			 const struct vector *x, struct vector *y)
 {
 	if (!design->reffects)
 		return;
@@ -185,7 +184,7 @@ design_send_muls0_effects(double alpha,
 {
 	if (!design->seffects)
 		return;
-	
+
 	ssize_t off = design->iseffects;
 	ssize_t dim = design_send_count(design);
 	design_muls0_effects(alpha, trans, off, dim, x, y);
@@ -199,12 +198,11 @@ design_recv_muls0_effects(double alpha,
 {
 	if (!design->reffects)
 		return;
-	
+
 	ssize_t off = design->ireffects;
 	ssize_t dim = design_recv_count(design);
 	design_muls0_effects(alpha, trans, off, dim, x, y);
 }
-
 
 static void
 design_send_mul0_static(double alpha,
@@ -214,17 +212,17 @@ design_send_mul0_static(double alpha,
 {
 	if (design->nsstatic == 0)
 		return;
-	
+
 	const struct actors *senders = design_senders(design);
 	ssize_t off = design->isstatic;
 	ssize_t dim = design->nsstatic;
-	
+
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
 		actors_mul(alpha, TRANS_NOTRANS, senders, &xsub, 0.0, y);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_mul(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);		
+		actors_mul(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);
 	}
 }
 
@@ -280,16 +278,16 @@ design_send_muls0_static(double alpha,
 {
 	if (design->nsstatic == 0)
 		return;
-	
+
 	const struct actors *senders = design_senders(design);
 	ssize_t off = design->isstatic;
 	ssize_t dim = design->nsstatic;
-	
+
 	if (trans == TRANS_NOTRANS) {
 		struct svector xsub;
 		struct svector_iter it;
 		ssize_t i;
-		
+
 		svector_init(&xsub, dim);
 		SVECTOR_FOREACH(it, x) {
 			i = SVECTOR_IDX(it) - off;
@@ -301,15 +299,16 @@ design_send_muls0_static(double alpha,
 		svector_deinit(&xsub);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_muls(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);		
+		actors_muls(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);
 	}
 }
 
 static void
 design_recv_muls0_static(double alpha,
-		    enum trans_op trans,
-		    const struct design *design,
-		    ssize_t isend, const struct svector *x, struct vector *y)
+			 enum trans_op trans,
+			 const struct design *design,
+			 ssize_t isend, const struct svector *x,
+			 struct vector *y)
 {
 	if (design->nrstatic == 0)
 		return;
@@ -379,20 +378,22 @@ design_send_mul0(double alpha,
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || vector_dim(x) == design_send_dim(design));
+	assert(trans != TRANS_NOTRANS
+	       || vector_dim(x) == design_send_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_send_count(design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_send_dim(design));
-	
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_send_dim(design));
+
 	/* y := beta y */
 	if (beta == 0.0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1.0) {
 		vector_scale(y, beta);
 	}
-	
+
 	design_send_mul0_effects(alpha, trans, design, x, y);
 	design_send_mul0_static(alpha, trans, design, x, y);
 }
@@ -409,12 +410,14 @@ design_recv_mul0(double alpha,
 	assert(isend < design_send_count(design));
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || vector_dim(x) == design_recv_dim(design));
+	assert(trans != TRANS_NOTRANS
+	       || vector_dim(x) == design_recv_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_recv_count(design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_recv_dim(design));
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_recv_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -436,42 +439,46 @@ design_send_muls0(double alpha,
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || svector_dim(x) == design_send_dim(design));
+	assert(trans != TRANS_NOTRANS
+	       || svector_dim(x) == design_send_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_send_count(design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_send_dim(design));
-	
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_send_dim(design));
+
 	/* y := beta y */
 	if (beta == 0.0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1.0) {
 		vector_scale(y, beta);
 	}
-	
+
 	design_send_muls0_effects(alpha, trans, design, x, y);
 	design_send_muls0_static(alpha, trans, design, x, y);
 }
 
 void
 design_recv_muls0(double alpha,
-	     enum trans_op trans,
-	     const struct design *design,
-	     ssize_t isend,
-	     const struct svector *x, double beta, struct vector *y)
+		  enum trans_op trans,
+		  const struct design *design,
+		  ssize_t isend,
+		  const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(isend >= 0);
 	assert(isend < design_send_count(design));
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || svector_dim(x) == design_recv_dim(design));
+	assert(trans != TRANS_NOTRANS
+	       || svector_dim(x) == design_recv_dim(design));
 	assert(trans != TRANS_NOTRANS
 	       || vector_dim(y) == design_recv_count(design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == design_recv_dim(design));
+	assert(trans == TRANS_NOTRANS
+	       || vector_dim(y) == design_recv_dim(design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -508,14 +515,14 @@ static void design_set_effects(bool *peffects, bool effects, ssize_t neffects,
 {
 	if (*peffects == effects)
 		return;
-	
+
 	ssize_t delta = effects ? neffects : -neffects;
-	
+
 	struct design_var *var;
 	ARRAY_FOREACH(var, vars) {
 		var->index += delta;
 	}
-	
+
 	*istatic += delta;
 	*idynamic += delta;
 	*dim += delta;
@@ -525,7 +532,7 @@ static void design_set_effects(bool *peffects, bool effects, ssize_t neffects,
 void design_set_send_effects(struct design *design, bool seffects)
 {
 	assert(design);
-	
+
 	design_set_effects(&design->seffects, seffects,
 			   design_send_count(design), &design->send_vars,
 			   &design->isstatic, &design->isdynamic,
@@ -547,7 +554,7 @@ static void design_add_var(struct design *design, const struct var_type *type,
 			   ssize_t *idynamic, ssize_t *ndynamic, ssize_t *dim)
 {
 	struct design_var *var = array_add(vars, NULL);
-	
+
 	type->init(var, design);
 	assert(var->dim >= 0);
 	var->index = (*idynamic) + (*ndynamic);
@@ -561,8 +568,8 @@ void design_add_send_var(struct design *design, const struct var_type *type)
 	assert(design);
 	assert(type);
 	assert(type->init);
-	
-	design_add_var(design, type, &design->send_vars, 
+
+	design_add_var(design, type, &design->send_vars,
 		       &design->isdynamic, &design->nsdynamic, &design->sdim);
 }
 
@@ -572,7 +579,7 @@ void design_add_recv_var(struct design *design, const struct var_type *type)
 	assert(type);
 	assert(type->init);
 
-	design_add_var(design, type, &design->recv_vars, 
+	design_add_var(design, type, &design->recv_vars,
 		       &design->irdynamic, &design->nrdynamic, &design->rdim);
 }
 
@@ -591,7 +598,7 @@ ssize_t design_recv_traits_index(const struct design *design)
 ssize_t design_send_effects_index(const struct design *design)
 {
 	assert(design);
-	
+
 	if (design_send_effects(design))
 		return design->iseffects;
 	return -1;
@@ -617,16 +624,16 @@ static ssize_t design_var_index(const struct array *vars,
 {
 	assert(vars);
 	assert(type);
-	
+
 	struct design_var *key = container_of(&type, struct design_var, type);
 
 	const struct design_var *var =
 	    array_find(vars, (predicate_fn) design_var_equals, key);
-	
+
 	if (var) {
 		return var->index;
 	}
-	
+
 	return -1;
 }
 
@@ -635,12 +642,12 @@ ssize_t design_send_var_index(const struct design *design,
 {
 	assert(design);
 	assert(type);
-	
+
 	return design_var_index(&design->send_vars, type);
 }
 
 ssize_t design_recv_var_index(const struct design *design,
-			 const struct var_type *type)
+			      const struct var_type *type)
 {
 	assert(design);
 	assert(type);

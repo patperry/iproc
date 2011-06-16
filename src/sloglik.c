@@ -20,7 +20,7 @@ static void iproc_sloglik_free(iproc_sloglik * sll)
 	}
 }
 
-iproc_sloglik *iproc_sloglik_new(struct model * model, ssize_t isend)
+iproc_sloglik *iproc_sloglik_new(struct model *model, ssize_t isend)
 {
 	iproc_sloglik *sll = malloc(sizeof(*sll));
 	if (!sll)
@@ -113,7 +113,7 @@ void iproc_sloglik_insertm(iproc_sloglik * sll,
 
 	// update observed variable diffs
 	frame_recv_dmuls(scale1 / n, TRANS_TRANS, f, sll->isend,
-		    wt, scale0, sll->dxobs);
+			 wt, scale0, sll->dxobs);
 	sll->gamma += scale1 * (sm->gamma - sll->gamma);
 
 	svector_scale(sll->dp, scale0);
@@ -156,15 +156,16 @@ acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
 
 	// (X[0,i])^T * sum{dP[t,i]}
 	design_recv_muls0(scale, TRANS_TRANS,
-		     sll->model->design, sll->isend, sll->dp, 1.0, dst_vector);
+			  sll->model->design, sll->isend, sll->dp, 1.0,
+			  dst_vector);
 
 	// sum{dxbar[t,i]}
 	svector_axpy(scale, sll->dxbar, dst_vector);
 
 	// - (X[0,i])^T n[i]
 	design_recv_muls0(-scale / sll->nsend, TRANS_TRANS,
-		     sll->model->design, sll->isend, sll->nrecv,
-		     1.0, dst_vector);
+			  sll->model->design, sll->isend, sll->nrecv,
+			  1.0, dst_vector);
 
 	// -sum{dx[t,i,j]}
 	svector_axpy(-scale, sll->dxobs, dst_vector);

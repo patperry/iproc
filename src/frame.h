@@ -75,7 +75,7 @@ struct frame {
 	struct history history;
 	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
-	struct array events; // events that happen immediately after the current time
+	struct array events;	// events that happen immediately after the current time
 	struct pqueue future_events;
 	ssize_t next_event_id;
 	struct matrix send_xt;

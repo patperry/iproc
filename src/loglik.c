@@ -25,7 +25,7 @@ static void iproc_loglik_free(iproc_loglik * loglik)
 	}
 }
 
-static iproc_loglik *iproc_loglik_new_empty(struct model * model)
+static iproc_loglik *iproc_loglik_new_empty(struct model *model)
 {
 	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
 	struct design *design = model_design(model);

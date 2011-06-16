@@ -103,18 +103,18 @@ struct design {
 	struct actors *senders;
 	struct actors *receivers;
 	bool loops;
-	
+
 	struct vector intervals;
-	
+
 	struct array send_vars;
-	bool seffects;	
+	bool seffects;
 	ssize_t iseffects;
 	ssize_t isstatic, nsstatic;
 	ssize_t isdynamic, nsdynamic;
 	ssize_t sdim;
 
 	struct array recv_vars;
-	bool reffects;	
+	bool reffects;
 	ssize_t ireffects;
 	ssize_t irstatic, nrstatic;
 	ssize_t irdynamic, nrdynamic;

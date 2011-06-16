@@ -102,7 +102,6 @@
  *         xbar[t,i] = gamma * xbar[0,i] + (X[0,i])^T * dP[t,i] + dxbar[t,i].
  */
 
-
 /* Two senders, i1 and i2, are in the same group if and only if their
  * covariates agree at time 0, i.e.
  *
@@ -146,20 +145,17 @@ struct model {
 	struct refcount refcount;
 };
 
-
 void model_init(struct model *model,
-		struct design *design,
-		const struct vector *coefs);
+		struct design *design, const struct vector *coefs);
 void model_deinit(struct model *model);
-struct model *model_alloc(struct design *design,
-			  const struct vector *coefs);
+struct model *model_alloc(struct design *design, const struct vector *coefs);
 struct model *model_ref(struct model *model);
 void model_free(struct model *model);
 
 struct design *model_design(const struct model *model);
 struct vector *model_coefs(const struct model *model);
-ssize_t model_sender_count(const struct model * model);
-ssize_t model_receiver_count(const struct model * model);
+ssize_t model_sender_count(const struct model *model);
+ssize_t model_receiver_count(const struct model *model);
 ssize_t model_dim(const struct model *model);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
@@ -170,11 +166,13 @@ struct vector *model_mean0(const struct model *model, ssize_t isend);
 void model_clear(struct model *m);
 void model_update(struct model *m, const struct frame *f);
 
-struct send_model *model_send_model(struct model *m, const struct frame *f, ssize_t isend);
+struct send_model *model_send_model(struct model *m, const struct frame *f,
+				    ssize_t isend);
 ssize_t send_model_receiver_count(const struct send_model *sm);
 double send_model_logprob(const struct send_model *sm, ssize_t jrecv);
 double send_model_prob(const struct send_model *sm, ssize_t jrecv);
-void send_model_get_logprobs(const struct send_model *sm, struct vector *logprobs);
+void send_model_get_logprobs(const struct send_model *sm,
+			     struct vector *logprobs);
 void send_model_get_probs(const struct send_model *sm, struct vector *probs);
 
 #endif /* _IPROC_MODEL_H */
