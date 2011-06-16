@@ -73,7 +73,7 @@ struct frame_var {
 struct frame {
 	struct design *design;
 	struct history history;
-	struct intmap send_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
+	struct intmap recv_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
 	struct array events;	// events that happen immediately after the current time
 	struct pqueue future_events;
@@ -83,7 +83,7 @@ struct frame {
 };
 
 /* dX[t,i] */
-struct send_frame {
+struct recv_frame {
 	struct frame *frame;
 	struct intmap jrecv_dxs;
 };

@@ -30,56 +30,56 @@ static int frame_event_rcompare(const void *x1, const void *x2)
 	return double_rcompare(&e1->time, &e2->time);
 }
 
-static void send_frame_init(struct send_frame *sf, struct frame *f)
+static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
-	assert(sf);
+	assert(rf);
 
-	intmap_init(&sf->jrecv_dxs, sizeof(struct svector),
+	intmap_init(&rf->jrecv_dxs, sizeof(struct svector),
 		    alignof(struct svector));
-	sf->frame = f;
+	rf->frame = f;
 }
 
-static void send_frame_deinit(struct send_frame *sf)
+static void recv_frame_deinit(struct recv_frame *rf)
 {
-	assert(sf);
+	assert(rf);
 
 	struct intmap_iter it;
 	struct svector *dx;
 
-	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		dx = INTMAP_VAL(it);
 		svector_deinit(dx);
 	}
-	intmap_deinit(&sf->jrecv_dxs);
+	intmap_deinit(&rf->jrecv_dxs);
 }
 
-static void send_frame_clear(struct send_frame *sf)
+static void recv_frame_clear(struct recv_frame *rf)
 {
-	assert(sf);
+	assert(rf);
 
 	struct intmap_iter it;
 	struct svector *dx;
 
-	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		dx = INTMAP_VAL(it);
 		svector_deinit(dx);
 	}
-	intmap_clear(&sf->jrecv_dxs);
+	intmap_clear(&rf->jrecv_dxs);
 }
 
-static struct svector *send_frame_dx(struct send_frame *sf, ssize_t jrecv)
+static struct svector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv)
 {
-	assert(sf);
+	assert(rf);
 
 	struct intmap_pos pos;
 	struct svector *dx;
 
-	if ((dx = intmap_find(&sf->jrecv_dxs, jrecv, &pos))) {
+	if ((dx = intmap_find(&rf->jrecv_dxs, jrecv, &pos))) {
 		return dx;
 	}
 
-	dx = intmap_insert(&sf->jrecv_dxs, &pos, NULL);
-	svector_init(dx, design_recv_dim(sf->frame->design));
+	dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
+	svector_init(dx, design_recv_dim(rf->frame->design));
 	return dx;
 }
 
@@ -140,35 +140,35 @@ static void var_frames_clear(struct frame *frame)
 	}
 }
 
-static void send_frames_init(struct frame *f)
+static void recv_frames_init(struct frame *f)
 {
 	assert(f);
-	intmap_init(&f->send_frames, sizeof(struct send_frame),
-		    alignof(struct send_frame));
+	intmap_init(&f->recv_frames, sizeof(struct recv_frame),
+		    alignof(struct recv_frame));
 }
 
-static void send_frames_deinit(struct frame *f)
+static void recv_frames_deinit(struct frame *f)
 {
 	assert(f);
 	struct intmap_iter it;
-	struct send_frame *sf;
+	struct recv_frame *rf;
 
-	INTMAP_FOREACH(it, &f->send_frames) {
-		sf = INTMAP_VAL(it);
-		send_frame_deinit(sf);
+	INTMAP_FOREACH(it, &f->recv_frames) {
+		rf = INTMAP_VAL(it);
+		recv_frame_deinit(rf);
 	}
-	intmap_deinit(&f->send_frames);
+	intmap_deinit(&f->recv_frames);
 }
 
-static void send_frames_clear(struct frame *f)
+static void recv_frames_clear(struct frame *f)
 {
 	assert(f);
 	struct intmap_iter it;
-	struct send_frame *sf;
+	struct recv_frame *rf;
 
-	INTMAP_FOREACH(it, &f->send_frames) {
-		sf = INTMAP_VAL(it);
-		send_frame_clear(sf);
+	INTMAP_FOREACH(it, &f->recv_frames) {
+		rf = INTMAP_VAL(it);
+		recv_frame_clear(rf);
 	}
 }
 
@@ -179,7 +179,7 @@ void frame_init(struct frame *f, struct design *design)
 
 	f->design = design_ref(design);
 	history_init(&f->history);
-	send_frames_init(f);
+	recv_frames_init(f);
 	var_frames_init(f, design);
 	array_init(&f->events, sizeof(struct frame_event));
 	pqueue_init(&f->future_events, frame_event_rcompare,
@@ -225,7 +225,7 @@ void frame_deinit(struct frame *f)
 	pqueue_deinit(&f->future_events);
 	array_deinit(&f->events);
 	var_frames_deinit(f);
-	send_frames_deinit(f);
+	recv_frames_deinit(f);
 	history_deinit(&f->history);
 	design_free(f->design);
 }
@@ -235,7 +235,7 @@ void frame_clear(struct frame *f)
 	assert(f);
 
 	history_clear(&f->history);
-	send_frames_clear(f);
+	recv_frames_clear(f);
 	var_frames_clear(f);
 	array_clear(&f->events);
 	pqueue_clear(&f->future_events);
@@ -275,19 +275,19 @@ const struct history *frame_history(const struct frame *f)
 	return &f->history;
 }
 
-static struct send_frame *frame_send_frame(struct frame *f, ssize_t isend)
+static struct recv_frame *frame_recv_frame(struct frame *f, ssize_t isend)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(f->design));
 
 	struct intmap_pos pos;
-	struct send_frame *sf;
+	struct recv_frame *rf;
 
-	if (!(sf = intmap_find(&f->send_frames, isend, &pos))) {
-		sf = intmap_insert(&f->send_frames, &pos, NULL);
-		send_frame_init(sf, f);
+	if (!(rf = intmap_find(&f->recv_frames, isend, &pos))) {
+		rf = intmap_insert(&f->recv_frames, &pos, NULL);
+		recv_frame_init(rf, f);
 	}
-	return sf;
+	return rf;
 }
 
 ssize_t frame_events_count(const struct frame *f)
@@ -544,8 +544,8 @@ struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
 	assert(0 <= isend && isend < design_send_count(f->design));
 	assert(0 <= jrecv && jrecv < design_recv_count(f->design));
 
-	struct send_frame *sf = frame_send_frame(f, isend);
-	return send_frame_dx(sf, jrecv);
+	struct recv_frame *rf = frame_recv_frame(f, isend);
+	return recv_frame_dx(rf, jrecv);
 }
 
 void frame_send_mul(double alpha, enum trans_op trans,
@@ -677,15 +677,15 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return;
 
-	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
-	if (!sf)
+	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
+	if (!rf)
 		return;
 
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
 
-	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		jrecv = INTMAP_KEY(it);
 		dx = INTMAP_VAL(it);
 		if (trans == TRANS_NOTRANS) {
@@ -736,15 +736,15 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 	if (ndynamic == 0)
 		return;
 
-	const struct send_frame *sf = intmap_item(&f->send_frames, isend);
-	if (!sf)
+	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
+	if (!rf)
 		return;
 
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct svector *dx;
 
-	INTMAP_FOREACH(it, &sf->jrecv_dxs) {
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		jrecv = INTMAP_KEY(it);
 		dx = INTMAP_VAL(it);
 
