@@ -86,7 +86,7 @@ static void basic_teardown(void **state)
 
 static void test_probs(void **state)
 {
-	struct send_model *sm;
+	struct recv_model *rm;
 	struct vector eta, probs, logprobs;
 	struct messages_iter it;
 	const struct message *msg = NULL;
@@ -115,7 +115,7 @@ static void test_probs(void **state)
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			sm = model_send_model(&model, &frame, isend);
+			rm = model_recv_model(&model, &frame, isend);
 			
 			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
 			
@@ -130,11 +130,11 @@ static void test_probs(void **state)
 			vector_exp(&probs);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
-				double lp0 = send_model_logprob(sm, jrecv);
+				double lp0 = recv_model_logprob(rm, jrecv);
 				double lp1 = vector_item(&logprobs, jrecv);
 				assert_in_range(double_eqrel(lp0, lp1), 49, DBL_MANT_DIG);
 				
-				double p0 = send_model_prob(sm, jrecv);
+				double p0 = recv_model_prob(rm, jrecv);
 				double p1 = vector_item(&probs, jrecv);
 				assert_in_range(double_eqrel(p0, p1), 47, DBL_MANT_DIG);
 			}

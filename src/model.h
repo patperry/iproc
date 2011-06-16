@@ -125,10 +125,10 @@ struct cohort_model {
 #endif
 };
 
-struct send_model {
+struct recv_model {
 	struct model *model;
 	ssize_t isend;
-	const struct cohort_model *cohort;
+	struct cohort_model *cohort;
 	double gamma;
 	double log_gamma;
 	struct svector deta;
@@ -141,7 +141,7 @@ struct model {
 	struct design *design;
 	struct vector coefs;
 	struct intmap cohort_models;
-	struct intmap send_models;
+	struct intmap recv_models;
 	struct refcount refcount;
 };
 
@@ -158,21 +158,22 @@ ssize_t model_sender_count(const struct model *model);
 ssize_t model_receiver_count(const struct model *model);
 ssize_t model_dim(const struct model *model);
 
-/* Initial probability, and expectations, without adjustment for self-loops. */
-struct vector *model_logprobs0(const struct model *model, ssize_t isend);
-struct vector *model_probs0(const struct model *model, ssize_t isend);
-struct vector *model_mean0(const struct model *model, ssize_t isend);
-
 void model_clear(struct model *m);
 void model_update(struct model *m, const struct frame *f);
 
-struct send_model *model_send_model(struct model *m, const struct frame *f,
+struct recv_model *model_recv_model(struct model *m, const struct frame *f,
 				    ssize_t isend);
-ssize_t send_model_receiver_count(const struct send_model *sm);
-double send_model_logprob(const struct send_model *sm, ssize_t jrecv);
-double send_model_prob(const struct send_model *sm, ssize_t jrecv);
-void send_model_get_logprobs(const struct send_model *sm,
+ssize_t recv_model_receiver_count(const struct recv_model *rm);
+
+/* Initial probability, and expectations, without adjustment for self-loops. */
+struct vector *recv_model_logprobs0(const struct recv_model *rm);
+struct vector *recv_model_probs0(const struct recv_model *rm);
+struct vector *recv_model_mean0(const struct recv_model *rm);
+
+double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
+double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
+void recv_model_get_logprobs(const struct recv_model *rm,
 			     struct vector *logprobs);
-void send_model_get_probs(const struct send_model *sm, struct vector *probs);
+void recv_model_get_probs(const struct recv_model *rm, struct vector *probs);
 
 #endif /* _IPROC_MODEL_H */

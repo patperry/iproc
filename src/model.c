@@ -246,96 +246,96 @@ static struct cohort_model *model_cohort_model(const struct model *model,
 	return cm;
 }
 
-static void send_model_clear(struct send_model *sm)
+static void recv_model_clear(struct recv_model *rm)
 {
-	assert(sm);
+	assert(rm);
 
-	const struct model *m = sm->model;
-	ssize_t isend = sm->isend;
+	const struct model *m = rm->model;
+	ssize_t isend = rm->isend;
 	const struct cohort_model *cm = model_cohort_model(m, isend);
 
-	svector_clear(&sm->deta);
-	svector_clear(&sm->dp);
-	svector_clear(&sm->dxbar);
+	svector_clear(&rm->deta);
+	svector_clear(&rm->dp);
+	svector_clear(&rm->dxbar);
 
 	if (!design_loops(model_design(m))) {
 		double p0 = vector_item(&cm->p0, isend);
 
-		sm->gamma = 1.0 / (1.0 - p0);
-		sm->log_gamma = -log1p(-p0);
+		rm->gamma = 1.0 / (1.0 - p0);
+		rm->log_gamma = -log1p(-p0);
 
-		svector_set_item(&sm->deta, isend, -INFINITY);
-		svector_set_item(&sm->dp, isend, -p0 / (1.0 - p0));
+		svector_set_item(&rm->deta, isend, -INFINITY);
+		svector_set_item(&rm->dp, isend, -p0 / (1.0 - p0));
 	} else {
-		sm->gamma = 1.0;
-		sm->log_gamma = 0.0;
+		rm->gamma = 1.0;
+		rm->log_gamma = 0.0;
 	}
-	sm->cached = true;
+	rm->cached = true;
 }
 
-static void send_model_update(struct send_model *sm, const struct frame *f)
+static void recv_model_update(struct recv_model *rm, const struct frame *f)
 {
-	assert(sm);
+	assert(rm);
 	assert(f);
 
-	svector_clear(&sm->deta);
-	svector_clear(&sm->dp);
-	svector_clear(&sm->dxbar);
+	svector_clear(&rm->deta);
+	svector_clear(&rm->dp);
+	svector_clear(&rm->dxbar);
 
-	struct model *model = sm->model;
-	ssize_t isend = sm->isend;
+	struct model *model = rm->model;
+	ssize_t isend = rm->isend;
 	const struct vector *coefs = model_coefs(model);
-	const struct vector *log_p0 = model_logprobs0(model, isend);
-	const struct vector *p0 = model_probs0(model, isend);
+	const struct vector *log_p0 = recv_model_logprobs0(rm);
+	const struct vector *p0 = recv_model_probs0(rm);
 
 	compute_weight_changes(f, isend, coefs, log_p0,
-			       &sm->deta, &sm->gamma, &sm->log_gamma);
-	compute_active_probs(log_p0, sm->log_gamma, &sm->deta, &sm->dp);
-	frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &sm->dp, 0.0, &sm->dxbar);
-	compute_prob_diffs(p0, sm->gamma, &sm->dp);
-	sm->cached = true;
+			       &rm->deta, &rm->gamma, &rm->log_gamma);
+	compute_active_probs(log_p0, rm->log_gamma, &rm->deta, &rm->dp);
+	frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &rm->dp, 0.0, &rm->dxbar);
+	compute_prob_diffs(p0, rm->gamma, &rm->dp);
+	rm->cached = true;
 }
 
-static void send_model_init(struct send_model *sm, struct model *m,
+static void recv_model_init(struct recv_model *rm, struct model *m,
 			    ssize_t isend)
 {
-	assert(sm);
+	assert(rm);
 	assert(m);
 	assert(0 <= isend && isend < model_sender_count(m));
 
-	sm->model = m;
-	sm->isend = isend;
-	sm->cohort = model_cohort_model(m, isend);
-	svector_init(&sm->deta, model_receiver_count(m));
-	svector_init(&sm->dp, model_receiver_count(m));
-	svector_init(&sm->dxbar, model_dim(m));
+	rm->model = m;
+	rm->isend = isend;
+	rm->cohort = model_cohort_model(m, isend);
+	svector_init(&rm->deta, model_receiver_count(m));
+	svector_init(&rm->dp, model_receiver_count(m));
+	svector_init(&rm->dxbar, model_dim(m));
 
-	send_model_clear(sm);
+	recv_model_clear(rm);
 }
 
-static void send_model_deinit(struct send_model *sm)
+static void recv_model_deinit(struct recv_model *rm)
 {
-	assert(sm);
-	svector_deinit(&sm->dxbar);
-	svector_deinit(&sm->dp);
-	svector_deinit(&sm->deta);
+	assert(rm);
+	svector_deinit(&rm->dxbar);
+	svector_deinit(&rm->dp);
+	svector_deinit(&rm->deta);
 }
 
-static struct send_model *model_send_model_raw(struct model *m, ssize_t isend)
+static struct recv_model *model_recv_model_raw(struct model *m, ssize_t isend)
 {
 	assert(m);
 	assert(0 <= isend && isend < model_sender_count(m));
 
 	struct intmap_pos pos;
-	struct send_model *sm;
+	struct recv_model *rm;
 
-	if (!(sm = intmap_find(&m->send_models, isend, &pos))) {
-		sm = intmap_insert(&m->send_models, &pos, NULL);
-		send_model_init(sm, m, isend);
+	if (!(rm = intmap_find(&m->recv_models, isend, &pos))) {
+		rm = intmap_insert(&m->recv_models, &pos, NULL);
+		recv_model_init(rm, m, isend);
 	}
 
-	assert(sm);
-	return sm;
+	assert(rm);
+	return rm;
 }
 
 void model_init(struct model *model, struct design *design,
@@ -351,8 +351,8 @@ void model_init(struct model *model, struct design *design,
 	model->design = design_ref(design);
 	vector_init_copy(&model->coefs, coefs);
 	cohort_models_init(&model->cohort_models, design, coefs);
-	intmap_init(&model->send_models, sizeof(struct send_model),
-		    alignof(struct send_model));
+	intmap_init(&model->recv_models, sizeof(struct recv_model),
+		    alignof(struct recv_model));
 	refcount_init(&model->refcount);
 }
 
@@ -363,11 +363,11 @@ void model_deinit(struct model *model)
 	refcount_deinit(&model->refcount);
 
 	struct intmap_iter it;
-	INTMAP_FOREACH(it, &model->send_models) {
-		send_model_deinit(INTMAP_VAL(it));
+	INTMAP_FOREACH(it, &model->recv_models) {
+		recv_model_deinit(INTMAP_VAL(it));
 	}
 
-	intmap_deinit(&model->send_models);
+	intmap_deinit(&model->recv_models);
 	cohort_models_deinit(&model->cohort_models);
 	vector_deinit(&model->coefs);
 	design_free(model->design);
@@ -435,31 +435,22 @@ ssize_t model_dim(const struct model *model)
 	return design_recv_dim(design);
 }
 
-struct vector *model_logprobs0(const struct model *model, ssize_t isend)
+struct vector *recv_model_logprobs0(const struct recv_model *model)
 {
 	assert(model);
-	assert(0 <= isend && isend < model_sender_count(model));
-
-	struct cohort_model *cm = model_cohort_model(model, isend);
-	return &cm->log_p0;
+	return &model->cohort->log_p0;
 }
 
-struct vector *model_probs0(const struct model *model, ssize_t isend)
+struct vector *recv_model_probs0(const struct recv_model *model)
 {
 	assert(model);
-	assert(0 <= isend && isend < model_sender_count(model));
-
-	struct cohort_model *cm = model_cohort_model(model, isend);
-	return &cm->p0;
+	return &model->cohort->p0;
 }
 
-struct vector *model_mean0(const struct model *model, ssize_t isend)
+struct vector *recv_model_mean0(const struct recv_model *model)
 {
 	assert(model);
-	assert(0 <= isend && isend < model_sender_count(model));
-
-	struct cohort_model *cm = model_cohort_model(model, isend);
-	return &cm->xbar0;
+	return &model->cohort->xbar0;
 }
 
 void model_clear(struct model *m)
@@ -468,8 +459,8 @@ void model_clear(struct model *m)
 
 	struct intmap_iter it;
 
-	INTMAP_FOREACH(it, &m->send_models) {
-		send_model_clear(INTMAP_VAL(it));
+	INTMAP_FOREACH(it, &m->recv_models) {
+		recv_model_clear(INTMAP_VAL(it));
 	}
 }
 
@@ -480,8 +471,8 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 
 	const struct recv_var_event_meta *meta = &e->meta.recv_var;
 	ssize_t isend = meta->item.isend;
-	struct send_model *sm = model_send_model_raw(m, isend);
-	sm->cached = false;
+	struct recv_model *rm = model_recv_model_raw(m, isend);
+	rm->cached = false;
 
 	/*
 	   const struct cohort_model *cm = model_cohort_model(m, isend);
@@ -493,16 +484,16 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	   double beta = vector_item(model_coefs(m), index);
 	   double dx = meta->delta;
 	   double deta_j = beta * dx;
-	   double p0 = sm->gamma * vector_item(&cm->p0, jrecv);
+	   double p0 = rm->gamma * vector_item(&cm->p0, jrecv);
 
-	   ptr = svector_find(&sm->deta, jrecv, &pos);
+	   ptr = svector_find(&rm->deta, jrecv, &pos);
 	   if (!ptr) {
-	   svector_insert(&sm->deta, &pos, deta_j);
+	   svector_insert(&rm->deta, &pos, deta_j);
 	   } else {
-	   p0 += svector_item(&sm->dp, jrecv);
+	   p0 += svector_item(&rm->dp, jrecv);
 	   *ptr += deta_j;
 	   if (*ptr == 0.0) {
-	   svector_remove_at(&sm->deta, &pos);
+	   svector_remove_at(&rm->deta, &pos);
 	   }
 	   } */
 }
@@ -535,23 +526,23 @@ void model_update(struct model *m, const struct frame *f)
 	}
 }
 
-struct send_model *model_send_model(struct model *m, const struct frame *f,
+struct recv_model *model_recv_model(struct model *m, const struct frame *f,
 				    ssize_t isend)
 {
 	assert(m);
-	assert(f);
 
-	struct send_model *sm = model_send_model_raw(m, isend);
-	if (!sm->cached) {
-		send_model_update(sm, f);
+	struct recv_model *rm = model_recv_model_raw(m, isend);
+	if (!rm->cached) {
+		assert(f);
+		recv_model_update(rm, f);
 	}
-	return sm;
+	return rm;
 }
 
-ssize_t send_model_receiver_count(const struct send_model *sm)
+ssize_t recv_model_receiver_count(const struct recv_model *rm)
 {
-	assert(sm);
-	struct model *model = sm->model;
+	assert(rm);
+	struct model *model = rm->model;
 	ssize_t nreceiver = model_receiver_count(model);
 	return nreceiver;
 }
@@ -559,10 +550,10 @@ ssize_t send_model_receiver_count(const struct send_model *sm)
 /*
  *         log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
-double send_model_logprob(const struct send_model *sm, ssize_t jrecv)
+double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 {
-	assert(sm);
-	assert(0 <= jrecv && jrecv < send_model_receiver_count(sm));
+	assert(rm);
+	assert(0 <= jrecv && jrecv < recv_model_receiver_count(rm));
 
 	/*
 	   double gamma = ctx->gamma;
@@ -573,44 +564,44 @@ double send_model_logprob(const struct send_model *sm, ssize_t jrecv)
 	   return log(p);
 	 */
 
-	double log_gamma = sm->log_gamma;
-	double log_p0 = *vector_item_ptr(&sm->cohort->log_p0, jrecv);
-	double deta = svector_item(&sm->deta, jrecv);
+	double log_gamma = rm->log_gamma;
+	double log_p0 = *vector_item_ptr(&rm->cohort->log_p0, jrecv);
+	double deta = svector_item(&rm->deta, jrecv);
 	double log_p = log_gamma + log_p0 + deta;
 	return MIN(log_p, 0.0);
 }
 
-double send_model_prob(const struct send_model *sm, ssize_t jrecv)
+double recv_model_prob(const struct recv_model *rm, ssize_t jrecv)
 {
-	assert(sm);
-	assert(0 <= jrecv && jrecv < send_model_receiver_count(sm));
+	assert(rm);
+	assert(0 <= jrecv && jrecv < recv_model_receiver_count(rm));
 
-	double lp = send_model_logprob(sm, jrecv);
+	double lp = recv_model_logprob(rm, jrecv);
 	double p = exp(lp);
 	return p;
 }
 
-void send_model_get_logprobs(const struct send_model *sm,
+void recv_model_get_logprobs(const struct recv_model *rm,
 			     struct vector *logprobs)
 {
-	assert(sm);
+	assert(rm);
 	assert(logprobs);
-	assert(vector_dim(logprobs) == send_model_receiver_count(sm));
+	assert(vector_dim(logprobs) == recv_model_receiver_count(rm));
 
-	ssize_t j, n = send_model_receiver_count(sm);
+	ssize_t j, n = recv_model_receiver_count(rm);
 
 	for (j = 0; j < n; j++) {
-		double lp = send_model_logprob(sm, j);
+		double lp = recv_model_logprob(rm, j);
 		*vector_item_ptr(logprobs, j) = lp;
 	}
 }
 
-void send_model_get_probs(const struct send_model *sm, struct vector *probs)
+void recv_model_get_probs(const struct recv_model *rm, struct vector *probs)
 {
-	assert(sm);
+	assert(rm);
 	assert(probs);
-	assert(vector_dim(probs) == send_model_receiver_count(sm));
+	assert(vector_dim(probs) == recv_model_receiver_count(rm));
 
-	send_model_get_logprobs(sm, probs);
+	recv_model_get_logprobs(rm, probs);
 	vector_exp(probs);
 }
