@@ -567,6 +567,7 @@ void design_add_send_var(struct design *design, const struct var_type *type)
 {
 	assert(design);
 	assert(type);
+	assert(type->var_class == VAR_SEND_VAR);
 	assert(type->init);
 
 	design_add_var(design, type, &design->send_vars,
@@ -577,6 +578,7 @@ void design_add_recv_var(struct design *design, const struct var_type *type)
 {
 	assert(design);
 	assert(type);
+	assert(type->var_class == VAR_RECV_VAR);	
 	assert(type->init);
 
 	design_add_var(design, type, &design->recv_vars,

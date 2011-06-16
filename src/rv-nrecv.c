@@ -51,6 +51,7 @@ static void nrecv_handle_event(struct frame_var *fv,
 }
 
 static struct var_type RECV_VAR_NRECV_REP = {
+	VAR_RECV_VAR,
 	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
 	nrecv_init,
 	nrecv_deinit,

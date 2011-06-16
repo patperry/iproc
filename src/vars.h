@@ -8,8 +8,13 @@ struct frame;
 struct frame_event;
 struct frame_var;
 
+enum var_class {
+	VAR_RECV_VAR,
+	VAR_SEND_VAR
+};
 
 struct var_type {
+	enum var_class var_class;
 	uint8_t event_mask;
 	
 	void (*init) (struct design_var *dv, const struct design *d);
