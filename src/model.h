@@ -135,7 +135,7 @@ struct recv_model {
 	
 	/* deprecated */
 	struct svector dp;
-	struct svector dxbar;
+	struct vector dxbar;
 	bool cached;
 };
 

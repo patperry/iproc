@@ -112,7 +112,7 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
 /* current covariates */
 struct vector frame_send_x(struct frame *f, ssize_t isend);
-struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv);
+struct vector *frame_recv_dx(const struct frame *f, ssize_t isend, ssize_t jrecv);
 
 void frame_send_mul(double alpha, enum trans_op trans,
 		    const struct frame *f,
@@ -133,7 +133,7 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 		     const struct vector *x, double beta, struct svector *y);
 void frame_recv_dmuls(double alpha, enum trans_op trans,
 		      const struct frame *f, ssize_t isend,
-		      const struct svector *x, double beta, struct svector *y);
+		      const struct svector *x, double beta, struct vector *y);
 
 /* debugging */
 void fprintf_event(FILE * restrict stream, const struct frame_event *e);

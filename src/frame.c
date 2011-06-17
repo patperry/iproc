@@ -34,8 +34,8 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
 	assert(rf);
 
-	intmap_init(&rf->jrecv_dxs, sizeof(struct svector),
-		    alignof(struct svector));
+	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
+		    alignof(struct vector));
 	rf->frame = f;
 }
 
@@ -44,11 +44,11 @@ static void recv_frame_deinit(struct recv_frame *rf)
 	assert(rf);
 
 	struct intmap_iter it;
-	struct svector *dx;
+	struct vector *dx;
 
 	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		dx = INTMAP_VAL(it);
-		svector_deinit(dx);
+		vector_deinit(dx);
 	}
 	intmap_deinit(&rf->jrecv_dxs);
 }
@@ -58,28 +58,28 @@ static void recv_frame_clear(struct recv_frame *rf)
 	assert(rf);
 
 	struct intmap_iter it;
-	struct svector *dx;
+	struct vector *dx;
 
 	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		dx = INTMAP_VAL(it);
-		svector_deinit(dx);
+		vector_deinit(dx);
 	}
 	intmap_clear(&rf->jrecv_dxs);
 }
 
-static struct svector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv)
+static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv)
 {
 	assert(rf);
 
 	struct intmap_pos pos;
-	struct svector *dx;
+	struct vector *dx;
 
 	if ((dx = intmap_find(&rf->jrecv_dxs, jrecv, &pos))) {
 		return dx;
 	}
 
 	dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
-	svector_init(dx, design_recv_dim(rf->frame->design));
+	vector_init(dx, design_recv_dyn_dim(rf->frame->design));
 	return dx;
 }
 
@@ -368,19 +368,15 @@ static void recv_var_event_after(struct frame *f, const struct frame_event *fe)
 	assert(fe->time == frame_time(f));
 	assert(fe->type == RECV_VAR_EVENT);
 
+	const struct design *design = f->design;
+	ssize_t offset = design_recv_dyn_index(design);
 	const struct recv_var_event_meta *meta = &fe->meta.recv_var;
-	struct svector_pos pos;
 	double *ptr;
-	struct svector *dx;
+	struct vector *dx;
 
 	dx = frame_recv_dx(f, meta->item.isend, meta->item.jrecv);
-	if ((ptr = svector_find(dx, meta->index, &pos))) {
-		*ptr += meta->delta;
-		if (*ptr == 0.0)
-			svector_remove_at(dx, &pos);
-	} else {
-		svector_insert(dx, &pos, meta->delta);
-	}
+	ptr = vector_item_ptr(dx, meta->index - offset);
+	*ptr += meta->delta;
 }
 
 static void event_before(struct frame *f, const struct frame_event *e)
@@ -538,13 +534,13 @@ struct vector frame_send_x(struct frame *f, ssize_t isend)
 	return matrix_col(&f->send_xt, isend);
 }
 
-struct svector *frame_recv_dx(struct frame *f, ssize_t isend, ssize_t jrecv)
+struct vector *frame_recv_dx(const struct frame *f, ssize_t isend, ssize_t jrecv)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(f->design));
 	assert(0 <= jrecv && jrecv < design_recv_count(f->design));
 
-	struct recv_frame *rf = frame_recv_frame(f, isend);
+	struct recv_frame *rf = frame_recv_frame((struct frame *)f, isend);
 	return recv_frame_dx(rf, jrecv);
 }
 
@@ -610,13 +606,28 @@ void frame_recv_mul(double alpha, enum trans_op trans,
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_recv_dim(f->design));
 
-	struct svector diffprod;
-
-	svector_init(&diffprod, vector_dim(y));
-	frame_recv_dmul(alpha, trans, f, isend, x, 0.0, &diffprod);
+	const struct design *design = f->design;
+	ssize_t off = design_recv_dyn_index(design);	
+	ssize_t dim = design_recv_dyn_dim(design);
+	
 	design_recv_mul0(alpha, trans, f->design, isend, x, beta, y);
-	svector_axpy(1.0, &diffprod, y);
-	svector_deinit(&diffprod);
+	if (trans == TRANS_NOTRANS) {
+		struct svector ys;
+		
+		svector_init(&ys, vector_dim(y));
+		struct vector xsub = vector_slice(x, off, dim);
+		frame_recv_dmul(alpha, trans, f, isend, &xsub, 0.0, &ys);
+		svector_axpy(1.0, &ys, y);
+		svector_deinit(&ys);
+	} else {
+		struct vector ysub = vector_slice(y, off, dim);
+		struct svector ysubs;
+		
+		svector_init(&ysubs, vector_dim(&ysub));
+		frame_recv_dmul(alpha, trans, f, isend, x, 0.0, &ysubs);
+		svector_axpy(1.0, &ysubs, &ysub);
+		svector_deinit(&ysubs);
+	}
 }
 
 void frame_recv_muls(double alpha, enum trans_op trans,
@@ -637,13 +648,29 @@ void frame_recv_muls(double alpha, enum trans_op trans,
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_recv_dim(f->design));
 
-	struct svector diffprod;
+	const struct design *design = f->design;
+	ssize_t off = design_recv_dyn_index(design);	
+	ssize_t dim = design_recv_dyn_dim(design);
 
-	svector_init(&diffprod, vector_dim(y));
-	frame_recv_dmuls(alpha, trans, f, isend, x, 0.0, &diffprod);
-	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);
-	svector_axpy(1.0, &diffprod, y);
-	svector_deinit(&diffprod);
+	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);	
+	
+	if (trans == TRANS_NOTRANS) {
+		struct svector xsub;
+		struct svector_iter it;
+		
+		svector_init(&xsub, dim);
+		SVECTOR_FOREACH(it, x) {
+			ssize_t i = SVECTOR_IDX(it) - off;
+			if (0 <= i && i < dim) {
+				svector_set_item(&xsub, i, SVECTOR_VAL(it));
+			}
+		}
+		frame_recv_dmuls(alpha, trans, f, isend, &xsub, 1.0, y);
+		svector_deinit(&xsub);
+	} else {
+		struct vector ysub = vector_slice(y, off, dim);
+		frame_recv_dmuls(alpha, trans, f, isend, x, 1.0, &ysub);		
+	}
 }
 
 void frame_recv_dmul(double alpha, enum trans_op trans,
@@ -656,13 +683,13 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || vector_dim(x) == design_recv_dim(f->design));
+	       || vector_dim(x) == design_recv_dyn_dim(f->design));
 	assert(trans != TRANS_NOTRANS
 	       || svector_dim(y) == design_recv_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(x) == design_recv_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(y) == design_recv_dim(f->design));
+	       || svector_dim(y) == design_recv_dyn_dim(f->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -672,9 +699,10 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 	}
 
 	struct design *design = f->design;
-	ssize_t ndynamic = design->nrdynamic;
+	ssize_t dim = design_recv_dyn_dim(design);
+	ssize_t i;
 
-	if (ndynamic == 0)
+	if (dim == 0)
 		return;
 
 	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
@@ -683,16 +711,22 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 
 	struct intmap_iter it;
 	ssize_t jrecv;
-	const struct svector *dx;
+	const struct vector *dx;
 
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		jrecv = INTMAP_KEY(it);
-		dx = INTMAP_VAL(it);
-		if (trans == TRANS_NOTRANS) {
-			double dot = svector_dot(dx, x);
+	if (trans == TRANS_NOTRANS) {
+		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+			jrecv = INTMAP_KEY(it);
+			dx = INTMAP_VAL(it);
+
+			double dot = vector_dot(dx, x);
 			double *yjrecv = svector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
-		} else {
+		}
+	} else {
+		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+			jrecv = INTMAP_KEY(it);
+			dx = INTMAP_VAL(it);
+
 			double xjrecv = *vector_item_ptr(x, jrecv);
 
 			if (xjrecv == 0.0)
@@ -700,14 +734,19 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * xjrecv;
-			svector_axpys(jscale, dx, y);
+			for (i = 0; i < dim; i++) {
+				double val = jscale * vector_item(dx, i);
+				double *ptr = svector_item_ptr(y, i);
+				*ptr += val;
+			}
+			// vector_axpy(jscale, dx, y);
 		}
 	}
 }
 
 void frame_recv_dmuls(double alpha, enum trans_op trans,
 		      const struct frame *f, ssize_t isend,
-		      const struct svector *x, double beta, struct svector *y)
+		      const struct svector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
@@ -715,25 +754,25 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(x) == design_recv_dim(f->design));
+	       || svector_dim(x) == design_recv_dyn_dim(f->design));
 	assert(trans != TRANS_NOTRANS
-	       || svector_dim(y) == design_recv_count(f->design));
+	       || vector_dim(y) == design_recv_count(f->design));
 	assert(trans == TRANS_NOTRANS
 	       || svector_dim(x) == design_recv_count(f->design));
 	assert(trans == TRANS_NOTRANS
-	       || svector_dim(y) == design_recv_dim(f->design));
+	       || vector_dim(y) == design_recv_dyn_dim(f->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		svector_clear(y);
+		vector_fill(y, 0.0);
 	} else if (beta != 1.0) {
-		svector_scale(y, beta);
+		vector_scale(y, beta);
 	}
 
-	struct design *design = f->design;
-	ssize_t ndynamic = design->nrdynamic;
+	const struct design *design = f->design;
+	ssize_t dim = design_recv_dyn_dim(design);
 
-	if (ndynamic == 0)
+	if (dim == 0)
 		return;
 
 	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
@@ -742,17 +781,22 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 
 	struct intmap_iter it;
 	ssize_t jrecv;
-	const struct svector *dx;
+	const struct vector *dx;
 
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		jrecv = INTMAP_KEY(it);
-		dx = INTMAP_VAL(it);
+	if (trans == TRANS_NOTRANS) {
+		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+			jrecv = INTMAP_KEY(it);
+			dx = INTMAP_VAL(it);
 
-		if (trans == TRANS_NOTRANS) {
-			double dot = svector_dots(dx, x);
-			double *yjrecv = svector_item_ptr(y, jrecv);
+			double dot = svector_dot(x, dx);
+			double *yjrecv = vector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
-		} else {
+		}
+	} else {
+		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+			jrecv = INTMAP_KEY(it);
+			dx = INTMAP_VAL(it);
+
 			double xjrecv = svector_item(x, jrecv);
 
 			if (xjrecv == 0.0)
@@ -760,7 +804,7 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * xjrecv;
-			svector_axpys(jscale, dx, y);
+			vector_axpy(jscale, dx, y);
 		}
 	}
 }

@@ -143,6 +143,8 @@ ssize_t design_recv_effects_index(const struct design *design);
 ssize_t design_recv_traits_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,
 			      const struct var_type *type);
+static inline ssize_t design_recv_dyn_index(const struct design *design);
+static inline ssize_t design_recv_dyn_dim(const struct design *design);
 
 void design_recv_mul0(double alpha,
 		      enum trans_op trans,
@@ -205,5 +207,18 @@ bool design_loops(const struct design *design)
 	assert(design);
 	return design->loops;
 }
+
+ssize_t design_recv_dyn_index(const struct design *design)
+{
+	assert(design);
+	return design->irdynamic;
+}
+
+ssize_t design_recv_dyn_dim(const struct design *design)
+{
+	assert(design);
+	return design->nrdynamic;
+}
+
 
 #endif /* _DESIGN_H */

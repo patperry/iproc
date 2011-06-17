@@ -16,6 +16,8 @@ void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize
 
 	ssize_t n = model_receiver_count(model);
 	ssize_t p = model_dim(model);
+	const struct design *design = model_design(model);
+	ssize_t dyn_dim = design_recv_dyn_dim(design);
 	
 	ll->model = (struct model *)model;
 	
@@ -25,20 +27,20 @@ void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize
 	
 	ll->nsend = 0;
 	svector_init(&ll->nrecv, n);
-	svector_init(&ll->dxobs, p);
+	vector_init(&ll->dxobs, dyn_dim);
 	
 	ll->gamma = 0.0;
 	svector_init(&ll->dp, n);
-	svector_init(&ll->dxbar, p);
+	vector_init(&ll->dxbar, dyn_dim);
 }
 
 void recv_sloglik_deinit(struct recv_sloglik *ll)
 {
 	assert(ll);
 
-	svector_deinit(&ll->dxbar);
+	vector_deinit(&ll->dxbar);
 	svector_deinit(&ll->dp);
-	svector_deinit(&ll->dxobs);
+	vector_deinit(&ll->dxobs);
 	svector_deinit(&ll->nrecv);
 	vector_deinit(&ll->grad);
 }
@@ -65,7 +67,7 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 		double lp = recv_model_logprob(model, jrecv[i]);
 		lpbar += (lp - lpbar) / (i + 1);
 
-		*svector_item_ptr(wt, jrecv[i]) += 1.0;
+		//*svector_item_ptr(wt, jrecv[i]) += 1.0;
 
 		// update number of receives
 		*svector_item_ptr(&ll->nrecv, jrecv[i]) += 1.0;
@@ -82,8 +84,8 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 	svector_scale(&ll->dp, scale0);
 	svector_axpys(scale1, &model->dp, &ll->dp);
 
-	svector_scale(&ll->dxbar, scale0);
-	svector_axpys(scale1, &model->dxbar, &ll->dxbar);
+	vector_scale(&ll->dxbar, scale0);
+	vector_axpy(scale1, &model->dxbar, &ll->dxbar);
 
 	// update number of sends
 	ll->nsend += n;
@@ -111,6 +113,12 @@ recv_sloglik_axpy_grad_nocache(double alpha, const struct recv_sloglik *ll, stru
 	const struct recv_model *rm = model_recv_model(ll->model, NULL, ll->isend);
 	const struct vector *xbar0 = recv_model_mean0(rm);
 
+	const struct design *design = model_design(ll->model);
+	ssize_t off = design_recv_dyn_index(design);
+	ssize_t dim = design_recv_dyn_dim(design);
+	struct vector ysub = vector_slice(y, off, dim);
+
+
 	// sum{gamma[t,i]} * xbar[0,i]
 	vector_axpy(scale * ll->gamma, xbar0, y);
 
@@ -120,7 +128,7 @@ recv_sloglik_axpy_grad_nocache(double alpha, const struct recv_sloglik *ll, stru
 			  y);
 
 	// sum{dxbar[t,i]}
-	svector_axpy(scale, &ll->dxbar, y);
+	vector_axpy(scale, &ll->dxbar, &ysub);
 
 	// - (X[0,i])^T n[i]
 	design_recv_muls0(-scale / ll->nsend, TRANS_TRANS,
@@ -128,7 +136,7 @@ recv_sloglik_axpy_grad_nocache(double alpha, const struct recv_sloglik *ll, stru
 			  1.0, y);
 
 	// -sum{dx[t,i,j]}
-	svector_axpy(-scale, &ll->dxobs, y);
+	vector_axpy(-scale, &ll->dxobs, &ysub);
 }
 
 static void

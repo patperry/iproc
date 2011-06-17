@@ -61,11 +61,11 @@ struct recv_sloglik {
 
 	ssize_t nsend;
 	struct svector nrecv;
-	struct svector dxobs;
+	struct vector dxobs;
 
 	double gamma;
 	struct svector dp;
-	struct svector dxbar;
+	struct vector dxbar;
 };
 
 void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize_t isend);

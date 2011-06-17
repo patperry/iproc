@@ -145,15 +145,17 @@ static void test_rv_irecv(void **state)
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
-	struct svector x, y;
+	struct svector x;
+	struct vector y;
 	double delta, tmsg, tlo, thi;
 	ssize_t i, n = vector_dim(&intervals);
 	
 	matrix_init(&tlast, design_send_count(&design), design_recv_count(&design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	svector_init(&x, design_recv_dim(&design));
-	svector_init(&y, design_recv_count(&design));
+	ssize_t off = design_recv_dyn_index(&design);
+	svector_init(&x, design_recv_dyn_dim(&design));
+	vector_init(&y, design_recv_count(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -166,17 +168,17 @@ static void test_rv_irecv(void **state)
 			tlo = i == 0 ? 0 : vector_item(&intervals, i - 1);
 			thi = i == n ? INFINITY : vector_item(&intervals, i);
 			
-			svector_set_basis(&x, rv_irecv_index + i);
+			svector_set_basis(&x, rv_irecv_index - off + i);
 			frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 			for (j = 0; j < 1; j++) {
 				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);
 				delta = t - tmsg;
 				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
-					assert(svector_item(&y, jrecv) == 1.0);
-					assert_true(svector_item(&y, jrecv) == 1.0);
+					assert(vector_item(&y, jrecv) == 1.0);
+					assert_true(vector_item(&y, jrecv) == 1.0);
 				} else {
-					assert_true(svector_item(&y, (jrecv + j) % nrecv) == 0.0);
+					assert_true(vector_item(&y, (jrecv + j) % nrecv) == 0.0);
 				}
 			}
 		}

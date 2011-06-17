@@ -8,6 +8,7 @@
 #include "model.h"
 #include "util.h"
 
+
 static void
 compute_weight_changes(const struct frame *f, ssize_t isend,
 		       const struct vector *coefs,
@@ -78,6 +79,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 	*gamma = exp(-log_sum_w);
 	*log_gamma = -log_sum_w;
 }
+
 
 /* Given log_p0, log_gamma, and deta, compute p_active.  The probability for
  * receiver j is active if x[t,i,j] is nonzero or j = i and self-loops are
@@ -257,7 +259,7 @@ static void recv_model_clear(struct recv_model *rm)
 
 	svector_clear(&rm->deta);
 	svector_clear(&rm->dp);
-	svector_clear(&rm->dxbar);
+	vector_fill(&rm->dxbar, 0.0);
 
 	if (!design_loops(model_design(m))) {
 		double p0 = vector_item(&cm->p0, isend);
@@ -280,7 +282,7 @@ static void recv_model_update(struct recv_model *rm, const struct frame *f)
 	assert(f);
 
 	svector_clear(&rm->dp);
-	svector_clear(&rm->dxbar);
+	vector_fill(&rm->dxbar, 0.0);
 
 	ssize_t isend = rm->isend;
 	const struct vector *log_p0 = recv_model_logprobs0(rm);
@@ -307,7 +309,7 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 	rm->cohort = model_cohort_model(m, isend);
 	svector_init(&rm->deta, model_receiver_count(m));
 	svector_init(&rm->dp, model_receiver_count(m));
-	svector_init(&rm->dxbar, model_dim(m));
+	vector_init(&rm->dxbar, design_recv_dyn_dim(model_design(m)));
 
 	recv_model_clear(rm);
 }
@@ -315,7 +317,7 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 static void recv_model_deinit(struct recv_model *rm)
 {
 	assert(rm);
-	svector_deinit(&rm->dxbar);
+	vector_deinit(&rm->dxbar);
 	svector_deinit(&rm->dp);
 	svector_deinit(&rm->deta);
 }
@@ -623,7 +625,10 @@ void recv_model_axpy_mean(double alpha,
 	const struct svector *dp = &rm->dp;
 	design_recv_muls0(alpha, TRANS_TRANS, design, isend, dp, 1.0, y);
 	
-	const struct svector *dxbar = &rm->dxbar;
-	svector_axpy(alpha, dxbar, y);
+	const struct vector *dxbar = &rm->dxbar;
+	ssize_t off = design_recv_dyn_index(design);
+	ssize_t dim = design_recv_dyn_dim(design);
+	struct vector ysub = vector_slice(y, off, dim);
+	vector_axpy(alpha, dxbar, &ysub);
 }
 
