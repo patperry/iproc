@@ -538,13 +538,22 @@ struct recv_model *model_recv_model(struct model *m, const struct frame *f,
 	return rm;
 }
 
-ssize_t recv_model_receiver_count(const struct recv_model *rm)
+ssize_t recv_model_count(const struct recv_model *rm)
 {
 	assert(rm);
-	struct model *model = rm->model;
-	ssize_t nreceiver = model_receiver_count(model);
-	return nreceiver;
+	const struct model *model = rm->model;
+	const struct design *design = model_design(model);
+	return design_recv_count(design);
 }
+
+ssize_t recv_model_dim(const struct recv_model *rm)
+{
+	assert(rm);
+	const struct model *model = rm->model;
+	const struct design *design = model_design(model);
+	return design_recv_dim(design);
+}
+
 
 /*
  *         log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
@@ -552,7 +561,7 @@ ssize_t recv_model_receiver_count(const struct recv_model *rm)
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 {
 	assert(rm);
-	assert(0 <= jrecv && jrecv < recv_model_receiver_count(rm));
+	assert(0 <= jrecv && jrecv < recv_model_count(rm));
 
 	/*
 	   double gamma = ctx->gamma;
@@ -573,34 +582,48 @@ double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv)
 {
 	assert(rm);
-	assert(0 <= jrecv && jrecv < recv_model_receiver_count(rm));
+	assert(0 <= jrecv && jrecv < recv_model_count(rm));
 
 	double lp = recv_model_logprob(rm, jrecv);
 	double p = exp(lp);
 	return p;
 }
 
-void recv_model_get_logprobs(const struct recv_model *rm,
-			     struct vector *logprobs)
+void recv_model_axpy_probs(double alpha,
+			   const struct recv_model *rm,
+			   struct vector *y)
 {
 	assert(rm);
-	assert(logprobs);
-	assert(vector_dim(logprobs) == recv_model_receiver_count(rm));
+	assert(y);
+	assert(vector_dim(y) == recv_model_count(rm));
 
-	ssize_t j, n = recv_model_receiver_count(rm);
+	ssize_t j, n = recv_model_count(rm);
 
 	for (j = 0; j < n; j++) {
-		double lp = recv_model_logprob(rm, j);
-		*vector_item_ptr(logprobs, j) = lp;
+		double p = recv_model_prob(rm, j);
+		*vector_item_ptr(y, j) += alpha * p;
 	}
 }
 
-void recv_model_get_probs(const struct recv_model *rm, struct vector *probs)
+void recv_model_axpy_mean(double alpha,
+			  const struct recv_model *rm,
+			  struct vector *y)
 {
 	assert(rm);
-	assert(probs);
-	assert(vector_dim(probs) == recv_model_receiver_count(rm));
-
-	recv_model_get_logprobs(rm, probs);
-	vector_exp(probs);
+	assert(y);
+	assert(vector_dim(y) == recv_model_dim(rm));
+	assert(rm->cached);
+	
+	const struct vector *xbar0 = recv_model_mean0(rm);
+	double gamma = rm->gamma;
+	vector_axpy(alpha * gamma, xbar0, y);
+	
+	const struct design *design = model_design(rm->model);
+	ssize_t isend = rm->isend;
+	const struct svector *dp = &rm->dp;
+	design_recv_muls0(alpha, TRANS_TRANS, design, isend, dp, 1.0, y);
+	
+	const struct svector *dxbar = &rm->dxbar;
+	svector_axpy(alpha, dxbar, y);
 }
+

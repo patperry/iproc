@@ -86,7 +86,7 @@ static void basic_teardown(void **state)
 static void test_probs(void **state)
 {
 	struct recv_model *rm;
-	struct vector eta, probs, logprobs;
+	struct vector eta, probs, logprobs, y;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -96,7 +96,11 @@ static void test_probs(void **state)
 	nrecv = design_recv_count(&design);
 	vector_init(&eta, nrecv);	
 	vector_init(&probs, nrecv);
-	vector_init(&logprobs, nrecv);	
+	vector_init(&logprobs, nrecv);
+	vector_init(&y, nrecv);
+
+	double alpha = 2.0;
+	double y0 = 3.14;
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -128,6 +132,8 @@ static void test_probs(void **state)
 			vector_assign_copy(&probs, &logprobs);
 			vector_exp(&probs);
 			
+			vector_fill(&y, y0);
+			recv_model_axpy_probs(alpha, rm, &y);
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = recv_model_logprob(rm, jrecv);
 				double lp1 = vector_item(&logprobs, jrecv);
@@ -136,8 +142,10 @@ static void test_probs(void **state)
 				double p0 = recv_model_prob(rm, jrecv);
 				double p1 = vector_item(&probs, jrecv);
 				assert_in_range(double_eqrel(p0, p1), 47, DBL_MANT_DIG);
+				
+				assert_true(double_identical(alpha * p0 + y0,
+							     vector_item(&y, jrecv)));
 			}
-
 		}
 		
 		n = MESSAGES_COUNT(it);
@@ -149,14 +157,78 @@ static void test_probs(void **state)
 	
 	vector_deinit(&probs);
 	vector_deinit(&logprobs);
-	vector_deinit(&eta);	
+	vector_deinit(&eta);
+	vector_deinit(&y);	
 }
+
+
+static void test_mean(void **state)
+{
+	struct recv_model *rm;
+	struct vector probs, mean, mean0;
+	struct messages_iter it;
+	const struct message *msg = NULL;
+	double t;
+	ssize_t isend;
+	ssize_t i, n;
+	ssize_t index, dim = design_recv_dim(&design);
+	
+	vector_init(&probs, design_recv_count(&design));
+	vector_init(&mean, design_recv_dim(&design));
+	vector_init(&mean0, design_recv_dim(&design));	
+	
+	MESSAGES_FOREACH(it, &messages) {
+		t = MESSAGES_TIME(it);
+		
+		while (frame_next_change(&frame) <= t) {
+			model_update(&model, &frame);
+			frame_advance(&frame);			
+		}
+		if (frame_time(&frame) < t) {
+			model_update(&model, &frame);
+			frame_advance_to(&frame, t);			
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			isend = msg->from;
+			rm = model_recv_model(&model, &frame, isend);
+			
+			vector_fill(&probs, 0.0);
+			recv_model_axpy_probs(1.0, rm, &probs);
+			
+			frame_recv_mul(1.0, TRANS_TRANS, &frame, isend, &probs,
+				       0.0, &mean);
+			
+			vector_fill(&mean0, 0.0);
+			recv_model_axpy_mean(1.0, rm, &mean0);
+			
+			for (index = 0; index < dim; index++) {
+				double x0 = vector_item(&mean0, index);
+				double x1 = vector_item(&mean, index);				
+				assert_in_range(double_eqrel(x0, x1), 44, DBL_MANT_DIG);
+			}
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			frame_add(&frame, msg);
+		}
+	}
+	
+	vector_deinit(&probs);
+	vector_deinit(&mean);
+}
+
 
 int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
 		unit_test_setup_teardown(test_probs, basic_setup, basic_teardown),
+		unit_test_setup_teardown(test_mean, basic_setup, basic_teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);

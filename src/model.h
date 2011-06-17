@@ -132,6 +132,8 @@ struct recv_model {
 	double gamma;
 	double log_gamma;
 	struct svector deta;
+	
+	/* deprecated */
 	struct svector dp;
 	struct svector dxbar;
 	bool cached;
@@ -163,7 +165,8 @@ void model_update(struct model *m, const struct frame *f);
 
 struct recv_model *model_recv_model(struct model *m, const struct frame *f,
 				    ssize_t isend);
-ssize_t recv_model_receiver_count(const struct recv_model *rm);
+ssize_t recv_model_count(const struct recv_model *rm);
+ssize_t recv_model_dim(const struct recv_model *rm);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
 struct vector *recv_model_logprobs0(const struct recv_model *rm);
@@ -172,8 +175,7 @@ struct vector *recv_model_mean0(const struct recv_model *rm);
 
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
-void recv_model_get_logprobs(const struct recv_model *rm,
-			     struct vector *logprobs);
-void recv_model_get_probs(const struct recv_model *rm, struct vector *probs);
+void recv_model_axpy_probs(double alpha, const struct recv_model *rm, struct vector *y);
+void recv_model_axpy_mean(double alpha, const struct recv_model *rm, struct vector *y);
 
 #endif /* _IPROC_MODEL_H */
