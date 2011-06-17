@@ -115,7 +115,8 @@ struct cohort_model {
 	double log_W0;
 	struct vector p0;
 	struct vector log_p0;
-	struct vector xbar0;
+	struct vector mean0;
+	struct matrix var0;
 
 	/* debug */
 #ifndef NDEBUG
@@ -133,9 +134,10 @@ struct recv_model {
 	double log_gamma;
 	struct svector deta;
 	
-	/* deprecated */
-	struct svector dp;
-	struct vector dxbar;
+	/* mean */
+	struct array active;
+	struct vector dp;
+	struct vector mean_dx;	
 	bool cached;
 };
 

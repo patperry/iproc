@@ -82,10 +82,18 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 	ll->gamma += scale1 * (model->gamma - ll->gamma);
 
 	svector_scale(&ll->dp, scale0);
-	svector_axpys(scale1, &model->dp, &ll->dp);
+	
+	ssize_t nactive = array_count(&model->active);
+	for (i = 0; i < nactive; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(&model->active, i);
+		double dp = vector_item(&model->dp, i);
+		double *dst = svector_item_ptr(&ll->dp, jrecv);
+		*dst += scale1 * dp;
+	}
+	//svector_axpys(scale1, &model->dp, &ll->dp);
 
 	vector_scale(&ll->dxbar, scale0);
-	vector_axpy(scale1, &model->dxbar, &ll->dxbar);
+	vector_axpy(scale1, &model->mean_dx, &ll->dxbar);
 
 	// update number of sends
 	ll->nsend += n;

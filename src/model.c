@@ -3,11 +3,13 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include "compare.h"
 #include "ieee754.h"
 #include "logsumexp.h"
 #include "model.h"
 #include "util.h"
 
+DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
 static void
 compute_weight_changes(const struct frame *f, ssize_t isend,
@@ -167,10 +169,31 @@ static void cohort_model_init(struct cohort_model *cm,
 	vector_init_copy(&cm->p0, &cm->log_p0);
 	vector_exp(&cm->p0);
 
-	/* xbar0 */
-	vector_init(&cm->xbar0, dim);
+	/* mean0 */
+	vector_init(&cm->mean0, dim);
 	design_recv_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0,
-			 &cm->xbar0);
+			 &cm->mean0);
+	
+	/* var0 */
+	struct vector y;
+	struct svector ej;
+	double pj;
+	ssize_t jrecv;	
+	
+	vector_init(&y, dim);
+	svector_init(&ej, nreceiver);
+	matrix_init(&cm->var0, dim, dim);
+
+	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
+		vector_assign_copy(&y, &cm->mean0);
+		svector_set_basis(&ej, jrecv);
+		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &ej, -1.0, &y);
+		pj = vector_item(&cm->p0, jrecv);
+		
+		matrix_update1(&cm->var0, pj, &y, &y);
+	}
+	svector_deinit(&ej);
+	vector_deinit(&y);
 
 #ifndef NDEBUG
 	/* W0 */
@@ -190,7 +213,7 @@ static void cohort_model_deinit(struct cohort_model *cm)
 	vector_deinit(&cm->w0);
 	vector_deinit(&cm->eta0);
 #endif
-	vector_deinit(&cm->xbar0);
+	vector_deinit(&cm->mean0);
 	vector_deinit(&cm->log_p0);
 	vector_deinit(&cm->p0);
 }
@@ -258,8 +281,9 @@ static void recv_model_clear(struct recv_model *rm)
 	const struct cohort_model *cm = model_cohort_model(m, isend);
 
 	svector_clear(&rm->deta);
-	svector_clear(&rm->dp);
-	vector_fill(&rm->dxbar, 0.0);
+	array_clear(&rm->active);
+	vector_deinit(&rm->dp);
+	vector_fill(&rm->mean_dx, 0.0);
 
 	if (!design_loops(model_design(m))) {
 		double p0 = vector_item(&cm->p0, isend);
@@ -268,10 +292,14 @@ static void recv_model_clear(struct recv_model *rm)
 		rm->log_gamma = -log1p(-p0);
 
 		svector_set_item(&rm->deta, isend, -INFINITY);
-		svector_set_item(&rm->dp, isend, -p0 / (1.0 - p0));
+		
+		array_add(&rm->active, &isend);
+		vector_init(&rm->dp, 1);
+		vector_set_item(&rm->dp, 0, -p0 / (1.0 - p0));
 	} else {
 		rm->gamma = 1.0;
 		rm->log_gamma = 0.0;
+		vector_init(&rm->dp, 0);
 	}
 	rm->cached = true;
 }
@@ -281,19 +309,35 @@ static void recv_model_update(struct recv_model *rm, const struct frame *f)
 	assert(rm);
 	assert(f);
 
-	svector_clear(&rm->dp);
-	vector_fill(&rm->dxbar, 0.0);
+	//vector_fill(&rm->dp, 0.0);
+	vector_fill(&rm->mean_dx, 0.0);
 
 	ssize_t isend = rm->isend;
-	const struct vector *log_p0 = recv_model_logprobs0(rm);
-	const struct vector *p0 = recv_model_probs0(rm);
+	//const struct vector *log_p0 = recv_model_logprobs0(rm);
+	const struct vector *probs0 = recv_model_probs0(rm);
+	double gamma = rm->gamma;
 	
 	//compute_weight_changes(f, rm->isend, model_coefs(rm->model), log_p0,
 	//		       &rm->deta, &rm->gamma, &rm->log_gamma);
 
-	compute_active_probs(log_p0, rm->log_gamma, &rm->deta, &rm->dp);
-	frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &rm->dp, 0.0, &rm->dxbar);
-	compute_prob_diffs(p0, rm->gamma, &rm->dp);
+	ssize_t i, n = array_count(&rm->active);
+	for (i = 0; i < n; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
+
+
+		double p = recv_model_prob(rm, jrecv);
+		double p0 = vector_item(probs0, jrecv);
+		double dp = p - gamma * p0;
+		vector_set_item(&rm->dp, i, dp);
+		
+		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+		vector_axpy(p, dx, &rm->mean_dx);
+	}
+	
+
+	//compute_active_probs(log_p0, rm->log_gamma, &rm->deta, &rm->dp);
+	//frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &rm->dp, 0.0, &rm->mean_dx);
+	//compute_prob_diffs(p0, rm->gamma, &rm->dp);
 	rm->cached = true;	
 }
 
@@ -308,8 +352,9 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 	rm->isend = isend;
 	rm->cohort = model_cohort_model(m, isend);
 	svector_init(&rm->deta, model_receiver_count(m));
-	svector_init(&rm->dp, model_receiver_count(m));
-	vector_init(&rm->dxbar, design_recv_dyn_dim(model_design(m)));
+	array_init(&rm->active, sizeof(ssize_t));
+	vector_init(&rm->dp, 0);
+	vector_init(&rm->mean_dx, design_recv_dyn_dim(model_design(m)));
 
 	recv_model_clear(rm);
 }
@@ -317,8 +362,9 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 static void recv_model_deinit(struct recv_model *rm)
 {
 	assert(rm);
-	vector_deinit(&rm->dxbar);
-	svector_deinit(&rm->dp);
+	vector_deinit(&rm->mean_dx);
+	vector_deinit(&rm->dp);
+	array_deinit(&rm->active);
 	svector_deinit(&rm->deta);
 }
 
@@ -451,7 +497,7 @@ struct vector *recv_model_probs0(const struct recv_model *model)
 struct vector *recv_model_mean0(const struct recv_model *model)
 {
 	assert(model);
-	return &model->cohort->xbar0;
+	return &model->cohort->mean0;
 }
 
 void model_clear(struct model *m)
@@ -464,6 +510,7 @@ void model_clear(struct model *m)
 		recv_model_clear(INTMAP_VAL(it));
 	}
 }
+
 
 static void process_recv_var_event(struct model *m, const struct frame_event *e)
 {
@@ -495,6 +542,29 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	rm->gamma = gamma;
 	rm->log_gamma = log_gamma;
 	*pdeta += deta;
+	
+	ssize_t pos = array_binary_search(&rm->active, &jrecv, ssize_compare);
+	if (pos < 0) {
+		pos = ~pos;
+		array_insert(&rm->active, pos, &jrecv);
+		
+		ssize_t dim = vector_dim(&rm->dp) + 1;
+		struct vector dp, dp0, dp1, dp0_old, dp1_old;
+		
+		vector_init(&dp, dim);
+		dp0 = vector_slice(&dp, 0, pos);
+		dp0_old = vector_slice(&rm->dp, 0, pos);
+		vector_assign_copy(&dp0, &dp0_old);
+		
+		vector_set_item(&dp, pos, 0.0);
+		
+		dp1 = vector_slice(&dp, pos + 1, dim - pos - 1);
+		dp1_old = vector_slice(&rm->dp, pos, dim - pos - 1);
+		vector_assign_copy(&dp1, &dp1_old);
+		
+		vector_deinit(&rm->dp);
+		rm->dp = dp;
+	}
 	
 	rm->cached = false;	
 }
@@ -616,19 +686,29 @@ void recv_model_axpy_mean(double alpha,
 	assert(vector_dim(y) == recv_model_dim(rm));
 	assert(rm->cached);
 	
-	const struct vector *xbar0 = recv_model_mean0(rm);
+	const struct vector *mean0 = recv_model_mean0(rm);
 	double gamma = rm->gamma;
-	vector_axpy(alpha * gamma, xbar0, y);
+	vector_axpy(alpha * gamma, mean0, y);
 	
 	const struct design *design = model_design(rm->model);
 	ssize_t isend = rm->isend;
-	const struct svector *dp = &rm->dp;
-	design_recv_muls0(alpha, TRANS_TRANS, design, isend, dp, 1.0, y);
 	
-	const struct vector *dxbar = &rm->dxbar;
+	ssize_t i, n = array_count(&rm->active);
+	struct svector dp;
+	svector_init(&dp, recv_model_count(rm));
+	for (i = 0; i < n; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
+		double val = vector_item(&rm->dp, i);
+		svector_set_item(&dp, jrecv, val);
+	}
+	
+	design_recv_muls0(alpha, TRANS_TRANS, design, isend, &dp, 1.0, y);
+	svector_deinit(&dp);
+	
+	const struct vector *mean_dx = &rm->mean_dx;
 	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 	struct vector ysub = vector_slice(y, off, dim);
-	vector_axpy(alpha, dxbar, &ysub);
+	vector_axpy(alpha, mean_dx, &ysub);
 }
 
