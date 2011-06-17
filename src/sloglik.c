@@ -6,134 +6,95 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sloglik.h"
+#include "util.h"
 
-static void iproc_sloglik_free(iproc_sloglik * sll)
+void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize_t isend)
 {
-	if (sll) {
-		svector_free(sll->dxbar);
-		svector_free(sll->dp);
-		svector_free(sll->dxobs);
-		svector_free(sll->nrecv);
-		vector_free(sll->grad);
-		model_free(sll->model);
-		free(sll);
-	}
-}
-
-iproc_sloglik *iproc_sloglik_new(struct model *model, ssize_t isend)
-{
-	iproc_sloglik *sll = malloc(sizeof(*sll));
-	if (!sll)
-		return NULL;
+	assert(ll);
+	assert(model);
+	assert(0 <= isend && isend < design_send_count(model_design(model)));
 
 	ssize_t n = model_receiver_count(model);
 	ssize_t p = model_dim(model);
-
-	sll->model = model_ref(model);
-	sll->isend = isend;
-
-	sll->f = 0.0;
-	sll->grad = vector_alloc(p);
-	sll->grad_cached = false;
-
-	sll->nsend = 0;
-	sll->nrecv = svector_alloc(n);
-	sll->dxobs = svector_alloc(p);
-
-	sll->gamma = 0.0;
-	sll->dp = svector_alloc(n);
-	sll->dxbar = svector_alloc(p);
-
-	refcount_init(&sll->refcount);
-
-	if (!(sll->grad && sll->nrecv && sll->dxobs && sll->dxbar)) {
-		iproc_sloglik_free(sll);
-		sll = NULL;
-	}
-
-	return sll;
+	
+	ll->model = (struct model *)model;
+	
+	ll->f = 0.0;
+	vector_init(&ll->grad, p);
+	ll->grad_cached = false;
+	
+	ll->nsend = 0;
+	svector_init(&ll->nrecv, n);
+	svector_init(&ll->dxobs, p);
+	
+	ll->gamma = 0.0;
+	svector_init(&ll->dp, n);
+	svector_init(&ll->dxbar, p);
 }
 
-iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll)
+void recv_sloglik_deinit(struct recv_sloglik *ll)
 {
-	if (sll) {
-		refcount_get(&sll->refcount);
-	}
-	return sll;
+	assert(ll);
+
+	svector_deinit(&ll->dxbar);
+	svector_deinit(&ll->dp);
+	svector_deinit(&ll->dxobs);
+	svector_deinit(&ll->nrecv);
+	vector_deinit(&ll->grad);
 }
 
-static void iproc_sloglik_release(struct refcount *refcount)
+void recv_sloglik_add(struct recv_sloglik *ll,
+		     const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
-	iproc_sloglik *sll = container_of(refcount, iproc_sloglik, refcount);
-	iproc_sloglik_free(sll);
-}
-
-void iproc_sloglik_unref(iproc_sloglik * sll)
-{
-	if (sll) {
-		refcount_put(&sll->refcount, iproc_sloglik_release);
-	}
-}
-
-void iproc_sloglik_insert(iproc_sloglik * sll,
-			  const struct frame *f, ssize_t jrecv)
-{
-	iproc_sloglik_insertm(sll, f, &jrecv, 1);
-}
-
-void iproc_sloglik_insertm(iproc_sloglik * sll,
-			   const struct frame *f, ssize_t *jrecv, ssize_t n)
-{
-	ssize_t nreceiver = model_receiver_count(sll->model);
-	struct recv_model *rm = model_recv_model(sll->model, f, sll->isend);
+	ssize_t isend = ll->isend;
+	const struct recv_model *model = model_recv_model(ll->model, f, isend);
+	ssize_t nreceiver = recv_model_count(model);
 	struct svector *wt = svector_alloc(nreceiver);
-	double ntot = sll->nsend + n;
+	double ntot = ll->nsend + n;
 	double scale1 = n / ntot;
 	double scale0 = 1 - scale1;
 	double lpbar = 0.0;
 	ssize_t i;
 
-	sll->grad_cached = false;
+	ll->grad_cached = false;
 
 	for (i = 0; i < n; i++) {
 		assert(jrecv[i] >= 0);
 		assert(jrecv[i] < nreceiver);
 
-		double lp = recv_model_logprob(rm, jrecv[i]);
+		double lp = recv_model_logprob(model, jrecv[i]);
 		lpbar += (lp - lpbar) / (i + 1);
 
 		*svector_item_ptr(wt, jrecv[i]) += 1.0;
 
 		// update number of receives
-		*svector_item_ptr(sll->nrecv, jrecv[i]) += 1.0;
+		*svector_item_ptr(&ll->nrecv, jrecv[i]) += 1.0;
 	}
 
 	// update log likelihood
-	sll->f += scale1 * ((-lpbar) - sll->f);
+	ll->f += scale1 * ((-lpbar) - ll->f);
 
 	// update observed variable diffs
-	frame_recv_dmuls(scale1 / n, TRANS_TRANS, f, sll->isend,
-			 wt, scale0, sll->dxobs);
-	sll->gamma += scale1 * (rm->gamma - sll->gamma);
+	frame_recv_dmuls(scale1 / n, TRANS_TRANS, f, model->isend,
+			 wt, scale0, &ll->dxobs);
+	ll->gamma += scale1 * (model->gamma - ll->gamma);
 
-	svector_scale(sll->dp, scale0);
-	svector_axpys(scale1, &rm->dp, sll->dp);
+	svector_scale(&ll->dp, scale0);
+	svector_axpys(scale1, &model->dp, &ll->dp);
 
-	svector_scale(sll->dxbar, scale0);
-	svector_axpys(scale1, &rm->dxbar, sll->dxbar);
+	svector_scale(&ll->dxbar, scale0);
+	svector_axpys(scale1, &model->dxbar, &ll->dxbar);
 
 	// update number of sends
-	sll->nsend += n;
+	ll->nsend += n;
 
 	svector_free(wt);
 }
 
-double iproc_sloglik_value(iproc_sloglik * sll)
+double recv_sloglik_value(const struct recv_sloglik *ll)
 {
-	if (!sll)
-		return 0.0;
-
-	return (-sll->nsend) * sll->f;
+	assert(ll);
+	return (-ll->nsend) * ll->f;
 }
 
 /*
@@ -144,43 +105,48 @@ double iproc_sloglik_value(iproc_sloglik * sll)
  *             [ (X[0,i])^T n[i] + sum{dx[t,i,j]} ]
  */
 static void
-acc_grad_nocache(struct vector *dst_vector, double scale, iproc_sloglik * sll)
+recv_sloglik_axpy_grad_nocache(double alpha, const struct recv_sloglik *ll, struct vector *y)
 {
-	if (!sll)
-		return;
-
-	const struct recv_model *rm = model_recv_model(sll->model, NULL, sll->isend);
+	double scale = (-ll->nsend) * alpha;
+	const struct recv_model *rm = model_recv_model(ll->model, NULL, ll->isend);
 	const struct vector *xbar0 = recv_model_mean0(rm);
 
 	// sum{gamma[t,i]} * xbar[0,i]
-	vector_axpy(scale * sll->gamma, xbar0, dst_vector);
+	vector_axpy(scale * ll->gamma, xbar0, y);
 
 	// (X[0,i])^T * sum{dP[t,i]}
 	design_recv_muls0(scale, TRANS_TRANS,
-			  sll->model->design, sll->isend, sll->dp, 1.0,
-			  dst_vector);
+			  ll->model->design, ll->isend, &ll->dp, 1.0,
+			  y);
 
 	// sum{dxbar[t,i]}
-	svector_axpy(scale, sll->dxbar, dst_vector);
+	svector_axpy(scale, &ll->dxbar, y);
 
 	// - (X[0,i])^T n[i]
-	design_recv_muls0(-scale / sll->nsend, TRANS_TRANS,
-			  sll->model->design, sll->isend, sll->nrecv,
-			  1.0, dst_vector);
+	design_recv_muls0(-scale / ll->nsend, TRANS_TRANS,
+			  ll->model->design, ll->isend, &ll->nrecv,
+			  1.0, y);
 
 	// -sum{dx[t,i,j]}
-	svector_axpy(-scale, sll->dxobs, dst_vector);
+	svector_axpy(-scale, &ll->dxobs, y);
 }
 
-struct vector *iproc_sloglik_grad(iproc_sloglik * sll)
+static void
+recv_sloglik_cache_grad(struct recv_sloglik *ll)
 {
-	if (!sll)
-		return NULL;
+	vector_fill(&ll->grad, 0.0);
+	recv_sloglik_axpy_grad_nocache(1.0, ll, &ll->grad);
+	ll->grad_cached = true;
+}
 
-	if (!sll->grad_cached) {
-		vector_fill(sll->grad, 0.0);
-		acc_grad_nocache(sll->grad, (-sll->nsend) * 1.0, sll);
-		sll->grad_cached = true;
+void recv_sloglik_axpy_grad(double alpha, const struct recv_sloglik *ll, struct vector *y)
+{
+	assert(ll);
+	assert(y);
+
+	if (!ll->grad_cached) {
+		recv_sloglik_cache_grad((struct recv_sloglik *)ll);
 	}
-	return sll->grad;
+	
+	vector_axpy(alpha, &ll->grad, y);
 }

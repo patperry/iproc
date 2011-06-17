@@ -51,37 +51,33 @@
  *
  */
 
-typedef struct _iproc_sloglik iproc_sloglik;
-
-struct _iproc_sloglik {
-	struct refcount refcount;
-
+struct recv_sloglik {
 	struct model *model;
 	ssize_t isend;
 
 	double f;
-	struct vector *grad;
+	struct vector grad;
 	bool grad_cached;
 
 	ssize_t nsend;
-	struct svector *nrecv;
-	struct svector *dxobs;
+	struct svector nrecv;
+	struct svector dxobs;
 
 	double gamma;
-	struct svector *dp;
-	struct svector *dxbar;
+	struct svector dp;
+	struct svector dxbar;
 };
 
-iproc_sloglik *iproc_sloglik_new(struct model *model, ssize_t isend);
-iproc_sloglik *iproc_sloglik_ref(iproc_sloglik * sll);
-void iproc_sloglik_unref(iproc_sloglik * sll);
+void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize_t isend);
+void recv_sloglik_deinit(struct recv_sloglik *ll);
 
-void iproc_sloglik_insert(iproc_sloglik * sll,
-			  const struct frame *f, ssize_t jrecv);
-void iproc_sloglik_insertm(iproc_sloglik * sll,
-			   const struct frame *f, ssize_t *jrecv, ssize_t n);
+struct recv_sloglik *recv_sloglik_alloc(const struct model *model, ssize_t isend);
+void recv_sloglik_free(struct recv_sloglik *ll);
 
-double iproc_sloglik_value(iproc_sloglik * sll);
-struct vector *iproc_sloglik_grad(iproc_sloglik * sll);
+void recv_sloglik_add(struct recv_sloglik *ll,
+		     const struct frame *f, ssize_t *jrecv, ssize_t n);
 
-#endif /* _IPROC_LOGLIK_H */
+double recv_sloglik_value(const struct recv_sloglik *ll);
+void recv_sloglik_axpy_grad(double alpha, const struct recv_sloglik *ll, struct vector *y);
+
+#endif /* _IPROC_SLOGLIK_H */

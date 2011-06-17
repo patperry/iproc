@@ -12,7 +12,7 @@ typedef struct _iproc_loglik iproc_loglik;
 
 struct _iproc_loglik {
 	struct model *model;
-	struct array sloglik_array;
+	struct array slogliks;
 	struct vector *grad;
 	bool grad_cached;
 	ssize_t nsend;
