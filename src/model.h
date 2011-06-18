@@ -133,11 +133,16 @@ struct recv_model {
 	double gamma;
 	double log_gamma;
 	struct svector deta;
-	
+
 	/* mean */
 	struct array active;
 	struct vector dp;
-	struct vector mean_dx;	
+	struct vector mean_dx;
+
+	/* var */
+	struct matrix dp2;
+	struct matrix var_dx;
+
 	bool cached;
 };
 
@@ -179,5 +184,6 @@ double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
 void recv_model_axpy_probs(double alpha, const struct recv_model *rm, struct vector *y);
 void recv_model_axpy_mean(double alpha, const struct recv_model *rm, struct vector *y);
+void recv_model_axpy_var(double alpha, const struct recv_model *rm, const struct frame *f, struct matrix *y);
 
 #endif /* _IPROC_MODEL_H */

@@ -220,7 +220,92 @@ static void test_mean(void **state)
 	
 	vector_deinit(&probs);
 	vector_deinit(&mean);
+	vector_deinit(&mean0);	
 }
+
+
+static void test_var(void **state)
+{
+	struct recv_model *rm;
+	struct vector mean, y;
+	struct svector e_j;
+	struct matrix var, var0;
+	struct messages_iter it;
+	const struct message *msg = NULL;
+	double t;
+	ssize_t isend, jrecv, nrecv = design_recv_count(&design);
+	ssize_t i, n;
+	ssize_t index1, index2, dim = design_recv_dim(&design);
+	
+	vector_init(&mean, dim);
+	vector_init(&y, dim);	
+	matrix_init(&var, dim, dim);
+	matrix_init(&var0, dim, dim);
+	svector_init(&e_j, nrecv);
+	
+	MESSAGES_FOREACH(it, &messages) {
+		t = MESSAGES_TIME(it);
+		
+		while (frame_next_change(&frame) <= t) {
+			model_update(&model, &frame);
+			frame_advance(&frame);			
+		}
+		if (frame_time(&frame) < t) {
+			model_update(&model, &frame);
+			frame_advance_to(&frame, t);			
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			isend = msg->from;
+			rm = model_recv_model(&model, &frame, isend);
+			
+			vector_fill(&mean, 0.0);
+			recv_model_axpy_mean(1.0, rm, &mean);
+			matrix_fill(&var, 0.0);
+			recv_model_axpy_var(1.0, rm, &frame, &var);
+
+			matrix_fill(&var0, 0.0);
+			for (jrecv = 0; jrecv < nrecv; jrecv++) {
+				double p = recv_model_prob(rm, jrecv);
+				vector_assign_copy(&y, &mean);				
+				svector_set_basis(&e_j, jrecv);
+
+				frame_recv_muls(1.0, TRANS_TRANS, &frame, isend, &e_j, -1.0, &y);
+				matrix_update1(&var0, p, &y, &y);
+			}
+			
+			for (index2 = 0; index2 < dim; index2++) {
+				for (index1 = 0; index1 < dim; index1++) {				
+					double v0 = matrix_item(&var0, index1, index2);
+					double v1 = matrix_item(&var, index1, index2);
+					//printf("v0: %.4f  v1: %.4f (%d)\n", v0, v1, double_eqrel(v0, v1));
+					assert(double_eqrel(v0, v1) >= 35
+					       || (fabs(v0) < 256 * DBL_EPSILON && fabs(v1) < 256 * DBL_EPSILON));
+					if (fabs(v0) >= 256 * DBL_EPSILON) {
+						assert_in_range(double_eqrel(v0, v1), 35, DBL_MANT_DIG);
+					} else {
+						assert_true(fabs(v1) < 256 * DBL_EPSILON);
+					}
+				}
+			}
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			frame_add(&frame, msg);
+		}
+	}
+	
+	svector_deinit(&e_j);
+	vector_deinit(&mean);
+	vector_deinit(&y);
+	matrix_deinit(&var);
+	matrix_deinit(&var0);	
+}
+
 
 
 int main(int argc, char **argv)
@@ -228,7 +313,8 @@ int main(int argc, char **argv)
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
 		unit_test_setup_teardown(test_probs, basic_setup, basic_teardown),
-		unit_test_setup_teardown(test_mean, basic_setup, basic_teardown),		
+		unit_test_setup_teardown(test_mean, basic_setup, basic_teardown),
+		unit_test_setup_teardown(test_var, basic_setup, basic_teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);
