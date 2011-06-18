@@ -99,7 +99,7 @@ struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n,
 	assert(n >= 0);
 	assert(lda >= MAX(1, m));
 	assert(n <= SSIZE_MAX / lda);
-	assert(vector_dim(v) == lda * n);
+	assert(vector_dim(v) == lda * n || (m == 0 && vector_dim(v) == 0));
 
 	struct matrix a;
 	a.data = *v;
@@ -122,7 +122,7 @@ struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m,
 
 	const double *ptr = (m > 0 && n > 0) ? matrix_item_ptr(a, i, j) : NULL;
 	ssize_t lda = matrix_lda(a);
-	struct vector v = vector_make(ptr, lda * n);
+	struct vector v = m > 0 ? vector_make(ptr, lda * n) : vector_make(ptr, 0);
 
 	return matrix_make_with_lda(&v, m, n, lda);
 }
