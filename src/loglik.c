@@ -239,3 +239,38 @@ void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, stru
 	assert(ll->last);
 	recv_sloglik_axpy_last_mean(alpha, ll->last, y);
 }
+
+void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll, struct matrix *y)
+{
+	struct matrix avg_imat, diff;
+	ssize_t dim = model_dim(ll->model);
+	matrix_init(&avg_imat, dim, dim);
+	matrix_init(&diff, dim, dim);
+	ssize_t ntot, n;
+	struct recv_sloglik *sll;
+	
+	ntot = 0;
+	
+	ARRAY_FOREACH(sll, &ll->slogliks) {
+		n = recv_sloglik_count(sll);
+		if (n > 0) {
+			ntot += n;			
+			matrix_assign_copy(&diff, &avg_imat);
+			recv_sloglik_axpy_avg_imat(-1.0, sll, &diff);
+			matrix_axpy(-((double)n)/ntot, &diff, &avg_imat);
+		}
+	}
+	assert(ntot == recv_loglik_count(ll));
+	
+	matrix_axpy(alpha, &avg_imat, y);
+	matrix_deinit(&diff);
+	matrix_deinit(&avg_imat);
+}
+
+void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, struct matrix *y)
+{
+	assert(ll);
+	assert(ll->last);
+	recv_sloglik_axpy_last_imat(alpha, ll->last, y);
+}
+

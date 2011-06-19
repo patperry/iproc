@@ -33,3 +33,4 @@
 /tests/intmap_test
 /tests/model_test
 /tests/pqueue_test
+/tests/recv_loglik_test

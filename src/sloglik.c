@@ -26,6 +26,25 @@ static void mean_init(struct recv_sloglik_mean *mean,
 	vector_init(&mean->mean_dx, dyn_dim);
 }
 
+static void imat_init(struct recv_sloglik_imat *imat,
+		      const struct model *model,
+		      ssize_t isend)
+{
+	assert(imat);
+	
+	const struct recv_model *rm = model_recv_model(model, NULL, isend);
+	const struct matrix *imat0 = recv_model_imat0(rm);
+	const struct design *design = model_design(model);
+	ssize_t dyn_dim = design_recv_dyn_dim(design);
+	
+	imat->imat0 = imat0;
+	imat->gamma2 = 0.0;
+	vector_init(&imat->gamma_dp, 0);
+	matrix_init(&imat->dx_p, dyn_dim, 0);
+	matrix_init(&imat->dp2, 0, 0);
+	matrix_init(&imat->var_dx, dyn_dim, dyn_dim);	
+}
+
 static void mean_deinit(struct recv_sloglik_mean *mean)
 {
 	assert(mean);
@@ -34,12 +53,32 @@ static void mean_deinit(struct recv_sloglik_mean *mean)
 	vector_deinit(&mean->dp);
 }
 
+static void imat_deinit(struct recv_sloglik_imat *imat)
+{
+	assert(imat);
+
+	matrix_deinit(&imat->var_dx);
+	matrix_deinit(&imat->dp2);
+	matrix_deinit(&imat->dx_p);
+	vector_deinit(&imat->gamma_dp);	
+}
+
 static void mean_clear(struct recv_sloglik_mean *mean)
 {
 	assert(mean);
-	mean->gamma = 0.0;
+	mean->gamma = 1.0;
 	vector_reinit(&mean->dp, 0);
 	vector_fill(&mean->mean_dx, 0.0);
+}
+
+static void imat_clear(struct recv_sloglik_imat *imat)
+{
+	assert(imat);
+	imat->gamma2 = 0.0;
+	vector_reinit(&imat->gamma_dp, 0);
+	matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), 0);
+	matrix_reinit(&imat->dp2, 0, 0);
+	matrix_fill(&imat->var_dx, 0.0);
 }
 
 static ssize_t mean_active_count(const struct recv_sloglik_mean *mean)
@@ -48,23 +87,28 @@ static ssize_t mean_active_count(const struct recv_sloglik_mean *mean)
 	return vector_dim(&mean->dp);
 }
 
-static void mean_insert_active(struct recv_sloglik_mean *mean,
-			       ssize_t index)
+static ssize_t imat_active_count(const struct recv_sloglik_imat *imat)
+{
+	assert(imat);
+	return vector_dim(&imat->gamma_dp);
+}
+
+static void mean_insert_active(struct recv_sloglik_mean *mean, ssize_t i)
 {
 	assert(mean);
-	assert(0 <= index && index <= mean_active_count(mean));
+	assert(0 <= i && i <= mean_active_count(mean));
 	
 	ssize_t n0 = mean_active_count(mean);
 	ssize_t n1 = n0 + 1;
 	struct vector dp, src, dst;
 	vector_init(&dp, n1);
 	
-	src = vector_slice(&mean->dp, 0, index);
-	dst = vector_slice(&dp, 0, index);
+	src = vector_slice(&mean->dp, 0, i);
+	dst = vector_slice(&dp, 0, i);
 	vector_assign_copy(&dst, &src);
 	
-	src = vector_slice(&mean->dp, index, n0 - index);
-	dst = vector_slice(&dp, index + 1, n0 - index);
+	src = vector_slice(&mean->dp, i, n0 - i);
+	dst = vector_slice(&dp, i + 1, n0 - i);
 	vector_assign_copy(&dst, &src);
 	
 	vector_deinit(&mean->dp);
@@ -73,37 +117,69 @@ static void mean_insert_active(struct recv_sloglik_mean *mean,
 	assert(mean_active_count(mean) == n1);
 }
 
-static void mean_grow_active(struct recv_sloglik_mean *mean,
-			     const struct array *active0,
-			     const struct array *active1)
+static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 {
-	assert(mean);
-	assert(active0);
-	assert(active1);
-	assert(mean_active_count(mean) == array_count(active0));
-	assert(array_count(active0) < array_count(active1));
+	assert(imat);
+	assert(0 <= i && i <= imat_active_count(imat));
 	
-	if (array_count(active0) == array_count(active1))
-		return;
+	ssize_t n0 = imat_active_count(imat);
+	ssize_t n1 = n0 + 1;
+	struct vector vdst, vsrc;
+	struct matrix dst, src;
+
+	/* gamma_dp */
+	struct vector gamma_dp;
+	vector_init(&gamma_dp, n1);
 	
-	const ssize_t n0 = array_count(active0);
-	const ssize_t n1 = array_count(active1);
-	const ssize_t *begin0 = array_to_ptr(active0);
-	const ssize_t *end0 = begin0 + n0;
-	const ssize_t *begin1 = array_to_ptr(active1);
-	const ssize_t *end1 = begin1 + n1;
-	const ssize_t *i0, *i1;
+	vsrc = vector_slice(&imat->gamma_dp, 0, i);
+	vdst = vector_slice(&gamma_dp, 0, i);
+	vector_assign_copy(&vdst, &vsrc);
+
+	vsrc = vector_slice(&imat->gamma_dp, i, n0 - i);
+	vdst = vector_slice(&gamma_dp, i + 1, n0 - i);
+	vector_assign_copy(&vdst, &vsrc);
 	
-	for (i0 = begin0, i1 = begin1; i1 < end1; i1++) {
-		if (i0 < end0 && *i0 == *i1) {
-			i0++;
-		} else {
-			assert(i0 == end0 || *i1 < *i0);
-			mean_insert_active(mean, i1 - begin1);
-		}
-	}
-	assert(i0 == end0);
-	assert(mean_active_count(mean) == n1);
+	vector_deinit(&imat->gamma_dp);
+	imat->gamma_dp = gamma_dp;
+
+	
+	/* dx_p */
+	struct matrix dx_p;
+	matrix_init(&dx_p, matrix_nrow(&imat->dx_p), n1);
+	
+	src = matrix_slice_cols(&imat->dx_p, 0, i);
+	dst = matrix_slice_cols(&dx_p, 0, i);
+	matrix_assign_copy(&dst, &src);
+	
+	src = matrix_slice_cols(&imat->dx_p, i, n0 - i);
+	dst = matrix_slice_cols(&dx_p, i + 1, n0 - i);
+	matrix_assign_copy(&dst, &src);
+	
+	matrix_deinit(&imat->dx_p);
+	imat->dx_p = dx_p;
+
+	
+	/* dp2 */
+	struct matrix dp2;
+	matrix_init(&dp2, n1, n1);
+
+	dst = matrix_slice(&dp2, 0, 0, i, i);
+	src = matrix_slice(&imat->dp2, 0, 0, i, i);
+	matrix_assign_copy(&dst, &src);
+	
+	dst = matrix_slice(&dp2, i + 1, 0, n0 - i, i);
+	src = matrix_slice(&imat->dp2, i, 0, n0 - i, i);
+	matrix_assign_copy(&dst, &src);
+	
+	dst = matrix_slice(&dp2, 0, i + 1, i, n0 - i);
+	src = matrix_slice(&imat->dp2, 0, i, i, n0 - i);
+	matrix_assign_copy(&dst, &src);
+	
+	dst = matrix_slice(&dp2, i + 1, i + 1, n0 - i, n0 - i);
+	src = matrix_slice(&imat->dp2, i, i, n0 - i, n0 - i);
+	matrix_assign_copy(&dst, &src);
+	matrix_deinit(&imat->dp2);
+	imat->dp2 = dp2;
 }
 
 static void mean_set(struct recv_sloglik_mean *mean,
@@ -143,14 +219,67 @@ static void mean_set(struct recv_sloglik_mean *mean,
 	}
 }
 
-static void mean_scale(struct recv_sloglik_mean *mean, double scale)
+static void imat_set(struct recv_sloglik_imat *imat,
+		     const struct recv_model *model,
+		     const struct frame *f,
+		     const struct recv_sloglik_mean *mean)
 {
-	assert(mean);
+	assert(imat);
+	assert(model);
+	assert(f);
 	
-	mean->gamma *= scale;
-	vector_scale(&mean->dp, scale);
-	vector_scale(&mean->mean_dx, scale);
+	const ssize_t isend = model->isend;
+	const struct array *active = &model->active;
+	const ssize_t n = array_count(active);
+	ssize_t i;
+	
+	imat->imat0 = recv_model_imat0(model);
+	
+	const double gamma = model->gamma;
+	imat->gamma2 = gamma * (1 - gamma);
+	
+	if (vector_dim(&imat->gamma_dp) != n) {
+		vector_reinit(&imat->gamma_dp, n);
+		matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), n);
+		matrix_reinit(&imat->dp2, n, n);
+	}
+	matrix_fill(&imat->dp2, 0.0);	
+	matrix_fill(&imat->var_dx, 0.0);	
+	struct vector y;
+	double ptot = 0.0;
+	
+	/* dp2 */
+	matrix_update1(&imat->dp2, -1.0, &mean->dp, &mean->dp);
+	
+	vector_init(&y, vector_dim(&mean->mean_dx));
+	for (i = 0; i < n; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(active, i);
+		double dp = vector_item(&mean->dp, i);
+		double p = recv_model_prob(model, jrecv);
+		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+		
+		/* gamma_dp */
+		vector_set_item(&imat->gamma_dp, i, gamma * dp);
+		
+		/* dp2 */
+		*matrix_item_ptr(&imat->dp2, i, i) += dp;
+		
+		/* dx_p */
+		struct vector dx_p_j = matrix_col(&imat->dx_p, i);
+		vector_assign_copy(&dx_p_j, dx);
+		vector_scale(&dx_p_j, p);
+
+		/* var_dx */
+		vector_assign_copy(&y, dx);
+		vector_sub(&y, &mean->mean_dx);
+		matrix_update1(&imat->var_dx, p, &y, &y);
+		ptot += p;
+	}
+	/* var_dx */
+	matrix_update1(&imat->var_dx, 1 - ptot, &mean->mean_dx, &mean->mean_dx);
+	vector_deinit(&y);
 }
+
 
 static void mean_update(const struct array *active,
 			ssize_t n0,
@@ -184,14 +313,25 @@ static void mean_update(const struct array *active,
 	vector_sub(&mean_dx_diff, &mean1->mean_dx);
 	vector_axpy(scale, &mean_dx_diff, &mean1->mean_dx);
 	vector_deinit(&mean_dx_diff);
-
-	
-	
-	
-	/*mean1->gamma += alpha * (mean0->gamma);
-	vector_axpy(alpha, &mean0->dp, &mean1->dp);
-	vector_axpy(alpha, &mean0->mean_dx, &mean1->mean_dx);*/
 }
+
+
+static void imat_update(const struct array *active,
+			ssize_t n0,
+			const struct recv_sloglik_imat *imat0,
+			ssize_t n1,
+			struct recv_sloglik_imat *imat1)
+{
+	assert(active);
+	assert(n0 >= 0);
+	assert(imat0);
+	assert(n1 >= 0);
+	assert(imat1);
+	assert(imat_active_count(imat0) == array_count(active));
+	assert(imat_active_count(imat0) == imat_active_count(imat1));
+	assert(imat0->imat0 == imat1->imat0);
+}
+
 
 static void mean_axpy(double alpha,
 		      const struct recv_sloglik_mean *mean,
@@ -222,6 +362,109 @@ static void mean_axpy(double alpha,
 	struct vector ysub = vector_slice(y, off, dim);
 	vector_axpy(alpha, mean_dx, &ysub);
 }
+
+static void imat_axpy(double alpha,
+		      const struct recv_sloglik_imat *imat,
+		      const struct recv_sloglik_mean *mean,
+		      const struct array *active,
+		      const struct design *design,
+		      ssize_t isend,
+		      struct matrix *y)
+{
+	const ssize_t dim = design_recv_dim(design);
+	const ssize_t nrecv = design_recv_count(design);
+	const struct vector *mean0 = mean->mean0;
+	const struct matrix *var0 = imat->imat0;
+	const double gamma = mean->gamma;
+	const double gamma2 = imat->gamma2;
+	
+	const ssize_t n = array_count(active);
+	ssize_t i, j, k;
+	struct svector dp;
+	svector_init(&dp, nrecv);
+	for (i = 0; i < n; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(active, i);
+		double val = vector_item(&mean->dp, i);
+		svector_set_item(&dp, jrecv, val);
+	}
+	
+	struct vector x0_dp;
+	vector_init(&x0_dp, dim);
+	design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp, 0.0, &x0_dp);
+	
+	struct matrix x0_dp2;
+	struct svector dp2_j;
+	
+	matrix_init(&x0_dp2, dim, n);
+	svector_init(&dp2_j, nrecv);
+	for (j = 0; j < n; j++) {
+		svector_clear(&dp2_j);
+		for (i = 0; i < n; i++) {
+			ssize_t jrecv = *(ssize_t *)array_item(active, i);
+			double val = matrix_item(&imat->dp2, i, j);
+			svector_set_item(&dp2_j, jrecv, val);
+		}
+		struct vector dst = matrix_col(&x0_dp2, j);
+		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp2_j, 0.0, &dst);
+	}
+	
+	matrix_axpy(alpha * gamma, var0, y);
+	matrix_update1(y, alpha * gamma2, mean0, mean0);
+	matrix_update1(y, -alpha * gamma, mean0, &x0_dp);
+	matrix_update1(y, -alpha * gamma, &x0_dp, mean0);
+	
+	struct svector x0_dp2_k;
+	svector_init(&x0_dp2_k, nrecv);
+	for (k = 0; k < dim; k++) {
+		svector_clear(&x0_dp2_k);
+		for (j = 0; j < n; j++) {
+			ssize_t jrecv = *(ssize_t *)array_item(active, j);
+			double val = matrix_item(&x0_dp2, k, j);
+			svector_set_item(&x0_dp2_k, jrecv, val);
+		}
+		struct vector dst = matrix_col(y, k);
+		design_recv_muls0(alpha, TRANS_TRANS, design, isend, &x0_dp2_k, 1.0, &dst);
+	}
+	
+	ssize_t dyn_off = design_recv_dyn_index(design);
+	ssize_t dyn_dim = design_recv_dyn_dim(design);	
+	struct matrix y_1 = matrix_slice(y, 0, dyn_off, dim, dyn_dim);
+	struct matrix y1_ = matrix_slice(y, dyn_off, 0, dyn_dim, dim);
+	struct matrix y11 = matrix_slice(y, dyn_off, dyn_off, dyn_dim, dyn_dim);
+	
+	matrix_axpy(alpha, &imat->var_dx, &y11);
+	
+	struct vector x0_j;	
+	struct svector e_j;
+	
+	vector_init(&x0_j, dim);
+	svector_init(&e_j, design_recv_count(design));
+	
+	for (i = 0; i < n; i++) {
+		ssize_t jrecv = *(ssize_t *)array_item(active, i);
+		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
+		
+		svector_set_basis(&e_j, jrecv);
+		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &e_j, 0.0, &x0_j);
+		
+		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
+		matrix_update1(&y1_, alpha, &dx_p_j, &x0_j);
+	}
+	
+	matrix_update1(&y_1, -alpha * gamma, mean0, &mean->mean_dx);
+	matrix_update1(&y1_, -alpha * gamma, &mean->mean_dx, mean0);
+	
+	matrix_update1(&y_1, -alpha, &x0_dp, &mean->mean_dx);
+	matrix_update1(&y1_, -alpha, &mean->mean_dx, &x0_dp);
+	
+	vector_deinit(&x0_j);
+	svector_deinit(&e_j);
+	svector_deinit(&x0_dp2_k);
+	svector_deinit(&dp2_j);
+	matrix_deinit(&x0_dp2);
+	vector_deinit(&x0_dp);
+	svector_deinit(&dp);
+}
 		      
 
 void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize_t isend)
@@ -245,6 +488,8 @@ void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize
 	array_init(&ll->active, sizeof(ssize_t));
 	mean_init(&ll->mean_last, model, isend);
 	mean_init(&ll->mean_avg, model, isend);
+	imat_init(&ll->imat_last, model, isend);
+	imat_init(&ll->imat_avg, model, isend);
 	
 	/* deprecated */
 	ll->f = 0.0;
@@ -265,6 +510,8 @@ void recv_sloglik_deinit(struct recv_sloglik *ll)
 {
 	assert(ll);
 
+	imat_deinit(&ll->imat_avg);
+	imat_deinit(&ll->imat_last);
 	mean_deinit(&ll->mean_avg);
 	mean_deinit(&ll->mean_last);
 	array_deinit(&ll->active);
@@ -282,7 +529,27 @@ static void recv_sloglik_update_active(struct recv_sloglik *ll,
 	assert(active);
 	
 	if (array_count(active) > array_count(&ll->active)) {
-		mean_grow_active(&ll->mean_avg, &ll->active, active);
+		const ssize_t n0 = array_count(&ll->active);
+		const ssize_t n1 = array_count(active);
+		const ssize_t *begin0 = array_to_ptr(&ll->active);
+		const ssize_t *end0 = begin0 + n0;
+		const ssize_t *begin1 = array_to_ptr(active);
+		const ssize_t *end1 = begin1 + n1;
+		const ssize_t *i0, *i1;
+		
+		for (i0 = begin0, i1 = begin1; i1 < end1; i1++) {
+			if (i0 < end0 && *i0 == *i1) {
+				i0++;
+			} else {
+				assert(i0 == end0 || *i1 < *i0);
+				mean_insert_active(&ll->mean_avg, i1 - begin1);
+				imat_insert_active(&ll->imat_avg, i1 - begin1);				
+			}
+		}
+		assert(i0 == end0);
+		assert(mean_active_count(&ll->mean_avg) == n1);
+		assert(imat_active_count(&ll->imat_avg) == n1);		
+
 		array_assign_copy(&ll->active, active);
 	}
 }
@@ -314,6 +581,8 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 	mean_set(&ll->mean_last, model, f);
 	mean_update(&model->active, n, &ll->mean_last, ll->n, &ll->mean_avg);
 	
+	imat_set(&ll->imat_last, model, f, &ll->mean_last);
+	imat_update(&model->active, n, &ll->imat_last, ll->n, &ll->imat_avg);	
 		    
 	ll->n_last = n;
 	ll->n += n;
@@ -476,3 +745,23 @@ void recv_sloglik_axpy_last_mean(double alpha, const struct recv_sloglik *sll, s
 	
 	mean_axpy(sll->n_last * alpha, &sll->mean_last, &sll->active, design, isend, y);
 }
+
+void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y)
+{
+	assert(sll);
+	assert(y);
+
+}
+
+void recv_sloglik_axpy_last_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y)
+{
+	assert(sll);
+	assert(y);
+
+	const struct model *model = sll->model;
+	const struct design *design = model_design(model);
+	ssize_t isend = sll->isend;
+	
+	imat_axpy(sll->n_last * alpha, &sll->imat_last, &sll->mean_last, &sll->active, design, isend, y);
+}
+

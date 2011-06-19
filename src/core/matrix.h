@@ -19,6 +19,7 @@ enum trans_op {
 
 /* create, destroy */
 void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
+void matrix_reinit(struct matrix *a, ssize_t nrow, ssize_t ncol);
 void matrix_init_copy(struct matrix *a, const struct matrix *src);
 void matrix_assign_copy(struct matrix *a, const struct matrix *src);
 void matrix_deinit(struct matrix *a);

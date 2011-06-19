@@ -174,7 +174,7 @@ static void cohort_model_init(struct cohort_model *cm,
 	design_recv_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0,
 			 &cm->mean0);
 	
-	/* var0 */
+	/* imat0 */
 	struct vector y;
 	struct svector ej;
 	double pj;
@@ -182,7 +182,7 @@ static void cohort_model_init(struct cohort_model *cm,
 	
 	vector_init(&y, dim);
 	svector_init(&ej, nreceiver);
-	matrix_init(&cm->var0, dim, dim);
+	matrix_init(&cm->imat0, dim, dim);
 
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
@@ -190,7 +190,7 @@ static void cohort_model_init(struct cohort_model *cm,
 		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &ej, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 		
-		matrix_update1(&cm->var0, pj, &y, &y);
+		matrix_update1(&cm->imat0, pj, &y, &y);
 	}
 	svector_deinit(&ej);
 	vector_deinit(&y);
@@ -543,6 +543,12 @@ struct vector *recv_model_mean0(const struct recv_model *model)
 	return &model->cohort->mean0;
 }
 
+struct matrix *recv_model_imat0(const struct recv_model *model)
+{
+	assert(model);
+	return &model->cohort->imat0;
+}
+
 void model_clear(struct model *m)
 {
 	assert(m);
@@ -785,7 +791,7 @@ void recv_model_axpy_var(double alpha, const struct recv_model *rm, const struct
 	const struct design *design = model_design(rm->model);
 	const ssize_t isend = rm->isend;
 	const struct vector *mean0 = recv_model_mean0(rm);
-	const struct matrix *var0 = &rm->cohort->var0;
+	const struct matrix *var0 = &rm->cohort->imat0;
 	const double gamma = rm->gamma;
 	
 	const ssize_t n = array_count(&rm->active);

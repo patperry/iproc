@@ -116,7 +116,7 @@ struct cohort_model {
 	struct vector p0;
 	struct vector log_p0;
 	struct vector mean0;
-	struct matrix var0;
+	struct matrix imat0;
 
 	/* debug */
 #ifndef NDEBUG
@@ -181,6 +181,7 @@ static inline double recv_model_prob0(const struct recv_model *rm, ssize_t jrecv
 struct vector *recv_model_logprobs0(const struct recv_model *rm);
 struct vector *recv_model_probs0(const struct recv_model *rm);
 struct vector *recv_model_mean0(const struct recv_model *rm);
+struct matrix *recv_model_imat0(const struct recv_model *rm);
 
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);

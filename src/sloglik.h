@@ -58,9 +58,11 @@ struct recv_sloglik_mean {
 	struct vector mean_dx;	// dx' * p
 };
 
-struct recv_sloglik_hess {
+struct recv_sloglik_imat {
+	const struct matrix *imat0;
 	double gamma2;		// gamma * (1 - gamma)
 	struct vector gamma_dp; // gamma * dp
+	struct vector gamma_mean_dx; // gamma * dx' * p
 	struct matrix dx_p;     // dx' * diag(p)
 	struct matrix dp2;	// diag(dp) - dp * dp'
 	struct matrix var_dx;	// dx' * [diag(p) - p p'] * dx
@@ -82,7 +84,7 @@ struct recv_sloglik {
 	ssize_t n_last, n;
 	struct array active;	
 	struct recv_sloglik_mean mean_last, mean_avg;
-	struct recv_sloglik_hess hess_last, hess_avg;	
+	struct recv_sloglik_imat imat_last, imat_avg;	
 	
 	/* deprecated */
 	double f;
@@ -108,5 +110,8 @@ double recv_sloglik_avg_dev(const struct recv_sloglik *sll);
 double recv_sloglik_last_dev(const struct recv_sloglik *sll);
 void recv_sloglik_axpy_avg_mean(double alpha, const struct recv_sloglik *sll, struct vector *y);
 void recv_sloglik_axpy_last_mean(double alpha, const struct recv_sloglik *sll, struct vector *y);
+void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y);
+void recv_sloglik_axpy_last_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y);
+
 
 #endif /* _IPROC_SLOGLIK_H */

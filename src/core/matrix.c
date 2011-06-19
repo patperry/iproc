@@ -20,6 +20,19 @@ void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
 	a->lda = MAX(1, nrow);
 }
 
+void matrix_reinit(struct matrix *a, ssize_t nrow, ssize_t ncol)
+{
+	assert(a);
+	assert(nrow >= 0);
+	assert(ncol >= 0);
+	assert(ncol == 0 || nrow <= SSIZE_MAX / ncol);
+
+	vector_reinit(&a->data, nrow * ncol);
+	a->nrow = nrow;
+	a->ncol = ncol;
+	a->lda = MAX(1, nrow);
+}
+
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol)
 {
 	struct matrix *a = xcalloc(1, sizeof(*a));
