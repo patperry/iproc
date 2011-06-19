@@ -21,7 +21,7 @@ struct _iproc_fit {
 	struct model *model;
 	struct messages *messages;
 	double penalty;
-	iproc_loglik *loglik;
+	struct recv_loglik *loglik;
 	double value;
 	double value0;
 	struct vector *x0;

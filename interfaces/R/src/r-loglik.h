@@ -14,7 +14,7 @@ SEXP Riproc_loglik_value(SEXP Rloglik);
 SEXP Riproc_loglik_grad(SEXP Rloglik);
 
 /* Internal use only */
-iproc_loglik *Riproc_to_loglik(SEXP Rloglik);
-SEXP Riproc_from_loglik(iproc_loglik * loglik);
+struct recv_loglik *Riproc_to_loglik(SEXP Rloglik);
+SEXP Riproc_from_loglik(struct recv_loglik * loglik);
 
 #endif /* _RIPROC_LOGLIK_H */

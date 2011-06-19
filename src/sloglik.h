@@ -51,18 +51,39 @@
  *
  */
 
+struct recv_sloglik_mean {
+	double gamma;
+	struct vector dp;	// p - gamma * p0
+	struct vector mean_dx;	// dx' * p
+};
+
+struct recv_sloglik_hess {
+	double gamma2;		// gamma * (1 - gamma)
+	struct vector gamma_dp; // gamma * dp
+	struct matrix dx_p;     // dx' * diag(p)
+	struct matrix dp2;	// diag(dp) - dp * dp'
+	struct matrix var_dx;	// dx' * [diag(p) - p p'] * dx
+};
+
 struct recv_sloglik {
 	struct model *model;
 	ssize_t isend;
 
-	double f;
 	struct vector grad;
 	bool grad_cached;
 
 	ssize_t nsend;
 	struct svector nrecv;
 	struct vector dxobs;
-
+	
+	double dev_last, dev;
+	
+	struct array active;	
+	struct recv_sloglik_mean mean_last, mean;
+	struct recv_sloglik_hess hess_last, hess;	
+	
+	/* deprecated */
+	double f;
 	double gamma;
 	struct svector dp;
 	struct vector dxbar;
@@ -75,9 +96,13 @@ struct recv_sloglik *recv_sloglik_alloc(const struct model *model, ssize_t isend
 void recv_sloglik_free(struct recv_sloglik *ll);
 
 void recv_sloglik_add(struct recv_sloglik *ll,
-		     const struct frame *f, ssize_t *jrecv, ssize_t n);
+		      const struct frame *f, ssize_t *jrecv, ssize_t n);
 
 double recv_sloglik_value(const struct recv_sloglik *ll);
 void recv_sloglik_axpy_grad(double alpha, const struct recv_sloglik *ll, struct vector *y);
+
+ssize_t recv_sloglik_count(const struct recv_sloglik *sll);
+double recv_sloglik_mean_dev(const struct recv_sloglik *sll);
+double recv_sloglik_last_dev(const struct recv_sloglik *sll);
 
 #endif /* _IPROC_SLOGLIK_H */

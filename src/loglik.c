@@ -6,148 +6,203 @@
 #include "sloglik.h"
 #include "loglik.h"
 
-static void iproc_loglik_free(iproc_loglik * loglik)
+
+void recv_loglik_init(struct recv_loglik *ll,
+		      struct model *m)
 {
-	if (loglik) {
-		struct recv_sloglik *sll;
-		ARRAY_FOREACH(sll, &loglik->slogliks) {
-			recv_sloglik_deinit(sll);
-		}
-		array_deinit(&loglik->slogliks);
-		vector_free(loglik->grad);
-		model_free(loglik->model);
-		free(loglik);
-	}
-}
+	assert(ll);
+	assert(m);
 
-static iproc_loglik *iproc_loglik_new_empty(struct model *model)
-{
-	iproc_loglik *loglik = calloc(1, sizeof(*loglik));
-	struct design *design = model_design(model);
-	ssize_t isend, nsender = design_send_count(design);
-
-	if (!loglik)
-		return NULL;
-
-	loglik->model = model_ref(model);
-	loglik->grad = vector_alloc(design_recv_dim(design));
-	loglik->grad_cached = false;
-	loglik->nsend = 0;
-	loglik->nrecv = 0;
-	refcount_init(&loglik->refcount);
-	array_init(&loglik->slogliks, sizeof(struct recv_sloglik));
+	const struct design *design = model_design(m);
+	ssize_t isend, nsend = design_send_count(design);
 	
-	array_set_capacity(&loglik->slogliks, nsender);
-	for (isend = 0; isend < nsender; isend++) {
-		struct recv_sloglik *sll = array_add(&loglik->slogliks, NULL);
-		recv_sloglik_init(sll, model, isend);
-	}
+	ll->model = model_ref(m);
 	
-	return loglik;
-}
-
-iproc_loglik *iproc_loglik_new(struct model * model, struct messages * messages)
-{
-	assert(model);
-	assert(!messages
-	       || messages_max_from(messages) < model_sender_count(model));
-	assert(!messages
-	       || messages_max_to(messages) < model_receiver_count(model));
-
-	iproc_loglik *loglik = iproc_loglik_new_empty(model);
-	struct frame frame;
-	frame_init(&frame, model->design);
-
-	if (!messages)
-		return loglik;
-
-	struct messages_iter it;
-
-	MESSAGES_FOREACH(it, messages) {
-		ssize_t tie, ntie = MESSAGES_COUNT(it);
-
-		for (tie = 0; tie < ntie; tie++) {
-			const struct message *msg = MESSAGES_VAL(it, tie);
-			iproc_loglik_insert(loglik, &frame, msg);
-			frame_add(&frame, msg);
-		}
+	array_init(&ll->slogliks, sizeof(struct recv_sloglik));
+	array_set_capacity(&ll->slogliks, nsend);
+	for (isend = 0; isend < nsend; isend++) {
+		struct recv_sloglik *sll = array_add(&ll->slogliks, NULL);
+		recv_sloglik_init(sll, m, isend);
 	}
 
-	frame_deinit(&frame);
-	return loglik;
+	vector_init(&ll->grad, design_recv_dim(design));
+	ll->grad_cached = true;
+	ll->nsend = 0;
+	ll->nrecv = 0;
+	ll->last = NULL;
 }
 
-iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik)
+void recv_loglik_deinit(struct recv_loglik *ll)
 {
-	if (loglik) {
-		refcount_get(&loglik->refcount);
+	assert(ll);
+
+	struct recv_sloglik *sll;
+	ARRAY_FOREACH(sll, &ll->slogliks) {
+		recv_sloglik_deinit(sll);
 	}
-
-	return loglik;
+	array_deinit(&ll->slogliks);
+	vector_deinit(&ll->grad);
+	model_free(ll->model);
 }
 
-static void iproc_loglik_release(struct refcount *refcount)
+struct recv_loglik *recv_loglik_alloc(struct model *m, struct messages *msgs)
 {
-	iproc_loglik *loglik = container_of(refcount, iproc_loglik, refcount);
-	iproc_loglik_free(loglik);
+	struct recv_loglik *ll = xcalloc(1, sizeof(*ll));
+	
+	struct frame f;
+	
+	frame_init(&f, model_design(m));
+	recv_loglik_init(ll, m);
+	recv_loglik_add_all(ll, &f, msgs);
+	frame_deinit(&f);
+	
+	return ll;
 }
 
-void iproc_loglik_unref(iproc_loglik * loglik)
+void recv_loglik_free(struct recv_loglik *ll)
 {
-	if (loglik) {
-		refcount_put(&loglik->refcount, iproc_loglik_release);
+	if (ll) {
+		recv_loglik_deinit(ll);
+		xfree(ll);
 	}
 }
 
-static struct recv_sloglik *iproc_loglik_sloglik(iproc_loglik * loglik, ssize_t isend)
+void recv_loglik_add(struct recv_loglik *ll,
+		     const struct frame *f,
+		     const struct message *msg)
 {
-	return array_item(&loglik->slogliks, isend);
-}
-
-void iproc_loglik_insert(iproc_loglik * loglik,
-			 const struct frame *f, const struct message *msg)
-{
-	struct recv_sloglik *sll = iproc_loglik_sloglik(loglik, msg->from);
+	struct recv_sloglik *sll = array_item(&ll->slogliks, msg->from);
 	recv_sloglik_add(sll, f, msg->to, msg->nto);
-	loglik->grad_cached = false;
-	loglik->nsend += 1;
-	loglik->nrecv += msg->nto;
+	ll->grad_cached = false;
+	ll->nsend += 1;
+	ll->nrecv += msg->nto;
+	ll->last = sll;
 }
 
-double iproc_loglik_value(iproc_loglik * loglik)
+void recv_loglik_add_all(struct recv_loglik *ll,
+			 struct frame *f,
+			 const struct messages *msgs)
 {
-	assert(loglik);
+	struct messages_iter it;
+	const struct message *msg;
+	ssize_t i, n;
+	
+	struct model *m = ll->model;
+
+	MESSAGES_FOREACH(it, msgs) {
+		double t = MESSAGES_TIME(it);
+		
+		while (frame_next_change(f) <= t) {
+			model_update(m, f);
+			frame_advance(f);			
+		}
+		if (frame_time(f) < t) {
+			model_update(m, f);
+			frame_advance_to(f, t);			
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			recv_loglik_add(ll, f, msg);
+		}
+		
+		n = MESSAGES_COUNT(it);
+		for (i = 0; i < n; i ++) {
+			msg = MESSAGES_VAL(it, i);
+			frame_add(f, msg);
+		}
+	}
+	
+}
+			 
+
+double recv_loglik_value(const struct recv_loglik *ll)
+{
+	assert(ll);
 	
 	double value = 0.0;
 	struct recv_sloglik *sll;
 
-	ARRAY_FOREACH(sll, &loglik->slogliks) {
+	ARRAY_FOREACH(sll, &ll->slogliks) {
 		value += recv_sloglik_value(sll);
 	}
 
 	return value;
 }
 
-static void
-iproc_vector_acc_loglik_grad_nocache(struct vector *dst_vector,
-				     double scale, iproc_loglik * loglik)
+static void recv_loglik_axpy_grad_nocache(double alpha,
+					  const struct recv_loglik *ll,
+					  struct vector *y)
 {
+	assert(ll);
+	assert(y);
+	assert(vector_dim(y) == model_dim(ll->model));
+	
 	struct recv_sloglik *sll;
 	
-	ARRAY_FOREACH(sll, &loglik->slogliks) {
-		recv_sloglik_axpy_grad(scale, sll, dst_vector);
+	ARRAY_FOREACH(sll, &ll->slogliks) {
+		recv_sloglik_axpy_grad(alpha, sll, y);
 	}
 }
 
-struct vector *iproc_loglik_grad(iproc_loglik * loglik)
+static void recv_loglik_cache_grad(struct recv_loglik *ll)
 {
-	if (!loglik)
-		return NULL;
+	assert(ll);
 
-	if (!loglik->grad_cached) {
-		vector_fill(loglik->grad, 0.0);
-		iproc_vector_acc_loglik_grad_nocache(loglik->grad, 1.0, loglik);
-		loglik->grad_cached = true;
+	vector_fill(&ll->grad, 0.0);
+	recv_loglik_axpy_grad_nocache(1.0, ll, &ll->grad);
+	ll->grad_cached = true;
+}
+
+void recv_loglik_axpy_grad(double alpha,
+			   const struct recv_loglik * ll,
+			   struct vector *y)
+{
+	assert(ll);
+	assert(y);
+	assert(vector_dim(y) == model_dim(ll->model));
+	
+	if (!ll->grad_cached) {
+		recv_loglik_cache_grad((struct recv_loglik *)ll);
 	}
-	return loglik->grad;
+	
+	vector_axpy(alpha, &ll->grad, y);
+}
+
+ssize_t recv_loglik_count(const struct recv_loglik *ll)
+{
+	assert(ll);
+	return ll->nrecv;
+}
+
+double recv_loglik_mean_dev(const struct recv_loglik *ll)
+{
+	assert(ll);
+	double dev, dev_mean;
+	ssize_t ntot, n;
+	struct recv_sloglik *sll;
+	
+	ntot = 0;
+	dev_mean = 0.0;
+	
+	ARRAY_FOREACH(sll, &ll->slogliks) {
+		n = recv_sloglik_count(sll);
+		if (n > 0) {
+			dev = recv_sloglik_mean_dev(sll);
+			dev_mean += n * (dev - dev_mean) / (n + ntot);
+			ntot += n;
+		}
+	}
+	assert(ntot == recv_loglik_count(ll));
+	
+	return dev_mean;
+}
+
+double recv_loglik_last_dev(const struct recv_loglik *ll)
+{
+	assert(ll);
+	assert(ll->last);
+	
+	return recv_sloglik_last_dev(ll->last);
 }

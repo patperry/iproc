@@ -11,6 +11,7 @@ struct vector {
 
 /* create, destroy */
 void vector_init(struct vector *v, ssize_t n);
+void vector_reinit(struct vector *v, ssize_t n);
 void vector_init_copy(struct vector *v, const struct vector *src);
 void vector_assign_copy(struct vector *v, const struct vector *src);
 void vector_deinit(struct vector *v);

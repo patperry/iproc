@@ -26,6 +26,20 @@ void vector_init(struct vector *v, ssize_t n)
 	v->owner = true;
 }
 
+void vector_reinit(struct vector *v, ssize_t n)
+{
+	assert(v);
+	assert(n >= 0);
+	assert(n <= F77INT_MAX);
+	assert(n <= SSIZE_MAX / sizeof(double));
+	assert(v->owner);
+	
+	v->data = xrealloc(v->data, n * sizeof(v->data[0]));
+	v->dim = n;
+	v->owner = true;
+	vector_fill(v, 0.0);
+}
+
 void vector_init_copy(struct vector *v, const struct vector *src)
 {
 	assert(v);

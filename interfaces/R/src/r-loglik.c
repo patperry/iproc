@@ -24,23 +24,23 @@ void Riproc_loglik_init(DllInfo * info)
 
 static void Riproc_loglik_free(SEXP Rloglik)
 {
-	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-	iproc_loglik_unref(loglik);
+	struct recv_loglik *loglik = Riproc_to_loglik(Rloglik);
+	recv_loglik_free(loglik);
 }
 
-iproc_loglik *Riproc_to_loglik(SEXP Rloglik)
+struct recv_loglik *Riproc_to_loglik(SEXP Rloglik)
 {
-	iproc_loglik *loglik =
+	struct recv_loglik *loglik =
 	    Riproc_sexp2ptr(Rloglik, FALSE, Riproc_loglik_type_tag,
 			    "loglik");
 	return loglik;
 }
 
-SEXP Riproc_from_loglik(iproc_loglik * loglik)
+SEXP Riproc_from_loglik(struct recv_loglik * loglik)
 {
 	SEXP Rloglik, class;
 
-	iproc_loglik_ref(loglik);
+	// iproc_loglik_ref(loglik);
 
 	PROTECT(Rloglik =
 		R_MakeExternalPtr(loglik, Riproc_loglik_type_tag, R_NilValue));
@@ -59,24 +59,25 @@ SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 	struct model *model = Riproc_to_model(Rmodel);
 	struct messages *messages = (Rmessages == NULL_USER_OBJECT
 				     ? NULL : Riproc_to_messages(Rmessages));
-	iproc_loglik *loglik = iproc_loglik_new(model, messages);
+	struct recv_loglik *loglik = recv_loglik_alloc(model, messages);
 	SEXP Rloglik;
 	PROTECT(Rloglik = Riproc_from_loglik(loglik));
-	iproc_loglik_unref(loglik);
+	recv_loglik_free(loglik);
 	UNPROTECT(1);
 	return Rloglik;
 }
 
 SEXP Riproc_loglik_value(SEXP Rloglik)
 {
-	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-	double value = iproc_loglik_value(loglik);
+	struct recv_loglik *loglik = Riproc_to_loglik(Rloglik);
+	double value = recv_loglik_value(loglik);
 	return ScalarReal(value);
 }
 
 SEXP Riproc_loglik_grad(SEXP Rloglik)
 {
-	iproc_loglik *loglik = Riproc_to_loglik(Rloglik);
-	struct vector *grad = iproc_loglik_grad(loglik);
-	return Riproc_vector_new_copy(grad);
+	//struct recv_loglik *loglik = Riproc_to_loglik(Rloglik);
+	//struct vector *grad = recv_loglik_grad(loglik);
+	//return Riproc_vector_new_copy(grad);
+	return NULL;
 }

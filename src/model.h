@@ -176,6 +176,8 @@ ssize_t recv_model_count(const struct recv_model *rm);
 ssize_t recv_model_dim(const struct recv_model *rm);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
+static inline double recv_model_prob0(const struct recv_model *rm, ssize_t jrecv);
+
 struct vector *recv_model_logprobs0(const struct recv_model *rm);
 struct vector *recv_model_probs0(const struct recv_model *rm);
 struct vector *recv_model_mean0(const struct recv_model *rm);
@@ -185,5 +187,15 @@ double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
 void recv_model_axpy_probs(double alpha, const struct recv_model *rm, struct vector *y);
 void recv_model_axpy_mean(double alpha, const struct recv_model *rm, struct vector *y);
 void recv_model_axpy_var(double alpha, const struct recv_model *rm, const struct frame *f, struct matrix *y);
+
+
+static inline double recv_model_prob0(const struct recv_model *rm, ssize_t jrecv)
+{
+	assert(rm);
+	assert(0 <= jrecv && jrecv < recv_model_count(rm));
+	
+	const struct vector *p0 = &rm->cohort->p0;
+	return vector_item(p0, jrecv);
+}
 
 #endif /* _IPROC_MODEL_H */

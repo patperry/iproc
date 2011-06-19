@@ -172,6 +172,10 @@
 		22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAD136A58230048244C /* employees.json */; };
 		22D2DDC2136A5ED60048244C /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
+		22D4788913AC4C0F00FF46CD /* recv_loglik_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */; };
+		22D4788A13AC4C2400FF46CD /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
+		22D4788B13AC4C2400FF46CD /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
+		22D4788C13AC4C2400FF46CD /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D6FA7C135D02A70082D129 /* sparsetable.h */; };
 		22EA3327136B29CE00C5627F /* design_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3325136B29AE00C5627F /* design_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
@@ -304,6 +308,27 @@
 			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
 			remoteInfo = enron;
 		};
+		22D4788D13AC4C2C00FF46CD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22678905134CD584001309F5;
+			remoteInfo = cmockery;
+		};
+		22D4788F13AC4C2C00FF46CD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
+			remoteInfo = enron;
+		};
+		22D4789113AC4C2C00FF46CD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
+		};
 		22EA3315136B14D900C5627F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
@@ -390,6 +415,15 @@
 				22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22D4787C13AC4BF600FF46CD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
 		};
 		22EA331A136B299600C5627F /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -528,6 +562,8 @@
 		22D2DDAD136A58230048244C /* employees.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = employees.json; path = tests/enron/employees.json; sourceTree = "<group>"; };
 		22D2DDAE136A58230048244C /* messages.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = messages.json; path = tests/enron/messages.json; sourceTree = "<group>"; };
 		22D2DDB3136A5E5B0048244C /* libenron.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libenron.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		22D4787E13AC4BF600FF46CD /* recv_loglik_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = recv_loglik_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik_test.c; path = tests/recv_loglik_test.c; sourceTree = "<group>"; };
 		22D6FA7B135D02A70082D129 /* sparsetable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sparsetable.c; path = src/core/sparsetable.c; sourceTree = "<group>"; };
 		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -635,6 +671,16 @@
 			files = (
 				22D2DDBC136A5E810048244C /* libiproc.dylib in Frameworks */,
 				22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22D4787B13AC4BF600FF46CD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22D4788A13AC4C2400FF46CD /* libcmockery.dylib in Frameworks */,
+				22D4788B13AC4C2400FF46CD /* libenron.dylib in Frameworks */,
+				22D4788C13AC4C2400FF46CD /* libiproc.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -763,6 +809,7 @@
 				22950A9413611D8D0074897C /* intmap_test.c */,
 				2288809613A9327E00D673A6 /* model_test.c */,
 				2267891C134CD66F001309F5 /* pqueue_test.c */,
+				22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */,
 			);
 			name = Tests;
 			sourceTree = "<group>";
@@ -805,6 +852,7 @@
 				22EA331C136B299600C5627F /* design_test */,
 				22221812136F1A8C00F0C7D2 /* frame_test */,
 				2288808D13A9325D00D673A6 /* model_test */,
+				22D4787E13AC4BF600FF46CD /* recv_loglik_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1209,6 +1257,26 @@
 			productReference = 22D2DDB3136A5E5B0048244C /* libenron.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
+		22D4787D13AC4BF600FF46CD /* recv_loglik_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22D4788613AC4BF600FF46CD /* Build configuration list for PBXNativeTarget "recv_loglik_test" */;
+			buildPhases = (
+				22D4787A13AC4BF600FF46CD /* Sources */,
+				22D4787B13AC4BF600FF46CD /* Frameworks */,
+				22D4787C13AC4BF600FF46CD /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22D4788E13AC4C2C00FF46CD /* PBXTargetDependency */,
+				22D4789013AC4C2C00FF46CD /* PBXTargetDependency */,
+				22D4789213AC4C2C00FF46CD /* PBXTargetDependency */,
+			);
+			name = recv_loglik_test;
+			productName = recv_loglik_test;
+			productReference = 22D4787E13AC4BF600FF46CD /* recv_loglik_test */;
+			productType = "com.apple.product-type.tool";
+		};
 		22EA331B136B299600C5627F /* design_test */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 22EA3322136B299600C5627F /* Build configuration list for PBXNativeTarget "design_test" */;
@@ -1261,6 +1329,7 @@
 				22EA331B136B299600C5627F /* design_test */,
 				22221811136F1A8C00F0C7D2 /* frame_test */,
 				2288808C13A9325D00D673A6 /* model_test */,
+				22D4787D13AC4BF600FF46CD /* recv_loglik_test */,
 			);
 		};
 /* End PBXProject section */
@@ -1439,6 +1508,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22D4787A13AC4BF600FF46CD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22D4788913AC4C0F00FF46CD /* recv_loglik_test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		22EA3318136B299600C5627F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1529,6 +1606,21 @@
 			isa = PBXTargetDependency;
 			target = 22D2DDB2136A5E5B0048244C /* enron */;
 			targetProxy = 22D2DDC0136A5EC90048244C /* PBXContainerItemProxy */;
+		};
+		22D4788E13AC4C2C00FF46CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22678905134CD584001309F5 /* cmockery */;
+			targetProxy = 22D4788D13AC4C2C00FF46CD /* PBXContainerItemProxy */;
+		};
+		22D4789013AC4C2C00FF46CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22D2DDB2136A5E5B0048244C /* enron */;
+			targetProxy = 22D4788F13AC4C2C00FF46CD /* PBXContainerItemProxy */;
+		};
+		22D4789213AC4C2C00FF46CD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 22D4789113AC4C2C00FF46CD /* PBXContainerItemProxy */;
 		};
 		22EA3316136B14D900C5627F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1869,6 +1961,28 @@
 			};
 			name = Release;
 		};
+		22D4788413AC4BF600FF46CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		22D4788513AC4BF600FF46CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		22EA3323136B299600C5627F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2003,6 +2117,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		22D4788613AC4BF600FF46CD /* Build configuration list for PBXNativeTarget "recv_loglik_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22D4788413AC4BF600FF46CD /* Debug */,
+				22D4788513AC4BF600FF46CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		22EA3322136B299600C5627F /* Build configuration list for PBXNativeTarget "design_test" */ = {
 			isa = XCConfigurationList;

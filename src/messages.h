@@ -60,7 +60,7 @@ ssize_t messages_max_from(const struct messages *msgs);
 ssize_t messages_max_to(const struct messages *msgs);
 ssize_t messages_max_nto(const struct messages *msgs);
 
-struct messages_iter messages_iter_make(struct messages *msgs);
+struct messages_iter messages_iter_make(const struct messages *msgs);
 void messages_iter_reset(struct messages_iter *it);
 bool messages_iter_advance(struct messages_iter *it);
 

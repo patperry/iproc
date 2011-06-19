@@ -1,33 +1,50 @@
-#ifndef _IPROC_LOGLIK_H
-#define _IPROC_LOGLIK_H
+#ifndef _RECV_LOGLIK_H
+#define _RECV_LOGLIK_H
 
 #include "array.h"
 #include "frame.h"
 #include "messages.h"
 #include "model.h"
-#include "refcount.h"
 #include "vector.h"
 
-typedef struct _iproc_loglik iproc_loglik;
+struct recv_sloglik;
 
-struct _iproc_loglik {
+struct recv_loglik {
 	struct model *model;
 	struct array slogliks;
-	struct vector *grad;
+	struct vector grad;
 	bool grad_cached;
 	ssize_t nsend;
 	ssize_t nrecv;
-	struct refcount refcount;
+	
+	struct recv_sloglik *last;
 };
 
-iproc_loglik *iproc_loglik_new(struct model *model, struct messages *messages);
-iproc_loglik *iproc_loglik_ref(iproc_loglik * loglik);
-void iproc_loglik_unref(iproc_loglik * loglik);
+void recv_loglik_init(struct recv_loglik *ll,
+		      struct model *m);
+void recv_loglik_deinit(struct recv_loglik *ll);
 
-void iproc_loglik_insert(iproc_loglik * loglik,
-			 const struct frame *f, const struct message *msg);
+void recv_loglik_update(struct model *m, const struct frame *f);
 
-double iproc_loglik_value(iproc_loglik * loglik);
-struct vector *iproc_loglik_grad(iproc_loglik * loglik);
+struct recv_loglik *recv_loglik_alloc(struct model *m, struct messages *messages);
+void recv_loglik_free(struct recv_loglik *ll);
 
-#endif /* _IPROC_LOGLIK_H */
+void recv_loglik_add(struct recv_loglik *ll,
+		     const struct frame *f,
+		     const struct message *msg);
+
+void recv_loglik_add_all(struct recv_loglik *ll,
+			 struct frame *f,
+			 const struct messages *msgs);
+
+
+double recv_loglik_value(const struct recv_loglik *ll);
+void recv_loglik_axpy_grad(double alpha,
+			   const struct recv_loglik * ll,
+			   struct vector *y);
+
+ssize_t recv_loglik_count(const struct recv_loglik *ll);
+double recv_loglik_mean_dev(const struct recv_loglik *ll);
+double recv_loglik_last_dev(const struct recv_loglik *ll);
+
+#endif /* _RECV_LOGLIK_H */

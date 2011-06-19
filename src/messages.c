@@ -137,13 +137,13 @@ ssize_t messages_max_nto(const struct messages *msgs)
 	return msgs->max_nto;
 }
 
-struct messages_iter messages_iter_make(struct messages *msgs)
+struct messages_iter messages_iter_make(const struct messages *msgs)
 {
 	assert(msgs);
 
 	struct messages_iter it;
 
-	it.messages = msgs;
+	it.messages = (struct messages *)msgs;
 	messages_iter_reset(&it);
 
 	return it;

@@ -13,15 +13,14 @@ int dcsrch_(double *stp, double *f, double *g,
 	    f77int task_len);
 
 static void
-eval_objective(iproc_loglik * loglik,
+eval_objective(struct recv_loglik * loglik,
 	       double penalty, double *valuep, struct vector *grad)
 {
 	struct model *model = loglik->model;
 	struct vector *coefs = &model->coefs;
 
 	double n = loglik->nrecv;
-	double ll_value = iproc_loglik_value(loglik);
-	struct vector *ll_grad = iproc_loglik_grad(loglik);
+	double ll_value = recv_loglik_value(loglik);
 
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
@@ -30,7 +29,7 @@ eval_objective(iproc_loglik * loglik,
 
 	vector_assign_copy(grad, coefs);
 	vector_scale(grad, penalty / n);
-	vector_axpy(-1.0 / n, ll_grad, grad);
+	recv_loglik_axpy_grad(-1.0 / n, loglik, grad);
 }
 
 static bool iproc_fit_init(iproc_fit * fit)
@@ -43,7 +42,7 @@ static bool iproc_fit_init(iproc_fit * fit)
 	fit->grad0 = vector_alloc(dim);
 	fit->grad = vector_alloc(dim);
 	fit->search_dir = vector_alloc(dim);
-	fit->loglik = iproc_loglik_new(fit->model, fit->messages);
+	fit->loglik = recv_loglik_alloc(fit->model, fit->messages);
 
 	if (!
 	    (fit->x0 && fit->x && fit->grad0 && fit->grad && fit->search_dir
@@ -87,7 +86,7 @@ iproc_fit *iproc_fit_new(struct model * model0,
 void iproc_fit_free(iproc_fit * fit)
 {
 	if (fit) {
-		iproc_loglik_unref(fit->loglik);
+		recv_loglik_free(fit->loglik);
 		vector_free(fit->search_dir);
 		vector_free(fit->grad);
 		vector_free(fit->grad0);
@@ -108,7 +107,7 @@ static void linesearch(iproc_fit * fit)
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
 	struct design *design = design_ref(model->design);
-	iproc_loglik *loglik = fit->loglik;
+	struct recv_loglik *loglik = fit->loglik;
 
 	struct vector *search_dir = fit->search_dir;
 	struct vector *grad0 = fit->grad;	/* swap grad0 and grad */
@@ -147,8 +146,8 @@ static void linesearch(iproc_fit * fit)
 		model = model_alloc(design, x);
 
 		/* Update the loglik, value, and gradient */
-		iproc_loglik_unref(loglik);
-		loglik = iproc_loglik_new(model, messages);
+		recv_loglik_free(loglik);
+		loglik = recv_loglik_alloc(model, messages);
 		eval_objective(loglik, penalty, &value, grad);
 
 		f = value;
