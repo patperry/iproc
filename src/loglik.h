@@ -44,7 +44,11 @@ void recv_loglik_axpy_grad(double alpha,
 			   struct vector *y);
 
 ssize_t recv_loglik_count(const struct recv_loglik *ll);
-double recv_loglik_mean_dev(const struct recv_loglik *ll);
+
+double recv_loglik_avg_dev(const struct recv_loglik *ll);
 double recv_loglik_last_dev(const struct recv_loglik *ll);
+
+void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll, struct vector *y);
+void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct vector *y);
 
 #endif /* _RECV_LOGLIK_H */

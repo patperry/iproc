@@ -170,7 +170,7 @@ ssize_t model_dim(const struct model *model);
 void model_clear(struct model *m);
 void model_update(struct model *m, const struct frame *f);
 
-struct recv_model *model_recv_model(struct model *m, const struct frame *f,
+struct recv_model *model_recv_model(const struct model *m, const struct frame *f,
 				    ssize_t isend);
 ssize_t recv_model_count(const struct recv_model *rm);
 ssize_t recv_model_dim(const struct recv_model *rm);

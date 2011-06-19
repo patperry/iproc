@@ -658,12 +658,12 @@ void model_update(struct model *m, const struct frame *f)
 	}
 }
 
-struct recv_model *model_recv_model(struct model *m, const struct frame *f,
+struct recv_model *model_recv_model(const struct model *m, const struct frame *f,
 				    ssize_t isend)
 {
 	assert(m);
 
-	struct recv_model *rm = model_recv_model_raw(m, isend);
+	struct recv_model *rm = model_recv_model_raw((struct model *)m, isend);
 	if (!rm->cached) {
 		assert(f);
 		recv_model_update(rm, f);
