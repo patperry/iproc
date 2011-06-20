@@ -87,6 +87,7 @@ libcore_la_SOURCES = \
 	src/core/vector.h
 
 libcore_la_CPPFLAGS = \
+	-I./src/core \
 	-I./lib/timsort \
 	$(AM_CPPFLAGS)
 

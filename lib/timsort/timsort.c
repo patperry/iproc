@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include "port.h"		// SIZEOF_SIZE_T
 #include <assert.h>		// assert
 #include <errno.h>		// EINVAL
 #include <stddef.h>		// size_t, NULL
