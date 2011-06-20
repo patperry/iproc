@@ -179,6 +179,9 @@ static void test_score(void **state)
 			frame_add(&frame, msg);			
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			n = recv_loglik_count(&recv_loglik);
+			if (n > 1000)
+				goto out;
+
 			isend = msg->from;
 			rm = model_recv_model(&model, &frame, isend);
 			
@@ -214,7 +217,7 @@ static void test_score(void **state)
 			vector_assign_copy(&avg_mean0, &avg_mean1);
 		}
 	}
-	
+out:
 	vector_deinit(&diff);
 	vector_deinit(&avg_mean1);	
 	vector_deinit(&avg_mean0);
