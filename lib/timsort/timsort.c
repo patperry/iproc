@@ -326,9 +326,9 @@ static void *ensureCapacity(struct timsort *ts, size_t minCapacity,
 		newSize |= newSize >> 4;
 		newSize |= newSize >> 8;
 		newSize |= newSize >> 16;
-		if (sizeof(newSize) > 4)
-			newSize |= newSize >> 32;
-
+#if SIZEOF_SIZE_T > 4
+		newSize |= newSize >> 32;
+#endif
 		newSize++;
 		newSize = MIN(newSize, ts->a_length >> 1);
 		if (newSize == 0) {	// (overflow) Not bloody likely!
