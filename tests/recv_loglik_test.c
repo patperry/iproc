@@ -230,18 +230,21 @@ static void test_imat(void **state)
 	struct recv_model *rm;
 	struct vector mean, y;
 	struct svector e_j;
-	struct matrix imat1, imat0;
+	struct matrix imat0, imat1, diff, avg_imat0, avg_imat1;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
 	ssize_t isend, jrecv, nrecv = design_recv_count(&design);
-	ssize_t itie, ntie;
+	ssize_t itie, ntie, n;
 	ssize_t index1, index2, dim = design_recv_dim(&design);
 	
 	vector_init(&mean, dim);
 	vector_init(&y, dim);	
+	matrix_init(&imat0, dim, dim);	
 	matrix_init(&imat1, dim, dim);
-	matrix_init(&imat0, dim, dim);
+	matrix_init(&diff, dim, dim);
+	matrix_init(&avg_imat0, dim, dim);	
+	matrix_init(&avg_imat1, dim, dim);
 	svector_init(&e_j, nrecv);
 	
 	MESSAGES_FOREACH(it, &messages) {
@@ -263,6 +266,7 @@ static void test_imat(void **state)
 			frame_add(&frame, msg);
 			recv_loglik_add(&recv_loglik, &frame, msg);
 
+			n = recv_loglik_count(&recv_loglik);
 			isend = msg->from;
 			rm = model_recv_model(&model, &frame, isend);
 			
@@ -294,6 +298,25 @@ static void test_imat(void **state)
 					}
 				}
 			}
+			
+			/*matrix_assign_copy(&diff, &avg_imat0);
+			matrix_axpy(-1.0/msg->nto, &imat0, &diff);
+			matrix_axpy(-((double)msg->nto) / n, &diff, &avg_imat0);
+			
+			matrix_fill(&avg_imat1, 0.0);
+			recv_loglik_axpy_avg_imat(1.0, &recv_loglik, &avg_imat1);
+			
+			for (index2 = 0; index2 < dim; index2++) {
+				for (index1 = 0; index1 < dim; index1++) {				
+					double v0 = matrix_item(&avg_imat0, index1, index2);
+					double v1 = matrix_item(&avg_imat1, index1, index2);
+					assert(double_eqrel(v0, v1) >= 40);
+					assert_in_range(double_eqrel(v0, v1), 48, DBL_MANT_DIG);
+				}
+			}
+			
+			matrix_assign_copy(&avg_imat0, &avg_imat1); */
+
 		}
 		
 	}
@@ -301,8 +324,11 @@ static void test_imat(void **state)
 	svector_deinit(&e_j);
 	vector_deinit(&mean);
 	vector_deinit(&y);
+	matrix_deinit(&imat0);
 	matrix_deinit(&imat1);
-	matrix_deinit(&imat0);	
+	matrix_deinit(&diff);
+	matrix_deinit(&avg_imat0);
+	matrix_deinit(&avg_imat1);
 }
 
 

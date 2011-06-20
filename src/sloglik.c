@@ -40,7 +40,9 @@ static void imat_init(struct recv_sloglik_imat *imat,
 	imat->imat0 = imat0;
 	imat->gamma2 = 0.0;
 	vector_init(&imat->gamma_dp, 0);
+	vector_init(&imat->gamma_mean_dx, dyn_dim);
 	matrix_init(&imat->dx_p, dyn_dim, 0);
+	matrix_init(&imat->mean_dx_dp, dyn_dim, 0);
 	matrix_init(&imat->dp2, 0, 0);
 	matrix_init(&imat->var_dx, dyn_dim, dyn_dim);	
 }
@@ -59,7 +61,9 @@ static void imat_deinit(struct recv_sloglik_imat *imat)
 
 	matrix_deinit(&imat->var_dx);
 	matrix_deinit(&imat->dp2);
+	matrix_deinit(&imat->mean_dx_dp);
 	matrix_deinit(&imat->dx_p);
+	vector_deinit(&imat->gamma_mean_dx);
 	vector_deinit(&imat->gamma_dp);	
 }
 
@@ -76,7 +80,9 @@ static void imat_clear(struct recv_sloglik_imat *imat)
 	assert(imat);
 	imat->gamma2 = 0.0;
 	vector_reinit(&imat->gamma_dp, 0);
+	vector_fill(&imat->gamma_mean_dx, 0.0);
 	matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), 0);
+	matrix_reinit(&imat->mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), 0);
 	matrix_reinit(&imat->dp2, 0, 0);
 	matrix_fill(&imat->var_dx, 0.0);
 }
@@ -157,6 +163,22 @@ static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 	
 	matrix_deinit(&imat->dx_p);
 	imat->dx_p = dx_p;
+	
+
+	/* mean_dx_dp */
+	struct matrix mean_dx_dp;
+	matrix_init(&mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), n1);
+	
+	src = matrix_slice_cols(&imat->mean_dx_dp, 0, i);
+	dst = matrix_slice_cols(&mean_dx_dp, 0, i);
+	matrix_assign_copy(&dst, &src);
+	
+	src = matrix_slice_cols(&imat->mean_dx_dp, i, n0 - i);
+	dst = matrix_slice_cols(&mean_dx_dp, i + 1, n0 - i);
+	matrix_assign_copy(&dst, &src);
+	
+	matrix_deinit(&imat->mean_dx_dp);
+	imat->mean_dx_dp = mean_dx_dp;
 
 	
 	/* dp2 */
@@ -236,17 +258,25 @@ static void imat_set(struct recv_sloglik_imat *imat,
 	imat->imat0 = recv_model_imat0(model);
 	
 	const double gamma = model->gamma;
-	imat->gamma2 = gamma * (1 - gamma);
+	
 	
 	if (vector_dim(&imat->gamma_dp) != n) {
 		vector_reinit(&imat->gamma_dp, n);
 		matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), n);
+		matrix_reinit(&imat->mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), n);		
 		matrix_reinit(&imat->dp2, n, n);
 	}
 	matrix_fill(&imat->dp2, 0.0);	
 	matrix_fill(&imat->var_dx, 0.0);	
 	struct vector y;
 	double ptot = 0.0;
+	
+	/* gamma2 */
+	imat->gamma2 = gamma * (1 - gamma);
+	
+	/* gamma_mean_dx */
+	vector_assign_copy(&imat->gamma_mean_dx, &mean->mean_dx);
+	vector_scale(&imat->gamma_mean_dx, gamma);
 	
 	/* dp2 */
 	matrix_update1(&imat->dp2, -1.0, &mean->dp, &mean->dp);
@@ -260,6 +290,11 @@ static void imat_set(struct recv_sloglik_imat *imat,
 		
 		/* gamma_dp */
 		vector_set_item(&imat->gamma_dp, i, gamma * dp);
+		
+		/* mean_dx_dp */
+		struct vector mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, i);
+		vector_assign_copy(&mean_dx_dp_j, &mean->mean_dx);
+		vector_scale(&mean_dx_dp_j, dp);
 		
 		/* dp2 */
 		*matrix_item_ptr(&imat->dp2, i, i) += dp;
@@ -380,17 +415,17 @@ static void imat_axpy(double alpha,
 	
 	const ssize_t n = array_count(active);
 	ssize_t i, j, k;
-	struct svector dp;
-	svector_init(&dp, nrecv);
+	struct svector gamma_dp;
+	svector_init(&gamma_dp, nrecv);
 	for (i = 0; i < n; i++) {
 		ssize_t jrecv = *(ssize_t *)array_item(active, i);
-		double val = vector_item(&mean->dp, i);
-		svector_set_item(&dp, jrecv, val);
+		double val = vector_item(&imat->gamma_dp, i);
+		svector_set_item(&gamma_dp, jrecv, val);
 	}
 	
-	struct vector x0_dp;
-	vector_init(&x0_dp, dim);
-	design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp, 0.0, &x0_dp);
+	struct vector gamma_x0_dp;
+	vector_init(&gamma_x0_dp, dim);
+	design_recv_muls0(1.0, TRANS_TRANS, design, isend, &gamma_dp, 0.0, &gamma_x0_dp);
 	
 	struct matrix x0_dp2;
 	struct svector dp2_j;
@@ -410,8 +445,8 @@ static void imat_axpy(double alpha,
 	
 	matrix_axpy(alpha * gamma, var0, y);
 	matrix_update1(y, alpha * gamma2, mean0, mean0);
-	matrix_update1(y, -alpha * gamma, mean0, &x0_dp);
-	matrix_update1(y, -alpha * gamma, &x0_dp, mean0);
+	matrix_update1(y, -alpha, mean0, &gamma_x0_dp);
+	matrix_update1(y, -alpha, &gamma_x0_dp, mean0);
 	
 	struct svector x0_dp2_k;
 	svector_init(&x0_dp2_k, nrecv);
@@ -449,21 +484,23 @@ static void imat_axpy(double alpha,
 		
 		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
 		matrix_update1(&y1_, alpha, &dx_p_j, &x0_j);
+		
+		struct vector mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, i);
+		matrix_update1(&y_1, -alpha, &x0_j, &mean_dx_dp_j);
+		matrix_update1(&y1_, -alpha, &mean_dx_dp_j, &x0_j);
+
 	}
 	
-	matrix_update1(&y_1, -alpha * gamma, mean0, &mean->mean_dx);
-	matrix_update1(&y1_, -alpha * gamma, &mean->mean_dx, mean0);
-	
-	matrix_update1(&y_1, -alpha, &x0_dp, &mean->mean_dx);
-	matrix_update1(&y1_, -alpha, &mean->mean_dx, &x0_dp);
+	matrix_update1(&y_1, -alpha, mean0, &imat->gamma_mean_dx);
+	matrix_update1(&y1_, -alpha, &imat->gamma_mean_dx, mean0);
 	
 	vector_deinit(&x0_j);
 	svector_deinit(&e_j);
 	svector_deinit(&x0_dp2_k);
 	svector_deinit(&dp2_j);
 	matrix_deinit(&x0_dp2);
-	vector_deinit(&x0_dp);
-	svector_deinit(&dp);
+	vector_deinit(&gamma_x0_dp);
+	svector_deinit(&gamma_dp);
 }
 		      
 

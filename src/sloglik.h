@@ -64,6 +64,7 @@ struct recv_sloglik_imat {
 	struct vector gamma_dp; // gamma * dp
 	struct vector gamma_mean_dx; // gamma * dx' * p
 	struct matrix dx_p;     // dx' * diag(p)
+	struct matrix mean_dx_dp; // (dx' * p) * dp'
 	struct matrix dp2;	// diag(dp) - dp * dp'
 	struct matrix var_dx;	// dx' * [diag(p) - p p'] * dx
 };
