@@ -20,7 +20,7 @@ eval_objective(struct recv_loglik * loglik,
 	struct vector *coefs = &model->coefs;
 
 	double n = loglik->nrecv;
-	double ll_value = recv_loglik_value(loglik);
+	double ll_value = -recv_loglik_avg_dev(loglik) / 2.0;
 
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
@@ -29,7 +29,7 @@ eval_objective(struct recv_loglik * loglik,
 
 	vector_assign_copy(grad, coefs);
 	vector_scale(grad, penalty / n);
-	recv_loglik_axpy_grad(-1.0 / n, loglik, grad);
+	recv_loglik_axpy_avg_score(1.0, loglik, grad);
 }
 
 static bool iproc_fit_init(iproc_fit * fit)
