@@ -75,10 +75,8 @@ struct recv_sloglik {
 	struct model *model;
 	ssize_t isend;
 
-	
-	double dev_last, dev_avg;
-	
 	ssize_t n_last, n;
+	double dev_last, dev_avg;	
 	struct array active;	
 	struct recv_sloglik_score score_last, score_avg;
 	struct recv_sloglik_imat imat_last, imat_avg;		
@@ -87,19 +85,17 @@ struct recv_sloglik {
 void recv_sloglik_init(struct recv_sloglik *ll, const struct model *model, ssize_t isend);
 void recv_sloglik_deinit(struct recv_sloglik *ll);
 
-struct recv_sloglik *recv_sloglik_alloc(const struct model *model, ssize_t isend);
-void recv_sloglik_free(struct recv_sloglik *ll);
-
 void recv_sloglik_add(struct recv_sloglik *ll,
 		      const struct frame *f, const ssize_t *jrecv, ssize_t n);
+void recv_sloglik_clear(struct recv_sloglik *ll);
 
 ssize_t recv_sloglik_count(const struct recv_sloglik *sll);
-
 double recv_sloglik_avg_dev(const struct recv_sloglik *sll);
 void recv_sloglik_axpy_avg_mean(double alpha, const struct recv_sloglik *sll, struct vector *y);
 void recv_sloglik_axpy_avg_score(double alpha, const struct recv_sloglik *sll, struct vector *y);
 void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y);
 
+ssize_t recv_sloglik_last_count(const struct recv_sloglik *sll);
 double recv_sloglik_last_dev(const struct recv_sloglik *sll);
 void recv_sloglik_axpy_last_mean(double alpha, const struct recv_sloglik *sll, struct vector *y);
 void recv_sloglik_axpy_last_score(double alpha, const struct recv_sloglik *sll, struct vector *y);

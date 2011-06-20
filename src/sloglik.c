@@ -638,6 +638,21 @@ void recv_sloglik_deinit(struct recv_sloglik *ll)
 	array_deinit(&ll->active);
 }
 
+void recv_sloglik_clear(struct recv_sloglik *ll)
+{
+	assert(ll);
+
+	ll->n_last = 0;
+	ll->n = 0;
+	ll->dev_last = 0.0;	
+	ll->dev_avg = 0.0;
+	array_clear(&ll->active);
+	score_clear(&ll->score_last);
+	score_clear(&ll->score_avg);	
+	imat_clear(&ll->imat_last);	
+	imat_clear(&ll->imat_avg);
+}
+
 static void recv_sloglik_update_active(struct recv_sloglik *ll,
 				       const struct array *active)
 {
@@ -707,6 +722,12 @@ ssize_t recv_sloglik_count(const struct recv_sloglik *sll)
 {
 	assert(sll);
 	return sll->n;
+}
+
+ssize_t recv_sloglik_last_count(const struct recv_sloglik *sll)
+{
+	assert(sll);
+	return sll->n_last;
 }
 
 double recv_sloglik_avg_dev(const struct recv_sloglik *sll)

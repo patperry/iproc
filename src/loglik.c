@@ -25,8 +25,6 @@ void recv_loglik_init(struct recv_loglik *ll,
 		recv_sloglik_init(sll, m, isend);
 	}
 
-	vector_init(&ll->grad, design_recv_dim(design));
-	ll->grad_cached = true;
 	ll->nsend = 0;
 	ll->nrecv = 0;
 	ll->last = NULL;
@@ -41,8 +39,22 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 		recv_sloglik_deinit(sll);
 	}
 	array_deinit(&ll->slogliks);
-	vector_deinit(&ll->grad);
 	model_free(ll->model);
+}
+
+void recv_loglik_clear(struct recv_loglik *ll)
+{
+	assert(ll);
+
+	struct recv_sloglik *sll;
+	
+	ARRAY_FOREACH(sll, &ll->slogliks) {
+		recv_sloglik_clear(sll);
+	}
+
+	ll->nsend = 0;
+	ll->nrecv = 0;
+	ll->last = NULL;
 }
 
 struct recv_loglik *recv_loglik_alloc(struct model *m, struct messages *msgs)
@@ -73,7 +85,6 @@ void recv_loglik_add(struct recv_loglik *ll,
 {
 	struct recv_sloglik *sll = array_item(&ll->slogliks, msg->from);
 	recv_sloglik_add(sll, f, msg->to, msg->nto);
-	ll->grad_cached = false;
 	ll->nsend += 1;
 	ll->nrecv += msg->nto;
 	ll->last = sll;
@@ -120,6 +131,13 @@ ssize_t recv_loglik_count(const struct recv_loglik *ll)
 {
 	assert(ll);
 	return ll->nrecv;
+}
+
+ssize_t recv_loglik_last_count(const struct recv_loglik *ll)
+{
+	assert(ll);
+	assert(ll->last);
+	return recv_sloglik_last_count(ll->last);
 }
 
 double recv_loglik_avg_dev(const struct recv_loglik *ll)
