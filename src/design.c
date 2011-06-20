@@ -342,8 +342,8 @@ design_recv_muls0_static(double alpha,
 				continue;
 
 			ij = imaxdiv(ix - ix_begin, p);
-			i = ij.rem;	/* ix % p */
-			j = ij.quot;	/* ix / p */
+			i = (ssize_t)ij.rem;	/* ix % p */
+			j = (ssize_t)ij.quot;	/* ix / p */
 			x_ij = SVECTOR_VAL(itx);
 			s_i = *vector_item_ptr(s, i);
 			*vector_item_ptr(z, j) += x_ij * s_i;
