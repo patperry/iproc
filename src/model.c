@@ -213,6 +213,7 @@ static void cohort_model_deinit(struct cohort_model *cm)
 	vector_deinit(&cm->w0);
 	vector_deinit(&cm->eta0);
 #endif
+	matrix_deinit(&cm->imat0);	
 	vector_deinit(&cm->mean0);
 	vector_deinit(&cm->log_p0);
 	vector_deinit(&cm->p0);

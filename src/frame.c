@@ -122,6 +122,8 @@ static void var_frames_deinit(struct frame *frame)
 			fv->design->type->frame_deinit(fv);
 		}
 	}
+	
+	array_deinit(&frame->vars);
 }
 
 static void var_frames_clear(struct frame *frame)
