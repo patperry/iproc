@@ -9,8 +9,8 @@ struct linesearch {
 	bool done;
 };
 
-/* init/advance */
-struct linesearch linesearch_make(double f0, double g0);
+/* start/advance */
+void linesearch_start(struct linesearch *ls, double f0, double g0);
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g);
 
 /* convergence failure */

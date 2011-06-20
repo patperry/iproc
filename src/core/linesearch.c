@@ -29,7 +29,7 @@ static void linesearch_dcscrch(struct linesearch *ls)
 	assert(strncmp(ls->task, TASK_ERROR, strlen(TASK_ERROR)) != 0);
 }
 
-static void linesearch_init(struct linesearch *ls, double f0, double g0)
+void linesearch_start(struct linesearch *ls, double f0, double g0)
 {
 	assert(ls);
 	assert(!isnan(f0));
@@ -42,13 +42,6 @@ static void linesearch_init(struct linesearch *ls, double f0, double g0)
 	linesearch_set_fgtol(ls, DEFAULT_FTOL, DEFAULT_GTOL);
 	linesearch_set_xtol(ls, DEFAULT_XTOL);
 	linesearch_set_stpminmax(ls, 0, -f0 / (DEFAULT_GTOL * g0));
-}
-
-struct linesearch linesearch_make(double f0, double g0)
-{
-	struct linesearch ls;
-	linesearch_init(&ls, f0, g0);
-	return ls;
 }
 
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g)
