@@ -99,16 +99,16 @@ libcore_la_LIBADD = \
 	$(LTLIBOBJS)
 
 libf2c_la_SOURCES = \
-	src/libf2c/f2c.h \
-	src/libf2c/s_cmp.c \
-	src/libf2c/s_copy.c
+	lib/libf2c/f2c.h \
+	lib/libf2c/s_cmp.c \
+	lib/libf2c/s_copy.c
 
 libminpack_la_SOURCES = \
-	src/minpack/dcsrch.c \
-	src/minpack/dcstep.c
+	lib/minpack/dcsrch.c \
+	lib/minpack/dcstep.c
 
 libminpack_la_CPPFLAGS = \
-	-I./src/libf2c \
+	-I./lib/libf2c \
 	$(AM_CPPFLAGS)
 
 libminpack_la_LIBADD = \
