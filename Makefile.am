@@ -63,6 +63,8 @@ libcore_la_SOURCES = \
 	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
+	src/core/linesearch.c \
+	src/core/linesearch.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/macconfig.h \
