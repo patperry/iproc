@@ -6,7 +6,7 @@
 #include <math.h>
 
 #include "design.h"
-#include "loglik.h"
+#include "recv_loglik.h"
 #include "matrix.h"
 #include "messages.h"
 #include "model.h"

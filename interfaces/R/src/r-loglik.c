@@ -70,7 +70,7 @@ SEXP Riproc_loglik_new(SEXP Rmodel, SEXP Rmessages)
 SEXP Riproc_loglik_value(SEXP Rloglik)
 {
 	struct recv_loglik *loglik = Riproc_to_loglik(Rloglik);
-	double value = recv_loglik_value(loglik);
+	double value = recv_loglik_avg_dev(loglik);
 	return ScalarReal(value);
 }
 

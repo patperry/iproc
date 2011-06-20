@@ -3,7 +3,7 @@
 
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
-#include "loglik.h"
+#include "recv_loglik.h"
 
 /* Call once to initialize library */
 void Riproc_loglik_init(DllInfo * info);

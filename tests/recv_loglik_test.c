@@ -16,8 +16,7 @@
 #include "vars.h"
 #include "frame.h"
 #include "model.h"
-#include "loglik.h"
-#include "sloglik.h"
+#include "recv_loglik.h"
 
 
 static struct actors senders;

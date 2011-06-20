@@ -24,16 +24,14 @@ libiproc_la_SOURCES = \
 	src/frame.h \
 	src/history.c \
 	src/history.h \
-	src/loglik.c \
-	src/loglik.h \
 	src/messages.c \
 	src/messages.h \
 	src/model.c \
 	src/model.h \
+	src/recv_loglik.c \
+	src/recv_loglik.h \
 	src/rv-irecv.c \
 	src/rv-nrecv.c \
-	src/sloglik.c \
-	src/sloglik.h \
 	src/sv-irecv.c \
 	src/sv-nrecv.c \
 	src/vars.h

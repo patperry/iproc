@@ -51,10 +51,9 @@
 		222FC41613607C7900E64FC9 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		222FC41813607C7900E64FC9 /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* fit.c */; };
 		222FC41A13607C7900E64FC9 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
-		222FC41C13607C7900E64FC9 /* loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* loglik.c */; };
+		222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* recv_loglik.c */; };
 		222FC41F13607C7900E64FC9 /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
 		222FC42213607C7900E64FC9 /* model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* model.c */; };
-		222FC42413607C7900E64FC9 /* sloglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597416133D0AFB0022B52E /* sloglik.c */; };
 		222FC42613607C7900E64FC9 /* event-trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597418133D0AFB0022B52E /* event-trace.c */; };
 		222FC42813607C7900E64FC9 /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* rv-irecv.c */; };
 		222FC42A13607C7900E64FC9 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
@@ -95,14 +94,12 @@
 		22597422133D0AFB0022B52E /* fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740B133D0AFB0022B52E /* fit.h */; };
 		22597423133D0AFB0022B52E /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
 		22597424133D0AFB0022B52E /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740D133D0AFB0022B52E /* history.h */; };
-		22597425133D0AFB0022B52E /* loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* loglik.c */; };
-		22597426133D0AFB0022B52E /* loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740F133D0AFB0022B52E /* loglik.h */; };
+		22597425133D0AFB0022B52E /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* recv_loglik.c */; };
+		22597426133D0AFB0022B52E /* recv_loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740F133D0AFB0022B52E /* recv_loglik.h */; };
 		22597428133D0AFB0022B52E /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
 		22597429133D0AFB0022B52E /* messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597412133D0AFB0022B52E /* messages.h */; };
 		2259742B133D0AFB0022B52E /* model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* model.c */; };
 		2259742C133D0AFB0022B52E /* model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597415133D0AFB0022B52E /* model.h */; };
-		2259742D133D0AFB0022B52E /* sloglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597416133D0AFB0022B52E /* sloglik.c */; };
-		2259742E133D0AFB0022B52E /* sloglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597417133D0AFB0022B52E /* sloglik.h */; };
 		2259742F133D0AFB0022B52E /* event-trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597418133D0AFB0022B52E /* event-trace.c */; };
 		22597430133D0AFB0022B52E /* event-trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597419133D0AFB0022B52E /* event-trace.h */; };
 		22597431133D0AFB0022B52E /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259741A133D0AFB0022B52E /* rv-irecv.c */; };
@@ -487,14 +484,12 @@
 		2259740B133D0AFB0022B52E /* fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fit.h; path = src/fit.h; sourceTree = "<group>"; };
 		2259740C133D0AFB0022B52E /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/history.c; sourceTree = "<group>"; };
 		2259740D133D0AFB0022B52E /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = src/history.h; sourceTree = "<group>"; };
-		2259740E133D0AFB0022B52E /* loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = loglik.c; path = src/loglik.c; sourceTree = "<group>"; };
-		2259740F133D0AFB0022B52E /* loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = loglik.h; path = src/loglik.h; sourceTree = "<group>"; };
+		2259740E133D0AFB0022B52E /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
+		2259740F133D0AFB0022B52E /* recv_loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_loglik.h; path = src/recv_loglik.h; sourceTree = "<group>"; };
 		22597411133D0AFB0022B52E /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = src/messages.c; sourceTree = "<group>"; };
 		22597412133D0AFB0022B52E /* messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = messages.h; path = src/messages.h; sourceTree = "<group>"; };
 		22597414133D0AFB0022B52E /* model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model.c; path = src/model.c; sourceTree = "<group>"; };
 		22597415133D0AFB0022B52E /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = src/model.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		22597416133D0AFB0022B52E /* sloglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sloglik.c; path = src/sloglik.c; sourceTree = "<group>"; };
-		22597417133D0AFB0022B52E /* sloglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sloglik.h; path = src/sloglik.h; sourceTree = "<group>"; };
 		22597418133D0AFB0022B52E /* event-trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "event-trace.c"; path = "src/event-trace.c"; sourceTree = "<group>"; };
 		22597419133D0AFB0022B52E /* event-trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "event-trace.h"; path = "src/event-trace.h"; sourceTree = "<group>"; };
 		2259741A133D0AFB0022B52E /* rv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-irecv.c"; path = "src/rv-irecv.c"; sourceTree = "<group>"; };
@@ -779,16 +774,14 @@
 				22EA3332136B440B00C5627F /* frame.h */,
 				2259740C133D0AFB0022B52E /* history.c */,
 				2259740D133D0AFB0022B52E /* history.h */,
-				2259740E133D0AFB0022B52E /* loglik.c */,
-				2259740F133D0AFB0022B52E /* loglik.h */,
 				22597411133D0AFB0022B52E /* messages.c */,
 				22597412133D0AFB0022B52E /* messages.h */,
 				22597414133D0AFB0022B52E /* model.c */,
 				22597415133D0AFB0022B52E /* model.h */,
+				2259740E133D0AFB0022B52E /* recv_loglik.c */,
+				2259740F133D0AFB0022B52E /* recv_loglik.h */,
 				2259741A133D0AFB0022B52E /* rv-irecv.c */,
 				22286F0D136F36340015CC42 /* rv-nrecv.c */,
-				22597416133D0AFB0022B52E /* sloglik.c */,
-				22597417133D0AFB0022B52E /* sloglik.h */,
 				223BFE4C13AAA40100835B8F /* sv-irecv.c */,
 				223BFE4913AAA2EC00835B8F /* sv-nrecv.c */,
 				223BFE4613AA98F200835B8F /* vars.h */,
@@ -994,10 +987,9 @@
 				22597420133D0AFB0022B52E /* design.h in Headers */,
 				22597422133D0AFB0022B52E /* fit.h in Headers */,
 				22597424133D0AFB0022B52E /* history.h in Headers */,
-				22597426133D0AFB0022B52E /* loglik.h in Headers */,
+				22597426133D0AFB0022B52E /* recv_loglik.h in Headers */,
 				22597429133D0AFB0022B52E /* messages.h in Headers */,
 				2259742C133D0AFB0022B52E /* model.h in Headers */,
-				2259742E133D0AFB0022B52E /* sloglik.h in Headers */,
 				22597430133D0AFB0022B52E /* event-trace.h in Headers */,
 				22597436133D0BD30022B52E /* pqueue.h in Headers */,
 				2223CD11134D76F8004FA7F9 /* array.h in Headers */,
@@ -1368,10 +1360,9 @@
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
 				222FC41813607C7900E64FC9 /* fit.c in Sources */,
 				222FC41A13607C7900E64FC9 /* history.c in Sources */,
-				222FC41C13607C7900E64FC9 /* loglik.c in Sources */,
+				222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */,
 				222FC41F13607C7900E64FC9 /* messages.c in Sources */,
 				222FC42213607C7900E64FC9 /* model.c in Sources */,
-				222FC42413607C7900E64FC9 /* sloglik.c in Sources */,
 				222FC42613607C7900E64FC9 /* event-trace.c in Sources */,
 				222FC42813607C7900E64FC9 /* rv-irecv.c in Sources */,
 				222FC42A13607C7900E64FC9 /* hashset.c in Sources */,
@@ -1428,10 +1419,9 @@
 				2259741F133D0AFB0022B52E /* design.c in Sources */,
 				22597421133D0AFB0022B52E /* fit.c in Sources */,
 				22597423133D0AFB0022B52E /* history.c in Sources */,
-				22597425133D0AFB0022B52E /* loglik.c in Sources */,
+				22597425133D0AFB0022B52E /* recv_loglik.c in Sources */,
 				22597428133D0AFB0022B52E /* messages.c in Sources */,
 				2259742B133D0AFB0022B52E /* model.c in Sources */,
-				2259742D133D0AFB0022B52E /* sloglik.c in Sources */,
 				2259742F133D0AFB0022B52E /* event-trace.c in Sources */,
 				22597431133D0AFB0022B52E /* rv-irecv.c in Sources */,
 				22597435133D0BD30022B52E /* pqueue.c in Sources */,
@@ -2125,6 +2115,7 @@
 				22D4788513AC4BF600FF46CD /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		22EA3322136B299600C5627F /* Build configuration list for PBXNativeTarget "design_test" */ = {
 			isa = XCConfigurationList;
