@@ -15,7 +15,7 @@ static void mean_init(struct recv_sloglik_mean *mean,
 {
 	assert(mean);
 
-	const struct recv_model *rm = model_recv_model(model, NULL, isend);
+	const struct recv_model *rm = model_recv_model(model, isend);
 	const struct vector *mean0 = recv_model_mean0(rm);
 	const struct design *design = model_design(model);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
@@ -32,7 +32,7 @@ static void imat_init(struct recv_sloglik_imat *imat,
 {
 	assert(imat);
 	
-	const struct recv_model *rm = model_recv_model(model, NULL, isend);
+	const struct recv_model *rm = model_recv_model(model, isend);
 	const struct matrix *imat0 = recv_model_imat0(rm);
 	const struct design *design = model_design(model);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
@@ -633,7 +633,7 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 		     const struct frame *f, ssize_t *jrecv, ssize_t n)
 {
 	ssize_t isend = ll->isend;
-	const struct recv_model *model = model_recv_model(ll->model, f, isend);
+	const struct recv_model *model = model_recv_model(ll->model, isend);
 	ssize_t nreceiver = recv_model_count(model);
 
 	double ntot = ll->n + n;
@@ -730,7 +730,7 @@ static void
 recv_sloglik_axpy_grad_nocache(double alpha, const struct recv_sloglik *ll, struct vector *y)
 {
 	double scale = (-ll->nsend) * alpha;
-	const struct recv_model *rm = model_recv_model(ll->model, NULL, ll->isend);
+	const struct recv_model *rm = model_recv_model(ll->model, ll->isend);
 	const struct vector *xbar0 = recv_model_mean0(rm);
 
 	const struct design *design = model_design(ll->model);

@@ -118,7 +118,7 @@ static void test_probs(void **state)
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			rm = model_recv_model(&model, &frame, isend);
+			rm = model_recv_model(&model, isend);
 			
 			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
 			

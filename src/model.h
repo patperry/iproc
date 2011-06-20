@@ -136,14 +136,6 @@ struct recv_model {
 
 	/* mean */
 	struct array active;
-	struct vector dp;
-	struct vector mean_dx;
-
-	/* var */
-	struct matrix dp2;
-	struct matrix var_dx;
-
-	bool cached;
 };
 
 struct model {
@@ -170,8 +162,7 @@ ssize_t model_dim(const struct model *model);
 void model_clear(struct model *m);
 void model_update(struct model *m, const struct frame *f);
 
-struct recv_model *model_recv_model(const struct model *m, const struct frame *f,
-				    ssize_t isend);
+struct recv_model *model_recv_model(const struct model *m, ssize_t isend);
 ssize_t recv_model_count(const struct recv_model *rm);
 ssize_t recv_model_dim(const struct recv_model *rm);
 
@@ -186,8 +177,6 @@ struct matrix *recv_model_imat0(const struct recv_model *rm);
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
 void recv_model_axpy_probs(double alpha, const struct recv_model *rm, struct vector *y);
-void recv_model_axpy_mean(double alpha, const struct recv_model *rm, struct vector *y);
-void recv_model_axpy_var(double alpha, const struct recv_model *rm, const struct frame *f, struct matrix *y);
 
 
 static inline double recv_model_prob0(const struct recv_model *rm, ssize_t jrecv)

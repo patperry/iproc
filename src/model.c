@@ -82,51 +82,6 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 	*log_gamma = -log_sum_w;
 }
 
-
-/* Given log_p0, log_gamma, and deta, compute p_active.  The probability for
- * receiver j is active if x[t,i,j] is nonzero or j = i and self-loops are
- * dis-allowed.  We rely on the fact that deta and p_active have the same
- * sparsity pattern.
- */
-static void
-compute_active_probs(const struct vector *log_p0,
-		     double log_gamma,
-		     struct svector *deta, struct svector *p_active)
-{
-	ssize_t jrecv;
-	double lp0_j, lp_j, deta_j, *p_j;
-	struct svector_iter it;
-
-	svector_assign_copy(p_active, deta);
-
-	SVECTOR_FOREACH(it, p_active) {
-		jrecv = SVECTOR_IDX(it);
-		lp0_j = *vector_item_ptr(log_p0, jrecv);
-		p_j = SVECTOR_PTR(it);
-		deta_j = *p_j;
-		lp_j = MIN(0.0, log_gamma + lp0_j + deta_j);
-		*p_j = exp(lp_j);
-	}
-}
-
-static void
-compute_prob_diffs(const struct vector *p0, double gamma,
-		   struct svector *p_active)
-{
-	ssize_t jrecv;
-	double p0_j, dp_j, *p_j;
-	struct svector_iter it;
-
-	SVECTOR_FOREACH(it, p_active) {
-		jrecv = SVECTOR_IDX(it);
-		p0_j = *vector_item_ptr(p0, jrecv);
-		p_j = SVECTOR_PTR(it);
-		dp_j = *p_j - gamma * p0_j;
-		*p_j = dp_j;
-
-	}
-}
-
 static void cohort_model_init(struct cohort_model *cm,
 			      const struct design *design,
 			      ssize_t isend, const struct vector *coefs)
@@ -283,99 +238,18 @@ static void recv_model_clear(struct recv_model *rm)
 
 	svector_clear(&rm->deta);
 	array_clear(&rm->active);
-	vector_deinit(&rm->dp);
-	vector_fill(&rm->mean_dx, 0.0);
-	
-	matrix_deinit(&rm->dp2);
-	matrix_fill(&rm->var_dx, 0.0);	
 
 	if (!design_loops(model_design(m))) {
 		double p0 = vector_item(&cm->p0, isend);
-		double dp = -p0 / (1.0 - p0);
-
 		rm->gamma = 1.0 / (1.0 - p0);
 		rm->log_gamma = -log1p(-p0);
 
 		svector_set_item(&rm->deta, isend, -INFINITY);
-		
 		array_add(&rm->active, &isend);
-		vector_init(&rm->dp, 1);
-		vector_set_item(&rm->dp, 0, dp);
-		matrix_init(&rm->dp2, 1, 1);
-		matrix_set_item(&rm->dp2, 0, 0, dp * (1 - dp));
 	} else {
 		rm->gamma = 1.0;
 		rm->log_gamma = 0.0;
-		vector_init(&rm->dp, 0);
-		matrix_init(&rm->dp2, 0, 0);
 	}
-	rm->cached = true;
-}
-
-static void recv_model_update(struct recv_model *rm, const struct frame *f)
-{
-	assert(rm);
-	assert(f);
-
-	//vector_fill(&rm->dp, 0.0);
-	vector_fill(&rm->mean_dx, 0.0);
-
-	ssize_t isend = rm->isend;
-	//const struct vector *log_p0 = recv_model_logprobs0(rm);
-	const struct vector *probs0 = recv_model_probs0(rm);
-	double gamma = rm->gamma;
-	
-	//compute_weight_changes(f, rm->isend, model_coefs(rm->model), log_p0,
-	//		       &rm->deta, &rm->gamma, &rm->log_gamma);
-
-	
-	ssize_t i, n = array_count(&rm->active);
-	for (i = 0; i < n; i++) {
-		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-
-		/* mean */		
-		double p = recv_model_prob(rm, jrecv);
-		double p0 = vector_item(probs0, jrecv);
-		double dp = p - gamma * p0;
-		vector_set_item(&rm->dp, i, dp);
-		
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-		vector_axpy(p, dx, &rm->mean_dx);
-	}
-
-	/* var */
-	matrix_fill(&rm->dp2, 0.0);	
-	matrix_fill(&rm->var_dx, 0.0);
-	struct vector y;
-	double ptot = 0.0;
-
-	matrix_update1(&rm->dp2, -1.0, &rm->dp, &rm->dp);
-	
-	vector_init(&y, vector_dim(&rm->mean_dx));
-	for (i = 0; i < n; i++) {
-		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-		double dp = vector_item(&rm->dp, i);
-		
-		*matrix_item_ptr(&rm->dp2, i, i) += dp;
-		
-		double p = recv_model_prob(rm, jrecv);
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-		
-		vector_assign_copy(&y, dx);
-		vector_sub(&y, &rm->mean_dx);
-		
-		matrix_update1(&rm->var_dx, p, &y, &y);
-		ptot += p;
-	}
-	matrix_update1(&rm->var_dx, 1 - ptot, &rm->mean_dx, &rm->mean_dx);
-	vector_deinit(&y);
-
-	
-
-	//compute_active_probs(log_p0, rm->log_gamma, &rm->deta, &rm->dp);
-	//frame_recv_dmuls(1.0, TRANS_TRANS, f, isend, &rm->dp, 0.0, &rm->mean_dx);
-	//compute_prob_diffs(p0, rm->gamma, &rm->dp);
-	rm->cached = true;	
 }
 
 static void recv_model_init(struct recv_model *rm, struct model *m,
@@ -385,29 +259,17 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 	assert(m);
 	assert(0 <= isend && isend < model_sender_count(m));
 
-	ssize_t dim_dx = design_recv_dyn_dim(model_design(m));
-	
 	rm->model = m;
 	rm->isend = isend;
 	rm->cohort = model_cohort_model(m, isend);
 	svector_init(&rm->deta, model_receiver_count(m));
 	array_init(&rm->active, sizeof(ssize_t));
-	vector_init(&rm->dp, 0);
-	vector_init(&rm->mean_dx, dim_dx);
-	
-	matrix_init(&rm->dp2, 0, 0);
-	matrix_init(&rm->var_dx, dim_dx, dim_dx);
-
 	recv_model_clear(rm);
 }
 
 static void recv_model_deinit(struct recv_model *rm)
 {
 	assert(rm);
-	matrix_deinit(&rm->var_dx);
-	matrix_deinit(&rm->dp2);
-	vector_deinit(&rm->mean_dx);
-	vector_deinit(&rm->dp);
 	array_deinit(&rm->active);
 	svector_deinit(&rm->deta);
 }
@@ -573,7 +435,15 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	const struct vector *coefs = model_coefs(m);	
 
 	ssize_t jrecv = meta->item.jrecv;
-	double *pdeta = svector_item_ptr(&rm->deta, jrecv);
+	struct svector_pos pos;	
+	double *pdeta = svector_find(&rm->deta, jrecv, &pos);
+	
+	if (!pdeta) {
+		pdeta = svector_insert(&rm->deta, &pos, 0.0);
+		ssize_t ix = array_binary_search(&rm->active, &jrecv, ssize_compare);
+		assert(ix < 0);
+		array_insert(&rm->active, ~ix, &jrecv);
+	}
 
 	ssize_t index = meta->index;
 	double dx = meta->delta;
@@ -592,49 +462,6 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	rm->gamma = gamma;
 	rm->log_gamma = log_gamma;
 	*pdeta += deta;
-	
-	ssize_t pos = array_binary_search(&rm->active, &jrecv, ssize_compare);
-	if (pos < 0) {
-		pos = ~pos;
-		array_insert(&rm->active, pos, &jrecv);
-		
-		ssize_t dim = vector_dim(&rm->dp) + 1;
-		struct vector dp, dp0, dp1, dp0_old, dp1_old;
-		
-		vector_init(&dp, dim);
-		dp0 = vector_slice(&dp, 0, pos);
-		dp0_old = vector_slice(&rm->dp, 0, pos);
-		vector_assign_copy(&dp0, &dp0_old);
-		
-		dp1 = vector_slice(&dp, pos + 1, dim - pos - 1);
-		dp1_old = vector_slice(&rm->dp, pos, dim - pos - 1);
-		vector_assign_copy(&dp1, &dp1_old);
-		
-		vector_deinit(&rm->dp);
-		rm->dp = dp;
-		
-		struct matrix dp2, dst, src;
-		matrix_init(&dp2, dim, dim);
-		dst = matrix_slice(&dp2, 0, 0, pos, pos);
-		src = matrix_slice(&rm->dp2, 0, 0, pos, pos);
-		matrix_assign_copy(&dst, &src);
-		
-		dst = matrix_slice(&dp2, pos + 1, 0, dim - pos - 1, pos);
-		src = matrix_slice(&rm->dp2, pos, 0, dim - pos - 1, pos);
-		matrix_assign_copy(&dst, &src);
-
-		dst = matrix_slice(&dp2, 0, pos + 1, pos, dim - pos - 1);
-		src = matrix_slice(&rm->dp2, 0, pos, pos, dim - pos - 1);
-		matrix_assign_copy(&dst, &src);
-
-		dst = matrix_slice(&dp2, pos + 1, pos + 1, dim - pos - 1, dim - pos - 1);
-		src = matrix_slice(&rm->dp2, pos, pos, dim - pos - 1, dim - pos - 1);
-		matrix_assign_copy(&dst, &src);
-		matrix_deinit(&rm->dp2);
-		rm->dp2 = dp2;
-	}
-	
-	rm->cached = false;	
 }
 
 static void model_update_with(struct model *m, const struct frame_event *e)
@@ -665,16 +492,11 @@ void model_update(struct model *m, const struct frame *f)
 	}
 }
 
-struct recv_model *model_recv_model(const struct model *m, const struct frame *f,
-				    ssize_t isend)
+struct recv_model *model_recv_model(const struct model *m, ssize_t isend)
 {
 	assert(m);
 
 	struct recv_model *rm = model_recv_model_raw((struct model *)m, isend);
-	if (!rm->cached) {
-		assert(f);
-		recv_model_update(rm, f);
-	}
 	return rm;
 }
 
@@ -696,7 +518,7 @@ ssize_t recv_model_dim(const struct recv_model *rm)
 
 
 /*
- *         log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
+ * log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 {
@@ -744,143 +566,3 @@ void recv_model_axpy_probs(double alpha,
 		*vector_item_ptr(y, j) += alpha * p;
 	}
 }
-
-void recv_model_axpy_mean(double alpha,
-			  const struct recv_model *rm,
-			  struct vector *y)
-{
-	assert(rm);
-	assert(y);
-	assert(vector_dim(y) == recv_model_dim(rm));
-	assert(rm->cached);
-	
-	const struct vector *mean0 = recv_model_mean0(rm);
-	double gamma = rm->gamma;
-	vector_axpy(alpha * gamma, mean0, y);
-	
-	const struct design *design = model_design(rm->model);
-	ssize_t isend = rm->isend;
-	
-	ssize_t i, n = array_count(&rm->active);
-	struct svector dp;
-	svector_init(&dp, recv_model_count(rm));
-	for (i = 0; i < n; i++) {
-		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-		double val = vector_item(&rm->dp, i);
-		svector_set_item(&dp, jrecv, val);
-	}
-	
-	design_recv_muls0(alpha, TRANS_TRANS, design, isend, &dp, 1.0, y);
-	svector_deinit(&dp);
-	
-	const struct vector *mean_dx = &rm->mean_dx;
-	ssize_t off = design_recv_dyn_index(design);
-	ssize_t dim = design_recv_dyn_dim(design);
-	struct vector ysub = vector_slice(y, off, dim);
-	vector_axpy(alpha, mean_dx, &ysub);
-}
-
-void recv_model_axpy_var(double alpha, const struct recv_model *rm, const struct frame *f, struct matrix *y)
-{
-	assert(rm);
-	assert(y);
-	assert(matrix_ncol(y) == recv_model_dim(rm));
-	assert(matrix_nrow(y) == recv_model_dim(rm));	
-	assert(rm->cached);
-	
-	const ssize_t dim = recv_model_dim(rm);
-	const struct design *design = model_design(rm->model);
-	const ssize_t isend = rm->isend;
-	const struct vector *mean0 = recv_model_mean0(rm);
-	const struct matrix *var0 = &rm->cohort->imat0;
-	const double gamma = rm->gamma;
-	
-	const ssize_t n = array_count(&rm->active);
-	ssize_t i, j, k;
-	struct svector dp;
-	svector_init(&dp, recv_model_count(rm));
-	for (i = 0; i < n; i++) {
-		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-		double val = vector_item(&rm->dp, i);
-		svector_set_item(&dp, jrecv, val);
-	}
-	
-	struct vector x0_dp;
-	vector_init(&x0_dp, dim);
-	design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp, 0.0, &x0_dp);
-
-	struct matrix x0_dp2;
-	struct svector dp2_j;
-	
-	matrix_init(&x0_dp2, dim, n);
-	svector_init(&dp2_j, recv_model_count(rm));
-	for (j = 0; j < n; j++) {
-		svector_clear(&dp2_j);
-		for (i = 0; i < n; i++) {
-			ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-			double val = matrix_item(&rm->dp2, i, j);
-			svector_set_item(&dp2_j, jrecv, val);
-		}
-		struct vector dst = matrix_col(&x0_dp2, j);
-		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp2_j, 0.0, &dst);
-	}
-	
-	matrix_axpy(alpha * gamma, var0, y);
-	matrix_update1(y, alpha * gamma * (1 - gamma), mean0, mean0);
-	matrix_update1(y, -alpha * gamma, mean0, &x0_dp);
-	matrix_update1(y, -alpha * gamma, &x0_dp, mean0);
-	
-	struct svector x0_dp2_k;
-	svector_init(&x0_dp2_k, recv_model_count(rm));
-	for (k = 0; k < dim; k++) {
-		svector_clear(&x0_dp2_k);
-		for (j = 0; j < n; j++) {
-			ssize_t jrecv = *(ssize_t *)array_item(&rm->active, j);
-			double val = matrix_item(&x0_dp2, k, j);
-			svector_set_item(&x0_dp2_k, jrecv, val);
-		}
-		struct vector dst = matrix_col(y, k);
-		design_recv_muls0(alpha, TRANS_TRANS, design, isend, &x0_dp2_k, 1.0, &dst);
-	}
-	
-	ssize_t dyn_off = design_recv_dyn_index(design);
-	ssize_t dyn_dim = design_recv_dyn_dim(design);	
-	struct matrix y_1 = matrix_slice(y, 0, dyn_off, dim, dyn_dim);
-	struct matrix y1_ = matrix_slice(y, dyn_off, 0, dyn_dim, dim);
-	struct matrix y11 = matrix_slice(y, dyn_off, dyn_off, dyn_dim, dyn_dim);
-
-	matrix_axpy(alpha, &rm->var_dx, &y11);
-	
-	struct vector x0_j;	
-	struct svector e_j;
-
-	vector_init(&x0_j, dim);
-	svector_init(&e_j, design_recv_count(design));
-	
-	for (i = 0; i < n; i++) {
-		ssize_t jrecv = *(ssize_t *)array_item(&rm->active, i);
-		double p = recv_model_prob(rm, jrecv);
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);		
-		
-		svector_set_basis(&e_j, jrecv);
-		design_recv_muls0(alpha, TRANS_TRANS, design, isend, &e_j, 0.0, &x0_j);
-		
-		matrix_update1(&y_1, alpha * p, &x0_j, dx);
-		matrix_update1(&y1_, alpha * p, dx, &x0_j);
-	}
-	
-	matrix_update1(&y_1, -alpha * gamma, mean0, &rm->mean_dx);
-	matrix_update1(&y1_, -alpha * gamma, &rm->mean_dx, mean0);
-
-	matrix_update1(&y_1, -alpha, &x0_dp, &rm->mean_dx);
-	matrix_update1(&y1_, -alpha, &rm->mean_dx, &x0_dp);
-
-	vector_deinit(&x0_j);
-	svector_deinit(&e_j);
-	svector_deinit(&x0_dp2_k);
-	svector_deinit(&dp2_j);
-	matrix_deinit(&x0_dp2);
-	vector_deinit(&x0_dp);
-	svector_deinit(&dp);
-}
-

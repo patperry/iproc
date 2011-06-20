@@ -121,7 +121,7 @@ static void test_dev(void **state)
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			n += msg->nto;
 			
-			rm = model_recv_model(&model, &frame, msg->from);
+			rm = model_recv_model(&model, msg->from);
 			
 			last_dev0 = 0.0;
 			for (i = 0; i < msg->nto; i++) {
@@ -183,7 +183,7 @@ static void test_score(void **state)
 				goto out;
 
 			isend = msg->from;
-			rm = model_recv_model(&model, &frame, isend);
+			rm = model_recv_model(&model, isend);
 			
 			vector_fill(&probs, 0.0);
 			recv_model_axpy_probs(1.0, rm, &probs);
@@ -272,7 +272,7 @@ static void test_imat(void **state)
 				goto out;
 
 			isend = msg->from;
-			rm = model_recv_model(&model, &frame, isend);
+			rm = model_recv_model(&model, isend);
 			
 			vector_fill(&mean, 0.0);
 			recv_loglik_axpy_last_mean(1.0 / msg->nto, &recv_loglik, &mean);
