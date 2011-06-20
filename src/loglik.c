@@ -6,18 +6,16 @@
 #include "sloglik.h"
 #include "loglik.h"
 
-
-void recv_loglik_init(struct recv_loglik *ll,
-		      struct model *m)
+void recv_loglik_init(struct recv_loglik *ll, struct model *m)
 {
 	assert(ll);
 	assert(m);
 
 	const struct design *design = model_design(m);
 	ssize_t isend, nsend = design_send_count(design);
-	
+
 	ll->model = model_ref(m);
-	
+
 	array_init(&ll->slogliks, sizeof(struct recv_sloglik));
 	array_set_capacity(&ll->slogliks, nsend);
 	for (isend = 0; isend < nsend; isend++) {
@@ -47,7 +45,7 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	assert(ll);
 
 	struct recv_sloglik *sll;
-	
+
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		recv_sloglik_clear(sll);
 	}
@@ -60,14 +58,14 @@ void recv_loglik_clear(struct recv_loglik *ll)
 struct recv_loglik *recv_loglik_alloc(struct model *m, struct messages *msgs)
 {
 	struct recv_loglik *ll = xcalloc(1, sizeof(*ll));
-	
+
 	struct frame f;
-	
+
 	frame_init(&f, model_design(m));
 	recv_loglik_init(ll, m);
 	recv_loglik_add_all(ll, &f, msgs);
 	frame_deinit(&f);
-	
+
 	return ll;
 }
 
@@ -80,8 +78,7 @@ void recv_loglik_free(struct recv_loglik *ll)
 }
 
 void recv_loglik_add(struct recv_loglik *ll,
-		     const struct frame *f,
-		     const struct message *msg)
+		     const struct frame *f, const struct message *msg)
 {
 	struct recv_sloglik *sll = array_item(&ll->slogliks, msg->from);
 	recv_sloglik_add(sll, f, msg->to, msg->nto);
@@ -91,40 +88,39 @@ void recv_loglik_add(struct recv_loglik *ll,
 }
 
 void recv_loglik_add_all(struct recv_loglik *ll,
-			 struct frame *f,
-			 const struct messages *msgs)
+			 struct frame *f, const struct messages *msgs)
 {
 	struct messages_iter it;
 	const struct message *msg;
 	ssize_t i, n;
-	
+
 	struct model *m = ll->model;
 
 	MESSAGES_FOREACH(it, msgs) {
 		double t = MESSAGES_TIME(it);
-		
+
 		while (frame_next_change(f) <= t) {
 			model_update(m, f);
-			frame_advance(f);			
+			frame_advance(f);
 		}
 		if (frame_time(f) < t) {
 			model_update(m, f);
-			frame_advance_to(f, t);			
+			frame_advance_to(f, t);
 		}
-		
+
 		n = MESSAGES_COUNT(it);
-		for (i = 0; i < n; i ++) {
+		for (i = 0; i < n; i++) {
 			msg = MESSAGES_VAL(it, i);
 			recv_loglik_add(ll, f, msg);
 		}
-		
+
 		n = MESSAGES_COUNT(it);
-		for (i = 0; i < n; i ++) {
+		for (i = 0; i < n; i++) {
 			msg = MESSAGES_VAL(it, i);
 			frame_add(f, msg);
 		}
 	}
-	
+
 }
 
 ssize_t recv_loglik_count(const struct recv_loglik *ll)
@@ -146,10 +142,10 @@ double recv_loglik_avg_dev(const struct recv_loglik *ll)
 	double dev, dev_avg;
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
-	
+
 	ntot = 0;
 	dev_avg = 0.0;
-	
+
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		n = recv_sloglik_count(sll);
 		if (n > 0) {
@@ -159,7 +155,7 @@ double recv_loglik_avg_dev(const struct recv_loglik *ll)
 		}
 	}
 	assert(ntot == recv_loglik_count(ll));
-	
+
 	return dev_avg;
 }
 
@@ -167,77 +163,82 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 {
 	assert(ll);
 	assert(ll->last);
-	
+
 	return recv_sloglik_last_dev(ll->last);
 }
 
-void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll, struct vector *y)
+void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
+			       struct vector *y)
 {
 	struct vector avg_mean, diff;
-	vector_init(&avg_mean, model_dim(ll->model));	
+	vector_init(&avg_mean, model_dim(ll->model));
 	vector_init(&diff, model_dim(ll->model));
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
-	
+
 	ntot = 0;
-	
+
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		n = recv_sloglik_count(sll);
 		if (n > 0) {
-			ntot += n;			
+			ntot += n;
 			vector_assign_copy(&diff, &avg_mean);
 			recv_sloglik_axpy_avg_mean(-1.0, sll, &diff);
-			vector_axpy(-((double)n)/ntot, &diff, &avg_mean);
+			vector_axpy(-((double)n) / ntot, &diff, &avg_mean);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll));
-	
+
 	vector_axpy(alpha, &avg_mean, y);
 	vector_deinit(&diff);
 	vector_deinit(&avg_mean);
 }
 
-void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct vector *y)
+void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
+				struct vector *y)
 {
 	assert(ll);
 	assert(ll->last);
 	recv_sloglik_axpy_last_mean(alpha, ll->last, y);
 }
 
-void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll, struct vector *y)
+void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
+				struct vector *y)
 {
 	struct vector avg_score, diff;
-	vector_init(&avg_score, model_dim(ll->model));	
+	vector_init(&avg_score, model_dim(ll->model));
 	vector_init(&diff, model_dim(ll->model));
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
-	
+
 	ntot = 0;
-	
+
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		n = recv_sloglik_count(sll);
 		if (n > 0) {
-			ntot += n;			
+			ntot += n;
 			vector_assign_copy(&diff, &avg_score);
 			recv_sloglik_axpy_avg_score(-1.0, sll, &diff);
-			vector_axpy(-((double)n)/ntot, &diff, &avg_score);
+			vector_axpy(-((double)n) / ntot, &diff, &avg_score);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll));
-	
+
 	vector_axpy(alpha, &avg_score, y);
 	vector_deinit(&diff);
 	vector_deinit(&avg_score);
 }
 
-void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct vector *y)
+void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
+				 struct vector *y)
 {
 	assert(ll);
 	assert(ll->last);
 	recv_sloglik_axpy_last_score(alpha, ll->last, y);
 }
 
-void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll, struct matrix *y)
+void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
+			       struct matrix *y)
 {
 	struct matrix avg_imat, diff;
 	ssize_t dim = model_dim(ll->model);
@@ -245,29 +246,29 @@ void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll, struc
 	matrix_init(&diff, dim, dim);
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
-	
+
 	ntot = 0;
-	
+
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		n = recv_sloglik_count(sll);
 		if (n > 0) {
-			ntot += n;			
+			ntot += n;
 			matrix_assign_copy(&diff, &avg_imat);
 			recv_sloglik_axpy_avg_imat(-1.0, sll, &diff);
-			matrix_axpy(-((double)n)/ntot, &diff, &avg_imat);
+			matrix_axpy(-((double)n) / ntot, &diff, &avg_imat);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll));
-	
+
 	matrix_axpy(alpha, &avg_imat, y);
 	matrix_deinit(&diff);
 	matrix_deinit(&avg_imat);
 }
 
-void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, struct matrix *y)
+void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
+				struct matrix *y)
 {
 	assert(ll);
 	assert(ll->last);
 	recv_sloglik_axpy_last_imat(alpha, ll->last, y);
 }
-

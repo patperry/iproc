@@ -17,32 +17,35 @@ struct recv_loglik {
 	struct recv_sloglik *last;
 };
 
-void recv_loglik_init(struct recv_loglik *ll,
-		      struct model *m);
+void recv_loglik_init(struct recv_loglik *ll, struct model *m);
 void recv_loglik_deinit(struct recv_loglik *ll);
 
-struct recv_loglik *recv_loglik_alloc(struct model *m, struct messages *messages);
+struct recv_loglik *recv_loglik_alloc(struct model *m,
+				      struct messages *messages);
 void recv_loglik_free(struct recv_loglik *ll);
 
 void recv_loglik_add(struct recv_loglik *ll,
-		     const struct frame *f,
-		     const struct message *msg);
+		     const struct frame *f, const struct message *msg);
 void recv_loglik_add_all(struct recv_loglik *ll,
-			 struct frame *f,
-			 const struct messages *msgs);
+			 struct frame *f, const struct messages *msgs);
 void recv_loglik_clear(struct recv_loglik *ll);
 
 ssize_t recv_loglik_count(const struct recv_loglik *ll);
 double recv_loglik_avg_dev(const struct recv_loglik *ll);
-void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll, struct vector *y);
-void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll, struct vector *y);
-void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll, struct matrix *y);
+void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
+			       struct vector *y);
+void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
+				struct vector *y);
+void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
+			       struct matrix *y);
 
 ssize_t recv_loglik_last_count(const struct recv_loglik *ll);
 double recv_loglik_last_dev(const struct recv_loglik *ll);
-void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct vector *y);
-void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct vector *y);
-void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, struct matrix *y);
-
+void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
+				struct vector *y);
+void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
+				 struct vector *y);
+void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
+				struct matrix *y);
 
 #endif /* _RECV_LOGLIK_H */

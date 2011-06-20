@@ -6,7 +6,7 @@
 static uint32_t intptr_hash(const void *x)
 {
 	intptr_t val = *(intptr_t *)x;
-	return (uint32_t) (val * 2654435761UL); /* Knuth's multiplicative method */
+	return (uint32_t)(val * 2654435761UL);	/* Knuth's multiplicative method */
 }
 
 DEFINE_EQUALS_FN(intptr_equals, intptr_t)

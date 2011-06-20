@@ -96,7 +96,8 @@ static void irecv_handle_event(struct frame_var *fv,
 	ssize_t index = fv->design->index;
 	struct irecv_udata *udata = fv->udata;
 	const struct irecv_active *key =
-	    container_of(&meta->msg_dyad.jrecv, const struct irecv_active, isend);
+	    container_of(&meta->msg_dyad.jrecv, const struct irecv_active,
+			 isend);
 	struct irecv_active *active;
 
 	struct frame_event dx;

@@ -65,7 +65,6 @@ struct frame_event {
 	} meta;
 };
 
-
 struct frame {
 	struct design *design;
 	struct history history;
@@ -112,7 +111,8 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
 /* current covariates */
 struct vector frame_send_x(struct frame *f, ssize_t isend);
-struct vector *frame_recv_dx(const struct frame *f, ssize_t isend, ssize_t jrecv);
+struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
+			     ssize_t jrecv);
 
 void frame_send_mul(double alpha, enum trans_op trans,
 		    const struct frame *f,

@@ -122,7 +122,7 @@ static void var_frames_deinit(struct frame *frame)
 			fv->design->type->frame_deinit(fv);
 		}
 	}
-	
+
 	array_deinit(&frame->vars);
 }
 
@@ -536,7 +536,8 @@ struct vector frame_send_x(struct frame *f, ssize_t isend)
 	return matrix_col(&f->send_xt, isend);
 }
 
-struct vector *frame_recv_dx(const struct frame *f, ssize_t isend, ssize_t jrecv)
+struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
+			     ssize_t jrecv)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(f->design));
@@ -609,13 +610,13 @@ void frame_recv_mul(double alpha, enum trans_op trans,
 	       || vector_dim(y) == design_recv_dim(f->design));
 
 	const struct design *design = f->design;
-	ssize_t off = design_recv_dyn_index(design);	
+	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
-	
+
 	design_recv_mul0(alpha, trans, f->design, isend, x, beta, y);
 	if (trans == TRANS_NOTRANS) {
 		struct svector ys;
-		
+
 		svector_init(&ys, vector_dim(y));
 		struct vector xsub = vector_slice(x, off, dim);
 		frame_recv_dmul(alpha, trans, f, isend, &xsub, 0.0, &ys);
@@ -624,7 +625,7 @@ void frame_recv_mul(double alpha, enum trans_op trans,
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
 		struct svector ysubs;
-		
+
 		svector_init(&ysubs, vector_dim(&ysub));
 		frame_recv_dmul(alpha, trans, f, isend, x, 0.0, &ysubs);
 		svector_axpy(1.0, &ysubs, &ysub);
@@ -651,15 +652,15 @@ void frame_recv_muls(double alpha, enum trans_op trans,
 	       || vector_dim(y) == design_recv_dim(f->design));
 
 	const struct design *design = f->design;
-	ssize_t off = design_recv_dyn_index(design);	
+	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 
-	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);	
-	
+	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);
+
 	if (trans == TRANS_NOTRANS) {
 		struct svector xsub;
 		struct svector_iter it;
-		
+
 		svector_init(&xsub, dim);
 		SVECTOR_FOREACH(it, x) {
 			ssize_t i = SVECTOR_IDX(it) - off;
@@ -671,7 +672,7 @@ void frame_recv_muls(double alpha, enum trans_op trans,
 		svector_deinit(&xsub);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		frame_recv_dmuls(alpha, trans, f, isend, x, 1.0, &ysub);		
+		frame_recv_dmuls(alpha, trans, f, isend, x, 1.0, &ysub);
 	}
 }
 

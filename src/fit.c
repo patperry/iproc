@@ -13,7 +13,7 @@ int dcsrch_(double *stp, double *f, double *g,
 	    f77int task_len);
 
 static void
-eval_objective(struct recv_loglik * loglik,
+eval_objective(struct recv_loglik *loglik,
 	       double penalty, double *valuep, struct vector *grad)
 {
 	struct model *model = loglik->model;

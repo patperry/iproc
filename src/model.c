@@ -128,13 +128,13 @@ static void cohort_model_init(struct cohort_model *cm,
 	vector_init(&cm->mean0, dim);
 	design_recv_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0,
 			 &cm->mean0);
-	
+
 	/* imat0 */
 	struct vector y;
 	struct svector ej;
 	double pj;
-	ssize_t jrecv;	
-	
+	ssize_t jrecv;
+
 	vector_init(&y, dim);
 	svector_init(&ej, nreceiver);
 	matrix_init(&cm->imat0, dim, dim);
@@ -142,9 +142,10 @@ static void cohort_model_init(struct cohort_model *cm,
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
 		svector_set_basis(&ej, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &ej, -1.0, &y);
+		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &ej, -1.0,
+				  &y);
 		pj = vector_item(&cm->p0, jrecv);
-		
+
 		matrix_update1(&cm->imat0, pj, &y, &y);
 	}
 	svector_deinit(&ej);
@@ -168,7 +169,7 @@ static void cohort_model_deinit(struct cohort_model *cm)
 	vector_deinit(&cm->w0);
 	vector_deinit(&cm->eta0);
 #endif
-	matrix_deinit(&cm->imat0);	
+	matrix_deinit(&cm->imat0);
 	vector_deinit(&cm->mean0);
 	vector_deinit(&cm->log_p0);
 	vector_deinit(&cm->p0);
@@ -423,7 +424,6 @@ void model_clear(struct model *m)
 	}
 }
 
-
 static void process_recv_var_event(struct model *m, const struct frame_event *e)
 {
 	assert(m);
@@ -431,16 +431,17 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 
 	const struct recv_var_event_meta *meta = &e->meta.recv_var;
 	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
-	const struct cohort_model *cm = rm->cohort;	
-	const struct vector *coefs = model_coefs(m);	
+	const struct cohort_model *cm = rm->cohort;
+	const struct vector *coefs = model_coefs(m);
 
 	ssize_t jrecv = meta->item.jrecv;
-	struct svector_pos pos;	
+	struct svector_pos pos;
 	double *pdeta = svector_find(&rm->deta, jrecv, &pos);
-	
+
 	if (!pdeta) {
 		pdeta = svector_insert(&rm->deta, &pos, 0.0);
-		ssize_t ix = array_binary_search(&rm->active, &jrecv, ssize_compare);
+		ssize_t ix =
+		    array_binary_search(&rm->active, &jrecv, ssize_compare);
 		assert(ix < 0);
 		array_insert(&rm->active, ~ix, &jrecv);
 	}
@@ -458,7 +459,7 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	double dp = p - p0;
 	double gamma = gamma0 / (1.0 + dp);
 	double log_gamma = log_gamma0 - log1p(dp);
-	
+
 	rm->gamma = gamma;
 	rm->log_gamma = log_gamma;
 	*pdeta += deta;
@@ -516,7 +517,6 @@ ssize_t recv_model_dim(const struct recv_model *rm)
 	return design_recv_dim(design);
 }
 
-
 /*
  * log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
@@ -552,8 +552,7 @@ double recv_model_prob(const struct recv_model *rm, ssize_t jrecv)
 }
 
 void recv_model_axpy_probs(double alpha,
-			   const struct recv_model *rm,
-			   struct vector *y)
+			   const struct recv_model *rm, struct vector *y)
 {
 	assert(rm);
 	assert(y);

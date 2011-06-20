@@ -33,7 +33,7 @@ void vector_reinit(struct vector *v, ssize_t n)
 	assert(n <= F77INT_MAX);
 	assert(n <= SSIZE_MAX / sizeof(double));
 	assert(v->owner);
-	
+
 	v->data = xrealloc(v->data, n * sizeof(v->data[0]));
 	v->dim = n;
 	v->owner = true;

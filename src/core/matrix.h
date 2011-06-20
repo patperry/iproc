@@ -123,7 +123,8 @@ struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m,
 
 	const double *ptr = (m > 0 && n > 0) ? matrix_item_ptr(a, i, j) : NULL;
 	ssize_t lda = matrix_lda(a);
-	struct vector v = m > 0 ? vector_make(ptr, lda * n) : vector_make(ptr, 0);
+	struct vector v =
+	    m > 0 ? vector_make(ptr, lda * n) : vector_make(ptr, 0);
 
 	return matrix_make_with_lda(&v, m, n, lda);
 }

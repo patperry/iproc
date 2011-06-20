@@ -73,7 +73,6 @@
  * a sparse vector.
  */
 
-
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
@@ -219,6 +218,5 @@ ssize_t design_recv_dyn_dim(const struct design *design)
 	assert(design);
 	return design->nrdynamic;
 }
-
 
 #endif /* _DESIGN_H */
