@@ -162,7 +162,6 @@ static void test_score(void **state)
 	vector_init(&diff, design_recv_dim(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
-		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
 		while (frame_next_change(&frame) <= t) {
@@ -248,7 +247,6 @@ static void test_imat(void **state)
 	svector_init(&e_j, nrecv);
 	
 	MESSAGES_FOREACH(it, &messages) {
-		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
 		while (frame_next_change(&frame) <= t) {
@@ -267,6 +265,9 @@ static void test_imat(void **state)
 			recv_loglik_add(&recv_loglik, &frame, msg);
 
 			n = recv_loglik_count(&recv_loglik);
+			if (n > 1000)
+				goto out;
+
 			isend = msg->from;
 			rm = model_recv_model(&model, &frame, isend);
 			
@@ -312,7 +313,7 @@ static void test_imat(void **state)
 					double v1 = matrix_item(&avg_imat1, index1, index2);
 					//assert(double_eqrel(v0, v1) >= 37
 					//       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
-					if (fabs(v0) >= 1e-1) {
+					if (fabs(v0) >= 5e-4) {
 						assert_in_range(double_eqrel(v0, v1), 37, DBL_MANT_DIG);
 					} else {
 						assert_true(fabs(v0 - v1) < sqrt(DBL_EPSILON));
@@ -326,6 +327,7 @@ static void test_imat(void **state)
 		
 	}
 	
+out:
 	svector_deinit(&e_j);
 	vector_deinit(&mean);
 	vector_deinit(&y);
@@ -344,8 +346,8 @@ int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
-		//unit_test_setup_teardown(test_dev, basic_setup, basic_teardown),
-		//unit_test_setup_teardown(test_score, basic_setup, basic_teardown),
+		unit_test_setup_teardown(test_dev, basic_setup, basic_teardown),
+		unit_test_setup_teardown(test_score, basic_setup, basic_teardown),
 		unit_test_setup_teardown(test_imat, basic_setup, basic_teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
