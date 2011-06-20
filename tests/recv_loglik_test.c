@@ -299,7 +299,7 @@ static void test_imat(void **state)
 				}
 			}
 			
-			/*matrix_assign_copy(&diff, &avg_imat0);
+			matrix_assign_copy(&diff, &avg_imat0);
 			matrix_axpy(-1.0/msg->nto, &imat0, &diff);
 			matrix_axpy(-((double)msg->nto) / n, &diff, &avg_imat0);
 			
@@ -310,12 +310,17 @@ static void test_imat(void **state)
 				for (index1 = 0; index1 < dim; index1++) {				
 					double v0 = matrix_item(&avg_imat0, index1, index2);
 					double v1 = matrix_item(&avg_imat1, index1, index2);
-					assert(double_eqrel(v0, v1) >= 40);
-					assert_in_range(double_eqrel(v0, v1), 48, DBL_MANT_DIG);
+					//assert(double_eqrel(v0, v1) >= 37
+					//       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
+					if (fabs(v0) >= 1e-1) {
+						assert_in_range(double_eqrel(v0, v1), 37, DBL_MANT_DIG);
+					} else {
+						assert_true(fabs(v0 - v1) < sqrt(DBL_EPSILON));
+					}
 				}
 			}
 			
-			matrix_assign_copy(&avg_imat0, &avg_imat1); */
+			matrix_assign_copy(&avg_imat0, &avg_imat1);
 
 		}
 		

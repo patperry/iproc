@@ -316,6 +316,29 @@ static void imat_set(struct recv_sloglik_imat *imat,
 }
 
 
+static void vector_mean_update(double scale, const struct vector *val,
+			       struct vector *mean, struct vector *work)
+{
+	struct vector diff = vector_slice(work, 0, vector_dim(mean));
+	vector_assign_copy(&diff, val);
+	vector_sub(&diff, mean);
+	vector_axpy(scale, &diff, mean);
+}
+
+static void matrix_mean_update(double scale, const struct matrix *val,
+			       struct matrix *mean, struct vector *work)
+{
+	ssize_t m = matrix_nrow(mean);
+	ssize_t n = matrix_ncol(mean);
+	struct vector vwork = vector_slice(work, 0, m * n);
+	struct matrix diff = matrix_make(&vwork, m, n);
+	
+	matrix_assign_copy(&diff, val);
+	matrix_sub(&diff, mean);
+	matrix_axpy(scale, &diff, mean);
+}
+
+
 static void mean_update(const struct array *active,
 			ssize_t n0,
 			const struct recv_sloglik_mean *mean0,
@@ -331,25 +354,18 @@ static void mean_update(const struct array *active,
 	assert(mean_active_count(mean0) == mean_active_count(mean1));
 	assert(mean0->mean0 == mean1->mean0);
 
-	struct vector dp_diff, mean_dx_diff;
 	ssize_t ntot = n0 + n1;
 	double scale = ((double)n0) / ntot;
-
+	struct vector work;
+	vector_init(&work, MAX(vector_dim(&mean0->dp), vector_dim(&mean0->mean_dx)));
+	
 	mean1->gamma += scale * (mean0->gamma - mean1->gamma);
-	
-	vector_init(&dp_diff, vector_dim(&mean0->dp));
-	vector_assign_copy(&dp_diff, &mean0->dp);
-	vector_sub(&dp_diff, &mean1->dp);
-	vector_axpy(scale, &dp_diff, &mean1->dp);
-	vector_deinit(&dp_diff);
-	
-	vector_init(&mean_dx_diff, vector_dim(&mean0->mean_dx));
-	vector_assign_copy(&mean_dx_diff, &mean0->mean_dx);
-	vector_sub(&mean_dx_diff, &mean1->mean_dx);
-	vector_axpy(scale, &mean_dx_diff, &mean1->mean_dx);
-	vector_deinit(&mean_dx_diff);
-}
 
+	vector_mean_update(scale, &mean0->dp, &mean1->dp, &work);
+	vector_mean_update(scale, &mean0->mean_dx, &mean1->mean_dx, &work);
+	
+	vector_deinit(&work);
+}
 
 static void imat_update(const struct array *active,
 			ssize_t n0,
@@ -365,6 +381,28 @@ static void imat_update(const struct array *active,
 	assert(imat_active_count(imat0) == array_count(active));
 	assert(imat_active_count(imat0) == imat_active_count(imat1));
 	assert(imat0->imat0 == imat1->imat0);
+	
+	ssize_t ntot = n0 + n1;
+	double scale = ((double)n0) / ntot;
+	
+	ssize_t nactive = vector_dim(&imat0->gamma_dp);
+	ssize_t dyn_dim = vector_dim(&imat0->gamma_mean_dx);
+	ssize_t nwork = MAX(nactive * nactive, dyn_dim * dyn_dim);
+	
+	struct vector work;
+	vector_init(&work, nwork);
+	
+	imat1->gamma2 += scale * (imat0->gamma2 - imat1->gamma2);
+	
+	vector_mean_update(scale, &imat0->gamma_dp, &imat1->gamma_dp, &work);
+	vector_mean_update(scale, &imat0->gamma_mean_dx, &imat1->gamma_mean_dx, &work);
+
+	matrix_mean_update(scale, &imat0->dx_p, &imat1->dx_p, &work);
+	matrix_mean_update(scale, &imat0->mean_dx_dp, &imat1->mean_dx_dp, &work);
+	matrix_mean_update(scale, &imat0->dp2, &imat1->dp2, &work);
+	matrix_mean_update(scale, &imat0->var_dx, &imat1->var_dx, &work);	
+	
+	vector_deinit(&work);
 }
 
 
@@ -477,11 +515,11 @@ static void imat_axpy(double alpha,
 	
 	for (i = 0; i < n; i++) {
 		ssize_t jrecv = *(ssize_t *)array_item(active, i);
-		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
 		
 		svector_set_basis(&e_j, jrecv);
 		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &e_j, 0.0, &x0_j);
 		
+		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
 		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
 		matrix_update1(&y1_, alpha, &dx_p_j, &x0_j);
 		
@@ -788,6 +826,11 @@ void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll, st
 	assert(sll);
 	assert(y);
 
+	const struct model *model = sll->model;
+	const struct design *design = model_design(model);
+	ssize_t isend = sll->isend;
+	
+	imat_axpy(alpha, &sll->imat_avg, &sll->mean_avg, &sll->active, design, isend, y);
 }
 
 void recv_sloglik_axpy_last_imat(double alpha, const struct recv_sloglik *sll, struct matrix *y)
