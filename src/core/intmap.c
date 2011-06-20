@@ -2,8 +2,14 @@
 #include <assert.h>
 #include "intmap.h"
 
-DEFINE_HASH_FN(intptr_hash, intptr_t)
-    DEFINE_EQUALS_FN(intptr_equals, intptr_t)
+//DEFINE_HASH_FN(intptr_hash, intptr_t)
+static uint32_t intptr_hash(const void *x)
+{
+	intptr_t val = *(intptr_t *)x;
+	return (uint32_t) (val * 2654435761UL); /* Knuth's multiplicative method */
+}
+
+DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 
 void intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
