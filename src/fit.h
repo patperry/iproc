@@ -13,7 +13,6 @@
 #include "model.h"
 #include "vector.h"
 
-
 typedef struct _iproc_fit iproc_fit;
 
 struct _iproc_fit {

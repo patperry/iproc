@@ -17,7 +17,6 @@
 		LINESEARCH_STPMAX0 \
 	}
 
-
 struct linesearch_ctrl {
 	double ftol;
 	double gtol;
@@ -38,7 +37,8 @@ struct linesearch {
 /* start/advance */
 void linesearch_start(struct linesearch *ls, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl);
-double linesearch_advance(struct linesearch *ls, double stp, double f, double g);
+double linesearch_advance(struct linesearch *ls, double stp, double f,
+			  double g);
 
 /* convergence/error */
 bool linesearch_converged(const struct linesearch *ls);
@@ -51,7 +51,6 @@ static inline double linesearch_grad(const struct linesearch *ls);
 
 /* control parameters */
 static inline bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl);
-
 
 /* inline function definitions */
 bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl)

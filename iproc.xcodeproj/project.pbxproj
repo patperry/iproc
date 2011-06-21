@@ -707,10 +707,10 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				228160F613B0F60C00B38330 /* bfgs.c */,
-				228160F713B0F60C00B38330 /* bfgs.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
+				228160F613B0F60C00B38330 /* bfgs.c */,
+				228160F713B0F60C00B38330 /* bfgs.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
 				228C2FFE137A380400B5A3B9 /* delegate.h */,

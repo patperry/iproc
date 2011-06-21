@@ -35,17 +35,17 @@ static void iproc_fit_init(iproc_fit * fit)
 	struct bfgs_ctrl ctrl = BFGS_CTRL0;
 	bfgs_init(&fit->opt, dim, &ctrl);
 	vector_init(&fit->grad, dim);
-	
+
 	fit->loglik = recv_loglik_alloc(fit->model, fit->messages);
 
-
 	eval_objective(fit->loglik, fit->penalty, &fit->f, &fit->grad);
-	
-	fit->xnext = bfgs_start(&fit->opt, &fit->model->coefs, fit->f, &fit->grad);
+
+	fit->xnext =
+	    bfgs_start(&fit->opt, &fit->model->coefs, fit->f, &fit->grad);
 }
 
-iproc_fit *iproc_fit_new(struct model * model0,
-			 struct messages * messages, double penalty)
+iproc_fit *iproc_fit_new(struct model *model0,
+			 struct messages *messages, double penalty)
 {
 	assert(model0);
 	assert(messages);
@@ -76,12 +76,11 @@ void iproc_fit_free(iproc_fit * fit)
 	}
 }
 
-
 void iproc_fit_step(iproc_fit * fit)
 {
 	assert(fit);
 	assert(fit->xnext);
-	
+
 	struct model *model = fit->model;
 	struct messages *messages = fit->messages;
 	double penalty = fit->penalty;
@@ -90,12 +89,12 @@ void iproc_fit_step(iproc_fit * fit)
 
 	model_free(model);
 	model = model_alloc(design, fit->xnext);
-	
+
 	/* Update the loglik, value, and gradient */
 	recv_loglik_free(loglik);
 	loglik = recv_loglik_alloc(model, messages);
 	eval_objective(loglik, penalty, &fit->f, &fit->grad);
-	
+
 	fit->xnext = bfgs_advance(&fit->opt, fit->f, &fit->grad);
 }
 

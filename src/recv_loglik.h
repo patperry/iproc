@@ -70,7 +70,7 @@ struct recv_sloglik_imat {
 struct recv_sloglik {
 	struct model *model;
 	ssize_t isend;
-	
+
 	ssize_t n_last, n;
 	double dev_last, dev_avg;
 	struct array active;

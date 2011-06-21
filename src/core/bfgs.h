@@ -17,11 +17,10 @@
 		BFGS_LSCTRL0 \
 	}
 
-
 struct bfgs_ctrl {
-	double abstol;	
+	double abstol;
 	double reltol;
-	ssize_t ls_maxit;	
+	ssize_t ls_maxit;
 	struct linesearch_ctrl ls;
 };
 
@@ -47,8 +46,6 @@ struct bfgs {
 	bool first_step;
 };
 
-
-
 void bfgs_init(struct bfgs *opt, ssize_t n, const struct bfgs_ctrl *ctrl);
 void bfgs_deinit(struct bfgs *opt);
 
@@ -56,8 +53,8 @@ static inline ssize_t bfgs_dim(const struct bfgs *opt);
 
 const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 				double f0, const struct vector *grad0);
-const struct vector *bfgs_advance(struct bfgs *opt, double f, const struct vector *grad);
-
+const struct vector *bfgs_advance(struct bfgs *opt, double f,
+				  const struct vector *grad);
 
 /* convergence/warning */
 bool bfgs_converged(const struct bfgs *opt);
@@ -73,12 +70,11 @@ static inline double bfgs_decrement(const struct bfgs *opt);
 /* control parameters */
 static inline bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl);
 
-
 /* inline function definitions */
 bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl)
 {
 	assert(ctrl);
-	
+
 	return linesearch_ctrl_valid(&ctrl->ls);
 }
 
