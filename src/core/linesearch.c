@@ -2,11 +2,9 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include "util.h"
 #include "linesearch.h"
 
-#define DEFAULT_FTOL 1e-4
-#define DEFAULT_GTOL 0.9
-#define DEFAULT_XTOL 0.1
 
 #define TASK_START	"START"
 #define TASK_FG		"FG"
@@ -22,36 +20,42 @@ extern int dcsrch_(double *stp, double *f, double *g,
 
 static void linesearch_dcscrch(struct linesearch *ls)
 {
+	assert(ls);
+	assert(linesearch_control_valid(&ls->ctrl));
+
 	f77int task_len = sizeof(ls->task) - 1;
-	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ftol, &ls->gtol, &ls->xtol,
-		ls->task, &ls->stpmin, &ls->stpmax, ls->isave, ls->dsave,
-		task_len);
+	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,
+		&ls->ctrl.gtol, &ls->ctrl.xtol,
+		ls->task, &ls->ctrl.stpmin, &ls->ctrl.stpmax,
+		ls->isave, ls->dsave, task_len);
+
 	assert(strncmp(ls->task, TASK_ERROR, strlen(TASK_ERROR)) != 0);
 }
 
-void linesearch_start(struct linesearch *ls, double f0, double g0)
+void linesearch_start(struct linesearch *ls, double f0, double g0, const struct linesearch_ctrl *ctrl)
 {
 	assert(ls);
 	assert(!isnan(f0));
 	assert(g0 < 0.0);
+	assert(ctrl);
+	assert(linesearch_control_valid(ctrl));
 	
+	ls->ctrl = *ctrl;
 	ls->stp = NAN;	
 	ls->f = f0;
 	ls->g = g0;
 	ls->done = false;
-	linesearch_set_fgtol(ls, DEFAULT_FTOL, DEFAULT_GTOL);
-	linesearch_set_xtol(ls, DEFAULT_XTOL);
-	linesearch_set_stpminmax(ls, 0, -f0 / (DEFAULT_GTOL * g0));
 }
 
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g)
 {
 	assert(ls);
+	assert(linesearch_control_valid(&ls->ctrl));
 	assert(stp > 0);
 	assert(isfinite(stp));
 	assert(isfinite(f));
 	assert(isfinite(g));
-	assert(linesearch_stpmin(ls) <= stp && stp <= linesearch_stpmax(ls));
+	assert(ls->ctrl.stpmin <= stp && stp <= ls->ctrl.stpmax);
 	assert(isnan(ls->stp) || stp == ls->stp);
 	assert(isnan(ls->stp) || strncmp(ls->task, TASK_FG, strlen(TASK_FG)) == 0);	
 

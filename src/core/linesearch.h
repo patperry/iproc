@@ -1,16 +1,44 @@
 #ifndef _LINESEARCH_H
 #define _LINESEARCH_H
 
+#include <float.h>
+
+#define LINSEARCH_FTOL0		1e-4
+#define LINSEARCH_GTOL0		0.9
+#define LINSEARCH_XTOL0		DBL_EPSILON
+#define LINSEARCH_STPMIN0	DBL_EPSILON
+#define LINSEARCH_STPMAX0	(1.0/DBL_EPSILON)
+
+
+struct linesearch_ctrl {
+	double ftol;
+	double gtol;
+	double xtol;
+	double stpmin;
+	double stpmax;
+};
+
 struct linesearch {
-	double stp, f, g, ftol, gtol, xtol, stpmin, stpmax;
+	struct linesearch_ctrl ctrl;
+	double stp, f, g;
 	char task[61];
 	f77int isave[2];
 	double dsave[13];
 	bool done;
 };
 
+/* default control */
+const struct linesearch_ctrl LINSEARCH_CTRL0 = {
+	LINSEARCH_FTOL0,
+	LINSEARCH_GTOL0,
+	LINSEARCH_XTOL0,
+	LINSEARCH_STPMIN0,
+	LINSEARCH_STPMAX0
+};
+
 /* start/advance */
-void linesearch_start(struct linesearch *ls, double f0, double g0);
+void linesearch_start(struct linesearch *ls, double f0, double g0,
+		      const struct linesearch_ctrl *ctrl);
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g);
 
 /* convergence failure */
@@ -22,17 +50,29 @@ static inline double linesearch_value(const struct linesearch *ls);
 static inline double linesearch_grad(const struct linesearch *ls);
 
 /* control parameters */
-static inline double linesearch_ftol(const struct linesearch *ls);
-static inline double linesearch_gtol(const struct linesearch *ls);
-static inline void linesearch_set_fgtol(struct linesearch *ls, double ftol, double gtol);
-static inline double linesearch_xtol(const struct linesearch *ls);
-static inline void linesearch_set_xtol(struct linesearch *ls, double xtol);
-static inline double linesearch_stpmin(const struct linesearch *ls);
-static inline double linesearch_stpmax(const struct linesearch *ls);
-static inline void linesearch_set_stpminmax(struct linesearch *ls, double stpmin, double stpmax);
+static inline bool linesearch_control_valid(const struct linesearch_ctrl *ctrl);
 
 
 /* inline function definitions */
+bool linesearch_control_valid(const struct linesearch_ctrl *ctrl)
+{
+	assert(ctrl);
+
+	if (!(ctrl->ftol >= 0)) {
+		return false;
+	} else if (!(ctrl->gtol >= 0)) {
+		return false;
+	} else if (!(ctrl->xtol >= 0)) {
+		return false;
+	} else if (!(ctrl->stpmin >= 0)) {
+		return false;
+	} else if (!(ctrl->stpmax >= ctrl->stpmin)) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
 double linesearch_step(const struct linesearch *ls)
 {
 	assert(ls);
@@ -52,62 +92,6 @@ double linesearch_grad(const struct linesearch *ls)
 	assert(ls);
 	assert(ls->done);
 	return ls->g;
-}
-
-double linesearch_ftol(const struct linesearch *ls)
-{
-	assert(ls);
-	return ls->ftol;
-}
-
-double linesearch_gtol(const struct linesearch *ls)
-{
-	assert(ls);
-	return ls->gtol;
-}
-
-void linesearch_set_fgtol(struct linesearch *ls, double ftol, double gtol)
-{
-	assert(ls);
-	assert(ftol >= 0.0);
-	assert(gtol >= 0.0);
-	assert(ftol < gtol);
-	ls->ftol = ftol;
-	ls->gtol = gtol;
-}
-
-double linesearch_xtol(const struct linesearch *ls)
-{
-	assert(ls);
-	return ls->xtol;
-}
-
-void linesearch_set_xtol(struct linesearch *ls, double xtol)
-{
-	assert(ls);
-	assert(xtol >= 0.0); 
-	ls->xtol = xtol;
-}
-
-double linesearch_stpmin(const struct linesearch *ls)
-{
-	assert(ls);
-	return ls->stpmin;
-}
-
-double linesearch_stpmax(const struct linesearch *ls)
-{
-	assert(ls);
-	return ls->stpmax;
-}
-
-void linesearch_set_stpminmax(struct linesearch *ls, double stpmin, double stpmax)
-{
-	assert(ls);
-	assert(stpmin >= 0.0);
-	assert(stpmax >= stpmin);
-	ls->stpmin = stpmin;
-	ls->stpmax = stpmax;
 }
 
 #endif /* _LINESEARCH_H */
