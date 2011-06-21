@@ -134,6 +134,10 @@
 		228160DC13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DD13B00EF200B38330 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160DA13B00EF200B38330 /* dcstep.c */; };
 		228160DE13B00EF200B38330 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160DA13B00EF200B38330 /* dcstep.c */; };
+		228160F813B0F60C00B38330 /* bfgs.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160F613B0F60C00B38330 /* bfgs.c */; };
+		228160F913B0F60C00B38330 /* bfgs.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160F613B0F60C00B38330 /* bfgs.c */; };
+		228160FA13B0F60C00B38330 /* bfgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 228160F713B0F60C00B38330 /* bfgs.h */; };
+		228160FB13B0F60C00B38330 /* bfgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 228160F713B0F60C00B38330 /* bfgs.h */; };
 		2288809713A9327E00D673A6 /* model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2288809613A9327E00D673A6 /* model_test.c */; };
 		2288809813A932A500D673A6 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2288809913A932A500D673A6 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -526,6 +530,8 @@
 		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
+		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
+		228160F713B0F60C00B38330 /* bfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bfgs.h; path = src/core/bfgs.h; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model_test.c; path = tests/model_test.c; sourceTree = "<group>"; };
 		228C2FFE137A380400B5A3B9 /* delegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = delegate.h; path = src/core/delegate.h; sourceTree = "<group>"; };
@@ -701,6 +707,8 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				228160F613B0F60C00B38330 /* bfgs.c */,
+				228160F713B0F60C00B38330 /* bfgs.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
 				221FEE6D132EC8710000097B /* blas-private.h */,
@@ -966,6 +974,7 @@
 				22FFF12B13871A8B003DDA26 /* timsort.h in Headers */,
 				223BFE4813AA98F300835B8F /* vars.h in Headers */,
 				225ECDB313B00E4100E20D8F /* f2c.h in Headers */,
+				228160FB13B0F60C00B38330 /* bfgs.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1027,6 +1036,7 @@
 				223BFE4713AA98F300835B8F /* vars.h in Headers */,
 				226E3CBF13AFEE610083E9E0 /* linesearch.h in Headers */,
 				225ECDB213B00E4100E20D8F /* f2c.h in Headers */,
+				228160FA13B0F60C00B38330 /* bfgs.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1400,6 +1410,7 @@
 				225ECDB713B00E4100E20D8F /* s_copy.c in Sources */,
 				228160DC13B00EF200B38330 /* dcsrch.c in Sources */,
 				228160DE13B00EF200B38330 /* dcstep.c in Sources */,
+				228160F913B0F60C00B38330 /* bfgs.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1450,6 +1461,7 @@
 				225ECDB613B00E4100E20D8F /* s_copy.c in Sources */,
 				228160DB13B00EF200B38330 /* dcsrch.c in Sources */,
 				228160DD13B00EF200B38330 /* dcstep.c in Sources */,
+				228160F813B0F60C00B38330 /* bfgs.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

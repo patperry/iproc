@@ -21,7 +21,7 @@ extern int dcsrch_(double *stp, double *f, double *g,
 static void linesearch_dcscrch(struct linesearch *ls)
 {
 	assert(ls);
-	assert(linesearch_control_valid(&ls->ctrl));
+	assert(linesearch_ctrl_valid(&ls->ctrl));
 
 	f77int task_len = sizeof(ls->task) - 1;
 	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,
@@ -38,7 +38,7 @@ void linesearch_start(struct linesearch *ls, double f0, double g0, const struct 
 	assert(!isnan(f0));
 	assert(g0 < 0.0);
 	assert(ctrl);
-	assert(linesearch_control_valid(ctrl));
+	assert(linesearch_ctrl_valid(ctrl));
 	
 	ls->ctrl = *ctrl;
 	ls->stp = NAN;	
@@ -50,7 +50,7 @@ void linesearch_start(struct linesearch *ls, double f0, double g0, const struct 
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g)
 {
 	assert(ls);
-	assert(linesearch_control_valid(&ls->ctrl));
+	assert(linesearch_ctrl_valid(&ls->ctrl));
 	assert(stp > 0);
 	assert(isfinite(stp));
 	assert(isfinite(f));

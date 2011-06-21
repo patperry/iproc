@@ -51,11 +51,11 @@ static inline double linesearch_value(const struct linesearch *ls);
 static inline double linesearch_grad(const struct linesearch *ls);
 
 /* control parameters */
-static inline bool linesearch_control_valid(const struct linesearch_ctrl *ctrl);
+static inline bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl);
 
 
 /* inline function definitions */
-bool linesearch_control_valid(const struct linesearch_ctrl *ctrl)
+bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl)
 {
 	assert(ctrl);
 
