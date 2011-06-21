@@ -5,12 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "linesearch.h"
 #include "fit.h"
-
-int dcsrch_(double *stp, double *f, double *g,
-	    double *ftol, double *gtol, double *xtol, char *task,
-	    double *stpmin, double *stpmax, f77int *isave, double *dsave,
-	    f77int task_len);
 
 static void
 eval_objective(struct recv_loglik *loglik,
@@ -119,25 +115,15 @@ static void linesearch(iproc_fit * fit)
 
 	double f = value0;
 	double g = vector_dot(grad0, search_dir);
-	double ftol = 1e-4;
-	double gtol = 0.9;
-	double xtol = 0.1;
-	f77int task_len = 60;
-	char task[task_len + 1];
-	double stpmin = 0;
-	double stpmax = -f / (gtol * g);
-	double stp = g == 0 ? 1.0 : MIN(1.0, stpmax);
-	f77int isave[2];
-	double dsave[13];
 
-	if (f == 0 || g == 0)
+	if (f == 0 || g >= 0)
 		goto cleanup;
 
-	strcpy(task, "START");
-	dcsrch_(&stp, &f, &g, &ftol, &gtol, &xtol, task, &stpmin, &stpmax,
-		isave, dsave, task_len);
+	struct linesearch ls;
+	linesearch_start(&ls, f, g, &LINESEARCH_CTRL0);
+	double stp = 1.0;
 
-	while (strncmp(task, "FG", strlen("FG")) == 0) {
+	do {
 		/* Take a step and create a new model */
 		vector_assign_copy(x, x0);
 		vector_axpy(stp, search_dir, x);
@@ -153,14 +139,10 @@ static void linesearch(iproc_fit * fit)
 		f = value;
 		g = vector_dot(grad, search_dir);
 
-		dcsrch_(&stp, &f, &g, &ftol, &gtol, &xtol, task, &stpmin,
-			&stpmax, isave, dsave, task_len);
-	}
+	} while ((stp = linesearch_advance(&ls, stp, f, g)));
 
-	const char *xtol_msg = "WARNING: XTOL TEST SATISFIED";
-	if (!(strncmp(task, "CONV", strlen("CONV")) == 0
-	      || strncmp(task, xtol_msg, strlen(xtol_msg)) == 0)) {
-		printf("%s\n", task);
+	if (!linesearch_converged(&ls)) {
+		printf("%s\n", linesearch_warning(&ls));
 	}
 
 cleanup:
