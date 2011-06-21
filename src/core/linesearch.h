@@ -3,11 +3,11 @@
 
 #include <float.h>
 
-#define LINSEARCH_FTOL0		1e-4
-#define LINSEARCH_GTOL0		0.9
-#define LINSEARCH_XTOL0		DBL_EPSILON
-#define LINSEARCH_STPMIN0	DBL_EPSILON
-#define LINSEARCH_STPMAX0	(1.0/DBL_EPSILON)
+#define LINESEARCH_FTOL0	1e-4
+#define LINESEARCH_GTOL0	0.9
+#define LINESEARCH_XTOL0	DBL_EPSILON
+#define LINESEARCH_STPMIN0	DBL_EPSILON
+#define LINESEARCH_STPMAX0	(1.0/DBL_EPSILON)
 
 
 struct linesearch_ctrl {
@@ -28,12 +28,12 @@ struct linesearch {
 };
 
 /* default control */
-const struct linesearch_ctrl LINSEARCH_CTRL0 = {
-	LINSEARCH_FTOL0,
-	LINSEARCH_GTOL0,
-	LINSEARCH_XTOL0,
-	LINSEARCH_STPMIN0,
-	LINSEARCH_STPMAX0
+static const struct linesearch_ctrl LINESEARCH_CTRL0 = {
+	LINESEARCH_FTOL0,
+	LINESEARCH_GTOL0,
+	LINESEARCH_XTOL0,
+	LINESEARCH_STPMIN0,
+	LINESEARCH_STPMAX0
 };
 
 /* start/advance */
@@ -41,7 +41,8 @@ void linesearch_start(struct linesearch *ls, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl);
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g);
 
-/* convergence failure */
+/* convergence/warning */
+bool linesearch_converged(const struct linesearch *ls);
 const char *linesearch_warning(const struct linesearch *ls);
 
 /* optimal values */
