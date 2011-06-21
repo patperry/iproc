@@ -3,11 +3,19 @@
 
 #include <float.h>
 
-#define LINESEARCH_FTOL0	1e-4
-#define LINESEARCH_GTOL0	0.9
-#define LINESEARCH_XTOL0	DBL_EPSILON
-#define LINESEARCH_STPMIN0	DBL_EPSILON
-#define LINESEARCH_STPMAX0	(1.0/DBL_EPSILON)
+#define LINESEARCH_FTOL0	(1e-4)
+#define LINESEARCH_GTOL0	(0.9)
+#define LINESEARCH_XTOL0	(1e-15)
+#define LINESEARCH_STPMIN0	(1e-15)
+#define LINESEARCH_STPMAX0	(1e+15)
+
+#define LINESEARCH_CTRL0 { \
+		LINESEARCH_FTOL0, \
+		LINESEARCH_GTOL0, \
+		LINESEARCH_XTOL0, \
+		LINESEARCH_STPMIN0, \
+		LINESEARCH_STPMAX0 \
+	}
 
 
 struct linesearch_ctrl {
@@ -27,23 +35,14 @@ struct linesearch {
 	bool done;
 };
 
-/* default control */
-static const struct linesearch_ctrl LINESEARCH_CTRL0 = {
-	LINESEARCH_FTOL0,
-	LINESEARCH_GTOL0,
-	LINESEARCH_XTOL0,
-	LINESEARCH_STPMIN0,
-	LINESEARCH_STPMAX0
-};
-
 /* start/advance */
 void linesearch_start(struct linesearch *ls, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl);
 double linesearch_advance(struct linesearch *ls, double stp, double f, double g);
 
-/* convergence/warning */
+/* convergence/error */
 bool linesearch_converged(const struct linesearch *ls);
-const char *linesearch_warning(const struct linesearch *ls);
+const char *linesearch_error(const struct linesearch *ls);
 
 /* optimal values */
 static inline double linesearch_step(const struct linesearch *ls);
@@ -77,21 +76,18 @@ bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl)
 double linesearch_step(const struct linesearch *ls)
 {
 	assert(ls);
-	assert(ls->done);
 	return ls->stp;
 }
 
 double linesearch_value(const struct linesearch *ls)
 {
 	assert(ls);
-	assert(ls->done);
 	return ls->f;
 }
 
 double linesearch_grad(const struct linesearch *ls)
 {
 	assert(ls);
-	assert(ls->done);
 	return ls->g;
 }
 

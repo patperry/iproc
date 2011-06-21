@@ -50,6 +50,8 @@ libcore_la_SOURCES = \
 	lib/timsort/timsort.c \
 	src/core/array.c \
 	src/core/array.h \
+	src/core/bfgs.c \
+	src/core/bfgs.h \
 	src/core/blas-private.h \
 	src/core/compare.h \
 	src/core/delegate.h \

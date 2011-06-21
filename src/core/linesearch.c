@@ -86,17 +86,21 @@ double linesearch_advance(struct linesearch *ls, double stp, double f, double g)
 bool linesearch_converged(const struct linesearch *ls)
 {
 	assert(ls);
-	assert(ls->done);
-	return (strncmp(ls->task, TASK_CONV, strlen(TASK_CONV)) == 0);
-
+	if (!ls->done) {
+		return false;
+	} else {
+		return (strncmp(ls->task, TASK_CONV, strlen(TASK_CONV)) == 0);
+	}
 }
 
-const char *linesearch_warning(const struct linesearch *ls)
+const char *linesearch_error(const struct linesearch *ls)
 {
 	assert(ls);
 	assert(ls->done);
-	assert(!linesearch_converged(ls));
-	
-	return ls->task + strlen("WARNING: ");
-}
 
+	if (!ls->done) {
+		return "LINESEARCH FAILED TO CONVERGE";
+	} else {
+		return ls->task + strlen("WARNING: ");
+	}
+}

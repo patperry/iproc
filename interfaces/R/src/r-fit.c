@@ -7,6 +7,7 @@
 #include <R_ext/Utils.h>
 
 #include "fit.h"
+#include "bfgs.h"
 #include "r-messages.h"
 #include "r-model.h"
 #include "r-fit.h"
@@ -65,15 +66,14 @@ Riproc_fit(SEXP Rmodel0,
 		if (trace && it % report == 0) {
 			const char *msg = penalty == 0 ? "" : "(penalized) ";
 			ssize_t n = fit->loglik->nrecv;
-			double dev = 2 * fit->value * n;
-			double dec =
-			    -1 * vector_dot(fit->search_dir, fit->grad) * n;
+			double dev = n * recv_loglik_avg_dev(fit->loglik);
+			double dec = 2 * bfgs_decrement(&fit->opt);
 			Rprintf("iter %d deviance %s%.6f decrement %.6f\n", it,
 				msg, dev, dec);
 		}
-	} while (it < maxit && !iproc_fit_converged(fit, abstol, reltol));
+	} while (it < maxit && !iproc_fit_converged(fit));
 
-	if (it == maxit && !iproc_fit_converged(fit, abstol, reltol)) {
+	if (it == maxit && !iproc_fit_converged(fit)) {
 		warning("algorithm did not converge");
 	}
 
