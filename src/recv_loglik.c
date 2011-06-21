@@ -1018,8 +1018,8 @@ void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
 			       struct vector *y)
 {
 	struct vector avg_mean, diff;
-	vector_init(&avg_mean, model_dim(ll->model));
-	vector_init(&diff, model_dim(ll->model));
+	vector_init(&avg_mean, model_recv_dim(ll->model));
+	vector_init(&diff, model_recv_dim(ll->model));
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
 
@@ -1053,8 +1053,8 @@ void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
 				struct vector *y)
 {
 	struct vector avg_score, diff;
-	vector_init(&avg_score, model_dim(ll->model));
-	vector_init(&diff, model_dim(ll->model));
+	vector_init(&avg_score, model_recv_dim(ll->model));
+	vector_init(&diff, model_recv_dim(ll->model));
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
 
@@ -1088,7 +1088,7 @@ void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
 			       struct matrix *y)
 {
 	struct matrix avg_imat, diff;
-	ssize_t dim = model_dim(ll->model);
+	ssize_t dim = model_recv_dim(ll->model);
 	matrix_init(&avg_imat, dim, dim);
 	matrix_init(&diff, dim, dim);
 	ssize_t ntot, n;

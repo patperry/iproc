@@ -14,18 +14,19 @@
 extern int dcsrch_(double *stp, double *f, double *g,
 		   double *ftol, double *gtol, double *xtol, char *task,
 		   double *stpmin, double *stpmax, f77int *isave,
-		   double *dsave, f77int task_len);
+		   double *dsave, ssize_t task_len);
 
 static void linesearch_dcscrch(struct linesearch *ls)
 {
 	assert(ls);
 	assert(linesearch_ctrl_valid(&ls->ctrl));
 
-	f77int task_len = sizeof(ls->task) - 1;
+	ssize_t task_len = sizeof(ls->task) - 1;
 	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,
 		&ls->ctrl.gtol, &ls->ctrl.xtol,
 		ls->task, &ls->ctrl.stpmin, &ls->ctrl.stpmax,
 		ls->isave, ls->dsave, task_len);
+	assert(task_len == 60);
 
 	assert(strncmp(ls->task, TASK_ERROR, strlen(TASK_ERROR)) != 0);
 }

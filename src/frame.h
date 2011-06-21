@@ -66,7 +66,7 @@ struct frame_event {
 };
 
 struct frame {
-	struct design *design;
+	const struct design *design;
 	struct history history;
 	struct intmap recv_frames;	// (j, dX[t,i) pairs; dX is a 'struct send_frame'
 	struct array vars;
@@ -84,7 +84,7 @@ struct recv_frame {
 };
 
 /* create/destroy */
-void frame_init(struct frame *f, struct design *design);
+void frame_init(struct frame *f, const struct design *design);
 void frame_deinit(struct frame *f);
 
 struct frame *frame_alloc(struct design *design);

@@ -83,7 +83,7 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv)
 	return dx;
 }
 
-static void var_frames_init(struct frame *frame, struct design *design)
+static void var_frames_init(struct frame *frame, const struct design *design)
 {
 	assert(frame);
 	assert(design);
@@ -174,12 +174,12 @@ static void recv_frames_clear(struct frame *f)
 	}
 }
 
-void frame_init(struct frame *f, struct design *design)
+void frame_init(struct frame *f, const struct design *design)
 {
 	assert(f);
 	assert(design);
 
-	f->design = design_ref(design);
+	f->design = design;
 	history_init(&f->history);
 	recv_frames_init(f);
 	var_frames_init(f, design);
@@ -229,7 +229,6 @@ void frame_deinit(struct frame *f)
 	var_frames_deinit(f);
 	recv_frames_deinit(f);
 	history_deinit(&f->history);
-	design_free(f->design);
 }
 
 void frame_clear(struct frame *f)
@@ -701,7 +700,7 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 		svector_scale(y, beta);
 	}
 
-	struct design *design = f->design;
+	const struct design *design = f->design;
 	ssize_t dim = design_recv_dyn_dim(design);
 	ssize_t i;
 

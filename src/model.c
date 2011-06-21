@@ -218,7 +218,7 @@ static struct cohort_model *model_cohort_model(const struct model *model,
 					       ssize_t isend)
 {
 	assert(model);
-	assert(0 <= isend && isend < model_sender_count(model));
+	assert(0 <= isend && isend < model_send_count(model));
 
 	const struct design *design = model_design(model);
 	const struct actors *senders = design_senders(design);
@@ -258,12 +258,12 @@ static void recv_model_init(struct recv_model *rm, struct model *m,
 {
 	assert(rm);
 	assert(m);
-	assert(0 <= isend && isend < model_sender_count(m));
+	assert(0 <= isend && isend < model_send_count(m));
 
 	rm->model = m;
 	rm->isend = isend;
 	rm->cohort = model_cohort_model(m, isend);
-	svector_init(&rm->deta, model_receiver_count(m));
+	svector_init(&rm->deta, model_recv_count(m));
 	array_init(&rm->active, sizeof(ssize_t));
 	recv_model_clear(rm);
 }
@@ -278,7 +278,7 @@ static void recv_model_deinit(struct recv_model *rm)
 static struct recv_model *model_recv_model_raw(struct model *m, ssize_t isend)
 {
 	assert(m);
-	assert(0 <= isend && isend < model_sender_count(m));
+	assert(0 <= isend && isend < model_send_count(m));
 
 	struct intmap_pos pos;
 	struct recv_model *rm;
@@ -292,19 +292,24 @@ static struct recv_model *model_recv_model_raw(struct model *m, ssize_t isend)
 	return rm;
 }
 
-void model_init(struct model *model, struct design *design,
-		const struct vector *coefs)
+void model_init(struct model *model, const struct design *design,
+		const struct vector *recv_coefs)
 {
 	assert(model);
 	assert(design);
-	assert(coefs);
-	assert(design_recv_dim(design) == vector_dim(coefs));
+	assert(!recv_coefs || design_recv_dim(design) == vector_dim(recv_coefs));
 	assert(design_recv_count(design) > 0);
 	assert(!design_loops(design) || design_recv_count(design) > 1);
 
-	model->design = design_ref(design);
-	vector_init_copy(&model->coefs, coefs);
-	cohort_models_init(&model->cohort_models, design, coefs);
+	model->design = design;
+	
+	if (recv_coefs) {
+		vector_init_copy(&model->recv_coefs, recv_coefs);
+	} else {
+		vector_init(&model->recv_coefs, design_recv_dim(design));
+	}
+	
+	cohort_models_init(&model->cohort_models, design, &model->recv_coefs);
 	intmap_init(&model->recv_models, sizeof(struct recv_model),
 		    alignof(struct recv_model));
 	refcount_init(&model->refcount);
@@ -323,11 +328,10 @@ void model_deinit(struct model *model)
 
 	intmap_deinit(&model->recv_models);
 	cohort_models_deinit(&model->cohort_models);
-	vector_deinit(&model->coefs);
-	design_free(model->design);
+	vector_deinit(&model->recv_coefs);
 }
 
-struct model *model_alloc(struct design *design, const struct vector *coefs)
+struct model *model_alloc(const struct design *design, const struct vector *coefs)
 {
 	assert(design);
 	assert(coefs);
@@ -356,36 +360,36 @@ void model_free(struct model *model)
 	}
 }
 
-struct design *model_design(const struct model *model)
+const struct design *model_design(const struct model *model)
 {
 	assert(model);
 	return model->design;
 }
 
-struct vector *model_coefs(const struct model *model)
+const struct vector *model_recv_coefs(const struct model *model)
 {
 	assert(model);
-	return &((struct model *)model)->coefs;
+	return &((struct model *)model)->recv_coefs;
 }
 
-ssize_t model_sender_count(const struct model *model)
+ssize_t model_send_count(const struct model *model)
 {
 	assert(model);
-	struct design *design = model_design(model);
+	const struct design *design = model_design(model);
 	return design_send_count(design);
 }
 
-ssize_t model_receiver_count(const struct model *model)
+ssize_t model_recv_count(const struct model *model)
 {
 	assert(model);
-	struct design *design = model_design(model);
+	const struct design *design = model_design(model);
 	return design_recv_count(design);
 }
 
-ssize_t model_dim(const struct model *model)
+ssize_t model_recv_dim(const struct model *model)
 {
 	assert(model);
-	struct design *design = model_design(model);
+	const struct design *design = model_design(model);
 	return design_recv_dim(design);
 }
 
@@ -432,7 +436,7 @@ static void process_recv_var_event(struct model *m, const struct frame_event *e)
 	const struct recv_var_event_meta *meta = &e->meta.recv_var;
 	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
 	const struct cohort_model *cm = rm->cohort;
-	const struct vector *coefs = model_coefs(m);
+	const struct vector *coefs = model_recv_coefs(m);
 
 	ssize_t jrecv = meta->item.jrecv;
 	struct svector_pos pos;

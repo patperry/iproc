@@ -9,7 +9,7 @@
 #include "fit.h"
 #include "bfgs.h"
 #include "r-messages.h"
-#include "r-model.h"
+#include "r-design.h"
 #include "r-fit.h"
 
 static R_CallMethodDef callMethods[] = {
@@ -23,12 +23,12 @@ void Riproc_fit_init(DllInfo * info)
 }
 
 SEXP
-Riproc_fit(SEXP Rmodel0,
+Riproc_fit(SEXP Rdesign,
 	   SEXP Rmessages,
 	   SEXP Rpenalty,
 	   SEXP Rreltol, SEXP Rabstol, SEXP Rmaxit, SEXP Rtrace, SEXP Rreport)
 {
-	struct model *model0 = Riproc_to_model(Rmodel0);
+	struct design *design = Riproc_to_design(Rdesign);
 	struct messages *messages = Riproc_to_messages(Rmessages);
 	double penalty = REAL(Rpenalty)[0];
 	double reltol = REAL(Rreltol)[0];
@@ -37,9 +37,9 @@ Riproc_fit(SEXP Rmodel0,
 	bool trace = LOGICAL_VALUE(Rtrace);
 	int report = INTEGER_VALUE(Rreport);
 
-	if (messages_max_from(messages) >= model_sender_count(model0)) {
+	if (messages_max_from(messages) >= design_send_count(design)) {
 		error("message 'from' id outside sender range");
-	} else if (messages_max_to(messages) >= model_receiver_count(model0)) {
+	} else if (messages_max_to(messages) >= design_recv_count(design)) {
 		error("message 'to' id outside receiver range");
 	} else if (!(penalty >= 0.0 && isfinite(penalty))) {
 		error("value of 'penalty' must be >= 0 and finite");
@@ -55,32 +55,29 @@ Riproc_fit(SEXP Rmodel0,
 		error("'report' value must be positive");
 	}
 
-	iproc_fit *fit = iproc_fit_new(model0, messages, penalty);
+	struct recv_fit fit;
+	recv_fit_init(&fit, messages, design, NULL, penalty);
 	int it = 0;
 
 	do {
 		R_CheckUserInterrupt();
 		it++;
-		iproc_fit_step(fit);
+		recv_fit_step(&fit);
 
 		if (trace && it % report == 0) {
 			const char *msg = penalty == 0 ? "" : "(penalized) ";
-			ssize_t n = fit->loglik->nrecv;
-			double dev = n * recv_loglik_avg_dev(fit->loglik);
-			double dec = 2 * bfgs_decrement(&fit->opt);
+			ssize_t n = recv_loglik_count(&fit.loglik);
+			double dev = n * recv_loglik_avg_dev(&fit.loglik);
+			double dec = -2 * bfgs_decrement(&fit.opt);
 			Rprintf("iter %d deviance %s%.6f decrement %.6f\n", it,
 				msg, dev, dec);
 		}
-	} while (it < maxit && !iproc_fit_converged(fit));
+	} while (it < maxit && !recv_fit_converged(&fit));
 
-	if (it == maxit && !iproc_fit_converged(fit)) {
+	if (it == maxit && !recv_fit_converged(&fit)) {
 		warning("algorithm did not converge");
 	}
 
-	SEXP Rmodel;
-	PROTECT(Rmodel = Riproc_from_model(fit->model));
-	iproc_fit_free(fit);
-
-	UNPROTECT(1);
-	return Rmodel;
+	assert(0 && "return value not implemented");
+	return NULL;
 }

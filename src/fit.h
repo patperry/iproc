@@ -13,24 +13,31 @@
 #include "model.h"
 #include "vector.h"
 
-typedef struct _iproc_fit iproc_fit;
 
-struct _iproc_fit {
-	struct model *model;
-	struct messages *messages;
+struct recv_fit {
+	const struct design *design;
+	const struct messages *msgs;
 	double penalty;
-	struct recv_loglik *loglik;
+
+	struct frame frame;	
+	struct model model;
+	struct recv_loglik loglik;
+	
 	struct bfgs opt;
 	double f;
 	struct vector grad;
 	const struct vector *xnext;
 };
 
-iproc_fit *iproc_fit_new(struct model *model0,
-			 struct messages *messages, double penalty);
-void iproc_fit_free(iproc_fit * fit);
 
-bool iproc_fit_converged(iproc_fit * fit);
-void iproc_fit_step(iproc_fit * fit);
+void recv_fit_init(struct recv_fit *fit,
+		   const struct messages *msgs,
+		   const struct design *design,
+		   const struct vector *coefs0,
+		   double penalty);
+void recv_fit_deinit(struct recv_fit *fit);
+void recv_fit_step(struct recv_fit *fit);
+bool recv_fit_converged(struct recv_fit *fit);
+
 
 #endif /* _IPROC_FIT_H */

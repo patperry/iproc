@@ -139,25 +139,25 @@ struct recv_model {
 };
 
 struct model {
-	struct design *design;
-	struct vector coefs;
+	const struct design *design;
+	struct vector recv_coefs;
 	struct intmap cohort_models;
 	struct intmap recv_models;
 	struct refcount refcount;
 };
 
 void model_init(struct model *model,
-		struct design *design, const struct vector *coefs);
+		const struct design *design, const struct vector *recv_coefs);
 void model_deinit(struct model *model);
-struct model *model_alloc(struct design *design, const struct vector *coefs);
+struct model *model_alloc(const struct design *design, const struct vector *recv_coefs);
 struct model *model_ref(struct model *model);
 void model_free(struct model *model);
 
-struct design *model_design(const struct model *model);
-struct vector *model_coefs(const struct model *model);
-ssize_t model_sender_count(const struct model *model);
-ssize_t model_receiver_count(const struct model *model);
-ssize_t model_dim(const struct model *model);
+const struct design *model_design(const struct model *model);
+const struct vector *model_recv_coefs(const struct model *model);
+ssize_t model_send_count(const struct model *model);
+ssize_t model_recv_count(const struct model *model);
+ssize_t model_recv_dim(const struct model *model);
 
 void model_clear(struct model *m);
 void model_update(struct model *m, const struct frame *f);

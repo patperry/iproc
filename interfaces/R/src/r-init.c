@@ -9,7 +9,6 @@
 #include "r-design.h"
 #include "r-fit.h"
 #include "r-messages.h"
-#include "r-model.h"
 #include "r-utils.h"
 
 void R_init_iproc(DllInfo * info)
@@ -18,7 +17,6 @@ void R_init_iproc(DllInfo * info)
 	Riproc_design_init(info);
 	Riproc_fit_init(info);
 	Riproc_messages_init(info);
-	Riproc_model_init(info);
 	Riproc_utils_init(info);
 }
 

@@ -8,97 +8,83 @@
 #include "linesearch.h"
 #include "fit.h"
 
-static void
-eval_objective(struct recv_loglik *loglik,
-	       double penalty, double *valuep, struct vector *grad)
+
+static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 {
-	struct model *model = loglik->model;
-	struct vector *coefs = &model->coefs;
-
-	double n = loglik->nrecv;
-	double ll_value = -recv_loglik_avg_dev(loglik) / 2.0;
-
+	frame_clear(&fit->frame);
+	model_clear(&fit->model);
+	
+	// update coefs
+	coefs = model_recv_coefs(&fit->model);
+	
+	recv_loglik_clear(&fit->loglik);
+	recv_loglik_add_all(&fit->loglik, &fit->frame, fit->msgs);
+	
+	double n = recv_loglik_count(&fit->loglik);
+	double ll = -0.5 * recv_loglik_avg_dev(&fit->loglik);
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
-	double value = -ll_value / n + 0.5 * (penalty / n) * norm2;
-	*valuep = value;
+	
+	fit->f = ll + 0.5 * fit->penalty * (norm2 / n);
 
-	vector_assign_copy(grad, coefs);
-	vector_scale(grad, penalty / n);
-	recv_loglik_axpy_avg_score(1.0, loglik, grad);
+	vector_assign_copy(&fit->grad, coefs);
+	vector_scale(&fit->grad, fit->penalty / n);
+	recv_loglik_axpy_avg_score(-1.0, &fit->loglik, &fit->grad);
 }
 
-static void iproc_fit_init(iproc_fit * fit)
-{
-	ssize_t dim = model_dim(fit->model);
 
+void recv_fit_init(struct recv_fit *fit,
+		   const struct messages *msgs,
+		   const struct design *design,
+		   const struct vector *coefs0,
+		   double penalty)
+{
+	assert(fit);
+	assert(msgs);
+	assert(design);	
+	assert(messages_max_to(msgs) < design_send_count(design));
+	assert(messages_max_from(msgs) < design_recv_count(design));
+	assert(!coefs0 || vector_dim(coefs0) == design_recv_dim(design));
+	assert(penalty >= 0.0 && isfinite(penalty));
+	
+	ssize_t dim = design_recv_dim(design);
+
+	fit->design = design;
+	fit->msgs = msgs;
+	fit->penalty = penalty;
+	
+	frame_init(&fit->frame, design);
+	model_init(&fit->model, fit->design, coefs0);
+	recv_loglik_init(&fit->loglik, &fit->model);
+	
 	struct bfgs_ctrl ctrl = BFGS_CTRL0;
 	bfgs_init(&fit->opt, dim, &ctrl);
 	vector_init(&fit->grad, dim);
 
-	fit->loglik = recv_loglik_alloc(fit->model, fit->messages);
-
-	eval_objective(fit->loglik, fit->penalty, &fit->f, &fit->grad);
-
-	fit->xnext =
-	    bfgs_start(&fit->opt, &fit->model->coefs, fit->f, &fit->grad);
+	recv_fit_set(fit, coefs0);
+	fit->xnext = bfgs_start(&fit->opt, model_recv_coefs(&fit->model), fit->f, &fit->grad);
 }
 
-iproc_fit *iproc_fit_new(struct model *model0,
-			 struct messages *messages, double penalty)
+void recv_fit_deinit(struct recv_fit *fit)
 {
-	assert(model0);
-	assert(messages);
-	assert(penalty >= 0.0);
-	assert(messages_max_from(messages) < model_sender_count(model0));
-	assert(messages_max_to(messages) < model_receiver_count(model0));
-
-	iproc_fit *fit = xcalloc(1, sizeof(*fit));
-
-	fit->model = model_ref(model0);
-	fit->messages = messages_ref(messages);
-	fit->penalty = penalty;
-	fit->loglik = NULL;
-
-	iproc_fit_init(fit);
-	return fit;
+	assert(fit);
+	vector_deinit(&fit->grad);
+	bfgs_deinit(&fit->opt);	
+	recv_loglik_deinit(&fit->loglik);
+	model_deinit(&fit->model);
+	frame_deinit(&fit->frame);
 }
 
-void iproc_fit_free(iproc_fit * fit)
-{
-	if (fit) {
-		recv_loglik_free(fit->loglik);
-		bfgs_deinit(&fit->opt);
-		vector_deinit(&fit->grad);
-		messages_free(fit->messages);
-		model_free(fit->model);
-		xfree(fit);
-	}
-}
-
-void iproc_fit_step(iproc_fit * fit)
+void recv_fit_step(struct recv_fit *fit)
 {
 	assert(fit);
 	assert(fit->xnext);
 
-	struct model *model = fit->model;
-	struct messages *messages = fit->messages;
-	double penalty = fit->penalty;
-	struct design *design = design_ref(model->design);
-	struct recv_loglik *loglik = fit->loglik;
-
-	model_free(model);
-	model = model_alloc(design, fit->xnext);
-
-	/* Update the loglik, value, and gradient */
-	recv_loglik_free(loglik);
-	loglik = recv_loglik_alloc(model, messages);
-	eval_objective(loglik, penalty, &fit->f, &fit->grad);
-
+	recv_fit_set(fit, fit->xnext);
 	fit->xnext = bfgs_advance(&fit->opt, fit->f, &fit->grad);
 }
 
-bool iproc_fit_converged(iproc_fit * fit)
+bool recv_fit_converged(struct recv_fit *fit)
 {
 	return bfgs_converged(&fit->opt);
 }

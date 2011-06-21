@@ -122,12 +122,8 @@
 		22708BB713311B8E0055AD94 /* r-fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA513311B8E0055AD94 /* r-fit.c */; };
 		22708BB813311B8E0055AD94 /* r-fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA613311B8E0055AD94 /* r-fit.h */; };
 		22708BB913311B8E0055AD94 /* r-init.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA713311B8E0055AD94 /* r-init.c */; };
-		22708BBA13311B8E0055AD94 /* r-loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BA813311B8E0055AD94 /* r-loglik.c */; };
-		22708BBB13311B8E0055AD94 /* r-loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BA913311B8E0055AD94 /* r-loglik.h */; };
 		22708BBC13311B8E0055AD94 /* r-messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAA13311B8E0055AD94 /* r-messages.c */; };
 		22708BBD13311B8E0055AD94 /* r-messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAB13311B8E0055AD94 /* r-messages.h */; };
-		22708BBE13311B8E0055AD94 /* r-model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAC13311B8E0055AD94 /* r-model.c */; };
-		22708BBF13311B8E0055AD94 /* r-model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAD13311B8E0055AD94 /* r-model.h */; };
 		22708BC013311B8E0055AD94 /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAE13311B8E0055AD94 /* r-utils.c */; };
 		22708BC113311B8E0055AD94 /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAF13311B8E0055AD94 /* r-utils.h */; };
 		228160DB13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
@@ -138,6 +134,9 @@
 		228160F913B0F60C00B38330 /* bfgs.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160F613B0F60C00B38330 /* bfgs.c */; };
 		228160FA13B0F60C00B38330 /* bfgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 228160F713B0F60C00B38330 /* bfgs.h */; };
 		228160FB13B0F60C00B38330 /* bfgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 228160F713B0F60C00B38330 /* bfgs.h */; };
+		2285AD1A13B147E900C46E8B /* enronfit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2285AD1913B147E900C46E8B /* enronfit.c */; };
+		2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
+		2285AD1C13B147F300C46E8B /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		2288809713A9327E00D673A6 /* model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2288809613A9327E00D673A6 /* model_test.c */; };
 		2288809813A932A500D673A6 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2288809913A932A500D673A6 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -256,6 +255,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 22678905134CD584001309F5;
 			remoteInfo = cmockery;
+		};
+		2285AD1D13B1480300C46E8B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
+			remoteInfo = enron;
+		};
+		2285AD1F13B1480300C46E8B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
 		};
 		2288809B13A932B100D673A6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -401,6 +414,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		2285AD0713B1474200C46E8B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		2288808B13A9325D00D673A6 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -520,18 +542,16 @@
 		22708BA513311B8E0055AD94 /* r-fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-fit.c"; path = "interfaces/R/src/r-fit.c"; sourceTree = "<group>"; };
 		22708BA613311B8E0055AD94 /* r-fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-fit.h"; path = "interfaces/R/src/r-fit.h"; sourceTree = "<group>"; };
 		22708BA713311B8E0055AD94 /* r-init.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-init.c"; path = "interfaces/R/src/r-init.c"; sourceTree = "<group>"; };
-		22708BA813311B8E0055AD94 /* r-loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-loglik.c"; path = "interfaces/R/src/r-loglik.c"; sourceTree = "<group>"; };
-		22708BA913311B8E0055AD94 /* r-loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-loglik.h"; path = "interfaces/R/src/r-loglik.h"; sourceTree = "<group>"; };
 		22708BAA13311B8E0055AD94 /* r-messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-messages.c"; path = "interfaces/R/src/r-messages.c"; sourceTree = "<group>"; };
 		22708BAB13311B8E0055AD94 /* r-messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-messages.h"; path = "interfaces/R/src/r-messages.h"; sourceTree = "<group>"; };
-		22708BAC13311B8E0055AD94 /* r-model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-model.c"; path = "interfaces/R/src/r-model.c"; sourceTree = "<group>"; };
-		22708BAD13311B8E0055AD94 /* r-model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-model.h"; path = "interfaces/R/src/r-model.h"; sourceTree = "<group>"; };
 		22708BAE13311B8E0055AD94 /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "interfaces/R/src/r-utils.c"; sourceTree = "<group>"; };
 		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
 		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
 		228160F713B0F60C00B38330 /* bfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bfgs.h; path = src/core/bfgs.h; sourceTree = "<group>"; };
+		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
+		2285AD1913B147E900C46E8B /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enron/enronfit.c; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model_test.c; path = tests/model_test.c; sourceTree = "<group>"; };
 		228C2FFE137A380400B5A3B9 /* delegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = delegate.h; path = src/core/delegate.h; sourceTree = "<group>"; };
@@ -642,6 +662,15 @@
 			files = (
 				22678934134CD75B001309F5 /* libcmockery.dylib in Frameworks */,
 				2267891F134CD6AB001309F5 /* libRiproc.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2285AD0613B1474200C46E8B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */,
+				2285AD1C13B147F300C46E8B /* libiproc.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -761,12 +790,8 @@
 				22708BA513311B8E0055AD94 /* r-fit.c */,
 				22708BA613311B8E0055AD94 /* r-fit.h */,
 				22708BA713311B8E0055AD94 /* r-init.c */,
-				22708BA813311B8E0055AD94 /* r-loglik.c */,
-				22708BA913311B8E0055AD94 /* r-loglik.h */,
 				22708BAA13311B8E0055AD94 /* r-messages.c */,
 				22708BAB13311B8E0055AD94 /* r-messages.h */,
-				22708BAC13311B8E0055AD94 /* r-model.c */,
-				22708BAD13311B8E0055AD94 /* r-model.h */,
 				22708BAE13311B8E0055AD94 /* r-utils.c */,
 				22708BAF13311B8E0055AD94 /* r-utils.h */,
 			);
@@ -835,9 +860,9 @@
 		2275BB84132EAC9D002D8876 = {
 			isa = PBXGroup;
 			children = (
-				22678906134CD584001309F5 /* libcmockery.dylib */,
 				22D2DDB3136A5E5B0048244C /* libenron.dylib */,
 				222FC40D13607C3F00E64FC9 /* libiproc.dylib */,
+				22678906134CD584001309F5 /* libcmockery.dylib */,
 				22678900134CD568001309F5 /* Tests */,
 				221FEE68132EC83F0000097B /* Core */,
 				22597404133D0ABE0022B52E /* IProc */,
@@ -860,6 +885,7 @@
 				22221812136F1A8C00F0C7D2 /* frame_test */,
 				2288808D13A9325D00D673A6 /* model_test */,
 				22D4787E13AC4BF600FF46CD /* recv_loglik_test */,
+				2285AD0913B1474200C46E8B /* enronfit */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -922,6 +948,7 @@
 		22D2DDAA136A57DD0048244C /* enron */ = {
 			isa = PBXGroup;
 			children = (
+				2285AD1913B147E900C46E8B /* enronfit.c */,
 				22D2DDAB136A58010048244C /* employees.c */,
 				22D2DDAC136A58010048244C /* enron.h */,
 				22EA3337136B4CEC00C5627F /* messages.c */,
@@ -993,9 +1020,7 @@
 				22708BB113311B8E0055AD94 /* r-actors.h in Headers */,
 				22708BB613311B8E0055AD94 /* r-design.h in Headers */,
 				22708BB813311B8E0055AD94 /* r-fit.h in Headers */,
-				22708BBB13311B8E0055AD94 /* r-loglik.h in Headers */,
 				22708BBD13311B8E0055AD94 /* r-messages.h in Headers */,
-				22708BBF13311B8E0055AD94 /* r-model.h in Headers */,
 				22708BC113311B8E0055AD94 /* r-utils.h in Headers */,
 				22A2F8A2133158B000E97C79 /* config.h in Headers */,
 				225973FF133CE9AD0022B52E /* compare.h in Headers */,
@@ -1193,6 +1218,25 @@
 			productReference = 22678913134CD651001309F5 /* pqueue_test */;
 			productType = "com.apple.product-type.tool";
 		};
+		2285AD0813B1474200C46E8B /* enronfit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2285AD0F13B1474200C46E8B /* Build configuration list for PBXNativeTarget "enronfit" */;
+			buildPhases = (
+				2285AD0513B1474200C46E8B /* Sources */,
+				2285AD0613B1474200C46E8B /* Frameworks */,
+				2285AD0713B1474200C46E8B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2285AD1E13B1480300C46E8B /* PBXTargetDependency */,
+				2285AD2013B1480300C46E8B /* PBXTargetDependency */,
+			);
+			name = enronfit;
+			productName = enronfit;
+			productReference = 2285AD0913B1474200C46E8B /* enronfit */;
+			productType = "com.apple.product-type.tool";
+		};
 		2288808C13A9325D00D673A6 /* model_test */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2288809313A9325D00D673A6 /* Build configuration list for PBXNativeTarget "model_test" */;
@@ -1342,6 +1386,7 @@
 				22221811136F1A8C00F0C7D2 /* frame_test */,
 				2288808C13A9325D00D673A6 /* model_test */,
 				22D4787D13AC4BF600FF46CD /* recv_loglik_test */,
+				2285AD0813B1474200C46E8B /* enronfit */,
 			);
 		};
 /* End PBXProject section */
@@ -1428,9 +1473,7 @@
 				22708BB513311B8E0055AD94 /* r-design.c in Sources */,
 				22708BB713311B8E0055AD94 /* r-fit.c in Sources */,
 				22708BB913311B8E0055AD94 /* r-init.c in Sources */,
-				22708BBA13311B8E0055AD94 /* r-loglik.c in Sources */,
 				22708BBC13311B8E0055AD94 /* r-messages.c in Sources */,
-				22708BBE13311B8E0055AD94 /* r-model.c in Sources */,
 				22708BC013311B8E0055AD94 /* r-utils.c in Sources */,
 				22597402133D081B0022B52E /* matrix.c in Sources */,
 				2259741C133D0AFB0022B52E /* actors.c in Sources */,
@@ -1478,6 +1521,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				2267891D134CD66F001309F5 /* pqueue_test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2285AD0513B1474200C46E8B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2285AD1A13B147E900C46E8B /* enronfit.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1580,6 +1631,16 @@
 			isa = PBXTargetDependency;
 			target = 22678905134CD584001309F5 /* cmockery */;
 			targetProxy = 22678924134CD708001309F5 /* PBXContainerItemProxy */;
+		};
+		2285AD1E13B1480300C46E8B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22D2DDB2136A5E5B0048244C /* enron */;
+			targetProxy = 2285AD1D13B1480300C46E8B /* PBXContainerItemProxy */;
+		};
+		2285AD2013B1480300C46E8B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 2285AD1F13B1480300C46E8B /* PBXContainerItemProxy */;
 		};
 		2288809C13A932B100D673A6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1873,6 +1934,28 @@
 			};
 			name = Release;
 		};
+		2285AD1013B1474200C46E8B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		2285AD1113B1474200C46E8B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		2288809413A9325D00D673A6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2095,6 +2178,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		2285AD0F13B1474200C46E8B /* Build configuration list for PBXNativeTarget "enronfit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2285AD1013B1474200C46E8B /* Debug */,
+				2285AD1113B1474200C46E8B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		2288809313A9325D00D673A6 /* Build configuration list for PBXNativeTarget "model_test" */ = {
 			isa = XCConfigurationList;

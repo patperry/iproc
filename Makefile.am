@@ -183,12 +183,8 @@ rpkg_sources = \
 	interfaces/R/src/r-fit.c \
 	interfaces/R/src/r-fit.h \
 	interfaces/R/src/r-init.c \
-	interfaces/R/src/r-loglik.c \
-	interfaces/R/src/r-loglik.h \
 	interfaces/R/src/r-messages.c \
 	interfaces/R/src/r-messages.h \
-	interfaces/R/src/r-model.c \
-	interfaces/R/src/r-model.h \
 	interfaces/R/src/r-utils.c \
 	interfaces/R/src/r-utils.h \
 	interfaces/R/tests/doRUnit.R
