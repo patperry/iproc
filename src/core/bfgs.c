@@ -21,6 +21,7 @@ static void update_searchdir(struct bfgs *opt, const struct vector *grad)
 
 	matrix_mul(-1.0, TRANS_NOTRANS, &opt->inv_hess, grad,
 		   0.0, &opt->search_dir);
+	assert(isfinite(vector_norm(&opt->search_dir)));
 }
 
 static void update_hess(struct bfgs *opt, const struct vector *grad)
@@ -45,6 +46,7 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 
 		if (s_y > 0) {
 			double s_s = vector_dot(s, s);
+			assert(s_s > 0);
 			scale = s_y / s_s;
 		}
 
@@ -56,6 +58,7 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 		}
 		opt->first_step = false;
 	} else {
+		assert(s_y > 0);
 		/* compute H_y */
 		struct vector *H_y = &opt->H_y;
 		matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
@@ -132,6 +135,7 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 		vector_assign_copy(&opt->search_dir, grad0);
 		vector_scale(&opt->search_dir, -1.0 / scale);
 		opt->g0 = vector_dot(&opt->grad0, &opt->search_dir);
+		assert(opt->g0 < 0);
 		return linesearch(opt, step0);
 	} else {
 		opt->done = true;
@@ -158,6 +162,9 @@ static bool converged(const struct bfgs *opt, double f,
 const struct vector *bfgs_advance(struct bfgs *opt, double f,
 				  const struct vector *grad)
 {
+	assert(isfinite(f));
+	assert(isfinite(vector_norm(grad)));
+
 	double g = vector_dot(grad, &opt->search_dir);
 
 	/* linesearch in progress */
@@ -178,6 +185,8 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 		return NULL;
 	}
 
+	opt->step = linesearch_step(&opt->ls);
+	assert(opt->step > 0);
 	update_hess(opt, grad);
 	update_searchdir(opt, grad);
 
@@ -188,6 +197,7 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 	opt->f0 = f;
 	vector_assign_copy(&opt->grad0, grad);
 	opt->g0 = vector_dot(grad, &opt->search_dir);
+	assert(opt->g0 < 0);
 
 	if (opt->done) {
 		opt->errmsg = NULL;
