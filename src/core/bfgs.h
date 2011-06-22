@@ -31,9 +31,6 @@ struct bfgs {
 	struct vector grad0;
 	struct vector x0;
 	struct vector x;
-	double f0;
-	double g0;
-	double step;
 	ssize_t ls_it;
 	bool done;
 	const char *errmsg;
@@ -94,7 +91,7 @@ const struct vector *bfgs_location(const struct bfgs *opt)
 double bfgs_value(const struct bfgs *opt)
 {
 	assert(opt);
-	return opt->f0;
+	return linesearch_value(&opt->ls);
 }
 
 const struct vector *bfgs_grad(const struct bfgs *opt)
@@ -113,7 +110,7 @@ const struct matrix *bfgs_inv_hess(const struct bfgs *opt)
 double bfgs_decrement(const struct bfgs *opt)
 {
 	assert(opt);
-	return opt->g0;
+	return linesearch_grad0(&opt->ls);
 }
 
 #endif /* _BFGS_H */

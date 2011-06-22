@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	double penalty = 10.0;
+	double penalty = 0.0;
 	ssize_t maxit = 5000;
 	ssize_t report = 1;
 	bool trace = true;

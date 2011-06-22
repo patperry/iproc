@@ -11,6 +11,7 @@
 
 static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 {
+	assert(coefs);
 	frame_clear(&fit->frame);
 	model_clear(&fit->model);
 	
@@ -65,6 +66,11 @@ void recv_fit_init(struct recv_fit *fit,
 	bfgs_init(&fit->opt, dim, &ctrl);
 	vector_init(&fit->grad, dim);
 
+	if (!coefs0) {
+		vector_fill(&fit->grad, 1.0); // use grad for temp storage
+		coefs0 = &fit->grad;
+	}
+	
 	recv_fit_set(fit, coefs0);
 	fit->xnext = bfgs_start(&fit->opt, model_recv_coefs(&fit->model), fit->f, &fit->grad);
 }

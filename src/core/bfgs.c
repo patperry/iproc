@@ -3,14 +3,13 @@
 #include <math.h>
 #include "bfgs.h"
 
-static const struct vector *linesearch(struct bfgs *opt, double step0)
+static const struct vector *linesearch(struct bfgs *opt, double step0, double f0, double g0)
 {
 	opt->ls_it = 0;
-	opt->step = step0;
 	vector_assign_copy(&opt->x, &opt->x0);
-	vector_axpy(opt->step, &opt->search_dir, &opt->x);
+	vector_axpy(step0, &opt->search_dir, &opt->x);
 
-	linesearch_start(&opt->ls, opt->f0, opt->g0, &opt->ctrl.ls);
+	linesearch_start(&opt->ls, step0, f0, g0, &opt->ctrl.ls);
 	return &opt->x;
 }
 
@@ -32,7 +31,7 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 
 	/* compute s */
 	vector_assign_copy(s, &opt->search_dir);
-	vector_scale(s, opt->step);
+	vector_scale(s, linesearch_step(&opt->ls));
 
 	/* compute y */
 	vector_assign_copy(y, grad);
@@ -57,20 +56,20 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 			matrix_set_item(H, i, i, scale);
 		}
 		opt->first_step = false;
-	} else {
-		assert(s_y > 0);
-		/* compute H_y */
-		struct vector *H_y = &opt->H_y;
-		matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
-
-		double y_H_y = vector_dot(H_y, y);
-		double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
-		double rho = 1.0 / s_y;
-
-		matrix_update1(H, scale1, s, s);
-		matrix_update1(H, -rho, H_y, s);
-		matrix_update1(H, -rho, s, H_y);
 	}
+
+	assert(s_y > 0);
+	/* compute H_y */
+	struct vector *H_y = &opt->H_y;
+	matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
+
+	double y_H_y = vector_dot(H_y, y);
+	double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
+	double rho = 1.0 / s_y;
+
+	matrix_update1(H, scale1, s, s);
+	matrix_update1(H, -rho, H_y, s);
+	matrix_update1(H, -rho, s, H_y);
 }
 
 void bfgs_init(struct bfgs *opt, ssize_t n, const struct bfgs_ctrl *ctrl)
@@ -116,7 +115,6 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 	double step0 = 1.0;
 
 	opt->first_step = true;
-	opt->f0 = f0;
 	vector_assign_copy(&opt->x0, x0);
 	vector_assign_copy(&opt->grad0, grad0);
 
@@ -134,14 +132,12 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 
 		vector_assign_copy(&opt->search_dir, grad0);
 		vector_scale(&opt->search_dir, -1.0 / scale);
-		opt->g0 = vector_dot(&opt->grad0, &opt->search_dir);
-		assert(opt->g0 < 0);
-		return linesearch(opt, step0);
+		double g0 = vector_dot(&opt->grad0, &opt->search_dir);
+		assert(g0 < 0);
+		return linesearch(opt, step0, f0, g0);
 	} else {
 		opt->done = true;
 		opt->errmsg = NULL;
-
-		opt->g0 = 0;
 		return NULL;
 	}
 }
@@ -166,27 +162,31 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 	assert(isfinite(vector_norm(grad)));
 
 	double g = vector_dot(grad, &opt->search_dir);
+	enum linesearch_task task = linesearch_advance(&opt->ls, f, g);
 
-	/* linesearch in progress */
-	if ((opt->step = linesearch_advance(&opt->ls, opt->step, f, g))) {
+	
+	switch (task) {
+	case LINESEARCH_CONV:
+		break;
+
+	case LINESEARCH_STEP:
 		opt->ls_it++;
 
 		if (opt->ls_it == opt->ctrl.ls_maxit) {
 			opt->done = true;
-			opt->errmsg = "LINESEARCH FAILED TO CONVERGE";
+			opt->errmsg = "linesearch failed to converge";
 			return NULL;
 		}
 		vector_assign_copy(&opt->x, &opt->x0);
-		vector_axpy(opt->step, &opt->search_dir, &opt->x);
+		vector_axpy(linesearch_step(&opt->ls), &opt->search_dir, &opt->x);
 		return &opt->x;
-	} else if (!linesearch_converged(&opt->ls)) {
+			
+	default:
 		opt->done = true;
-		opt->errmsg = linesearch_error(&opt->ls);
+		opt->errmsg = linesearch_warnmsg(task);
 		return NULL;
 	}
 
-	opt->step = linesearch_step(&opt->ls);
-	assert(opt->step > 0);
 	update_hess(opt, grad);
 	update_searchdir(opt, grad);
 
@@ -194,16 +194,17 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 	opt->done = converged(opt, f, grad);
 
 	vector_assign_copy(&opt->x0, &opt->x);
-	opt->f0 = f;
 	vector_assign_copy(&opt->grad0, grad);
-	opt->g0 = vector_dot(grad, &opt->search_dir);
-	assert(opt->g0 < 0);
+	double step0 = 1.0;
+	double f0 = f;	
+	double g0 = vector_dot(grad, &opt->search_dir);
+	assert(g0 < 0);
 
 	if (opt->done) {
 		opt->errmsg = NULL;
 		return NULL;
 	} else {
-		return linesearch(opt, 1.0);
+		return linesearch(opt, step0, f0, g0);
 	}
 }
 

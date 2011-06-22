@@ -1,107 +1,119 @@
 #include "port.h"
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 #include "util.h"
 #include "linesearch.h"
 
-#define TASK_START	"START"
-#define TASK_FG		"FG"
-#define TASK_CONV	"CONV"
-#define TASK_WARN	"WARN"
-#define TASK_ERROR	"ERROR"
+#define TASK_START		"START"
+#define TASK_FG			"FG"
+#define TASK_CONV		"CONV"
+#define TASK_WARN		"WARN"
+#define TASK_WARN_ROUND		"WARNING: ROUNDING ERRORS PREVENT PROGRESS"
+#define TASK_WARN_XTOL		"WARNING: XTOL TEST SATISFIED"
+#define TASK_WARN_STPMAX	"WARNING: STP = STPMAX"
+#define TASK_WARN_STPMIN	"WARNING: STP = STPMIN"
+#define TASK_ERROR		"ERROR"
 
 extern int dcsrch_(double *stp, double *f, double *g,
 		   double *ftol, double *gtol, double *xtol, char *task,
 		   double *stpmin, double *stpmax, f77int *isave,
 		   double *dsave, ssize_t task_len);
 
-static void linesearch_dcscrch(struct linesearch *ls)
+static void linesearch_dcsrch(struct linesearch *ls)
 {
 	assert(ls);
+	assert(isfinite(ls->f));
+	assert(isfinite(ls->g));	
 	assert(linesearch_ctrl_valid(&ls->ctrl));
+	assert((ls->task == LINESEARCH_STEP && !strncmp(ls->taskbuf, TASK_FG, strlen(TASK_FG)))
+	       || !strncmp(ls->taskbuf, TASK_START, strlen(TASK_START)));
 
-	ssize_t task_len = sizeof(ls->task) - 1;
+	if (ls->task != LINESEARCH_STEP) {
+		fprintf(stderr, "[LINESEARCH] f0 = %.22e, g0 = %.22e\n", ls->f, ls->g);
+	} else {
+		fprintf(stderr, "[LINESEARCH] stp = %.22e, f = %.22e, g = %.22e\n", ls->stp, ls->f, ls->g);
+	}
+	
+	ssize_t task_len = sizeof(ls->taskbuf) - 1;
+	
+	assert(task_len == 60);	
 	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,
 		&ls->ctrl.gtol, &ls->ctrl.xtol,
-		ls->task, &ls->ctrl.stpmin, &ls->ctrl.stpmax,
+		ls->taskbuf, &ls->ctrl.stpmin, &ls->ctrl.stpmax,
 		ls->isave, ls->dsave, task_len);
-	assert(task_len == 60);
 
-	assert(strncmp(ls->task, TASK_ERROR, strlen(TASK_ERROR)) != 0);
+	if (!strncmp(ls->taskbuf, TASK_CONV, strlen(TASK_CONV))) {
+		ls->task = LINESEARCH_CONV;
+	} else if (!strncmp(ls->taskbuf, TASK_FG, strlen(TASK_FG))) {
+		ls->task = LINESEARCH_STEP;
+	} else if (!strncmp(ls->taskbuf, TASK_WARN_ROUND, strlen(TASK_WARN_ROUND))) {
+		ls->task = LINESEARCH_WARN_ROUND;
+	} else if (!strncmp(ls->taskbuf, TASK_WARN_XTOL, strlen(TASK_WARN_XTOL))) {
+		ls->task = LINESEARCH_WARN_XTOL;
+	} else if (!strncmp(ls->taskbuf, TASK_WARN_STPMAX, strlen(TASK_WARN_STPMAX))) {
+		ls->task = LINESEARCH_WARN_STPMAX;
+	} else if (!strncmp(ls->taskbuf, TASK_WARN_STPMIN, strlen(TASK_WARN_STPMIN))) {
+		ls->task = LINESEARCH_WARN_STPMIN;
+	} else {
+		assert(!strncmp(ls->taskbuf, TASK_ERROR, sizeof(TASK_ERROR)));
+		assert(0);
+	}
 }
 
-void linesearch_start(struct linesearch *ls, double f0, double g0,
+void linesearch_start(struct linesearch *ls, double stp0, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl)
 {
 	assert(ls);
-	assert(!isnan(f0));
+	assert(isfinite(stp0));
+	assert(isfinite(f0));
 	assert(g0 < 0.0);
 	assert(ctrl);
 	assert(linesearch_ctrl_valid(ctrl));
+	assert(ctrl->stpmin <= stp0 && stp0 <= ctrl->stpmax);
 
 	ls->ctrl = *ctrl;
-	ls->stp = NAN;
+	ls->stp = stp0;
 	ls->f = f0;
+	ls->f0 = f0;	
 	ls->g = g0;
-	ls->done = false;
+	ls->g0 = g0;
+	
+	strcpy(ls->taskbuf, TASK_START);
+	linesearch_dcsrch(ls);
 }
 
-double linesearch_advance(struct linesearch *ls, double stp, double f, double g)
+enum linesearch_task linesearch_advance(struct linesearch *ls, double f, double g)
 {
 	assert(ls);
 	assert(linesearch_ctrl_valid(&ls->ctrl));
-	assert(stp > 0);
-	assert(isfinite(stp));
 	assert(isfinite(f));
 	assert(isfinite(g));
-	assert(ls->ctrl.stpmin <= stp && stp <= ls->ctrl.stpmax);
-	assert(isnan(ls->stp) || stp == ls->stp);
-	assert(isnan(ls->stp)
-	       || strncmp(ls->task, TASK_FG, strlen(TASK_FG)) == 0);
-
-	if (isnan(ls->stp)) {
-		ls->stp = stp;
-
-		strcpy(ls->task, TASK_START);
-		linesearch_dcscrch(ls);
-		linesearch_advance(ls, stp, f, g);
-	}
+	assert(ls->task = LINESEARCH_STEP);
 
 	ls->f = f;
 	ls->g = g;
-	linesearch_dcscrch(ls);
-
-	if (strncmp(ls->task, TASK_FG, strlen(TASK_FG)) == 0) {
-		return ls->stp;
-	} else {
-		assert(strncmp(ls->task, TASK_CONV, strlen(TASK_CONV)) == 0
-		       || strncmp(ls->task, TASK_WARN, strlen(TASK_WARN)) == 0);
-		ls->done = true;
-		return 0;
-	}
-
-	return ls->stp;
+	linesearch_dcsrch(ls);
+	return ls->task;
 }
 
-bool linesearch_converged(const struct linesearch *ls)
+const char *linesearch_warnmsg(enum linesearch_task task)
 {
-	assert(ls);
-	if (!ls->done) {
-		return false;
-	} else {
-		return (strncmp(ls->task, TASK_CONV, strlen(TASK_CONV)) == 0);
+	switch(task) {
+	case LINESEARCH_STEP:
+		return "search in progress";
+	case LINESEARCH_WARN_ROUND:
+		return "rounding errors prevent progress";
+	case LINESEARCH_WARN_XTOL:
+		return "xtol test satisfied";
+	case LINESEARCH_WARN_STPMAX:
+		return "stp = stpmax";
+	case LINESEARCH_WARN_STPMIN:
+		return "stp = stpmin";
+	case LINESEARCH_CONV:
+		return NULL;
 	}
-}
-
-const char *linesearch_error(const struct linesearch *ls)
-{
-	assert(ls);
-	assert(ls->done);
-
-	if (!ls->done) {
-		return "LINESEARCH FAILED TO CONVERGE";
-	} else {
-		return ls->task + strlen("WARNING: ");
-	}
+	assert(0);
+	return NULL;
 }
