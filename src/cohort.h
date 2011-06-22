@@ -16,7 +16,7 @@ struct cohort_iter {
 	struct intset_iter members_it;
 };
 
-#define COHORT_KEY(it) ((ssize_t)INTSET_KEY(it.members_it))
+#define COHORT_KEY(it) ((ssize_t)INTSET_KEY((it).members_it))
 #define COHORT_FOREACH(it, c) \
 	for ((it) = cohort_iter_make(c); cohort_iter_advance(&(it));)
 
