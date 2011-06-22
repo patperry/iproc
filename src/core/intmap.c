@@ -91,7 +91,6 @@ void *intmap_set_item(struct intmap *m, intptr_t key, const void *val)
 void *intmap_add(struct intmap *m, intptr_t key, const void *val)
 {
 	assert(m);
-	assert(val || intmap_elt_size(m) == 0);
 	assert(!intmap_contains_key(m, key));
 
 	struct intmap_pos pos;
