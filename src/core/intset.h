@@ -18,7 +18,7 @@ struct intset_iter {
 	ssize_t index;
 };
 
-#define INTSET_KEY(it) (*(intptr_t *)array_item(&it.set->keys, it.index))
+#define INTSET_KEY(it) (*(intptr_t *)array_item(&(it).set->keys, (it).index))
 #define INTSET_FOREACH(it, set) \
 	for ((it) = intset_iter_make(set); intset_iter_advance(&(it));)
 
