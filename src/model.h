@@ -112,6 +112,7 @@
  * w[0,i,j], W[0,i,j], p[0,i,j], and xbar[0,i].
  */
 struct cohort_model {
+	ssize_t isend0; // canonical sender
 	double log_W0;
 	struct vector p0;
 	struct vector log_p0;
@@ -133,8 +134,6 @@ struct recv_model {
 	double gamma;
 	double log_gamma;
 	struct svector deta;
-
-	/* mean */
 	struct array active;
 };
 
@@ -160,6 +159,7 @@ ssize_t model_recv_count(const struct model *model);
 ssize_t model_recv_dim(const struct model *model);
 
 void model_clear(struct model *m);
+void model_set(struct model *m, const struct frame *f, const struct vector *recv_coefs);
 void model_update(struct model *m, const struct frame *f);
 
 struct recv_model *model_recv_model(const struct model *m, ssize_t isend);
