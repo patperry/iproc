@@ -15,13 +15,14 @@ static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 	model_clear(&fit->model);
 	
 	// update coefs
+	model_set(&fit->model, &fit->frame, coefs);
 	coefs = model_recv_coefs(&fit->model);
 	
 	recv_loglik_clear(&fit->loglik);
 	recv_loglik_add_all(&fit->loglik, &fit->frame, fit->msgs);
 	
 	double n = recv_loglik_count(&fit->loglik);
-	double ll = -0.5 * recv_loglik_avg_dev(&fit->loglik);
+	double ll = 0.5 * recv_loglik_avg_dev(&fit->loglik);
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
 	
@@ -30,6 +31,9 @@ static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 	vector_assign_copy(&fit->grad, coefs);
 	vector_scale(&fit->grad, fit->penalty / n);
 	recv_loglik_axpy_avg_score(-1.0, &fit->loglik, &fit->grad);
+	
+	assert(isfinite(fit->f));
+	assert(isfinite(vector_norm(&fit->grad)));
 }
 
 
