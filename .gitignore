@@ -28,6 +28,7 @@
 /tests/actors_test
 /tests/array_test
 /tests/design_test
+/tests/enronfit
 /tests/frame_test
 /tests/hashset_test
 /tests/intmap_test

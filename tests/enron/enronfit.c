@@ -1,13 +1,6 @@
 #include "port.h"
-#include <math.h>
-#include <float.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stddef.h>
 #include <stdio.h>
-#include <setjmp.h>
-#include <stdlib.h>
-#include "cmockery.h"
 
 #include "ieee754.h"
 #include "enron.h"
@@ -82,7 +75,7 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	double penalty = 1.0;
+	double penalty = 10.0;
 	ssize_t maxit = 5000;
 	ssize_t report = 1;
 	bool trace = true;
@@ -92,17 +85,16 @@ int main(int argc, char **argv)
 	ssize_t it = 0;
 	
 	do {
-		it++;
-		recv_fit_step(&fit);
-		
 		if (trace && it % report == 0) {
-			const char *msg = penalty == 0 ? "" : "(penalized) ";
 			ssize_t n = recv_loglik_count(&fit.loglik);
 			double dev = n * recv_loglik_avg_dev(&fit.loglik);
-			double dec = -2 * bfgs_decrement(&fit.opt);
-			printf("iter %"SSIZE_FMT" deviance %s%.6f decrement %.6f\n", it,
-				msg, dev, dec);
+			double dec = -2 * n * bfgs_decrement(&fit.opt);
+			printf("[iter %"SSIZE_FMT" deviance %.22f decrement %.22f]\n", it,
+				dev, dec);
 		}
+		
+		it++;
+		recv_fit_step(&fit);
 	} while (it < maxit && !recv_fit_converged(&fit));
 	
 	teardown();

@@ -41,8 +41,7 @@ libiproc_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 libiproc_la_LIBADD = \
-	libcore.la \
-	libminpack.la
+	libcore.la
 
 libcore_la_SOURCES = \
 	lib/timsort/timsort.h \
@@ -94,6 +93,7 @@ libcore_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 libcore_la_LIBADD = \
+	libminpack.la \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) \
 	$(LIBS) \
@@ -114,6 +114,7 @@ libminpack_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 libminpack_la_LIBADD = \
+	libf2c.la \
 	$(BLAS_LIBS) \
 	$(LIBS) \
 	$(FLIBS)
@@ -231,6 +232,11 @@ cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
 cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
+
+check_PROGRAMS += tests/enronfit
+tests_enronfit_SOURCES  = tests/enron/enronfit.c
+tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Itests/enron
+tests_enronfit_LDADD    = libiproc.la tests/libenron.la
 
 check_PROGRAMS += tests/array_test
 tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
