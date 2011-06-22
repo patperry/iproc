@@ -40,13 +40,13 @@ void intset_deinit(struct intset *s)
 bool intset_add(struct intset *s, intptr_t key)
 {
 	assert(s);
-	bool notfound;
 	struct intset_pos pos;
 
-	if ((notfound = !intset_find(s, key, &pos))) {
+	if (!intset_find(s, key, &pos)) {
 		intset_insert(s, &pos);
+		return true;
 	}
-	return notfound;	// already in set
+	return false;	// already in set
 }
 
 void intset_clear(struct intset *s)
