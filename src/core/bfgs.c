@@ -38,17 +38,15 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 	vector_axpy(-1.0, &opt->grad0, y);
 
 	double s_y = vector_dot(s, y);
+	
+	/* Note could use damped update instead (Nocedal and Wright, p. 537) */	
+	assert(s_y > 0); 
 
 	/* update H */
-	if (opt->first_step) {
-		double scale = 1.0;
-
-		if (s_y > 0) {
-			double s_s = vector_dot(s, s);
-			assert(s_s > 0);
-			scale = s_y / s_s;
-		}
-
+	if (opt->first_step) { /* Nocedal and Wright, p. 143 */
+		double y_y = vector_dot(y, y);
+		assert(y_y > 0);
+		double scale = s_y / y_y;
 		ssize_t i, n = vector_dim(y);
 
 		matrix_fill(H, 0.0);
@@ -58,7 +56,6 @@ static void update_hess(struct bfgs *opt, const struct vector *grad)
 		opt->first_step = false;
 	}
 
-	assert(s_y > 0);
 	/* compute H_y */
 	struct vector *H_y = &opt->H_y;
 	matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
@@ -163,7 +160,7 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 
 	double g = vector_dot(grad, &opt->search_dir);
 	enum linesearch_task task = linesearch_advance(&opt->ls, f, g);
-
+	bool wolfe = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
 	
 	switch (task) {
 	case LINESEARCH_CONV:
@@ -172,19 +169,25 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 	case LINESEARCH_STEP:
 		opt->ls_it++;
 
-		if (opt->ls_it == opt->ctrl.ls_maxit) {
+		if (opt->ls_it < opt->ctrl.ls_maxit) {
+			vector_assign_copy(&opt->x, &opt->x0);
+			vector_axpy(linesearch_step(&opt->ls), &opt->search_dir, &opt->x);
+			return &opt->x;
+		} else if (wolfe) {
+			break;
+		} else {
 			opt->done = true;
 			opt->errmsg = "linesearch failed to converge";
 			return NULL;
 		}
-		vector_assign_copy(&opt->x, &opt->x0);
-		vector_axpy(linesearch_step(&opt->ls), &opt->search_dir, &opt->x);
-		return &opt->x;
-			
 	default:
-		opt->done = true;
-		opt->errmsg = linesearch_warnmsg(task);
-		return NULL;
+		if (wolfe) {
+			break;
+		} else {
+			opt->done = true;
+			opt->errmsg = linesearch_warnmsg(task);
+			return NULL;
+		}
 	}
 
 	update_hess(opt, grad);

@@ -151,14 +151,14 @@ SEXP Riproc_messages_new(SEXP Rtime, SEXP Rfrom, SEXP Rto)
 SEXP Riproc_messages_size(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int size = (int)messages_size(msgs);
+	int size = (int)messages_count(msgs);
 	return ScalarInteger(size);
 }
 
 SEXP Riproc_messages_time(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int i, ntie, n = (int)messages_size(msgs);
+	int i, ntie, n = (int)messages_count(msgs);
 	double t;
 	SEXP Rtime;
 
@@ -182,7 +182,7 @@ SEXP Riproc_messages_time(SEXP Rmsgs)
 SEXP Riproc_messages_from(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int i, ntie, n = (int)messages_size(msgs);
+	int i, ntie, n = (int)messages_count(msgs);
 	SEXP Rfrom;
 
 	PROTECT(Rfrom = NEW_INTEGER(n));
@@ -206,7 +206,7 @@ SEXP Riproc_messages_from(SEXP Rmsgs)
 SEXP Riproc_messages_to(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int i, imsg, ntie, nto, n = (int)messages_size(msgs);
+	int i, imsg, ntie, nto, n = (int)messages_count(msgs);
 	ssize_t *msg_to;
 	SEXP Rto, Rmsg_to;
 
@@ -238,7 +238,7 @@ SEXP Riproc_messages_to(SEXP Rmsgs)
 SEXP Riproc_messages_nto(SEXP Rmsgs)
 {
 	struct messages *msgs = Riproc_to_messages(Rmsgs);
-	int i, ntie, n = (int)messages_size(msgs);
+	int i, ntie, n = (int)messages_count(msgs);
 	SEXP Rnto;
 
 	PROTECT(Rnto = NEW_INTEGER(n));

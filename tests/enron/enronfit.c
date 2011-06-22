@@ -75,10 +75,10 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	double penalty = 0.0;
+	double penalty = 10.0; //  * messages_count(&messages);
 	ssize_t maxit = 5000;
 	ssize_t report = 1;
-	bool trace = true;
+	bool trace = false;
 	
 	struct recv_fit fit;
 	recv_fit_init(&fit, &messages, &design, NULL, penalty);

@@ -31,9 +31,9 @@ static void linesearch_dcsrch(struct linesearch *ls)
 	       || !strncmp(ls->taskbuf, TASK_START, strlen(TASK_START)));
 
 	if (ls->task != LINESEARCH_STEP) {
-		fprintf(stderr, "[LINESEARCH] f0 = %.22e, g0 = %.22e\n", ls->f, ls->g);
+		fprintf(stderr, "LNSRCH: f0 = %.22e, g0 = %.22e\n", ls->f, ls->g);
 	} else {
-		fprintf(stderr, "[LINESEARCH] stp = %.22e, f = %.22e, g = %.22e\n", ls->stp, ls->f, ls->g);
+		fprintf(stderr, "LNSRCH: stp = %.22e, f = %.22e, g = %.22e\n", ls->stp, ls->f, ls->g);
 	}
 	
 	ssize_t task_len = sizeof(ls->taskbuf) - 1;
@@ -59,6 +59,10 @@ static void linesearch_dcsrch(struct linesearch *ls)
 	} else {
 		assert(!strncmp(ls->taskbuf, TASK_ERROR, sizeof(TASK_ERROR)));
 		assert(0);
+	}
+	
+	if (ls->task < 0) {
+		fprintf(stderr, "[LINESEARCH] %s\n", linesearch_warnmsg(ls->task));
 	}
 }
 

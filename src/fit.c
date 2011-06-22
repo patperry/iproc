@@ -23,15 +23,19 @@ static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 	recv_loglik_add_all(&fit->loglik, &fit->frame, fit->msgs);
 	
 	double n = recv_loglik_count(&fit->loglik);
-	double ll = 0.5 * recv_loglik_avg_dev(&fit->loglik);
+	double nll = 0.5 * recv_loglik_avg_dev(&fit->loglik);
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
 	
-	fit->f = ll + 0.5 * fit->penalty * (norm2 / n);
+
+
+	fit->f = nll + 0.5 * fit->penalty * (norm2 / n);
+	printf("FNEVAL: f = %.22e nll = %.22e pen = %.22e\n", fit->f, nll, 0.5 * fit->penalty * norm2 / n);	
 
 	vector_assign_copy(&fit->grad, coefs);
 	vector_scale(&fit->grad, fit->penalty / n);
 	recv_loglik_axpy_avg_score(-1.0, &fit->loglik, &fit->grad);
+	printf("GREVAL: |grad| = %.22e\n", vector_norm(&fit->grad));
 	
 	assert(isfinite(fit->f));
 	assert(isfinite(vector_norm(&fit->grad)));

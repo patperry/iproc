@@ -3,6 +3,7 @@
 
 #include <float.h>
 
+
 #define LINESEARCH_FTOL0	(1e-4)
 #define LINESEARCH_GTOL0	(0.9)
 #define LINESEARCH_XTOL0	(1e-15)
@@ -66,8 +67,13 @@ void linesearch_start(struct linesearch *ls, double stp0, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl);
 enum linesearch_task linesearch_advance(struct linesearch *ls, double f, double g);
 
+/* weak Wolfe conditions */
+static inline bool linesearch_sdec(const struct linesearch *ls);  // sufficient decrease (Armijo)
+static inline bool linesearch_curv(const struct linesearch *ls);  // curvature
+
 /* convergence/error */
 const char *linesearch_warnmsg(enum linesearch_task task);
+
 
 /* optimal values */
 static inline double linesearch_step(const struct linesearch *ls);
@@ -123,6 +129,28 @@ double linesearch_value(const struct linesearch *ls)
 {
 	assert(ls);
 	return ls->f;
+}
+
+bool linesearch_sdec(const struct linesearch *ls)
+{
+	assert(ls);
+	double stp = linesearch_step(ls);
+	double f0 = linesearch_value0(ls);
+	double f = linesearch_value(ls);
+	double g0 = linesearch_grad0(ls);
+	double c1 = ls->ctrl.ftol;
+	
+	return f <= f0 + c1 * stp * g0;
+}
+
+bool linesearch_curv(const struct linesearch *ls)
+{
+	assert(ls);
+	double g0 = linesearch_grad0(ls);
+	double g = linesearch_grad(ls);
+	double c2 = ls->ctrl.ftol;
+
+	return g >= c2 * g0;
 }
 
 double linesearch_grad(const struct linesearch *ls)

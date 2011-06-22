@@ -55,7 +55,7 @@ void messages_free(struct messages *msgs)
 	}
 }
 
-ssize_t messages_size(const struct messages *msgs)
+ssize_t messages_count(const struct messages *msgs)
 {
 	assert(msgs);
 	return array_count(&msgs->message_reps);
@@ -70,7 +70,7 @@ double messages_tlast(const struct messages *msgs)
 struct message *messages_at(const struct messages *msgs, ssize_t i)
 {
 	assert(msgs);
-	assert(0 <= i && i < messages_size(msgs));
+	assert(0 <= i && i < messages_count(msgs));
 
 	struct message_rep *rep = array_item(&msgs->message_reps, i);
 
@@ -161,7 +161,7 @@ void messages_iter_reset(struct messages_iter *it)
 bool messages_iter_advance(struct messages_iter *it)
 {
 	assert(it);
-	assert(it->offset < messages_size(it->messages));
+	assert(it->offset < messages_count(it->messages));
 
 	ssize_t offset = it->offset + it->ntie;
 
