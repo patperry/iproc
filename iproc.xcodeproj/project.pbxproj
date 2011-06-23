@@ -191,6 +191,12 @@
 		22EA3335136B440B00C5627F /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EA3332136B440B00C5627F /* frame.h */; };
 		22EA3336136B440B00C5627F /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EA3332136B440B00C5627F /* frame.h */; };
 		22EA3338136B4CEC00C5627F /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3337136B4CEC00C5627F /* messages.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib -I$(SRCROOT)/src/core"; }; };
+		22EFB31813B3AE18007755EA /* lapack-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EFB31513B3AE18007755EA /* lapack-private.h */; };
+		22EFB31913B3AE18007755EA /* lapack-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EFB31513B3AE18007755EA /* lapack-private.h */; };
+		22EFB31A13B3AE18007755EA /* linalg.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EFB31613B3AE18007755EA /* linalg.c */; };
+		22EFB31B13B3AE18007755EA /* linalg.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EFB31613B3AE18007755EA /* linalg.c */; };
+		22EFB31C13B3AE18007755EA /* linalg.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EFB31713B3AE18007755EA /* linalg.h */; };
+		22EFB31D13B3AE18007755EA /* linalg.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EFB31713B3AE18007755EA /* linalg.h */; };
 		22FFF12613871A8B003DDA26 /* timsort-impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 22FFF12313871A8B003DDA26 /* timsort-impl.h */; };
 		22FFF12713871A8B003DDA26 /* timsort-impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 22FFF12313871A8B003DDA26 /* timsort-impl.h */; };
 		22FFF12813871A8B003DDA26 /* timsort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22FFF12413871A8B003DDA26 /* timsort.c */; };
@@ -598,6 +604,9 @@
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
 		22EA3332136B440B00C5627F /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22EA3337136B4CEC00C5627F /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = tests/enron/messages.c; sourceTree = "<group>"; };
+		22EFB31513B3AE18007755EA /* lapack-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "lapack-private.h"; path = "src/core/lapack-private.h"; sourceTree = "<group>"; };
+		22EFB31613B3AE18007755EA /* linalg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = linalg.c; path = src/core/linalg.c; sourceTree = "<group>"; };
+		22EFB31713B3AE18007755EA /* linalg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = linalg.h; path = src/core/linalg.h; sourceTree = "<group>"; };
 		22FFF12313871A8B003DDA26 /* timsort-impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "timsort-impl.h"; path = "lib/timsort/timsort-impl.h"; sourceTree = "<group>"; };
 		22FFF12413871A8B003DDA26 /* timsort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = timsort.c; path = lib/timsort/timsort.c; sourceTree = "<group>"; };
 		22FFF12513871A8B003DDA26 /* timsort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = timsort.h; path = lib/timsort/timsort.h; sourceTree = "<group>"; };
@@ -736,6 +745,9 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				22EFB31513B3AE18007755EA /* lapack-private.h */,
+				22EFB31613B3AE18007755EA /* linalg.c */,
+				22EFB31713B3AE18007755EA /* linalg.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
 				228160F613B0F60C00B38330 /* bfgs.c */,
@@ -1002,6 +1014,8 @@
 				223BFE4813AA98F300835B8F /* vars.h in Headers */,
 				225ECDB313B00E4100E20D8F /* f2c.h in Headers */,
 				228160FB13B0F60C00B38330 /* bfgs.h in Headers */,
+				22EFB31913B3AE18007755EA /* lapack-private.h in Headers */,
+				22EFB31D13B3AE18007755EA /* linalg.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1062,6 +1076,8 @@
 				226E3CBF13AFEE610083E9E0 /* linesearch.h in Headers */,
 				225ECDB213B00E4100E20D8F /* f2c.h in Headers */,
 				228160FA13B0F60C00B38330 /* bfgs.h in Headers */,
+				22EFB31813B3AE18007755EA /* lapack-private.h in Headers */,
+				22EFB31C13B3AE18007755EA /* linalg.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1456,6 +1472,7 @@
 				228160DC13B00EF200B38330 /* dcsrch.c in Sources */,
 				228160DE13B00EF200B38330 /* dcstep.c in Sources */,
 				228160F913B0F60C00B38330 /* bfgs.c in Sources */,
+				22EFB31B13B3AE18007755EA /* linalg.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1505,6 +1522,7 @@
 				228160DB13B00EF200B38330 /* dcsrch.c in Sources */,
 				228160DD13B00EF200B38330 /* dcstep.c in Sources */,
 				228160F813B0F60C00B38330 /* bfgs.c in Sources */,
+				22EFB31A13B3AE18007755EA /* linalg.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2186,6 +2204,7 @@
 				2285AD1113B1474200C46E8B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2288809313A9325D00D673A6 /* Build configuration list for PBXNativeTarget "model_test" */ = {
 			isa = XCConfigurationList;

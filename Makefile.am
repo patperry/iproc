@@ -64,6 +64,9 @@ libcore_la_SOURCES = \
 	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
+	src/core/lapack-private.h \
+	src/core/linalg.c \
+	src/core/linalg.h \
 	src/core/linesearch.c \
 	src/core/linesearch.h \
 	src/core/logsumexp.c \
