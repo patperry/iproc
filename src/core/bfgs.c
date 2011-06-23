@@ -4,14 +4,13 @@
 #include <stdio.h>
 #include "bfgs.h"
 
-static const struct vector *linesearch(struct bfgs *opt, double step0, double f0, double g0)
+static void linesearch(struct bfgs *opt, double step0, double f0, double g0)
 {
 	opt->ls_it = 0;
 	vector_assign_copy(&opt->x, &opt->x0);
 	vector_axpy(step0, &opt->search, &opt->x);
 
 	linesearch_start(&opt->ls, step0, f0, g0, &opt->ctrl.ls);
-	return &opt->x;
 }
 
 static void update(struct bfgs *opt, double f, const struct vector *grad)
@@ -104,8 +103,8 @@ void bfgs_deinit(struct bfgs *opt)
 	matrix_deinit(&opt->inv_hess);
 }
 
-const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
-				double f0, const struct vector *grad0)
+enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
+			  double f0, const struct vector *grad0)
 {
 	assert(opt);
 	assert(x0);
@@ -135,23 +134,18 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 	assert(!isnan(scale));
 
 	if (!isfinite(scale)) {
-		opt->done = true;
-		opt->errmsg = "OVERFLOW IN GRADIENT";
-		return NULL;
+		opt->task = BFGS_OVFLW_GRAD;
 	} else if (scale > 0) {
-		opt->done = false;
-		opt->errmsg = NULL;
+		opt->task = BFGS_STEP;
 
 		vector_assign_copy(&opt->search, grad0);
 		vector_scale(&opt->search, -1.0 / scale);
-		double g0 = vector_dot(&opt->grad0, &opt->search);
-		assert(g0 < 0);
-		return linesearch(opt, step0, f0, g0);
+		double g0 = -scale;
+		linesearch(opt, step0, f0, g0);
 	} else {
-		opt->done = true;
-		opt->errmsg = NULL;
-		return NULL;
+		opt->task = BFGS_CONV;
 	}
+	return opt->task;
 }
 
 static bool converged(const struct bfgs *opt)
@@ -173,17 +167,18 @@ static bool converged(const struct bfgs *opt)
 	return true;		
 }
 
-const struct vector *bfgs_advance(struct bfgs *opt, double f,
-				  const struct vector *grad)
+enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
+			    const struct vector *grad)
 {
 	assert(isfinite(f));
 	assert(isfinite(vector_norm(grad)));
+	assert(opt->task == BFGS_STEP);
 
 	double g = vector_dot(grad, &opt->search);
-	enum linesearch_task task = linesearch_advance(&opt->ls, f, g);
+	enum linesearch_task lstask = linesearch_advance(&opt->ls, f, g);
 	bool ok = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
 	
-	switch (task) {
+	switch (lstask) {
 	case LINESEARCH_CONV:
 		break;
 
@@ -193,52 +188,54 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 		if (opt->ls_it < opt->ctrl.ls_maxit) {
 			vector_assign_copy(&opt->x, &opt->x0);
 			vector_axpy(linesearch_step(&opt->ls), &opt->search, &opt->x);
-			return &opt->x;
+			assert(opt->task == BFGS_STEP);
+			goto out;
 		} else if (ok) {
 			break;
 		} else {
-			opt->done = true;
-			opt->errmsg = "linesearch failed to converge";
-			return NULL;
+			opt->task = BFGS_ERR_LNSRCH; // maximum number of iterations
 		}
 	default:
 		if (ok) {
 			break;
 		} else {
-			opt->done = true;
-			opt->errmsg = linesearch_warnmsg(task);
-			return NULL;
+			opt->task = BFGS_ERR_LNSRCH;
+			goto out;
 		}
 	}
 
 	update(opt, f, grad);
 
 	// test for convergence
-	opt->done = converged(opt);
-
-	double step0 = 1.0;
-	double f0 = f;	
-	double g0 = vector_dot(grad, &opt->search);
-	assert(g0 < 0);
-
-	if (opt->done) {
-		opt->errmsg = NULL;
-		return NULL;
+	if (converged(opt)) {
+		opt->task = BFGS_CONV;
 	} else {
-		return linesearch(opt, step0, f0, g0);
+		assert(opt->task == BFGS_STEP);
+		
+		double step0 = 1.0;
+		double f0 = f;	
+		double g0 = vector_dot(grad, &opt->search);
+		assert(g0 < 0);
+		
+		linesearch(opt, step0, f0, g0);
 	}
+out:
+	return opt->task;
 }
 
-bool bfgs_converged(const struct bfgs *opt)
+const char *bfgs_errmsg(enum bfgs_task task)
 {
-	return opt->done && !opt->errmsg;
+	switch(task) {
+		case BFGS_STEP:
+			return "optimization in progress";
+		case BFGS_ERR_LNSRCH:
+			return "linesearch failed";
+		case BFGS_OVFLW_GRAD:
+			return "overflow computing norm of gradient";
+		case BFGS_CONV:
+			return NULL;
+	}
+	assert(0);
+	return NULL;
 }
 
-const char *bfgs_error(const struct bfgs *opt)
-{
-	if (!opt->done) {
-		return "BFGS FAILED TO CONVERGE";
-	} else {
-		return opt->errmsg;
-	}
-}

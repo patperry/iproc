@@ -21,12 +21,18 @@ struct bfgs_ctrl {
 	struct linesearch_ctrl ls;
 };
 
+enum bfgs_task {
+	BFGS_CONV = 0,
+	BFGS_STEP = 1,
+	BFGS_ERR_LNSRCH = -1, // linesearch failed to converge
+	BFGS_OVFLW_GRAD = -2, // overflow in computing norm of gradient
+};
+
 struct bfgs {
 	/* control/status */
 	struct bfgs_ctrl ctrl;
-	const char *errmsg;
+	enum bfgs_task task;
 	bool first_step;
-	bool done;
 
 	/* current values */
 	double f0;
@@ -56,15 +62,13 @@ void bfgs_deinit(struct bfgs *opt);
 
 static inline ssize_t bfgs_dim(const struct bfgs *opt);
 
-const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
-				double f0, const struct vector *grad0);
-const struct vector *bfgs_advance(struct bfgs *opt, double f,
-				  const struct vector *grad);
+enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
+			  double f0, const struct vector *grad0);
 static inline const struct vector *bfgs_next(const struct bfgs *opt);
+enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
+			    const struct vector *grad);
+const char *bfgs_errmsg(enum bfgs_task task);
 
-/* convergence/warning */
-bool bfgs_converged(const struct bfgs *opt);
-const char *bfgs_error(const struct bfgs *opt);
 
 /* current values */
 static inline const struct vector *bfgs_cur(const struct bfgs *opt);
@@ -98,14 +102,13 @@ ssize_t bfgs_dim(const struct bfgs *opt)
 const struct vector *bfgs_cur(const struct bfgs *opt)
 {
 	assert(opt);
-	assert(!opt->errmsg);
 	return &opt->x0;
 }
 
 const struct vector *bfgs_next(const struct bfgs *opt)
 {
 	assert(opt);
-	assert(!opt->errmsg);
+	assert(opt->task == BFGS_STEP);
 	return &opt->x;
 }
 
@@ -124,8 +127,11 @@ const struct vector *bfgs_grad(const struct bfgs *opt)
 const struct matrix *bfgs_inv_hess(const struct bfgs *opt)
 {
 	assert(opt);
-	assert(!opt->first_step);
-	return &opt->inv_hess;
+	if (opt->first_step) {
+		return NULL;
+	} else {
+		return &opt->inv_hess;
+	}
 }
 
 #endif /* _BFGS_H */

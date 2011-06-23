@@ -72,7 +72,7 @@ void recv_fit_init(struct recv_fit *fit,
 	}
 	
 	recv_fit_set(fit, coefs0);
-	fit->xnext = bfgs_start(&fit->opt, model_recv_coefs(&fit->model), fit->f, &fit->grad);
+	fit->task = bfgs_start(&fit->opt, model_recv_coefs(&fit->model), fit->f, &fit->grad);
 }
 
 void recv_fit_deinit(struct recv_fit *fit)
@@ -85,16 +85,23 @@ void recv_fit_deinit(struct recv_fit *fit)
 	frame_deinit(&fit->frame);
 }
 
-void recv_fit_step(struct recv_fit *fit)
+bool recv_fit_step(struct recv_fit *fit)
 {
 	assert(fit);
-	assert(fit->xnext);
+	assert(fit->task == BFGS_STEP);
 
-	recv_fit_set(fit, fit->xnext);
-	fit->xnext = bfgs_advance(&fit->opt, fit->f, &fit->grad);
+	const struct vector *xnext = bfgs_next(&fit->opt);
+	recv_fit_set(fit, xnext);
+	fit->task = bfgs_advance(&fit->opt, fit->f, &fit->grad);
+	return (fit->task == BFGS_STEP);
 }
 
-bool recv_fit_converged(struct recv_fit *fit)
+bool recv_fit_converged(const struct recv_fit *fit)
 {
-	return bfgs_converged(&fit->opt);
+	return fit->task == BFGS_CONV;
+}
+
+const char *recv_fit_errmsg(const struct recv_fit *fit)
+{
+	return bfgs_errmsg(fit->task);
 }

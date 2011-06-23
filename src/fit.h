@@ -24,9 +24,9 @@ struct recv_fit {
 	struct recv_loglik loglik;
 	
 	struct bfgs opt;
+	enum bfgs_task task;
 	double f;
 	struct vector grad;
-	const struct vector *xnext;
 };
 
 
@@ -36,8 +36,9 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct vector *coefs0,
 		   double penalty);
 void recv_fit_deinit(struct recv_fit *fit);
-void recv_fit_step(struct recv_fit *fit);
-bool recv_fit_converged(struct recv_fit *fit);
+bool recv_fit_step(struct recv_fit *fit);
+bool recv_fit_converged(const struct recv_fit *fit);
+const char *recv_fit_errmsg(const struct recv_fit *fit);
 
 
 #endif /* _IPROC_FIT_H */
