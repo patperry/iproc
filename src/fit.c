@@ -23,20 +23,16 @@ static void recv_fit_set(struct recv_fit *fit, const struct vector *coefs)
 	recv_loglik_add_all(&fit->loglik, &fit->frame, fit->msgs);
 	
 	double n = recv_loglik_count(&fit->loglik);
-	double nll = 0.5 * recv_loglik_avg_dev(&fit->loglik);
+	double dev = recv_loglik_avg_dev(&fit->loglik);
 	double norm = vector_norm(coefs);
 	double norm2 = norm * norm;
 	
-
-
-	fit->f = nll + 0.5 * fit->penalty * (norm2 / n);
-	printf("FNEVAL: f = %.22e nll = %.22e pen = %.22e\n", fit->f, nll, 0.5 * fit->penalty * norm2 / n);	
+	fit->f = dev + (fit->penalty / n) * norm2;
 
 	vector_assign_copy(&fit->grad, coefs);
-	vector_scale(&fit->grad, fit->penalty / n);
-	recv_loglik_axpy_avg_score(-1.0, &fit->loglik, &fit->grad);
-	printf("GREVAL: |grad| = %.22e\n", vector_norm(&fit->grad));
-	
+	vector_scale(&fit->grad, 2 * (fit->penalty / n));
+	recv_loglik_axpy_avg_score(-2.0, &fit->loglik, &fit->grad);
+
 	assert(isfinite(fit->f));
 	assert(isfinite(vector_norm(&fit->grad)));
 }
@@ -71,7 +67,7 @@ void recv_fit_init(struct recv_fit *fit,
 	vector_init(&fit->grad, dim);
 
 	if (!coefs0) {
-		vector_fill(&fit->grad, 1.0); // use grad for temp storage
+		vector_fill(&fit->grad, 0.0); // use grad for temp storage
 		coefs0 = &fit->grad;
 	}
 	
