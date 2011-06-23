@@ -75,7 +75,8 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	double penalty = 10.0; //  * messages_count(&messages);
+	ssize_t n = messages_recv_count(&messages);
+	double penalty = n / 9.0;
 	ssize_t maxit = 5000;
 	ssize_t report = 1;
 	bool trace = false;
@@ -86,7 +87,6 @@ int main(int argc, char **argv)
 	
 	do {
 		if (trace && it % report == 0) {
-			ssize_t n = recv_loglik_count(&fit.loglik);
 			double dev = n * recv_loglik_avg_dev(&fit.loglik);
 			double dec = -2 * n * bfgs_decrement(&fit.opt);
 			printf("[iter %"SSIZE_FMT" deviance %.22f decrement %.22f]\n", it,
