@@ -28,6 +28,7 @@ struct bfgs {
 	struct bfgs_ctrl ctrl;
 	struct matrix inv_hess;
 	struct vector search_dir;
+	double f0;
 	struct vector grad0;
 	struct vector x0;
 	struct vector x;
@@ -36,10 +37,11 @@ struct bfgs {
 	const char *errmsg;
 
 	/* workspace */
+	double df;
 	struct linesearch ls;
-	struct vector s;
-	struct vector y;
-	struct vector H_y;
+	struct vector step;
+	struct vector dg;
+	struct vector H_dg;
 	bool first_step;
 };
 
