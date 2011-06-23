@@ -233,11 +233,6 @@ cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/enronfit
-tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Itests/enron
-tests_enronfit_LDADD    = libiproc.la tests/libenron.la
-
 check_PROGRAMS += tests/array_test
 tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
@@ -274,6 +269,10 @@ check_PROGRAMS += tests/recv_loglik_test
 tests_recv_loglik_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
 tests_recv_loglik_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
+check_PROGRAMS += tests/enronfit
+tests_enronfit_SOURCES  = tests/enron/enronfit.c
+tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Itests/enron
+tests_enronfit_LDADD    = libiproc.la tests/libenron.la
 
 TESTS = \
 	$(check_PROGRAMS)

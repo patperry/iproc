@@ -8,7 +8,7 @@ static const struct vector *linesearch(struct bfgs *opt, double step0, double f0
 {
 	opt->ls_it = 0;
 	vector_assign_copy(&opt->x, &opt->x0);
-	vector_axpy(step0, &opt->search_dir, &opt->x);
+	vector_axpy(step0, &opt->search, &opt->x);
 
 	linesearch_start(&opt->ls, step0, f0, g0, &opt->ctrl.ls);
 	return &opt->x;
@@ -21,7 +21,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	struct vector *y = &opt->dg;
 
 	/* update step */
-	vector_assign_copy(s, &opt->search_dir);
+	vector_assign_copy(s, &opt->search);
 	vector_scale(s, linesearch_step(&opt->ls));
 
 	/* update df */
@@ -63,12 +63,12 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	matrix_update1(H, -rho, H_y, s);
 	matrix_update1(H, -rho, s, H_y);
 	
-	/* update searchdir */
+	/* update search direction */
 	matrix_mul(-1.0, TRANS_NOTRANS, &opt->inv_hess, grad,
-		   0.0, &opt->search_dir);
-	assert(isfinite(vector_norm(&opt->search_dir)));
+		   0.0, &opt->search);
+	assert(isfinite(vector_norm(&opt->search)));
 
-	/* update initial position value, and grad */
+	/* update initial position, value, and grad */
 	vector_assign_copy(&opt->x0, &opt->x);
 	opt->f0 = f;
 	vector_assign_copy(&opt->grad0, grad);
@@ -83,7 +83,7 @@ void bfgs_init(struct bfgs *opt, ssize_t n, const struct bfgs_ctrl *ctrl)
 
 	opt->ctrl = *ctrl;
 	matrix_init(&opt->inv_hess, n, n);
-	vector_init(&opt->search_dir, n);
+	vector_init(&opt->search, n);
 	vector_init(&opt->grad0, n);
 	vector_init(&opt->x0, n);
 	vector_init(&opt->x, n);
@@ -100,7 +100,7 @@ void bfgs_deinit(struct bfgs *opt)
 	vector_deinit(&opt->x);
 	vector_deinit(&opt->x0);
 	vector_deinit(&opt->grad0);
-	vector_deinit(&opt->search_dir);
+	vector_deinit(&opt->search);
 	matrix_deinit(&opt->inv_hess);
 }
 
@@ -126,7 +126,7 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 	vector_fill(&opt->step, NAN);
 	vector_fill(&opt->dg, NAN);
 	vector_fill(&opt->H_dg, NAN);	
-	vector_fill(&opt->search_dir, NAN);
+	vector_fill(&opt->search, NAN);
 	matrix_fill(&opt->inv_hess, NAN);
 #endif
 	
@@ -142,9 +142,9 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 		opt->done = false;
 		opt->errmsg = NULL;
 
-		vector_assign_copy(&opt->search_dir, grad0);
-		vector_scale(&opt->search_dir, -1.0 / scale);
-		double g0 = vector_dot(&opt->grad0, &opt->search_dir);
+		vector_assign_copy(&opt->search, grad0);
+		vector_scale(&opt->search, -1.0 / scale);
+		double g0 = vector_dot(&opt->grad0, &opt->search);
 		assert(g0 < 0);
 		return linesearch(opt, step0, f0, g0);
 	} else {
@@ -156,23 +156,18 @@ const struct vector *bfgs_start(struct bfgs *opt, const struct vector *x0,
 
 static bool converged(const struct bfgs *opt)
 {
-	//double abstol = opt->ctrl.abstol;
-	double reltol = opt->ctrl.reltol;
+	double gtol = opt->ctrl.gtol;
 
-	fprintf(stderr, "|df| = %.22f; |grad| = %.22f; |step| = %.22f\n",
-		fabs(opt->df /MAX(1, opt->f0)),
-		vector_max_abs(&opt->grad0), vector_max_abs(&opt->step));
+	//fprintf(stderr, "|df| = %.22f; |grad| = %.22f; |step| = %.22f\n",
+	//	fabs(opt->df /MAX(1, opt->f0)),
+	//	vector_max_abs(&opt->grad0), vector_max_abs(&opt->step));
 	
-	//double f = fabs(opt->f0);
-	//double dxmax = 0.0;
 	ssize_t i, n = bfgs_dim(opt);
 	for (i = 0; i < n; i++) {
-		//double dx = fabs(vector_item(&opt->step, i));
-		double x = fabs(vector_item(&opt->x0, i));
-		//double dg = fabs(vector_item(&opt->dg, i));
-		double g = fabs(vector_item(&opt->grad0, i));
+		double x = vector_item(&opt->x0, i);
+		double g = vector_item(&opt->grad0, i);
 		
-		if (!(g < reltol * MAX(1.0, x)))
+		if (!(fabs(g) < gtol * MAX(1.0, fabs(x))))
 			return false;
 	}
 	return true;		
@@ -184,9 +179,9 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 	assert(isfinite(f));
 	assert(isfinite(vector_norm(grad)));
 
-	double g = vector_dot(grad, &opt->search_dir);
+	double g = vector_dot(grad, &opt->search);
 	enum linesearch_task task = linesearch_advance(&opt->ls, f, g);
-	bool wolfe = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
+	bool ok = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
 	
 	switch (task) {
 	case LINESEARCH_CONV:
@@ -197,9 +192,9 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 
 		if (opt->ls_it < opt->ctrl.ls_maxit) {
 			vector_assign_copy(&opt->x, &opt->x0);
-			vector_axpy(linesearch_step(&opt->ls), &opt->search_dir, &opt->x);
+			vector_axpy(linesearch_step(&opt->ls), &opt->search, &opt->x);
 			return &opt->x;
-		} else if (wolfe) {
+		} else if (ok) {
 			break;
 		} else {
 			opt->done = true;
@@ -207,7 +202,7 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 			return NULL;
 		}
 	default:
-		if (wolfe) {
+		if (ok) {
 			break;
 		} else {
 			opt->done = true;
@@ -223,7 +218,7 @@ const struct vector *bfgs_advance(struct bfgs *opt, double f,
 
 	double step0 = 1.0;
 	double f0 = f;	
-	double g0 = vector_dot(grad, &opt->search_dir);
+	double g0 = vector_dot(grad, &opt->search);
 	assert(g0 < 0);
 
 	if (opt->done) {

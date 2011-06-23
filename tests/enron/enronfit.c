@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 	double penalty = n / 9.0;
 	ssize_t maxit = 5000;
 	ssize_t report = 1;
-	bool trace = false;
+	bool trace = true;
 	
 	struct recv_fit fit;
 	recv_fit_init(&fit, &messages, &design, NULL, penalty);
@@ -88,9 +88,11 @@ int main(int argc, char **argv)
 	do {
 		if (trace && it % report == 0) {
 			double dev = n * recv_loglik_avg_dev(&fit.loglik);
-			double dec = -2 * n * bfgs_decrement(&fit.opt);
-			printf("[iter %"SSIZE_FMT" deviance %.22f decrement %.22f]\n", it,
-				dev, dec);
+			double f = bfgs_value(&fit.opt);
+			const struct vector *grad = bfgs_grad(&fit.opt);
+			double ngrad = vector_max_abs(grad);
+			printf("iter %"SSIZE_FMT" deviance %.1f f: %.22f |grad| %.22f\n",
+			       it, dev, f, ngrad);
 		}
 		
 		it++;

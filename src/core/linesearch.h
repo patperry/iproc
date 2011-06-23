@@ -1,9 +1,6 @@
 #ifndef _LINESEARCH_H
 #define _LINESEARCH_H
 
-#include <float.h>
-
-
 #define LINESEARCH_FTOL0	(1e-4)
 #define LINESEARCH_GTOL0	(0.9)
 #define LINESEARCH_XTOL0	(1e-15)
@@ -25,25 +22,7 @@ struct linesearch_ctrl {
 	double stpmin;
 	double stpmax;
 };
-
-/*
-p <= stmin || *stp >= stmax)) {
-	s_copy(task, "WARNING: ROUNDING ERRORS PREVENT PROGRESS", task_len, (
-									     ftnlen)41);
-}
-if (brackt && stmax - stmin <= *xtol * stmax) {
-	s_copy(task, "WARNING: XTOL TEST SATISFIED", task_len, (ftnlen)28);
-}
-if (*stp == *stpmax && *f <= ftest && *g <= gtest) {
-	s_copy(task, "WARNING: STP = STPMAX", task_len, (ftnlen)21);
-}
-if (*stp == *stpmin && (*f > ftest || *g >= gtest)) {
-	s_copy(task, "WARNING: STP = STPMIN", task_len, (ftnlen)21);
-}
-if (*f <= ftest && abs(*g) <= *gtol * (-ginit)) {
-	s_copy(task, "CONVERGENCE
-*/
-	       
+   
 enum linesearch_task {
 	LINESEARCH_CONV = 0,
 	LINESEARCH_STEP = 1,

@@ -68,9 +68,9 @@ Riproc_fit(SEXP Rdesign,
 			const char *msg = penalty == 0 ? "" : "(penalized) ";
 			ssize_t n = recv_loglik_count(&fit.loglik);
 			double dev = n * recv_loglik_avg_dev(&fit.loglik);
-			double dec = -2 * bfgs_decrement(&fit.opt);
+			//double dec = -2 * bfgs_decrement(&fit.opt);
 			Rprintf("iter %d deviance %s%.6f decrement %.6f\n", it,
-				msg, dev, dec);
+				msg, dev, NAN);
 		}
 	} while (it < maxit && !recv_fit_converged(&fit));
 
