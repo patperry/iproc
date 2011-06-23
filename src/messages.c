@@ -14,6 +14,7 @@ void messages_init(struct messages *msgs)
 	array_init(&msgs->recipients, sizeof(ssize_t));
 	refcount_init(&msgs->refcount);
 
+	msgs->nrecv = 0;
 	msgs->tlast = -INFINITY;
 	msgs->max_to = -1;
 	msgs->max_from = -1;
@@ -59,6 +60,12 @@ ssize_t messages_count(const struct messages *msgs)
 {
 	assert(msgs);
 	return array_count(&msgs->message_reps);
+}
+
+ssize_t messages_recv_count(const struct messages *msgs)
+{
+	assert(msgs);
+	return msgs->nrecv;
 }
 
 double messages_tlast(const struct messages *msgs)
@@ -115,7 +122,8 @@ bool messages_add(struct messages *msgs, double time,
 	array_add(message_reps, &m);	// always succeeds
 	msgs->to_cached = false;
 	msgs->tlast = time;
-
+	msgs->nrecv += nto;
+	
 	return true;
 }
 

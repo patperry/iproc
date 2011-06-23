@@ -22,6 +22,7 @@ struct messages {
 	struct array message_reps;
 	struct array recipients;
 	struct refcount refcount;
+	ssize_t nrecv;
 	double tlast;
 	ssize_t max_from;
 	ssize_t max_to;
@@ -50,6 +51,7 @@ struct messages *messages_ref(struct messages *msgs);
 void messages_free(struct messages *msgs);
 
 ssize_t messages_count(const struct messages *msgs);
+ssize_t messages_recv_count(const struct messages *msgs);
 double messages_tlast(const struct messages *msgs);
 bool messages_add(struct messages *msgs, double time,
 		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
