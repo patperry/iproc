@@ -745,9 +745,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				22EFB31513B3AE18007755EA /* lapack-private.h */,
-				22EFB31613B3AE18007755EA /* linalg.c */,
-				22EFB31713B3AE18007755EA /* linalg.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
 				228160F613B0F60C00B38330 /* bfgs.c */,
@@ -765,6 +762,9 @@
 				221C601F1352D3720008B25B /* intmap.h */,
 				221C601A1352B8580008B25B /* intset.c */,
 				221C601B1352B85D0008B25B /* intset.h */,
+				22EFB31513B3AE18007755EA /* lapack-private.h */,
+				22EFB31613B3AE18007755EA /* linalg.c */,
+				22EFB31713B3AE18007755EA /* linalg.h */,
 				226E3CBC13AFEE610083E9E0 /* linesearch.c */,
 				226E3CBD13AFEE610083E9E0 /* linesearch.h */,
 				221FEE7C132EC8710000097B /* logsumexp.c */,

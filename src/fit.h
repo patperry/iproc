@@ -1,16 +1,14 @@
-#ifndef _IPROC_FIT_H
-#define _IPROC_FIT_H
-
-#include <stdbool.h>
-#include <float.h>
-#include <math.h>
+#ifndef _RECV_FIT_H
+#define _RECV_FIT_H
 
 #include "bfgs.h"
 #include "design.h"
-#include "recv_loglik.h"
+#include "linalg.h"
+#include "linesearch.h"
 #include "matrix.h"
 #include "messages.h"
 #include "model.h"
+#include "recv_loglik.h"
 #include "vector.h"
 
 
@@ -23,10 +21,15 @@ struct recv_fit {
 	struct model model;
 	struct recv_loglik loglik;
 	
-	struct bfgs opt;
-	enum bfgs_task task;
 	double f;
 	struct vector grad;
+	struct matrix imat_evec;
+	struct vector imat_eval;
+	ssize_t imat_rank;
+	struct symeig eig;
+	
+	struct linesearch ls;
+	struct linesearch_ctrl lsctrl;
 };
 
 
@@ -41,4 +44,4 @@ bool recv_fit_converged(const struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 
 
-#endif /* _IPROC_FIT_H */
+#endif /* _RECV_FIT_H */
