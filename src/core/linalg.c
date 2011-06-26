@@ -4,6 +4,27 @@
 #include "util.h"
 #include "linalg.h"
 
+
+ssize_t chol_solve(enum matrix_uplo uplo, struct matrix *a, struct matrix *b)
+{
+	assert(matrix_nrow(a) == matrix_ncol(a));
+	assert(matrix_nrow(b) == matrix_nrow(a));
+	
+	char *cuplo = uplo == UPLO_LOWER ? "L" : "U";
+	f77int n = (f77int)matrix_nrow(b);
+	f77int nrhs = (f77int)matrix_ncol(b);
+	double *pa = matrix_to_ptr(a);
+	f77int lda = (f77int)matrix_lda(a);
+	double *pb = matrix_to_ptr(b);
+	f77int ldb = (f77int)matrix_lda(b);
+	f77int info = 0;
+	
+	F77_FUNC(dposv) (cuplo, &n, &nrhs, pa, &lda, pb, &ldb, &info);
+	assert(info >= 0);
+	
+	return (ssize_t)info;
+}
+
 static void symeig_get_worksize(ssize_t n, enum eig_job job,
 				f77int *lwork, f77int *liwork)
 {
@@ -32,15 +53,25 @@ void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
 	assert(eig);
 	assert(0 <= n && n <= F77INT_MAX);
 	
+	eig->work = NULL;
+	eig->iwork = NULL;
+	symeig_reinit(eig, n, job);
+}
+
+void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job)
+{
+	assert(eig);
+	assert(0 <= n && n <= F77INT_MAX);
+	
 	f77int lwork, liwork;
 	
 	symeig_get_worksize(n, job, &lwork, &liwork);
-	
+
 	eig->n = n;
 	eig->job = job;
-	eig->work = xmalloc(lwork * sizeof(eig->work[0]));
+	eig->work = xrealloc(eig->work, lwork * sizeof(eig->work[0]));
 	eig->lwork = lwork;
-	eig->iwork = xmalloc(liwork * sizeof(eig->iwork[0]));
+	eig->iwork = xrealloc(eig->iwork, liwork * sizeof(eig->iwork[0]));
 	eig->liwork = liwork;
 	eig->info = -1;
 }
