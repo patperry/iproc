@@ -17,19 +17,25 @@ struct recv_fit {
 	const struct messages *msgs;
 	double penalty;
 
-	struct frame frame;	
+	struct frame frame;
+	struct vector coefs;
 	struct model model;
 	struct recv_loglik loglik;
 	
-	double f;
-	struct vector grad;
-	struct matrix imat_evec;
-	struct vector imat_eval;
-	ssize_t imat_rank;
-	struct symeig eig;
+	/* optimization problem */
+	struct vector scale; /* scaling for the coefiecnets */
+	struct matrix ce_t;  /* equality constraints: ce * coef = be */
+	struct vector be;    /* cont'd */
+
+	/* optimization problem workspace */
+	struct vector duals;  /* dual parameters */
+	struct vector resid;  /* dual and primal residuals */
+	struct matrix kkt;    /* KKT matrix */
 	
+	/* additional workspace */
 	struct linesearch ls;
 	struct linesearch_ctrl lsctrl;
+	struct symeig eig;	
 };
 
 

@@ -75,8 +75,8 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	ssize_t n = messages_recv_count(&messages);
-	double penalty = n / 512.0;
+	/* ssize_t n = messages_recv_count(&messages); */
+	double penalty = 0; // n / 512.0;
 	ssize_t maxit = 30;
 	ssize_t report = 1;
 	bool trace = true;
@@ -87,12 +87,12 @@ int main(int argc, char **argv)
 	
 	do {
 		if (trace && it % report == 0) {
-			double dev = n * recv_loglik_avg_dev(&fit.loglik);
+			/*double dev = n * recv_loglik_avg_dev(&fit.loglik);
 			double f = fit.f;
 			const struct vector *grad = &fit.grad;
 			double ngrad = vector_max_abs(grad);
 			printf("iter %"SSIZE_FMT" deviance %.1f f: %.22f |grad| %.22f\n",
-			       it, dev, f, ngrad);
+			       it, dev, f, ngrad);*/
 		}
 		
 		it++;
