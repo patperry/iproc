@@ -51,14 +51,16 @@ void vector_div(struct vector *v1, const struct vector *v2);
 
 /* special functions */
 void vector_exp(struct vector *v);
+void vector_sqrt(struct vector *v);
 
 /* other arithmetic operations */
 double vector_log_sum_exp(const struct vector *vector);
 
 /* linear algebra */
 double vector_dot(const struct vector *v1, const struct vector *v2);
-double vector_norm(const struct vector *v);
-double vector_norm1(const struct vector *v);
+double vector_norm(const struct vector *v); // Eucludean norm
+double vector_norm2(const struct vector *v); // Square of Euclidean
+double vector_sum_abs(const struct vector *v);
 void vector_axpy(double alpha, const struct vector *x, struct vector *y);
 double vector_dist(const struct vector *v1, const struct vector *v2);
 

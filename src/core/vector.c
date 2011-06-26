@@ -283,7 +283,13 @@ double vector_norm(const struct vector *vector)
 	return norm;
 }
 
-double vector_norm1(const struct vector *vector)
+double vector_norm2(const struct vector *v)
+{
+	assert(v);
+	return vector_dot(v, v);
+}
+
+double vector_sum_abs(const struct vector *vector)
 {
 	assert(vector);
 
@@ -380,6 +386,18 @@ void vector_exp(struct vector *vector)
 	for (i = 0; i < n; i++) {
 		x = *vector_item_ptr(vector, i);
 		*vector_item_ptr(vector, i) = exp(x);
+	}
+}
+
+void vector_sqrt(struct vector *v)
+{
+	ssize_t n = vector_dim(v);
+	ssize_t i;
+	double x;
+	
+	for (i = 0; i < n; i++) {
+		x = *vector_item_ptr(v, i);
+		*vector_item_ptr(v, i) = sqrt(x);
 	}
 }
 
