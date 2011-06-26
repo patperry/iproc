@@ -78,12 +78,21 @@ struct recv_sloglik {
 	struct recv_sloglik_imat imat_last, imat_avg;
 };
 
+struct recv_loglik_info {
+	struct matrix imat;
+	struct vector score;	
+	struct vector mean;
+	double dev;
+	ssize_t nrecv;
+	ssize_t nsend;
+};
+
 struct recv_loglik {
 	struct model *model;
 	struct array slogliks;
-	ssize_t nsend;
-	ssize_t nrecv;
 	struct recv_sloglik *last;
+	struct recv_loglik_info info;
+	bool info_cached;
 };
 
 void recv_loglik_init(struct recv_loglik *ll, struct model *m);
@@ -116,5 +125,8 @@ void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
 				 struct vector *y);
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
 				struct matrix *y);
+
+struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll);
+
 
 #endif /* _RECV_LOGLIK_H */
