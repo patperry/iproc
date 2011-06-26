@@ -188,7 +188,7 @@ void matrix_get_row(const struct matrix *a, ssize_t i, double *dst)
 	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
 }
 
-void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
+void matrix_axpy_row(double alpha, const struct matrix *x, ssize_t i,
 		     struct vector *y)
 {
 	assert(x);
@@ -208,7 +208,7 @@ void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
-void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
+void matrix_axpy_col(double alpha, const struct matrix *x, ssize_t j,
 		     struct vector *y)
 {
 	assert(x);
@@ -225,6 +225,69 @@ void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
 	double *py = vector_to_ptr(y);
 	f77int incy = 1;
 
+	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
+}
+
+
+void matrix_fill_diag(struct matrix *a, ssize_t i, double val)
+{
+	assert(a);
+	assert(0 <= i && i < matrix_nrow(a));
+	
+	ssize_t j, n = matrix_ncol(a);
+	
+	for (j = 0; j < n; j++) {
+		matrix_set_item(a, i, j, val);
+	}
+}
+
+void matrix_set_diag(struct matrix *a, ssize_t i, const double *src)
+{
+	assert(a);
+	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
+	assert(src);
+	
+	f77int n = (f77int)matrix_diag_dim(a, i);
+	double *y = (i >= 0 ? matrix_item_ptr(a, 0, i)
+			     : matrix_item_ptr(a, -i, 0));
+	f77int incy = (f77int)(matrix_lda(a) + 1);
+	const double *x = src;
+	f77int incx = 1;
+	
+	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
+}
+
+void matrix_get_diag(const struct matrix *a, ssize_t i, double *dst)
+{
+	assert(a);
+	assert(dst);
+	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
+	
+	f77int n = (f77int)matrix_diag_dim(a, i);
+	const double *x = (i >= 0 ? matrix_item_ptr(a, 0, i)
+			    : matrix_item_ptr(a, -i, 0));
+	f77int incx = (f77int)(matrix_lda(a) + 1);
+	double *y = dst;
+	f77int incy = 1;
+	
+	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
+}
+
+void matrix_axpy_diag(double alpha, const struct matrix *x, ssize_t i,
+		      struct vector *y)
+{
+	assert(x);
+	assert(y);
+	assert(-matrix_nrow(x) < i && i < matrix_ncol(x));
+	assert(vector_dim(y) == matrix_diag_dim(x, i));
+	
+	f77int n = (f77int)matrix_diag_dim(x, i);
+	const double *px = (i >= 0 ? matrix_item_ptr(x, 0, i)
+			    : matrix_item_ptr(x, -i, 0));
+	f77int incx = (f77int)(matrix_lda(x) + 1);
+	double *py = vector_to_ptr(y);
+	f77int incy = 1;
+	
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
@@ -295,6 +358,58 @@ void matrix_scale_rows(struct matrix *a, const struct vector *scale)
 	for (j = 0; j < n; j++) {
 		col = matrix_col(a, j);
 		vector_mul(&col, scale);
+	}
+}
+
+void matrix_div_rows(struct matrix *a, const struct vector *scale)
+{
+	assert(a);
+	assert(scale);
+	assert(matrix_nrow(a) == vector_dim(scale));
+	
+	struct vector col;
+	ssize_t n = matrix_ncol(a);
+	ssize_t j;
+	
+	for (j = 0; j < n; j++) {
+		col = matrix_col(a, j);
+		vector_div(&col, scale);
+	}
+}
+
+void matrix_scale_cols(struct matrix *a, const struct vector *scale)
+{
+	assert(a);
+	assert(scale);
+	assert(matrix_ncol(a) == vector_dim(scale));
+
+	struct vector col;
+	double alpha;
+	ssize_t n = matrix_ncol(a);
+	ssize_t j;
+	
+	for (j = 0; j < n; j++) {
+		col = matrix_col(a, j);
+		alpha = vector_item(scale, j);
+		vector_scale(&col, alpha);
+	}
+}
+
+void matrix_div_cols(struct matrix *a, const struct vector *scale)
+{
+	assert(a);
+	assert(scale);
+	assert(matrix_ncol(a) == vector_dim(scale));
+	
+	struct vector col;
+	double alpha;
+	ssize_t n = matrix_ncol(a);
+	ssize_t j;
+	
+	for (j = 0; j < n; j++) {
+		col = matrix_col(a, j);
+		alpha = vector_item(scale, j);
+		vector_scale(&col, 1.0 / alpha);
 	}
 }
 
@@ -400,12 +515,12 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 		if (trans == TRANS_NOTRANS) {
 			j = SVECTOR_IDX(itx);
 			x_j = SVECTOR_VAL(itx);
-			matrix_col_axpy(alpha * x_j, a, j, y);
+			matrix_axpy_col(alpha * x_j, a, j, y);
 		} else {
 
 			i = SVECTOR_IDX(itx);
 			x_i = SVECTOR_VAL(itx);
-			matrix_row_axpy(alpha * x_i, a, i, y);
+			matrix_axpy_row(alpha * x_i, a, i, y);
 		}
 	}
 }

@@ -42,6 +42,7 @@ static inline ssize_t matrix_ncol(const struct matrix *a);
 static inline ssize_t matrix_lda(const struct matrix *a);
 static inline ssize_t matrix_count(const struct matrix *a);
 static inline double *matrix_to_ptr(const struct matrix *a);
+static inline ssize_t matrix_diag_dim(const struct matrix *a, ssize_t i);
 
 static inline double matrix_item(const struct matrix *a, ssize_t i, ssize_t j);
 static inline double *matrix_item_ptr(const struct matrix *a, ssize_t i,
@@ -53,22 +54,38 @@ static inline void matrix_set_item(struct matrix *a, ssize_t i, ssize_t j,
 void matrix_fill(struct matrix *a, double value);
 void matrix_assign_identity(struct matrix *a);
 
+/* cols */
 void matrix_fill_col(struct matrix *a, ssize_t j, double val);
+void matrix_axpy_col(double alpha, const struct matrix *x, ssize_t j,
+		     struct vector *y);
+
+/* rows */
 void matrix_fill_row(struct matrix *a, ssize_t i, double val);
 void matrix_set_row(struct matrix *a, ssize_t i, const double *src);
 void matrix_get_row(const struct matrix *a, ssize_t i, double *dst);
+void matrix_axpy_row(double alpha, const struct matrix *x, ssize_t i,
+		     struct vector *y);
+
+/* diags */
+void matrix_fill_diag(struct matrix *a, ssize_t i, double val);
+void matrix_set_diag(struct matrix *a, ssize_t i, const double *src);
+void matrix_get_diag(const struct matrix *a, ssize_t i, double *dst);
+void matrix_axpy_diag(double alpha, const struct matrix *x, ssize_t i,
+		      struct vector *y);
+
 
 /* arithmetic */
 void matrix_scale(struct matrix *a, double scale);
 void matrix_scale_rows(struct matrix *a, const struct vector *scale);
+void matrix_scale_cols(struct matrix *a, const struct vector *scale);
+void matrix_div_rows(struct matrix *a, const struct vector *scale);
+void matrix_div_cols(struct matrix *a, const struct vector *scale);
+
 void matrix_add(struct matrix *a, const struct matrix *src);
 void matrix_sub(struct matrix *a, const struct matrix *src);
 void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y);
 
-void matrix_row_axpy(double alpha, const struct matrix *x, ssize_t i,
-		     struct vector *y);
-void matrix_col_axpy(double alpha, const struct matrix *x, ssize_t j,
-		     struct vector *y);
+
 
 /* linear algebra */
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
@@ -165,6 +182,20 @@ ssize_t matrix_lda(const struct matrix *a)
 {
 	assert(a);
 	return a->lda;
+}
+
+ssize_t matrix_diag_dim(const struct matrix *a, ssize_t i)
+{
+	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
+	
+	ssize_t m = matrix_nrow(a);
+	ssize_t n = matrix_ncol(a);
+	
+	if (i >= 0) {
+		return MIN(m, n - i);
+	} else {
+		return MIN(n, m + i);
+	}
 }
 
 ssize_t matrix_count(const struct matrix *a)
