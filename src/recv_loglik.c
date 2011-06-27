@@ -1128,7 +1128,7 @@ static void cache_info(struct recv_loglik *ll)
 {
 	info_clear(&ll->info);
 	ll->info.dev += recv_loglik_avg_dev_nocache(ll);
-	recv_loglik_axpy_avg_score_nocache(1, ll, &ll->info.mean);	
+	recv_loglik_axpy_avg_mean_nocache(1, ll, &ll->info.mean);	
 	recv_loglik_axpy_avg_score_nocache(1, ll, &ll->info.score);
 	recv_loglik_axpy_avg_imat_nocache(1, ll, &ll->info.imat);
 }
