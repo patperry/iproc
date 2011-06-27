@@ -24,12 +24,28 @@ struct symeig {
 	f77int info;
 };
 
+struct ldlfac {
+	ssize_t n;
+	double *work;
+	f77int lwork;
+	f77int *ipiv;
+	f77int info;
+};
 
 // replace b with a \ b; replace a with its cholesky factor
 // returns 0 on success, i > 0 if leading minor of order i is not pd
 ssize_t chol_solve(enum matrix_uplo uplo, struct matrix *a, struct matrix *b);
 
+void ldlfac_init(struct ldlfac *fac, ssize_t n);
+void ldlfac_reinit(struct ldlfac *fac, ssize_t n);
+void ldlfac_deinit(struct ldlfac *fac);
+static inline ssize_t ldlfac_dim(const struct ldlfac *fac)
+{
+	assert(fac);
+	return fac->n;
+}
 
+ssize_t ldlfac_solve(struct ldlfac *fac, enum matrix_uplo uplo, struct matrix *a, struct matrix *b);
 
 void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job);
 void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job);
