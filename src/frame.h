@@ -135,6 +135,12 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 		      const struct frame *f, ssize_t isend,
 		      const struct svector *x, double beta, struct vector *y);
 
+static inline const struct design *frame_design(const struct frame *f)
+{
+	assert(f);
+	return f->design;
+}
+
 /* debugging */
 void fprintf_event(FILE * restrict stream, const struct frame_event *e);
 
