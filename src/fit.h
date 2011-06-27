@@ -26,9 +26,10 @@ struct recv_fit {
 	struct vector scale; /* scaling for the coefiecnets */
 	struct matrix ce_t;  /* equality constraints: ce * coef = be */
 	struct vector be;    /* cont'd */
+	ssize_t ne;
 
 	/* optimization problem workspace */
-	struct vector duals;  /* dual parameters */
+	struct vector params; /* primal and dual parameters */
 	struct vector resid;  /* dual and primal residuals */
 	struct matrix kkt;    /* KKT matrix */
 	
@@ -36,6 +37,7 @@ struct recv_fit {
 	struct linesearch ls;
 	struct linesearch_ctrl lsctrl;
 	struct symeig eig;	
+	struct ldlfac ldl;
 };
 
 

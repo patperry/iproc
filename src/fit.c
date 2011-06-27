@@ -48,12 +48,11 @@ static void compute_scale(struct recv_fit *fit)
 	
 	/* otherwise, take the square root of the variance */
 	vector_sqrt(&fit->scale);
-	
 	vector_fill(&fit->scale, 1.0);
 }
 
-// sets ce_t, and be
-// reinits kkt and resid, and duals
+// sets ce_t, be, and ne
+// reinits kkt and resid, duals, and ldlfac
 // assumes scale is initalized and evaluate has already been called
 static void compute_constraints(struct recv_fit *fit)
 {
@@ -70,10 +69,9 @@ static void compute_constraints(struct recv_fit *fit)
 	struct vector eval = vector_slice(&fit->resid, 0, dim);
 
 	matrix_assign_copy(&evec, imat);
-	matrix_scale_rows(&evec, &fit->scale);
-	matrix_div_cols(&evec, &fit->scale);
 	matrix_div_rows(&evec, &fit->scale);
-	
+	matrix_div_cols(&evec, &fit->scale);
+
 	/* compute its eigendecomposition */
 	assert(symeig_dim(&fit->eig) == dim);
 	assert(symeig_job(&fit->eig) == EIG_VEC);
@@ -94,11 +92,15 @@ static void compute_constraints(struct recv_fit *fit)
 	matrix_assign_copy(&fit->ce_t, &u);
 	vector_reinit(&fit->be, i);
 	vector_fill(&fit->be, 0);
+	fit->ne = i;
 	
 	/* update dims of kkt matrix, residuals and dual parameters */
 	matrix_reinit(&fit->kkt, dim + i, dim + i);
 	vector_reinit(&fit->resid, dim + i);
-	vector_reinit(&fit->duals, i);
+	vector_reinit(&fit->params, dim + i);
+	
+	/* update ldlfac dimension */
+	ldlfac_reinit(&fit->ldl, dim + i);
 }
 
 // sets resid
@@ -106,7 +108,7 @@ static void compute_constraints(struct recv_fit *fit)
 static void compute_resid(struct recv_fit *fit)
 {
 	ssize_t dim = model_recv_dim(&fit->model);
-	ssize_t ne = matrix_ncol(&fit->ce_t);
+	ssize_t ne = fit->ne;
 
 	assert(vector_dim(&fit->be) == ne);
 	
@@ -117,14 +119,16 @@ static void compute_resid(struct recv_fit *fit)
 	 * where grad(f) = s^{-1} * grad(nll)
 	 */
 	struct vector r1 = vector_slice(&fit->resid, 0, dim);
+	struct vector duals = vector_slice(&fit->params, dim, ne);
 	vector_assign_copy(&r1, score);
 	vector_div(&r1, &fit->scale);
-	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &fit->duals, -1.0, &r1);
+	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &duals, -1.0, &r1);
 	
 	/* r2 is the primal residual: ce * x - be */
 	struct vector r2 = vector_slice(&fit->resid, dim, ne);
+	struct vector primals = vector_slice(&fit->params, 0, dim);
 	vector_assign_copy(&r2, &fit->be);
-	matrix_mul(1.0, TRANS_TRANS, &fit->ce_t, &fit->coefs, -1.0, &r2);
+	matrix_mul(1.0, TRANS_TRANS, &fit->ce_t, &primals, -1.0, &r2);
 }
 
 // sets kkt
@@ -132,14 +136,15 @@ static void compute_resid(struct recv_fit *fit)
 static void compute_kkt(struct recv_fit *fit)
 {
 	ssize_t dim = model_recv_dim(&fit->model);
-	ssize_t ne = matrix_ncol(&fit->ce_t);
-	
+	ssize_t ne = fit->ne;
+
 	assert(matrix_nrow(&fit->kkt) == dim + ne);
 	assert(matrix_ncol(&fit->kkt) == dim + ne);
 
 	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik);
 	const struct matrix *imat = &info->imat;
 
+	
 	/* k11 is the (scaled) hessian */
 	struct matrix k11 = matrix_slice(&fit->kkt, 0, 0, dim, dim);
 	matrix_assign_copy(&k11, imat);
@@ -155,6 +160,10 @@ static void compute_kkt(struct recv_fit *fit)
 	matrix_fill(&k22, 0.0);
 	
 	/* k21 is never referenced */
+#ifndef NDEBUG
+	struct matrix k21 = matrix_slice(&fit->kkt, dim, 0, ne, dim);
+	matrix_fill(&k21, 0);
+#endif
 }
 
 // sets scale, ce, be
@@ -179,7 +188,7 @@ static void preprocess(struct recv_fit *fit)
 static bool primal_dual_step(struct recv_fit *fit)
 {
 	ssize_t dim = model_recv_dim(&fit->model);
-	ssize_t ne = vector_dim(&fit->be);
+	ssize_t ne = fit->ne;
 	
 	double f0 = vector_norm2(&fit->resid);
 	double g0 = -2 * f0;
@@ -188,23 +197,24 @@ static bool primal_dual_step(struct recv_fit *fit)
 		return false; /* residual is 0 */
 	
 	/* determine the search direction */
-	struct matrix resid_mat = matrix_make(&fit->resid, dim + ne, 1);
-	ssize_t info = chol_solve(UPLO_UPPER, &fit->kkt, &resid_mat);
+	struct vector search;
+	vector_init_copy(&search, &fit->resid);
+	struct matrix smat = matrix_make(&search, dim + ne, 1);
+	ssize_t info = ldlfac_solve(&fit->ldl, UPLO_UPPER, &fit->kkt, &smat);
 	assert(info == 0);
-	vector_scale(&fit->resid, -1.0);
+	vector_scale(&search, -1.0);
 	
-	struct vector csearch = vector_slice(&fit->resid, 0, dim);
-	vector_mul(&csearch, &fit->scale);
-
-	struct vector dsearch = vector_slice(&fit->resid, dim, ne);
-	struct vector cgrad, dgrad; /* gradients of |resid|^2 */
-	vector_init(&cgrad, dim);
-	vector_init(&dgrad, ne);
+	struct vector grad;
+	vector_init(&grad, dim + ne); /* gradients of |resid|^2 */
+	struct vector cgrad = vector_slice(&grad, 0, dim);
+	struct vector dgrad = vector_slice(&grad, dim, ne);
 
 	/* save the initial primal and dual variables */
-	struct vector coefs0, duals0;
-	vector_init_copy(&coefs0, &fit->coefs);
-	vector_init_copy(&duals0, &fit->duals);
+	struct vector params0;
+	vector_init_copy(&params0, &fit->params);
+	
+	/* define the relevant subvectors */
+	struct vector primals = vector_slice(&fit->params, 0, dim);
 	
 	/* perform a linesearch to reduce the residual norm */
 	double f, g, stp;
@@ -217,12 +227,12 @@ static bool primal_dual_step(struct recv_fit *fit)
 	do {
 		/* take a step to get new primal and dual variables */
 		stp = linesearch_step(&fit->ls);		
-		vector_assign_copy(&fit->coefs, &coefs0);
-		vector_assign_copy(&fit->duals, &duals0);
-		vector_axpy(stp, &csearch, &fit->coefs);
-		vector_axpy(stp, &dsearch, &fit->duals);
+		vector_assign_copy(&fit->params, &params0);
+		vector_axpy(stp, &search, &fit->params);
 
 		/* compute the fit, residuals, and kkt matrix at the new point */
+		vector_assign_copy(&fit->coefs, &primals);
+		vector_div(&fit->coefs, &fit->scale);
 		evaluate_loglik(fit);
 		compute_resid(fit);
 		compute_kkt(fit);
@@ -240,18 +250,17 @@ static bool primal_dual_step(struct recv_fit *fit)
 		
 		/* evaluate the new squared residual norm and directional derivative */
 		f = vector_norm2(&fit->resid);
-		g = vector_dot(&csearch, &cgrad) + vector_dot(&dsearch, &dgrad);
+		g = vector_dot(&search, &grad);
 		task = linesearch_advance(&fit->ls, f, g);
 		
 		printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
-	} while (task == LINESEARCH_STEP);
+	} while (task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
 
-	vector_deinit(&duals0);
-	vector_deinit(&coefs0);
-	vector_deinit(&dgrad);	
-	vector_deinit(&cgrad);
+	vector_deinit(&params0);
+	vector_deinit(&grad);	
+	vector_deinit(&search);
 	
-	return task == LINESEARCH_CONV;
+	return linesearch_sdec(&fit->ls);
 }
 
 
@@ -290,10 +299,11 @@ void recv_fit_init(struct recv_fit *fit,
 	vector_init(&fit->scale, dim);
 	matrix_init(&fit->ce_t, dim, 0);
 	vector_init(&fit->be, 0);
-	vector_init(&fit->duals, 0);
+	vector_init(&fit->params, dim);
 	vector_init(&fit->resid, dim);
 	matrix_init(&fit->kkt, dim, dim);
 	symeig_init(&fit->eig, dim, EIG_VEC);
+	ldlfac_init(&fit->ldl, dim);
 
 	struct linesearch_ctrl lsctrl = LINESEARCH_CTRL0;
 	fit->lsctrl = lsctrl;
@@ -305,10 +315,11 @@ void recv_fit_deinit(struct recv_fit *fit)
 {
 	assert(fit);
 	
+	ldlfac_deinit(&fit->ldl);
 	symeig_deinit(&fit->eig);
 	matrix_deinit(&fit->kkt);
 	vector_deinit(&fit->resid);
-	vector_deinit(&fit->duals);
+	vector_deinit(&fit->params);
 	vector_deinit(&fit->be);
 	matrix_deinit(&fit->ce_t);	
 	vector_deinit(&fit->scale);
