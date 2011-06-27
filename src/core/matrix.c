@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <strings.h>
 #include "blas-private.h"
 #include "util.h"
@@ -548,4 +549,24 @@ matrix_update1(struct matrix *a,
 	f77int lda = (f77int)matrix_lda(a);
 
 	F77_FUNC(dger) (&m, &n, &alpha, px, &incx, py, &incy, pa, &lda);
+}
+
+void matrix_printf(const struct matrix *a)
+{
+	ssize_t m = matrix_nrow(a);
+	ssize_t n = matrix_ncol(a);
+	ssize_t i, j;
+	
+	printf("a <- matrix(c(");
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < m; i++) {
+			double x = matrix_item(a, i, j);
+			if (i == 0 && j == 0) {
+				printf("%.8e", x);
+			} else {
+				printf(", %.8e", x);
+			}
+		}
+	}
+	printf("), %"SSIZE_FMT", %"SSIZE_FMT")\n", m, n);
 }

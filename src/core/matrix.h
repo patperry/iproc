@@ -98,6 +98,10 @@ void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
 
+
+/* debug */
+void matrix_printf(const struct matrix *a);
+
 /* deprecated */
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol);
 struct matrix *matrix_alloc_copy(const struct matrix *src);
