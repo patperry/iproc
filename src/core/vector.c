@@ -436,7 +436,7 @@ void vector_printf(const struct vector *v)
 		if (*vector_item_ptr(v, i) == 0.0)
 			continue;
 
-		printf("\n         %" SSIZE_FMT ", %.8f", i,
+		printf("\n         %" SSIZE_FMT ", %.22f", i,
 		       *vector_item_ptr(v, i));
 	}
 	printf("\n       }");
