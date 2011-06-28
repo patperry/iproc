@@ -80,7 +80,7 @@ static void test_rv_nrecv(void **state)
 	matrix_fill(&xnrecv, 0.0);
 
 	vector_init(&x, design_recv_dim(&design));
-	vector_set_basis(&x, rv_nrecv_index);
+	vector_set_basis(&x, rv_nrecv_index + 1);
 	vector_init(&y, design_recv_count(&design));
 	
 	isend = 0;
