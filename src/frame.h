@@ -10,13 +10,13 @@
 #include "design.h"
 
 enum frame_event_type {
-	DYAD_EVENT_INIT = 1 << 1,
-	DYAD_EVENT_MOVE = 1 << 2,
-	TRIAD_EVENT_INIT = 1 << 3,
-	TRIAD_EVENT_MOVE1 = 1 << 4,
-	TRIAD_EVENT_MOVE2 = 1 << 5,
-	SEND_VAR_EVENT = 1 << 6,
-	RECV_VAR_EVENT = 1 << 7
+	DYAD_EVENT_INIT = 1 << 0,
+	DYAD_EVENT_MOVE = 1 << 1,
+	TRIAD_EVENT_INIT = 1 << 2,
+	TRIAD_EVENT_MOVE1 = 1 << 3,
+	TRIAD_EVENT_MOVE2 = 1 << 4,
+	SEND_VAR_EVENT = 1 << 5,
+	RECV_VAR_EVENT = 1 << 6
 };
 
 struct message_event_meta {
@@ -65,6 +65,12 @@ struct frame_event {
 	} meta;
 };
 
+struct frame_observer {
+	uint8_t event_mask;
+	void *udata;	
+	void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f);	
+};
+
 struct frame {
 	const struct design *design;
 	struct history history;
@@ -73,6 +79,7 @@ struct frame {
 	struct array events;	// events that happen immediately after the current time
 	struct pqueue future_events;
 	ssize_t next_event_id;
+	struct array observers;
 	struct matrix send_xt;
 	struct refcount refcount;
 };
@@ -113,6 +120,12 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 struct vector frame_send_x(struct frame *f, ssize_t isend);
 struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 			     ssize_t jrecv);
+
+/* observers */
+void frame_add_observer(struct frame *f, uint8_t event_mask, void *udata,
+			void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f));
+void frame_remove_observer(struct frame *f, void *udata);
+			
 
 void frame_send_mul(double alpha, enum trans_op trans,
 		    const struct frame *f,

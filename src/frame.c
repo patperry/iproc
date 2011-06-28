@@ -186,6 +186,7 @@ void frame_init(struct frame *f, const struct design *design)
 	array_init(&f->events, sizeof(struct frame_event));
 	pqueue_init(&f->future_events, frame_event_rcompare,
 		    sizeof(struct frame_event));
+	array_init(&f->observers, sizeof(struct frame_observer));
 	matrix_init(&f->send_xt, design_send_dim(design),
 		    design_send_count(design));
 	refcount_init(&f->refcount);
@@ -224,6 +225,7 @@ void frame_deinit(struct frame *f)
 
 	refcount_deinit(&f->refcount);
 	matrix_deinit(&f->send_xt);
+	array_deinit(&f->observers);
 	pqueue_deinit(&f->future_events);
 	array_deinit(&f->events);
 	var_frames_deinit(f);
@@ -304,23 +306,63 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i)
 	return array_item(&f->events, i);
 }
 
-static void notify_listeners(struct frame *f, const struct frame_event *e)
+void frame_add_observer(struct frame *f, uint8_t event_mask, void *udata,
+			void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f))
+{
+	assert(f);
+	assert(udata);
+	assert(handle_event);
+	
+	struct frame_observer *obs = array_add(&f->observers, NULL);
+	obs->event_mask = event_mask;
+	obs->udata = udata;
+	obs->handle_event = handle_event;
+}
+
+static bool observer_equals(const void *val, void *udata)
+{
+	const struct frame_observer *obs = val;
+	return obs->udata == udata;
+}
+
+void frame_remove_observer(struct frame *f, void *udata)
+{
+	assert(f);
+	assert(udata);
+
+	ssize_t pos = array_find_last_index(&f->observers, observer_equals, udata);
+	if (pos >= 0) {
+		array_remove_at(&f->observers, pos);
+	}
+}
+
+static void notify_observers(struct frame *f, const struct frame_event *e)
+{
+	assert(f);
+	assert(e);
+	assert(frame_time(f) == e->time);
+	
+	const struct frame_observer *obs;
+	ARRAY_FOREACH(obs, &f->observers) {
+		if (obs->event_mask & e->type) {
+			obs->handle_event(obs->udata, e, f);
+		}
+	}
+}
+
+static void notify_vars(struct frame *f, const struct frame_event *e)
 {
 	assert(f);
 	assert(e);
 	assert(frame_time(f) == e->time);
 
-	const struct array *vars = &f->vars;
 	struct frame_var *v;
-	ssize_t i, n = array_count(vars);
 
-	for (i = 0; i < n; i++) {
-		v = array_item(vars, i);
-		if (!(v->design->type->handle_event
-		      && v->design->type->event_mask & e->type))
-			continue;
-
-		v->design->type->handle_event(v, e, f);
+	ARRAY_FOREACH(v, &f->vars) {
+		if (v->design->type->handle_event
+		    && v->design->type->event_mask & e->type) {
+			v->design->type->handle_event(v, e, f);
+		}
 	}
 }
 
@@ -385,7 +427,7 @@ static void event_before(struct frame *f, const struct frame_event *e)
 	assert(f);
 	assert(e->time == frame_time(f));
 
-	notify_listeners(f, e);
+	notify_vars(f, e);
 
 	switch (e->type) {
 	case DYAD_EVENT_INIT:
@@ -421,6 +463,8 @@ static void event_after(struct frame *f, const struct frame_event *e)
 		recv_var_event_after(f, e);
 		break;
 	}
+	
+	notify_observers(f, e);
 }
 
 ssize_t frame_events_add(struct frame *f, struct frame_event *e)
