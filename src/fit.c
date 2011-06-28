@@ -15,10 +15,9 @@
 static void evaluate_loglik(struct recv_fit *fit)
 {
 	frame_clear(&fit->frame);
-	model_clear(&fit->model);
 	
 	// update coefs
-	model_set(&fit->model, &fit->frame, &fit->coefs);
+	model_set_recv_coefs(&fit->model, &fit->coefs);
 
 	// update loglik
 	recv_loglik_clear(&fit->loglik);
@@ -48,7 +47,7 @@ static void compute_scale(struct recv_fit *fit)
 	
 	/* otherwise, take the square root of the variance */
 	vector_sqrt(&fit->scale);
-	vector_fill(&fit->scale, 1.0);
+	//vector_fill(&fit->scale, 1.0);
 }
 
 // sets ce_t, be, and ne
@@ -116,17 +115,19 @@ static void compute_resid(struct recv_fit *fit)
 	const struct vector *score = &info->score;
 	
 	/* r1 is the dual residual: grad(f) + ce' * nu,
-	 * where grad(f) = s^{-1} * grad(nll)
+	 * where grad(f) = s^{-1} * grad(nll) + lambda * x
+	 *               = -[s^{-1} * score - lambda * x]
 	 */
 	struct vector r1 = vector_slice(&fit->resid, 0, dim);
+	struct vector primals = vector_slice(&fit->params, 0, dim);
 	struct vector duals = vector_slice(&fit->params, dim, ne);
 	vector_assign_copy(&r1, score);
 	vector_div(&r1, &fit->scale);
+	vector_axpy(-fit->penalty, &primals, &r1);
 	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &duals, -1.0, &r1);
 	
 	/* r2 is the primal residual: ce * x - be */
 	struct vector r2 = vector_slice(&fit->resid, dim, ne);
-	struct vector primals = vector_slice(&fit->params, 0, dim);
 	vector_assign_copy(&r2, &fit->be);
 	matrix_mul(1.0, TRANS_TRANS, &fit->ce_t, &primals, -1.0, &r2);
 }
@@ -149,7 +150,11 @@ static void compute_kkt(struct recv_fit *fit)
 	struct matrix k11 = matrix_slice(&fit->kkt, 0, 0, dim, dim);
 	matrix_assign_copy(&k11, imat);
 	matrix_div_rows(&k11, &fit->scale);
-	matrix_div_cols(&k11, &fit->scale);	
+	matrix_div_cols(&k11, &fit->scale);
+	ssize_t i;
+	for (i = 0; i < dim; i++) {
+		*matrix_item_ptr(&k11, i, i) += fit->penalty;
+	}
 	
 	/* k12 is the transpose of the equality constraint matrix */
 	struct matrix k12 = matrix_slice(&fit->kkt, 0, dim, dim, ne);
@@ -178,7 +183,17 @@ static void preprocess(struct recv_fit *fit)
 	vector_fill(&fit->coefs, 0);
 	evaluate_loglik(fit);
 	compute_scale(fit);
-	compute_constraints(fit); 
+	compute_constraints(fit);
+	
+	ssize_t dim = model_recv_dim(&fit->model);
+	ssize_t ne = fit->ne;
+	struct vector primals = vector_slice(&fit->params, 0, dim);
+	struct vector duals = vector_slice(&fit->params, dim, ne);
+	vector_fill(&primals, 1.0);
+	vector_fill(&duals, 0.0);	
+	vector_fill(&fit->coefs, 1.0);
+	vector_div(&fit->coefs, &fit->scale);
+	evaluate_loglik(fit);
 	compute_resid(fit);
 	compute_kkt(fit);
 }
@@ -256,6 +271,8 @@ static bool primal_dual_step(struct recv_fit *fit)
 		printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
 	} while (task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
 
+	assert(linesearch_sdec(&fit->ls));
+	
 	vector_deinit(&params0);
 	vector_deinit(&grad);	
 	vector_deinit(&search);
@@ -293,7 +310,7 @@ void recv_fit_init(struct recv_fit *fit,
 	}
 	
 
-	model_init(&fit->model, fit->design, &fit->coefs);
+	model_init(&fit->model, &fit->frame, &fit->coefs);
 	recv_loglik_init(&fit->loglik, &fit->model);
 	
 	vector_init(&fit->scale, dim);
