@@ -68,7 +68,7 @@ struct frame_event {
 struct frame_handlers {
 	uint8_t event_mask;
 	void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f);
-	void (*handle_clear) (void *udata, struct frame *f);
+	void (*handle_clear) (void *udata, const struct frame *f);
 };
 
 struct frame_observer {

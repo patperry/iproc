@@ -73,11 +73,72 @@ static void basic_setup(void **state)
 		vector_set_item(&coefs, i, val);
 	}
 	
-	model_init(&model, &design, &coefs);
+	model_init(&model, &frame, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
-static void basic_teardown(void **state)
+static void hard_setup(void **state)
+{
+	double coefs_data[] = {
+		-2.0078320213241120123852e-16,
+		7.0235805310703240459397e-16,
+		4.0871230686004442771612e-15,
+		3.5061694800573514011041e-15,
+		-9.7506233043687851203037e-15,
+		-1.4542111837460032219838e+00,
+		3.2844263208747004334498e+00,
+		3.4331083526169348107970e-01,
+		7.9362087235055411849061e-01,
+		-1.2066175732167991330179e-01,
+		-1.1378909670106971407932e+00,
+		4.0547542577788908690906e-01,
+		1.1758651538928710511556e+00,
+		-6.7915784985022098485530e-01,
+		6.7407617457656709980540e-01,
+		-2.0047092350113207559481e-01,
+		-5.9427807574077675181745e-03,
+		-3.2814501792059824758496e-01,
+		5.6490694754611092687213e-01,
+		8.4437967320357881773063e-02,
+		-1.3939268854476738468406e+00,
+		1.6815195024824614034031e-01,
+		3.9756417583138609073146e-01,
+		-4.5517302772080470152360e-01,
+		1.5696564637539311970471e+00,
+		4.3464158208588665743832e+00,
+		3.4377415537199795814161e+00,
+		2.3787403030778051515881e+00,
+		6.1180077624527857624304e-03 };
+	
+	enron_employees_init(&senders);
+	enron_employees_init(&receivers);
+	enron_messages_init(&messages);
+	
+	ssize_t i;
+	double intvls[3] = {
+		112.50,  450.00, 1800.00,
+	};
+	struct vector vintvls = vector_make(intvls, 3);
+	bool has_reffects = false;
+	bool has_loops = false;
+	vector_init(&intervals, 3);
+	vector_assign_copy(&intervals, &vintvls);
+	design_init(&design, &senders, &receivers, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_recv_effects(&design, has_reffects);
+	design_add_recv_var(&design, RECV_VAR_NRECV);
+	frame_init(&frame, &design);
+	vector_init(&coefs, design_recv_dim(&design));
+	
+	for (i = 0; i < vector_dim(&coefs); i++) {
+		vector_set_item(&coefs, i, coefs_data[i]);
+	}
+	
+	model_init(&model, &frame, &coefs);
+	recv_loglik_init(&recv_loglik, &model);
+}
+
+static void teardown(void **state)
 {
 	recv_loglik_deinit(&recv_loglik);
 	model_deinit(&model);
@@ -102,16 +163,10 @@ static void test_dev(void **state)
 	n = 0;
 
 	MESSAGES_FOREACH(it, &messages) {
+		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
-		while (frame_next_change(&frame) <= t) {
-			model_update(&model, &frame);
-			frame_advance(&frame);			
-		}
-		if (frame_time(&frame) < t) {
-			model_update(&model, &frame);
-			frame_advance_to(&frame, t);			
-		}
+		frame_advance_to(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -119,6 +174,9 @@ static void test_dev(void **state)
 			frame_add(&frame, msg);
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			n += msg->nto;
+			
+			if (n > 1000)
+				goto out;
 			
 			rm = model_recv_model(&model, msg->from);
 			
@@ -138,6 +196,8 @@ static void test_dev(void **state)
 			mean_dev_old = mean_dev1;
 		}
 	}
+out:
+	return;
 }
 
 
@@ -162,15 +222,8 @@ static void test_mean(void **state)
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		
-		while (frame_next_change(&frame) <= t) {
-			model_update(&model, &frame);
-			frame_advance(&frame);			
-		}
-		if (frame_time(&frame) < t) {
-			model_update(&model, &frame);
-			frame_advance_to(&frame, t);			
-		}
+
+		frame_advance_to(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -178,7 +231,8 @@ static void test_mean(void **state)
 			frame_add(&frame, msg);			
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			n = recv_loglik_count(&recv_loglik);
-			if (n > 5000)
+		
+			if (n > 1000)
 				goto out;
 
 			isend = msg->from;
@@ -210,7 +264,7 @@ static void test_mean(void **state)
 				double x0 = vector_item(&avg_mean0, index);
 				double x1 = vector_item(&avg_mean1, index);
 				assert(double_eqrel(x0, x1) >= 40);
-				assert_in_range(double_eqrel(x0, x1), 48, DBL_MANT_DIG);
+				assert_in_range(double_eqrel(x0, x1), 47, DBL_MANT_DIG);
 			}
 
 			vector_assign_copy(&avg_mean0, &avg_mean1);
@@ -249,14 +303,7 @@ static void test_score(void **state)
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 		
-		while (frame_next_change(&frame) <= t) {
-			model_update(&model, &frame);
-			frame_advance(&frame);			
-		}
-		if (frame_time(&frame) < t) {
-			model_update(&model, &frame);
-			frame_advance_to(&frame, t);			
-		}
+		frame_advance_to(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -264,7 +311,7 @@ static void test_score(void **state)
 			frame_add(&frame, msg);			
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			n = recv_loglik_count(&recv_loglik);
-			if (n > 5000)
+			if (n > 1000)
 				goto out;
 			
 			isend = msg->from;
@@ -343,17 +390,11 @@ static void test_imat(void **state)
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 		
-		while (frame_next_change(&frame) <= t) {
-			model_update(&model, &frame);
-			frame_advance(&frame);			
-		}
-		if (frame_time(&frame) < t) {
-			model_update(&model, &frame);
-			frame_advance_to(&frame, t);			
-		}
+		frame_advance_to(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
+			printf("."); fflush(stdout);
 			msg = MESSAGES_VAL(it, itie);
 			frame_add(&frame, msg);
 			recv_loglik_add(&recv_loglik, &frame, msg);
@@ -440,11 +481,16 @@ int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
-		unit_test_setup_teardown(test_dev, basic_setup, basic_teardown),
-		unit_test_setup_teardown(test_mean, basic_setup, basic_teardown),
-		unit_test_setup_teardown(test_score, basic_setup, basic_teardown),		
-		unit_test_setup_teardown(test_imat, basic_setup, basic_teardown),
+		unit_test_setup_teardown(test_dev, basic_setup, teardown),
+		unit_test_setup_teardown(test_dev, hard_setup, teardown),
+		unit_test_setup_teardown(test_mean, basic_setup, teardown),
+		unit_test_setup_teardown(test_mean, hard_setup, teardown),
+		unit_test_setup_teardown(test_score, basic_setup, teardown),
+		unit_test_setup_teardown(test_score, hard_setup, teardown),
+		unit_test_setup_teardown(test_imat, basic_setup, teardown),
+		unit_test_setup_teardown(test_imat, hard_setup, teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
+		
 	};
 	return run_tests(tests);
 }

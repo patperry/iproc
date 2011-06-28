@@ -53,7 +53,7 @@ static void setup(void) {
 		vector_set_item(&coefs, i, val);
 	}
 
-	model_init(&model, &design, &coefs);
+	model_init(&model, &frame, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
@@ -76,8 +76,8 @@ int main(int argc, char **argv)
 	setup();
 	
 	/* ssize_t n = messages_recv_count(&messages); */
-	double penalty = 0; // n / 512.0;
-	ssize_t maxit = 30;
+	double penalty = 0.01; // n / 512.0; // >= 1 works
+	ssize_t maxit = 300;
 	ssize_t report = 1;
 	bool trace = true;
 	

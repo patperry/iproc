@@ -269,7 +269,8 @@ static struct cohort_model *model_cohort_model(const struct model *model,
 	assert(model);
 	assert(0 <= isend && isend < model_send_count(model));
 
-	const struct design *design = model_design(model);
+	const struct frame *frame = model_frame(model);
+	const struct design *design = frame_design(frame);
 	const struct actors *senders = design_senders(design);
 	intptr_t c = (intptr_t)actors_cohort(senders, isend);
 	struct cohort_model *cm = intmap_item(&model->cohort_models, c);
@@ -285,11 +286,13 @@ static void recv_model_clear(struct recv_model *rm)
 	const struct model *m = rm->model;
 	ssize_t isend = rm->isend;
 	const struct cohort_model *cm = model_cohort_model(m, isend);
+	const struct frame *f = model_frame(m);
+	const struct design *d = frame_design(f);
 
 	svector_clear(&rm->deta);
 	array_clear(&rm->active);
 
-	if (!design_loops(model_design(m))) {
+	if (!design_loops(d)) {
 		double p0 = vector_item(&cm->p0, isend);
 		assert(p0 < 1);
 		rm->gamma = 1.0 / (1.0 - p0);
@@ -364,33 +367,132 @@ static struct recv_model *model_recv_model_raw(struct model *m, ssize_t isend)
 	return rm;
 }
 
-void model_init(struct model *model, const struct design *design,
+
+static void process_recv_var_event(struct model *m, const struct frame *f, const struct frame_event *e)
+{
+	assert(m);
+	assert(e->type == RECV_VAR_EVENT);
+	
+	const struct recv_var_event_meta *meta = &e->meta.recv_var;
+	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
+	const struct cohort_model *cm = rm->cohort;
+	const struct vector *coefs = model_recv_coefs(m);
+	
+	ssize_t jrecv = meta->item.jrecv;
+	struct svector_pos pos;
+	double *pdeta = svector_find(&rm->deta, jrecv, &pos);
+	
+	if (!pdeta) {
+		pdeta = svector_insert(&rm->deta, &pos, 0.0);
+		ssize_t ix =
+		array_binary_search(&rm->active, &jrecv, ssize_compare);
+		assert(ix < 0);
+		array_insert(&rm->active, ~ix, &jrecv);
+	}
+	
+	ssize_t index = meta->index;
+	double dx = meta->delta;
+	double deta = vector_item(coefs, index) * dx;
+	
+	double gamma0 = rm->gamma;
+	double log_gamma0 = rm->log_gamma;
+	// double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
+	double log_p0 = MIN(0.0, log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta));
+	double p0 = exp(log_p0);
+	double p = exp(log_p0 + deta);
+	double dp = p - p0;
+	
+	double gamma = gamma0 / (1.0 + dp);
+	double log_gamma = log_gamma0 - log1p(dp);
+	
+	/* for dramatic changes in the weight sums, we recompute everything */
+	if (!(fabs(log_gamma) <= 5.0)) {
+		/* Recompute the diffs when there is overflow */
+		printf("."); fflush(stdout);
+		recv_model_set(rm, f, model_recv_coefs(m));
+	} else {
+		rm->gamma = gamma;
+		rm->log_gamma = log_gamma;
+		assert(rm->gamma >= 0);
+		assert(isfinite(log_gamma));
+		*pdeta += deta;
+	}
+}
+
+
+static void handle_frame_event(void *udata, const struct frame_event *e, struct frame *f)
+{
+	struct model *m = udata;
+	assert(m);
+	assert(e);
+	assert(f == model_frame(m));
+	
+	switch (e->type) {
+		case RECV_VAR_EVENT:
+			process_recv_var_event(m, f, e);
+			break;
+		default:
+			break;		/* pass */
+	}
+}
+
+static void model_clear(struct model *m)
+{
+	assert(m);
+	
+	struct intmap_iter it;
+	
+	INTMAP_FOREACH(it, &m->recv_models) {
+		recv_model_clear(INTMAP_VAL(it));
+	}
+}
+
+static void handle_frame_clear(void *udata, const struct frame *f)
+{
+	struct model *m = udata;
+	assert(m);
+	assert(f == model_frame(m));
+	model_clear(m);
+}
+
+void model_init(struct model *model, struct frame *f,
 		const struct vector *recv_coefs)
 {
 	assert(model);
-	assert(design);
-	assert(!recv_coefs || design_recv_dim(design) == vector_dim(recv_coefs));
-	assert(design_recv_count(design) > 0);
-	assert(!design_loops(design) || design_recv_count(design) > 1);
+	assert(f);
+	assert(!recv_coefs || design_recv_dim(frame_design(f)) == vector_dim(recv_coefs));
+	assert(design_recv_count(frame_design(f)) > 0);
+	assert(!design_loops(frame_design(f)) || design_recv_count(frame_design(f)) > 1);
 
-	model->design = design;
+	const struct design *d = frame_design(f);
+	
+	model->frame = f;
 	
 	if (recv_coefs) {
 		vector_init_copy(&model->recv_coefs, recv_coefs);
 	} else {
-		vector_init(&model->recv_coefs, design_recv_dim(design));
+		vector_init(&model->recv_coefs, design_recv_dim(d));
 	}
 	
-	cohort_models_init(&model->cohort_models, design, &model->recv_coefs);
+	cohort_models_init(&model->cohort_models, d, &model->recv_coefs);
 	intmap_init(&model->recv_models, sizeof(struct recv_model),
 		    alignof(struct recv_model));
 	refcount_init(&model->refcount);
+	
+	struct frame_handlers h;
+	h.event_mask = RECV_VAR_EVENT;
+	h.handle_event = handle_frame_event;
+	h.handle_clear = handle_frame_clear;
+	frame_add_observer(f, model, &h);
+	
 }
 
 void model_deinit(struct model *model)
 {
 	assert(model);
 
+	frame_remove_observer(model->frame, model);
+	
 	refcount_deinit(&model->refcount);
 
 	struct intmap_iter it;
@@ -403,16 +505,13 @@ void model_deinit(struct model *model)
 	vector_deinit(&model->recv_coefs);
 }
 
-struct model *model_alloc(const struct design *design, const struct vector *coefs)
+struct model *model_alloc(struct frame *f, const struct vector *coefs)
 {
-	assert(design);
+	assert(f);
 	assert(coefs);
-	assert(design_recv_dim(design) == vector_dim(coefs));
-	assert(design_recv_count(design) > 0);
-	assert(!design_loops(design) || design_recv_count(design) > 1);
 
 	struct model *model = xcalloc(1, sizeof(*model));
-	model_init(model, design, coefs);
+	model_init(model, f, coefs);
 	return model;
 }
 
@@ -432,10 +531,15 @@ void model_free(struct model *model)
 	}
 }
 
-const struct design *model_design(const struct model *model)
+const struct frame *model_frame(const struct model *model)
 {
 	assert(model);
-	return model->design;
+	return model->frame;
+}
+
+const struct design *model_design(const struct model *model)
+{
+	return frame_design(model_frame(model));
 }
 
 const struct vector *model_recv_coefs(const struct model *model)
@@ -489,22 +593,11 @@ struct matrix *recv_model_imat0(const struct recv_model *model)
 	return &model->cohort->imat0;
 }
 
-void model_clear(struct model *m)
+
+void model_set_recv_coefs(struct model *m, const struct vector *recv_coefs)
 {
 	assert(m);
-
-	struct intmap_iter it;
-
-	INTMAP_FOREACH(it, &m->recv_models) {
-		recv_model_clear(INTMAP_VAL(it));
-	}
-}
-
-void model_set(struct model *m, const struct frame *f, const struct vector *recv_coefs)
-{
-	assert(m);
-	assert(f);
-	assert(model_design(m) == f->design);
+	assert(!recv_coefs || design_recv_dim(model_design(m)) == vector_dim(recv_coefs));
 
 	if (recv_coefs) {
 		vector_assign_copy(&m->recv_coefs, recv_coefs);
@@ -512,7 +605,10 @@ void model_set(struct model *m, const struct frame *f, const struct vector *recv
 		vector_fill(&m->recv_coefs, 0.0);
 	}
 	
-	cohort_models_set(&m->cohort_models, m->design, &m->recv_coefs);
+	const struct frame *f = model_frame(m);
+	const struct design *d = frame_design(f);
+
+	cohort_models_set(&m->cohort_models, d, &m->recv_coefs);
 	
 	struct intmap_iter it;
 	
@@ -520,85 +616,6 @@ void model_set(struct model *m, const struct frame *f, const struct vector *recv
 		recv_model_set(INTMAP_VAL(it), f, &m->recv_coefs);
 	}
 
-}
-
-static void process_recv_var_event(struct model *m, const struct frame *f, const struct frame_event *e)
-{
-	assert(m);
-	assert(e->type == RECV_VAR_EVENT);
-
-	const struct recv_var_event_meta *meta = &e->meta.recv_var;
-	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
-	const struct cohort_model *cm = rm->cohort;
-	const struct vector *coefs = model_recv_coefs(m);
-
-	ssize_t jrecv = meta->item.jrecv;
-	struct svector_pos pos;
-	double *pdeta = svector_find(&rm->deta, jrecv, &pos);
-
-	if (!pdeta) {
-		pdeta = svector_insert(&rm->deta, &pos, 0.0);
-		ssize_t ix =
-		    array_binary_search(&rm->active, &jrecv, ssize_compare);
-		assert(ix < 0);
-		array_insert(&rm->active, ~ix, &jrecv);
-	}
-
-	ssize_t index = meta->index;
-	double dx = meta->delta;
-	double deta = vector_item(coefs, index) * dx;
-
-	double gamma0 = rm->gamma;
-	double log_gamma0 = rm->log_gamma;
-	// double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
-	double log_p0 = MIN(0.0, log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta));
-	double p0 = exp(log_p0);
-	double p = exp(log_p0 + deta);
-	double dp = p - p0;
-	
-	//if (dp < -(1 - 1e-1)) {
-	double gamma = gamma0 / (1.0 + dp);
-	double log_gamma = log_gamma0 - log1p(dp);
-
-	if (!isfinite(log_gamma)) {
-		/* Recompute the diffs when there is overflow */
-		printf("."); fflush(stdout);
-		recv_model_set(rm, f, model_recv_coefs(m));
-	} else {
-		rm->gamma = gamma;
-		rm->log_gamma = log_gamma;
-		assert(rm->gamma >= 0);
-		assert(isfinite(log_gamma));
-		*pdeta += deta;
-	}
-}
-
-static void model_update_with(struct model *m, const struct frame *f, const struct frame_event *e)
-{
-	assert(m);
-	assert(e);
-
-	switch (e->type) {
-	case RECV_VAR_EVENT:
-		process_recv_var_event(m, f, e);
-		break;
-	default:
-		break;		/* pass */
-	}
-}
-
-void model_update(struct model *m, const struct frame *f)
-{
-	assert(m);
-	assert(f);
-
-	const struct frame_event *e;
-
-	ARRAY_FOREACH(e, &f->events) {
-		if (e->type & (SEND_VAR_EVENT | RECV_VAR_EVENT)) {
-			model_update_with(m, f, e);
-		}
-	}
 }
 
 struct recv_model *model_recv_model(const struct model *m, ssize_t isend)
