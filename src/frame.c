@@ -264,6 +264,13 @@ void frame_clear(struct frame *f)
 			matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
 		}
 	}
+	
+	const struct frame_observer *obs;
+	ARRAY_FOREACH(obs, &f->observers) {
+		if (obs->h.handle_clear) {
+			obs->h.handle_clear(obs->udata, f);
+		}
+	}
 }
 
 double frame_time(const struct frame *f)
@@ -306,17 +313,15 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i)
 	return array_item(&f->events, i);
 }
 
-void frame_add_observer(struct frame *f, uint8_t event_mask, void *udata,
-			void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f))
+void frame_add_observer(struct frame *f, void *udata, const struct frame_handlers *h)
 {
 	assert(f);
 	assert(udata);
-	assert(handle_event);
+	assert(h);
 	
 	struct frame_observer *obs = array_add(&f->observers, NULL);
-	obs->event_mask = event_mask;
 	obs->udata = udata;
-	obs->handle_event = handle_event;
+	obs->h = *h;
 }
 
 static bool observer_equals(const void *val, void *udata)
@@ -344,8 +349,8 @@ static void notify_observers(struct frame *f, const struct frame_event *e)
 	
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
-		if (obs->event_mask & e->type) {
-			obs->handle_event(obs->udata, e, f);
+		if (obs->h.event_mask & e->type) {
+			obs->h.handle_event(obs->udata, e, f);
 		}
 	}
 }
