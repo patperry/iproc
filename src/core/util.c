@@ -210,7 +210,7 @@ ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 void *xcalloc(size_t count, size_t size)
 {
 	void *ptr = calloc(count, size);
-	if (!ptr)
+	if (size && !ptr)
 		abort();
 	return ptr;
 }
@@ -223,7 +223,7 @@ void xfree(void *ptr)
 void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
-	if (!ptr)
+	if (size && !ptr)
 		abort();
 	return ptr;
 }
@@ -231,7 +231,7 @@ void *xmalloc(size_t size)
 void *xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
-	if (!ptr)
+	if (size && !ptr)
 		abort();
 	return ptr;
 }
