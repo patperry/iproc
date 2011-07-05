@@ -406,7 +406,7 @@ static void process_recv_var_event(struct model *m, const struct frame *f, const
 	double log_gamma = log_gamma0 - log1p(dp);
 	
 	/* for dramatic changes in the weight sums, we recompute everything */
-	if (!(fabs(log_gamma) <= 5.0)) {
+	if (!(fabs(dp) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
 		printf("."); fflush(stdout);
 		recv_model_set(rm, f, model_recv_coefs(m));
