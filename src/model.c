@@ -92,7 +92,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 			logsumexp_insert(&lse, lp - logscale);
 		}
 		
-		log_sum_w = logsumexp_value(&lse);
+		log_sum_w = logsumexp_value(&lse) + logscale;
 	}
 
 	*gamma = exp(-log_sum_w);
