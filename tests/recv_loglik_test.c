@@ -263,8 +263,15 @@ static void test_mean(void **state)
 			for (index = 0; index < dim; index++) {
 				double x0 = vector_item(&avg_mean0, index);
 				double x1 = vector_item(&avg_mean1, index);
-				assert(double_eqrel(x0, x1) >= 40);
-				assert_in_range(double_eqrel(x0, x1), 47, DBL_MANT_DIG);
+				
+				if (fabs(x0) >= 5e-4) {
+					assert(double_eqrel(x0, x1) >= 47);
+					assert_in_range(double_eqrel(x0, x1), 47, DBL_MANT_DIG);
+					
+				} else {
+					assert(fabs(x0 - x1) < sqrt(DBL_EPSILON));
+					assert_true(fabs(x0 - x1) < sqrt(DBL_EPSILON));
+				}
 			}
 
 			vector_assign_copy(&avg_mean0, &avg_mean1);
