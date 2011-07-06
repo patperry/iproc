@@ -116,11 +116,15 @@ static void nrecv_handle_event(struct frame_var *fv,
 		dx.meta.recv_var.index = fv->design->index + meta->intvl;
 		dx.meta.recv_var.delta = -1.0;
 		frame_events_add(f, &dx);
+	} else {
+		ssize_t i, n = fv->design->dim;
+		for (i = 1; i < n; i++) {
+			dx.id = -1;
+			dx.meta.recv_var.index = fv->design->index + i;
+			dx.meta.recv_var.delta = 1.0;
+			frame_events_add(f, &dx);
+		}
 	}
-
-	dx.meta.recv_var.index = fv->design->index + 1 + meta->intvl;
-	dx.meta.recv_var.delta = 1.0;
-	frame_events_add(f, &dx);
 }
 
 static struct var_type RECV_VAR_NRECV_REP = {
