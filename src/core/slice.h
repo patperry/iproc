@@ -53,8 +53,7 @@ void slice_sort(struct slice *a, compare_fn compar);
 struct slice slice_make(const void *ptr, ssize_t n, size_t elt_size)
 {
 	assert(ptr || n == 0);
-	assert(0 <= n && n <= SSIZE_MAX / MAX(1, elt_size));
-	assert(elt_size >= 0);
+	assert(0 <= n && n <= (ssize_t)(SSIZE_MAX / MAX(1, elt_size)));
 
 	struct slice a;
 	slice_init(&a, ptr, n, elt_size);
@@ -65,8 +64,7 @@ void slice_init(struct slice *a, const void *ptr, ssize_t n, size_t elt_size)
 {
 	assert(a);
 	assert(ptr || n == 0);
-	assert(0 <= n && n <= SSIZE_MAX / MAX(1, elt_size));
-	assert(elt_size >= 0);
+	assert(0 <= n && n <= (ssize_t)(SSIZE_MAX / MAX(1, elt_size)));
 
 	a->data = (void *)ptr;
 	a->size = n;

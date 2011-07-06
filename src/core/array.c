@@ -34,7 +34,6 @@ static void array_grow(struct array *a, ssize_t delta)
 void array_init(struct array *a, size_t elt_size)
 {
 	assert(a);
-	assert(elt_size >= 0);
 
 	a->data = NULL;
 	a->count = 0;

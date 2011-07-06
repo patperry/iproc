@@ -71,7 +71,6 @@ static void hashset_init_sized(struct hashset *s, hash_fn hash,
 	assert(hash);
 	assert(equals);
 	assert(num_buckets >= HT_MIN_BUCKETS);
-	assert(elt_size >= 0);
 
 	sparsetable_init(&s->table, num_buckets, elt_size);
 	s->hash = hash;
@@ -133,7 +132,6 @@ void hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 	assert(s);
 	assert(hash);
 	assert(equals);
-	assert(elt_size >= 0);
 
 	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
 	hashset_init_sized(s, hash, equals, num_buckets, elt_size);

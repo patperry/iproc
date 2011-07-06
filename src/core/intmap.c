@@ -14,7 +14,6 @@ DEFINE_EQUALS_FN(intptr_equals, intptr_t)
 void intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
 	assert(m);
-	assert(elt_size >= 0);
 	assert(elt_align > 0);
 
 	size_t key_size = sizeof(intptr_t);

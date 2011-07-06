@@ -19,7 +19,7 @@ void vector_init(struct vector *v, ssize_t n)
 	assert(v);
 	assert(n >= 0);
 	assert(n <= F77INT_MAX);
-	assert(n <= SSIZE_MAX / sizeof(double));
+	assert(n <= (ssize_t)(SSIZE_MAX / sizeof(double)));
 
 	v->data = xcalloc(n, sizeof(v->data[0]));
 	v->dim = n;
@@ -31,7 +31,7 @@ void vector_reinit(struct vector *v, ssize_t n)
 	assert(v);
 	assert(n >= 0);
 	assert(n <= F77INT_MAX);
-	assert(n <= SSIZE_MAX / sizeof(double));
+	assert(n <= (ssize_t)(SSIZE_MAX / sizeof(double)));
 	assert(v->owner);
 
 	v->data = xrealloc(v->data, n * sizeof(v->data[0]));
