@@ -30,14 +30,20 @@ static void setup(void) {
 	enron_messages_init(&messages);
 	
 	ssize_t i;
-	double intvls[3] = {
-		112.50,  450.00, 1800.00,
+	double intvls[] = {
+		// 56.25,      
+		// 112.50,      
+		225.00,      450.00,      900.00,
+		1800.00,     3600.00,     7200.00,    14400.00,    28800.00,
+		57600.00,    115200.00,   230400.00,   460800.00,   921600.00,
+		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00,
+		58982400.00
 	};
-	struct vector vintvls = vector_make(intvls, 3);
+	ssize_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
+	struct vector vintvls = vector_make(intvls, nintvls);
 	bool has_reffects = false;
 	bool has_loops = false;
-	vector_init(&intervals, 3);
-	vector_assign_copy(&intervals, &vintvls);
+	vector_init_copy(&intervals, &vintvls);
 	design_init(&design, &senders, &receivers, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
@@ -76,7 +82,7 @@ int main(int argc, char **argv)
 	setup();
 	
 	/* ssize_t n = messages_recv_count(&messages); */
-	double penalty = 0.01; // n / 512.0; // >= 1 works
+	double penalty = 0; // 0.00001; // n / 512.0; // >= 0.00001 works
 	ssize_t maxit = 300;
 	ssize_t report = 1;
 	bool trace = true;
