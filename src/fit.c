@@ -47,7 +47,7 @@ static void compute_scale(struct recv_fit *fit)
 	
 	/* otherwise, take the square root of the variance */
 	vector_sqrt(&fit->scale);
-	//vector_fill(&fit->scale, 1.0);
+	vector_fill(&fit->scale, 1.0);
 }
 
 // sets ce_t, be, and ne
@@ -189,10 +189,25 @@ static void preprocess(struct recv_fit *fit)
 	ssize_t ne = fit->ne;
 	struct vector primals = vector_slice(&fit->params, 0, dim);
 	struct vector duals = vector_slice(&fit->params, dim, ne);
-	vector_fill(&primals, 1.0);
-	vector_fill(&duals, 0.0);	
-	vector_fill(&fit->coefs, 1.0);
-	vector_div(&fit->coefs, &fit->scale);
+	
+	//vector_assign_copy(&fit->coefs, &fit->loglik.info.score);
+	//vector_scale(&fit->coefs, 0.1/vector_max_abs(&fit->coefs));
+	//vector_axpy(1.0, &fit->loglik.info.mean, &fit->coefs);
+	//vector_shift(&fit->coefs, 1.0);
+	//vector_log(&fit->coefs); 
+	//vector_scale(&fit->coefs, 0.5); // log(sqrt(1 + obs))
+	
+	vector_fill(&fit->coefs, 0.0);
+	
+	vector_assign_copy(&primals, &fit->coefs);
+	vector_mul(&primals, &fit->scale);
+
+	vector_fill(&duals, 0.0);
+	
+	//vector_fill(&primals, 0.0);
+	//vector_fill(&duals, 0.0);
+	//vector_fill(&fit->coefs, 0.0);
+	//vector_div(&fit->coefs, &fit->scale);
 	evaluate_loglik(fit);
 	compute_resid(fit);
 	compute_kkt(fit);
