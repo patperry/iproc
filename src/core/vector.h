@@ -51,6 +51,7 @@ void vector_div(struct vector *v1, const struct vector *v2);
 
 /* special functions */
 void vector_exp(struct vector *v);
+void vector_log(struct vector *v);
 void vector_sqrt(struct vector *v);
 
 /* other arithmetic operations */

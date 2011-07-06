@@ -389,6 +389,20 @@ void vector_exp(struct vector *vector)
 	}
 }
 
+void vector_log(struct vector *vector)
+{
+	assert(vector);
+	
+	ssize_t n = vector_dim(vector);
+	ssize_t i;
+	double x;
+	
+	for (i = 0; i < n; i++) {
+		x = *vector_item_ptr(vector, i);
+		*vector_item_ptr(vector, i) = log(x);
+	}
+}
+
 void vector_sqrt(struct vector *v)
 {
 	ssize_t n = vector_dim(v);
