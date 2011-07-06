@@ -343,15 +343,18 @@ ssize_t vector_max_index(const struct vector *vector)
 	double x, max = NAN;
 
 	/* Find the first non-NaN entry of the vector */
-	for (imax = 0; imax < n && isnan(max); imax++) {
-		max = *vector_item_ptr(vector, imax);
+	imax = 0;
+	while (imax < n && isnan(vector_item(vector, imax))) {
+		imax++;
 	}
 
 	/* If all of the entries are NaN, define imax as 0. */
 	if (imax == n)
 		return 0;
 
-	/* Otherwise, search for the largest entry in the tail of the vector */
+	/* Otherwise, search for the largest entry in the tail of the vector */	
+	max = *vector_item_ptr(vector, imax);
+
 	for (i = imax + 1; i < n; i++) {
 		x = *vector_item_ptr(vector, i);
 		if (x > max) {
