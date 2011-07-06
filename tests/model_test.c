@@ -200,9 +200,9 @@ static void test_probs(void **state)
 				double lp0 = recv_model_logprob(rm, jrecv);
 				double lp1 = vector_item(&logprobs, jrecv);
 				if (fabs(lp0) >= 5e-4) {
-					
-					assert(double_eqrel(lp0, lp1) >= 40);
-					assert_in_range(double_eqrel(lp0, lp1), 40, DBL_MANT_DIG);
+					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
+					assert(double_eqrel(lp0, lp1) >= 39);
+					assert_in_range(double_eqrel(lp0, lp1), 39, DBL_MANT_DIG);
 
 				} else {
 					assert_true(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
@@ -210,17 +210,16 @@ static void test_probs(void **state)
 				
 				double p0 = recv_model_prob(rm, jrecv);
 				double p1 = vector_item(&probs, jrecv);
-				//if (fabs(p0) >= 5e-4) {
+				if (fabs(p0) >= 5e-4) {
 					minprec = MIN(minprec, double_eqrel(p0, p1));
 					assert(double_eqrel(p0, p1) >= 47);
 					assert_in_range(double_eqrel(p0, p1), 47, DBL_MANT_DIG);
-				//} else {
-				//	assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
-				//}
+				} else {
+					assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
+				}
 				
 				assert_true(double_identical(alpha * p0 + y0,
 							     vector_item(&y, jrecv)));
-
 
 			}
 		}
