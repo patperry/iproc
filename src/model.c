@@ -74,7 +74,7 @@ compute_weight_changes(const struct frame *f, ssize_t isend,
 
 	/* Compute the sum the expensive way when there is overflow */
 	if (!isfinite(log_sum_w)) {
-		printf("!"); fflush(stdout);
+		// fprintf(stderr, "!"); fflush(stderr);
 		logscale = -INFINITY;
 		ssize_t jrecv, nrecv = design_recv_count(design);
 		for (jrecv = 0; jrecv < nrecv; jrecv++) {
@@ -408,7 +408,7 @@ static void process_recv_var_event(struct model *m, const struct frame *f, const
 	/* for dramatic changes in the weight sums, we recompute everything */
 	if (!(fabs(dp) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
-		printf("."); fflush(stdout);
+		//fprintf(stderr, "."); fflush(stderr);
 		recv_model_set(rm, f, model_recv_coefs(m));
 	} else {
 		rm->gamma = gamma;
