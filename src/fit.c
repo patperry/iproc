@@ -28,7 +28,7 @@ static void evaluate_loglik(struct recv_fit *fit)
 // assumes evaluate has already been called
 static void compute_scale(struct recv_fit *fit)
 {
-	const double var_tol = 1e-8;	
+	const double vartol = fit->ctrl.vartol;
 	ssize_t i, dim = vector_dim(&fit->coefs);
 	
 	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik);
@@ -38,16 +38,15 @@ static void compute_scale(struct recv_fit *fit)
 	assert(vector_dim(&fit->scale) == matrix_diag_dim(imat, 0));
 	matrix_get_diag(imat, 0, vector_to_ptr(&fit->scale));
 
-	/* define the scale to be 1 when the variance is 0 */
+	/* define the variance to be 1 when the variance is 0 */
 	for (i = 0; i < dim; i++) {
 		double *s = vector_item_ptr(&fit->scale, i);
-		if (*s < var_tol)
+		if (*s < vartol)
 			*s = 1;
 	}
 	
 	/* otherwise, take the square root of the variance */
 	vector_sqrt(&fit->scale);
-	vector_fill(&fit->scale, 1.0);
 }
 
 // sets ce_t, be, and ne
@@ -55,12 +54,12 @@ static void compute_scale(struct recv_fit *fit)
 // assumes scale is initalized and evaluate has already been called
 static void compute_constraints(struct recv_fit *fit)
 {
-	const double eig_tol = 1e-5;
+	const double eigtol = fit->ctrl.eigtol;
 	ssize_t i, dim = vector_dim(&fit->coefs);
 	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik);
 	const struct matrix *imat = &info->imat;
 	
-	/* compute the eigendecomp of the empirical correlation matrix;
+	/* compute the eigendecomp of the empirical covariance matrix;
 	 * kkt matrix and resid vector are un-initialized/free, so we
 	 * can use them for temporary storage.
 	 */
@@ -68,8 +67,6 @@ static void compute_constraints(struct recv_fit *fit)
 	struct vector eval = vector_slice(&fit->resid, 0, dim);
 
 	matrix_assign_copy(&evec, imat);
-	matrix_div_rows(&evec, &fit->scale);
-	matrix_div_cols(&evec, &fit->scale);
 
 	/* compute its eigendecomposition */
 	assert(symeig_dim(&fit->eig) == dim);
@@ -80,7 +77,7 @@ static void compute_constraints(struct recv_fit *fit)
 	/* compute its rank */
 	for (i = 0; i < dim; i++) {
 		double l = vector_item(&eval, i);
-		if (l > eig_tol)
+		if (l > eigtol)
 			break;
 	}
 	// rank = dim - i;
@@ -115,14 +112,13 @@ static void compute_resid(struct recv_fit *fit)
 	const struct vector *score = &info->score;
 	
 	/* r1 is the dual residual: grad(f) + ce' * nu,
-	 * where grad(f) = s^{-1} * grad(nll) + lambda * x
-	 *               = -[s^{-1} * score - lambda * x]
+	 * where grad(f) = grad(nll) + lambda * x
+	 *               = -[score - lambda * x]
 	 */
 	struct vector r1 = vector_slice(&fit->resid, 0, dim);
 	struct vector primals = vector_slice(&fit->params, 0, dim);
 	struct vector duals = vector_slice(&fit->params, dim, ne);
 	vector_assign_copy(&r1, score);
-	vector_div(&r1, &fit->scale);
 	vector_axpy(-fit->penalty, &primals, &r1);
 	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &duals, -1.0, &r1);
 	
@@ -146,11 +142,9 @@ static void compute_kkt(struct recv_fit *fit)
 	const struct matrix *imat = &info->imat;
 
 	
-	/* k11 is the (scaled) hessian */
+	/* k11 is the hessian */
 	struct matrix k11 = matrix_slice(&fit->kkt, 0, 0, dim, dim);
 	matrix_assign_copy(&k11, imat);
-	matrix_div_rows(&k11, &fit->scale);
-	matrix_div_cols(&k11, &fit->scale);
 	ssize_t i;
 	for (i = 0; i < dim; i++) {
 		*matrix_item_ptr(&k11, i, i) += fit->penalty;
@@ -174,7 +168,7 @@ static void compute_kkt(struct recv_fit *fit)
 // sets scale, ce, be
 // reinits kkt and nresid
 // destroys model and coefs 
-static void preprocess(struct recv_fit *fit)
+static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 {
 	/* compute the empirical covariance matrix of the covariates
 	 * by using the null model (coefs = 0, all receivers equally
@@ -190,32 +184,24 @@ static void preprocess(struct recv_fit *fit)
 	struct vector primals = vector_slice(&fit->params, 0, dim);
 	struct vector duals = vector_slice(&fit->params, dim, ne);
 	
-	//vector_assign_copy(&fit->coefs, &fit->loglik.info.score);
-	//vector_scale(&fit->coefs, 0.1/vector_max_abs(&fit->coefs));
-	//vector_axpy(1.0, &fit->loglik.info.mean, &fit->coefs);
-	//vector_shift(&fit->coefs, 1.0);
-	//vector_log(&fit->coefs); 
-	//vector_scale(&fit->coefs, 0.5); // log(sqrt(1 + obs))
-	
-	vector_fill(&fit->coefs, 0.0);
+	if (coefs0) {
+		vector_assign_copy(&fit->coefs, coefs0);
+	} else {
+		vector_fill(&fit->coefs, 0.0);
+	}
 	
 	vector_assign_copy(&primals, &fit->coefs);
-	vector_mul(&primals, &fit->scale);
-
 	vector_fill(&duals, 0.0);
-	
-	//vector_fill(&primals, 0.0);
-	//vector_fill(&duals, 0.0);
-	//vector_fill(&fit->coefs, 0.0);
-	//vector_div(&fit->coefs, &fit->scale);
+
 	evaluate_loglik(fit);
 	compute_resid(fit);
 	compute_kkt(fit);
+	fit->task = RECV_FIT_STEP;
 }
 
 
 
-static bool primal_dual_step(struct recv_fit *fit)
+static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 {
 	ssize_t dim = model_recv_dim(&fit->model);
 	ssize_t ne = fit->ne;
@@ -223,8 +209,8 @@ static bool primal_dual_step(struct recv_fit *fit)
 	double f0 = vector_norm2(&fit->resid);
 	double g0 = -2 * f0;
 
-	if (g0 == 0)
-		return false; /* residual is 0 */
+	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol)
+		return RECV_FIT_CONV; /* residual is 0 */
 	
 	/* determine the search direction */
 	struct vector search;
@@ -250,9 +236,9 @@ static bool primal_dual_step(struct recv_fit *fit)
 	double f, g, stp;
 	enum linesearch_task task;
 	
-	linesearch_start(&fit->ls, 1.0, f0, g0, &fit->lsctrl);
+	linesearch_start(&fit->ls, 1.0, f0, g0, &fit->ctrl.ls);
 	
-	printf("f0: %.22f g0: %.22f\n", f0, g0);
+	//printf("f0: %.22f g0: %.22f\n", f0, g0);
 	
 	do {
 		/* take a step to get new primal and dual variables */
@@ -262,7 +248,6 @@ static bool primal_dual_step(struct recv_fit *fit)
 
 		/* compute the fit, residuals, and kkt matrix at the new point */
 		vector_assign_copy(&fit->coefs, &primals);
-		vector_div(&fit->coefs, &fit->scale);
 		evaluate_loglik(fit);
 		compute_resid(fit);
 		compute_kkt(fit);
@@ -283,7 +268,7 @@ static bool primal_dual_step(struct recv_fit *fit)
 		g = vector_dot(&search, &grad);
 		task = linesearch_advance(&fit->ls, f, g);
 		
-		printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
+		//printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
 	} while (task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
 
 	assert(linesearch_sdec(&fit->ls));
@@ -292,7 +277,11 @@ static bool primal_dual_step(struct recv_fit *fit)
 	vector_deinit(&grad);	
 	vector_deinit(&search);
 	
-	return linesearch_sdec(&fit->ls);
+	if (linesearch_sdec(&fit->ls)) {
+		return RECV_FIT_STEP;
+	} else {
+		return RECV_FIT_ERR_LNSRCH;
+	}
 }
 
 
@@ -300,7 +289,7 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *msgs,
 		   const struct design *design,
 		   const struct vector *coefs0,
-		   double penalty)
+		   const struct recv_fit_ctrl *ctrl)
 {
 	assert(fit);
 	assert(msgs);
@@ -308,23 +297,22 @@ void recv_fit_init(struct recv_fit *fit,
 	assert(messages_max_to(msgs) < design_send_count(design));
 	assert(messages_max_from(msgs) < design_recv_count(design));
 	assert(!coefs0 || vector_dim(coefs0) == design_recv_dim(design));
-	assert(penalty >= 0.0 && isfinite(penalty));
-	
+	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
+
 	ssize_t dim = design_recv_dim(design);
 
-	fit->design = design;
-	fit->msgs = msgs;
-	fit->penalty = penalty;
-	
-	frame_init(&fit->frame, design);		
-	
-	if (!coefs0) {
-		vector_init(&fit->coefs, dim);
+	if (!ctrl) {
+		fit->ctrl = RECV_FIT_CTRL0;
 	} else {
-		vector_init_copy(&fit->coefs, coefs0);
+		fit->ctrl = *ctrl;
 	}
 	
-
+	fit->design = design;
+	fit->msgs = msgs;
+	fit->penalty = 0.0;
+	
+	frame_init(&fit->frame, design);		
+	vector_init(&fit->coefs, dim);
 	model_init(&fit->model, &fit->frame, &fit->coefs);
 	recv_loglik_init(&fit->loglik, &fit->model);
 	
@@ -337,10 +325,7 @@ void recv_fit_init(struct recv_fit *fit,
 	symeig_init(&fit->eig, dim, EIG_VEC);
 	ldlfac_init(&fit->ldl, dim);
 
-	struct linesearch_ctrl lsctrl = LINESEARCH_CTRL0;
-	fit->lsctrl = lsctrl;
-	
-	preprocess(fit);
+	preprocess(fit, coefs0);
 }
 
 void recv_fit_deinit(struct recv_fit *fit)
@@ -361,18 +346,28 @@ void recv_fit_deinit(struct recv_fit *fit)
 	frame_deinit(&fit->frame);
 }
 
-bool recv_fit_step(struct recv_fit *fit)
+enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 {
 	assert(fit);
-	return primal_dual_step(fit);
-}
-
-bool recv_fit_converged(const struct recv_fit *fit)
-{
-	return false;
+	assert(fit->task == RECV_FIT_STEP);
+	
+	fit->task = primal_dual_step(fit);
+	return fit->task;
 }
 
 const char *recv_fit_errmsg(const struct recv_fit *fit)
 {
+	assert(fit);
+
+	switch (fit->task) {
+	case RECV_FIT_STEP:
+		return "optimization in progress";
+	case RECV_FIT_ERR_LNSRCH:
+		return "linesearch failed";
+	case RECV_FIT_CONV:
+		return NULL;
+	}
+
+	assert(0);
 	return NULL;
 }

@@ -82,28 +82,35 @@ int main(int argc, char **argv)
 	setup();
 	
 	/* ssize_t n = messages_recv_count(&messages); */
-	double penalty = 0; // 0.00001; // n / 512.0; // >= 0.00001 works
-	ssize_t maxit = 300;
+	//double penalty = 0; // 0.00001; // n / 512.0; // >= 0.00001 works
+	ssize_t maxit = 25;
 	ssize_t report = 1;
 	bool trace = true;
 	
 	struct recv_fit fit;
-	recv_fit_init(&fit, &messages, &design, NULL, penalty);
+	recv_fit_init(&fit, &messages, &design, NULL, NULL);
+	enum recv_fit_task task;
 	ssize_t it = 0;
 	
 	do {
 		if (trace && it % report == 0) {
-			/*double dev = n * recv_loglik_avg_dev(&fit.loglik);
-			double f = fit.f;
-			const struct vector *grad = &fit.grad;
-			double ngrad = vector_max_abs(grad);
-			printf("iter %"SSIZE_FMT" deviance %.1f f: %.22f |grad| %.22f\n",
-			       it, dev, f, ngrad);*/
+			ssize_t n = fit.loglik.info.nrecv;
+			double dev = n * recv_loglik_avg_dev(&fit.loglik);
+			const struct vector *score = &fit.loglik.info.score;
+			double ngrad = vector_max_abs(score);
+			printf("iter %"SSIZE_FMT" deviance %.1f |grad| %.22f\n",
+			       it, dev, ngrad);
 		}
 		
 		it++;
-		recv_fit_step(&fit);
-	} while (it < maxit && !recv_fit_converged(&fit));
+		task = recv_fit_advance(&fit);
+	} while (it < maxit && task == RECV_FIT_STEP);
+	
+	if (task != RECV_FIT_CONV) {
+		printf("ERROR: %s\n", recv_fit_errmsg(&fit));
+		return -1;
+	}
 	
 	teardown();
+	return 0;
 }
