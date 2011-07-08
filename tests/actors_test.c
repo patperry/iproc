@@ -30,7 +30,7 @@ static void enron_teardown_fixture(void **state)
 
 static void enron_setup(void **state)
 {
-	matrix_init_copy(&matrix, &employees);
+	matrix_init_copy(&matrix, TRANS_NOTRANS, &employees);
 	actors_init_matrix(&actors, TRANS_NOTRANS, &matrix);
 }
 

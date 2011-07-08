@@ -442,7 +442,7 @@ static void test_imat(void **state)
 				}
 			}
 			
-			matrix_assign_copy(&diff, &avg_imat0);
+			matrix_assign_copy(&diff, TRANS_NOTRANS, &avg_imat0);
 			matrix_axpy(-1.0/msg->nto, &imat0, &diff);
 			matrix_axpy(-((double)msg->nto) / n, &diff, &avg_imat0);
 			
@@ -463,7 +463,7 @@ static void test_imat(void **state)
 				}
 			}
 			
-			matrix_assign_copy(&avg_imat0, &avg_imat1);
+			matrix_assign_copy(&avg_imat0, TRANS_NOTRANS, &avg_imat1);
 
 		}
 		

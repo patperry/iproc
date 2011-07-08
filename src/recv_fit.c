@@ -66,7 +66,7 @@ static void compute_constraints(struct recv_fit *fit)
 	struct matrix evec = matrix_slice(&fit->kkt, 0, 0, dim, dim);
 	struct vector eval = vector_slice(&fit->resid, 0, dim);
 
-	matrix_assign_copy(&evec, imat);
+	matrix_assign_copy(&evec, TRANS_NOTRANS, imat);
 
 	/* compute its eigendecomposition */
 	assert(symeig_dim(&fit->eig) == dim);
@@ -85,7 +85,7 @@ static void compute_constraints(struct recv_fit *fit)
 	/* define the constraints */
 	struct matrix u = matrix_slice_cols(&evec, 0, i);
 	matrix_reinit(&fit->ce_t, dim, i);
-	matrix_assign_copy(&fit->ce_t, &u);
+	matrix_assign_copy(&fit->ce_t, TRANS_NOTRANS, &u);
 	vector_reinit(&fit->be, i);
 	vector_fill(&fit->be, 0);
 	fit->ne = i;
@@ -145,7 +145,7 @@ static void compute_kkt(struct recv_fit *fit)
 	
 	/* k11 is the hessian */
 	struct matrix k11 = matrix_slice(&fit->kkt, 0, 0, dim, dim);
-	matrix_assign_copy(&k11, imat);
+	matrix_assign_copy(&k11, TRANS_NOTRANS, imat);
 	ssize_t i;
 	for (i = 0; i < dim; i++) {
 		*matrix_item_ptr(&k11, i, i) += fit->penalty;
@@ -153,7 +153,7 @@ static void compute_kkt(struct recv_fit *fit)
 	
 	/* k12 is the transpose of the equality constraint matrix */
 	struct matrix k12 = matrix_slice(&fit->kkt, 0, dim, dim, ne);
-	matrix_assign_copy(&k12, &fit->ce_t);
+	matrix_assign_copy(&k12, TRANS_NOTRANS, &fit->ce_t);
 	
 	/* k22 is zero */
 	struct matrix k22 = matrix_slice(&fit->kkt, dim, dim, ne, ne);

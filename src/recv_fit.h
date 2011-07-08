@@ -87,6 +87,8 @@ void recv_fit_init(struct recv_fit *fit,
 void recv_fit_deinit(struct recv_fit *fit);
 
 /* problem constraints */
+const struct matrix *recv_fit_ce(struct recv_fit *fit);
+const struct vector *recv_fit_be(const struct recv_fit *fit);
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);

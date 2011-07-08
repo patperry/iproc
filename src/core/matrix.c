@@ -41,53 +41,73 @@ struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol)
 	return a;
 }
 
-void matrix_init_copy(struct matrix *a, const struct matrix *src)
+void matrix_init_copy(struct matrix *a, enum trans_op trans,
+		      const struct matrix *src)
 {
 	assert(a);
 	assert(src);
 
-	ssize_t nrow = matrix_nrow(src);
-	ssize_t ncol = matrix_ncol(src);
+	ssize_t nrow, ncol;
+	
+	if (trans == TRANS_NOTRANS) {
+		nrow = matrix_nrow(src);
+		ncol = matrix_ncol(src);
+	} else {
+		nrow = matrix_ncol(src);		
+		ncol = matrix_nrow(src);
+	}
+
 	matrix_init(a, nrow, ncol);
-	matrix_assign_copy(a, src);
+	matrix_assign_copy(a, trans, src);
 }
 
-void matrix_assign_copy(struct matrix *a, const struct matrix *src)
+void matrix_assign_copy(struct matrix *a, enum trans_op trans,
+			const struct matrix *src)
 {
 	assert(a);
 	assert(src);
-	assert(matrix_nrow(a) == matrix_nrow(src));
-	assert(matrix_ncol(a) == matrix_ncol(src));
-
+	assert(trans != TRANS_NOTRANS || matrix_nrow(a) == matrix_nrow(src));
+	assert(trans != TRANS_NOTRANS || matrix_ncol(a) == matrix_ncol(src));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(a) == matrix_ncol(src));
+	assert(trans == TRANS_NOTRANS || matrix_ncol(a) == matrix_nrow(src));
+	
 	f77int m = (f77int)matrix_nrow(a);
 	f77int n = (f77int)matrix_ncol(a);
 	f77int i, j;
+	double val;
 
 	if (m == 0 || n == 0)
 		return;
 
-	if (matrix_lda(a) == m && matrix_lda(src) == m) {
-		f77int mn = m * n;
-		f77int one = 1;
+	if (trans == TRANS_NOTRANS) {
+		if (matrix_lda(a) == m && matrix_lda(src) == m) {
+			f77int mn = m * n;
+			f77int one = 1;
 
-		F77_FUNC(dcopy) (&mn, matrix_item_ptr(src, 0, 0),
-				 &one, matrix_item_ptr(a, 0, 0), &one);
+			F77_FUNC(dcopy) (&mn, matrix_item_ptr(src, 0, 0),
+					 &one, matrix_item_ptr(a, 0, 0), &one);
+		} else {
+			for (j = 0; j < n; j++) {
+				for (i = 0; i < m; i++) {
+					val = matrix_item(src, i, j);
+					matrix_set_item(a, i, j, val);
+				}
+			}
+		}
 	} else {
-		double value;
-
 		for (j = 0; j < n; j++) {
 			for (i = 0; i < m; i++) {
-				value = matrix_item(src, i, j);
-				matrix_set_item(a, i, j, value);
+				val = matrix_item(src, j, i);
+				matrix_set_item(a, i, j, val);
 			}
 		}
 	}
 }
 
-struct matrix *matrix_alloc_copy(const struct matrix *src)
+struct matrix *matrix_alloc_copy(enum trans_op trans, const struct matrix *src)
 {
 	struct matrix *a = xcalloc(1, sizeof(*a));
-	matrix_init_copy(a, src);
+	matrix_init_copy(a, trans, src);
 	return a;
 }
 

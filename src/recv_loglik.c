@@ -189,11 +189,11 @@ static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 
 	src = matrix_slice_cols(&imat->dx_p, 0, i);
 	dst = matrix_slice_cols(&dx_p, 0, i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	src = matrix_slice_cols(&imat->dx_p, i, n0 - i);
 	dst = matrix_slice_cols(&dx_p, i + 1, n0 - i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	matrix_deinit(&imat->dx_p);
 	imat->dx_p = dx_p;
@@ -204,11 +204,11 @@ static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 
 	src = matrix_slice_cols(&imat->mean_dx_dp, 0, i);
 	dst = matrix_slice_cols(&mean_dx_dp, 0, i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	src = matrix_slice_cols(&imat->mean_dx_dp, i, n0 - i);
 	dst = matrix_slice_cols(&mean_dx_dp, i + 1, n0 - i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	matrix_deinit(&imat->mean_dx_dp);
 	imat->mean_dx_dp = mean_dx_dp;
@@ -219,19 +219,19 @@ static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 
 	dst = matrix_slice(&dp2, 0, 0, i, i);
 	src = matrix_slice(&imat->dp2, 0, 0, i, i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	dst = matrix_slice(&dp2, i + 1, 0, n0 - i, i);
 	src = matrix_slice(&imat->dp2, i, 0, n0 - i, i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	dst = matrix_slice(&dp2, 0, i + 1, i, n0 - i);
 	src = matrix_slice(&imat->dp2, 0, i, i, n0 - i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 
 	dst = matrix_slice(&dp2, i + 1, i + 1, n0 - i, n0 - i);
 	src = matrix_slice(&imat->dp2, i, i, n0 - i, n0 - i);
-	matrix_assign_copy(&dst, &src);
+	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
 	matrix_deinit(&imat->dp2);
 	imat->dp2 = dp2;
 }
@@ -389,7 +389,7 @@ static void matrix_mean_update(double scale, const struct matrix *val,
 	struct vector vwork = vector_slice(work, 0, m * n);
 	struct matrix diff = matrix_make(&vwork, m, n);
 
-	matrix_assign_copy(&diff, val);
+	matrix_assign_copy(&diff, TRANS_NOTRANS, val);
 	matrix_sub(&diff, mean);
 	matrix_axpy(scale, &diff, mean);
 }
@@ -1127,7 +1127,7 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha, const struct recv_lo
 
 			matrix_fill(&new_imat, 0.0);
 			recv_sloglik_axpy_avg_imat(1.0, sll, &new_imat);
-			matrix_assign_copy(&diff, &avg_imat);
+			matrix_assign_copy(&diff, TRANS_NOTRANS, &avg_imat);
 			matrix_axpy(-1.0, &new_imat, &diff);
 			//recv_sloglik_axpy_avg_imat(-1.0, sll, &diff);
 			matrix_axpy(-((double)n) / ntot, &diff, &avg_imat);
