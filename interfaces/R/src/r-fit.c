@@ -56,13 +56,14 @@ Riproc_fit(SEXP Rdesign,
 	}
 
 	struct recv_fit fit;
-	recv_fit_init(&fit, messages, design, NULL, penalty);
+	recv_fit_init(&fit, messages, design, NULL, NULL);
+	enum recv_fit_task task;
 	int it = 0;
 
 	do {
 		R_CheckUserInterrupt();
 		it++;
-		recv_fit_step(&fit);
+		task = recv_fit_advance(&fit);
 
 		if (trace && it % report == 0) {
 			const char *msg = penalty == 0 ? "" : "(penalized) ";
@@ -72,9 +73,9 @@ Riproc_fit(SEXP Rdesign,
 			Rprintf("iter %d deviance %s%.6f decrement %.6f\n", it,
 				msg, dev, NAN);
 		}
-	} while (it < maxit && !recv_fit_converged(&fit));
+	} while (it < maxit && (task == RECV_FIT_STEP));
 
-	if (it == maxit && !recv_fit_converged(&fit)) {
+	if (it == maxit && task != RECV_FIT_CONV) {
 		warning("algorithm did not converge");
 	}
 
