@@ -192,7 +192,7 @@ static void test_dev(void **state)
 			
 			mean_dev0 = mean_dev_old + msg->nto * (((last_dev0 / msg->nto) - mean_dev_old) / n);
 			mean_dev1 = recv_loglik_avg_dev(&recv_loglik);
-			assert_in_range(double_eqrel(mean_dev0, mean_dev1), 49, DBL_MANT_DIG);
+			assert_in_range(double_eqrel(mean_dev0, mean_dev1), 48, DBL_MANT_DIG);
 			mean_dev_old = mean_dev1;
 		}
 	}
