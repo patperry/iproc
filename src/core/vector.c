@@ -444,20 +444,18 @@ double vector_log_sum_exp(const struct vector *vector)
 
 void vector_printf(const struct vector *v)
 {
-	printf("\nvector {");
-	printf("\n  dim: %" SSIZE_FMT "", vector_dim(v));
-	printf("\n   nz: {");
+	printf("x <- c(");
 
 	ssize_t i, n = vector_dim(v);
-	for (i = 0; i < n; i++) {
-		if (*vector_item_ptr(v, i) == 0.0)
-			continue;
-
-		printf("\n         %" SSIZE_FMT ", %.22f", i,
-		       *vector_item_ptr(v, i));
+	
+	if (n > 0) {
+		printf("%.22f", vector_item(v, 0));
 	}
-	printf("\n       }");
-	printf("\n}\n");
+	
+	for (i = 1; i < n; i++) {
+		printf(", %.22f", vector_item(v, i));
+	}
+	printf(")\n");
 }
 
 uint32_t vector_hash(const void *v)
