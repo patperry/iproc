@@ -15,90 +15,100 @@ DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 static void
 compute_weight_changes(const struct frame *f, ssize_t isend,
 		       const struct vector *recv_coefs,
-		       const struct vector *log_p0,
-		       struct svector *deta, double *gamma, double *log_gamma)
+		       const struct vector *eta0,
+		       double max_eta0, double log_W0,
+		       const struct svector *deta, double *scale,
+		       double *gamma, double *log_W)
 {
-	const struct design *design = f->design;
-	bool has_loops = design_loops(design);
-	ssize_t dyn_off = design_recv_dyn_index(design);
-	ssize_t dyn_dim = design_recv_dyn_dim(design);
-	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
+	//if (isend == 119) {
+	//	printf("COMPUTE\n");
+	//}
 	
-	/* compute the changes in weights */
-	frame_recv_dmul(1.0, TRANS_NOTRANS, f, isend, &beta, 0.0, deta);
-	if (!has_loops) {
-		svector_set_item(deta, isend, -INFINITY);
-	}
-
-	/* compute the scale for the weight differences */
-	double lwmax = svector_max(deta);
-	double logscale = MAX(0.0, lwmax);
-	double invscale = exp(-logscale);
-
-	struct logsumexp pos, neg;
-	logsumexp_init(&pos);
-	logsumexp_init(&neg);
-
-	/* treat the initial sum of weights as the first positive difference */
-	logsumexp_insert(&pos, -logscale);
-
-	/* compute the log sums of the positive and negative differences in weights */
+	const struct design *design = f->design;
+	
+	ssize_t jrecv, nrecv = design_recv_count(design);				
 	struct svector_iter it;
+	bool shrink = false;
+	
+	/* compute the maximum eta value */
+	*scale = max_eta0;
+
 	SVECTOR_FOREACH(it, deta) {
-		//      for (i = 0; i < nnz; i++) {
 		ssize_t jrecv = SVECTOR_IDX(it);
-		double lp0 = vector_item(log_p0, jrecv);
-		double dlw = SVECTOR_VAL(it);
-		double log_abs_dw;
+		double eta0_j = vector_item(eta0, jrecv);
+		double deta_j = SVECTOR_VAL(it);
+		double eta_j = eta0_j + deta_j;
+		
+		if (eta0_j == max_eta0 && deta_j < 0)
+			shrink = true;
 
-		/* When w > w0:
-		 *   w - w0      = w0 * [exp(dlw) - 1];
-		 *               = w0 * {exp[dlw - log(scale)] - 1/scale} * scale
-		 *
-		 *   log(w - w0) = log(w0) + log{exp[(dlw) - log(scale)] - 1/scale} + log(scale)
-		 */
-		if (dlw >= 0) {
-			log_abs_dw = lp0 + log(exp(dlw - logscale) - invscale);
-			logsumexp_insert(&pos, log_abs_dw);
+		*scale = MAX(*scale, eta_j);
+	}
+	
+fast:
+	{
+		double W = exp(log_W0 + (max_eta0 - *scale));
+		bool found_max = false;
+		
+		SVECTOR_FOREACH(it, deta) {
+			ssize_t jrecv = SVECTOR_IDX(it);
+			double eta0_j = vector_item(eta0, jrecv);
+			double deta_j = SVECTOR_VAL(it);
+			double eta_j = eta0_j + deta_j;
+			
+			if (!found_max && eta_j == *scale) {
+				found_max = true;
+				W += -exp(eta0_j - *scale);
+			} else {
+				W += (exp(eta_j - *scale)
+				      - exp(eta0_j - *scale));
+			}
+		}
+			
+		if (found_max) {
+			*log_W = log1p(W);
 		} else {
-			log_abs_dw = lp0 + log(invscale - exp(dlw - logscale));
-			logsumexp_insert(&neg, log_abs_dw);
+			*log_W = log(W);
 		}
+		
+		if (*log_W > 0)
+			goto out;
 	}
 
-	double log_sum_abs_dw_p = logsumexp_value(&pos);
-	double log_sum_abs_dw_n = logsumexp_value(&neg);
-	double log_sum_w = (log_sum_abs_dw_p
-			    + log1p(-exp(log_sum_abs_dw_n - log_sum_abs_dw_p))
-			    + logscale);
-
-	/* Compute the sum the expensive way when there is overflow */
-	if (!isfinite(log_sum_w)) {
-		// fprintf(stderr, "!"); fflush(stderr);
-		logscale = -INFINITY;
-		ssize_t jrecv, nrecv = design_recv_count(design);
-		for (jrecv = 0; jrecv < nrecv; jrecv++) {
-			double lp0 = vector_item(log_p0, jrecv);
-			double lp = lp0 + svector_item(deta, jrecv);
-			logscale = MAX(logscale, lp);
+accurate:
+	{
+		//fprintf(stderr, "!"); fflush(stderr);
+		/* compute the new max_eta */
+		if (shrink && *scale == max_eta0) {
+			double max = -INFINITY;
+			for (jrecv = 0; jrecv < nrecv; jrecv++) {
+				double eta0_j = vector_item(eta0, jrecv);
+				double deta_j = svector_item(deta, jrecv);
+				double eta_j = eta0_j + deta_j;
+				
+				max = MAX(max, eta_j);
+			}
+			*scale = max;
 		}
 
+		/* compute the new log_W */
 		struct logsumexp lse;
-		
-		logsumexp_init(&lse);
+		logsumexp_init(&lse);		
+
 		for (jrecv = 0; jrecv < nrecv; jrecv++) {
-			double lp0 = vector_item(log_p0, jrecv);
-			double lp = lp0 + svector_item(deta, jrecv);
-			logsumexp_insert(&lse, lp - logscale);
-		}
+			double eta0_j = vector_item(eta0, jrecv);
+			double deta_j = svector_item(deta, jrecv);
+			double eta_j = eta0_j + deta_j;
 		
-		log_sum_w = logsumexp_value(&lse) + logscale;
+			logsumexp_insert(&lse, eta_j - *scale);
+		}
+		*log_W = logsumexp_value(&lse);
 	}
 
-	*gamma = exp(-log_sum_w);
-	*log_gamma = -log_sum_w;
+out:
+	*gamma = exp((log_W0 + (max_eta0 - *scale)) - *log_W);
 	assert(*gamma >= 0.0);
-	assert(isfinite(*log_gamma));
+	assert(isfinite(*log_W));
 }
 
 static void cohort_model_set(struct cohort_model *cm,
@@ -126,22 +136,21 @@ static void cohort_model_set(struct cohort_model *cm,
 	 * shouldn't be necessary in most (all?) real-world situations.
 	 */
 	
-	/* log_p0, eta0 */
+	/* eta0 */
 	design_recv_mul0(1.0, TRANS_NOTRANS, design, isend, recv_coefs, 0.0,
-			 &cm->log_p0);
-#ifndef NDEGUG
-	vector_assign_copy(&cm->eta0, &cm->log_p0);
-#endif
-	double max = vector_max(&cm->log_p0);	/* protect against overflow */
-	vector_shift(&cm->log_p0, -max);
-	double lse = vector_log_sum_exp(&cm->log_p0);
-	vector_shift(&cm->log_p0, -lse);
+			 &cm->eta0);
+	
+	/* max_eta0 */
+	cm->max_eta0 = vector_max(&cm->eta0);
+
+
+	/* store log_p0 in p0 */
+	vector_assign_copy(&cm->p0, &cm->eta0);	
+	vector_shift(&cm->p0, -cm->max_eta0); /* guard against overflow */
 	
 	/* log_W0 */
-	cm->log_W0 = lse + max;
-	
-	/* p0 */
-	vector_assign_copy(&cm->p0, &cm->log_p0);
+	cm->log_W0 = vector_log_sum_exp(&cm->p0);
+	vector_shift(&cm->p0, -cm->log_W0);
 	vector_exp(&cm->p0);
 	
 	/* mean0 */
@@ -172,7 +181,7 @@ static void cohort_model_set(struct cohort_model *cm,
 	
 #ifndef NDEBUG
 	/* W0 */
-	cm->W0 = exp(cm->log_W0);
+	cm->W0 = exp(cm->log_W0 + cm->max_eta0);
 	
 	/* w0 */
 	vector_assign_copy(&cm->w0, &cm->p0);
@@ -193,12 +202,11 @@ static void cohort_model_init(struct cohort_model *cm,
 	ssize_t dim = design_recv_dim(design);
 
 	cm->isend0 = isend;
-	vector_init(&cm->log_p0, nreceiver);
+	vector_init(&cm->eta0, nreceiver);		
 	vector_init(&cm->p0, nreceiver);
 	vector_init(&cm->mean0, dim);
 	matrix_init(&cm->imat0, dim, dim);
 #ifndef NDEBUG
-	vector_init(&cm->eta0, nreceiver);	
 	vector_init(&cm->w0, nreceiver);
 #endif
 	cohort_model_set(cm, design, recv_coefs);	
@@ -209,12 +217,11 @@ static void cohort_model_deinit(struct cohort_model *cm)
 	assert(cm);
 #ifndef NDEBUG
 	vector_deinit(&cm->w0);
-	vector_deinit(&cm->eta0);
 #endif
 	matrix_deinit(&cm->imat0);
 	vector_deinit(&cm->mean0);
-	vector_deinit(&cm->log_p0);
-	vector_deinit(&cm->p0);
+	vector_deinit(&cm->p0);	
+	vector_deinit(&cm->eta0);	
 }
 
 static void cohort_models_set(struct intmap *cms,
@@ -279,30 +286,40 @@ static struct cohort_model *model_cohort_model(const struct model *model,
 	return cm;
 }
 
+
 static void recv_model_clear(struct recv_model *rm)
 {
 	assert(rm);
 
 	const struct model *m = rm->model;
 	ssize_t isend = rm->isend;
-	const struct cohort_model *cm = model_cohort_model(m, isend);
 	const struct frame *f = model_frame(m);
 	const struct design *d = frame_design(f);
+
+	double max_eta0 = rm->cohort->max_eta0;
+	double log_W0 = rm->cohort->log_W0;
 
 	svector_clear(&rm->deta);
 	array_clear(&rm->active);
 
-	if (!design_loops(d)) {
-		double p0 = vector_item(&cm->p0, isend);
-		assert(p0 < 1);
-		rm->gamma = 1.0 / (1.0 - p0);
-		rm->log_gamma = -log1p(-p0);
-
-		svector_set_item(&rm->deta, isend, -INFINITY);
-		array_add(&rm->active, &isend);
-	} else {
+	/* take the initial values if there are self-loops */
+	if (design_loops(d)) {
 		rm->gamma = 1.0;
-		rm->log_gamma = 0.0;
+		rm->log_W = log_W0;
+		rm->scale = max_eta0;
+	} else {
+		/* add the loop to the active set */
+		array_add(&rm->active, &isend);
+
+		/* compute the eta values */
+		svector_set_item(&rm->deta, rm->isend, -INFINITY);
+		
+		/* compute the changes in weights */	
+		const struct vector *recv_coefs = model_recv_coefs(rm->model);
+		compute_weight_changes(f, isend, recv_coefs, &rm->cohort->eta0,
+				       max_eta0, log_W0,
+				       &rm->deta, &rm->scale, &rm->gamma, &rm->log_W);
+
 	}
 }
 
@@ -312,11 +329,27 @@ static void recv_model_set(struct recv_model *rm,
 {
 	recv_model_clear(rm);
 	
-	compute_weight_changes(f, rm->isend, recv_coefs, &rm->cohort->log_p0,
-			       &rm->deta, &rm->gamma, &rm->log_gamma);
-	assert(rm->gamma >= 0.0);
-	assert(isfinite(rm->log_gamma));	
+	const struct design *design = model_design(rm->model);
+	bool has_loops = design_loops(design);
+	ssize_t dyn_off = design_recv_dyn_index(design);
+	ssize_t dyn_dim = design_recv_dyn_dim(design);
+	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
+	
+	/* compute the eta values */
+	frame_recv_dmul(1.0, TRANS_NOTRANS, f, rm->isend, &beta, 0.0, &rm->deta);
+	if (!has_loops) {
+		svector_set_item(&rm->deta, rm->isend, -INFINITY);
+	}
+	
+	/* compute the changes in weights */	
+	compute_weight_changes(f, rm->isend, recv_coefs, &rm->cohort->eta0,
+			       rm->cohort->max_eta0, rm->cohort->log_W0,
+			       &rm->deta, &rm->scale, &rm->gamma, &rm->log_W);
 
+	assert(rm->gamma >= 0.0);
+	assert(isfinite(rm->log_W));	
+
+	/* compute the active set */
 	struct svector_iter it;
 	SVECTOR_FOREACH(it, &rm->deta) {
 		ssize_t ix = SVECTOR_IDX(it);
@@ -378,6 +411,10 @@ static void process_recv_var_event(struct model *m, const struct frame *f, const
 	const struct cohort_model *cm = rm->cohort;
 	const struct vector *coefs = model_recv_coefs(m);
 	
+	//if (rm->isend == 119) {
+	//	printf("PROCESS\n");
+	//}
+	
 	ssize_t jrecv = meta->item.jrecv;
 	struct svector_pos pos;
 	double *pdeta = svector_find(&rm->deta, jrecv, &pos);
@@ -394,27 +431,41 @@ static void process_recv_var_event(struct model *m, const struct frame *f, const
 	double dx = meta->delta;
 	double deta = vector_item(coefs, index) * dx;
 	
-	double gamma0 = rm->gamma;
-	double log_gamma0 = rm->log_gamma;
-	// double p0 = gamma0 * vector_item(&cm->p0, jrecv) * exp(*pdeta);
-	double log_p0 = MIN(0.0, log_gamma0 + vector_item(&cm->log_p0, jrecv) + (*pdeta));
-	double p0 = exp(log_p0);
-	double p = exp(log_p0 + deta);
-	double dp = p - p0;
+	double scale = rm->scale;
+	double gamma = rm->gamma;
+	double log_W = rm->log_W;
+	double eta = vector_item(&cm->eta0, jrecv) + (*pdeta);
+	double eta1 = eta + deta;
 	
-	double gamma = gamma0 / (1.0 + dp);
-	double log_gamma = log_gamma0 - log1p(dp);
+	/* W' = W + exp(eta') - exp(eta)
+
+	   log(W') = log{ W * (1 + [exp(eta') - exp(eta)]/W) }
+		   = log(W) + log[ 1 + (exp(eta') - exp(eta))/W ]
+	 
+	   gamma' = W0 / W * W / W'
+	          = gamma / { 1 + [exp(eta') - exp(eta)] / W }
+		  = gamma / { 1 + [ exp(eta' - log(W)) - exp(eta - log(W)) ] }
+	 */
+	double w = exp(eta - scale);
+	double w1 = exp(eta1 - scale);
+	double dw = (w1 - w) / exp(log_W);
+	double gamma1 = gamma / (1.0 + dw);
+	double log_W1 = log_W + log1p(dw);
+	
+	//if (rm->isend == 119) {
+	//	printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
+	//}
 	
 	/* for dramatic changes in the weight sums, we recompute everything */
-	if (!(fabs(dp) <= 0.5)) {
+	if (!(fabs(dw) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
 		//fprintf(stderr, "."); fflush(stderr);
 		recv_model_set(rm, f, model_recv_coefs(m));
 	} else {
-		rm->gamma = gamma;
-		rm->log_gamma = log_gamma;
+		rm->gamma = gamma1;
+		rm->log_W = log_W1;
 		assert(rm->gamma >= 0);
-		assert(isfinite(log_gamma));
+		assert(isfinite(log_W1));
 		*pdeta += deta;
 	}
 }
@@ -569,10 +620,10 @@ ssize_t model_recv_dim(const struct model *model)
 	return design_recv_dim(design);
 }
 
-struct vector *recv_model_logprobs0(const struct recv_model *model)
+struct vector *recv_model_logweight0(const struct recv_model *model)
 {
 	assert(model);
-	return &model->cohort->log_p0;
+	return &model->cohort->eta0;
 }
 
 struct vector *recv_model_probs0(const struct recv_model *model)
@@ -659,13 +710,17 @@ double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 	   return log(p);
 	 */
 
-	double log_gamma = rm->log_gamma;
-	double log_p0 = *vector_item_ptr(&rm->cohort->log_p0, jrecv);
+	double scale = rm->scale;
+	double log_W = rm->log_W;
+	double eta0 = vector_item(&rm->cohort->eta0, jrecv);
 	double deta = svector_item(&rm->deta, jrecv);
-	double log_p = log_gamma + log_p0 + deta;
+	double eta = eta0 + deta;
+	double log_p = (eta - scale) - log_W;
 	
-	assert(!isnan(log_p));
-	return MIN(log_p, 0.0);
+	log_p = MIN(0.0, log_p);
+	
+	assert(log_p <= 0.0);
+	return log_p;
 }
 
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv)

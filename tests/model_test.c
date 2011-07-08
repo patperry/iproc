@@ -183,12 +183,10 @@ static void test_probs(void **state)
 				vector_set_item(&eta, isend, -INFINITY);
 			
 			vector_assign_copy(&logprobs, &eta);
-			double etamax = vector_max(&eta);
-			vector_shift(&logprobs, -etamax);
+			double max_eta = vector_max(&eta);
+			vector_shift(&logprobs, -max_eta);
 			double log_W = vector_log_sum_exp(&logprobs);
 			vector_shift(&logprobs, -log_W);
-			
-			log_W += etamax;
 			
 			vector_assign_copy(&probs, &logprobs);
 			vector_exp(&probs);
@@ -196,9 +194,12 @@ static void test_probs(void **state)
 			vector_fill(&y, y0);
 			recv_model_axpy_probs(alpha, rm, &y);
 			
+			assert(double_eqrel(log_W + max_eta, rm->log_W + rm->scale) >= 36);
+			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
-				double lp0 = recv_model_logprob(rm, jrecv);
-				double lp1 = vector_item(&logprobs, jrecv);
+				double lp0 = vector_item(&logprobs, jrecv);				
+				double lp1 = recv_model_logprob(rm, jrecv);
+
 				if (fabs(lp0) >= 5e-4) {
 					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
 					assert(double_eqrel(lp0, lp1) >= 36);
@@ -208,9 +209,10 @@ static void test_probs(void **state)
 					assert(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
 					assert_true(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
 				}
-				
-				double p0 = recv_model_prob(rm, jrecv);
-				double p1 = vector_item(&probs, jrecv);
+
+				double p0 = vector_item(&probs, jrecv);				
+				double p1 = recv_model_prob(rm, jrecv);
+
 				if (fabs(p0) >= 5e-4) {
 					minprec = MIN(minprec, double_eqrel(p0, p1));
 					assert(double_eqrel(p0, p1) >= 38);
@@ -219,9 +221,10 @@ static void test_probs(void **state)
 					assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
 				}
 				
-				assert_true(double_identical(alpha * p0 + y0,
-							     vector_item(&y, jrecv)));
-
+				assert_in_range(double_eqrel(alpha * p0 + y0,
+							     vector_item(&y, jrecv)),
+						45,
+						DBL_MANT_DIG);
 			}
 		}
 		

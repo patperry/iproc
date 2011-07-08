@@ -113,16 +113,16 @@
  */
 struct cohort_model {
 	ssize_t isend0; // canonical sender
-	double log_W0;
+	double max_eta0;
+	double log_W0; // log_W0 - max_eta0
+	struct vector eta0;
 	struct vector p0;
-	struct vector log_p0;
 	struct vector mean0;
 	struct matrix imat0;
 
 	/* debug */
 #ifndef NDEBUG
 	double W0;
-	struct vector eta0;
 	struct vector w0;
 #endif
 };
@@ -132,7 +132,8 @@ struct recv_model {
 	ssize_t isend;
 	struct cohort_model *cohort;
 	double gamma;
-	double log_gamma;
+	double log_W; // log_W - scale
+	double scale;
 	struct svector deta;
 	struct array active;
 };
@@ -169,7 +170,7 @@ ssize_t recv_model_dim(const struct recv_model *rm);
 static inline double recv_model_prob0(const struct recv_model *rm,
 				      ssize_t jrecv);
 
-struct vector *recv_model_logprobs0(const struct recv_model *rm);
+struct vector *recv_model_logweight0(const struct recv_model *rm);
 struct vector *recv_model_probs0(const struct recv_model *rm);
 struct vector *recv_model_mean0(const struct recv_model *rm);
 struct matrix *recv_model_imat0(const struct recv_model *rm);
