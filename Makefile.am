@@ -18,8 +18,6 @@ libiproc_la_SOURCES = \
 	src/design.h \
 	src/event-trace.c \
 	src/event-trace.h \
-	src/fit.c \
-	src/fit.h \
 	src/frame.c \
 	src/frame.h \
 	src/history.c \
@@ -28,6 +26,8 @@ libiproc_la_SOURCES = \
 	src/messages.h \
 	src/model.c \
 	src/model.h \
+	src/recv_fit.c \
+	src/recv_fit.h \
 	src/recv_loglik.c \
 	src/recv_loglik.h \
 	src/rv-irecv.c \

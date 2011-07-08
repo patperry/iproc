@@ -13,6 +13,7 @@
 
 
 #define RECV_FIT_GTOL0		(1e-8)
+#define RECV_FIT_XTOL0		(1e-8)
 #define RECV_FIT_LSMAX0		(10)
 #define RECV_FIT_LSCTRL0	LINESEARCH_CTRL0
 #define RECV_FIT_VARTOL		(1e-8)
@@ -20,6 +21,7 @@
 
 #define RECV_FIT_CTRL0 ((struct recv_fit_ctrl) { \
 		RECV_FIT_GTOL0, \
+		RECV_FIT_XTOL0, \
 		RECV_FIT_LSMAX0, \
 		RECV_FIT_LSCTRL0, \
 		RECV_FIT_VARTOL, \
@@ -28,6 +30,7 @@
 
 struct recv_fit_ctrl {
 	double gtol;
+	double xtol;	
 	ssize_t ls_maxit;
 	struct linesearch_ctrl ls;
 	double vartol;
@@ -38,6 +41,7 @@ enum recv_fit_task {
 	RECV_FIT_CONV = 0,
 	RECV_FIT_STEP = 1,
 	RECV_FIT_ERR_LNSRCH = -1, // linesearch failed to converge
+	RECV_FIT_ERR_XTOL = -2, // step size is smaller than tolerance
 };
 
 
@@ -64,6 +68,8 @@ struct recv_fit {
 	struct vector params; /* primal and dual parameters */
 	struct vector resid;  /* dual and primal residuals */
 	struct matrix kkt;    /* KKT matrix */
+	struct vector search;
+	double step;
 	
 	/* additional workspace */
 	struct linesearch ls;
@@ -80,9 +86,15 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 
+/* problem constraints */
+
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 
+/* current values */
+const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
+const struct vector *recv_fit_coefs(const struct recv_fit *fit);
+double recv_fit_step(const struct recv_fit *fit);
 
 /* control parameters */
 static inline bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl);

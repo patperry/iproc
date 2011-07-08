@@ -10,7 +10,7 @@
 #include "frame.h"
 #include "model.h"
 #include "recv_loglik.h"
-#include "fit.h"
+#include "recv_fit.h"
 
 
 static struct actors senders;
@@ -93,17 +93,20 @@ int main(int argc, char **argv)
 	ssize_t it = 0;
 	
 	do {
-		if (trace && it % report == 0) {
-			ssize_t n = fit.loglik.info.nrecv;
-			double dev = n * recv_loglik_avg_dev(&fit.loglik);
-			const struct vector *score = &fit.loglik.info.score;
-			double ngrad = vector_max_abs(score);
-			printf("iter %"SSIZE_FMT" deviance %.1f |grad| %.22f\n",
-			       it, dev, ngrad);
-		}
-		
 		it++;
 		task = recv_fit_advance(&fit);
+
+		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
+			const struct recv_loglik *ll = recv_fit_loglik(&fit);
+			const struct recv_loglik_info *info = recv_loglik_info(ll);
+			ssize_t n = info->nrecv;
+			double dev = n * info->dev;
+			const struct vector *score = &info->score;
+			double ngrad = vector_max_abs(score);
+			double step = recv_fit_step(&fit);
+			printf("iter %"SSIZE_FMT" deviance = %.1f; |grad| = %.22f; step = %.22f\n",
+			       it, dev, ngrad, step);
+		}
 	} while (it < maxit && task == RECV_FIT_STEP);
 	
 	if (task != RECV_FIT_CONV) {

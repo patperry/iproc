@@ -49,7 +49,7 @@
 		222FC41113607C7900E64FC9 /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597405133D0AFB0022B52E /* actors.c */; };
 		222FC41313607C7900E64FC9 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
 		222FC41613607C7900E64FC9 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
-		222FC41813607C7900E64FC9 /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* fit.c */; };
+		222FC41813607C7900E64FC9 /* recv_fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* recv_fit.c */; };
 		222FC41A13607C7900E64FC9 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
 		222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* recv_loglik.c */; };
 		222FC41F13607C7900E64FC9 /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
@@ -86,8 +86,8 @@
 		2259741D133D0AFB0022B52E /* actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597406133D0AFB0022B52E /* actors.h */; };
 		2259741F133D0AFB0022B52E /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		22597420133D0AFB0022B52E /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597409133D0AFB0022B52E /* design.h */; };
-		22597421133D0AFB0022B52E /* fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* fit.c */; };
-		22597422133D0AFB0022B52E /* fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740B133D0AFB0022B52E /* fit.h */; };
+		22597421133D0AFB0022B52E /* recv_fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* recv_fit.c */; };
+		22597422133D0AFB0022B52E /* recv_fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740B133D0AFB0022B52E /* recv_fit.h */; };
 		22597423133D0AFB0022B52E /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
 		22597424133D0AFB0022B52E /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 2259740D133D0AFB0022B52E /* history.h */; };
 		22597425133D0AFB0022B52E /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* recv_loglik.c */; };
@@ -516,8 +516,8 @@
 		22597406133D0AFB0022B52E /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = src/actors.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597408133D0AFB0022B52E /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
 		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		2259740A133D0AFB0022B52E /* fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fit.c; path = src/fit.c; sourceTree = "<group>"; };
-		2259740B133D0AFB0022B52E /* fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fit.h; path = src/fit.h; sourceTree = "<group>"; };
+		2259740A133D0AFB0022B52E /* recv_fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_fit.c; path = src/recv_fit.c; sourceTree = "<group>"; };
+		2259740B133D0AFB0022B52E /* recv_fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_fit.h; path = src/recv_fit.h; sourceTree = "<group>"; };
 		2259740C133D0AFB0022B52E /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/history.c; sourceTree = "<group>"; };
 		2259740D133D0AFB0022B52E /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = src/history.h; sourceTree = "<group>"; };
 		2259740E133D0AFB0022B52E /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
@@ -821,8 +821,8 @@
 				22597409133D0AFB0022B52E /* design.h */,
 				22597418133D0AFB0022B52E /* event-trace.c */,
 				22597419133D0AFB0022B52E /* event-trace.h */,
-				2259740A133D0AFB0022B52E /* fit.c */,
-				2259740B133D0AFB0022B52E /* fit.h */,
+				2259740A133D0AFB0022B52E /* recv_fit.c */,
+				2259740B133D0AFB0022B52E /* recv_fit.h */,
 				22EA3331136B440B00C5627F /* frame.c */,
 				22EA3332136B440B00C5627F /* frame.h */,
 				2259740C133D0AFB0022B52E /* history.c */,
@@ -1041,7 +1041,7 @@
 				22597403133D081B0022B52E /* matrix.h in Headers */,
 				2259741D133D0AFB0022B52E /* actors.h in Headers */,
 				22597420133D0AFB0022B52E /* design.h in Headers */,
-				22597422133D0AFB0022B52E /* fit.h in Headers */,
+				22597422133D0AFB0022B52E /* recv_fit.h in Headers */,
 				22597424133D0AFB0022B52E /* history.h in Headers */,
 				22597426133D0AFB0022B52E /* recv_loglik.h in Headers */,
 				22597429133D0AFB0022B52E /* messages.h in Headers */,
@@ -1440,7 +1440,7 @@
 				222FC41113607C7900E64FC9 /* actors.c in Sources */,
 				222FC41313607C7900E64FC9 /* cohort.c in Sources */,
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
-				222FC41813607C7900E64FC9 /* fit.c in Sources */,
+				222FC41813607C7900E64FC9 /* recv_fit.c in Sources */,
 				222FC41A13607C7900E64FC9 /* history.c in Sources */,
 				222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */,
 				222FC41F13607C7900E64FC9 /* messages.c in Sources */,
@@ -1495,7 +1495,7 @@
 				22597402133D081B0022B52E /* matrix.c in Sources */,
 				2259741C133D0AFB0022B52E /* actors.c in Sources */,
 				2259741F133D0AFB0022B52E /* design.c in Sources */,
-				22597421133D0AFB0022B52E /* fit.c in Sources */,
+				22597421133D0AFB0022B52E /* recv_fit.c in Sources */,
 				22597423133D0AFB0022B52E /* history.c in Sources */,
 				22597425133D0AFB0022B52E /* recv_loglik.c in Sources */,
 				22597428133D0AFB0022B52E /* messages.c in Sources */,

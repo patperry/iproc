@@ -4,7 +4,7 @@
 #include "enron.h"
 
 #define EMPLOYEES_SIZE  156
-#define EMPLOYEES_DIM   5
+#define EMPLOYEES_DIM   12
 
 enum gender_code { GENDER_NA = -1, GENDER_MALE, GENDER_FEMALE };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
@@ -128,45 +128,63 @@ static int parse_end_map(void *ctx)
 	struct matrix *matrix = parse->matrix;
 	ssize_t i = parse->id - 1;
 	
+	
+	assert(parse->department != DEPARTMENT_NA);
+	assert(parse->gender != GENDER_NA);
+	assert(parse->seniority != SENIORITY_NA);
+	
+	
 	matrix_fill_row(matrix, i, 0.0);
 	
-	matrix_set_item(matrix, i, 0, 1.0); // intercept
+	/* intercept */
+	matrix_set_item(matrix, i, 0, 1.0);
 	
-	switch (parse->department) {
-		case DEPARTMENT_LEGAL:
-			matrix_set_item(matrix, i, 1, 1.0);
-			break;
-		case DEPARTMENT_TRADING:
-			matrix_set_item(matrix, i, 2, 1.0);
-			break;
-		case DEPARTMENT_OTHER:
-			break;
-		default:
-			assert(0);
-			break;
-	}
+	/* department */
+	if (parse->department == DEPARTMENT_LEGAL)
+		matrix_set_item(matrix, i, 1, 1.0);
+	if (parse->department == DEPARTMENT_TRADING)
+		matrix_set_item(matrix, i, 2, 1.0);
 	
-	switch (parse->gender) {
-		case GENDER_FEMALE:
-			matrix_set_item(matrix, i, 3, 1.0);
-			break;
-		case GENDER_MALE:
-			break;
-		default:
-			assert(0);
-			break;
-	}
+	/* gender */
+	if (parse->gender == GENDER_FEMALE)
+		matrix_set_item(matrix, i, 3, 1.0);
 	
-	switch (parse->seniority) {
-		case SENIORITY_JUNIOR:
-			matrix_set_item(matrix, i, 4, 1.0);
-			break;
-		case SENIORITY_SENIOR:
-			break;
-		default:
-			assert(0);
-			break;
-	}
+	/* seniority */
+	if (parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 4, 1.0);
+	
+#if 1
+	/* department * gender */
+	if (parse->department == DEPARTMENT_LEGAL
+	    && parse->gender == GENDER_FEMALE)
+		matrix_set_item(matrix, i, 5, 1.0);
+	if (parse->department == DEPARTMENT_TRADING
+	    && parse->gender == GENDER_FEMALE)
+		matrix_set_item(matrix, i, 6, 1.0);
+
+	/* department * seniority */
+	if (parse->department == DEPARTMENT_LEGAL
+	    && parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 7, 1.0);
+	if (parse->department == DEPARTMENT_TRADING
+	    && parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 8, 1.0);
+
+	/* gender * senority */
+	if (parse->gender == GENDER_FEMALE
+	    && parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 9, 1.0);
+
+	/* department * gender * senority */
+	if (parse->department == DEPARTMENT_LEGAL
+	    && parse->gender == GENDER_FEMALE
+	    && parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 10, 1.0);
+	if (parse->department == DEPARTMENT_TRADING
+	    && parse->gender == GENDER_FEMALE
+	    && parse->seniority == SENIORITY_JUNIOR)
+		matrix_set_item(matrix, i, 11, 1.0);
+#endif
 	
 	return 1;
 }

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "linesearch.h"
-#include "fit.h"
+#include "recv_fit.h"
 
 
 // sets model and loglik
@@ -94,6 +94,7 @@ static void compute_constraints(struct recv_fit *fit)
 	matrix_reinit(&fit->kkt, dim + i, dim + i);
 	vector_reinit(&fit->resid, dim + i);
 	vector_reinit(&fit->params, dim + i);
+	vector_reinit(&fit->search, dim + i);
 	
 	/* update ldlfac dimension */
 	ldlfac_reinit(&fit->ldl, dim + i);
@@ -206,19 +207,22 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	ssize_t dim = model_recv_dim(&fit->model);
 	ssize_t ne = fit->ne;
 	
+	double stp0 = 1.0;
 	double f0 = vector_norm2(&fit->resid);
 	double g0 = -2 * f0;
-
+	
+	assert(isfinite(f0));
+	assert(isfinite(g0));
+	
 	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol)
 		return RECV_FIT_CONV; /* residual is 0 */
 	
 	/* determine the search direction */
-	struct vector search;
-	vector_init_copy(&search, &fit->resid);
-	struct matrix smat = matrix_make(&search, dim + ne, 1);
+	vector_assign_copy(&fit->search, &fit->resid);
+	struct matrix smat = matrix_make(&fit->search, dim + ne, 1);
 	ssize_t info = ldlfac_solve(&fit->ldl, UPLO_UPPER, &fit->kkt, &smat);
 	assert(info == 0);
-	vector_scale(&search, -1.0);
+	vector_scale(&fit->search, -1.0);
 	
 	struct vector grad;
 	vector_init(&grad, dim + ne); /* gradients of |resid|^2 */
@@ -233,18 +237,24 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	struct vector primals = vector_slice(&fit->params, 0, dim);
 	
 	/* perform a linesearch to reduce the residual norm */
-	double f, g, stp;
+	double f, g;
 	enum linesearch_task task;
-	
-	linesearch_start(&fit->ls, 1.0, f0, g0, &fit->ctrl.ls);
+	ssize_t it = 0;
 	
 	//printf("f0: %.22f g0: %.22f\n", f0, g0);
 	
+	struct linesearch_ctrl ctrl = fit->ctrl.ls;
+	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, vector_max_abs(&fit->search)));
+	ctrl.stpmin = MIN(ctrl.stpmin, 1e-12 * ctrl.stpmax);
+	stp0 = MIN(1.0, ctrl.stpmin + 0.5 * (ctrl.stpmax - ctrl.stpmin));
+	linesearch_start(&fit->ls, stp0, f0, g0, &ctrl);
+
 	do {
 		/* take a step to get new primal and dual variables */
-		stp = linesearch_step(&fit->ls);		
+		it++;
+		fit->step = linesearch_step(&fit->ls);		
 		vector_assign_copy(&fit->params, &params0);
-		vector_axpy(stp, &search, &fit->params);
+		vector_axpy(fit->step, &fit->search, &fit->params);
 
 		/* compute the fit, residuals, and kkt matrix at the new point */
 		vector_assign_copy(&fit->coefs, &primals);
@@ -265,19 +275,24 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		
 		/* evaluate the new squared residual norm and directional derivative */
 		f = vector_norm2(&fit->resid);
-		g = vector_dot(&search, &grad);
+		g = vector_dot(&fit->search, &grad);
+	
+		assert(isfinite(f));
+		assert(isfinite(g));
+		
 		task = linesearch_advance(&fit->ls, f, g);
 		
 		//printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
-	} while (task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
+	} while (it < fit->ctrl.ls_maxit
+		 && task == LINESEARCH_STEP
+		 && !linesearch_sdec(&fit->ls));
 
-	assert(linesearch_sdec(&fit->ls));
-	
 	vector_deinit(&params0);
 	vector_deinit(&grad);	
-	vector_deinit(&search);
 	
-	if (linesearch_sdec(&fit->ls)) {
+	if (fit->step < fit->ctrl.xtol) {
+		return RECV_FIT_ERR_XTOL;
+	} else if (linesearch_sdec(&fit->ls)) {
 		return RECV_FIT_STEP;
 	} else {
 		return RECV_FIT_ERR_LNSRCH;
@@ -322,6 +337,8 @@ void recv_fit_init(struct recv_fit *fit,
 	vector_init(&fit->params, dim);
 	vector_init(&fit->resid, dim);
 	matrix_init(&fit->kkt, dim, dim);
+	vector_init(&fit->search, dim);
+	fit->step = NAN;
 	symeig_init(&fit->eig, dim, EIG_VEC);
 	ldlfac_init(&fit->ldl, dim);
 
@@ -334,6 +351,7 @@ void recv_fit_deinit(struct recv_fit *fit)
 	
 	ldlfac_deinit(&fit->ldl);
 	symeig_deinit(&fit->eig);
+	vector_deinit(&fit->search);	
 	matrix_deinit(&fit->kkt);
 	vector_deinit(&fit->resid);
 	vector_deinit(&fit->params);
@@ -364,6 +382,8 @@ const char *recv_fit_errmsg(const struct recv_fit *fit)
 		return "optimization in progress";
 	case RECV_FIT_ERR_LNSRCH:
 		return "linesearch failed";
+	case RECV_FIT_ERR_XTOL:
+		return "step size is less than tolerance";
 	case RECV_FIT_CONV:
 		return NULL;
 	}
@@ -371,3 +391,22 @@ const char *recv_fit_errmsg(const struct recv_fit *fit)
 	assert(0);
 	return NULL;
 }
+
+const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->loglik;
+}
+
+const struct vector *recv_fit_coefs(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->coefs;
+}
+
+double recv_fit_step(const struct recv_fit *fit)
+{
+	assert(fit);
+	return fit->step;
+}
+
