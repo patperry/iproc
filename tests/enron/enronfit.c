@@ -1,8 +1,10 @@
 #include "port.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ieee754.h"
+#include "json.h"
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
@@ -77,6 +79,34 @@ static void teardown(void)
 }
 
 
+
+#define YSTR(str) ((const unsigned char *)(str))
+
+#define COEFFICIENTS "coefficients"
+#define IMAT         "imat"
+
+static void output(const struct recv_fit *fit)
+{
+	/* generator config */
+	yajl_gen g = yajl_gen_alloc(NULL);
+	yajl_gen_config(g, yajl_gen_beautify, 1);
+	
+	
+	yajl_gen_map_open(g);
+	yajl_gen_string(g, YSTR(COEFFICIENTS), strlen(COEFFICIENTS));
+	yajl_gen_vector(g, recv_fit_coefs(fit));
+	yajl_gen_map_close(g);
+	
+	/* output */
+	const unsigned char * buf;
+	size_t len;
+	yajl_gen_get_buf(g, &buf, &len);
+	fwrite(buf, 1, len, stdout);
+	yajl_gen_clear(g);
+	yajl_gen_free(g);
+}
+
+
 int main(int argc, char **argv)
 {
 	setup();
@@ -104,14 +134,16 @@ int main(int argc, char **argv)
 			const struct vector *score = &info->score;
 			double ngrad = vector_max_abs(score);
 			double step = recv_fit_step(&fit);
-			printf("iter %"SSIZE_FMT" deviance = %.1f; |grad| = %.22f; step = %.22f\n",
-			       it, dev, ngrad, step);
+			fprintf(stderr, "iter %"SSIZE_FMT" deviance = %.2f; |grad| = %.16f; step = %.16f\n",
+				it, dev, ngrad, step);
 		}
 	} while (it < maxit && task == RECV_FIT_STEP);
 	
 	if (task != RECV_FIT_CONV) {
 		printf("ERROR: %s\n", recv_fit_errmsg(&fit));
 		return -1;
+	} else {
+		output(&fit);
 	}
 	
 	teardown();

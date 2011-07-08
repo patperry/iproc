@@ -6,6 +6,7 @@ lib_LTLIBRARIES = \
 noinst_LTLIBRARIES = \
 	libcore.la \
 	libf2c.la \
+	libjson.la \
 	libminpack.la \
 	libyajl.la
 
@@ -102,6 +103,22 @@ libcore_la_LIBADD = \
 	$(LIBS) \
 	$(FLIBS) \
 	$(LTLIBOBJS)
+
+libjson_la_SOURCES = \
+	src/json/json.c \
+	src/json/json.h
+
+libjson_la_LIBADD = \
+	libcore.la \
+	libyajl.la \
+	$(LIBS) \
+	$(FLIBS) \
+	$(LTLIBOBJS)
+
+libjson_la_CPPFLAGS = \
+	$(libcore_la_CPPFLAGS) \
+	$(libyajl_la_CPPFLAGS) \
+	$(AM_CPPFLAGS)
 
 libf2c_la_SOURCES = \
 	lib/libf2c/f2c.h \
@@ -228,6 +245,7 @@ tests_libenron_la_CPPFLAGS = \
 
 tests_libenron_la_LIBADD = \
 	libiproc.la \
+	libjson.la \
 	libyajl.la
 
 
@@ -274,7 +292,7 @@ tests_recv_loglik_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd
 
 check_PROGRAMS += tests/enronfit
 tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Itests/enron
+tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Isrc/json -Itests/enron -Ilib
 tests_enronfit_LDADD    = libiproc.la tests/libenron.la
 
 TESTS = \
