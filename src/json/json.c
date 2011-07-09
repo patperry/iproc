@@ -38,20 +38,12 @@ yajl_gen_status yajl_gen_vector(yajl_gen hand, const struct vector * x)
 	yajl_gen_status err = yajl_gen_status_ok;
 	ssize_t i, n = vector_dim(x);
 
-	YG(yajl_gen_map_open(hand));
-
-	YG(yajl_gen_string(hand, YSTR(VECTOR_DIM), strlen(VECTOR_DIM)));
-	YG(yajl_gen_integer(hand, n));
-
-	YG(yajl_gen_string(hand, YSTR(VECTOR_DATA), strlen(VECTOR_DATA)));
 	YG(yajl_gen_array_open(hand));
 	for (i = 0; i < n; i++) {
 		double val = vector_item(x, i);
 		YG(yajl_gen_ieee754(hand, val));
 	}
 	YG(yajl_gen_array_close(hand));
-
-	YG(yajl_gen_map_close(hand));
 
 	return err;
 }
