@@ -55,12 +55,17 @@ struct recv_fit {
 	struct model model;
 	struct recv_loglik loglik;
 	
+	/* null log-likelihood */
+	struct matrix imat0;
+	struct vector score0;
+	double dev0;
+	
 	/* regularization terms */
 	struct vector scale;  /* sample variances of the covariates */
 	double penalty;	
 	
 	/* optimization problem */
-	struct matrix ce_t;  /* equality constraints: ce * coef = be */
+	struct matrix ce;  /* equality constraints: ce' * coef = be */
 	struct vector be;    /* cont'd */
 	ssize_t ne;
 
@@ -87,8 +92,14 @@ void recv_fit_init(struct recv_fit *fit,
 void recv_fit_deinit(struct recv_fit *fit);
 
 /* problem constraints */
-const struct matrix *recv_fit_ce(struct recv_fit *fit);
+ssize_t recv_fit_rank(const struct recv_fit *fit);
+const struct matrix *recv_fit_ce(const struct recv_fit *fit);
 const struct vector *recv_fit_be(const struct recv_fit *fit);
+
+/* null values */
+double recv_fit_dev0(const struct recv_fit *fit);
+const struct vector *recv_fit_score0(const struct recv_fit *fit);
+const struct matrix *recv_fit_imat0(const struct recv_fit *fit);
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);

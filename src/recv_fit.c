@@ -84,8 +84,8 @@ static void compute_constraints(struct recv_fit *fit)
 	
 	/* define the constraints */
 	struct matrix u = matrix_slice_cols(&evec, 0, i);
-	matrix_reinit(&fit->ce_t, dim, i);
-	matrix_assign_copy(&fit->ce_t, TRANS_NOTRANS, &u);
+	matrix_reinit(&fit->ce, dim, i);
+	matrix_assign_copy(&fit->ce, TRANS_NOTRANS, &u);
 	vector_reinit(&fit->be, i);
 	vector_fill(&fit->be, 0);
 	fit->ne = i;
@@ -112,7 +112,7 @@ static void compute_resid(struct recv_fit *fit)
 	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik);
 	const struct vector *score = &info->score;
 	
-	/* r1 is the dual residual: grad(f) + ce' * nu,
+	/* r1 is the dual residual: grad(f) + ce * nu,
 	 * where grad(f) = grad(nll) + lambda * x
 	 *               = -[score - lambda * x]
 	 */
@@ -121,12 +121,12 @@ static void compute_resid(struct recv_fit *fit)
 	struct vector duals = vector_slice(&fit->params, dim, ne);
 	vector_assign_copy(&r1, score);
 	vector_axpy(-fit->penalty, &primals, &r1);
-	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &duals, -1.0, &r1);
+	matrix_mul(1.0, TRANS_NOTRANS, &fit->ce, &duals, -1.0, &r1);
 	
 	/* r2 is the primal residual: ce * x - be */
 	struct vector r2 = vector_slice(&fit->resid, dim, ne);
 	vector_assign_copy(&r2, &fit->be);
-	matrix_mul(1.0, TRANS_TRANS, &fit->ce_t, &primals, -1.0, &r2);
+	matrix_mul(1.0, TRANS_TRANS, &fit->ce, &primals, -1.0, &r2);
 }
 
 // sets kkt
@@ -153,7 +153,7 @@ static void compute_kkt(struct recv_fit *fit)
 	
 	/* k12 is the transpose of the equality constraint matrix */
 	struct matrix k12 = matrix_slice(&fit->kkt, 0, dim, dim, ne);
-	matrix_assign_copy(&k12, TRANS_NOTRANS, &fit->ce_t);
+	matrix_assign_copy(&k12, TRANS_NOTRANS, &fit->ce);
 	
 	/* k22 is zero */
 	struct matrix k22 = matrix_slice(&fit->kkt, dim, dim, ne, ne);
@@ -177,6 +177,13 @@ static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 	 */
 	vector_fill(&fit->coefs, 0);
 	evaluate_loglik(fit);
+	
+	const struct recv_loglik *ll = recv_fit_loglik(fit);
+	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	matrix_assign_copy(&fit->imat0, TRANS_NOTRANS, &info->imat);
+	vector_assign_copy(&fit->score0, &info->score);
+	fit->dev0 = info->dev;
+	
 	compute_scale(fit);
 	compute_constraints(fit);
 	
@@ -187,6 +194,7 @@ static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 	
 	if (coefs0) {
 		vector_assign_copy(&fit->coefs, coefs0);
+		evaluate_loglik(fit);		
 	} else {
 		vector_fill(&fit->coefs, 0.0);
 	}
@@ -194,7 +202,6 @@ static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 	vector_assign_copy(&primals, &fit->coefs);
 	vector_fill(&duals, 0.0);
 
-	evaluate_loglik(fit);
 	compute_resid(fit);
 	compute_kkt(fit);
 	fit->task = RECV_FIT_STEP;
@@ -268,8 +275,8 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 		/* compute the gradient of the squared residual norm */
 		matrix_mul(1.0, TRANS_NOTRANS, &k11, &cresid, 0.0, &cgrad);
-		matrix_mul(1.0, TRANS_NOTRANS, &fit->ce_t, &dresid, 1.0, &cgrad);
-		matrix_mul(1.0, TRANS_TRANS, &fit->ce_t, &cresid, 1.0, &dgrad);
+		matrix_mul(1.0, TRANS_NOTRANS, &fit->ce, &dresid, 1.0, &cgrad);
+		matrix_mul(1.0, TRANS_TRANS, &fit->ce, &cresid, 1.0, &dgrad);
 		vector_scale(&cgrad, 2.0);
 		vector_scale(&dgrad, 2.0);	
 		
@@ -330,9 +337,10 @@ void recv_fit_init(struct recv_fit *fit,
 	vector_init(&fit->coefs, dim);
 	model_init(&fit->model, &fit->frame, &fit->coefs);
 	recv_loglik_init(&fit->loglik, &fit->model);
-	
+	matrix_init(&fit->imat0, dim, dim);
+	vector_init(&fit->score0, dim);
 	vector_init(&fit->scale, dim);
-	matrix_init(&fit->ce_t, dim, 0);
+	matrix_init(&fit->ce, dim, 0);
 	vector_init(&fit->be, 0);
 	vector_init(&fit->params, dim);
 	vector_init(&fit->resid, dim);
@@ -356,8 +364,10 @@ void recv_fit_deinit(struct recv_fit *fit)
 	vector_deinit(&fit->resid);
 	vector_deinit(&fit->params);
 	vector_deinit(&fit->be);
-	matrix_deinit(&fit->ce_t);	
+	matrix_deinit(&fit->ce);	
 	vector_deinit(&fit->scale);
+	vector_deinit(&fit->score0);	
+	matrix_deinit(&fit->imat0);	
 	recv_loglik_deinit(&fit->loglik);
 	model_deinit(&fit->model);
 	vector_deinit(&fit->coefs);
@@ -390,6 +400,45 @@ const char *recv_fit_errmsg(const struct recv_fit *fit)
 
 	assert(0);
 	return NULL;
+}
+
+ssize_t recv_fit_rank(const struct recv_fit *fit)
+{
+	assert(fit);
+	ssize_t dim = vector_dim(&fit->coefs);
+	ssize_t ne = vector_dim(&fit->be);
+	
+	return dim - ne;
+}
+
+const struct matrix *recv_fit_ce(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->ce;
+}
+
+const struct vector *recv_fit_be(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->be;
+}
+
+double recv_fit_dev0(const struct recv_fit *fit)
+{
+	assert(fit);
+	return fit->dev0;
+}
+
+const struct vector *recv_fit_score0(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->score0;
+}
+
+const struct matrix *recv_fit_imat0(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->imat0;
 }
 
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
