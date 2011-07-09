@@ -139,7 +139,7 @@ static void cohort_model_set(struct cohort_model *cm,
 	/* eta0 */
 	design_recv_mul0(1.0, TRANS_NOTRANS, design, isend, recv_coefs, 0.0,
 			 &cm->eta0);
-	assert(isfinite(vector_norm(&cm->eta0)));
+	assert(isfinite(vector_max_abs(&cm->eta0)));
 
 	/* max_eta0 */
 	cm->max_eta0 = vector_max(&cm->eta0);
