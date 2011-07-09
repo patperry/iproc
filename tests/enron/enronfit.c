@@ -79,23 +79,104 @@ static void teardown(void)
 }
 
 
-
+#define YG(gen) \
+	do { \
+		if ((err = gen) != yajl_gen_status_ok) \
+			return err; \
+	} while (0)
 #define YSTR(str) ((const unsigned char *)(str))
 
-#define COEFFICIENTS "coefficients"
-#define IMAT         "imat"
+#define COEFFICIENTS		"coefficients"
+#define RANK			"rank"
+#define CONSTRAINTS		"constraints"
+#define CONSTRAINT_VALUES	"constraint_values"
+#define INFORMATION		"information"
+#define DEVIANCE		"deviance"
+#define NULL_DEVIANCE		"null_deviance"
+#define DF_RESIDUAL		"df_residual"
+#define DF_NULL			"df_null"
+
+yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
+{
+	assert(fit);
+	yajl_gen_status err = yajl_gen_status_ok;
+	const struct recv_loglik *ll = recv_fit_loglik(fit);
+	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	
+	YG(yajl_gen_map_open(hand));
+	
+	/* coefficients */	
+	YG(yajl_gen_string(hand, YSTR(COEFFICIENTS), strlen(COEFFICIENTS)));
+	YG(yajl_gen_vector(hand, recv_fit_coefs(fit)));
+	
+	/* residuals */
+	/* fitted.values */
+        /* effects */
+	
+	/* rank */	
+	YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
+	YG(yajl_gen_integer(hand, recv_fit_rank(fit)));
+	
+	/* qr */
+	YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
+	YG(yajl_gen_matrix(hand, recv_fit_ce(fit)));
+
+	YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
+	YG(yajl_gen_vector(hand, recv_fit_be(fit)));
+
+	YG(yajl_gen_string(hand, YSTR(INFORMATION), strlen(INFORMATION)));
+	YG(yajl_gen_matrix(hand, &info->imat));
+
+	/* linear.predictors (eta) */
+	
+	/* deviance */
+	YG(yajl_gen_string(hand, YSTR(DEVIANCE), strlen(DEVIANCE)));
+	YG(yajl_gen_ieee754(hand, info->nrecv * info->dev));
+	
+	/* aic */
+	
+	/* null.deviance */
+	YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
+	YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit)));
+	
+	/* iter */
+	/* weights = wt */
+	/* prior.weights = weights */
+	
+	/* df.residual */
+	YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
+	YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit)));
+
+	/* df.null */
+	YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
+	YG(yajl_gen_integer(hand, info->nrecv));
+
+	/* y = y */
+	/* converged = conv */
+	/* boundary = boundary */
+	/* call */
+	/* formula */
+	/* terms */
+        /* data */
+	/* offset */
+	/* control */
+	/* method */
+	/* contrasts */
+	/* xlevels */
+	
+	yajl_gen_map_close(hand);
+	
+	
+	return err;
+}
 
 static void output(const struct recv_fit *fit)
 {
 	/* generator config */
 	yajl_gen g = yajl_gen_alloc(NULL);
 	yajl_gen_config(g, yajl_gen_beautify, 1);
+	yaj_gen_recv_fit(g, fit);
 	
-	
-	yajl_gen_map_open(g);
-	yajl_gen_string(g, YSTR(COEFFICIENTS), strlen(COEFFICIENTS));
-	yajl_gen_vector(g, recv_fit_coefs(fit));
-	yajl_gen_map_close(g);
 	
 	/* output */
 	const unsigned char * buf;
