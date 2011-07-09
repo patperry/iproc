@@ -20,8 +20,10 @@ enum trans_op {
 /* create, destroy */
 void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
 void matrix_reinit(struct matrix *a, ssize_t nrow, ssize_t ncol);
-void matrix_init_copy(struct matrix *a, enum trans_op trans, const struct matrix *src);
-void matrix_assign_copy(struct matrix *a, enum trans_op trans, const struct matrix *src);
+void matrix_init_copy(struct matrix *a, enum trans_op trans,
+		      const struct matrix *src);
+void matrix_assign_copy(struct matrix *a, enum trans_op trans,
+			const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
 /* views */
@@ -73,7 +75,6 @@ void matrix_get_diag(const struct matrix *a, ssize_t i, double *dst);
 void matrix_axpy_diag(double alpha, const struct matrix *x, ssize_t i,
 		      struct vector *y);
 
-
 /* arithmetic */
 void matrix_scale(struct matrix *a, double scale);
 void matrix_scale_rows(struct matrix *a, const struct vector *scale);
@@ -85,8 +86,6 @@ void matrix_add(struct matrix *a, const struct matrix *src);
 void matrix_sub(struct matrix *a, const struct matrix *src);
 void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y);
 
-
-
 /* linear algebra */
 void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y);
@@ -97,7 +96,6 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
-
 
 /* debug */
 void matrix_printf(const struct matrix *a);
@@ -191,10 +189,10 @@ ssize_t matrix_lda(const struct matrix *a)
 ssize_t matrix_diag_dim(const struct matrix *a, ssize_t i)
 {
 	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
-	
+
 	ssize_t m = matrix_nrow(a);
 	ssize_t n = matrix_ncol(a);
-	
+
 	if (i >= 0) {
 		return MIN(m, n - i);
 	} else {

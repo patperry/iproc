@@ -352,7 +352,7 @@ ssize_t vector_max_index(const struct vector *vector)
 	if (imax == n)
 		return 0;
 
-	/* Otherwise, search for the largest entry in the tail of the vector */	
+	/* Otherwise, search for the largest entry in the tail of the vector */
 	max = *vector_item_ptr(vector, imax);
 
 	for (i = imax + 1; i < n; i++) {
@@ -395,11 +395,11 @@ void vector_exp(struct vector *vector)
 void vector_log(struct vector *vector)
 {
 	assert(vector);
-	
+
 	ssize_t n = vector_dim(vector);
 	ssize_t i;
 	double x;
-	
+
 	for (i = 0; i < n; i++) {
 		x = *vector_item_ptr(vector, i);
 		*vector_item_ptr(vector, i) = log(x);
@@ -411,7 +411,7 @@ void vector_sqrt(struct vector *v)
 	ssize_t n = vector_dim(v);
 	ssize_t i;
 	double x;
-	
+
 	for (i = 0; i < n; i++) {
 		x = *vector_item_ptr(v, i);
 		*vector_item_ptr(v, i) = sqrt(x);
@@ -447,11 +447,11 @@ void vector_printf(const struct vector *v)
 	printf("x <- c(");
 
 	ssize_t i, n = vector_dim(v);
-	
+
 	if (n > 0) {
 		printf("%.22f", vector_item(v, 0));
 	}
-	
+
 	for (i = 1; i < n; i++) {
 		printf(", %.22f", vector_item(v, i));
 	}

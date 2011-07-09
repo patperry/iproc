@@ -22,7 +22,7 @@ struct linesearch_ctrl {
 	double stpmin;
 	double stpmax;
 };
-   
+
 enum linesearch_task {
 	LINESEARCH_CONV = 0,
 	LINESEARCH_STEP = 1,
@@ -44,15 +44,15 @@ struct linesearch {
 /* start/advance */
 void linesearch_start(struct linesearch *ls, double stp0, double f0, double g0,
 		      const struct linesearch_ctrl *ctrl);
-enum linesearch_task linesearch_advance(struct linesearch *ls, double f, double g);
+enum linesearch_task linesearch_advance(struct linesearch *ls, double f,
+					double g);
 
 /* weak Wolfe conditions */
-static inline bool linesearch_sdec(const struct linesearch *ls);  // sufficient decrease (Armijo)
-static inline bool linesearch_curv(const struct linesearch *ls);  // curvature
+static inline bool linesearch_sdec(const struct linesearch *ls);	// sufficient decrease (Armijo)
+static inline bool linesearch_curv(const struct linesearch *ls);	// curvature
 
 /* convergence/error */
 const char *linesearch_warnmsg(enum linesearch_task task);
-
 
 /* optimal values */
 static inline double linesearch_step(const struct linesearch *ls);
@@ -118,7 +118,7 @@ bool linesearch_sdec(const struct linesearch *ls)
 	double f = linesearch_value(ls);
 	double g0 = linesearch_grad0(ls);
 	double c1 = ls->ctrl.ftol;
-	
+
 	return f <= f0 + c1 * stp * g0;
 }
 

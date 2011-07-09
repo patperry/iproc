@@ -264,7 +264,7 @@ void frame_clear(struct frame *f)
 			matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
 		}
 	}
-	
+
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->h.handle_clear) {
@@ -313,12 +313,13 @@ struct frame_event *frame_events_item(const struct frame *f, ssize_t i)
 	return array_item(&f->events, i);
 }
 
-void frame_add_observer(struct frame *f, void *udata, const struct frame_handlers *h)
+void frame_add_observer(struct frame *f, void *udata,
+			const struct frame_handlers *h)
 {
 	assert(f);
 	assert(udata);
 	assert(h);
-	
+
 	struct frame_observer *obs = array_add(&f->observers, NULL);
 	obs->udata = udata;
 	obs->h = *h;
@@ -335,7 +336,8 @@ void frame_remove_observer(struct frame *f, void *udata)
 	assert(f);
 	assert(udata);
 
-	ssize_t pos = array_find_last_index(&f->observers, observer_equals, udata);
+	ssize_t pos =
+	    array_find_last_index(&f->observers, observer_equals, udata);
 	if (pos >= 0) {
 		array_remove_at(&f->observers, pos);
 	}
@@ -346,7 +348,7 @@ static void notify_observers(struct frame *f, const struct frame_event *e)
 	assert(f);
 	assert(e);
 	assert(frame_time(f) == e->time);
-	
+
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->h.event_mask & e->type) {
@@ -468,7 +470,7 @@ static void event_after(struct frame *f, const struct frame_event *e)
 		recv_var_event_after(f, e);
 		break;
 	}
-	
+
 	notify_observers(f, e);
 }
 

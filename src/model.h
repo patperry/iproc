@@ -112,9 +112,9 @@
  * w[0,i,j], W[0,i,j], p[0,i,j], and xbar[0,i].
  */
 struct cohort_model {
-	ssize_t isend0; // canonical sender
+	ssize_t isend0;		// canonical sender
 	double max_eta0;
-	double log_W0; // log_W0 - max_eta0
+	double log_W0;		// log_W0 - max_eta0
 	struct vector eta0;
 	struct vector p0;
 	struct vector mean0;
@@ -132,7 +132,7 @@ struct recv_model {
 	ssize_t isend;
 	struct cohort_model *cohort;
 	double gamma;
-	double log_W; // log_W - scale
+	double log_W;		// log_W - scale
 	double scale;
 	struct svector deta;
 	struct array active;

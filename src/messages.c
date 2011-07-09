@@ -123,7 +123,7 @@ bool messages_add(struct messages *msgs, double time,
 	msgs->to_cached = false;
 	msgs->tlast = time;
 	msgs->nrecv += nto;
-	
+
 	return true;
 }
 

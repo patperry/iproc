@@ -31,12 +31,12 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	vector_axpy(-1.0, &opt->grad0, y);
 
 	double s_y = vector_dot(s, y);
-	
-	/* NOTE: could use damped update instead (Nocedal and Wright, p. 537) */	
-	assert(s_y > 0); 
+
+	/* NOTE: could use damped update instead (Nocedal and Wright, p. 537) */
+	assert(s_y > 0);
 
 	/* initialize inv hessian on first step (Nocedal and Wright, p. 143) */
-	if (opt->first_step) { /*  */
+	if (opt->first_step) {	/*  */
 		double y_y = vector_dot(y, y);
 		assert(y_y > 0);
 		double scale = s_y / y_y;
@@ -61,7 +61,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	matrix_update1(H, scale1, s, s);
 	matrix_update1(H, -rho, H_y, s);
 	matrix_update1(H, -rho, s, H_y);
-	
+
 	/* update search direction */
 	matrix_mul(-1.0, TRANS_NOTRANS, &opt->inv_hess, grad,
 		   0.0, &opt->search);
@@ -124,11 +124,11 @@ enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
 	opt->df = NAN;
 	vector_fill(&opt->step, NAN);
 	vector_fill(&opt->dg, NAN);
-	vector_fill(&opt->H_dg, NAN);	
+	vector_fill(&opt->H_dg, NAN);
 	vector_fill(&opt->search, NAN);
 	matrix_fill(&opt->inv_hess, NAN);
 #endif
-	
+
 	double scale = vector_norm(grad0);
 
 	assert(!isnan(scale));
@@ -153,18 +153,18 @@ static bool converged(const struct bfgs *opt)
 	double gtol = opt->ctrl.gtol;
 
 	//fprintf(stderr, "|df| = %.22f; |grad| = %.22f; |step| = %.22f\n",
-	//	fabs(opt->df /MAX(1, opt->f0)),
-	//	vector_max_abs(&opt->grad0), vector_max_abs(&opt->step));
-	
+	//      fabs(opt->df /MAX(1, opt->f0)),
+	//      vector_max_abs(&opt->grad0), vector_max_abs(&opt->step));
+
 	ssize_t i, n = bfgs_dim(opt);
 	for (i = 0; i < n; i++) {
 		double x = vector_item(&opt->x0, i);
 		double g = vector_item(&opt->grad0, i);
-		
+
 		if (!(fabs(g) < gtol * MAX(1.0, fabs(x))))
 			return false;
 	}
-	return true;		
+	return true;
 }
 
 enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
@@ -177,7 +177,7 @@ enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
 	double g = vector_dot(grad, &opt->search);
 	enum linesearch_task lstask = linesearch_advance(&opt->ls, f, g);
 	bool ok = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
-	
+
 	switch (lstask) {
 	case LINESEARCH_CONV:
 		break;
@@ -187,13 +187,14 @@ enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
 
 		if (opt->ls_it < opt->ctrl.ls_maxit) {
 			vector_assign_copy(&opt->x, &opt->x0);
-			vector_axpy(linesearch_step(&opt->ls), &opt->search, &opt->x);
+			vector_axpy(linesearch_step(&opt->ls), &opt->search,
+				    &opt->x);
 			assert(opt->task == BFGS_STEP);
 			goto out;
 		} else if (ok) {
 			break;
 		} else {
-			opt->task = BFGS_ERR_LNSRCH; // maximum number of iterations
+			opt->task = BFGS_ERR_LNSRCH;	// maximum number of iterations
 		}
 	default:
 		if (ok) {
@@ -211,12 +212,12 @@ enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
 		opt->task = BFGS_CONV;
 	} else {
 		assert(opt->task == BFGS_STEP);
-		
+
 		double step0 = 1.0;
-		double f0 = f;	
+		double f0 = f;
 		double g0 = vector_dot(grad, &opt->search);
 		assert(g0 < 0);
-		
+
 		linesearch(opt, step0, f0, g0);
 	}
 out:
@@ -225,17 +226,16 @@ out:
 
 const char *bfgs_errmsg(enum bfgs_task task)
 {
-	switch(task) {
-		case BFGS_STEP:
-			return "optimization in progress";
-		case BFGS_ERR_LNSRCH:
-			return "linesearch failed";
-		case BFGS_OVFLW_GRAD:
-			return "overflow computing norm of gradient";
-		case BFGS_CONV:
-			return NULL;
+	switch (task) {
+	case BFGS_STEP:
+		return "optimization in progress";
+	case BFGS_ERR_LNSRCH:
+		return "linesearch failed";
+	case BFGS_OVFLW_GRAD:
+		return "overflow computing norm of gradient";
+	case BFGS_CONV:
+		return NULL;
 	}
 	assert(0);
 	return NULL;
 }
-

@@ -46,7 +46,7 @@ bool intset_add(struct intset *s, intptr_t key)
 		intset_insert(s, &pos);
 		return true;
 	}
-	return false;	// already in set
+	return false;		// already in set
 }
 
 void intset_clear(struct intset *s)

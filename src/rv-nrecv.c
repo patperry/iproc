@@ -12,7 +12,6 @@ struct nrecv_udata {
 	struct array active;
 };
 
-
 static void nrecv_init(struct design_var *dv, const struct design *d)
 {
 	assert(dv);
@@ -31,17 +30,17 @@ static void nrecv_frame_init(struct frame_var *fv, struct frame *f)
 {
 	assert(fv);
 	assert(f);
-	
+
 	const struct design *d = frame_design(f);
 	struct nrecv_udata *udata = xcalloc(1, sizeof(*udata));
 	array_init(&udata->active, sizeof(struct nrecv_active));
-	
+
 	ssize_t i, n = design_recv_count(d);
 	for (i = 0; i < n; i++) {
 		struct nrecv_active *active = array_add(&udata->active, NULL);
 		intset_init(&active->jrecv);
 	}
-	
+
 	fv->udata = udata;
 }
 
@@ -49,14 +48,14 @@ static void nrecv_frame_deinit(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
-	
+
 	struct nrecv_udata *udata = fv->udata;
 	struct nrecv_active *active;
 
 	ARRAY_FOREACH(active, &udata->active) {
 		intset_deinit(&active->jrecv);
 	}
-	
+
 	array_deinit(&udata->active);
 	xfree(udata);
 }
@@ -65,10 +64,10 @@ static void nrecv_frame_clear(struct frame_var *fv)
 {
 	assert(fv);
 	assert(fv->udata);
-	
+
 	struct nrecv_udata *udata = fv->udata;
 	struct nrecv_active *active;
-	
+
 	ARRAY_FOREACH(active, &udata->active) {
 		intset_clear(&active->jrecv);
 	}
@@ -86,13 +85,13 @@ static void nrecv_handle_event(struct frame_var *fv,
 	       design_recv_dim(f->design) - fv->design->dim);
 	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
 
-	
 	const struct dyad_event_meta *meta = &e->meta.dyad;
 	struct frame_event dx;
-	
+
 	if (e->type == DYAD_EVENT_INIT) {
 		struct nrecv_udata *udata = fv->udata;
-		struct nrecv_active *active = array_item(&udata->active, meta->msg_dyad.jrecv);
+		struct nrecv_active *active =
+		    array_item(&udata->active, meta->msg_dyad.jrecv);
 		if (intset_add(&active->jrecv, meta->msg_dyad.isend)) {
 			dx.type = RECV_VAR_EVENT;
 			dx.time = e->time;

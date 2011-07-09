@@ -12,7 +12,6 @@
 	} while (0)
 #define YSTR(s) ((const unsigned char *)s)
 
-
 #define VECTOR_DIM  "dim"
 #define VECTOR_DATA "data"
 
@@ -20,12 +19,11 @@
 #define MATRIX_NCOL "ncol"
 #define MATRIX_DATA "data"
 
-
 yajl_gen_status yajl_gen_ieee754(yajl_gen hand, double val)
 {
-	switch(fpclassify(val)) {
+	switch (fpclassify(val)) {
 	case FP_INFINITE:
-		return yajl_gen_double(hand, val > 0 ? DBL_MAX : -DBL_MAX);			
+		return yajl_gen_double(hand, val > 0 ? DBL_MAX : -DBL_MAX);
 	case FP_NAN:
 		return yajl_gen_null(hand);
 	default:
@@ -33,12 +31,11 @@ yajl_gen_status yajl_gen_ieee754(yajl_gen hand, double val)
 	}
 }
 
-
-yajl_gen_status yajl_gen_vector(yajl_gen hand, const struct vector *x)
+yajl_gen_status yajl_gen_vector(yajl_gen hand, const struct vector * x)
 {
 	assert(x);
 
-	yajl_gen_status err = yajl_gen_status_ok;	
+	yajl_gen_status err = yajl_gen_status_ok;
 	ssize_t i, n = vector_dim(x);
 
 	YG(yajl_gen_map_open(hand));
@@ -52,23 +49,23 @@ yajl_gen_status yajl_gen_vector(yajl_gen hand, const struct vector *x)
 		double val = vector_item(x, i);
 		YG(yajl_gen_ieee754(hand, val));
 	}
-	YG(yajl_gen_array_close(hand));	
-	
+	YG(yajl_gen_array_close(hand));
+
 	YG(yajl_gen_map_close(hand));
-	
+
 	return err;
 }
 
-yajl_gen_status yajl_gen_matrix(yajl_gen hand, const struct matrix *a)
+yajl_gen_status yajl_gen_matrix(yajl_gen hand, const struct matrix * a)
 {
 	assert(a);
-	
-	yajl_gen_status err = yajl_gen_status_ok;	
+
+	yajl_gen_status err = yajl_gen_status_ok;
 	ssize_t i, m = matrix_nrow(a);
 	ssize_t j, n = matrix_ncol(a);
-	
+
 	YG(yajl_gen_map_open(hand));
-	
+
 	YG(yajl_gen_string(hand, YSTR(MATRIX_NROW), strlen(MATRIX_NROW)));
 	YG(yajl_gen_integer(hand, m));
 
@@ -77,17 +74,16 @@ yajl_gen_status yajl_gen_matrix(yajl_gen hand, const struct matrix *a)
 
 	YG(yajl_gen_string(hand, YSTR(MATRIX_DATA), strlen(MATRIX_DATA)));
 	YG(yajl_gen_array_open(hand));
-	for (j = 0; j < n; j++) {	
+	for (j = 0; j < n; j++) {
 		for (i = 0; i < m; i++) {
 			double val = matrix_item(a, i, j);
 			YG(yajl_gen_ieee754(hand, val));
 		}
 	}
-	YG(yajl_gen_array_close(hand));	
-	
+	YG(yajl_gen_array_close(hand));
+
 	YG(yajl_gen_map_close(hand));
-	
+
 	return err;
 
 }
-

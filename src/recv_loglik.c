@@ -569,10 +569,9 @@ static void imat_axpy(double alpha,
 				  &dst);
 	}
 
-	
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
 	 */
-	
+
 	matrix_axpy(alpha * gamma, var0, y);
 	matrix_update1(y, alpha * gamma2, mean0, mean0);
 	matrix_update1(y, -alpha, mean0, &gamma_x0_dp);
@@ -591,28 +590,25 @@ static void imat_axpy(double alpha,
 		design_recv_muls0(alpha, TRANS_TRANS, design, isend, &x0_dp2_k,
 				  1.0, &dst);
 	}
-	
+
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
-	
 	ssize_t dyn_off = design_recv_dyn_index(design);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
 	struct matrix y_1 = matrix_slice(y, 0, dyn_off, dim, dyn_dim);
 	struct matrix y1_ = matrix_slice(y, dyn_off, 0, dyn_dim, dim);
 	struct matrix y11 = matrix_slice(y, dyn_off, dyn_off, dyn_dim, dyn_dim);
 
-	
 	/*   Part II: dX' * [ Diag(p) - p p' ] * dX
 	 */
-	
+
 	matrix_axpy(alpha, &imat->var_dx, &y11);
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
-	
 	/*   Part III:   X0' * [ Diag(p) - p p' ] * dX
 	 *             + dX' * [ Diag(p0 - p p' ] * X0
 	 */
-	
+
 	struct vector x0_j;
 	struct svector e_j;
 
@@ -646,24 +642,24 @@ static void imat_axpy(double alpha,
 	matrix_deinit(&x0_dp2);
 	vector_deinit(&gamma_x0_dp);
 	svector_deinit(&gamma_dp);
-	
+
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
-	
+
 }
 
 static void info_init(struct recv_loglik_info *info, const struct model *m)
 {
 	assert(info);
 	assert(m);
-	
+
 	ssize_t dim = model_recv_dim(m);
-	
+
 	matrix_init(&info->imat, dim, dim);
 	vector_init(&info->score, dim);
 	vector_init(&info->mean, dim);
 	info->dev = 0;
 	info->nsend = 0;
-	info->nrecv = 0;	
+	info->nrecv = 0;
 }
 
 static void info_deinit(struct recv_loglik_info *info)
@@ -921,7 +917,7 @@ void recv_loglik_init(struct recv_loglik *ll, struct model *m)
 	}
 
 	ll->last = NULL;
-	
+
 	info_init(&ll->info, m);
 	ll->info_cached = false;
 }
@@ -952,7 +948,7 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	ll->last = NULL;
 	info_clear(&ll->info);
 	ll->info.nsend = 0;
-	ll->info.nrecv = 0;	
+	ll->info.nrecv = 0;
 	ll->info_cached = false;
 }
 
@@ -1052,7 +1048,8 @@ static double recv_loglik_avg_dev_nocache(const struct recv_loglik *ll)
 	return dev_avg;
 }
 
-static void recv_loglik_axpy_avg_mean_nocache(double alpha, const struct recv_loglik *ll,
+static void recv_loglik_axpy_avg_mean_nocache(double alpha,
+					      const struct recv_loglik *ll,
 					      struct vector *y)
 {
 	struct vector avg_mean, diff;
@@ -1079,7 +1076,8 @@ static void recv_loglik_axpy_avg_mean_nocache(double alpha, const struct recv_lo
 	vector_deinit(&avg_mean);
 }
 
-static void recv_loglik_axpy_avg_score_nocache(double alpha, const struct recv_loglik *ll,
+static void recv_loglik_axpy_avg_score_nocache(double alpha,
+					       const struct recv_loglik *ll,
 					       struct vector *y)
 {
 	struct vector avg_score, diff;
@@ -1106,19 +1104,19 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha, const struct recv_l
 	vector_deinit(&avg_score);
 }
 
-static void recv_loglik_axpy_avg_imat_nocache(double alpha, const struct recv_loglik *ll,
+static void recv_loglik_axpy_avg_imat_nocache(double alpha,
+					      const struct recv_loglik *ll,
 					      struct matrix *y)
 {
 	struct matrix avg_imat, new_imat, diff;
 	ssize_t dim = model_recv_dim(ll->model);
 	matrix_init(&avg_imat, dim, dim);
-	matrix_init(&new_imat, dim, dim);	
+	matrix_init(&new_imat, dim, dim);
 	matrix_init(&diff, dim, dim);
 	ssize_t ntot, n;
 	struct recv_sloglik *sll;
 
 	ntot = 0;
-	
 
 	ARRAY_FOREACH(sll, &ll->slogliks) {
 		n = recv_sloglik_count(sll);
@@ -1137,7 +1135,7 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha, const struct recv_lo
 
 	matrix_axpy(alpha, &avg_imat, y);
 	matrix_deinit(&diff);
-	matrix_deinit(&new_imat);	
+	matrix_deinit(&new_imat);
 	matrix_deinit(&avg_imat);
 }
 
@@ -1145,15 +1143,15 @@ static void cache_info(struct recv_loglik *ll)
 {
 	info_clear(&ll->info);
 	ll->info.dev += recv_loglik_avg_dev_nocache(ll);
-	recv_loglik_axpy_avg_mean_nocache(1, ll, &ll->info.mean);	
+	recv_loglik_axpy_avg_mean_nocache(1, ll, &ll->info.mean);
 	recv_loglik_axpy_avg_score_nocache(1, ll, &ll->info.score);
 	recv_loglik_axpy_avg_imat_nocache(1, ll, &ll->info.imat);
 }
 
 struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll)
 {
-	struct recv_loglik *mll = (struct recv_loglik *)ll; // no const
-	
+	struct recv_loglik *mll = (struct recv_loglik *)ll;	// no const
+
 	if (!mll->info_cached) {
 		cache_info(mll);
 		mll->info_cached = true;
@@ -1193,7 +1191,7 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 {
 	assert(ll);
 	assert(ll->last);
-	
+
 	return recv_sloglik_last_dev(ll->last);
 }
 

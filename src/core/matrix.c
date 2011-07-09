@@ -48,12 +48,12 @@ void matrix_init_copy(struct matrix *a, enum trans_op trans,
 	assert(src);
 
 	ssize_t nrow, ncol;
-	
+
 	if (trans == TRANS_NOTRANS) {
 		nrow = matrix_nrow(src);
 		ncol = matrix_ncol(src);
 	} else {
-		nrow = matrix_ncol(src);		
+		nrow = matrix_ncol(src);
 		ncol = matrix_nrow(src);
 	}
 
@@ -70,7 +70,7 @@ void matrix_assign_copy(struct matrix *a, enum trans_op trans,
 	assert(trans != TRANS_NOTRANS || matrix_ncol(a) == matrix_ncol(src));
 	assert(trans == TRANS_NOTRANS || matrix_nrow(a) == matrix_ncol(src));
 	assert(trans == TRANS_NOTRANS || matrix_ncol(a) == matrix_nrow(src));
-	
+
 	f77int m = (f77int)matrix_nrow(a);
 	f77int n = (f77int)matrix_ncol(a);
 	f77int i, j;
@@ -249,14 +249,13 @@ void matrix_axpy_col(double alpha, const struct matrix *x, ssize_t j,
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
-
 void matrix_fill_diag(struct matrix *a, ssize_t i, double val)
 {
 	assert(a);
 	assert(0 <= i && i < matrix_nrow(a));
-	
+
 	ssize_t j, n = matrix_ncol(a);
-	
+
 	for (j = 0; j < n; j++) {
 		matrix_set_item(a, i, j, val);
 	}
@@ -267,14 +266,14 @@ void matrix_set_diag(struct matrix *a, ssize_t i, const double *src)
 	assert(a);
 	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
 	assert(src);
-	
+
 	f77int n = (f77int)matrix_diag_dim(a, i);
 	double *y = (i >= 0 ? matrix_item_ptr(a, 0, i)
-			     : matrix_item_ptr(a, -i, 0));
+		     : matrix_item_ptr(a, -i, 0));
 	f77int incy = (f77int)(matrix_lda(a) + 1);
 	const double *x = src;
 	f77int incx = 1;
-	
+
 	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
 }
 
@@ -283,14 +282,14 @@ void matrix_get_diag(const struct matrix *a, ssize_t i, double *dst)
 	assert(a);
 	assert(dst);
 	assert(-matrix_nrow(a) < i && i < matrix_ncol(a));
-	
+
 	f77int n = (f77int)matrix_diag_dim(a, i);
 	const double *x = (i >= 0 ? matrix_item_ptr(a, 0, i)
-			    : matrix_item_ptr(a, -i, 0));
+			   : matrix_item_ptr(a, -i, 0));
 	f77int incx = (f77int)(matrix_lda(a) + 1);
 	double *y = dst;
 	f77int incy = 1;
-	
+
 	F77_FUNC(dcopy) (&n, x, &incx, y, &incy);
 }
 
@@ -301,14 +300,14 @@ void matrix_axpy_diag(double alpha, const struct matrix *x, ssize_t i,
 	assert(y);
 	assert(-matrix_nrow(x) < i && i < matrix_ncol(x));
 	assert(vector_dim(y) == matrix_diag_dim(x, i));
-	
+
 	f77int n = (f77int)matrix_diag_dim(x, i);
 	const double *px = (i >= 0 ? matrix_item_ptr(x, 0, i)
 			    : matrix_item_ptr(x, -i, 0));
 	f77int incx = (f77int)(matrix_lda(x) + 1);
 	double *py = vector_to_ptr(y);
 	f77int incy = 1;
-	
+
 	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
 }
 
@@ -387,11 +386,11 @@ void matrix_div_rows(struct matrix *a, const struct vector *scale)
 	assert(a);
 	assert(scale);
 	assert(matrix_nrow(a) == vector_dim(scale));
-	
+
 	struct vector col;
 	ssize_t n = matrix_ncol(a);
 	ssize_t j;
-	
+
 	for (j = 0; j < n; j++) {
 		col = matrix_col(a, j);
 		vector_div(&col, scale);
@@ -408,7 +407,7 @@ void matrix_scale_cols(struct matrix *a, const struct vector *scale)
 	double alpha;
 	ssize_t n = matrix_ncol(a);
 	ssize_t j;
-	
+
 	for (j = 0; j < n; j++) {
 		col = matrix_col(a, j);
 		alpha = vector_item(scale, j);
@@ -421,12 +420,12 @@ void matrix_div_cols(struct matrix *a, const struct vector *scale)
 	assert(a);
 	assert(scale);
 	assert(matrix_ncol(a) == vector_dim(scale));
-	
+
 	struct vector col;
 	double alpha;
 	ssize_t n = matrix_ncol(a);
 	ssize_t j;
-	
+
 	for (j = 0; j < n; j++) {
 		col = matrix_col(a, j);
 		alpha = vector_item(scale, j);
@@ -576,7 +575,7 @@ void matrix_printf(const struct matrix *a)
 	ssize_t m = matrix_nrow(a);
 	ssize_t n = matrix_ncol(a);
 	ssize_t i, j;
-	
+
 	printf("a <- matrix(c(");
 	for (j = 0; j < n; j++) {
 		for (i = 0; i < m; i++) {
@@ -588,5 +587,5 @@ void matrix_printf(const struct matrix *a)
 			}
 		}
 	}
-	printf("), %"SSIZE_FMT", %"SSIZE_FMT")\n", m, n);
+	printf("), %" SSIZE_FMT ", %" SSIZE_FMT ")\n", m, n);
 }

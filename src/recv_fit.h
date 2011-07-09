@@ -11,7 +11,6 @@
 #include "recv_loglik.h"
 #include "vector.h"
 
-
 #define RECV_FIT_GTOL0		(1e-8)
 #define RECV_FIT_XTOL0		(1e-8)
 #define RECV_FIT_LSMAX0		(10)
@@ -30,7 +29,7 @@
 
 struct recv_fit_ctrl {
 	double gtol;
-	double xtol;	
+	double xtol;
 	ssize_t ls_maxit;
 	struct linesearch_ctrl ls;
 	double vartol;
@@ -40,10 +39,9 @@ struct recv_fit_ctrl {
 enum recv_fit_task {
 	RECV_FIT_CONV = 0,
 	RECV_FIT_STEP = 1,
-	RECV_FIT_ERR_LNSRCH = -1, // linesearch failed to converge
-	RECV_FIT_ERR_XTOL = -2, // step size is smaller than tolerance
+	RECV_FIT_ERR_LNSRCH = -1,	// linesearch failed to converge
+	RECV_FIT_ERR_XTOL = -2,	// step size is smaller than tolerance
 };
-
 
 struct recv_fit {
 	struct recv_fit_ctrl ctrl;
@@ -54,35 +52,34 @@ struct recv_fit {
 	struct vector coefs;
 	struct model model;
 	struct recv_loglik loglik;
-	
+
 	/* null log-likelihood */
 	struct matrix imat0;
 	struct vector score0;
 	double dev0;
-	
+
 	/* regularization terms */
-	struct vector scale;  /* sample variances of the covariates */
-	double penalty;	
-	
+	struct vector scale;	/* sample variances of the covariates */
+	double penalty;
+
 	/* optimization problem */
-	struct matrix ce;  /* equality constraints: ce' * coef = be */
-	struct vector be;    /* cont'd */
+	struct matrix ce;	/* equality constraints: ce' * coef = be */
+	struct vector be;	/* cont'd */
 	ssize_t ne;
 
 	/* optimization problem workspace */
-	struct vector params; /* primal and dual parameters */
-	struct vector resid;  /* dual and primal residuals */
-	struct matrix kkt;    /* KKT matrix */
+	struct vector params;	/* primal and dual parameters */
+	struct vector resid;	/* dual and primal residuals */
+	struct matrix kkt;	/* KKT matrix */
 	struct vector search;
 	double step;
-	
+
 	/* additional workspace */
 	struct linesearch ls;
-	struct symeig eig;	
+	struct symeig eig;
 	struct ldlfac ldl;
 	enum recv_fit_task task;
 };
-
 
 void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *msgs,
@@ -116,7 +113,7 @@ static inline bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl);
 bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl)
 {
 	assert(ctrl);
-	
+
 	if (!(ctrl->gtol > 0)) {
 		return false;
 	} else if (!(ctrl->ls_maxit > 0)) {
@@ -125,6 +122,5 @@ bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl)
 		return linesearch_ctrl_valid(&ctrl->ls);
 	}
 }
-
 
 #endif /* _RECV_FIT_H */

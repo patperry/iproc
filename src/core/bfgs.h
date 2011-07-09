@@ -24,8 +24,8 @@ struct bfgs_ctrl {
 enum bfgs_task {
 	BFGS_CONV = 0,
 	BFGS_STEP = 1,
-	BFGS_ERR_LNSRCH = -1, // linesearch failed to converge
-	BFGS_OVFLW_GRAD = -2, // overflow in computing norm of gradient
+	BFGS_ERR_LNSRCH = -1,	// linesearch failed to converge
+	BFGS_OVFLW_GRAD = -2,	// overflow in computing norm of gradient
 };
 
 struct bfgs {
@@ -38,12 +38,12 @@ struct bfgs {
 	double f0;
 	struct vector grad0;
 	struct vector x0;
-	
+
 	/* next step */
 	struct vector x;
-	struct vector search;	
+	struct vector search;
 	struct vector step;
-	
+
 	/* linsearch workspace */
 	struct linesearch ls;
 	ssize_t ls_it;
@@ -69,7 +69,6 @@ enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
 			    const struct vector *grad);
 const char *bfgs_errmsg(enum bfgs_task task);
 
-
 /* current values */
 static inline const struct vector *bfgs_cur(const struct bfgs *opt);
 static inline double bfgs_value(const struct bfgs *opt);
@@ -83,7 +82,7 @@ static inline bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl);
 bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl)
 {
 	assert(ctrl);
-	
+
 	if (!(ctrl->gtol > 0)) {
 		return false;
 	} else if (!(ctrl->ls_maxit > 0)) {

@@ -80,7 +80,7 @@ struct recv_sloglik {
 
 struct recv_loglik_info {
 	struct matrix imat;
-	struct vector score;	
+	struct vector score;
 	struct vector mean;
 	double dev;
 	ssize_t nrecv;
@@ -127,6 +127,5 @@ void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
 				struct matrix *y);
 
 struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll);
-
 
 #endif /* _RECV_LOGLIK_H */

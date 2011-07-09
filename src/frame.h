@@ -67,8 +67,9 @@ struct frame_event {
 
 struct frame_handlers {
 	uint8_t event_mask;
-	void (*handle_event) (void *udata, const struct frame_event *e, struct frame *f);
-	void (*handle_clear) (void *udata, const struct frame *f);
+	void (*handle_event) (void *udata, const struct frame_event * e,
+			      struct frame * f);
+	void (*handle_clear) (void *udata, const struct frame * f);
 };
 
 struct frame_observer {
@@ -127,9 +128,9 @@ struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 			     ssize_t jrecv);
 
 /* observers */
-void frame_add_observer(struct frame *f, void *udata, const struct frame_handlers *h);
+void frame_add_observer(struct frame *f, void *udata,
+			const struct frame_handlers *h);
 void frame_remove_observer(struct frame *f, void *udata);
-			
 
 void frame_send_mul(double alpha, enum trans_op trans,
 		    const struct frame *f,
