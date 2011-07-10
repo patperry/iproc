@@ -127,8 +127,6 @@ struct recv_model_common {
 };
 
 struct recv_model_sender {
-	struct recv_model *model;
-	ssize_t isend;
 	double gamma;
 	double log_W;		// log_W - scale
 	double scale;
