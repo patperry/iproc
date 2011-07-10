@@ -13,13 +13,16 @@
 #include "cohort.h"
 
 struct actor {
-	struct cohort *cohort;
+	ssize_t cohort;
 };
 
 struct actors {
 	ssize_t dim;
 	struct array actors;
-	struct hashset cohorts;
+	struct array cohorts;
+	struct intmap trait_hashes; /* (hash(x_i), { i_1, ... i_k }) */
+	
+	/* deprecated */
 	struct refcount refcount;
 };
 
@@ -39,15 +42,15 @@ void actors_deinit(struct actors *a);
 void actors_clear(struct actors *a);
 
 static inline ssize_t actors_count(const struct actors *a);
-static inline ssize_t actors_cohorts_count(const struct actors *a);
+static inline ssize_t actors_cohort_count(const struct actors *a);
 static inline ssize_t actors_dim(const struct actors *a);
 
 /* makes a copy of traits */
 void actors_add(struct actors *a, const struct vector *traits);
 
-const struct actor *actors_item(const struct actors *a, ssize_t actor_id);
-const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
-const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id);
+static inline const struct actor *actors_item(const struct actors *a, ssize_t actor_id);
+static inline const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
+static inline const struct cohort *actors_cohort(const struct actors *a, ssize_t cohort_id);
 
 void actors_mul(double alpha,
 		enum trans_op trans,
@@ -70,10 +73,10 @@ ssize_t actors_count(const struct actors *a)
 	return array_count(&a->actors);
 }
 
-ssize_t actors_cohorts_count(const struct actors *a)
+ssize_t actors_cohort_count(const struct actors *a)
 {
 	assert(a);
-	return hashset_count(&a->cohorts);
+	return array_count(&a->cohorts);
 }
 
 ssize_t actors_dim(const struct actors *actors)
@@ -81,5 +84,29 @@ ssize_t actors_dim(const struct actors *actors)
 	assert(actors);
 	return actors->dim;
 }
+
+const struct actor *actors_item(const struct actors *a, ssize_t actor_id)
+{
+	assert(a);
+	assert(0 <= actor_id && actor_id < actors_count(a));
+	return array_item(&a->actors, actor_id);
+}
+
+const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
+{
+	assert(a);
+	assert(0 <= actor_id && actor_id < actors_count(a));
+	
+	const struct actor *actor = actors_item(a, actor_id);
+	const struct cohort *cohort = actors_cohort(a, actor->cohort);
+	return cohort_traits(cohort);
+}
+
+const struct cohort *actors_cohort(const struct actors *a, ssize_t cohort_id)
+{
+	return array_item(&a->cohorts, cohort_id);
+}
+
+
 
 #endif /* _ACTORS_H */

@@ -4,16 +4,6 @@
 #include <stdlib.h>
 #include "actors.h"
 
-static uint32_t cohortp_traits_hash(const void *cohortp)
-{
-	return vector_hash(cohort_traits(*(struct cohort **)cohortp));
-}
-
-static bool cohortp_traits_equals(const void *cohortp1, const void *cohortp2)
-{
-	return vector_equals(cohort_traits(*(struct cohort **)cohortp1),
-			     cohort_traits(*(struct cohort **)cohortp2));
-}
 
 void actors_init(struct actors *actors, ssize_t dim)
 {
@@ -21,9 +11,8 @@ void actors_init(struct actors *actors, ssize_t dim)
 	assert(dim >= 0);
 
 	array_init(&actors->actors, sizeof(struct actor));
-
-	hashset_init(&actors->cohorts, cohortp_traits_hash,
-		     cohortp_traits_equals, sizeof(struct cohort *));
+	array_init(&actors->cohorts, sizeof(struct cohort));
+	intmap_init(&actors->trait_hashes, sizeof(struct intset), alignof(struct intset));
 
 	refcount_init(&actors->refcount);
 	actors->dim = dim;
@@ -77,24 +66,34 @@ void actors_init_copy(struct actors *actors, const struct actors *src)
 		actors_add(actors, actors_traits(src, i));
 	}
 
-	assert(actors_count(actors) == actors_cohorts_count(src));
-	assert(actors_cohorts_count(actors) == actors_cohorts_count(src));
+	assert(actors_count(actors) == actors_count(src));
+	assert(actors_cohort_count(actors) == actors_cohort_count(src));
 }
 
-static void cohorts_clear(struct hashset *cohorts)
+static void cohorts_clear(struct array *cohorts)
 {
-	struct hashset_iter it;
-	HASHSET_FOREACH(it, cohorts) {
-		struct cohort **cp = HASHSET_KEY(it);
-		cohort_free(*cp);
+	struct cohort *c;
+	ARRAY_FOREACH(c, cohorts) {
+		cohort_deinit(c);
 	}
-	hashset_clear(cohorts);
+	array_clear(cohorts);
+}
+
+static void trait_hashes_clear(struct intmap *trait_hashes)
+{
+	struct intmap_iter it;
+	INTMAP_FOREACH(it, trait_hashes) {
+		struct intset *set = INTMAP_VAL(it);
+		intset_deinit(set);
+	}
+	intmap_clear(trait_hashes);
 }
 
 void actors_clear(struct actors *a)
 {
+	array_clear(&a->actors);	
 	cohorts_clear(&a->cohorts);
-	array_clear(&a->actors);
+	trait_hashes_clear(&a->trait_hashes);
 }
 
 void actors_deinit(struct actors *a)
@@ -103,7 +102,8 @@ void actors_deinit(struct actors *a)
 
 	actors_clear(a);
 	refcount_deinit(&a->refcount);
-	hashset_deinit(&a->cohorts);
+	intmap_deinit(&a->trait_hashes);
+	array_deinit(&a->cohorts);
 	array_deinit(&a->actors);
 }
 
@@ -134,57 +134,45 @@ struct actors *actors_ref(struct actors *actors)
 	return actors;
 }
 
-const struct actor *actors_item(const struct actors *a, ssize_t actor_id)
-{
-	assert(a);
-	assert(0 <= actor_id && actor_id < actors_count(a));
-	return array_item(&a->actors, actor_id);
-}
-
-const struct cohort *actors_cohort(const struct actors *a, ssize_t actor_id)
-{
-	return actors_item(a, actor_id)->cohort;
-}
-
-static struct cohort *actors_get_cohort(struct actors *actors,
-					const struct vector *traits)
-{
-	struct cohort *key = container_of(traits, struct cohort, traits);
-	struct hashset_pos pos;
-	struct cohort *new_cohort;
-	struct cohort **cohortp;
-
-	if ((cohortp = hashset_find(&actors->cohorts, &key, &pos)))
-		return *cohortp;
-
-	new_cohort = cohort_alloc(traits);
-	hashset_insert(&actors->cohorts, &pos, &new_cohort);
-	return new_cohort;
-}
-
 void actors_add(struct actors *actors, const struct vector *traits)
 {
 	assert(actors);
 	assert(vector_dim(traits) == actors_dim(actors));
 
-	struct actor a;
-	ssize_t id;
-
-	a.cohort = actors_get_cohort(actors, traits);
-	array_add(&actors->actors, &a);
-
-	id = array_count(&actors->actors) - 1;
-	cohort_add(a.cohort, id);
+	ssize_t aid = array_count(&actors->actors);
+	struct actor *a;
+	ssize_t cid = -1;
+	struct cohort *c;
+	int32_t hash = vector_hash(traits);
+	struct intmap_pos pos;
+	struct intset *set = intmap_find(&actors->trait_hashes, hash, &pos);
+	
+	if (!set) {
+		set = intmap_insert(&actors->trait_hashes, &pos, NULL);
+		intset_init(set);
+	}
+	
+	struct intset_iter it;
+	INTSET_FOREACH(it, set) {
+		cid = INTSET_KEY(it);
+		c = array_item(&actors->cohorts, cid);
+		const struct vector *x = cohort_traits(c);
+		if (vector_equals(x, traits)) {
+			goto found;
+		}
+	}
+	
+	/* cohort not found; create a new one */
+	cid = array_count(&actors->cohorts);
+	c = array_add(&actors->cohorts, NULL);
+	cohort_init(c, traits);
+	intset_add(set, cid);
+found:
+	cohort_add(c, aid);
+	a = array_add(&actors->actors, NULL);
+	a->cohort = cid;
 }
 
-const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
-{
-	assert(a);
-	assert(0 <= actor_id && actor_id < actors_count(a));
-
-	const struct actor *actor = actors_item(a, actor_id);
-	return cohort_traits(actor->cohort);
-}
 
 void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		const struct vector *x, double beta, struct vector *y)
@@ -199,7 +187,6 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 
 	const struct vector *row;
 	double alpha_dot, scale;
-	struct hashset_iter it;
 	struct cohort *c;
 	struct cohort_iter c_it;
 	ssize_t id;
@@ -211,8 +198,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 	}
 
 	if (trans == TRANS_NOTRANS) {
-		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_KEY(it);
+		ARRAY_FOREACH(c, &a->cohorts) {
 			row = cohort_traits(c);
 			alpha_dot = alpha * vector_dot(row, x);
 
@@ -222,8 +208,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 			}
 		}
 	} else {
-		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_KEY(it);
+		ARRAY_FOREACH(c, &a->cohorts) {
 			row = cohort_traits(c);
 			scale = 0.0;
 
@@ -234,7 +219,6 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 
 			vector_axpy(alpha * scale, row, y);
 		}
-
 	}
 }
 
@@ -254,7 +238,6 @@ actors_muls(double alpha,
 
 	const struct vector *row;
 	double alpha_dot, entry;
-	struct hashset_iter it;
 	struct cohort *c;
 	struct cohort_iter c_it;
 	ssize_t id;
@@ -266,8 +249,7 @@ actors_muls(double alpha,
 	}
 
 	if (trans == TRANS_NOTRANS) {
-		HASHSET_FOREACH(it, &a->cohorts) {
-			c = *(struct cohort **)HASHSET_KEY(it);
+		ARRAY_FOREACH(c, &a->cohorts) {
 			row = cohort_traits(c);
 			alpha_dot = alpha * svector_dot(x, row);
 

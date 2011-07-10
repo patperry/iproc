@@ -240,19 +240,19 @@ static void cohort_models_init(struct intmap *cms,
 			       const struct vector *recv_coefs)
 {
 	const struct actors *senders = design_senders(design);
-	const struct hashset *cohorts = &senders->cohorts;
+	ssize_t i, n = actors_cohort_count(senders);
+
 
 	intmap_init(cms, sizeof(struct cohort_model),
 		    alignof(struct cohort_model));
 
-	struct hashset_iter it;
-	HASHSET_FOREACH(it, cohorts) {
-		const struct cohort *c = *(struct cohort **)HASHSET_KEY(it);
+	for (i = 0; i < n; i++) {
+		const struct cohort *c = actors_cohort(senders, i);		
 		struct cohort_iter cit = cohort_iter_make(c);
 		if (!cohort_iter_advance(&cit))
 			continue;	// ignore empty cohorts
 
-		struct cohort_model *cm = intmap_add(cms, (intptr_t)c, NULL);
+		struct cohort_model *cm = intmap_add(cms, i, NULL);
 		ssize_t isend = COHORT_KEY(cit);
 		cohort_model_init(cm, design, isend, recv_coefs);
 	}
@@ -279,7 +279,8 @@ static struct cohort_model *model_cohort_model(const struct model *model,
 	const struct frame *frame = model_frame(model);
 	const struct design *design = frame_design(frame);
 	const struct actors *senders = design_senders(design);
-	intptr_t c = (intptr_t)actors_cohort(senders, isend);
+	const struct actor *s = actors_item(senders, isend);
+	intptr_t c = (intptr_t)s->cohort;
 	struct cohort_model *cm = intmap_item(&model->cohort_models, c);
 
 	assert(cm);
