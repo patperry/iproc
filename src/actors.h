@@ -90,6 +90,8 @@ const struct actor *actors_item(const struct actors *a, ssize_t actor_id)
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_count(a));
 	return array_item(&a->actors, actor_id);
+	//const struct actor *base = array_to_ptr(&a->actors);
+	//return base + actor_id;
 }
 
 const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
@@ -104,7 +106,11 @@ const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
 
 const struct cohort *actors_cohort(const struct actors *a, ssize_t cohort_id)
 {
+	assert(a);
+	assert(0 <= cohort_id && cohort_id < actors_cohort_count(a));
 	return array_item(&a->cohorts, cohort_id);
+	//const struct cohort *base = array_to_ptr(&a->cohorts);
+	//return base + cohort_id;
 }
 
 
