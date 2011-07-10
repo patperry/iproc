@@ -897,7 +897,7 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 	const struct design *design = recv_model_design(m);
 	ssize_t isend, nsend = design_send_count(design);
 
-	ll->model = recv_model_ref(m);
+	ll->model = m;
 
 	array_init(&ll->slogliks, sizeof(struct recv_sloglik));
 	array_set_capacity(&ll->slogliks, nsend);
@@ -922,7 +922,6 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 		recv_sloglik_deinit(sll);
 	}
 	array_deinit(&ll->slogliks);
-	recv_model_free(ll->model);
 }
 
 void recv_loglik_clear(struct recv_loglik *ll)

@@ -460,7 +460,6 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	common_init(&model->common, d, &model->coefs);
 	intmap_init(&model->senders, sizeof(struct recv_model_sender),
 		    alignof(struct recv_model_sender));
-	refcount_init(&model->refcount);
 
 	struct frame_handlers h;
 	h.event_mask = RECV_VAR_EVENT;
@@ -476,8 +475,6 @@ void recv_model_deinit(struct recv_model *model)
 
 	frame_remove_observer(model->frame, model);
 
-	refcount_deinit(&model->refcount);
-
 	struct intmap_iter it;
 	INTMAP_FOREACH(it, &model->senders) {
 		sender_deinit(INTMAP_VAL(it));
@@ -486,32 +483,6 @@ void recv_model_deinit(struct recv_model *model)
 	intmap_deinit(&model->senders);
 	common_deinit(&model->common);
 	vector_deinit(&model->coefs);
-}
-
-struct recv_model *recv_model_alloc(struct frame *f, const struct vector *coefs)
-{
-	assert(f);
-	assert(coefs);
-
-	struct recv_model *model = xcalloc(1, sizeof(*model));
-	recv_model_init(model, f, coefs);
-	return model;
-}
-
-struct recv_model *recv_model_ref(struct recv_model *model)
-{
-	assert(model);
-	refcount_get(&model->refcount);
-	return model;
-}
-
-void recv_model_free(struct recv_model *model)
-{
-	if (model && refcount_put(&model->refcount, NULL)) {
-		refcount_get(&model->refcount);
-		recv_model_deinit(model);
-		xfree(model);
-	}
 }
 
 const struct frame *recv_model_frame(const struct recv_model *model)

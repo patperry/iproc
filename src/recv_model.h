@@ -141,15 +141,11 @@ struct recv_model {
 	struct vector coefs;
 	struct recv_model_common common;
 	struct intmap senders;
-	struct refcount refcount;
 };
 
 void recv_model_init(struct recv_model *model,
 		struct frame *f, const struct vector *recv_coefs);
 void recv_model_deinit(struct recv_model *model);
-struct recv_model *recv_model_alloc(struct frame *f, const struct vector *recv_coefs);
-struct recv_model *recv_model_ref(struct recv_model *model);
-void recv_model_free(struct recv_model *model);
 
 const struct frame *recv_model_frame(const struct recv_model *model);
 const struct design *recv_model_design(const struct recv_model *model);
