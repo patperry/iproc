@@ -148,12 +148,10 @@ static inline ssize_t design_recv_dyn_dim(const struct design *design);
 void design_recv_mul0(double alpha,
 		      enum trans_op trans,
 		      const struct design *design,
-		      ssize_t isend,
 		      const struct vector *x, double beta, struct vector *y);
 void design_recv_muls0(double alpha,
 		       enum trans_op trans,
 		       const struct design *design,
-		       ssize_t isend,
 		       const struct svector *x, double beta, struct vector *y);
 
 /* inline funciton definitions */

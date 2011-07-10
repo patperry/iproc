@@ -48,8 +48,8 @@ void design_init(struct design *design, struct actors *senders,
 	}
 #endif
 
-	ssize_t p = actors_dim(senders);
-	ssize_t q = actors_dim(receivers);
+	ssize_t ps = actors_dim(senders);
+	ssize_t pr = actors_dim(receivers);
 
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
@@ -61,7 +61,7 @@ void design_init(struct design *design, struct actors *senders,
 	design->seffects = false;
 	design->iseffects = 0;
 	design->isstatic = 0;
-	design->nsstatic = p;
+	design->nsstatic = ps;
 	design->isdynamic = design->isstatic + design->nsstatic;
 	design->nsdynamic = 0;
 	design->sdim = design->isdynamic + design->nsdynamic;
@@ -70,7 +70,7 @@ void design_init(struct design *design, struct actors *senders,
 	design->reffects = false;
 	design->ireffects = 0;
 	design->irstatic = 0;
-	design->nrstatic = p * q;
+	design->nrstatic = pr;
 	design->irdynamic = design->irstatic + design->nrstatic;
 	design->nrdynamic = 0;
 	design->rdim = design->irdynamic + design->nrdynamic;
@@ -219,10 +219,10 @@ design_send_mul0_static(double alpha,
 
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
-		actors_mul(alpha, TRANS_NOTRANS, senders, &xsub, 0.0, y);
+		actors_mul(alpha, TRANS_NOTRANS, senders, &xsub, 1.0, y);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_mul(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);
+		actors_mul(alpha, TRANS_TRANS, senders, x, 1.0, &ysub);
 	}
 }
 
@@ -230,13 +230,26 @@ static void
 design_recv_mul0_static(double alpha,
 			enum trans_op trans,
 			const struct design *design,
-			ssize_t isend, const struct vector *x, struct vector *y)
+			const struct vector *x, struct vector *y)
 {
 	if (design->nrstatic == 0)
 		return;
 
-	const struct actors *senders = design_senders(design);
 	const struct actors *receivers = design_receivers(design);
+	ssize_t off = design->irstatic;
+	ssize_t dim = design->nrstatic;
+	assert(dim == actors_dim(receivers));
+	
+	if (trans == TRANS_NOTRANS) {
+		struct vector xsub = vector_slice(x, off, dim);
+		actors_mul(alpha, trans, receivers, &xsub, 1.0, y);
+	} else {
+		struct vector ysub = vector_slice(y, off, dim);
+		actors_mul(alpha, trans, receivers, x, 1.0, &ysub);
+	}
+	
+	/*
+	const struct actors *senders = design_senders(design);	 
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
 	ssize_t ix_begin = design->irstatic;
@@ -247,18 +260,18 @@ design_recv_mul0_static(double alpha,
 	if (trans == TRANS_NOTRANS) {
 		struct vector xsub = vector_slice(x, ix_begin, nstatic);
 
-		/* z := alpha t(x) s */
+		// z := alpha t(x) s
 		struct matrix xmat = matrix_make(&xsub, p, q);
 
 		matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
 
-		/* y := y + R z */
+		// y := y + R z
 		actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
-		/* z := alpha t(R) x */
+		// z := alpha t(R) x
 		actors_mul(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
-		/* y := y + s \otimes z */
+		// y := y + s \otimes z
 		struct vector ysub = vector_slice(y, ix_begin, nstatic);
 		struct matrix ymat = matrix_make(&ysub, p, q);
 		struct matrix smat = matrix_make(s, p, 1);
@@ -268,6 +281,7 @@ design_recv_mul0_static(double alpha,
 	}
 
 	vector_free(z);
+	*/
 }
 
 static void
@@ -295,11 +309,11 @@ design_send_muls0_static(double alpha,
 				continue;
 			svector_set_item(&xsub, i, SVECTOR_VAL(it));
 		}
-		actors_muls(alpha, TRANS_NOTRANS, senders, &xsub, 0.0, y);
+		actors_muls(alpha, TRANS_NOTRANS, senders, &xsub, 1.0, y);
 		svector_deinit(&xsub);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_muls(alpha, TRANS_TRANS, senders, x, 0.0, &ysub);
+		actors_muls(alpha, TRANS_TRANS, senders, x, 1.0, &ysub);
 	}
 }
 
@@ -307,27 +321,50 @@ static void
 design_recv_muls0_static(double alpha,
 			 enum trans_op trans,
 			 const struct design *design,
-			 ssize_t isend, const struct svector *x,
+			 const struct svector *x,
 			 struct vector *y)
 {
 	if (design->nrstatic == 0)
 		return;
 
-	const struct actors *senders = design_senders(design);
 	const struct actors *receivers = design_receivers(design);
+	ssize_t off = design->irstatic;
+	ssize_t dim = design->nrstatic;
+
+	if (trans == TRANS_NOTRANS) {
+		struct svector xsub;
+		struct svector_iter it;
+		ssize_t i;
+		
+		svector_init(&xsub, dim);
+		SVECTOR_FOREACH(it, x) {
+			i = SVECTOR_IDX(it) - off;
+			if (i < 0 || i >= dim)
+				continue;
+			svector_set_item(&xsub, i, SVECTOR_VAL(it));
+		}
+		actors_muls(alpha, trans, receivers, &xsub, 1.0, y);
+		svector_deinit(&xsub);
+	} else {
+		struct vector ysub = vector_slice(y, off, dim);
+		actors_muls(alpha, trans, receivers, x, 1.0, &ysub);
+	}
+
+	
+	/*
+	const struct actors *receivers = design_receivers(design);
+	const struct actors *senders = design_senders(design);	
 	ssize_t p = actors_dim(senders);
 	ssize_t q = actors_dim(receivers);
-	ssize_t ix_begin = design->irstatic;
+	ssize_t off = design->irstatic;
 	ssize_t nstatic = design->nrstatic;
-	ssize_t ix_end = ix_begin + nstatic;
+	ssize_t ix_end = off + nstatic;
 	const struct vector *s = actors_traits(senders, isend);
 	struct vector *z = vector_alloc(q);
 
 	if (trans == TRANS_NOTRANS) {
-		/* z := alpha t(x) s 
-		 *
-		 * z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
-		 */
+		// z := alpha t(x) s 
+		// z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
 
 		struct svector_iter itx;
 		double x_ij, s_i;
@@ -338,12 +375,12 @@ design_recv_muls0_static(double alpha,
 
 		SVECTOR_FOREACH(itx, x) {
 			ix = SVECTOR_IDX(itx);
-			if (ix < ix_begin || ix >= ix_end)
+			if (ix < off || ix >= ix_end)
 				continue;
 
-			ij = imaxdiv(ix - ix_begin, p);
-			i = (ssize_t)ij.rem;	/* ix % p */
-			j = (ssize_t)ij.quot;	/* ix / p */
+			ij = imaxdiv(ix - off, p);
+			i = (ssize_t)ij.rem;	// ix % p
+			j = (ssize_t)ij.quot;	// ix / p
 			x_ij = SVECTOR_VAL(itx);
 			s_i = *vector_item_ptr(s, i);
 			*vector_item_ptr(z, j) += x_ij * s_i;
@@ -351,14 +388,14 @@ design_recv_muls0_static(double alpha,
 
 		vector_scale(z, alpha);
 
-		/* y := y + R z */
+		// y := y + R z
 		actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
 	} else {
-		/* z := alpha t(R) x */
+		// z := alpha t(R) x
 		actors_muls(alpha, TRANS_TRANS, receivers, x, 0.0, z);
 
-		/* y := y + s \otimes z */
-		struct vector ysub = vector_slice(y, ix_begin, nstatic);
+		// y := y + s \otimes z
+		struct vector ysub = vector_slice(y, off, nstatic);
 		struct matrix ymat = matrix_make(&ysub, p, q);
 		struct matrix smat = matrix_make(s, p, 1);
 		struct matrix zmat = matrix_make(z, 1, q);
@@ -367,6 +404,7 @@ design_recv_muls0_static(double alpha,
 	}
 
 	vector_free(z);
+	*/
 }
 
 void
@@ -402,12 +440,9 @@ void
 design_recv_mul0(double alpha,
 		 enum trans_op trans,
 		 const struct design *design,
-		 ssize_t isend,
 		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
-	assert(isend >= 0);
-	assert(isend < design_send_count(design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -427,7 +462,7 @@ design_recv_mul0(double alpha,
 	}
 
 	design_recv_mul0_effects(alpha, trans, design, x, y);
-	design_recv_mul0_static(alpha, trans, design, isend, x, y);
+	design_recv_mul0_static(alpha, trans, design, x, y);
 }
 
 void
@@ -463,12 +498,9 @@ void
 design_recv_muls0(double alpha,
 		  enum trans_op trans,
 		  const struct design *design,
-		  ssize_t isend,
 		  const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
-	assert(isend >= 0);
-	assert(isend < design_send_count(design));
 	assert(x);
 	assert(y);
 	assert(trans != TRANS_NOTRANS
@@ -488,7 +520,7 @@ design_recv_muls0(double alpha,
 	}
 
 	design_recv_muls0_effects(alpha, trans, design, x, y);
-	design_recv_muls0_static(alpha, trans, design, isend, x, y);
+	design_recv_muls0_static(alpha, trans, design, x, y);
 }
 
 void design_set_loops(struct design *design, bool loops)

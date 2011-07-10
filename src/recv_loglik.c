@@ -477,7 +477,7 @@ static void score_axpy_obs(double alpha,
 
 	// (X[0,i])^T n[i]
 	design_recv_muls0(alpha / nsend, TRANS_TRANS,
-			  design, isend, &score->nrecv, 1.0, y);
+			  design, &score->nrecv, 1.0, y);
 
 	// sum{dx[t,i,j]}
 	vector_axpy(alpha, &score->mean_obs_dx, &ysub);
@@ -502,7 +502,7 @@ static void score_axpy_mean(double alpha,
 		svector_set_item(&dp, jrecv, val);
 	}
 
-	design_recv_muls0(alpha, TRANS_TRANS, design, isend, &dp, 1.0, y);
+	design_recv_muls0(alpha, TRANS_TRANS, design, &dp, 1.0, y);
 	svector_deinit(&dp);
 
 	const struct vector *mean_dx = &score->mean_dx;
@@ -549,7 +549,7 @@ static void imat_axpy(double alpha,
 
 	struct vector gamma_x0_dp;
 	vector_init(&gamma_x0_dp, dim);
-	design_recv_muls0(1.0, TRANS_TRANS, design, isend, &gamma_dp, 0.0,
+	design_recv_muls0(1.0, TRANS_TRANS, design, &gamma_dp, 0.0,
 			  &gamma_x0_dp);
 
 	struct matrix x0_dp2;
@@ -565,7 +565,7 @@ static void imat_axpy(double alpha,
 			svector_set_item(&dp2_j, jrecv, val);
 		}
 		struct vector dst = matrix_col(&x0_dp2, j);
-		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &dp2_j, 0.0,
+		design_recv_muls0(1.0, TRANS_TRANS, design, &dp2_j, 0.0,
 				  &dst);
 	}
 
@@ -587,7 +587,7 @@ static void imat_axpy(double alpha,
 			svector_set_item(&x0_dp2_k, jrecv, val);
 		}
 		struct vector dst = matrix_col(y, k);
-		design_recv_muls0(alpha, TRANS_TRANS, design, isend, &x0_dp2_k,
+		design_recv_muls0(alpha, TRANS_TRANS, design, &x0_dp2_k,
 				  1.0, &dst);
 	}
 
@@ -619,8 +619,7 @@ static void imat_axpy(double alpha,
 		ssize_t jrecv = *(ssize_t *)array_item(active, i);
 
 		svector_set_basis(&e_j, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &e_j, 0.0,
-				  &x0_j);
+		design_recv_muls0(1.0, TRANS_TRANS, design, &e_j, 0.0, &x0_j);
 
 		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
 		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);

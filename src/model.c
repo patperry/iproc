@@ -123,7 +123,6 @@ static void cohort_model_set(struct cohort_model *cm,
 
 	ssize_t nreceiver = design_recv_count(design);
 	ssize_t dim = design_recv_dim(design);
-	ssize_t isend = cm->isend0;
 
 	/* The probabilities are p[i] = w[i] / sum(w[j]), so
 	 * log(p[i]) = log(w[i]) - log(sum(w[j])).
@@ -137,7 +136,7 @@ static void cohort_model_set(struct cohort_model *cm,
 	 */
 
 	/* eta0 */
-	design_recv_mul0(1.0, TRANS_NOTRANS, design, isend, recv_coefs, 0.0,
+	design_recv_mul0(1.0, TRANS_NOTRANS, design, recv_coefs, 0.0,
 			 &cm->eta0);
 	assert(isfinite(vector_max_abs(&cm->eta0)));
 
@@ -154,7 +153,7 @@ static void cohort_model_set(struct cohort_model *cm,
 	vector_exp(&cm->p0);
 
 	/* mean0 */
-	design_recv_mul0(1.0, TRANS_TRANS, design, isend, &cm->p0, 0.0,
+	design_recv_mul0(1.0, TRANS_TRANS, design, &cm->p0, 0.0,
 			 &cm->mean0);
 
 	/* imat0 */
@@ -170,7 +169,7 @@ static void cohort_model_set(struct cohort_model *cm,
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
 		svector_set_basis(&ej, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, isend, &ej, -1.0,
+		design_recv_muls0(1.0, TRANS_TRANS, design, &ej, -1.0,
 				  &y);
 		pj = vector_item(&cm->p0, jrecv);
 

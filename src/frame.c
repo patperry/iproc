@@ -663,7 +663,7 @@ void frame_recv_mul(double alpha, enum trans_op trans,
 	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 
-	design_recv_mul0(alpha, trans, f->design, isend, x, beta, y);
+	design_recv_mul0(alpha, trans, f->design, x, beta, y);
 	if (trans == TRANS_NOTRANS) {
 		struct svector ys;
 
@@ -705,7 +705,7 @@ void frame_recv_muls(double alpha, enum trans_op trans,
 	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 
-	design_recv_muls0(alpha, trans, f->design, isend, x, beta, y);
+	design_recv_muls0(alpha, trans, f->design, x, beta, y);
 
 	if (trans == TRANS_NOTRANS) {
 		struct svector xsub;
