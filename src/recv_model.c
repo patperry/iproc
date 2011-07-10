@@ -7,23 +7,18 @@
 #include "compare.h"
 #include "ieee754.h"
 #include "logsumexp.h"
-#include "model.h"
+#include "recv_model.h"
 #include "util.h"
 
 DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
 static void
-compute_weight_changes(const struct frame *f, ssize_t isend,
-		       const struct vector *recv_coefs,
+compute_weight_changes(const struct frame *f,
 		       const struct vector *eta0,
 		       double max_eta0, double log_W0,
 		       const struct svector *deta, double *scale,
 		       double *gamma, double *log_W)
 {
-	//if (isend == 119) {
-	//      printf("COMPUTE\n");
-	//}
-
 	const struct design *design = f->design;
 
 	ssize_t jrecv, nrecv = design_recv_count(design);
@@ -111,9 +106,9 @@ out:
 	assert(isfinite(*log_W));
 }
 
-static void recv_common_set(struct recv_model_common *cm,
-			     const struct design *design,
-			     const struct vector *recv_coefs)
+static void common_set(struct recv_model_common *cm,
+		       const struct design *design,
+		       const struct vector *recv_coefs)
 {
 	assert(cm);
 	assert(design);
@@ -187,9 +182,9 @@ static void recv_common_set(struct recv_model_common *cm,
 #endif
 }
 
-static void recv_common_init(struct recv_model_common *cm,
-			     const struct design *design,
-			     const struct vector *recv_coefs)
+static void common_init(struct recv_model_common *cm,
+			const struct design *design,
+			const struct vector *recv_coefs)
 {
 	assert(cm);
 	assert(design);
@@ -205,10 +200,10 @@ static void recv_common_init(struct recv_model_common *cm,
 #ifndef NDEBUG
 	vector_init(&cm->w0, nreceiver);
 #endif
-	recv_common_set(cm, design, recv_coefs);
+	common_set(cm, design, recv_coefs);
 }
 
-static void recv_common_deinit(struct recv_model_common *cm)
+static void common_deinit(struct recv_model_common *cm)
 {
 	assert(cm);
 #ifndef NDEBUG
@@ -220,17 +215,17 @@ static void recv_common_deinit(struct recv_model_common *cm)
 	vector_deinit(&cm->eta0);
 }
 
-static void recv_model_clear(struct recv_model *rm)
+static void sender_clear(struct recv_model_sender *rm)
 {
 	assert(rm);
 
-	const struct model *m = rm->model;
+	const struct recv_model *m = rm->model;
 	ssize_t isend = rm->isend;
-	const struct frame *f = model_frame(m);
+	const struct frame *f = recv_model_frame(m);
 	const struct design *d = frame_design(f);
 
-	double max_eta0 = m->recv_common.max_eta0;
-	double log_W0 = m->recv_common.log_W0;
+	double max_eta0 = m->common.max_eta0;
+	double log_W0 = m->common.log_W0;
 
 	svector_clear(&rm->deta);
 	array_clear(&rm->active);
@@ -248,8 +243,7 @@ static void recv_model_clear(struct recv_model *rm)
 		svector_set_item(&rm->deta, rm->isend, -INFINITY);
 
 		/* compute the changes in weights */
-		const struct vector *recv_coefs = model_recv_coefs(rm->model);
-		compute_weight_changes(f, isend, recv_coefs, &m->recv_common.eta0,
+		compute_weight_changes(f, &m->common.eta0,
 				       max_eta0, log_W0,
 				       &rm->deta, &rm->scale, &rm->gamma,
 				       &rm->log_W);
@@ -257,14 +251,14 @@ static void recv_model_clear(struct recv_model *rm)
 	}
 }
 
-static void recv_model_set(struct recv_model *rm,
-			   const struct frame *f,
-			   const struct vector *recv_coefs)
+static void sender_set(struct recv_model_sender *rm,
+		       const struct frame *f,
+		       const struct vector *recv_coefs)
 {
-	recv_model_clear(rm);
+	sender_clear(rm);
 
-	const struct design *design = model_design(rm->model);
-	const struct model *m = rm->model;
+	const struct design *design = recv_model_design(rm->model);
+	const struct recv_model *m = rm->model;
 	bool has_loops = design_loops(design);
 	ssize_t dyn_off = design_recv_dyn_index(design);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
@@ -278,8 +272,8 @@ static void recv_model_set(struct recv_model *rm,
 	}
 
 	/* compute the changes in weights */
-	compute_weight_changes(f, rm->isend, recv_coefs, &m->recv_common.eta0,
-			       m->recv_common.max_eta0, m->recv_common.log_W0,
+	compute_weight_changes(f, &m->common.eta0,
+			       m->common.max_eta0, m->common.log_W0,
 			       &rm->deta, &rm->scale, &rm->gamma, &rm->log_W);
 
 	assert(rm->gamma >= 0.0);
@@ -298,54 +292,54 @@ static void recv_model_set(struct recv_model *rm,
 	assert(array_count(&rm->active) == svector_count(&rm->deta));
 }
 
-static void recv_model_init(struct recv_model *rm, struct model *m,
-			    ssize_t isend)
+static void sender_init(struct recv_model_sender *rm, struct recv_model *m,
+			ssize_t isend)
 {
 	assert(rm);
 	assert(m);
-	assert(0 <= isend && isend < model_send_count(m));
+	assert(0 <= isend && isend < recv_model_send_count(m));
 
 	rm->model = m;
 	rm->isend = isend;
-	svector_init(&rm->deta, model_recv_count(m));
+	svector_init(&rm->deta, recv_model_count(m));
 	array_init(&rm->active, sizeof(ssize_t));
-	recv_model_clear(rm);
+	sender_clear(rm);
 }
 
-static void recv_model_deinit(struct recv_model *rm)
+static void sender_deinit(struct recv_model_sender *rm)
 {
 	assert(rm);
 	array_deinit(&rm->active);
 	svector_deinit(&rm->deta);
 }
 
-static struct recv_model *model_recv_model_raw(struct model *m, ssize_t isend)
+static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 {
 	assert(m);
-	assert(0 <= isend && isend < model_send_count(m));
+	assert(0 <= isend && isend < recv_model_send_count(m));
 
 	struct intmap_pos pos;
-	struct recv_model *rm;
+	struct recv_model_sender *rm;
 
-	if (!(rm = intmap_find(&m->recv_models, isend, &pos))) {
-		rm = intmap_insert(&m->recv_models, &pos, NULL);
-		recv_model_init(rm, m, isend);
+	if (!(rm = intmap_find(&m->senders, isend, &pos))) {
+		rm = intmap_insert(&m->senders, &pos, NULL);
+		sender_init(rm, m, isend);
 	}
 
 	assert(rm);
 	return rm;
 }
 
-static void process_recv_var_event(struct model *m, const struct frame *f,
+static void process_recv_var_event(struct recv_model *m, const struct frame *f,
 				   const struct frame_event *e)
 {
 	assert(m);
 	assert(e->type == RECV_VAR_EVENT);
 
 	const struct recv_var_event_meta *meta = &e->meta.recv_var;
-	struct recv_model *rm = model_recv_model_raw(m, meta->item.isend);
-	const struct recv_model_common *cm = &rm->model->recv_common;
-	const struct vector *coefs = model_recv_coefs(m);
+	struct recv_model_sender *rm = sender_raw(m, meta->item.isend);
+	const struct recv_model_common *cm = &rm->model->common;
+	const struct vector *coefs = recv_model_coefs(m);
 
 	//if (rm->isend == 119) {
 	//      printf("PROCESS\n");
@@ -396,7 +390,7 @@ static void process_recv_var_event(struct model *m, const struct frame *f,
 	if (!(fabs(dw) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
 		//fprintf(stderr, "."); fflush(stderr);
-		recv_model_set(rm, f, model_recv_coefs(m));
+		sender_set(rm, f, recv_model_coefs(m));
 	} else {
 		rm->gamma = gamma1;
 		rm->log_W = log_W1;
@@ -409,10 +403,10 @@ static void process_recv_var_event(struct model *m, const struct frame *f,
 static void handle_frame_event(void *udata, const struct frame_event *e,
 			       struct frame *f)
 {
-	struct model *m = udata;
+	struct recv_model *m = udata;
 	assert(m);
 	assert(e);
-	assert(f == model_frame(m));
+	assert(f == recv_model_frame(m));
 
 	switch (e->type) {
 	case RECV_VAR_EVENT:
@@ -423,32 +417,32 @@ static void handle_frame_event(void *udata, const struct frame_event *e,
 	}
 }
 
-static void model_clear(struct model *m)
+static void model_clear(struct recv_model *m)
 {
 	assert(m);
 
 	struct intmap_iter it;
 
-	INTMAP_FOREACH(it, &m->recv_models) {
-		recv_model_clear(INTMAP_VAL(it));
+	INTMAP_FOREACH(it, &m->senders) {
+		sender_clear(INTMAP_VAL(it));
 	}
 }
 
 static void handle_frame_clear(void *udata, const struct frame *f)
 {
-	struct model *m = udata;
+	struct recv_model *m = udata;
 	assert(m);
-	assert(f == model_frame(m));
+	assert(f == recv_model_frame(m));
 	model_clear(m);
 }
 
-void model_init(struct model *model, struct frame *f,
-		const struct vector *recv_coefs)
+void recv_model_init(struct recv_model *model, struct frame *f,
+		const struct vector *coefs)
 {
 	assert(model);
 	assert(f);
-	assert(!recv_coefs
-	       || design_recv_dim(frame_design(f)) == vector_dim(recv_coefs));
+	assert(!coefs
+	       || design_recv_dim(frame_design(f)) == vector_dim(coefs));
 	assert(design_recv_count(frame_design(f)) > 0);
 	assert(!design_loops(frame_design(f))
 	       || design_recv_count(frame_design(f)) > 1);
@@ -457,15 +451,15 @@ void model_init(struct model *model, struct frame *f,
 
 	model->frame = f;
 
-	if (recv_coefs) {
-		vector_init_copy(&model->recv_coefs, recv_coefs);
+	if (coefs) {
+		vector_init_copy(&model->coefs, coefs);
 	} else {
-		vector_init(&model->recv_coefs, design_recv_dim(d));
+		vector_init(&model->coefs, design_recv_dim(d));
 	}
 
-	recv_common_init(&model->recv_common, d, &model->recv_coefs);
-	intmap_init(&model->recv_models, sizeof(struct recv_model),
-		    alignof(struct recv_model));
+	common_init(&model->common, d, &model->coefs);
+	intmap_init(&model->senders, sizeof(struct recv_model_sender),
+		    alignof(struct recv_model_sender));
 	refcount_init(&model->refcount);
 
 	struct frame_handlers h;
@@ -476,7 +470,7 @@ void model_init(struct model *model, struct frame *f,
 
 }
 
-void model_deinit(struct model *model)
+void recv_model_deinit(struct recv_model *model)
 {
 	assert(model);
 
@@ -485,160 +479,191 @@ void model_deinit(struct model *model)
 	refcount_deinit(&model->refcount);
 
 	struct intmap_iter it;
-	INTMAP_FOREACH(it, &model->recv_models) {
-		recv_model_deinit(INTMAP_VAL(it));
+	INTMAP_FOREACH(it, &model->senders) {
+		sender_deinit(INTMAP_VAL(it));
 	}
 
-	intmap_deinit(&model->recv_models);
-	recv_common_deinit(&model->recv_common);
-	vector_deinit(&model->recv_coefs);
+	intmap_deinit(&model->senders);
+	common_deinit(&model->common);
+	vector_deinit(&model->coefs);
 }
 
-struct model *model_alloc(struct frame *f, const struct vector *coefs)
+struct recv_model *recv_model_alloc(struct frame *f, const struct vector *coefs)
 {
 	assert(f);
 	assert(coefs);
 
-	struct model *model = xcalloc(1, sizeof(*model));
-	model_init(model, f, coefs);
+	struct recv_model *model = xcalloc(1, sizeof(*model));
+	recv_model_init(model, f, coefs);
 	return model;
 }
 
-struct model *model_ref(struct model *model)
+struct recv_model *recv_model_ref(struct recv_model *model)
 {
 	assert(model);
 	refcount_get(&model->refcount);
 	return model;
 }
 
-void model_free(struct model *model)
+void recv_model_free(struct recv_model *model)
 {
 	if (model && refcount_put(&model->refcount, NULL)) {
 		refcount_get(&model->refcount);
-		model_deinit(model);
+		recv_model_deinit(model);
 		xfree(model);
 	}
 }
 
-const struct frame *model_frame(const struct model *model)
+const struct frame *recv_model_frame(const struct recv_model *model)
 {
 	assert(model);
 	return model->frame;
 }
 
-const struct design *model_design(const struct model *model)
+const struct design *recv_model_design(const struct recv_model *model)
 {
-	return frame_design(model_frame(model));
+	return frame_design(recv_model_frame(model));
 }
 
-const struct vector *model_recv_coefs(const struct model *model)
+const struct vector *recv_model_coefs(const struct recv_model *model)
 {
 	assert(model);
-	return &((struct model *)model)->recv_coefs;
+	return &((struct recv_model *)model)->coefs;
 }
 
-ssize_t model_send_count(const struct model *model)
+ssize_t recv_model_send_count(const struct recv_model *model)
 {
 	assert(model);
-	const struct design *design = model_design(model);
+	const struct design *design = recv_model_design(model);
 	return design_send_count(design);
 }
 
-ssize_t model_recv_count(const struct model *model)
+ssize_t recv_model_count(const struct recv_model *model)
 {
 	assert(model);
-	const struct design *design = model_design(model);
+	const struct design *design = recv_model_design(model);
 	return design_recv_count(design);
 }
 
-ssize_t model_recv_dim(const struct model *model)
+ssize_t recv_model_dim(const struct recv_model *model)
 {
 	assert(model);
-	const struct design *design = model_design(model);
+	const struct design *design = recv_model_design(model);
 	return design_recv_dim(design);
 }
 
-struct vector *model_recv_logweight0(const struct model *model)
-{
-	assert(model);
-	return &((struct model *)model)->recv_common.eta0;
-}
-
-struct vector *model_recv_probs0(const struct model *model)
-{
-	assert(model);
-	return &((struct model *)model)->recv_common.p0;
-}
-
-struct vector *model_recv_mean0(const struct model *model)
-{
-	assert(model);
-	return &((struct model *)model)->recv_common.mean0;
-}
-
-struct matrix *model_recv_imat0(const struct model *model)
-{
-	assert(model);
-	return &((struct model *)model)->recv_common.imat0;
-}
-
-void model_set_recv_coefs(struct model *m, const struct vector *recv_coefs)
+double recv_model_logsumwt0(const struct recv_model *m)
 {
 	assert(m);
-	assert(!recv_coefs
-	       || design_recv_dim(model_design(m)) == vector_dim(recv_coefs));
+	return m->common.log_W0 + m->common.max_eta0;
+}
 
-	if (recv_coefs) {
-		vector_assign_copy(&m->recv_coefs, recv_coefs);
+struct vector *recv_model_logwts0(const struct recv_model *model)
+{
+	assert(model);
+	return &((struct recv_model *)model)->common.eta0;
+}
+
+struct vector *recv_model_probs0(const struct recv_model *model)
+{
+	assert(model);
+	return &((struct recv_model *)model)->common.p0;
+}
+
+double recv_model_prob0(const struct recv_model *m, ssize_t jrecv)
+{
+	assert(m);
+	assert(0 <= jrecv && jrecv < recv_model_count(m));
+	
+	const struct vector *p0 = &m->common.p0;
+	return vector_item(p0, jrecv);
+}
+
+struct vector *recv_model_mean0(const struct recv_model *model)
+{
+	assert(model);
+	return &((struct recv_model *)model)->common.mean0;
+}
+
+struct matrix *recv_model_imat0(const struct recv_model *model)
+{
+	assert(model);
+	return &((struct recv_model *)model)->common.imat0;
+}
+
+void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs)
+{
+	assert(m);
+	assert(!coefs
+	       || design_recv_dim(recv_model_design(m)) == vector_dim(coefs));
+
+	if (coefs) {
+		vector_assign_copy(&m->coefs, coefs);
 	} else {
-		vector_fill(&m->recv_coefs, 0.0);
+		vector_fill(&m->coefs, 0.0);
 	}
 
-	const struct frame *f = model_frame(m);
+	const struct frame *f = recv_model_frame(m);
 	const struct design *d = frame_design(f);
 
-	recv_common_set(&m->recv_common, d, &m->recv_coefs);
+	common_set(&m->common, d, &m->coefs);
 
 	struct intmap_iter it;
 
-	INTMAP_FOREACH(it, &m->recv_models) {
-		recv_model_set(INTMAP_VAL(it), f, &m->recv_coefs);
+	INTMAP_FOREACH(it, &m->senders) {
+		sender_set(INTMAP_VAL(it), f, &m->coefs);
 	}
 
 }
 
-struct recv_model *model_recv_model(const struct model *m, ssize_t isend)
+struct recv_model_sender *model_recv_model(const struct recv_model *m, ssize_t isend)
 {
 	assert(m);
 
-	struct recv_model *rm = model_recv_model_raw((struct model *)m, isend);
+	struct recv_model_sender *rm = sender_raw((struct recv_model *)m, isend);
 	return rm;
 }
 
-ssize_t recv_model_count(const struct recv_model *rm)
+void recv_model_get_active(const struct recv_model *m, ssize_t isend, ssize_t **jrecv, ssize_t *n)
 {
-	assert(rm);
-	const struct model *model = rm->model;
-	const struct design *design = model_design(model);
-	return design_recv_count(design);
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));	
+	assert(jrecv);
+	assert(n);
+	
+	const struct recv_model_sender *rm = model_recv_model(m, isend);
+	*jrecv = array_to_ptr(&rm->active);
+	*n = array_count(&rm->active);
 }
 
-ssize_t recv_model_dim(const struct recv_model *rm)
+double recv_model_logsumwt(const struct recv_model *m, ssize_t isend)
 {
-	assert(rm);
-	const struct model *model = rm->model;
-	const struct design *design = model_design(model);
-	return design_recv_dim(design);
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));	
+	
+	const struct recv_model_sender *rm = model_recv_model(m, isend);
+	return rm->log_W + rm->scale;
+}
+
+double recv_model_invgrow(const struct recv_model *m, ssize_t isend)
+{
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));	
+	
+	const struct recv_model_sender *rm = model_recv_model(m, isend);
+	return rm->gamma;
 }
 
 /*
  * log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
-double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
+double recv_model_logprob(const struct recv_model *m, ssize_t isend, ssize_t jrecv)
 {
-	assert(rm);
-	assert(0 <= jrecv && jrecv < recv_model_count(rm));
-
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));	
+	assert(0 <= jrecv && jrecv < recv_model_count(m));	
+	
+	const struct recv_model_sender *rm = model_recv_model(m, isend);
 	/*
 	   double gamma = ctx->gamma;
 	   double p0 = vector_item(ctx->group->p0, jrecv);
@@ -650,7 +675,7 @@ double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 
 	double scale = rm->scale;
 	double log_W = rm->log_W;
-	double eta0 = vector_item(&rm->model->recv_common.eta0, jrecv);
+	double eta0 = vector_item(&rm->model->common.eta0, jrecv);
 	double deta = svector_item(&rm->deta, jrecv);
 	double eta = eta0 + deta;
 	double log_p = (eta - scale) - log_W;
@@ -661,27 +686,30 @@ double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv)
 	return log_p;
 }
 
-double recv_model_prob(const struct recv_model *rm, ssize_t jrecv)
+double recv_model_prob(const struct recv_model *m, ssize_t isend, ssize_t jrecv)
 {
-	assert(rm);
-	assert(0 <= jrecv && jrecv < recv_model_count(rm));
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));	
+	assert(0 <= jrecv && jrecv < recv_model_count(m));	
 
-	double lp = recv_model_logprob(rm, jrecv);
+	double lp = recv_model_logprob(m, isend, jrecv);
 	double p = exp(lp);
 	return p;
 }
 
 void recv_model_axpy_probs(double alpha,
-			   const struct recv_model *rm, struct vector *y)
+			   const struct recv_model *m, 
+			   ssize_t isend, struct vector *y)
 {
-	assert(rm);
+	assert(m);
+	assert(0 <= isend && isend < recv_model_send_count(m));
 	assert(y);
-	assert(vector_dim(y) == recv_model_count(rm));
+	assert(vector_dim(y) == recv_model_count(m));
 
-	ssize_t j, n = recv_model_count(rm);
+	ssize_t j, n = recv_model_count(m);
 
 	for (j = 0; j < n; j++) {
-		double p = recv_model_prob(rm, j);
+		double p = recv_model_prob(m, isend, j);
 		*vector_item_ptr(y, j) += alpha * p;
 	}
 }

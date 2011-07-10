@@ -10,7 +10,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
-#include "model.h"
+#include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
 
@@ -22,7 +22,7 @@ static struct messages messages;
 static struct design design;
 static struct frame frame;
 static struct vector coefs;
-static struct model model;
+static struct recv_model model;
 static struct recv_loglik recv_loglik;
 
 
@@ -61,14 +61,14 @@ static void setup(void) {
 		vector_set_item(&coefs, i, val);
 	}
 
-	model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
 static void teardown(void)
 {
 	recv_loglik_deinit(&recv_loglik);
-	model_deinit(&model);
+	recv_model_deinit(&model);
 	vector_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	

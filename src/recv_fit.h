@@ -7,8 +7,8 @@
 #include "linesearch.h"
 #include "matrix.h"
 #include "messages.h"
-#include "model.h"
 #include "recv_loglik.h"
+#include "recv_model.h"
 #include "vector.h"
 
 #define RECV_FIT_GTOL0		(1e-8)
@@ -50,7 +50,7 @@ struct recv_fit {
 
 	struct frame frame;
 	struct vector coefs;
-	struct model model;
+	struct recv_model model;
 	struct recv_loglik loglik;
 
 	/* null log-likelihood */

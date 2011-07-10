@@ -4,7 +4,7 @@
 #include "array.h"
 #include "frame.h"
 #include "messages.h"
-#include "model.h"
+#include "recv_model.h"
 #include "vector.h"
 
 /* I. Value
@@ -68,7 +68,7 @@ struct recv_sloglik_imat {
 };
 
 struct recv_sloglik {
-	struct model *model;
+	struct recv_model *model;
 	ssize_t isend;
 
 	ssize_t n_last, n;
@@ -88,17 +88,17 @@ struct recv_loglik_info {
 };
 
 struct recv_loglik {
-	struct model *model;
+	struct recv_model *model;
 	struct array slogliks;
 	struct recv_sloglik *last;
 	struct recv_loglik_info info;
 	bool info_cached;
 };
 
-void recv_loglik_init(struct recv_loglik *ll, struct model *m);
+void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m);
 void recv_loglik_deinit(struct recv_loglik *ll);
 
-struct recv_loglik *recv_loglik_alloc(struct model *m,
+struct recv_loglik *recv_loglik_alloc(struct recv_model *m,
 				      struct messages *messages);
 void recv_loglik_free(struct recv_loglik *ll);
 

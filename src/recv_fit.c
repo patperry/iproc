@@ -16,7 +16,7 @@ static void evaluate_loglik(struct recv_fit *fit)
 	frame_clear(&fit->frame);
 
 	// update coefs
-	model_set_recv_coefs(&fit->model, &fit->coefs);
+	recv_model_set_coefs(&fit->model, &fit->coefs);
 
 	// update loglik
 	recv_loglik_clear(&fit->loglik);
@@ -103,7 +103,7 @@ static void compute_constraints(struct recv_fit *fit)
 // assumes evaluate and preprocess have already been called
 static void compute_resid(struct recv_fit *fit)
 {
-	ssize_t dim = model_recv_dim(&fit->model);
+	ssize_t dim = recv_model_dim(&fit->model);
 	ssize_t ne = fit->ne;
 
 	assert(vector_dim(&fit->be) == ne);
@@ -132,7 +132,7 @@ static void compute_resid(struct recv_fit *fit)
 // assumes evaluate and preproeces have already been called
 static void compute_kkt(struct recv_fit *fit)
 {
-	ssize_t dim = model_recv_dim(&fit->model);
+	ssize_t dim = recv_model_dim(&fit->model);
 	ssize_t ne = fit->ne;
 
 	assert(matrix_nrow(&fit->kkt) == dim + ne);
@@ -185,7 +185,7 @@ static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 	compute_scale(fit);
 	compute_constraints(fit);
 
-	ssize_t dim = model_recv_dim(&fit->model);
+	ssize_t dim = recv_model_dim(&fit->model);
 	ssize_t ne = fit->ne;
 	struct vector primals = vector_slice(&fit->params, 0, dim);
 	struct vector duals = vector_slice(&fit->params, dim, ne);
@@ -207,7 +207,7 @@ static void preprocess(struct recv_fit *fit, const struct vector *coefs0)
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 {
-	ssize_t dim = model_recv_dim(&fit->model);
+	ssize_t dim = recv_model_dim(&fit->model);
 	ssize_t ne = fit->ne;
 
 	double stp0 = 1.0;
@@ -330,7 +330,7 @@ void recv_fit_init(struct recv_fit *fit,
 
 	frame_init(&fit->frame, design);
 	vector_init(&fit->coefs, dim);
-	model_init(&fit->model, &fit->frame, &fit->coefs);
+	recv_model_init(&fit->model, &fit->frame, &fit->coefs);
 	recv_loglik_init(&fit->loglik, &fit->model);
 	matrix_init(&fit->imat0, dim, dim);
 	vector_init(&fit->score0, dim);
@@ -364,7 +364,7 @@ void recv_fit_deinit(struct recv_fit *fit)
 	vector_deinit(&fit->score0);
 	matrix_deinit(&fit->imat0);
 	recv_loglik_deinit(&fit->loglik);
-	model_deinit(&fit->model);
+	recv_model_deinit(&fit->model);
 	vector_deinit(&fit->coefs);
 	frame_deinit(&fit->frame);
 }

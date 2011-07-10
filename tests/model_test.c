@@ -15,7 +15,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
-#include "model.h"
+#include "recv_model.h"
 
 
 static struct actors senders;
@@ -25,7 +25,7 @@ static struct messages messages;
 static struct design design;
 static struct frame frame;
 static struct vector coefs;
-static struct model model;
+static struct recv_model model;
 
 
 static void enron_setup_fixture(void **state)
@@ -71,12 +71,12 @@ static void basic_setup(void **state)
 		vector_set_item(&coefs, i, val);
 	}
 	
-	model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 }
 
 static void teardown(void **state)
 {
-	model_deinit(&model);
+	recv_model_deinit(&model);
 	vector_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
@@ -115,13 +115,12 @@ static void hard_setup(void **state)
 		vector_set_item(&coefs, i, val);
 	}
 	
-	model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 }
 
 
 static void test_probs(void **state)
 {
-	struct recv_model *rm;
 	struct vector eta, probs, logprobs, y;
 	struct messages_iter it;
 	const struct message *msg = NULL;
@@ -141,6 +140,7 @@ static void test_probs(void **state)
 	ssize_t minprec = DBL_MANT_DIG;
 	
 	MESSAGES_FOREACH(it, &messages) {
+		// fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
 		frame_advance_to(&frame, t);			
@@ -149,8 +149,6 @@ static void test_probs(void **state)
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			rm = model_recv_model(&model, isend);
-			
 			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
 			
 			if (!design_loops(&design))
@@ -166,13 +164,14 @@ static void test_probs(void **state)
 			vector_exp(&probs);
 			
 			vector_fill(&y, y0);
-			recv_model_axpy_probs(alpha, rm, &y);
+			recv_model_axpy_probs(alpha, &model, isend, &y);
 			
-			assert(double_eqrel(log_W + max_eta, rm->log_W + rm->scale) >= 36);
+			assert(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)) >= 36);
+			assert_in_range(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = vector_item(&logprobs, jrecv);				
-				double lp1 = recv_model_logprob(rm, jrecv);
+				double lp1 = recv_model_logprob(&model, isend, jrecv);
 
 				if (fabs(lp0) >= 5e-4) {
 					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
@@ -185,7 +184,7 @@ static void test_probs(void **state)
 				}
 
 				double p0 = vector_item(&probs, jrecv);				
-				double p1 = recv_model_prob(rm, jrecv);
+				double p1 = recv_model_prob(&model, isend, jrecv);
 
 				if (fabs(p0) >= 5e-4) {
 					minprec = MIN(minprec, double_eqrel(p0, p1));

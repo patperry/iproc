@@ -15,7 +15,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
-#include "model.h"
+#include "recv_model.h"
 #include "recv_loglik.h"
 
 
@@ -26,7 +26,7 @@ static struct messages messages;
 static struct design design;
 static struct frame frame;
 static struct vector coefs;
-static struct model model;
+static struct recv_model model;
 static struct recv_loglik recv_loglik;
 
 
@@ -73,7 +73,7 @@ static void basic_setup(void **state)
 		vector_set_item(&coefs, i, val);
 	}
 	
-	model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
@@ -106,14 +106,14 @@ static void hard_setup(void **state)
 			      i % 7 == 6 ? +10 : 0.0);
 		vector_set_item(&coefs, i, val);
 	}
-	model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
 static void teardown(void **state)
 {
 	recv_loglik_deinit(&recv_loglik);
-	model_deinit(&model);
+	recv_model_deinit(&model);
 	vector_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
@@ -122,7 +122,6 @@ static void teardown(void **state)
 
 static void test_dev(void **state)
 {
-	struct recv_model *rm;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -150,11 +149,9 @@ static void test_dev(void **state)
 			if (n > 1000)
 				goto out;
 			
-			rm = model_recv_model(&model, msg->from);
-			
 			last_dev0 = 0.0;
 			for (i = 0; i < msg->nto; i++) {
-				last_dev0 += -2 * recv_model_logprob(rm, msg->to[i]);
+				last_dev0 += -2 * recv_model_logprob(&model, msg->from, msg->to[i]);
 			}
 			
 			last_dev1 = recv_loglik_last_dev(&recv_loglik);
@@ -175,7 +172,6 @@ out:
 
 static void test_mean(void **state)
 {
-	struct recv_model *rm;
 	struct vector probs, mean0, mean1, avg_mean0, avg_mean1, diff;
 	struct messages_iter it;
 	const struct message *msg = NULL;
@@ -208,10 +204,9 @@ static void test_mean(void **state)
 				goto out;
 
 			isend = msg->from;
-			rm = model_recv_model(&model, isend);
 			
 			vector_fill(&probs, 0.0);
-			recv_model_axpy_probs(1.0, rm, &probs);
+			recv_model_axpy_probs(1.0, &model, isend, &probs);
 			
 			frame_recv_mul(msg->nto, TRANS_TRANS, &frame, isend, &probs,
 				       0.0, &mean0);
@@ -261,7 +256,6 @@ out:
 
 static void test_score(void **state)
 {
-	struct recv_model *rm;
 	struct vector score0, score1, avg_score0, avg_score1, diff;
 	struct svector nrecv;
 	struct messages_iter it;
@@ -294,7 +288,6 @@ static void test_score(void **state)
 				goto out;
 			
 			isend = msg->from;
-			rm = model_recv_model(&model, isend);
 			
 			svector_clear(&nrecv);
 			for (ito = 0; ito < msg->nto; ito++) {
@@ -346,7 +339,6 @@ out:
 
 static void test_imat(void **state)
 {
-	struct recv_model *rm;
 	struct vector mean, y;
 	struct svector e_j;
 	struct matrix imat0, imat1, diff, avg_imat0, avg_imat1;
@@ -383,7 +375,6 @@ static void test_imat(void **state)
 				goto out;
 
 			isend = msg->from;
-			rm = model_recv_model(&model, isend);
 			
 			vector_fill(&mean, 0.0);
 			recv_loglik_axpy_last_mean(1.0 / msg->nto, &recv_loglik, &mean);
@@ -392,7 +383,7 @@ static void test_imat(void **state)
 			
 			matrix_fill(&imat0, 0.0);
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
-				double p = recv_model_prob(rm, jrecv);
+				double p = recv_model_prob(&model, isend, jrecv);
 				vector_assign_copy(&y, &mean);				
 				svector_set_basis(&e_j, jrecv);
 				

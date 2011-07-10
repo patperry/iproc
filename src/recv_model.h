@@ -126,8 +126,8 @@ struct recv_model_common {
 #endif
 };
 
-struct recv_model {
-	struct model *model;
+struct recv_model_sender {
+	struct recv_model *model;
 	ssize_t isend;
 	double gamma;
 	double log_W;		// log_W - scale
@@ -136,55 +136,48 @@ struct recv_model {
 	struct array active;
 };
 
-struct model {
+struct recv_model {
 	struct frame *frame;
-	struct vector recv_coefs;
-	struct recv_model_common recv_common;
-	struct intmap recv_models;
+	struct vector coefs;
+	struct recv_model_common common;
+	struct intmap senders;
 	struct refcount refcount;
 };
 
-void model_init(struct model *model,
+void recv_model_init(struct recv_model *model,
 		struct frame *f, const struct vector *recv_coefs);
-void model_deinit(struct model *model);
-struct model *model_alloc(struct frame *f, const struct vector *recv_coefs);
-struct model *model_ref(struct model *model);
-void model_free(struct model *model);
+void recv_model_deinit(struct recv_model *model);
+struct recv_model *recv_model_alloc(struct frame *f, const struct vector *recv_coefs);
+struct recv_model *recv_model_ref(struct recv_model *model);
+void recv_model_free(struct recv_model *model);
 
-const struct frame *model_frame(const struct model *model);
-const struct design *model_design(const struct model *model);
-const struct vector *model_recv_coefs(const struct model *model);
-ssize_t model_send_count(const struct model *model);
-ssize_t model_recv_count(const struct model *model);
-ssize_t model_recv_dim(const struct model *model);
+const struct frame *recv_model_frame(const struct recv_model *model);
+const struct design *recv_model_design(const struct recv_model *model);
+const struct vector *recv_model_coefs(const struct recv_model *model);
+ssize_t recv_model_send_count(const struct recv_model *model);
+ssize_t recv_model_count(const struct recv_model *model);
+ssize_t recv_model_dim(const struct recv_model *model);
 
-void model_set_recv_coefs(struct model *m, const struct vector *recv_coefs);
-
-struct recv_model *model_recv_model(const struct model *m, ssize_t isend);
-ssize_t recv_model_count(const struct recv_model *rm);
-ssize_t recv_model_dim(const struct recv_model *rm);
+void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-static inline double model_recv_prob0(const struct model *m,
-				      ssize_t jrecv);
+double recv_model_logsumwt0(const struct recv_model *m);
+struct vector *recv_model_logwts0(const struct recv_model *m);
+struct vector *recv_model_probs0(const struct recv_model *m);
 
-struct vector *model_recv_logweight0(const struct model *m);
-struct vector *model_recv_probs0(const struct model *m);
-struct vector *model_recv_mean0(const struct model *m);
-struct matrix *model_recv_imat0(const struct model *m);
+double recv_model_prob0(const struct recv_model *m, ssize_t jrecv);
+struct vector *recv_model_mean0(const struct recv_model *m);
+struct matrix *recv_model_imat0(const struct recv_model *m);
 
-double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
-double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
-void recv_model_axpy_probs(double alpha, const struct recv_model *rm,
+/* updated values */
+double recv_model_logsumwt(const struct recv_model *m, ssize_t isend);
+double recv_model_logprob(const struct recv_model *m, ssize_t isend, ssize_t jrecv);
+double recv_model_prob(const struct recv_model *m, ssize_t isend, ssize_t jrecv);
+void recv_model_axpy_probs(double alpha, const struct recv_model *m, ssize_t isend,
 			   struct vector *y);
 
-static inline double model_recv_prob0(const struct model *m, ssize_t jrecv)
-{
-	assert(m);
-	assert(0 <= jrecv && jrecv < model_recv_count(m));
+void recv_model_get_active(const struct recv_model *m, ssize_t isend, ssize_t **jrecv, ssize_t *n);
+double recv_model_invgrow(const struct recv_model *m, ssize_t isend);
 
-	const struct vector *p0 = &m->recv_common.p0;
-	return vector_item(p0, jrecv);
-}
 
 #endif /* _IPROC_MODEL_H */
