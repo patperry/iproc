@@ -28,7 +28,7 @@ void cohort_deinit(struct cohort *c);
 
 /* traits */
 static inline ssize_t cohort_dim(const struct cohort *c);
-const struct vector *cohort_traits(const struct cohort *c);
+static inline const struct vector *cohort_traits(const struct cohort *c);
 
 /* size/query */
 static inline ssize_t cohort_count(const struct cohort *c);
@@ -55,5 +55,12 @@ ssize_t cohort_count(const struct cohort *c)
 	assert(c);
 	return intset_count(&c->members);
 }
+
+const struct vector *cohort_traits(const struct cohort *c)
+{
+	assert(c);
+	return &c->traits;
+}
+
 
 #endif /* _COHORT */

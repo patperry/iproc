@@ -37,12 +37,6 @@ void cohort_deinit(struct cohort *c)
 	vector_deinit(&c->traits);
 }
 
-const struct vector *cohort_traits(const struct cohort *c)
-{
-	assert(c);
-	return &c->traits;
-}
-
 bool cohort_contains(const struct cohort *c, ssize_t id)
 {
 	assert(c);
