@@ -68,7 +68,7 @@ SEXP Riproc_matrix_new_copy(struct matrix * matrix)
 
 	PROTECT(Rmatrix = allocMatrix(REALSXP, nrow, ncol));
 	struct matrix view = Riproc_matrix_view_sexp(Rmatrix);
-	matrix_assign_copy(&view, matrix);
+	matrix_assign_copy(&view, TRANS_NOTRANS, matrix);
 	UNPROTECT(1);
 	return Rmatrix;
 }

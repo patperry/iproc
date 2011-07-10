@@ -6,7 +6,7 @@
 #include <R_ext/Rdynload.h>
 #include <R_ext/Utils.h>
 
-#include "fit.h"
+#include "recv_fit.h"
 #include "bfgs.h"
 #include "r-messages.h"
 #include "r-design.h"
