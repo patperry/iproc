@@ -111,8 +111,7 @@
  * all senders in the same group share the same values of
  * w[0,i,j], W[0,i,j], p[0,i,j], and xbar[0,i].
  */
-struct cohort_model {
-	ssize_t isend0;		// canonical sender
+struct recv_model_common {
 	double max_eta0;
 	double log_W0;		// log_W0 - max_eta0
 	struct vector eta0;
@@ -130,7 +129,6 @@ struct cohort_model {
 struct recv_model {
 	struct model *model;
 	ssize_t isend;
-	struct cohort_model *cohort;
 	double gamma;
 	double log_W;		// log_W - scale
 	double scale;
@@ -141,7 +139,7 @@ struct recv_model {
 struct model {
 	struct frame *frame;
 	struct vector recv_coefs;
-	struct intmap cohort_models;
+	struct recv_model_common recv_common;
 	struct intmap recv_models;
 	struct refcount refcount;
 };
@@ -167,26 +165,25 @@ ssize_t recv_model_count(const struct recv_model *rm);
 ssize_t recv_model_dim(const struct recv_model *rm);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-static inline double recv_model_prob0(const struct recv_model *rm,
+static inline double model_recv_prob0(const struct model *m,
 				      ssize_t jrecv);
 
-struct vector *recv_model_logweight0(const struct recv_model *rm);
-struct vector *recv_model_probs0(const struct recv_model *rm);
-struct vector *recv_model_mean0(const struct recv_model *rm);
-struct matrix *recv_model_imat0(const struct recv_model *rm);
+struct vector *model_recv_logweight0(const struct model *m);
+struct vector *model_recv_probs0(const struct model *m);
+struct vector *model_recv_mean0(const struct model *m);
+struct matrix *model_recv_imat0(const struct model *m);
 
 double recv_model_logprob(const struct recv_model *rm, ssize_t jrecv);
 double recv_model_prob(const struct recv_model *rm, ssize_t jrecv);
 void recv_model_axpy_probs(double alpha, const struct recv_model *rm,
 			   struct vector *y);
 
-static inline double recv_model_prob0(const struct recv_model *rm,
-				      ssize_t jrecv)
+static inline double model_recv_prob0(const struct model *m, ssize_t jrecv)
 {
-	assert(rm);
-	assert(0 <= jrecv && jrecv < recv_model_count(rm));
+	assert(m);
+	assert(0 <= jrecv && jrecv < model_recv_count(m));
 
-	const struct vector *p0 = &rm->cohort->p0;
+	const struct vector *p0 = &m->recv_common.p0;
 	return vector_item(p0, jrecv);
 }
 
