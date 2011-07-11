@@ -62,5 +62,4 @@ const struct vector *cohort_traits(const struct cohort *c)
 	return &c->traits;
 }
 
-
 #endif /* _COHORT */

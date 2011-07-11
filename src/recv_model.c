@@ -147,8 +147,7 @@ static void common_set(struct recv_model_common *cm,
 	vector_exp(&cm->p0);
 
 	/* mean0 */
-	design_recv_mul0(1.0, TRANS_TRANS, design, &cm->p0, 0.0,
-			 &cm->mean0);
+	design_recv_mul0(1.0, TRANS_TRANS, design, &cm->p0, 0.0, &cm->mean0);
 
 	/* imat0 */
 	struct vector y;
@@ -163,8 +162,7 @@ static void common_set(struct recv_model_common *cm,
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
 		svector_set_basis(&ej, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, &ej, -1.0,
-				  &y);
+		design_recv_muls0(1.0, TRANS_TRANS, design, &ej, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 
 		matrix_update1(&cm->imat0, pj, &y, &y);
@@ -254,8 +252,7 @@ static void sender_clear(const struct recv_model *m,
 static void sender_set(const struct recv_model *m,
 		       struct recv_model_sender *send,
 		       ssize_t isend,
-		       const struct frame *f,
-		       const struct vector *recv_coefs)
+		       const struct frame *f, const struct vector *recv_coefs)
 {
 	sender_clear(m, send, isend);
 
@@ -266,8 +263,7 @@ static void sender_set(const struct recv_model *m,
 	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
 
 	/* compute the eta values */
-	frame_recv_dmul(1.0, TRANS_NOTRANS, f, isend, &beta, 0.0,
-			&send->deta);
+	frame_recv_dmul(1.0, TRANS_NOTRANS, f, isend, &beta, 0.0, &send->deta);
 	if (!has_loops) {
 		svector_set_item(&send->deta, isend, -INFINITY);
 	}
@@ -275,7 +271,8 @@ static void sender_set(const struct recv_model *m,
 	/* compute the changes in weights */
 	compute_weight_changes(f, &m->common.eta0,
 			       m->common.max_eta0, m->common.log_W0,
-			       &send->deta, &send->scale, &send->gamma, &send->log_W);
+			       &send->deta, &send->scale, &send->gamma,
+			       &send->log_W);
 
 	assert(send->gamma >= 0.0);
 	assert(isfinite(send->log_W));
@@ -294,8 +291,7 @@ static void sender_set(const struct recv_model *m,
 }
 
 static void sender_init(const struct recv_model *m,
-			struct recv_model_sender *send, 
-			ssize_t isend)
+			struct recv_model_sender *send, ssize_t isend)
 {
 	assert(send);
 	assert(m);
@@ -427,7 +423,7 @@ static void model_clear(struct recv_model *m)
 	INTMAP_FOREACH(it, &m->senders) {
 		ssize_t isend = INTMAP_KEY(it);
 		struct recv_model_sender *send = INTMAP_VAL(it);
-		
+
 		sender_clear(m, send, isend);
 	}
 }
@@ -441,12 +437,11 @@ static void handle_frame_clear(void *udata, const struct frame *f)
 }
 
 void recv_model_init(struct recv_model *model, struct frame *f,
-		const struct vector *coefs)
+		     const struct vector *coefs)
 {
 	assert(model);
 	assert(f);
-	assert(!coefs
-	       || design_recv_dim(frame_design(f)) == vector_dim(coefs));
+	assert(!coefs || design_recv_dim(frame_design(f)) == vector_dim(coefs));
 	assert(design_recv_count(frame_design(f)) > 0);
 	assert(!design_loops(frame_design(f))
 	       || design_recv_count(frame_design(f)) > 1);
@@ -549,7 +544,7 @@ double recv_model_prob0(const struct recv_model *m, ssize_t jrecv)
 {
 	assert(m);
 	assert(0 <= jrecv && jrecv < recv_model_count(m));
-	
+
 	const struct vector *p0 = &m->common.p0;
 	return vector_item(p0, jrecv);
 }
@@ -593,21 +588,24 @@ void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs)
 
 }
 
-struct recv_model_sender *recv_model_send(const struct recv_model *m, ssize_t isend)
+struct recv_model_sender *recv_model_send(const struct recv_model *m,
+					  ssize_t isend)
 {
 	assert(m);
 
-	struct recv_model_sender *rm = sender_raw((struct recv_model *)m, isend);
+	struct recv_model_sender *rm =
+	    sender_raw((struct recv_model *)m, isend);
 	return rm;
 }
 
-void recv_model_get_active(const struct recv_model *m, ssize_t isend, ssize_t **jrecv, ssize_t *n)
+void recv_model_get_active(const struct recv_model *m, ssize_t isend,
+			   ssize_t **jrecv, ssize_t *n)
 {
 	assert(m);
-	assert(0 <= isend && isend < recv_model_send_count(m));	
+	assert(0 <= isend && isend < recv_model_send_count(m));
 	assert(jrecv);
 	assert(n);
-	
+
 	const struct recv_model_sender *rm = recv_model_send(m, isend);
 	*jrecv = array_to_ptr(&rm->active);
 	*n = array_count(&rm->active);
@@ -616,8 +614,8 @@ void recv_model_get_active(const struct recv_model *m, ssize_t isend, ssize_t **
 double recv_model_logsumwt(const struct recv_model *m, ssize_t isend)
 {
 	assert(m);
-	assert(0 <= isend && isend < recv_model_send_count(m));	
-	
+	assert(0 <= isend && isend < recv_model_send_count(m));
+
 	const struct recv_model_sender *rm = recv_model_send(m, isend);
 	return rm->log_W + rm->scale;
 }
@@ -625,8 +623,8 @@ double recv_model_logsumwt(const struct recv_model *m, ssize_t isend)
 double recv_model_invgrow(const struct recv_model *m, ssize_t isend)
 {
 	assert(m);
-	assert(0 <= isend && isend < recv_model_send_count(m));	
-	
+	assert(0 <= isend && isend < recv_model_send_count(m));
+
 	const struct recv_model_sender *rm = recv_model_send(m, isend);
 	return rm->gamma;
 }
@@ -634,12 +632,13 @@ double recv_model_invgrow(const struct recv_model *m, ssize_t isend)
 /*
  * log(p[t,i,j]) = log(gamma) + log(p[0,i,j]) + deta[t,i,j].
  */
-double recv_model_logprob(const struct recv_model *m, ssize_t isend, ssize_t jrecv)
+double recv_model_logprob(const struct recv_model *m, ssize_t isend,
+			  ssize_t jrecv)
 {
 	assert(m);
-	assert(0 <= isend && isend < recv_model_send_count(m));	
-	assert(0 <= jrecv && jrecv < recv_model_count(m));	
-	
+	assert(0 <= isend && isend < recv_model_send_count(m));
+	assert(0 <= jrecv && jrecv < recv_model_count(m));
+
 	const struct recv_model_sender *send = recv_model_send(m, isend);
 	/*
 	   double gamma = ctx->gamma;
@@ -666,8 +665,8 @@ double recv_model_logprob(const struct recv_model *m, ssize_t isend, ssize_t jre
 double recv_model_prob(const struct recv_model *m, ssize_t isend, ssize_t jrecv)
 {
 	assert(m);
-	assert(0 <= isend && isend < recv_model_send_count(m));	
-	assert(0 <= jrecv && jrecv < recv_model_count(m));	
+	assert(0 <= isend && isend < recv_model_send_count(m));
+	assert(0 <= jrecv && jrecv < recv_model_count(m));
 
 	double lp = recv_model_logprob(m, isend, jrecv);
 	double p = exp(lp);
@@ -675,7 +674,7 @@ double recv_model_prob(const struct recv_model *m, ssize_t isend, ssize_t jrecv)
 }
 
 void recv_model_axpy_probs(double alpha,
-			   const struct recv_model *m, 
+			   const struct recv_model *m,
 			   ssize_t isend, struct vector *y)
 {
 	assert(m);

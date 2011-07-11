@@ -142,7 +142,7 @@ struct recv_model {
 };
 
 void recv_model_init(struct recv_model *model,
-		struct frame *f, const struct vector *recv_coefs);
+		     struct frame *f, const struct vector *coefs);
 void recv_model_deinit(struct recv_model *model);
 
 const struct frame *recv_model_frame(const struct recv_model *model);
@@ -165,13 +165,15 @@ struct matrix *recv_model_imat0(const struct recv_model *m);
 
 /* updated values */
 double recv_model_logsumwt(const struct recv_model *m, ssize_t isend);
-double recv_model_logprob(const struct recv_model *m, ssize_t isend, ssize_t jrecv);
-double recv_model_prob(const struct recv_model *m, ssize_t isend, ssize_t jrecv);
-void recv_model_axpy_probs(double alpha, const struct recv_model *m, ssize_t isend,
-			   struct vector *y);
+double recv_model_logprob(const struct recv_model *m, ssize_t isend,
+			  ssize_t jrecv);
+double recv_model_prob(const struct recv_model *m, ssize_t isend,
+		       ssize_t jrecv);
+void recv_model_axpy_probs(double alpha, const struct recv_model *m,
+			   ssize_t isend, struct vector *y);
 
-void recv_model_get_active(const struct recv_model *m, ssize_t isend, ssize_t **jrecv, ssize_t *n);
+void recv_model_get_active(const struct recv_model *m, ssize_t isend,
+			   ssize_t **jrecv, ssize_t *n);
 double recv_model_invgrow(const struct recv_model *m, ssize_t isend);
-
 
 #endif /* _IPROC_MODEL_H */

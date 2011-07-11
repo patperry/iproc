@@ -20,8 +20,8 @@ struct actors {
 	ssize_t dim;
 	struct array actors;
 	struct array cohorts;
-	struct intmap trait_hashes; /* (hash(x_i), { i_1, ... i_k }) */
-	
+	struct intmap trait_hashes;	/* (hash(x_i), { i_1, ... i_k }) */
+
 	/* deprecated */
 	struct refcount refcount;
 };
@@ -48,9 +48,12 @@ static inline ssize_t actors_dim(const struct actors *a);
 /* makes a copy of traits */
 void actors_add(struct actors *a, const struct vector *traits);
 
-static inline const struct actor *actors_item(const struct actors *a, ssize_t actor_id);
-static inline const struct vector *actors_traits(const struct actors *a, ssize_t actor_id);
-static inline const struct cohort *actors_cohort(const struct actors *a, ssize_t cohort_id);
+static inline const struct actor *actors_item(const struct actors *a,
+					      ssize_t actor_id);
+static inline const struct vector *actors_traits(const struct actors *a,
+						 ssize_t actor_id);
+static inline const struct cohort *actors_cohort(const struct actors *a,
+						 ssize_t cohort_id);
 
 void actors_mul(double alpha,
 		enum trans_op trans,
@@ -98,7 +101,7 @@ const struct vector *actors_traits(const struct actors *a, ssize_t actor_id)
 {
 	assert(a);
 	assert(0 <= actor_id && actor_id < actors_count(a));
-	
+
 	const struct actor *actor = actors_item(a, actor_id);
 	const struct cohort *cohort = actors_cohort(a, actor->cohort);
 	return cohort_traits(cohort);
@@ -112,7 +115,5 @@ const struct cohort *actors_cohort(const struct actors *a, ssize_t cohort_id)
 	//const struct cohort *base = array_to_ptr(&a->cohorts);
 	//return base + cohort_id;
 }
-
-
 
 #endif /* _ACTORS_H */

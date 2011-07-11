@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include "actors.h"
 
-
 void actors_init(struct actors *actors, ssize_t dim)
 {
 	assert(actors);
@@ -12,7 +11,8 @@ void actors_init(struct actors *actors, ssize_t dim)
 
 	array_init(&actors->actors, sizeof(struct actor));
 	array_init(&actors->cohorts, sizeof(struct cohort));
-	intmap_init(&actors->trait_hashes, sizeof(struct intset), alignof(struct intset));
+	intmap_init(&actors->trait_hashes, sizeof(struct intset),
+		    alignof(struct intset));
 
 	refcount_init(&actors->refcount);
 	actors->dim = dim;
@@ -91,7 +91,7 @@ static void trait_hashes_clear(struct intmap *trait_hashes)
 
 void actors_clear(struct actors *a)
 {
-	array_clear(&a->actors);	
+	array_clear(&a->actors);
 	cohorts_clear(&a->cohorts);
 	trait_hashes_clear(&a->trait_hashes);
 }
@@ -146,12 +146,12 @@ void actors_add(struct actors *actors, const struct vector *traits)
 	int32_t hash = vector_hash(traits);
 	struct intmap_pos pos;
 	struct intset *set = intmap_find(&actors->trait_hashes, hash, &pos);
-	
+
 	if (!set) {
 		set = intmap_insert(&actors->trait_hashes, &pos, NULL);
 		intset_init(set);
 	}
-	
+
 	struct intset_iter it;
 	INTSET_FOREACH(it, set) {
 		cid = INTSET_KEY(it);
@@ -161,7 +161,7 @@ void actors_add(struct actors *actors, const struct vector *traits)
 			goto found;
 		}
 	}
-	
+
 	/* cohort not found; create a new one */
 	cid = array_count(&actors->cohorts);
 	c = array_add(&actors->cohorts, NULL);
@@ -172,7 +172,6 @@ found:
 	a = array_add(&actors->actors, NULL);
 	a->cohort = cid;
 }
-
 
 void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		const struct vector *x, double beta, struct vector *y)
