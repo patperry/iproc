@@ -188,6 +188,10 @@
 		22D4788C13AC4C2400FF46CD /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D6FA7C135D02A70082D129 /* sparsetable.h */; };
+		22DB0A8113CB68B5004149CE /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22DB0A7F13CB68B5004149CE /* strata.c */; };
+		22DB0A8213CB68B5004149CE /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22DB0A7F13CB68B5004149CE /* strata.c */; };
+		22DB0A8313CB68B5004149CE /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 22DB0A8013CB68B5004149CE /* strata.h */; };
+		22DB0A8413CB68B5004149CE /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 22DB0A8013CB68B5004149CE /* strata.h */; };
 		22EA3327136B29CE00C5627F /* design_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3325136B29AE00C5627F /* design_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		22EA332E136B29E700C5627F /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22EA332F136B29E700C5627F /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -622,6 +626,8 @@
 		22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik_test.c; path = tests/recv_loglik_test.c; sourceTree = "<group>"; };
 		22D6FA7B135D02A70082D129 /* sparsetable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sparsetable.c; path = src/core/sparsetable.c; sourceTree = "<group>"; };
 		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
+		22DB0A7F13CB68B5004149CE /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = src/strata.c; sourceTree = "<group>"; };
+		22DB0A8013CB68B5004149CE /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = src/strata.h; sourceTree = "<group>"; };
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EA3325136B29AE00C5627F /* design_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_test.c; path = tests/design_test.c; sourceTree = "<group>"; };
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
@@ -880,6 +886,8 @@
 				22286F0D136F36340015CC42 /* rv-nrecv.c */,
 				223BFE4C13AAA40100835B8F /* sv-irecv.c */,
 				223BFE4913AAA2EC00835B8F /* sv-nrecv.c */,
+				22DB0A7F13CB68B5004149CE /* strata.c */,
+				22DB0A8013CB68B5004149CE /* strata.h */,
 				223BFE4613AA98F200835B8F /* vars.h */,
 			);
 			name = IProc;
@@ -1061,6 +1069,7 @@
 				228160FB13B0F60C00B38330 /* bfgs.h in Headers */,
 				22EFB31913B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31D13B3AE18007755EA /* linalg.h in Headers */,
+				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1131,6 +1140,7 @@
 				228160FA13B0F60C00B38330 /* bfgs.h in Headers */,
 				22EFB31813B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31C13B3AE18007755EA /* linalg.h in Headers */,
+				22DB0A8313CB68B5004149CE /* strata.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1546,6 +1556,7 @@
 				228160DE13B00EF200B38330 /* dcstep.c in Sources */,
 				228160F913B0F60C00B38330 /* bfgs.c in Sources */,
 				22EFB31B13B3AE18007755EA /* linalg.c in Sources */,
+				22DB0A8213CB68B5004149CE /* strata.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1604,6 +1615,7 @@
 				228160DD13B00EF200B38330 /* dcstep.c in Sources */,
 				228160F813B0F60C00B38330 /* bfgs.c in Sources */,
 				22EFB31A13B3AE18007755EA /* linalg.c in Sources */,
+				22DB0A8113CB68B5004149CE /* strata.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

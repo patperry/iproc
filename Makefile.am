@@ -33,6 +33,8 @@ libiproc_la_SOURCES = \
 	src/recv_model.h \
 	src/rv-irecv.c \
 	src/rv-nrecv.c \
+	src/strata.c \
+	src/strata.h \
 	src/sv-irecv.c \
 	src/sv-nrecv.c \
 	src/vars.h

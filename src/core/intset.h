@@ -30,6 +30,7 @@ void intset_deinit(struct intset *s);
 
 /* properties */
 static inline ssize_t intset_count(const struct intset *s);
+static inline intptr_t *intset_items(const struct intset *s);
 
 /* methods */
 bool intset_add(struct intset *s, intptr_t key);
@@ -53,6 +54,12 @@ ssize_t intset_count(const struct intset *s)
 {
 	assert(s);
 	return array_count(&s->keys);
+}
+
+static inline intptr_t *intset_items(const struct intset *s)
+{
+	assert(s);
+	return array_to_ptr(&s->keys);
 }
 
 #endif /* _INTSET_H */
