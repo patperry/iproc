@@ -47,7 +47,6 @@
 		222FC40213607B4200E64FC9 /* hashset_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 222FC3F31360755C00E64FC9 /* hashset_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		222FC40713607B5800E64FC9 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		222FC41113607C7900E64FC9 /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597405133D0AFB0022B52E /* actors.c */; };
-		222FC41313607C7900E64FC9 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
 		222FC41613607C7900E64FC9 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		222FC41813607C7900E64FC9 /* recv_fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740A133D0AFB0022B52E /* recv_fit.c */; };
 		222FC41A13607C7900E64FC9 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740C133D0AFB0022B52E /* history.c */; };
@@ -152,8 +151,6 @@
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
 		22A88EBC135E6B6A006FE604 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
 		22A88EBD135E6B6A006FE604 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A88EBB135E6B6A006FE604 /* hashset.h */; };
-		22C67AA61354FCC8006A81E8 /* cohort.c in Sources */ = {isa = PBXBuildFile; fileRef = 22C67AA41354FCC6006A81E8 /* cohort.c */; };
-		22C67AA71354FCC8006A81E8 /* cohort.h in Headers */ = {isa = PBXBuildFile; fileRef = 22C67AA51354FCC7006A81E8 /* cohort.h */; };
 		22D2DD6B136929100048244C /* yajl_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD57136929100048244C /* yajl_alloc.h */; };
 		22D2DD6D136929100048244C /* yajl_buf.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD59136929100048244C /* yajl_buf.h */; };
 		22D2DD6E136929100048244C /* yajl_bytestack.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD5A136929100048244C /* yajl_bytestack.h */; };
@@ -592,8 +589,6 @@
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
 		22A88EBA135E6B6A006FE604 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
 		22A88EBB135E6B6A006FE604 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
-		22C67AA41354FCC6006A81E8 /* cohort.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cohort.c; path = src/cohort.c; sourceTree = "<group>"; };
-		22C67AA51354FCC7006A81E8 /* cohort.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cohort.h; path = src/cohort.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D2DD56136929100048244C /* yajl_alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = yajl_alloc.c; path = lib/yajl/yajl_alloc.c; sourceTree = "<group>"; };
 		22D2DD57136929100048244C /* yajl_alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_alloc.h; path = lib/yajl/yajl_alloc.h; sourceTree = "<group>"; };
@@ -864,8 +859,6 @@
 			children = (
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
-				22C67AA41354FCC6006A81E8 /* cohort.c */,
-				22C67AA51354FCC7006A81E8 /* cohort.h */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
 				22597418133D0AFB0022B52E /* event-trace.c */,
@@ -1116,7 +1109,6 @@
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
 				221C601D1352B8700008B25B /* intset.h in Headers */,
 				221C60211352D3820008B25B /* intmap.h in Headers */,
-				22C67AA71354FCC8006A81E8 /* cohort.h in Headers */,
 				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
 				22A88EBD135E6B6A006FE604 /* hashset.h in Headers */,
 				22D2DD6B136929100048244C /* yajl_alloc.h in Headers */,
@@ -1521,7 +1513,6 @@
 			files = (
 				226E3CC013B00BB20083E9E0 /* linesearch.c in Sources */,
 				222FC41113607C7900E64FC9 /* actors.c in Sources */,
-				222FC41313607C7900E64FC9 /* cohort.c in Sources */,
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
 				222FC41813607C7900E64FC9 /* recv_fit.c in Sources */,
 				222FC41A13607C7900E64FC9 /* history.c in Sources */,
@@ -1600,7 +1591,6 @@
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C601C1352B8700008B25B /* intset.c in Sources */,
 				221C60201352D3820008B25B /* intmap.c in Sources */,
-				22C67AA61354FCC8006A81E8 /* cohort.c in Sources */,
 				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
 				22A88EBC135E6B6A006FE604 /* hashset.c in Sources */,
 				22EA3333136B440B00C5627F /* frame.c in Sources */,
