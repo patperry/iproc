@@ -314,16 +314,7 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 	assert(m);
 	assert(0 <= isend && isend < recv_model_send_count(m));
 
-	struct intmap_pos pos;
-	struct recv_model_sender *send;
-
-	if (!(send = intmap_find(&m->senders, isend, &pos))) {
-		send = intmap_insert(&m->senders, &pos, NULL);
-		sender_init(m, send, isend);
-	}
-
-	assert(send);
-	return send;
+	return &m->senders[isend];
 }
 
 static void process_recv_var_event(struct recv_model *m, const struct frame *f,
@@ -418,13 +409,11 @@ static void model_clear(struct recv_model *m)
 {
 	assert(m);
 
-	struct intmap_iter it;
+	struct recv_model_sender *senders = m->senders;	
+	ssize_t i, n = recv_model_send_count(m);
 
-	INTMAP_FOREACH(it, &m->senders) {
-		ssize_t isend = INTMAP_KEY(it);
-		struct recv_model_sender *send = INTMAP_VAL(it);
-
-		sender_clear(m, send, isend);
+	for (i = 0; i < n; i++) {
+		sender_clear(m, &senders[i], i);
 	}
 }
 
@@ -448,6 +437,7 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 
 	const struct design *d = frame_design(f);
 
+
 	model->frame = f;
 
 	if (coefs) {
@@ -457,9 +447,15 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	}
 
 	common_init(&model->common, d, &model->coefs);
-	intmap_init(&model->senders, sizeof(struct recv_model_sender),
-		    alignof(struct recv_model_sender));
 
+	ssize_t isend, nsend = design_send_count(d);	
+	struct recv_model_sender *senders = xcalloc(nsend, sizeof(struct recv_model_sender));
+	
+	for (isend = 0; isend < nsend; isend++) {
+		sender_init(model, &senders[isend], isend);
+	}
+	model->senders = senders;	
+	
 	struct frame_handlers h;
 	h.event_mask = RECV_VAR_EVENT;
 	h.handle_event = handle_frame_event;
@@ -474,12 +470,13 @@ void recv_model_deinit(struct recv_model *model)
 
 	frame_remove_observer(model->frame, model);
 
-	struct intmap_iter it;
-	INTMAP_FOREACH(it, &model->senders) {
-		sender_deinit(INTMAP_VAL(it));
+	struct recv_model_sender *senders = model->senders;	
+	ssize_t isend, nsend = recv_model_send_count(model);
+	for (isend = 0; isend < nsend; isend++) {
+		sender_deinit(&senders[isend]);
 	}
-
-	intmap_deinit(&model->senders);
+	xfree(senders);
+	
 	common_deinit(&model->common);
 	vector_deinit(&model->coefs);
 }
@@ -578,12 +575,10 @@ void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs)
 
 	common_set(&m->common, d, &m->coefs);
 
-	struct intmap_iter it;
-
-	INTMAP_FOREACH(it, &m->senders) {
-		ssize_t isend = INTMAP_KEY(it);
-		struct recv_model_sender *send = INTMAP_VAL(it);
-		sender_set(m, send, isend, f, &m->coefs);
+	struct recv_model_sender *senders = m->senders;
+	ssize_t isend, nsend = recv_model_send_count(m);
+	for (isend = 0; isend < nsend; isend++) {
+		sender_set(m, &senders[isend], isend, f, &m->coefs);
 	}
 
 }

@@ -6,7 +6,6 @@
 #include "array.h"
 #include "design.h"
 #include "frame.h"
-#include "intmap.h"
 #include "vector.h"
 
 /* I. Model
@@ -138,7 +137,7 @@ struct recv_model {
 	struct frame *frame;
 	struct vector coefs;
 	struct recv_model_common common;
-	struct intmap senders;
+	struct recv_model_sender *senders; // array
 };
 
 void recv_model_init(struct recv_model *model,
