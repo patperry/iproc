@@ -44,7 +44,8 @@ static void score_init(struct recv_sloglik_score *score,
 {
 	assert(score);
 
-	const struct vector *mean0 = recv_model_mean0(model);
+	ssize_t ic = 0;
+	const struct vector *mean0 = recv_model_mean0(model, ic);
 	const struct design *design = recv_model_design(model);
 	ssize_t nrecv = design_recv_count(design);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
@@ -62,7 +63,8 @@ static void imat_init(struct recv_sloglik_imat *imat,
 {
 	assert(imat);
 
-	const struct matrix *imat0 = recv_model_imat0(model);
+	ssize_t ic = 0;
+	const struct matrix *imat0 = recv_model_imat0(model, ic);
 	const struct design *design = recv_model_design(model);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
 
@@ -258,9 +260,10 @@ static void score_set_mean(struct recv_sloglik_score *score,
 	assert(f);
 
 	ssize_t *active, i, n;
+	ssize_t ic = 0;
 	recv_model_get_active(model, isend, &active, &n);
 
-	score->mean0 = recv_model_mean0(model);
+	score->mean0 = recv_model_mean0(model, ic);
 
 	const double gamma = recv_model_invgrow(model, isend);
 	score->gamma = gamma;
@@ -275,7 +278,7 @@ static void score_set_mean(struct recv_sloglik_score *score,
 
 		/* mean */
 		double p = recv_model_prob(model, isend, jrecv);
-		double p0 = recv_model_prob0(model, jrecv);
+		double p0 = recv_model_prob0(model, ic, jrecv);
 		double dp = p - gamma * p0;
 		vector_set_item(&score->dp, i, dp);
 
@@ -302,10 +305,11 @@ static void imat_set(struct recv_sloglik_imat *imat,
 	assert(model);
 	assert(f);
 
+	ssize_t ic = 0;
 	ssize_t *active, i, n;
 	recv_model_get_active(model, isend, &active, &n);
 
-	imat->imat0 = recv_model_imat0(model);
+	imat->imat0 = recv_model_imat0(model, ic);
 
 	const double gamma = recv_model_invgrow(model, isend);
 

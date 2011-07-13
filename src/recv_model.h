@@ -110,7 +110,7 @@
  * all senders in the same group share the same values of
  * w[0,i,j], W[0,i,j], p[0,i,j], and xbar[0,i].
  */
-struct recv_model_common {
+struct recv_model_cohort {
 	double max_eta0;
 	double log_W0;		// log_W0 - max_eta0
 	struct vector eta0;
@@ -136,7 +136,7 @@ struct recv_model_sender {
 struct recv_model {
 	struct frame *frame;
 	struct vector coefs;
-	struct recv_model_common common;
+	struct recv_model_cohort *cohorts;
 	struct recv_model_sender *senders; // array
 };
 
@@ -148,19 +148,20 @@ const struct frame *recv_model_frame(const struct recv_model *model);
 const struct design *recv_model_design(const struct recv_model *model);
 const struct vector *recv_model_coefs(const struct recv_model *model);
 ssize_t recv_model_send_count(const struct recv_model *model);
+ssize_t recv_model_send_cohort_count(const struct recv_model *model);
 ssize_t recv_model_count(const struct recv_model *model);
 ssize_t recv_model_dim(const struct recv_model *model);
 
 void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
-double recv_model_logsumwt0(const struct recv_model *m);
-struct vector *recv_model_logwts0(const struct recv_model *m);
-struct vector *recv_model_probs0(const struct recv_model *m);
+double recv_model_logsumwt0(const struct recv_model *m, ssize_t c);
+struct vector *recv_model_logwts0(const struct recv_model *m, ssize_t c);
+struct vector *recv_model_probs0(const struct recv_model *m, ssize_t c);
 
-double recv_model_prob0(const struct recv_model *m, ssize_t jrecv);
-struct vector *recv_model_mean0(const struct recv_model *m);
-struct matrix *recv_model_imat0(const struct recv_model *m);
+double recv_model_prob0(const struct recv_model *m, ssize_t c, ssize_t jrecv);
+struct vector *recv_model_mean0(const struct recv_model *m, ssize_t c);
+struct matrix *recv_model_imat0(const struct recv_model *m, ssize_t c);
 
 /* updated values */
 double recv_model_logsumwt(const struct recv_model *m, ssize_t isend);
