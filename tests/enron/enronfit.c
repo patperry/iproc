@@ -15,8 +15,12 @@
 #include "recv_fit.h"
 
 
+static struct actors enron_actors;
+static struct matrix enron_traits;
+
 static struct actors senders;
 static struct actors receivers;
+static struct matrix recv_traits;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
@@ -27,9 +31,12 @@ static struct recv_loglik recv_loglik;
 
 
 static void setup(void) {
-	enron_employees_init(&senders);
-	enron_employees_init(&receivers);
-	enron_messages_init(&messages);
+	enron_employees_init(&enron_actors, &enron_traits);
+	enron_messages_init(&messages);	
+	
+	actors_init_copy(&senders, &enron_actors);
+	actors_init_copy(&receivers, &enron_actors);	
+	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
 	
 	ssize_t i;
 	double intvls[] = {
@@ -46,7 +53,7 @@ static void setup(void) {
 	bool has_reffects = false;
 	bool has_loops = false;
 	vector_init_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
@@ -73,9 +80,12 @@ static void teardown(void)
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
-	messages_deinit(&messages);
+	matrix_deinit(&recv_traits);
 	actors_deinit(&receivers);	
 	actors_deinit(&senders);	
+	messages_deinit(&messages);
+	matrix_deinit(&enron_traits);
+	actors_deinit(&enron_actors);
 }
 
 

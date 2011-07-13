@@ -4,96 +4,58 @@
 #include <stdlib.h>
 #include "actors.h"
 
-void actors_init(struct actors *actors, ssize_t dim)
+static void cohort_init(struct cohort *c)
 {
-	assert(actors);
-	assert(dim >= 0);
-
-	array_init(&actors->actors, sizeof(struct actor));
-	array_init(&actors->cohorts, sizeof(struct cohort));
-	intmap_init(&actors->trait_hashes, sizeof(struct intset),
-		    alignof(struct intset));
-
-	refcount_init(&actors->refcount);
-	actors->dim = dim;
+	assert(c);
+	array_init(&c->actors, sizeof(ssize_t));
 }
 
-void actors_init_matrix(struct actors *actors, enum trans_op trans,
-			const struct matrix *matrix)
+static void cohort_init_copy(struct cohort *c, const struct cohort *src)
 {
-	assert(actors);
-	assert(matrix);
-
-	ssize_t m = matrix_nrow(matrix);
-	ssize_t n = matrix_ncol(matrix);
-	ssize_t dim = trans == TRANS_NOTRANS ? n : m;
-
-	actors_init(actors, dim);
-
-	if (trans == TRANS_NOTRANS) {
-		struct vector row;
-		double *row_front;
-		ssize_t i;
-
-		vector_init(&row, n);
-		row_front = vector_to_ptr(&row);
-
-		for (i = 0; i < m; i++) {
-			matrix_get_row(matrix, i, row_front);
-			actors_add(actors, &row);
-		}
-		vector_deinit(&row);
-	} else {
-		struct vector col;
-		ssize_t j;
-
-		for (j = 0; j < n; j++) {
-			col = matrix_col(matrix, j);
-			actors_add(actors, &col);
-		}
-	}
+	assert(c);
+	array_init_copy(&c->actors, &src->actors);
 }
 
-void actors_init_copy(struct actors *actors, const struct actors *src)
+static void cohort_deinit(struct cohort *c)
 {
-	assert(actors);
+	assert(c);
+	array_deinit(&c->actors);
+}
+
+void actors_init(struct actors *a)
+{
+	assert(a);
+
+	array_init(&a->actors, sizeof(struct actor));
+	array_init(&a->cohorts, sizeof(struct cohort));
+	refcount_init(&a->refcount);
+}
+
+void actors_init_copy(struct actors *a, const struct actors *src)
+{
+	assert(a);
 	assert(src);
-
-	actors_init(actors, src->dim);
-
-	ssize_t i, n = actors_count(src);
-	for (i = 0; i < n; i++) {
-		actors_add(actors, actors_traits(src, i));
+	array_init_copy(&a->actors, &src->actors);
+	
+	array_init(&a->cohorts, sizeof(struct cohort));	
+	struct cohort *csrc, *cdst;
+	ARRAY_FOREACH(csrc, &src->cohorts) {
+		cdst = array_add(&a->cohorts, NULL);
+		cohort_init_copy(cdst, csrc);
 	}
 
-	assert(actors_count(actors) == actors_count(src));
-	assert(actors_cohort_count(actors) == actors_cohort_count(src));
-}
-
-static void cohorts_clear(struct array *cohorts)
-{
-	struct cohort *c;
-	ARRAY_FOREACH(c, cohorts) {
-		cohort_deinit(c);
-	}
-	array_clear(cohorts);
-}
-
-static void trait_hashes_clear(struct intmap *trait_hashes)
-{
-	struct intmap_iter it;
-	INTMAP_FOREACH(it, trait_hashes) {
-		struct intset *set = INTMAP_VAL(it);
-		intset_deinit(set);
-	}
-	intmap_clear(trait_hashes);
+	refcount_init(&a->refcount);
 }
 
 void actors_clear(struct actors *a)
 {
 	array_clear(&a->actors);
-	cohorts_clear(&a->cohorts);
-	trait_hashes_clear(&a->trait_hashes);
+	
+	struct cohort *c;
+	ARRAY_FOREACH(c, &a->cohorts) {
+		cohort_deinit(c);
+	}
+	array_clear(&a->cohorts);
 }
 
 void actors_deinit(struct actors *a)
@@ -102,16 +64,14 @@ void actors_deinit(struct actors *a)
 
 	actors_clear(a);
 	refcount_deinit(&a->refcount);
-	intmap_deinit(&a->trait_hashes);
 	array_deinit(&a->cohorts);
 	array_deinit(&a->actors);
 }
 
-struct actors *actors_alloc(ssize_t dim)
+struct actors *actors_alloc(void)
 {
-	assert(dim >= 0);
 	struct actors *actors = xcalloc(1, sizeof(*actors));
-	actors_init(actors, dim);
+	actors_init(actors);
 	return actors;
 }
 
@@ -134,44 +94,29 @@ struct actors *actors_ref(struct actors *actors)
 	return actors;
 }
 
-void actors_add(struct actors *actors, const struct vector *traits)
+ssize_t actors_add(struct actors *a, ssize_t cohort)
 {
-	assert(actors);
-	assert(vector_dim(traits) == actors_dim(actors));
-
-	ssize_t aid = array_count(&actors->actors);
-	struct actor *a;
-	ssize_t cid = -1;
-	struct cohort *c;
-	int32_t hash = vector_hash(traits);
-	struct intmap_pos pos;
-	struct intset *set = intmap_find(&actors->trait_hashes, hash, &pos);
-
-	if (!set) {
-		set = intmap_insert(&actors->trait_hashes, &pos, NULL);
-		intset_init(set);
-	}
-
-	struct intset_iter it;
-	INTSET_FOREACH(it, set) {
-		cid = INTSET_KEY(it);
-		c = array_item(&actors->cohorts, cid);
-		const struct vector *x = cohort_traits(c);
-		if (vector_equals(x, traits)) {
-			goto found;
-		}
-	}
-
-	/* cohort not found; create a new one */
-	cid = array_count(&actors->cohorts);
-	c = array_add(&actors->cohorts, NULL);
-	cohort_init(c, traits);
-	intset_add(set, cid);
-found:
-	cohort_add(c, aid);
-	a = array_add(&actors->actors, NULL);
-	a->cohort = cid;
+	assert(a);
+	assert(0 <= cohort && cohort < actors_cohort_count(a));
+	
+	struct cohort *c = (struct cohort *)actors_cohorts(a);
+	ssize_t id = array_count(&a->actors);
+	array_add(&a->actors, &cohort);
+	array_add(&c[cohort].actors, &id);
+	return id;
 }
+
+ssize_t actors_add_cohort(struct actors *a)
+{
+	assert(a);
+	
+	ssize_t cid = array_count(&a->cohorts);
+	struct cohort *c = array_add(&a->cohorts, NULL);
+	cohort_init(c);
+	return cid;
+}
+
+
 
 void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		const struct vector *x, double beta, struct vector *y)
@@ -179,16 +124,10 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || vector_dim(x) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS || vector_dim(x) == actors_cohort_count(a));
 	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || vector_dim(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
-
-	const struct vector *row;
-	double alpha_dot, scale;
-	struct cohort *c;
-	struct cohort_iter c_it;
-	ssize_t id;
+	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_cohort_count(a));
 
 	if (beta == 0) {
 		vector_fill(y, 0.0);
@@ -197,81 +136,82 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 	}
 
 	if (trans == TRANS_NOTRANS) {
-		ARRAY_FOREACH(c, &a->cohorts) {
-			row = cohort_traits(c);
-			alpha_dot = alpha * vector_dot(row, x);
-
-			COHORT_FOREACH(c_it, c) {
-				id = COHORT_KEY(c_it);
-				*vector_item_ptr(y, id) += alpha_dot;
-			}
+		const struct actor *item = actors_items(a);
+		ssize_t i, n = actors_count(a);
+		
+		for (i = 0; i < n; i++) {
+			ssize_t c = item[i].cohort;
+			double xc = vector_item(x, c);
+			double *yi = vector_item_ptr(y, i);
+			*yi += alpha * xc;
 		}
 	} else {
-		ARRAY_FOREACH(c, &a->cohorts) {
-			row = cohort_traits(c);
-			scale = 0.0;
+		const struct cohort *cohort = actors_cohorts(a);
+		ssize_t c, p = actors_cohort_count(a);
+		
+		for (c = 0; c < p; c++) {
+			double *yc = vector_item_ptr(y, c);			
+			const ssize_t *actors = array_to_ptr(&cohort[c].actors);			
+			ssize_t ic, nc = array_count(&cohort[c].actors);
 
-			COHORT_FOREACH(c_it, c) {
-				id = COHORT_KEY(c_it);
-				scale += *vector_item_ptr(x, id);
+			for (ic = 0; ic < nc; ic++) {
+				ssize_t i = actors[ic];
+				double xi = vector_item(x, i);
+				*yc += alpha * xi;
 			}
-
-			vector_axpy(alpha * scale, row, y);
 		}
 	}
 }
+
 
 void
 actors_muls(double alpha,
 	    enum trans_op trans,
 	    const struct actors *a,
-	    const struct svector *x, double beta, struct vector *y)
+	    const struct svector *x, double beta, struct svector *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || svector_dim(x) == actors_dim(a));
-	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_count(a));
+	assert(trans != TRANS_NOTRANS || svector_dim(x) == actors_cohort_count(a));
+	assert(trans != TRANS_NOTRANS || svector_dim(y) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || svector_dim(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || vector_dim(y) == actors_dim(a));
-
-	const struct vector *row;
-	double alpha_dot, entry;
-	struct cohort *c;
-	struct cohort_iter c_it;
-	ssize_t id;
+	assert(trans == TRANS_NOTRANS || svector_dim(y) == actors_cohort_count(a));
 
 	if (beta == 0) {
-		vector_fill(y, 0.0);
+		svector_clear(y);
 	} else if (beta != 1) {
-		vector_scale(y, beta);
+		svector_scale(y, beta);
 	}
 
 	if (trans == TRANS_NOTRANS) {
-		ARRAY_FOREACH(c, &a->cohorts) {
-			row = cohort_traits(c);
-			alpha_dot = alpha * svector_dot(x, row);
-
-			COHORT_FOREACH(c_it, c) {
-				id = COHORT_KEY(c_it);
-				*vector_item_ptr(y, id) += alpha_dot;
+		const struct cohort *cohort = actors_cohorts(a);
+		struct svector_iter itx;
+		SVECTOR_FOREACH(itx, x) {
+			ssize_t c = SVECTOR_IDX(itx);
+			double xc = SVECTOR_VAL(itx);
+			const ssize_t *actors = array_to_ptr(&cohort[c].actors);
+			ssize_t ic, nc = array_count(&cohort[c].actors);
+			
+			for (ic = 0; ic < nc; ic++) {
+				ssize_t i = actors[ic];
+				double *yi = svector_item_ptr(y, i);
+				*yi += alpha * xc;
 			}
 		}
 	} else {
-		/* NOTE: this could potentially be made more effecient by
-		 * using the cohort structure.  Below, we assume that
-		 * the sparsity in x is more important.
-		 */
+		const struct actor *item = actors_items(a);
 		struct svector_iter itx;
 		SVECTOR_FOREACH(itx, x) {
-			id = SVECTOR_IDX(itx);
-			entry = SVECTOR_VAL(itx);
-			row = actors_traits(a, id);
-			vector_axpy(alpha * entry, row, y);
-
+			ssize_t i = SVECTOR_IDX(itx);
+			double xi = SVECTOR_VAL(itx);
+			ssize_t c = item[i].cohort;
+			double *yc = svector_item_ptr(y, c);
+			*yc += alpha * xi;
 		}
 	}
 }
+
 
 void
 actors_matmul(double alpha,
@@ -282,10 +222,10 @@ actors_matmul(double alpha,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS || matrix_nrow(x) == actors_dim(a));
+	assert(trans != TRANS_NOTRANS || matrix_nrow(x) == actors_cohort_count(a));
 	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == actors_count(a));
 	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == actors_dim(a));
+	assert(trans == TRANS_NOTRANS || matrix_nrow(y) == actors_cohort_count(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 
 	ssize_t m = matrix_ncol(x);
@@ -306,3 +246,4 @@ actors_matmul(double alpha,
 		actors_mul(alpha, trans, a, &xcol, 1.0, &ycol);
 	}
 }
+

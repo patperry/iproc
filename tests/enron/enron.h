@@ -10,9 +10,8 @@
 #define ENRON_EMPLOYEES_FILE PARENT_DIR"tests/enron/employees.json"
 #define ENRON_MESSAGES_FILE  PARENT_DIR"tests/enron/messages.json"
 
-bool enron_employees_init(struct actors *employees);
-bool enron_employee_matrix_init(struct matrix *employees);
-bool enron_employee_matrix_init_fread(struct matrix *employees, FILE *stream);
+bool enron_employees_init(struct actors *employees, struct matrix *traits);
+bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, FILE *stream);
 
 bool enron_messages_init(struct messages *messages);
 bool enron_messages_init_fread(struct messages *messages, FILE *stream);

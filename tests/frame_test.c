@@ -16,6 +16,7 @@
 
 static struct actors senders;
 static struct actors receivers;
+static struct matrix recv_traits;
 static bool has_reffects;
 static bool has_loops;
 static struct vector intervals;
@@ -30,14 +31,15 @@ static void enron_setup_fixture(void **state)
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&senders);
-	enron_employees_init(&receivers);
+	enron_employees_init(&receivers, &recv_traits);
+	actors_init_copy(&senders, &receivers);
 	enron_messages_init(&messages);
 }
 
 static void enron_teardown_fixture(void **state)
 {
 	messages_deinit(&messages);
+	matrix_deinit(&recv_traits);
 	actors_deinit(&receivers);
 	actors_deinit(&senders);
 	print_message("\n\n");
@@ -48,7 +50,7 @@ static void rv_nrecv_setup(void **state)
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
@@ -120,7 +122,7 @@ static void rv_irecv_setup(void **state)
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV);

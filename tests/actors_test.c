@@ -9,42 +9,53 @@
 #include "enron.h"
 #include "actors.h"
 
-
-static struct matrix employees;
-static struct matrix matrix;
 static struct actors actors;
-
+static struct matrix traits;
+static struct matrix matrix;
 
 static void enron_setup_fixture(void **state)
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
-	enron_employee_matrix_init(&employees);
+	enron_employees_init(&actors, &traits);
+	
+	ssize_t n = actors_count(&actors);
+	ssize_t c, nc = actors_cohort_count(&actors);
+	matrix_init(&matrix, n, nc);
+	
+	const struct cohort *cohort = actors_cohorts(&actors);
+	
+	for (c = 0; c < nc; c++) {
+		const ssize_t *items = array_to_ptr(&cohort[c].actors);
+		ssize_t ia, na = array_count(&cohort[c].actors);
+		for (ia = 0; ia < na; ia++) {
+			ssize_t i = items[ia];
+			matrix_set_item(&matrix, i, c, 1.0);
+		}
+	}
 }
 
 static void enron_teardown_fixture(void **state)
 {
-	matrix_deinit(&employees);
+	matrix_deinit(&matrix);
+	matrix_deinit(&traits);
+	actors_deinit(&actors);	
 	print_message("\n\n");
 }
 
 static void enron_setup(void **state)
 {
-	matrix_init_copy(&matrix, TRANS_NOTRANS, &employees);
-	actors_init_matrix(&actors, TRANS_NOTRANS, &matrix);
 }
 
 static void enron_teardown(void **state)
 {
-	matrix_deinit(&matrix);
-	actors_deinit(&actors);
 }
 
 static void enron_test_size(void **state)
 {
 	assert_int_equal(actors_count(&actors), matrix_nrow(&matrix));
-	assert_int_equal(actors_dim(&actors), matrix_ncol(&matrix));
-	assert_int_equal(actors_cohort_count(&actors), 12);
+	assert_int_equal(actors_cohort_count(&actors), matrix_nrow(&traits));	
+	assert_int_equal(matrix_ncol(&traits), matrix_ncol(&matrix));
 }
 
 static void test_mul(void **state)
@@ -121,15 +132,18 @@ static void test_tmul(void **state)
 
 static void test_muls(void **state)
 {
-	struct svector x;
-	struct vector y, y1;
+	struct svector x, y;
+	struct vector y0, diff, zero;
 	ssize_t n = matrix_nrow(&matrix);
 	ssize_t p = matrix_ncol(&matrix);
 	ssize_t i;
 	
 	svector_init(&x, p);
-	vector_init(&y, n);
-	vector_init(&y1, n);
+	svector_init(&y, n);
+	vector_init(&y0, n);
+	vector_init(&diff, n);
+	vector_init(&zero, n);	
+	vector_fill(&zero, 0.0);
 	
 	for (i = 0; i < p; i++) {
 		if (i % 2 == 0)
@@ -137,37 +151,49 @@ static void test_muls(void **state)
 	}
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 1.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, -1.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(2.0, TRANS_NOTRANS, &actors, &x, 2.0, &y);
-	matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
-	vector_deinit(&y1);
-	vector_deinit(&y);
+	vector_deinit(&zero);
+	vector_deinit(&diff);
+	vector_deinit(&y0);
+	svector_deinit(&y);
 	svector_deinit(&x);
 }
 
 static void test_tmuls(void **state)
 {
-	struct svector x;
-	struct vector y, y1;
+	struct svector x, y;
+	struct vector y0, diff, zero;
 	ssize_t n = matrix_nrow(&matrix);
 	ssize_t p = matrix_ncol(&matrix);
 	ssize_t i;
 	
 	svector_init(&x, n);
-	vector_init(&y, p);
-	vector_init(&y1, p);
+	svector_init(&y, p);
+	vector_init(&y0, p);
+	vector_init(&diff, p);	
+	vector_init(&zero, p);	
 	
 	for (i = 0; i < n; i++) {
 		if (i % 3 == 0)
@@ -175,23 +201,33 @@ static void test_tmuls(void **state)
 	}
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, 1.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(1.0, TRANS_TRANS, &actors, &x, -1.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
 	actors_muls(2.0, TRANS_TRANS, &actors, &x, 2.0, &y);
-	matrix_muls(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_equals(&y, &y1));
+	matrix_muls(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y0);
+	vector_assign_copy(&diff, &y0);
+	svector_axpy(-1.0, &y, &diff);
+	assert_true(vector_equals(&diff, &zero));
 	
-	vector_deinit(&y1);
-	vector_deinit(&y);
+	vector_deinit(&zero);
+	vector_deinit(&diff);
+	vector_deinit(&y0);
+	svector_deinit(&y);
 	svector_deinit(&x);
 }
 

@@ -86,7 +86,7 @@ struct frame {
 	struct pqueue future_events;
 	ssize_t next_event_id;
 	struct array observers;
-	struct matrix send_xt;
+	// struct matrix send_xt;
 	struct refcount refcount;
 };
 
@@ -123,7 +123,7 @@ ssize_t frame_events_count(const struct frame *f);
 struct frame_event *frame_events_item(const struct frame *f, ssize_t i);
 
 /* current covariates */
-struct vector frame_send_x(struct frame *f, ssize_t isend);
+// struct vector frame_send_x(struct frame *f, ssize_t isend);
 struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 			     ssize_t jrecv);
 
@@ -132,12 +132,13 @@ void frame_add_observer(struct frame *f, void *udata,
 			const struct frame_handlers *h);
 void frame_remove_observer(struct frame *f, void *udata);
 
-void frame_send_mul(double alpha, enum trans_op trans,
+/*void frame_send_mul(double alpha, enum trans_op trans,
 		    const struct frame *f,
 		    const struct vector *x, double beta, struct vector *y);
 void frame_send_muls(double alpha, enum trans_op trans,
 		     const struct frame *f,
 		     const struct svector *x, double beta, struct vector *y);
+*/
 
 void frame_recv_mul(double alpha, enum trans_op trans,
 		    const struct frame *f, ssize_t isend,

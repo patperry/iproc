@@ -33,11 +33,14 @@ void design_deinit(struct design *design)
 }
 
 void design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, const struct vector *intervals)
+		 struct actors *receivers, const struct matrix *traits,
+		 const struct vector *intervals)
 {
 	assert(design);
 	assert(senders);
 	assert(receivers);
+	assert(traits);
+	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
 	assert(intervals);
 
 #ifndef NDEBUG
@@ -48,11 +51,12 @@ void design_init(struct design *design, struct actors *senders,
 	}
 #endif
 
-	ssize_t ps = actors_dim(senders);
-	ssize_t pr = actors_dim(receivers);
+	ssize_t ps = 0; // actors_dim(senders);
+	ssize_t pr = matrix_ncol(traits);
 
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
+	design->traits = traits;
 	design->loops = false;
 
 	vector_init_copy(&design->intervals, intervals);
@@ -79,10 +83,11 @@ void design_init(struct design *design, struct actors *senders,
 }
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
+			    const struct matrix *traits,
 			    const struct vector *intervals)
 {
 	struct design *design = xcalloc(1, sizeof(*design));
-	design_init(design, senders, receivers, intervals);
+	design_init(design, senders, receivers, traits, intervals);
 	return design;
 }
 
@@ -204,6 +209,7 @@ design_recv_muls0_effects(double alpha,
 	design_muls0_effects(alpha, trans, off, dim, x, y);
 }
 
+/*
 static void
 design_send_mul0_static(double alpha,
 			enum trans_op trans,
@@ -225,6 +231,7 @@ design_send_mul0_static(double alpha,
 		actors_mul(alpha, TRANS_TRANS, senders, x, 1.0, &ysub);
 	}
 }
+ */
 
 static void
 design_recv_mul0_static(double alpha,
@@ -236,17 +243,29 @@ design_recv_mul0_static(double alpha,
 		return;
 
 	const struct actors *receivers = design_receivers(design);
+	const struct matrix *traits = design_traits(design);
 	ssize_t off = design->irstatic;
 	ssize_t dim = design->nrstatic;
-	assert(dim == actors_dim(receivers));
+	assert(dim == matrix_nrow(traits));
+	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
+
+	struct vector z;
+	vector_init(&z, actors_cohort_count(receivers));
 
 	if (trans == TRANS_NOTRANS) {
-		struct vector xsub = vector_slice(x, off, dim);
-		actors_mul(alpha, trans, receivers, &xsub, 1.0, y);
+		struct vector xsub = vector_slice(x, off, dim);		
+
+		matrix_mul(1.0, trans, traits, &xsub, 0.0, &z);
+		actors_mul(alpha, trans, receivers, &z, 1.0, y);
+		
+
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_mul(alpha, trans, receivers, x, 1.0, &ysub);
+		actors_mul(1.0, trans, receivers, x, 0.0, &z);
+		matrix_mul(alpha, trans, traits, &z, 1.0, &ysub);
 	}
+	
+	vector_deinit(&z);	
 
 	/*
 	   const struct actors *senders = design_senders(design);        
@@ -284,6 +303,7 @@ design_recv_mul0_static(double alpha,
 	 */
 }
 
+/*
 static void
 design_send_muls0_static(double alpha,
 			 enum trans_op trans,
@@ -316,6 +336,7 @@ design_send_muls0_static(double alpha,
 		actors_muls(alpha, TRANS_TRANS, senders, x, 1.0, &ysub);
 	}
 }
+ */
 
 static void
 design_recv_muls0_static(double alpha,
@@ -327,10 +348,16 @@ design_recv_muls0_static(double alpha,
 		return;
 
 	const struct actors *receivers = design_receivers(design);
+	const struct matrix *traits = design_traits(design);
 	ssize_t off = design->irstatic;
 	ssize_t dim = design->nrstatic;
+	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
+	assert(dim == matrix_ncol(traits));
 
 	if (trans == TRANS_NOTRANS) {
+		struct vector z;
+		vector_init(&z, actors_cohort_count(receivers));
+
 		struct svector xsub;
 		struct svector_iter it;
 		ssize_t i;
@@ -342,11 +369,20 @@ design_recv_muls0_static(double alpha,
 				continue;
 			svector_set_item(&xsub, i, SVECTOR_VAL(it));
 		}
-		actors_muls(alpha, trans, receivers, &xsub, 1.0, y);
+
+		matrix_muls(1.0, trans, traits, &xsub, 0.0, &z);
+		actors_mul(alpha, trans, receivers, &z, 1.0, y);
 		svector_deinit(&xsub);
+		vector_deinit(&z);
 	} else {
+		struct svector z;
+		svector_init(&z, actors_cohort_count(receivers));
+		
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_muls(alpha, trans, receivers, x, 1.0, &ysub);
+		actors_muls(1.0, trans, receivers, x, 0.0, &z);
+		matrix_muls(alpha, trans, traits, &z, 1.0, &ysub);
+		
+		svector_deinit(&z);
 	}
 
 	/*
@@ -405,6 +441,7 @@ design_recv_muls0_static(double alpha,
 	 */
 }
 
+/*
 void
 design_send_mul0(double alpha,
 		 enum trans_op trans,
@@ -423,7 +460,7 @@ design_send_mul0(double alpha,
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_send_dim(design));
 
-	/* y := beta y */
+	// y := beta y
 	if (beta == 0.0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1.0) {
@@ -433,6 +470,7 @@ design_send_mul0(double alpha,
 	design_send_mul0_effects(alpha, trans, design, x, y);
 	design_send_mul0_static(alpha, trans, design, x, y);
 }
+*/
 
 void
 design_recv_mul0(double alpha,
@@ -463,6 +501,7 @@ design_recv_mul0(double alpha,
 	design_recv_mul0_static(alpha, trans, design, x, y);
 }
 
+/*
 void
 design_send_muls0(double alpha,
 		  enum trans_op trans,
@@ -481,7 +520,7 @@ design_send_muls0(double alpha,
 	assert(trans == TRANS_NOTRANS
 	       || vector_dim(y) == design_send_dim(design));
 
-	/* y := beta y */
+	// y := beta y
 	if (beta == 0.0) {
 		vector_fill(y, 0.0);
 	} else if (beta != 1.0) {
@@ -491,6 +530,7 @@ design_send_muls0(double alpha,
 	design_send_muls0_effects(alpha, trans, design, x, y);
 	design_send_muls0_static(alpha, trans, design, x, y);
 }
+*/
 
 void
 design_recv_muls0(double alpha,

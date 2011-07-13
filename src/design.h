@@ -76,6 +76,7 @@
 struct design {
 	struct actors *senders;
 	struct actors *receivers;
+	const struct matrix *traits;
 	bool loops;
 
 	struct vector intervals;
@@ -98,12 +99,14 @@ struct design {
 };
 
 struct design *design_alloc(struct actors *senders, struct actors *receivers,
+			    const struct matrix *traits,
 			    const struct vector *intervals);
 struct design *design_ref(struct design *design);
 void design_free(struct design *design);
 
 void design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, const struct vector *intervals);
+		 struct actors *receivers, const struct matrix *traits,
+		 const struct vector *intervals);
 void design_deinit(struct design *design);
 
 static inline ssize_t design_send_dim(const struct design *design);
@@ -112,6 +115,7 @@ static inline ssize_t design_send_count(const struct design *design);
 static inline ssize_t design_recv_count(const struct design *design);
 static inline struct actors *design_senders(const struct design *design);
 static inline struct actors *design_receivers(const struct design *design);
+static inline const struct matrix *design_traits(const struct design *design);
 static inline const struct vector *design_intervals(const struct design
 						    *design);
 
@@ -126,6 +130,7 @@ ssize_t design_send_effects_index(const struct design *design);
 ssize_t design_send_var_index(const struct design *design,
 			      const struct var_type *type);
 
+/*
 void design_send_mul0(double alpha,
 		      enum trans_op trans,
 		      const struct design *design,
@@ -134,7 +139,8 @@ void design_send_muls0(double alpha,
 		       enum trans_op trans,
 		       const struct design *design,
 		       const struct svector *x, double beta, struct vector *y);
-
+*/
+ 
 bool design_recv_effects(const struct design *design);
 void design_set_recv_effects(struct design *design, bool reffects);
 void design_add_recv_var(struct design *design, const struct var_type *type);
@@ -191,6 +197,12 @@ struct actors *design_receivers(const struct design *design)
 {
 	assert(design);
 	return design->receivers;
+}
+
+const struct matrix *design_traits(const struct design *design)
+{
+	assert(design);
+	return design->traits;
 }
 
 const struct vector *design_intervals(const struct design *design)
