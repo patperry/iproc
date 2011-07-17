@@ -135,24 +135,29 @@ struct recv_model_sender {
 
 struct recv_model {
 	struct frame *frame;
-	struct vector coefs;
-	struct recv_model_cohort *cohorts;
-	struct recv_model_sender *senders; // array
+	const struct actors *senders;
+	struct matrix coefs;
+	struct recv_model_cohort *cohort_models;
+	struct recv_model_sender *sender_models;
 };
 
 void recv_model_init(struct recv_model *model,
-		     struct frame *f, const struct vector *coefs);
+		     struct frame *f,
+		     const struct actors *senders,
+		     const struct matrix *coefs);
 void recv_model_deinit(struct recv_model *model);
 
 const struct frame *recv_model_frame(const struct recv_model *model);
 const struct design *recv_model_design(const struct recv_model *model);
-const struct vector *recv_model_coefs(const struct recv_model *model);
+const struct actors *recv_model_senders(const struct recv_model *model);
+const struct matrix *recv_model_coefs(const struct recv_model *model);
 ssize_t recv_model_send_count(const struct recv_model *model);
-ssize_t recv_model_send_cohort_count(const struct recv_model *model);
+ssize_t recv_model_cohort_count(const struct recv_model *model);
+ssize_t recv_model_cohort(const struct recv_model *model, ssize_t isend);
 ssize_t recv_model_count(const struct recv_model *model);
 ssize_t recv_model_dim(const struct recv_model *model);
 
-void recv_model_set_coefs(struct recv_model *m, const struct vector *coefs);
+void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
 double recv_model_logsumwt0(const struct recv_model *m, ssize_t c);

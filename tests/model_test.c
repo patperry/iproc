@@ -27,7 +27,7 @@ static struct vector intervals;
 static struct messages messages;
 static struct design design;
 static struct frame frame;
-static struct vector coefs;
+static struct matrix coefs;
 static struct recv_model model;
 
 
@@ -55,7 +55,7 @@ static void enron_teardown_fixture(void **state)
 
 static void basic_setup(void **state)
 {
-	ssize_t i;
+	ssize_t i, c;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -69,23 +69,25 @@ static void basic_setup(void **state)
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
 	frame_init(&frame, &design);
-	vector_init(&coefs, design_recv_dim(&design));
+	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
 	
-	for (i = 0; i < vector_dim(&coefs); i++) {
-		double val = (i % 5 == 0 ? -2.0 :
-			      i % 5 == 1 ?  1.0 :
-			      i % 5 == 2 ? -1.0 :
-			      i % 5 == 3 ?  2.0 : 0.0);
-		vector_set_item(&coefs, i, val);
+	for (c = 0; c < matrix_ncol(&coefs); c++) {
+		for (i = 0; i < matrix_nrow(&coefs); i++) {
+			double val = (i + 2 * c % 5 == 0 ? -2.0 :
+				      i + 3 * c % 5 == 1 ?  1.0 :
+				      i + 7 * c % 5 == 2 ? -1.0 :
+				      i + 11 * c % 5 == 3 ?  2.0 : 0.0);
+			matrix_set_item(&coefs, i, c, val);
+		}
 	}
 	
-	recv_model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &senders, &coefs);
 }
 
 static void teardown(void **state)
 {
 	recv_model_deinit(&model);
-	vector_deinit(&coefs);
+	matrix_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
@@ -94,7 +96,7 @@ static void teardown(void **state)
 
 static void hard_setup(void **state)
 {
-	ssize_t i;
+	ssize_t i, c;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -108,18 +110,20 @@ static void hard_setup(void **state)
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
 	frame_init(&frame, &design);
-	vector_init(&coefs, design_recv_dim(&design));
+	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
 	
-	for (i = 0; i < vector_dim(&coefs); i++) {
-		double val = (i % 7 == 0 ?  0.1 :
-			      i % 7 == 1 ?  0.3 :
-			      i % 7 == 2 ? -0.2 :
-			      i % 7 == 4 ? -10 :
-			      i % 7 == 6 ? +10 : 0.0);
-		vector_set_item(&coefs, i, val);
+	for (c = 0; c < matrix_ncol(&coefs); c++) {
+		for (i = 0; i < matrix_nrow(&coefs); i++) {
+			double val = (i + 2 * c % 7 == 0 ?  0.1 :
+				      i + 3 * c % 7 == 1 ?  0.3 :
+				      i + 5 * c % 7 == 2 ? -0.2 :
+				      i + 11 * c % 7 == 4 ? -10 :
+				      i % 7 == 6 ? +10 : 0.0);
+			matrix_set_item(&coefs, i, c, val);
+		}
 	}
 	
-	recv_model_init(&model, &frame, &coefs);
+	recv_model_init(&model, &frame, &senders, &coefs);
 }
 
 
@@ -153,7 +157,9 @@ static void test_probs(void **state)
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &coefs, 0.0, &eta);
+			ssize_t c = actors_items(&senders)[isend].cohort;
+			const struct vector col = matrix_col(&coefs, c);
+			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			
 			if (!design_loops(&design))
 				vector_set_item(&eta, isend, -INFINITY);

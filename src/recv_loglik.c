@@ -6,45 +6,49 @@
 #include "util.h"
 #include "recv_loglik.h"
 
-static void recv_sloglik_init(struct recv_sloglik *ll,
-			      const struct recv_model *model, ssize_t isend);
-static void recv_sloglik_deinit(struct recv_sloglik *ll);
+static void cohort_init(struct recv_loglik_cohort *cll, const struct recv_model *m, ssize_t c);
+static void cohort_deinit(struct recv_loglik_cohort *cll);
+static void cohort_clear(struct recv_loglik_cohort *cll);
 
-static void recv_sloglik_add(struct recv_sloglik *ll,
+static void sender_init(struct recv_loglik_sender *ll,
+			      const struct recv_model *model, ssize_t isend);
+static void sender_deinit(struct recv_loglik_sender *ll);
+
+static void sender_add(struct recv_loglik_sender *ll,
 			     const struct frame *f, const ssize_t *jrecv,
 			     ssize_t n);
-static void recv_sloglik_clear(struct recv_sloglik *ll);
+static void sender_clear(struct recv_loglik_sender *ll);
 
-static ssize_t recv_sloglik_count(const struct recv_sloglik *sll);
-static double recv_sloglik_avg_dev(const struct recv_sloglik *sll);
-static void recv_sloglik_axpy_avg_mean(double alpha,
-				       const struct recv_sloglik *sll,
+static ssize_t sender_count(const struct recv_loglik_sender *sll);
+static double sender_avg_dev(const struct recv_loglik_sender *sll);
+static void sender_axpy_avg_mean(double alpha,
+				       const struct recv_loglik_sender *sll,
 				       struct vector *y);
-static void recv_sloglik_axpy_avg_score(double alpha,
-					const struct recv_sloglik *sll,
+static void sender_axpy_avg_score(double alpha,
+					const struct recv_loglik_sender *sll,
 					struct vector *y);
-static void recv_sloglik_axpy_avg_imat(double alpha,
-				       const struct recv_sloglik *sll,
+static void sender_axpy_avg_imat(double alpha,
+				       const struct recv_loglik_sender *sll,
 				       struct matrix *y);
 
-static ssize_t recv_sloglik_last_count(const struct recv_sloglik *sll);
-static double recv_sloglik_last_dev(const struct recv_sloglik *sll);
-static void recv_sloglik_axpy_last_mean(double alpha,
-					const struct recv_sloglik *sll,
+static ssize_t sender_last_count(const struct recv_loglik_sender *sll);
+static double sender_last_dev(const struct recv_loglik_sender *sll);
+static void sender_axpy_last_mean(double alpha,
+					const struct recv_loglik_sender *sll,
 					struct vector *y);
-static void recv_sloglik_axpy_last_score(double alpha,
-					 const struct recv_sloglik *sll,
+static void sender_axpy_last_score(double alpha,
+					 const struct recv_loglik_sender *sll,
 					 struct vector *y);
-static void recv_sloglik_axpy_last_imat(double alpha,
-					const struct recv_sloglik *sll,
+static void sender_axpy_last_imat(double alpha,
+					const struct recv_loglik_sender *sll,
 					struct matrix *y);
 
-static void score_init(struct recv_sloglik_score *score,
+static void score_init(struct recv_loglik_sender_score *score,
 		       const struct recv_model *model, ssize_t isend)
 {
 	assert(score);
 
-	ssize_t ic = 0;
+	ssize_t ic = recv_model_cohort(model, isend);
 	const struct vector *mean0 = recv_model_mean0(model, ic);
 	const struct design *design = recv_model_design(model);
 	ssize_t nrecv = design_recv_count(design);
@@ -58,12 +62,12 @@ static void score_init(struct recv_sloglik_score *score,
 	vector_init(&score->mean_dx, dyn_dim);
 }
 
-static void imat_init(struct recv_sloglik_imat *imat,
+static void imat_init(struct recv_loglik_sender_imat *imat,
 		      const struct recv_model *model, ssize_t isend)
 {
 	assert(imat);
 
-	ssize_t ic = 0;
+	ssize_t ic = recv_model_cohort(model, isend);
 	const struct matrix *imat0 = recv_model_imat0(model, ic);
 	const struct design *design = recv_model_design(model);
 	ssize_t dyn_dim = design_recv_dyn_dim(design);
@@ -78,7 +82,7 @@ static void imat_init(struct recv_sloglik_imat *imat,
 	matrix_init(&imat->var_dx, dyn_dim, dyn_dim);
 }
 
-static void score_deinit(struct recv_sloglik_score *score)
+static void score_deinit(struct recv_loglik_sender_score *score)
 {
 	assert(score);
 
@@ -88,7 +92,7 @@ static void score_deinit(struct recv_sloglik_score *score)
 	svector_deinit(&score->nrecv);
 }
 
-static void imat_deinit(struct recv_sloglik_imat *imat)
+static void imat_deinit(struct recv_loglik_sender_imat *imat)
 {
 	assert(imat);
 
@@ -100,7 +104,7 @@ static void imat_deinit(struct recv_sloglik_imat *imat)
 	vector_deinit(&imat->gamma_dp);
 }
 
-static void score_clear(struct recv_sloglik_score *score)
+static void score_clear(struct recv_loglik_sender_score *score)
 {
 	assert(score);
 	svector_clear(&score->nrecv);
@@ -110,7 +114,7 @@ static void score_clear(struct recv_sloglik_score *score)
 	vector_fill(&score->mean_dx, 0.0);
 }
 
-static void imat_clear(struct recv_sloglik_imat *imat)
+static void imat_clear(struct recv_loglik_sender_imat *imat)
 {
 	assert(imat);
 	imat->gamma2 = 0.0;
@@ -122,19 +126,19 @@ static void imat_clear(struct recv_sloglik_imat *imat)
 	matrix_fill(&imat->var_dx, 0.0);
 }
 
-static ssize_t score_active_count(const struct recv_sloglik_score *score)
+static ssize_t score_active_count(const struct recv_loglik_sender_score *score)
 {
 	assert(score);
 	return vector_dim(&score->dp);
 }
 
-static ssize_t imat_active_count(const struct recv_sloglik_imat *imat)
+static ssize_t imat_active_count(const struct recv_loglik_sender_imat *imat)
 {
 	assert(imat);
 	return vector_dim(&imat->gamma_dp);
 }
 
-static void score_insert_active(struct recv_sloglik_score *score, ssize_t i)
+static void score_insert_active(struct recv_loglik_sender_score *score, ssize_t i)
 {
 	assert(score);
 	assert(0 <= i && i <= score_active_count(score));
@@ -158,7 +162,7 @@ static void score_insert_active(struct recv_sloglik_score *score, ssize_t i)
 	assert(score_active_count(score) == n1);
 }
 
-static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
+static void imat_insert_active(struct recv_loglik_sender_imat *imat, ssize_t i)
 {
 	assert(imat);
 	assert(0 <= i && i <= imat_active_count(imat));
@@ -236,7 +240,7 @@ static void imat_insert_active(struct recv_sloglik_imat *imat, ssize_t i)
 	imat->dp2 = dp2;
 }
 
-static void score_set_obs(struct recv_sloglik_score *score,
+static void score_set_obs(struct recv_loglik_sender_score *score,
 			  const struct frame *f,
 			  ssize_t isend, const ssize_t *jrecv, const ssize_t n)
 {
@@ -251,7 +255,7 @@ static void score_set_obs(struct recv_sloglik_score *score,
 			 &score->nrecv, 0.0, &score->mean_obs_dx);
 }
 
-static void score_set_mean(struct recv_sloglik_score *score,
+static void score_set_mean(struct recv_loglik_sender_score *score,
 			   const struct frame *f,
 			   const struct recv_model *model, ssize_t isend)
 {
@@ -260,7 +264,7 @@ static void score_set_mean(struct recv_sloglik_score *score,
 	assert(f);
 
 	ssize_t *active, i, n;
-	ssize_t ic = 0;
+	ssize_t ic = recv_model_cohort(model, isend);
 	recv_model_get_active(model, isend, &active, &n);
 
 	score->mean0 = recv_model_mean0(model, ic);
@@ -287,7 +291,7 @@ static void score_set_mean(struct recv_sloglik_score *score,
 	}
 }
 
-static void score_set(struct recv_sloglik_score *score,
+static void score_set(struct recv_loglik_sender_score *score,
 		      const struct frame *f,
 		      ssize_t isend, const ssize_t *jrecv, ssize_t n,
 		      const struct recv_model *model)
@@ -296,16 +300,16 @@ static void score_set(struct recv_sloglik_score *score,
 	score_set_mean(score, f, model, isend);
 }
 
-static void imat_set(struct recv_sloglik_imat *imat,
+static void imat_set(struct recv_loglik_sender_imat *imat,
 		     const struct frame *f,
 		     const struct recv_model *model,
-		     ssize_t isend, const struct recv_sloglik_score *score)
+		     ssize_t isend, const struct recv_loglik_sender_score *score)
 {
 	assert(imat);
 	assert(model);
 	assert(f);
 
-	ssize_t ic = 0;
+	ssize_t ic = recv_model_cohort(model, isend);
 	ssize_t *active, i, n;
 	recv_model_get_active(model, isend, &active, &n);
 
@@ -392,8 +396,8 @@ static void matrix_mean_update(double scale, const struct matrix *val,
 	matrix_axpy(scale, &diff, mean);
 }
 
-static void score_update(ssize_t n0, const struct recv_sloglik_score *score0,
-			 ssize_t n1, struct recv_sloglik_score *score1)
+static void score_update(ssize_t n0, const struct recv_loglik_sender_score *score0,
+			 ssize_t n1, struct recv_loglik_sender_score *score1)
 {
 	assert(n0 >= 0);
 	assert(score0);
@@ -420,8 +424,8 @@ static void score_update(ssize_t n0, const struct recv_sloglik_score *score0,
 	vector_deinit(&work);
 }
 
-static void imat_update(ssize_t n0, const struct recv_sloglik_imat *imat0,
-			ssize_t n1, struct recv_sloglik_imat *imat1)
+static void imat_update(ssize_t n0, const struct recv_loglik_sender_imat *imat0,
+			ssize_t n1, struct recv_loglik_sender_imat *imat1)
 {
 	assert(n0 >= 0);
 	assert(imat0);
@@ -456,7 +460,7 @@ static void imat_update(ssize_t n0, const struct recv_sloglik_imat *imat0,
 }
 
 static void score_axpy_obs(double alpha,
-			   const struct recv_sloglik_score *score,
+			   const struct recv_loglik_sender_score *score,
 			   ssize_t nsend,
 			   const struct design *design,
 			   ssize_t isend, struct vector *y)
@@ -474,7 +478,7 @@ static void score_axpy_obs(double alpha,
 }
 
 static void score_axpy_mean(double alpha,
-			    const struct recv_sloglik_score *score,
+			    const struct recv_loglik_sender_score *score,
 			    const struct array *active,
 			    const struct design *design,
 			    ssize_t isend, struct vector *y)
@@ -503,7 +507,7 @@ static void score_axpy_mean(double alpha,
 }
 
 static void score_axpy(double alpha,
-		       const struct recv_sloglik_score *score,
+		       const struct recv_loglik_sender_score *score,
 		       ssize_t nsend,
 		       const struct array *active,
 		       const struct design *design,
@@ -514,8 +518,8 @@ static void score_axpy(double alpha,
 }
 
 static void imat_axpy(double alpha,
-		      const struct recv_sloglik_imat *imat,
-		      const struct recv_sloglik_score *score,
+		      const struct recv_loglik_sender_imat *imat,
+		      const struct recv_loglik_sender_score *score,
 		      const struct array *active,
 		      const struct design *design,
 		      ssize_t isend, struct matrix *y)
@@ -665,7 +669,7 @@ static void info_clear(struct recv_loglik_info *info)
 	info->dev = 0;
 }
 
-void recv_sloglik_init(struct recv_sloglik *ll, const struct recv_model *model,
+void sender_init(struct recv_loglik_sender *ll, const struct recv_model *model,
 		       ssize_t isend)
 {
 	assert(ll);
@@ -687,7 +691,7 @@ void recv_sloglik_init(struct recv_sloglik *ll, const struct recv_model *model,
 	imat_init(&ll->imat_avg, model, isend);
 }
 
-void recv_sloglik_deinit(struct recv_sloglik *ll)
+void sender_deinit(struct recv_loglik_sender *ll)
 {
 	assert(ll);
 
@@ -698,7 +702,7 @@ void recv_sloglik_deinit(struct recv_sloglik *ll)
 	array_deinit(&ll->active);
 }
 
-void recv_sloglik_clear(struct recv_sloglik *ll)
+void sender_clear(struct recv_loglik_sender *ll)
 {
 	assert(ll);
 
@@ -713,7 +717,7 @@ void recv_sloglik_clear(struct recv_sloglik *ll)
 	imat_clear(&ll->imat_avg);
 }
 
-static void recv_sloglik_update_active(struct recv_sloglik *ll,
+static void sender_update_active(struct recv_loglik_sender *ll,
 				       const ssize_t *active, ssize_t n)
 {
 	assert(ll);
@@ -746,7 +750,7 @@ static void recv_sloglik_update_active(struct recv_sloglik *ll,
 	}
 }
 
-void recv_sloglik_add(struct recv_sloglik *ll,
+void sender_add(struct recv_loglik_sender *ll,
 		      const struct frame *f, const ssize_t *jrecv, ssize_t n)
 {
 	ssize_t isend = ll->isend;
@@ -759,7 +763,7 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 
 	ssize_t *active, nactive;
 	recv_model_get_active(model, isend, &active, &nactive);
-	recv_sloglik_update_active(ll, active, nactive);
+	sender_update_active(ll, active, nactive);
 
 	ll->dev_last = 0.0;
 	for (i = 0; i < n; i++) {
@@ -781,31 +785,31 @@ void recv_sloglik_add(struct recv_sloglik *ll,
 	ll->n += n;
 }
 
-ssize_t recv_sloglik_count(const struct recv_sloglik *sll)
+ssize_t sender_count(const struct recv_loglik_sender *sll)
 {
 	assert(sll);
 	return sll->n;
 }
 
-ssize_t recv_sloglik_last_count(const struct recv_sloglik *sll)
+ssize_t sender_last_count(const struct recv_loglik_sender *sll)
 {
 	assert(sll);
 	return sll->n_last;
 }
 
-double recv_sloglik_avg_dev(const struct recv_sloglik *sll)
+double sender_avg_dev(const struct recv_loglik_sender *sll)
 {
 	assert(sll);
 	return sll->dev_avg;
 }
 
-double recv_sloglik_last_dev(const struct recv_sloglik *sll)
+double sender_last_dev(const struct recv_loglik_sender *sll)
 {
 	assert(sll);
 	return sll->dev_last;
 }
 
-void recv_sloglik_axpy_avg_mean(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_avg_mean(double alpha, const struct recv_loglik_sender *sll,
 				struct vector *y)
 {
 	assert(sll);
@@ -818,7 +822,7 @@ void recv_sloglik_axpy_avg_mean(double alpha, const struct recv_sloglik *sll,
 	score_axpy_mean(alpha, &sll->score_avg, &sll->active, design, isend, y);
 }
 
-void recv_sloglik_axpy_last_mean(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
 				 struct vector *y)
 {
 	assert(sll);
@@ -832,7 +836,7 @@ void recv_sloglik_axpy_last_mean(double alpha, const struct recv_sloglik *sll,
 			design, isend, y);
 }
 
-void recv_sloglik_axpy_avg_score(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_avg_score(double alpha, const struct recv_loglik_sender *sll,
 				 struct vector *y)
 {
 	assert(sll);
@@ -846,7 +850,7 @@ void recv_sloglik_axpy_avg_score(double alpha, const struct recv_sloglik *sll,
 		   y);
 }
 
-void recv_sloglik_axpy_last_score(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
 				  struct vector *y)
 {
 	assert(sll);
@@ -860,7 +864,7 @@ void recv_sloglik_axpy_last_score(double alpha, const struct recv_sloglik *sll,
 		   &sll->active, design, isend, y);
 }
 
-void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_avg_imat(double alpha, const struct recv_loglik_sender *sll,
 				struct matrix *y)
 {
 	assert(sll);
@@ -874,7 +878,7 @@ void recv_sloglik_axpy_avg_imat(double alpha, const struct recv_sloglik *sll,
 		  isend, y);
 }
 
-void recv_sloglik_axpy_last_imat(double alpha, const struct recv_sloglik *sll,
+void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
 				 struct matrix *y)
 {
 	assert(sll);
@@ -890,91 +894,110 @@ void recv_sloglik_axpy_last_imat(double alpha, const struct recv_sloglik *sll,
 
 /* recv_loglik */
 
+void cohort_init(struct recv_loglik_cohort *cll, const struct recv_model *m, ssize_t c)
+{
+	assert(cll);
+	assert(m);
+	assert(0 <= c && c < recv_model_cohort_count(m));
+	
+	info_init(&cll->info, m);
+	cll->info_cached = true;
+}
+
 void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 {
 	assert(ll);
 	assert(m);
 
-	const struct design *design = recv_model_design(m);
-	ssize_t isend, nsend = design_send_count(design);
-
 	ll->model = m;
 
-	array_init(&ll->slogliks, sizeof(struct recv_sloglik));
-	array_set_capacity(&ll->slogliks, nsend);
-	for (isend = 0; isend < nsend; isend++) {
-		struct recv_sloglik *sll = array_add(&ll->slogliks, NULL);
-		recv_sloglik_init(sll, m, isend);
+	ssize_t ic, nc = recv_model_cohort_count(m);
+	struct recv_loglik_cohort *cohorts = xcalloc(nc, sizeof(*cohorts));
+	for (ic = 0; ic < nc; ic++) {
+		cohort_init(&cohorts[ic], m, ic);
 	}
+	ll->cohorts = cohorts;
+	
+	ssize_t isend, nsend = recv_model_send_count(m);
+	struct recv_loglik_sender *senders = xcalloc(nsend, sizeof(*senders));
+	for (isend = 0; isend < nsend; isend++) {
+		sender_init(&senders[isend], m, isend);
+	}
+	ll->senders = senders;
 
 	ll->last = NULL;
+}
 
-	info_init(&ll->info, m);
-	ll->info_cached = false;
+void cohort_deinit(struct recv_loglik_cohort *cll)
+{
+	assert(cll);
+	info_deinit(&cll->info);
 }
 
 void recv_loglik_deinit(struct recv_loglik *ll)
 {
 	assert(ll);
 
-	info_deinit(&ll->info);
-	struct recv_sloglik *sll;
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		recv_sloglik_deinit(sll);
+	struct recv_loglik_sender *senders = ll->senders;
+	ssize_t isend, nsend = recv_model_send_count(ll->model);
+	for (isend = 0; isend < nsend; isend++) {
+		sender_deinit(&senders[isend]);
 	}
-	array_deinit(&ll->slogliks);
+	xfree(senders);
+
+	struct recv_loglik_cohort *cohorts = ll->cohorts;
+	ssize_t ic, nc = recv_model_cohort_count(ll->model);
+	for (ic = 0; ic < nc; ic++) {
+		cohort_deinit(&cohorts[ic]);
+	}
+	xfree(cohorts);
+}
+
+void cohort_clear(struct recv_loglik_cohort *cll)
+{
+	assert(cll);
+	info_clear(&cll->info);
+	cll->info.dev = 0.0;
+	cll->info.nsend = 0;
+	cll->info.nrecv = 0;	
+	cll->info_cached = true;
 }
 
 void recv_loglik_clear(struct recv_loglik *ll)
 {
 	assert(ll);
 
-	struct recv_sloglik *sll;
+	struct recv_loglik_cohort *cohorts = ll->cohorts;
+	ssize_t ic, nc = recv_model_cohort_count(ll->model);
+	for (ic = 0; ic < nc; ic++) {
+		cohort_clear(&cohorts[ic]);
+	}
 
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		recv_sloglik_clear(sll);
+	struct recv_loglik_sender *senders = ll->senders;
+	ssize_t isend, nsend = recv_model_send_count(ll->model);
+	for (isend = 0; isend < nsend; isend++) {
+		sender_clear(&senders[isend]);
 	}
 
 	ll->last = NULL;
-	info_clear(&ll->info);
-	ll->info.nsend = 0;
-	ll->info.nrecv = 0;
+}
+
+void cohort_add(struct recv_loglik_cohort *ll, ssize_t nto)
+{
+	ll->info.nsend += 1;
+	ll->info.nrecv += nto;
 	ll->info_cached = false;
-}
-
-struct recv_loglik *recv_loglik_alloc(struct recv_model *m,
-				      struct messages *msgs)
-{
-	struct recv_loglik *ll = xcalloc(1, sizeof(*ll));
-
-	struct frame f;
-
-	frame_init(&f, recv_model_design(m));
-	recv_loglik_init(ll, m);
-	recv_loglik_add_all(ll, &f, msgs);
-	frame_deinit(&f);
-
-	return ll;
-}
-
-void recv_loglik_free(struct recv_loglik *ll)
-{
-	if (ll) {
-		recv_loglik_deinit(ll);
-		xfree(ll);
-	}
 }
 
 void recv_loglik_add(struct recv_loglik *ll,
 		     const struct frame *f, const struct message *msg)
 {
-	struct recv_sloglik *sll = array_item(&ll->slogliks, msg->from);
-	recv_sloglik_add(sll, f, msg->to, msg->nto);
-	ll->info.nsend += 1;
-	ll->info.nrecv += msg->nto;
-	ll->last = sll;
-	ll->info_cached = false;
-
+	ssize_t isend = msg->from;
+	ssize_t c = recv_model_cohort(ll->model, isend);
+	sender_add(&ll->senders[isend], f, msg->to, msg->nto);
+	cohort_add(&ll->cohorts[c], msg->nto);
+	
+	ll->last = &ll->senders[isend];
 }
 
 void recv_loglik_add_all(struct recv_loglik *ll,
@@ -1003,64 +1026,82 @@ void recv_loglik_add_all(struct recv_loglik *ll,
 
 }
 
-ssize_t recv_loglik_count(const struct recv_loglik *ll)
+ssize_t recv_loglik_count(const struct recv_loglik *ll, ssize_t c)
 {
 	assert(ll);
-	return ll->info.nrecv;
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	return ll->cohorts[c].info.nrecv;
 }
 
 ssize_t recv_loglik_last_count(const struct recv_loglik *ll)
 {
 	assert(ll);
 	assert(ll->last);
-	return recv_sloglik_last_count(ll->last);
+	return sender_last_count(ll->last);
 }
 
-static double recv_loglik_avg_dev_nocache(const struct recv_loglik *ll)
+static double recv_loglik_avg_dev_nocache(const struct recv_loglik *ll, ssize_t c)
 {
 	assert(ll);
-	double dev, dev_avg;
-	ssize_t ntot, n;
-	struct recv_sloglik *sll;
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
 
-	ntot = 0;
-	dev_avg = 0.0;
-
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		n = recv_sloglik_count(sll);
+	const struct actors *senders = recv_model_senders(ll->model);
+	const struct cohort *cohorts = actors_cohorts(senders);
+	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
+	ssize_t ic , nc = array_count(&cohorts[c].actors);
+	ssize_t ntot = 0;	
+	double dev_avg = 0.0;
+	
+	for (ic = 0; ic < nc; ic++) {
+		ssize_t i = ids[ic];
+		struct recv_loglik_sender *sll = &ll->senders[i];
+		ssize_t n = sender_count(sll);
 		if (n > 0) {
-			dev = recv_sloglik_avg_dev(sll);
+			double dev = sender_avg_dev(sll);
 			dev_avg += n * (dev - dev_avg) / (n + ntot);
 			ntot += n;
 		}
 	}
-	assert(ntot == recv_loglik_count(ll));
+	assert(ntot == recv_loglik_count(ll, c));
 
 	return dev_avg;
 }
 
 static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 					      const struct recv_loglik *ll,
+					      ssize_t c,
 					      struct vector *y)
 {
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(vector_dim(y) == recv_model_dim(ll->model));
+
+	const struct actors *senders = recv_model_senders(ll->model);
+	const struct cohort *cohorts = actors_cohorts(senders);
+	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
+	ssize_t ic , nc = array_count(&cohorts[c].actors);
+
 	struct vector avg_mean, diff;
 	vector_init(&avg_mean, recv_model_dim(ll->model));
 	vector_init(&diff, recv_model_dim(ll->model));
 	ssize_t ntot, n;
-	struct recv_sloglik *sll;
 
 	ntot = 0;
 
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		n = recv_sloglik_count(sll);
+	for (ic = 0; ic < nc; ic++) {
+		ssize_t i = ids[ic];
+		struct recv_loglik_sender *sll = &ll->senders[i];
+
+		n = sender_count(sll);
 		if (n > 0) {
 			ntot += n;
 			vector_assign_copy(&diff, &avg_mean);
-			recv_sloglik_axpy_avg_mean(-1.0, sll, &diff);
+			sender_axpy_avg_mean(-1.0, sll, &diff);
 			vector_axpy(-((double)n) / ntot, &diff, &avg_mean);
 		}
 	}
-	assert(ntot == recv_loglik_count(ll));
+	assert(ntot == recv_loglik_count(ll, c));
 
 	vector_axpy(alpha, &avg_mean, y);
 	vector_deinit(&diff);
@@ -1069,26 +1110,39 @@ static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 
 static void recv_loglik_axpy_avg_score_nocache(double alpha,
 					       const struct recv_loglik *ll,
+					       ssize_t c,
 					       struct vector *y)
 {
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(vector_dim(y) == recv_model_dim(ll->model));
+
+	const struct actors *senders = recv_model_senders(ll->model);
+	const struct cohort *cohorts = actors_cohorts(senders);
+	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
+	ssize_t ic , nc = array_count(&cohorts[c].actors);
+		
 	struct vector avg_score, diff;
 	vector_init(&avg_score, recv_model_dim(ll->model));
 	vector_init(&diff, recv_model_dim(ll->model));
 	ssize_t ntot, n;
-	struct recv_sloglik *sll;
 
 	ntot = 0;
 
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		n = recv_sloglik_count(sll);
+	for (ic = 0; ic < nc; ic++) {
+		ssize_t i = ids[ic];
+		struct recv_loglik_sender *sll = &ll->senders[i];
+
+		n = sender_count(sll);
 		if (n > 0) {
 			ntot += n;
 			vector_assign_copy(&diff, &avg_score);
-			recv_sloglik_axpy_avg_score(-1.0, sll, &diff);
+			sender_axpy_avg_score(-1.0, sll, &diff);
 			vector_axpy(-((double)n) / ntot, &diff, &avg_score);
 		}
 	}
-	assert(ntot == recv_loglik_count(ll));
+	assert(ntot == recv_loglik_count(ll, c));
 
 	vector_axpy(alpha, &avg_score, y);
 	vector_deinit(&diff);
@@ -1097,32 +1151,46 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha,
 
 static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 					      const struct recv_loglik *ll,
+					      ssize_t c,
 					      struct matrix *y)
 {
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(matrix_nrow(y) == recv_model_dim(ll->model));
+	assert(matrix_ncol(y) == recv_model_dim(ll->model));	
+
+	const struct actors *senders = recv_model_senders(ll->model);
+	const struct cohort *cohorts = actors_cohorts(senders);
+	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
+	ssize_t ic , nc = array_count(&cohorts[c].actors);
+	
 	struct matrix avg_imat, new_imat, diff;
 	ssize_t dim = recv_model_dim(ll->model);
 	matrix_init(&avg_imat, dim, dim);
 	matrix_init(&new_imat, dim, dim);
 	matrix_init(&diff, dim, dim);
 	ssize_t ntot, n;
-	struct recv_sloglik *sll;
 
 	ntot = 0;
 
-	ARRAY_FOREACH(sll, &ll->slogliks) {
-		n = recv_sloglik_count(sll);
+	for (ic = 0; ic < nc; ic++) {
+		ssize_t i = ids[ic];
+		struct recv_loglik_sender *sll = &ll->senders[i];
+
+		n = sender_count(sll);
 		if (n > 0) {
 			ntot += n;
 
 			matrix_fill(&new_imat, 0.0);
-			recv_sloglik_axpy_avg_imat(1.0, sll, &new_imat);
+			sender_axpy_avg_imat(1.0, sll, &new_imat);
 			matrix_assign_copy(&diff, TRANS_NOTRANS, &avg_imat);
 			matrix_axpy(-1.0, &new_imat, &diff);
-			//recv_sloglik_axpy_avg_imat(-1.0, sll, &diff);
+			//sender_axpy_avg_imat(-1.0, sll, &diff);
 			matrix_axpy(-((double)n) / ntot, &diff, &avg_imat);
 		}
 	}
-	assert(ntot == recv_loglik_count(ll));
+	assert(ntot == recv_loglik_count(ll, c));
 
 	matrix_axpy(alpha, &avg_imat, y);
 	matrix_deinit(&diff);
@@ -1130,51 +1198,76 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 	matrix_deinit(&avg_imat);
 }
 
-static void cache_info(struct recv_loglik *ll)
+static void cache_info(struct recv_loglik *ll, ssize_t c)
 {
-	info_clear(&ll->info);
-	ll->info.dev += recv_loglik_avg_dev_nocache(ll);
-	recv_loglik_axpy_avg_mean_nocache(1, ll, &ll->info.mean);
-	recv_loglik_axpy_avg_score_nocache(1, ll, &ll->info.score);
-	recv_loglik_axpy_avg_imat_nocache(1, ll, &ll->info.imat);
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	
+	info_clear(&ll->cohorts[c].info);
+	ll->cohorts[c].info.dev += recv_loglik_avg_dev_nocache(ll, c);
+	recv_loglik_axpy_avg_mean_nocache(1, ll, c, &ll->cohorts[c].info.mean);
+	recv_loglik_axpy_avg_score_nocache(1, ll, c, &ll->cohorts[c].info.score);
+	recv_loglik_axpy_avg_imat_nocache(1, ll, c, &ll->cohorts[c].info.imat);
 }
 
-struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll)
+struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll, ssize_t c)
 {
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+
 	struct recv_loglik *mll = (struct recv_loglik *)ll;	// no const
 
-	if (!mll->info_cached) {
-		cache_info(mll);
-		mll->info_cached = true;
+	if (!mll->cohorts[c].info_cached) {
+		cache_info(mll, c);
+		mll->cohorts[c].info_cached = true;
 	}
 
-	return &mll->info;
+	return &mll->cohorts[c].info;
 }
 
-double recv_loglik_avg_dev(const struct recv_loglik *ll)
+double recv_loglik_avg_dev(const struct recv_loglik *ll, ssize_t c)
 {
-	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+
+	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
 	return info->dev;
 }
 
 void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
-			       struct vector *y)
+			       ssize_t c, struct vector *y)
 {
-	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(vector_dim(y) == recv_model_dim(ll->model));
+
+	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
 	vector_axpy(alpha, &info->mean, y);
 }
 
 void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
-				struct vector *y)
+				ssize_t c, struct vector *y)
 {
-	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(vector_dim(y) == recv_model_dim(ll->model));
+
+	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
 	vector_axpy(alpha, &info->score, y);
 }
 
 void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
-			       struct matrix *y)
+			       ssize_t c, struct matrix *y)
 {
-	const struct recv_loglik_info *info = recv_loglik_info(ll);
+	assert(ll);
+	assert(0 <= c && c < recv_model_cohort_count(ll->model));
+	assert(y);
+	assert(matrix_nrow(y) == recv_model_dim(ll->model));
+	assert(matrix_ncol(y) == recv_model_dim(ll->model));	
+
+	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
 	matrix_axpy(alpha, &info->imat, y);
 }
 
@@ -1183,7 +1276,7 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 	assert(ll);
 	assert(ll->last);
 
-	return recv_sloglik_last_dev(ll->last);
+	return sender_last_dev(ll->last);
 }
 
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
@@ -1191,7 +1284,7 @@ void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
 {
 	assert(ll);
 	assert(ll->last);
-	recv_sloglik_axpy_last_mean(alpha, ll->last, y);
+	sender_axpy_last_mean(alpha, ll->last, y);
 }
 
 void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
@@ -1199,7 +1292,7 @@ void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
 {
 	assert(ll);
 	assert(ll->last);
-	recv_sloglik_axpy_last_score(alpha, ll->last, y);
+	sender_axpy_last_score(alpha, ll->last, y);
 }
 
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
@@ -1207,5 +1300,5 @@ void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
 {
 	assert(ll);
 	assert(ll->last);
-	recv_sloglik_axpy_last_imat(alpha, ll->last, y);
+	sender_axpy_last_imat(alpha, ll->last, y);
 }
