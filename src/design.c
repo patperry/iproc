@@ -246,7 +246,7 @@ design_recv_mul0_static(double alpha,
 	const struct matrix *traits = design_traits(design);
 	ssize_t off = design->irstatic;
 	ssize_t dim = design->nrstatic;
-	assert(dim == matrix_nrow(traits));
+	assert(dim == matrix_ncol(traits));
 	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
 
 	struct vector z;

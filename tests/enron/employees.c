@@ -5,7 +5,7 @@
 #include "enron.h"
 
 #define EMPLOYEES_SIZE  156
-#define EMPLOYEES_DIM   12
+#define EMPLOYEES_DIM   11
 
 enum gender_code { GENDER_NA = -1, GENDER_MALE, GENDER_FEMALE };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
@@ -137,54 +137,51 @@ static int parse_end_map(void *ctx)
 	
 	vector_fill(traits, 0.0);
 	
-	/* intercept */
-	vector_set_item(traits, 0, 1.0);
-	
 	/* department */
 	if (parse->department == DEPARTMENT_LEGAL)
-		vector_set_item(traits, 1, 1.0);
+		vector_set_item(traits, 0, 1.0);
 	if (parse->department == DEPARTMENT_TRADING)
-		vector_set_item(traits, 2, 1.0);
+		vector_set_item(traits, 1, 1.0);
 	
 	/* gender */
 	if (parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 3, 1.0);
+		vector_set_item(traits, 2, 1.0);
 	
 	/* seniority */
 	if (parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 4, 1.0);
+		vector_set_item(traits, 3, 1.0);
 	
 #if 1
 	/* department * gender */
 	if (parse->department == DEPARTMENT_LEGAL
 	    && parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 5, 1.0);
+		vector_set_item(traits, 4, 1.0);
 	if (parse->department == DEPARTMENT_TRADING
 	    && parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 6, 1.0);
+		vector_set_item(traits, 5, 1.0);
 
 	/* department * seniority */
 	if (parse->department == DEPARTMENT_LEGAL
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 7, 1.0);
+		vector_set_item(traits, 6, 1.0);
 	if (parse->department == DEPARTMENT_TRADING
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 8, 1.0);
+		vector_set_item(traits, 7, 1.0);
 
 	/* gender * senority */
 	if (parse->gender == GENDER_FEMALE
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 9, 1.0);
+		vector_set_item(traits, 8, 1.0);
 
 	/* department * gender * senority */
 	if (parse->department == DEPARTMENT_LEGAL
 	    && parse->gender == GENDER_FEMALE
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 10, 1.0);
+		vector_set_item(traits, 9, 1.0);
 	if (parse->department == DEPARTMENT_TRADING
 	    && parse->gender == GENDER_FEMALE
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 11, 1.0);
+		vector_set_item(traits, 10, 1.0);
 #endif
 	ssize_t cohort = strata_add(&parse->strata, traits);
 	assert(cohort <= actors_cohort_count(parse->actors));
