@@ -96,10 +96,12 @@ static void teardown(void)
 #define YSTR(str) ((const unsigned char *)(str))
 
 #define COEFFICIENTS		"coefficients"
+#define SCORE			"score"
+#define INFORMATION		"information"
 #define RANK			"rank"
 #define CONSTRAINTS		"constraints"
 #define CONSTRAINT_VALUES	"constraint_values"
-#define INFORMATION		"information"
+#define DUALS			"duals"
 #define DEVIANCE		"deviance"
 #define NULL_DEVIANCE		"null_deviance"
 #define DF_RESIDUAL		"df_residual"
@@ -110,79 +112,99 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
-	const struct matrix *coefs = recv_fit_coefs(fit);
-	ssize_t c, n = recv_model_cohort_count(ll->model);
 
+	ssize_t ne = recv_fit_constr_count(fit);
+	ssize_t dim = recv_model_dim(ll->model);
+	ssize_t ic, nc = recv_model_cohort_count(ll->model);
 
-	YG(yajl_gen_array_open(hand));
-	for (c = 0; c < n; c++) {
-		YG(yajl_gen_map_open(hand));
-		
-		const struct recv_loglik_info *info = recv_loglik_info(ll, c);
-		
-		/* coefficients */	
+	YG(yajl_gen_map_open(hand));
+	{
+		/* coefficients */
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS), strlen(COEFFICIENTS)));
-		const struct vector coefs_c = matrix_col(coefs, c);
-		YG(yajl_gen_vector(hand, &coefs_c));
-		
-		/* residuals */
-		/* fitted.values */
-		/* effects */
-		
-		/* rank */	
-		//YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
-		//YG(yajl_gen_integer(hand, recv_fit_rank(fit, c)));
-		
-		/* qr */
-		//YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
-		//YG(yajl_gen_matrix(hand, recv_fit_ce(fit, c)));
+		const struct matrix *coefs = recv_fit_coefs(fit);		
+		YG(yajl_gen_matrix(hand, coefs));
 
-		//YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
-		//YG(yajl_gen_vector(hand, recv_fit_be(fit, c)));
-
+		YG(yajl_gen_string(hand, YSTR(SCORE), strlen(SCORE)));
+		YG(yajl_gen_array_open(hand));
+		for (ic = 0; ic < nc; ic++) {
+			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+			const struct vector *score = &info->score;
+			YG(yajl_gen_vector(hand, score));
+		}
+		YG(yajl_gen_array_close(hand));
+		
 		YG(yajl_gen_string(hand, YSTR(INFORMATION), strlen(INFORMATION)));
-		YG(yajl_gen_matrix(hand, &info->imat));
+		YG(yajl_gen_array_open(hand));
+		for (ic = 0; ic < nc; ic++) {
+			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+			const struct matrix *imat = &info->imat;
+			YG(yajl_gen_matrix(hand, imat));
+		}
+		YG(yajl_gen_array_close(hand));
 
-		/* linear.predictors (eta) */
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));	
+		const struct matrix *ce;
+		const struct vector *be;
+		recv_fit_get_constr(fit, &ce, &be);
+		YG(yajl_gen_matrix(hand, ce));
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
+		YG(yajl_gen_vector(hand, be));
+		
+		YG(yajl_gen_string(hand, YSTR(DUALS), strlen(DUALS)));
+		const struct vector *duals = recv_fit_duals(fit);
+		YG(yajl_gen_vector(hand, duals));
+		
+		/* rank */
+		YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
+		ssize_t rank = dim * nc - ne;
+		YG(yajl_gen_integer(hand, rank));
 		
 		/* deviance */
 		YG(yajl_gen_string(hand, YSTR(DEVIANCE), strlen(DEVIANCE)));
-		YG(yajl_gen_ieee754(hand, info->nrecv * info->dev));
-		
-		/* aic */
-		
-		/* null.deviance */
-		//YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
-		//YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit, c)));
-		
-		/* iter */
-		/* weights = wt */
-		/* prior.weights = weights */
-		
-		/* df.residual */
-		//YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
-		//YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit, c)));
-
-		/* df.null */
-		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
-		YG(yajl_gen_integer(hand, info->nrecv));
-
-		/* y = y */
-		/* converged = conv */
-		/* boundary = boundary */
-		/* call */
-		/* formula */
-		/* terms */
-		/* data */
-		/* offset */
-		/* control */
-		/* method */
-		/* contrasts */
-		/* xlevels */
-	
-		yajl_gen_map_close(hand);
+		double dev = recv_fit_dev(fit);
+		YG(yajl_gen_ieee754(hand, dev));
 	}
-	YG(yajl_gen_array_close(hand));	
+	YG(yajl_gen_map_close(hand));
+
+
+		
+	/* residuals */
+	/* fitted.values */
+	/* effects */
+
+	/* qr */	
+	/* linear.predictors (eta) */
+	/* aic */
+		
+	/* null.deviance */
+	//YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
+	//YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit, c)));
+		
+	/* iter */
+	/* weights = wt */
+	/* prior.weights = weights */
+		
+	/* df.residual */
+	//YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
+	//YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit, c)));
+
+	/* df.null */
+	//YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
+	//YG(yajl_gen_integer(hand, info->nrecv));
+
+	/* y = y */
+	/* converged = conv */
+	/* boundary = boundary */
+	/* call */
+	/* formula */
+	/* terms */
+	/* data */
+	/* offset */
+	/* control */
+	/* method */
+	/* contrasts */
+	/* xlevels */
+	
 	
 	return err;
 }

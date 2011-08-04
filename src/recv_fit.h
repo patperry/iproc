@@ -111,6 +111,8 @@ void recv_fit_init(struct recv_fit *fit,
 void recv_fit_deinit(struct recv_fit *fit);
 
 /* constraints */
+ssize_t recv_fit_constr_count(const struct recv_fit *fit);
+void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce, const struct vector **be);
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2);
 
@@ -121,7 +123,9 @@ const char *recv_fit_errmsg(const struct recv_fit *fit);
 
 /* current values */
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
+double recv_fit_dev(const struct recv_fit *fit);
 const struct matrix *recv_fit_coefs(const struct recv_fit *fit);
+const struct vector *recv_fit_duals(const struct recv_fit *fit);
 double recv_fit_step(const struct recv_fit *fit);
 double recv_fit_grad_norm2(const struct recv_fit *fit);
 

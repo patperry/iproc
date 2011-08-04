@@ -499,6 +499,17 @@ void recv_fit_deinit(struct recv_fit *fit)
 	frame_deinit(&fit->frame);
 }
 
+ssize_t recv_fit_constr_count(const struct recv_fit *fit)
+{
+	return constr_count(&fit->constr);
+}
+
+void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce, const struct vector **be)
+{
+	*ce = &fit->constr.ce;
+	*be = &fit->constr.be;
+}
+
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val)
 {
 	constr_add_set(&fit->constr, i, c, val);
@@ -553,10 +564,33 @@ const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
 	return &fit->cur->loglik;
 }
 
+double recv_fit_dev(const struct recv_fit *fit)
+{
+	assert(fit);
+	
+	const struct recv_loglik *ll = &fit->cur->loglik;
+	double dev = 0.0;
+	ssize_t ic, nc = recv_model_cohort_count(&fit->model);
+	for (ic = 0; ic < nc; ic++) {
+		const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		ssize_t nrecv = info->nrecv;
+		double avg_dev = info->dev;
+		dev += nrecv * avg_dev;
+	}
+	
+	return dev;
+}
+
 const struct matrix *recv_fit_coefs(const struct recv_fit *fit)
 {
 	assert(fit);
 	return &fit->cur->coefs;
+}
+
+const struct vector *recv_fit_duals(const struct recv_fit *fit)
+{
+	assert(fit);
+	return &fit->cur->duals;
 }
 
 double recv_fit_step(const struct recv_fit *fit)
