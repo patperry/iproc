@@ -44,6 +44,7 @@ enum recv_fit_task {
 };
 
 struct recv_fit_constr {
+	ssize_t dim, nc;
 	struct matrix ce;
 	struct vector be;
 };
@@ -106,10 +107,15 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *msgs,
 		   const struct design *design,
 		   const struct actors *senders,
-		   const struct matrix *coefs0,
 		   const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 
+/* constraints */
+void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val);
+void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2);
+
+enum recv_fit_task recv_fit_start(struct recv_fit *fit,
+				  const struct matrix *coefs0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 

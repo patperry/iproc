@@ -40,11 +40,6 @@ static void setup(void) {
 	
 	ssize_t i, c;
 	double intvls[] = {
-		// 56.25,      
-		// 112.50,      
-		// 225.00,      
-		// 450.00,      
-		900.00,
 		1800.00,     3600.00,     7200.00,    14400.00,    28800.00,
 		57600.00,    115200.00,   230400.00,   460800.00,   921600.00,
 		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00,
@@ -221,14 +216,24 @@ int main(int argc, char **argv)
 	bool trace = true;
 	
 	struct recv_fit fit;
-	recv_fit_init(&fit, &messages, &design, &senders, NULL, NULL);
+	recv_fit_init(&fit, &messages, &design, &senders, NULL);
+	ssize_t ic, nc = recv_model_cohort_count(&model);
+	ssize_t dim = recv_model_dim(&model);
+	ssize_t dim0 = matrix_ncol(&recv_traits);
+	ssize_t ii, ni = vector_dim(&intervals);
+
+	for (ic = 1; ic < nc; ic++) {	
+		for (ii = dim0; ii < dim; ii++) {	
+			recv_fit_add_constr_eq(&fit, ii, 0, ii, ic);
+		}
+	}
+	
 	enum recv_fit_task task;
 	ssize_t it = 0;
 	
-	do {
-		it++;
-		task = recv_fit_advance(&fit);
-
+	for (it = 0, task = recv_fit_start(&fit, NULL);
+	     it < maxit && task == RECV_FIT_STEP;
+	     it++, task = recv_fit_advance(&fit)) {
 		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
 			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
 			// const struct recv_loglik_info *info = recv_loglik_info(ll);
@@ -244,7 +249,7 @@ int main(int argc, char **argv)
 			// fprintf(stderr, "iter %"SSIZE_FMT" deviance = %.2f; |grad| = %.16f; step = %.16f\n",
 			//	it, dev, ngrad, step);
 		}
-	} while (it < maxit && task == RECV_FIT_STEP);
+	}
 	
 	if (task != RECV_FIT_CONV) {
 		printf("ERROR: %s\n", recv_fit_errmsg(&fit));
