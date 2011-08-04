@@ -322,19 +322,19 @@ void array_remove_at(struct array *a, ssize_t i)
 void array_remove_range(struct array *a, ssize_t i, ssize_t n)
 {
 	assert(a);
-	assert(i >= 0);
-	assert(i <= array_count(a) - n);
-	assert(n >= 0);
+	assert(0 <= i && i <= array_count(a) - n);
+	assert(0 <= n && n <= array_count(a));
 
 	if (n == 0)
 		return;
 
 	size_t elt_size = array_elt_size(a);
-	ssize_t size = array_count(a) - n;
+	ssize_t size0 = array_count(a);
+	ssize_t size = size0 - n;
 	void *dst = array_item(a, i);
 	void *src = (char *)dst + n * elt_size;
 
-	memmove(dst, src, n * elt_size);
+	memmove(dst, src, (size0 - (i + n)) * elt_size);
 	a->count = size;
 }
 
