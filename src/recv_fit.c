@@ -9,385 +9,304 @@
 #include "util.h"
 #include "recv_fit.h"
 
-// sets model and loglik
-// advances frame to end of messages
-// assumes coefs has already been set
-static void evaluate_loglik(struct recv_fit *fit)
+static void constr_init(struct recv_fit_constr *constr, ssize_t nc, ssize_t dim)
 {
-	frame_clear(&fit->frame);
-
-	// update coefs
-	recv_model_set_coefs(&fit->model, &fit->coefs);
-
-	// update loglik
-	recv_loglik_clear(&fit->loglik);
-	recv_loglik_add_all(&fit->loglik, &fit->frame, fit->msgs);
+	matrix_init(&constr->ce, 0, nc * dim);
+	vector_init(&constr->be, 0);
 }
 
-// sets scale
-// assumes evaluate has already been called
-static void cohort_compute_scale(struct recv_fit *fit, ssize_t c)
+static void constr_deinit(struct recv_fit_constr *constr)
 {
-	struct recv_fit_cohort *cohort = &fit->cohorts[c];	
-	const double vartol = fit->ctrl.vartol;
-	ssize_t i, dim = matrix_nrow(&fit->coefs);
-
-	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik, c);
-	const struct matrix *imat = &info->imat;
-
-	/* get the empirical variances of the covariates */
-	assert(vector_dim(&cohort->scale) == matrix_diag_dim(imat, 0));
-	matrix_get_diag(imat, 0, vector_to_ptr(&cohort->scale));
-
-	/* define the variance to be 1 when the variance is 0 */
-	for (i = 0; i < dim; i++) {
-		double *s = vector_item_ptr(&cohort->scale, i);
-		if (*s < vartol)
-			*s = 1;
-	}
-
-	/* otherwise, take the square root of the variance */
-	vector_sqrt(&cohort->scale);
+	vector_deinit(&constr->be);
+	matrix_deinit(&constr->ce);
 }
 
-static void compute_scale(struct recv_fit *fit)
+static ssize_t constr_count(const struct recv_fit_constr *constr)
 {
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		cohort_compute_scale(fit, c);
-	}
+	assert(matrix_nrow(&constr->ce) == vector_dim(&constr->be));
+	return vector_dim(&constr->be);
 }
 
-// sets ce_t, be, and ne
-// reinits kkt and resid, duals, and ldlfac
-// assumes scale is initalized and evaluate has already been called
-static void cohort_compute_constraints(struct recv_fit *fit, ssize_t c)
+static void resid_init(struct recv_fit_resid *resid, ssize_t nc, ssize_t dim, ssize_t ne)
 {
-	struct recv_fit_cohort *cohort = &fit->cohorts[c];
-	const double eigtol = fit->ctrl.eigtol;
-	ssize_t i, dim = matrix_nrow(&fit->coefs);
-	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik, c);
-	const struct matrix *imat = &info->imat;
-
-	/* compute the eigendecomp of the empirical covariance matrix;
-	 * kkt matrix and resid vector are un-initialized/free, so we
-	 * can use them for temporary storage.
-	 */
-	struct matrix evec = matrix_slice(&cohort->kkt, 0, 0, dim, dim);
-	struct vector eval = vector_slice(&cohort->resid, 0, dim);
-
-	matrix_assign_copy(&evec, TRANS_NOTRANS, imat);
-
-	/* compute its eigendecomposition */
-	assert(symeig_dim(&fit->eig) == dim);
-	assert(symeig_job(&fit->eig) == EIG_VEC);
-	bool ok = symeig_factor(&fit->eig, UPLO_LOWER, &evec, &eval);
-	assert(ok);
-
-	/* compute its rank */
-	for (i = 0; i < dim; i++) {
-		double l = vector_item(&eval, i);
-		if (l > eigtol)
-			break;
-	}
-	// rank = dim - i;
-
-	/* define the constraints */
-	struct matrix u = matrix_slice_cols(&evec, 0, i);
-	matrix_reinit(&cohort->ce, dim, i);
-	matrix_assign_copy(&cohort->ce, TRANS_NOTRANS, &u);
-	vector_reinit(&cohort->be, i);
-	vector_fill(&cohort->be, 0);
-	cohort->ne = i;
-
-	/* update dims of kkt matrix, residuals and dual parameters */
-	matrix_reinit(&cohort->kkt, dim + i, dim + i);
-	vector_reinit(&cohort->resid, dim + i);
-	vector_reinit(&cohort->params0, dim + i);
-	vector_reinit(&cohort->params, dim + i);	
-	vector_reinit(&cohort->search, dim + i);
-	vector_reinit(&cohort->grad_rss, dim + i);	
-
-	/* update ldlfac dimension */
-	ldlfac_reinit(&cohort->ldl, dim + i);
+	vector_init(&resid->vector, dim * nc + ne);
 }
 
-
-static void compute_constraints(struct recv_fit *fit)
+static void resid_deinit(struct recv_fit_resid *resid)
 {
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		cohort_compute_constraints(fit, c);
-	}
+	vector_deinit(&resid->vector);
 }
 
-
-// sets resid
-// assumes evaluate and preprocess have already been called
-static void cohort_compute_resid(struct recv_fit *fit, ssize_t c)
+static void resid_set(struct recv_fit_resid *resid, const struct recv_loglik *ll,
+		      const struct recv_fit_constr *constr,
+		      const struct vector *params)
 {
-	struct recv_fit_cohort *cohort = &fit->cohorts[c];
-	ssize_t dim = recv_model_dim(&fit->model);
-	ssize_t ne = cohort->ne;
-
-	assert(vector_dim(&cohort->be) == ne);
-
-	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik, c);
-	const struct vector *score = &info->score;
-
-	/* r1 is the dual residual: grad(f) + ce * nu,
-	 * where grad(f) = grad(nll) + lambda * x
-	 *               = -[score - lambda * x]
-	 */
-	struct vector r1 = vector_slice(&cohort->resid, 0, dim);
-	struct vector primals = vector_slice(&cohort->params, 0, dim);
-	struct vector duals = vector_slice(&cohort->params, dim, ne);
-	vector_assign_copy(&r1, score);
-	vector_axpy(-fit->penalty, &primals, &r1);
-	matrix_mul(1.0, TRANS_NOTRANS, &cohort->ce, &duals, -1.0, &r1);
-
-	/* r2 is the primal residual: ce * x - be */
-	struct vector r2 = vector_slice(&cohort->resid, dim, ne);
-	vector_assign_copy(&r2, &cohort->be);
-	matrix_mul(1.0, TRANS_TRANS, &cohort->ce, &primals, -1.0, &r2);
-}
-
-static void compute_resid(struct recv_fit *fit)
-{
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		cohort_compute_resid(fit, c);
-	}
-}
-
-// sets kkt
-// assumes evaluate and preproeces have already been called
-static void cohort_compute_kkt(struct recv_fit *fit, ssize_t c)
-{
-	struct recv_fit_cohort *cohort = &fit->cohorts[c];
-	ssize_t dim = recv_model_dim(&fit->model);
-	ssize_t ne = cohort->ne;
-
-	assert(matrix_nrow(&cohort->kkt) == dim + ne);
-	assert(matrix_ncol(&cohort->kkt) == dim + ne);
-
-	const struct recv_loglik_info *info = recv_loglik_info(&fit->loglik, c);
-	const struct matrix *imat = &info->imat;
-
-	/* k11 is the hessian */
-	struct matrix k11 = matrix_slice(&cohort->kkt, 0, 0, dim, dim);
-	matrix_assign_copy(&k11, TRANS_NOTRANS, imat);
-	ssize_t i;
-	for (i = 0; i < dim; i++) {
-		*matrix_item_ptr(&k11, i, i) += fit->penalty;
-	}
-
-	/* k12 is the transpose of the equality constraint matrix */
-	struct matrix k12 = matrix_slice(&cohort->kkt, 0, dim, dim, ne);
-	matrix_assign_copy(&k12, TRANS_NOTRANS, &cohort->ce);
-
-	/* k22 is zero */
-	struct matrix k22 = matrix_slice(&cohort->kkt, dim, dim, ne, ne);
-	matrix_fill(&k22, 0.0);
-
-	/* k21 is never referenced */
-#ifndef NDEBUG
-	struct matrix k21 = matrix_slice(&cohort->kkt, dim, 0, ne, dim);
-	matrix_fill(&k21, 0);
-#endif
-}
-
-static void compute_kkt(struct recv_fit *fit)
-{
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		cohort_compute_kkt(fit, c);
-	}
-}
-
-static double resid_norm2(const struct recv_fit *fit)
-{
-	double rss = 0.0;
+	struct vector *r = &resid->vector;
+	const struct recv_model *m = recv_loglik_model(ll);
+	ssize_t dim = recv_model_dim(m);
+	ssize_t ne = constr_count(constr);
+	ssize_t ic, nc = recv_model_cohort_count(m);
 	
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		rss += vector_norm2(&fit->cohorts[c].resid);
-	}
-	return rss;
-}
-
-
-// sets scale, ce, be
-// reinits kkt and nresid
-// destroys model and coefs 
-static void preprocess(struct recv_fit *fit, const struct matrix *coefs0)
-{
-	ssize_t c, nc = recv_model_cohort_count(&fit->model);
-	/* compute the empirical covariance matrix of the covariates
-	 * by using the null model (coefs = 0, all receivers equally
-	 * likely
+	/* r1 is the dual residual: grad(f) + ce' * nu,
+	 *   where grad(f) = grad(nll)
+	 *                 = -(score)
 	 */
-	matrix_fill(&fit->coefs, 0);
-	evaluate_loglik(fit);
-
-	const struct recv_loglik *ll = recv_fit_loglik(fit);
+	struct vector r1 = vector_slice(r, 0, nc * dim);
+	struct vector duals = vector_slice(params, nc * dim, ne);
+	matrix_mul(1.0, TRANS_TRANS, &constr->ce, &duals, 0.0, &r1);
 	
-	for (c = 0; c < nc; c++) {
-		const struct recv_loglik_info *info = recv_loglik_info(ll, c);
-		matrix_assign_copy(&fit->cohorts[c].imat0, TRANS_NOTRANS, &info->imat);
-		vector_assign_copy(&fit->cohorts[c].score0, &info->score);
-		fit->cohorts[c].dev0 = info->dev;
+	for (ic = 0; ic < nc; ic++) {
+		const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		const struct vector *score = &info->score;
 		
-		cohort_compute_scale(fit, c);
-		cohort_compute_constraints(fit, c);
-
+		struct vector r1c = vector_slice(&r1, ic * dim, dim);
+		vector_axpy(-1.0, score, &r1c);
 	}
+	
+	
+	// r2 is the primal residual: ce * x - be
+	struct vector r2 = vector_slice(r, nc * dim, ne);
+	struct vector primals = vector_slice(params, 0, nc * dim);
+	
+	vector_assign_copy(&r2, &constr->be);
+	matrix_mul(1.0, TRANS_NOTRANS, &constr->ce, &primals, -1.0, &r2);
+	
+	// compute ||r||^2
+	resid->norm2 = vector_norm2(r);
+}
 
-	if (coefs0) {
-		matrix_assign_copy(&fit->coefs, TRANS_NOTRANS, coefs0);
-		evaluate_loglik(fit);
+static void eval_init(struct recv_fit_eval *eval, struct recv_model *m, ssize_t ne)
+{
+	ssize_t dim = recv_model_dim(m);
+	ssize_t nc = recv_model_cohort_count(m);
+
+	vector_init(&eval->params, nc * dim + ne);
+
+	struct vector coefs_data = vector_slice(&eval->params, 0, dim * nc);
+	eval->coefs = matrix_make(&coefs_data, dim, nc);
+	eval->duals = vector_slice(&eval->params, dim * nc, ne);
+
+	recv_loglik_init(&eval->loglik, m);
+	resid_init(&eval->resid, nc, dim, ne);
+}
+
+static void eval_deinit(struct recv_fit_eval *eval)
+{
+	resid_deinit(&eval->resid);
+	recv_loglik_deinit(&eval->loglik);
+	vector_deinit(&eval->params);
+}
+
+static void _eval_update(struct recv_fit_eval *eval, const struct recv_fit_constr *constr,
+			 const struct messages *msgs, struct frame *frame, struct recv_model *model)
+{
+	// clear frame; set model coefs
+	frame_clear(frame);
+	recv_model_set_coefs(model, &eval->coefs);
+	
+	// set loglik
+	recv_loglik_clear(&eval->loglik);
+	recv_loglik_add_all(&eval->loglik, frame, msgs);
+	
+	// set resid
+	resid_set(&eval->resid, &eval->loglik, constr, &eval->params);
+	
+	// set in_domain
+	eval->in_domain = isfinite(eval->resid.norm2);
+
+}
+
+static void eval_set(struct recv_fit_eval *eval, const struct recv_fit_constr *constr,
+		     const struct matrix *coefs, const struct vector *duals,
+		     const struct messages *msgs, struct frame *frame, struct recv_model *model)
+{
+	ssize_t dim = recv_model_dim(model);
+	ssize_t nc = recv_model_cohort_count(model);
+	ssize_t ne = constr_count(constr);
+	
+	struct vector pcoefs_data = vector_slice(&eval->params, 0, dim * nc);
+	struct matrix pcoefs = matrix_make(&pcoefs_data, dim, nc);
+	
+	if (coefs) {
+		matrix_assign_copy(&pcoefs, TRANS_NOTRANS, coefs);
 	} else {
-		assert(vector_norm(&fit->coefs.data) == 0);
+		matrix_fill(&pcoefs, 0.0);
 	}
 	
-	for (c = 0; c < nc; c++) {
-		ssize_t dim = recv_model_dim(&fit->model);
-		ssize_t ne = fit->cohorts[c].ne;
-		struct vector primals = vector_slice(&fit->cohorts[c].params, 0, dim);
-		struct vector duals = vector_slice(&fit->cohorts[c].params, dim, ne);
-
-		struct vector coefs_c = matrix_col(&fit->coefs, c);
-		vector_assign_copy(&primals, &coefs_c);
-		vector_fill(&duals, 0.0);
+	struct vector pduals = vector_slice(&eval->params, dim * nc, ne);
+	
+	if (duals) {
+		vector_assign_copy(&pduals, duals);
+	} else {
+		vector_fill(&pduals, 0.0);
 	}
-
-	compute_resid(fit);
-	compute_kkt(fit);
-	fit->task = RECV_FIT_STEP;
-	fit->rss = resid_norm2(fit);
+	
+	_eval_update(eval, constr, msgs, frame, model);
 }
 
-static void cohort_compute_search(struct recv_fit *fit, ssize_t c)
+static void eval_step(struct recv_fit_eval *eval, const struct recv_fit_constr *constr,
+		      const struct vector *params0, double scale, const struct vector *dir,
+		      const struct messages *msgs, struct frame *frame, struct recv_model *model)
 {
-	ssize_t dim = recv_model_dim(&fit->model);
-	ssize_t ne = fit->cohorts[c].ne;
+	vector_assign_copy(&eval->params, params0);
+	vector_axpy(scale, dir, &eval->params);
+	_eval_update(eval, constr, msgs, frame, model);
+}
 
+static void kkt_init(struct recv_fit_kkt *kkt, ssize_t nc, ssize_t dim, ssize_t ne)
+{
+	ssize_t n = nc * dim + ne;
+
+	kkt->factored = false;
+	kkt->uplo = UPLO_LOWER;
+	matrix_init(&kkt->matrix, n, n);
+	ldlfac_init(&kkt->ldl, n);
+}
+
+static void kkt_deinit(struct recv_fit_kkt *kkt)
+{
+	ldlfac_deinit(&kkt->ldl);
+	matrix_deinit(&kkt->matrix);
+}
+
+static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll, const struct recv_fit_constr *constr)
+{
+	struct matrix *k = &kkt->matrix;
+	const struct recv_model *m = recv_loglik_model(ll);
+	const struct actors *s = recv_model_senders(m);
+	ssize_t dim = recv_model_dim(m);
+	ssize_t ne = constr_count(constr);
+	ssize_t ic, nc = actors_cohort_count(s);
+	
+	matrix_fill(k, 0.0);
+	
+	// k11
+	for (ic = 0; ic < nc; ic++) {
+		struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		struct matrix h = matrix_slice(k, ic * dim, ic * dim, dim, dim);
+		matrix_assign_copy(&h, TRANS_NOTRANS, &info->imat);
+	}
+
+	struct matrix k21 = matrix_slice(k, nc * dim, 0, ne, nc * dim);
+	matrix_assign_copy(&k21, TRANS_NOTRANS, &constr->ce);
+
+	struct matrix k12 = matrix_slice(k, 0, nc * dim, nc * dim, ne);
+	matrix_assign_copy(&k12, TRANS_TRANS, &constr->ce);
+	
+	kkt->factored = false;
+}
+
+static void search_init(struct recv_fit_search *search, ssize_t nc, ssize_t dim, ssize_t ne)
+{
+	vector_init(&search->vector, dim * nc + ne);
+}
+
+static void search_deinit(struct recv_fit_search *search)
+{
+	vector_deinit(&search->vector);
+}
+
+static void search_set(struct recv_fit_search *search, const struct recv_fit_resid *resid,
+		       struct recv_fit_kkt *kkt)
+{
+	assert(!kkt->factored);
+	
 	/* determine the search direction */
-	vector_assign_copy(&fit->cohorts[c].search, &fit->cohorts[c].resid);
-	struct matrix smat = matrix_make(&fit->cohorts[c].search, dim + ne, 1);
-	ssize_t info = ldlfac_solve(&fit->cohorts[c].ldl, UPLO_UPPER,
-				    &fit->cohorts[c].kkt, &smat);
+	struct vector *s = &search->vector;
+	vector_assign_copy(s, &resid->vector);
+	vector_scale(s, -1.0);
+	
+	struct matrix smat = matrix_make(s, vector_dim(s), 1);
+	ssize_t info = ldlfac_solve(&kkt->ldl, kkt->uplo,
+				    &kkt->matrix, &smat);
+	kkt->factored = true;
+
 	assert(info == 0);
-	vector_scale(&fit->cohorts[c].search, -1.0);
-	
-	/* update the initial position */
-	vector_assign_copy(&fit->cohorts[c].params0, &fit->cohorts[c].params);
-	
 }
 
-static void compute_search(struct recv_fit *fit)
+
+static void rgrad_init(struct recv_fit_rgrad *rgrad, ssize_t nc, ssize_t dim, ssize_t ne)
 {
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	for (c = 0; c < n; c++) {
-		cohort_compute_search(fit, c);
-	}
+	vector_init(&rgrad->vector, dim * nc + ne);
 }
 
-
-static void take_step(struct recv_fit *fit, double stp, double *rssp, double *grssp)
+static void rgrad_deinit(struct recv_fit_rgrad *rgrad)
 {
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	ssize_t dim = recv_model_dim(&fit->model);
-	
-	/* take a step to get new primal and dual variables (and coefficients) */
-	for (c = 0; c < n; c++) {
-		vector_assign_copy(&fit->cohorts[c].params, &fit->cohorts[c].params0);
-		vector_axpy(stp, &fit->cohorts[c].search, &fit->cohorts[c].params);
-
-		struct vector primals = vector_slice(&fit->cohorts[c].params, 0, dim);
-		struct vector coefs_c = matrix_col(&fit->coefs, c);
-		vector_assign_copy(&coefs_c, &primals);
-	}
-	
-	/* compute the fit, residuals, and kkt matrix at the new coefficients */
-	evaluate_loglik(fit);
-	compute_resid(fit);
-	compute_kkt(fit);
-
-	/* compute the gradient of the squared residual norm */
-	double rss = 0.0, grss = 0.0;
-	
-	for (c = 0; c < n; c++) {
-		ssize_t ne = fit->cohorts[c].ne;
-		struct vector cgrad = vector_slice(&fit->cohorts[c].grad_rss, 0, dim);
-		struct vector dgrad = vector_slice(&fit->cohorts[c].grad_rss, dim, ne);	
-		struct vector cresid = vector_slice(&fit->cohorts[c].resid, 0, dim);
-		struct vector dresid = vector_slice(&fit->cohorts[c].resid, dim, ne);
-		struct matrix k11 = matrix_slice(&fit->cohorts[c].kkt, 0, 0, dim, dim);
-	
-		matrix_mul(1.0, TRANS_NOTRANS, &k11, &cresid, 0.0, &cgrad);
-		matrix_mul(1.0, TRANS_NOTRANS, &fit->cohorts[c].ce, &dresid, 1.0, &cgrad);
-		matrix_mul(1.0, TRANS_TRANS, &fit->cohorts[c].ce, &cresid, 0.0, &dgrad);
-		vector_scale(&cgrad, 2.0);
-		vector_scale(&dgrad, 2.0);
-		
-		/* evaluate the new squared residual norm and directional derivative */
-		fit->cohorts[c].rss = vector_norm2(&fit->cohorts[c].resid);
-		fit->cohorts[c].grss = vector_dot(&fit->cohorts[c].search, &fit->cohorts[c].grad_rss);
-		
-		rss += fit->cohorts[c].rss;
-		grss += fit->cohorts[c].grss;
-	}
-	
-	assert(isfinite(rss));
-	assert(isfinite(grss));
-	
-	*rssp = rss;
-	*grssp = grss;
+	vector_deinit(&rgrad->vector);
 }
+
+static void rgrad_set(struct recv_fit_rgrad *rgrad, const struct recv_fit_kkt *kkt,
+		      const struct recv_fit_resid *resid)
+{
+	assert(!kkt->factored);
+	
+	struct vector *g = &rgrad->vector;
+	matrix_mul(2.0, TRANS_NOTRANS, &kkt->matrix, &resid->vector, 0.0, g);
+}
+
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 {
-
-	double f0 = fit->rss;
+	// swap prev and cur evals
+	struct recv_fit_eval *tmp = fit->prev;
+	fit->prev = fit->cur;
+	fit->cur = tmp;
+	
+	// determine initial value and gradient
+	double f0 = fit->prev->resid.norm2;
 	double g0 = -2 * f0;
 
-	assert(isfinite(f0));
-	assert(isfinite(g0));
-
+	// stop early if residual is below tolerance
 	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol)
-		return RECV_FIT_CONV;	/* residual is 0 */
+		return RECV_FIT_CONV;
 
-	compute_search(fit);
+	// determine the search direction
+	search_set(&fit->search, &fit->prev->resid, &fit->kkt);
+	double smax = vector_max_abs(&fit->search.vector);
 
-	/* perform a linesearch to reduce the residual norm */
-	enum linesearch_task task;
-	ssize_t it = 0;
-
-	//printf("f0: %.22f g0: %.22f\n", f0, g0);
-
-
-	
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	double xmax = 0.0;
-	for (c = 0; c < n; c++) {
-		xmax = MAX(xmax, vector_max_abs(&fit->cohorts[c].search));
-	}
-	
+	// set up the linesearch control parameters
 	struct linesearch_ctrl ctrl = fit->ctrl.ls;	
-	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, xmax));
+	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, smax));
 	ctrl.stpmin = MIN(ctrl.stpmin, 1e-12 * ctrl.stpmax);
 	double stp0 = MIN(1.0, ctrl.stpmin + 0.5 * (ctrl.stpmax - ctrl.stpmin));
+	
+	// perform a linesearch to reduce the residual norm	
+	enum linesearch_task task;
+	ssize_t it = 0;
 	linesearch_start(&fit->ls, stp0, f0, g0, &ctrl);
 
 	do {
+		// compute the new trial step length
 		it++;
 		fit->step = linesearch_step(&fit->ls);
-		take_step(fit, fit->step, &fit->rss, &fit->grss);
+		
+		// evaluate the function at the new point
+		eval_step(fit->cur, &fit->constr,
+			  &fit->prev->params, fit->step, &fit->search.vector,
+			  fit->msgs, &fit->frame, &fit->model);
+		
+		if (!fit->cur->in_domain) {
+			goto domain_error_f;
+		}
+		
+		// compute the kkt matrix and residual gradient at the new point
+		kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
+		rgrad_set(&fit->rgrad, &fit->kkt, &fit->cur->resid);
+		
+		double f = fit->cur->resid.norm2;
+		double g = vector_dot(&fit->search.vector, &fit->rgrad.vector);
 
-		task = linesearch_advance(&fit->ls, fit->rss, fit->grss);
+		if (!isfinite(g)) {
+			goto domain_error_g; 
+		}
 
-		//printf("f: %.22f g: %.22f  stp: %.22f\n", f, g, stp);
+		// stop (linesearch converged) or get a new trial step
+		task = linesearch_advance(&fit->ls, f, g);
+		continue;
+
+	domain_error_f:
+	domain_error_g:		
+		assert(0 && "DOMAIN ERROR");
 	} while (it < fit->ctrl.ls_maxit
 		 && task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
 
@@ -398,22 +317,6 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	} else {
 		return RECV_FIT_ERR_LNSRCH;
 	}
-}
-
-static void cohort_init(struct recv_fit_cohort *cohort, ssize_t dim)
-{
-	matrix_init(&cohort->imat0, dim, dim);
-	vector_init(&cohort->score0, dim);
-	vector_init(&cohort->scale, dim);
-	matrix_init(&cohort->ce, dim, 0);
-	vector_init(&cohort->be, 0);
-	vector_init(&cohort->params0, dim);
-	vector_init(&cohort->params, dim);	
-	vector_init(&cohort->resid, dim);
-	matrix_init(&cohort->kkt, dim, dim);
-	vector_init(&cohort->search, dim);
-	vector_init(&cohort->grad_rss, dim);	
-	ldlfac_init(&cohort->ldl, dim);
 }
 
 void recv_fit_init(struct recv_fit *fit,
@@ -432,7 +335,8 @@ void recv_fit_init(struct recv_fit *fit,
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
 	ssize_t dim = design_recv_dim(design);
-	ssize_t ncohort = actors_cohort_count(senders);
+	ssize_t nc = actors_cohort_count(senders);
+	ssize_t ne = 0;
 
 	if (!ctrl) {
 		fit->ctrl = RECV_FIT_CTRL0;
@@ -440,62 +344,42 @@ void recv_fit_init(struct recv_fit *fit,
 		fit->ctrl = *ctrl;
 	}
 
+	fit->msgs = msgs;	
 	fit->design = design;
 	fit->senders = senders;
-	fit->msgs = msgs;
-	fit->penalty = 0.0;
 
-	frame_init(&fit->frame, design);
-	matrix_init(&fit->coefs, dim, ncohort);
-	recv_model_init(&fit->model, &fit->frame, fit->senders, &fit->coefs);
-	recv_loglik_init(&fit->loglik, &fit->model);
-	fit->step = NAN;
-	symeig_init(&fit->eig, dim, EIG_VEC);
+	frame_init(&fit->frame, fit->design);
+	recv_model_init(&fit->model, &fit->frame, fit->senders, NULL);
+	constr_init(&fit->constr, nc, dim);
+	eval_init(&fit->eval[0], &fit->model, ne);
+	eval_init(&fit->eval[1], &fit->model, ne);
+	fit->prev = &fit->eval[0];
+	fit->cur = &fit->eval[1];
+	kkt_init(&fit->kkt, nc, dim, ne);
+	search_init(&fit->search, nc, dim, ne);
+	rgrad_init(&fit->rgrad, nc, dim, ne);
 
-	ssize_t c;
-	struct recv_fit_cohort *cohorts = xcalloc(ncohort, sizeof(*cohorts));
-	for (c = 0; c < ncohort; c++) {
-		cohort_init(&cohorts[c], dim);
-	}
-	fit->cohorts = cohorts;
+	eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->msgs, &fit->frame, &fit->model);
+	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
 	
-	preprocess(fit, coefs0);
-}
-
-static void cohort_deinit(struct recv_fit_cohort *cohort)
-{
-	ldlfac_deinit(&cohort->ldl);
-	vector_deinit(&cohort->grad_rss);	
-	vector_deinit(&cohort->search);
-	matrix_deinit(&cohort->kkt);
-	vector_deinit(&cohort->resid);
-	vector_deinit(&cohort->params);
-	vector_deinit(&cohort->params0);	
-	vector_deinit(&cohort->be);
-	matrix_deinit(&cohort->ce);
-	vector_deinit(&cohort->scale);
-	vector_deinit(&cohort->score0);
-	matrix_deinit(&cohort->imat0);
+	fit->step = NAN;
+	fit->task = RECV_FIT_STEP;
 }
 
 void recv_fit_deinit(struct recv_fit *fit)
 {
 	assert(fit);
 
-	
-	ssize_t c, n = recv_model_cohort_count(&fit->model);
-	struct recv_fit_cohort *cohorts = fit->cohorts;
-	for (c = 0; c < n; c++) {
-		cohort_deinit(&cohorts[c]);
-	}
-	xfree(cohorts);
-
-	symeig_deinit(&fit->eig);
-	recv_loglik_deinit(&fit->loglik);
+	rgrad_deinit(&fit->rgrad);
+	search_deinit(&fit->search);
+	kkt_deinit(&fit->kkt);
+	eval_deinit(&fit->eval[1]);
+	eval_deinit(&fit->eval[0]);
+	constr_deinit(&fit->constr);
 	recv_model_deinit(&fit->model);
-	matrix_deinit(&fit->coefs);
 	frame_deinit(&fit->frame);
 }
+
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 {
@@ -525,55 +409,16 @@ const char *recv_fit_errmsg(const struct recv_fit *fit)
 	return NULL;
 }
 
-ssize_t recv_fit_rank(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	ssize_t dim = matrix_nrow(&fit->coefs);
-	ssize_t ne = vector_dim(&fit->cohorts[c].be);
-
-	return dim - ne;
-}
-
-const struct matrix *recv_fit_ce(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	return &fit->cohorts[c].ce;
-}
-
-const struct vector *recv_fit_be(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	return &fit->cohorts[c].be;
-}
-
-double recv_fit_dev0(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	return fit->cohorts[c].dev0;
-}
-
-const struct vector *recv_fit_score0(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	return &fit->cohorts[c].score0;
-}
-
-const struct matrix *recv_fit_imat0(const struct recv_fit *fit, ssize_t c)
-{
-	assert(fit);
-	return &fit->cohorts[c].imat0;
-}
-
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
 {
 	assert(fit);
-	return &fit->loglik;
+	return &fit->cur->loglik;
 }
 
 const struct matrix *recv_fit_coefs(const struct recv_fit *fit)
 {
 	assert(fit);
-	return &fit->coefs;
+	return &fit->cur->coefs;
 }
 
 double recv_fit_step(const struct recv_fit *fit)
@@ -585,5 +430,5 @@ double recv_fit_step(const struct recv_fit *fit)
 double recv_fit_grad_norm2(const struct recv_fit *fit)
 {
 	assert(fit);
-	return fit->rss;
+	return fit->cur->resid.norm2;
 }

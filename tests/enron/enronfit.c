@@ -135,15 +135,15 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* effects */
 		
 		/* rank */	
-		YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
-		YG(yajl_gen_integer(hand, recv_fit_rank(fit, c)));
+		//YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
+		//YG(yajl_gen_integer(hand, recv_fit_rank(fit, c)));
 		
 		/* qr */
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
-		YG(yajl_gen_matrix(hand, recv_fit_ce(fit, c)));
+		//YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
+		//YG(yajl_gen_matrix(hand, recv_fit_ce(fit, c)));
 
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
-		YG(yajl_gen_vector(hand, recv_fit_be(fit, c)));
+		//YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
+		//YG(yajl_gen_vector(hand, recv_fit_be(fit, c)));
 
 		YG(yajl_gen_string(hand, YSTR(INFORMATION), strlen(INFORMATION)));
 		YG(yajl_gen_matrix(hand, &info->imat));
@@ -157,16 +157,16 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* aic */
 		
 		/* null.deviance */
-		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
-		YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit, c)));
+		//YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
+		//YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit, c)));
 		
 		/* iter */
 		/* weights = wt */
 		/* prior.weights = weights */
 		
 		/* df.residual */
-		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
-		YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit, c)));
+		//YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
+		//YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit, c)));
 
 		/* df.null */
 		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
