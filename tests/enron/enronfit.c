@@ -40,6 +40,7 @@ static void setup(void) {
 	
 	ssize_t i, c;
 	double intvls[] = {
+		900.00,
 		1800.00,     3600.00,     7200.00,    14400.00,    28800.00,
 		57600.00,    115200.00,   230400.00,   460800.00,   921600.00,
 		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00,
@@ -96,6 +97,7 @@ static void teardown(void)
 #define YSTR(str) ((const unsigned char *)(str))
 
 #define COEFFICIENTS		"coefficients"
+#define COUNT			"count"
 #define SCORE			"score"
 #define INFORMATION		"information"
 #define RANK			"rank"
@@ -124,6 +126,14 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		const struct matrix *coefs = recv_fit_coefs(fit);		
 		YG(yajl_gen_matrix(hand, coefs));
 
+		YG(yajl_gen_string(hand, YSTR(COUNT), strlen(COUNT)));
+		YG(yajl_gen_array_open(hand));
+		for (ic = 0; ic < nc; ic++) {
+			ssize_t count = recv_loglik_count(ll, ic);
+			YG(yajl_gen_integer(hand, count));
+		}
+		YG(yajl_gen_array_close(hand));
+		
 		YG(yajl_gen_string(hand, YSTR(SCORE), strlen(SCORE)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
@@ -163,10 +173,17 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_string(hand, YSTR(DEVIANCE), strlen(DEVIANCE)));
 		double dev = recv_fit_dev(fit);
 		YG(yajl_gen_ieee754(hand, dev));
+		
+		/* df.residual */
+		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
+		ssize_t ntot = recv_loglik_count_sum(ll);
+		YG(yajl_gen_integer(hand, ntot - rank));
+		
+		/* df.null */
+		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
+		YG(yajl_gen_integer(hand, ntot));
 	}
 	YG(yajl_gen_map_close(hand));
-
-
 		
 	/* residuals */
 	/* fitted.values */
@@ -184,14 +201,6 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	/* weights = wt */
 	/* prior.weights = weights */
 		
-	/* df.residual */
-	//YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
-	//YG(yajl_gen_integer(hand, info->nrecv - recv_fit_rank(fit, c)));
-
-	/* df.null */
-	//YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
-	//YG(yajl_gen_integer(hand, info->nrecv));
-
 	/* y = y */
 	/* converged = conv */
 	/* boundary = boundary */

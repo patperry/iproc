@@ -113,6 +113,7 @@ void recv_loglik_clear(struct recv_loglik *ll);
 
 struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll,
 					  ssize_t c);
+ssize_t recv_loglik_count_sum(const struct recv_loglik *ll);
 ssize_t recv_loglik_count(const struct recv_loglik *ll, ssize_t c);
 double recv_loglik_avg_dev(const struct recv_loglik *ll, ssize_t c);
 void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,

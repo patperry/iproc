@@ -93,6 +93,7 @@ static void resid_set(struct recv_fit_resid *resid,
 {
 	struct vector *r = &resid->vector;
 	const struct recv_model *m = recv_loglik_model(ll);
+	ssize_t ntot = recv_loglik_count_sum(ll);
 	ssize_t dim = recv_model_dim(m);
 	ssize_t ne = constr_count(constr);
 	ssize_t ic, nc = recv_model_cohort_count(m);
@@ -108,9 +109,10 @@ static void resid_set(struct recv_fit_resid *resid,
 	for (ic = 0; ic < nc; ic++) {
 		const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
 		const struct vector *score = &info->score;
+		ssize_t n = recv_loglik_count(ll, ic);
 
 		struct vector r1c = vector_slice(&r1, ic * dim, dim);
-		vector_axpy(-1.0, score, &r1c);
+		vector_axpy(-((double)n)/ntot, score, &r1c);
 	}
 
 	// r2 is the primal residual: ce' * x - be
@@ -264,14 +266,17 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	ssize_t dim = recv_model_dim(m);
 	ssize_t ne = constr_count(constr);
 	ssize_t ic, nc = actors_cohort_count(s);
+	ssize_t ntot = recv_loglik_count_sum(ll);
 
 	matrix_fill(k, 0.0);
 
 	// k11
 	for (ic = 0; ic < nc; ic++) {
 		struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		ssize_t n = recv_loglik_count(ll, ic);
 		struct matrix h = matrix_slice(k, ic * dim, ic * dim, dim, dim);
 		matrix_assign_copy(&h, TRANS_NOTRANS, &info->imat);
+		matrix_scale(&h, ((double)n) / ntot);
 	}
 
 	struct matrix k21 = matrix_slice(k, nc * dim, 0, ne, nc * dim);
