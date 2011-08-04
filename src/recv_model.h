@@ -143,8 +143,7 @@ struct recv_model {
 
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
-		     const struct actors *senders,
-		     const struct matrix *coefs);
+		     const struct actors *senders, const struct matrix *coefs);
 void recv_model_deinit(struct recv_model *model);
 
 const struct frame *recv_model_frame(const struct recv_model *model);

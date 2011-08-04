@@ -6,7 +6,6 @@
 #include "intmap.h"
 #include "vector.h"
 
-
 struct strata {
 	ssize_t dim;
 	struct array levels;
@@ -41,6 +40,5 @@ struct vector *strata_levels(const struct strata *s)
 	assert(s);
 	return array_to_ptr(&s->levels);
 }
-
 
 #endif /* _STRATA_H */

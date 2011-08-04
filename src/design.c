@@ -51,7 +51,7 @@ void design_init(struct design *design, struct actors *senders,
 	}
 #endif
 
-	ssize_t ps = 0; // actors_dim(senders);
+	ssize_t ps = 0;		// actors_dim(senders);
 	ssize_t pr = matrix_ncol(traits);
 
 	design->senders = actors_ref(senders);
@@ -253,19 +253,18 @@ design_recv_mul0_static(double alpha,
 	vector_init(&z, actors_cohort_count(receivers));
 
 	if (trans == TRANS_NOTRANS) {
-		struct vector xsub = vector_slice(x, off, dim);		
+		struct vector xsub = vector_slice(x, off, dim);
 
 		matrix_mul(1.0, trans, traits, &xsub, 0.0, &z);
 		actors_mul(alpha, trans, receivers, &z, 1.0, y);
-		
 
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
 		actors_mul(1.0, trans, receivers, x, 0.0, &z);
 		matrix_mul(alpha, trans, traits, &z, 1.0, &ysub);
 	}
-	
-	vector_deinit(&z);	
+
+	vector_deinit(&z);
 
 	/*
 	   const struct actors *senders = design_senders(design);        
@@ -377,11 +376,11 @@ design_recv_muls0_static(double alpha,
 	} else {
 		struct svector z;
 		svector_init(&z, actors_cohort_count(receivers));
-		
+
 		struct vector ysub = vector_slice(y, off, dim);
 		actors_muls(1.0, trans, receivers, x, 0.0, &z);
 		matrix_muls(alpha, trans, traits, &z, 1.0, &ysub);
-		
+
 		svector_deinit(&z);
 	}
 

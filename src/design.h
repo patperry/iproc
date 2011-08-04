@@ -140,7 +140,7 @@ void design_send_muls0(double alpha,
 		       const struct design *design,
 		       const struct svector *x, double beta, struct vector *y);
 */
- 
+
 bool design_recv_effects(const struct design *design);
 void design_set_recv_effects(struct design *design, bool reffects);
 void design_add_recv_var(struct design *design, const struct var_type *type);

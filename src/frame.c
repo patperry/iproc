@@ -188,7 +188,7 @@ void frame_init(struct frame *f, const struct design *design)
 		    sizeof(struct frame_event));
 	array_init(&f->observers, sizeof(struct frame_observer));
 	// matrix_init(&f->send_xt, design_send_dim(design),
-	//	    design_send_count(design));
+	//          design_send_count(design));
 	refcount_init(&f->refcount);
 
 	frame_clear(f);
@@ -254,15 +254,15 @@ void frame_clear(struct frame *f)
 	// matrix_fill(&f->send_xt, 0.0);
 
 	// for (isend = 0; isend < nsend; isend++) {
-		// const struct vector *xi = actors_traits(senders, isend);
-		// struct vector col = matrix_col(&f->send_xt, isend);
-		// struct vector dst = vector_slice(&col, itraits, ntraits);
+	// const struct vector *xi = actors_traits(senders, isend);
+	// struct vector col = matrix_col(&f->send_xt, isend);
+	// struct vector dst = vector_slice(&col, itraits, ntraits);
 
-		// vector_assign_copy(&dst, xi);
+	// vector_assign_copy(&dst, xi);
 
-		// if (design_send_effects(f->design)) {
-		// 	matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
-		// }
+	// if (design_send_effects(f->design)) {
+	//      matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
+	// }
 	// }
 
 	const struct frame_observer *obs;
@@ -580,10 +580,10 @@ void frame_add(struct frame *f, const struct message *msg)
 
 //struct vector frame_send_x(struct frame *f, ssize_t isend)
 //{
-//	assert(f);
-//	assert(0 <= isend && isend < design_send_count(f->design));
+//      assert(f);
+//      assert(0 <= isend && isend < design_send_count(f->design));
 //
-//	return matrix_col(&f->send_xt, isend);
+//      return matrix_col(&f->send_xt, isend);
 //}
 
 struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,

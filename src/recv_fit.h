@@ -79,7 +79,7 @@ struct recv_fit_rgrad {
 
 struct recv_fit {
 	struct recv_fit_ctrl ctrl;
-	const struct messages *msgs;	
+	const struct messages *msgs;
 	const struct design *design;
 	const struct actors *senders;
 
@@ -89,15 +89,15 @@ struct recv_fit {
 
 	/* optimization constraints */
 	struct recv_fit_constr constr;
-	
+
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
 	struct recv_fit_kkt kkt;
 	struct recv_fit_search search;
 	struct recv_fit_rgrad rgrad;
-	
+
 	/* additional workspace */
-	struct linesearch ls;	
+	struct linesearch ls;
 	enum recv_fit_task task;
 	double step;
 };

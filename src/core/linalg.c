@@ -57,7 +57,7 @@ void ldlfac_init(struct ldlfac *fac, ssize_t n)
 	fac->lwork = 0;
 	fac->ipiv = NULL;
 	fac->info = -1;
-	
+
 	if (n > 0)
 		ldlfac_reinit(fac, n);
 }
