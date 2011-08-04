@@ -32,9 +32,9 @@ static inline struct matrix matrix_make(const struct vector *v, ssize_t m,
 static inline struct matrix matrix_make_with_lda(const struct vector *v,
 						 ssize_t m, ssize_t n,
 						 ssize_t lda);
-static inline struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j,
+static inline struct matrix matrix_slice(const struct matrix *a, ssize_t i, ssize_t j,
 					 ssize_t m, ssize_t n);
-static inline struct matrix matrix_slice_cols(struct matrix *a, ssize_t j,
+static inline struct matrix matrix_slice_cols(const struct matrix *a, ssize_t j,
 					      ssize_t n);
 static inline struct vector matrix_col(const struct matrix *a, ssize_t j);
 
@@ -129,7 +129,7 @@ struct matrix matrix_make_with_lda(const struct vector *v, ssize_t m, ssize_t n,
 	return a;
 }
 
-struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m,
+struct matrix matrix_slice(const struct matrix *a, ssize_t i, ssize_t j, ssize_t m,
 			   ssize_t n)
 {
 	assert(a);
@@ -148,7 +148,7 @@ struct matrix matrix_slice(struct matrix *a, ssize_t i, ssize_t j, ssize_t m,
 	return matrix_make_with_lda(&v, m, n, lda);
 }
 
-struct matrix matrix_slice_cols(struct matrix *a, ssize_t j, ssize_t n)
+struct matrix matrix_slice_cols(const struct matrix *a, ssize_t j, ssize_t n)
 {
 	assert(a);
 	assert(j >= 0);
