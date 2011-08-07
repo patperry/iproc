@@ -4,9 +4,6 @@
 #include "strata.h"
 #include "enron.h"
 
-#define EMPLOYEES_SIZE  156
-#define EMPLOYEES_DIM   11
-
 enum gender_code { GENDER_NA = -1, GENDER_MALE, GENDER_FEMALE };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
 enum department_code { DEPARTMENT_NA = -1, DEPARTMENT_LEGAL, DEPARTMENT_TRADING, DEPARTMENT_OTHER };
@@ -139,55 +136,51 @@ static int parse_end_map(void *ctx)
 	
 	/* department */
 	if (parse->department == DEPARTMENT_LEGAL)
-		vector_set_item(traits, 0, 1.0);
+		vector_set_item(traits, ENRON_TRAIT_L, 1.0);
 	if (parse->department == DEPARTMENT_TRADING)
-		vector_set_item(traits, 1, 1.0);
-	
-	/* gender */
-	if (parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 2, 1.0);
+		vector_set_item(traits, ENRON_TRAIT_T, 1.0);
 	
 	/* seniority */
 	if (parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 3, 1.0);
-	
-#if 1
-	/* department * gender */
-	if (parse->department == DEPARTMENT_LEGAL
-	    && parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 4, 1.0);
-	if (parse->department == DEPARTMENT_TRADING
-	    && parse->gender == GENDER_FEMALE)
-		vector_set_item(traits, 5, 1.0);
+		vector_set_item(traits, ENRON_TRAIT_J, 1.0);
 
+	/* gender */
+	if (parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_F, 1.0);
+	
 	/* department * seniority */
 	if (parse->department == DEPARTMENT_LEGAL
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 6, 1.0);
+		vector_set_item(traits, ENRON_TRAIT_LJ, 1.0);
 	if (parse->department == DEPARTMENT_TRADING
 	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 7, 1.0);
-
-	/* gender * senority */
-	if (parse->gender == GENDER_FEMALE
-	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 8, 1.0);
-
-	/* department * gender * senority */
-	if (parse->department == DEPARTMENT_LEGAL
-	    && parse->gender == GENDER_FEMALE
-	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 9, 1.0);
-	if (parse->department == DEPARTMENT_TRADING
-	    && parse->gender == GENDER_FEMALE
-	    && parse->seniority == SENIORITY_JUNIOR)
-		vector_set_item(traits, 10, 1.0);
-#endif
-	ssize_t cohort = strata_add(&parse->strata, traits);
-	assert(cohort <= actors_cohort_count(parse->actors));
-	if (cohort == actors_cohort_count(parse->actors))
-		actors_add_cohort(parse->actors);
+		vector_set_item(traits, ENRON_TRAIT_TJ, 1.0);
 	
+	/* department * gender */
+	if (parse->department == DEPARTMENT_LEGAL
+	    && parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_LF, 1.0);
+	if (parse->department == DEPARTMENT_TRADING
+	    && parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_TF, 1.0);
+
+	/* seniority * gender */
+	if (parse->seniority == SENIORITY_JUNIOR
+	    && parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_JF, 1.0);
+
+	/* department * seniority * gender */
+	if (parse->department == DEPARTMENT_LEGAL
+	    && parse->seniority == SENIORITY_JUNIOR	    
+	    && parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_LJF, 1.0);
+	if (parse->department == DEPARTMENT_TRADING
+	    && parse->seniority == SENIORITY_JUNIOR	    
+	    && parse->gender == GENDER_FEMALE)
+		vector_set_item(traits, ENRON_TRAIT_TJF, 1.0);
+
+	ssize_t cohort = strata_add(&parse->strata, traits);
+	assert(cohort < ENRON_NCOHORT);
 	actors_add(parse->actors, cohort);
 	
 	return 1;
@@ -208,6 +201,38 @@ static yajl_callbacks parse_callbacks = {
 	NULL
 };
 
+static void traits_init(struct matrix *traits)
+{
+	matrix_init(traits, ENRON_NCOHORT, ENRON_NTRAIT);
+	ssize_t ic, nc = ENRON_NCOHORT;
+
+	for (ic = 0; ic < nc; ic++) {
+		if (enron_legal[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_L, 1.0);
+		if (enron_trading[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_T, 1.0);
+		if (enron_junior[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_J, 1.0);
+		if (enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_F, 1.0);
+		
+		if (enron_legal[ic] && enron_junior[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_LJ, 1.0);
+		if (enron_trading[ic] && enron_junior[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_TJ, 1.0);
+		if (enron_legal[ic] && enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_LF, 1.0);
+		if (enron_trading[ic] && enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_TF, 1.0);
+		if (enron_junior[ic] && enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_JF, 1.0);
+
+		if (enron_legal[ic] && enron_junior[ic] & enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_LJF, 1.0);
+		if (enron_trading[ic] && enron_junior[ic] & enron_female[ic])
+			matrix_set_item(traits, ic, ENRON_TRAIT_TJF, 1.0);
+	}
+}
 
 bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, FILE *stream)
 {
@@ -217,7 +242,7 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	bool parse_ok = true;
 	
 	struct employee_parse parse;
-	ssize_t p = EMPLOYEES_DIM;
+	ssize_t p = ENRON_NTRAIT;
 	
 	strata_init(&parse.strata, p);
 	vector_init(&parse.traits, p);
@@ -227,6 +252,16 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *) &parse);
 	yajl_config(hand, yajl_allow_comments, 1);
 	yajl_config(hand, yajl_dont_validate_strings, 1);
+	
+	
+	traits_init(traits);
+	ssize_t ic, nc = ENRON_NCOHORT;
+	for (ic = 0; ic < nc; ic++) {
+		matrix_get_row(traits, ic, vector_to_ptr(&parse.traits));
+		strata_add(&parse.strata, &parse.traits);
+		assert(strata_count(&parse.strata) == ic + 1);
+		actors_add_cohort(parse.actors);
+	}
 	
 	for (;;) {
 		rd = fread((void *)fileData, 1, sizeof(fileData) - 1, stream);

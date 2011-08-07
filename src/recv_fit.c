@@ -29,6 +29,20 @@ static ssize_t constr_count(const struct recv_fit_constr *constr)
 	return vector_dim(&constr->be);
 }
 
+static void constr_add(struct recv_fit_constr *constr, const struct vector *ce, double be)
+{
+	ssize_t ne0 = vector_dim(&constr->be);
+	ssize_t ne = ne0 + 1;
+	
+	matrix_reinit(&constr->ce, matrix_nrow(&constr->ce), ne);
+	
+	struct vector ce1 = matrix_col(&constr->ce, ne0);
+	vector_assign_copy(&ce1, ce);
+	
+	vector_reinit(&constr->be, ne);
+	vector_set_item(&constr->be, ne0, be);
+}
+
 static void constr_add_set(struct recv_fit_constr *constr, ssize_t i, ssize_t c, double val)
 {
 	assert(constr);
@@ -515,24 +529,32 @@ void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce, c
 	*be = &fit->constr.be;
 }
 
+static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
+{
+	eval_add_constrs(&fit->eval[0], n);
+	eval_add_constrs(&fit->eval[1], n);
+	kkt_add_constrs(&fit->kkt, n);
+	search_add_constrs(&fit->search, n);
+	rgrad_add_constrs(&fit->rgrad, n);
+
+}
+
+void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce, double be)
+{
+	constr_add(&fit->constr, ce, be);
+	_recv_fit_add_constrs(fit, 1);
+}
+
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val)
 {
 	constr_add_set(&fit->constr, i, c, val);
-	eval_add_constrs(&fit->eval[0], 1);
-	eval_add_constrs(&fit->eval[1], 1);
-	kkt_add_constrs(&fit->kkt, 1);
-	search_add_constrs(&fit->search, 1);
-	rgrad_add_constrs(&fit->rgrad, 1);
+	_recv_fit_add_constrs(fit, 1);
 }
 
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2)
 {
 	constr_add_eq(&fit->constr, i1, c1, i2, c2);
-	eval_add_constrs(&fit->eval[0], 1);
-	eval_add_constrs(&fit->eval[1], 1);
-	kkt_add_constrs(&fit->kkt, 1);
-	search_add_constrs(&fit->search, 1);
-	rgrad_add_constrs(&fit->rgrad, 1);
+	_recv_fit_add_constrs(fit, 1);	
 }
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)

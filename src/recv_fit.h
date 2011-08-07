@@ -113,6 +113,7 @@ void recv_fit_deinit(struct recv_fit *fit);
 /* constraints */
 ssize_t recv_fit_constr_count(const struct recv_fit *fit);
 void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce, const struct vector **be);
+void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce, double be);
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2);
 

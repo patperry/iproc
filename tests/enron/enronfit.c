@@ -24,10 +24,6 @@ static struct matrix recv_traits;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
-static struct frame frame;
-static struct matrix coefs;
-static struct recv_model model;
-static struct recv_loglik recv_loglik;
 
 
 static void setup(void) {
@@ -38,13 +34,14 @@ static void setup(void) {
 	actors_init_copy(&receivers, &enron_actors);	
 	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
 	
-	ssize_t i, c;
 	double intvls[] = {
+		// 450.00,
 		900.00,
-		1800.00,     3600.00,     7200.00,    14400.00,    28800.00,
+		1800.00,     
+		3600.00,     7200.00,    14400.00,    28800.00,
 		57600.00,    115200.00,   230400.00,   460800.00,   921600.00,
-		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00,
-		58982400.00
+		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00
+		// 58982400.00
 	};
 	ssize_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
 	struct vector vintvls = vector_make(intvls, nintvls);
@@ -55,29 +52,10 @@ static void setup(void) {
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
-	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
-
-	for (c = 0; c < matrix_ncol(&coefs); c++) {
-		for (i = 0; i < matrix_nrow(&coefs); i++) {
-			double val = (i % 5 == 0 ? -2.0 :
-				      i % 5 == 1 ?  1.0 :
-				      i % 5 == 2 ? -1.0 :
-				      i % 5 == 3 ?  2.0 : 0.0);
-			matrix_set_item(&coefs, i, c, val);
-		}
-	}
-
-	recv_model_init(&model, &frame, &senders, &coefs);
-	recv_loglik_init(&recv_loglik, &model);
 }
 
 static void teardown(void)
 {
-	recv_loglik_deinit(&recv_loglik);
-	recv_model_deinit(&model);
-	matrix_deinit(&coefs);
-	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 	matrix_deinit(&recv_traits);
@@ -240,24 +218,110 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	/* ssize_t n = messages_recv_count(&messages); */
-	//double penalty = 0; // 0.00001; // n / 512.0; // >= 0.00001 works
 	ssize_t maxit = 25;
 	ssize_t report = 1;
 	bool trace = true;
 	
 	struct recv_fit fit;
 	recv_fit_init(&fit, &messages, &design, &senders, NULL);
-	ssize_t ic, nc = recv_model_cohort_count(&model);
-	ssize_t dim = recv_model_dim(&model);
 	ssize_t dim0 = matrix_ncol(&recv_traits);
-	ssize_t ii, ni = vector_dim(&intervals);
+	ssize_t nc = actors_cohort_count(&senders);	
+	ssize_t dim = design_recv_dim(&design);
+	struct vector ce;
+	vector_init(&ce, dim * nc);
+	ssize_t i;
+	
+	/* constrain dynamic covariates */
+	for (i = dim0; i < dim; i++) {
+		// 3-way interactions
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LJF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LJM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);		
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+		
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TJF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TJM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);		
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+				
+		// 2-way interactions
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LJM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);		
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
 
-	for (ic = 1; ic < nc; ic++) {	
-		for (ii = dim0; ii < dim; ii++) {	
-			recv_fit_add_constr_eq(&fit, ii, 0, ii, ic);
-		}
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TJM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+
+		// main effects
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+		
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+		
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+		
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		recv_fit_add_constr(&fit, &ce, 0.0);
+		
+		// intercept
+		//vector_fill(&ce, 0.0);
+		//vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);		
+		//recv_fit_add_constr(&fit, &ce, 0.0);
+		
 	}
+
+	
+	vector_deinit(&ce);
 	
 	enum recv_fit_task task;
 	ssize_t it = 0;
@@ -283,7 +347,7 @@ int main(int argc, char **argv)
 	}
 	
 	if (task != RECV_FIT_CONV) {
-		printf("ERROR: %s\n", recv_fit_errmsg(&fit));
+		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(&fit));
 		return -1;
 	} else {
 		output(&fit);
