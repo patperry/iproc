@@ -43,15 +43,16 @@ enum enron_trait {
 
 #define ENRON_NTRAIT (ENRON_TRAIT_TJF + 1)
 
-static bool enron_legal[ENRON_NCOHORT]   = { true, true, true, true, false, false, false, false, false, false, false, false };
-static bool enron_trading[ENRON_NCOHORT] = { false, false, false, false, true, true, true, true, false, false, false, false };
-static bool enron_other[ENRON_NCOHORT]   = { false, false, false, false, false, false, false, false, true, true, true, true };
+extern bool enron_legal[ENRON_NCOHORT];
+extern bool enron_trading[ENRON_NCOHORT];
+extern bool enron_other[ENRON_NCOHORT];
 
-static bool enron_junior[ENRON_NCOHORT] = { true, true, false, false, true, true, false, false, true, true, false, false };
-static bool enron_senior[ENRON_NCOHORT] = { false, false, true, true, false, false, true, true, false, false, true, true };
+extern bool enron_junior[ENRON_NCOHORT];
+extern bool enron_senior[ENRON_NCOHORT];
 
-static bool enron_female[ENRON_NCOHORT] = { true, false, true, false, true, false, true, false, true, false, true, false };
-static bool enron_male[ENRON_NCOHORT]   = { false, true, false, true, false, true, false, true, false, true, false, true };
+extern bool enron_female[ENRON_NCOHORT];
+extern bool enron_male[ENRON_NCOHORT];
+
 
 bool enron_employees_init(struct actors *employees, struct matrix *traits);
 bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, FILE *stream);

@@ -27,6 +27,19 @@ struct employee_parse {
 	enum employee_map_key map_key;
 };
 
+
+bool enron_legal[ENRON_NCOHORT]   = { true, true, true, true, false, false, false, false, false, false, false, false };
+bool enron_trading[ENRON_NCOHORT] = { false, false, false, false, true, true, true, true, false, false, false, false };
+bool enron_other[ENRON_NCOHORT]   = { false, false, false, false, false, false, false, false, true, true, true, true };
+
+bool enron_junior[ENRON_NCOHORT] = { true, true, false, false, true, true, false, false, true, true, false, false };
+bool enron_senior[ENRON_NCOHORT] = { false, false, true, true, false, false, true, true, false, false, true, true };
+
+bool enron_female[ENRON_NCOHORT] = { true, false, true, false, true, false, true, false, true, false, true, false };
+bool enron_male[ENRON_NCOHORT]   = { false, true, false, true, false, true, false, true, false, true, false, true };
+
+
+
 static int parse_integer(void *ctx, long long integerVal)
 {
 	struct employee_parse *parse = ctx;
