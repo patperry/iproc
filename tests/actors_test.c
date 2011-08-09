@@ -55,7 +55,6 @@ static void enron_test_size(void **state)
 {
 	assert_int_equal(actors_count(&actors), matrix_nrow(&matrix));
 	assert_int_equal(actors_cohort_count(&actors), matrix_nrow(&traits));	
-	assert_int_equal(matrix_ncol(&traits), matrix_ncol(&matrix));
 }
 
 static void test_mul(void **state)
