@@ -12,12 +12,12 @@ if test "x$ax_blas_ok" == xyes; then
     AC_MSG_CHECKING([whether BLAS has 64-bit integers])
     save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS $FLIBS"
     AC_RUN_IFELSE([AC_LANG_SOURCE([[
-    float F77_FUNC(sdot)(int *, float *, int *, float *, int *);
+    double F77_FUNC(ddot)(int *, double *, int *, double *, int *);
 
     int main(void)
     {
-      float a = 1.0; float b = 1.0; int nn[3] = { -1, 1, -1 }; int inc = 1;
-      return (F77_FUNC(sdot)(&nn[1], &a, &inc, &b, &inc) == 1.0f) ? 0 : 1;
+      double a = 1.0; double b = 1.0; int nn[3] = { -1, 1, -1 }; int inc = 1;
+      return (F77_FUNC(ddot)(&nn[1], &a, &inc, &b, &inc) == 1.0) ? 0 : 1;
     }
     ]])],[ac_cv_blas64=no],[ac_cv_blas64=yes],[ac_cv_blas64=no])
     AC_MSG_RESULT($ac_cv_blas64)
