@@ -41,7 +41,6 @@
 		2223CD11134D76F8004FA7F9 /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* array.h */; };
 		2223CD33134D8C6F004FA7F9 /* array_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD20134D8C11004FA7F9 /* array_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		2223CD34134D8C88004FA7F9 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
-		2223CD35134D8C88004FA7F9 /* libRiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 224D0557132EC113007F5646 /* libRiproc.dylib */; };
 		22286F0F136F36340015CC42 /* rv-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22286F0D136F36340015CC42 /* rv-nrecv.c */; };
 		22286F10136F36340015CC42 /* rv-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22286F0D136F36340015CC42 /* rv-nrecv.c */; };
 		222FC40213607B4200E64FC9 /* hashset_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 222FC3F31360755C00E64FC9 /* hashset_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
@@ -115,7 +114,6 @@
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
 		2267890E134CD5B3001309F5 /* cmockery.h in Headers */ = {isa = PBXBuildFile; fileRef = 2267890C134CD5B3001309F5 /* cmockery.h */; };
 		2267891D134CD66F001309F5 /* pqueue_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267891C134CD66F001309F5 /* pqueue_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
-		2267891F134CD6AB001309F5 /* libRiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 224D0557132EC113007F5646 /* libRiproc.dylib */; };
 		22678934134CD75B001309F5 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		226E3CBE13AFEE610083E9E0 /* linesearch.c in Sources */ = {isa = PBXBuildFile; fileRef = 226E3CBC13AFEE610083E9E0 /* linesearch.c */; };
 		226E3CBF13AFEE610083E9E0 /* linesearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 226E3CBD13AFEE610083E9E0 /* linesearch.h */; };
@@ -151,6 +149,8 @@
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
 		22A88EBC135E6B6A006FE604 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
 		22A88EBD135E6B6A006FE604 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A88EBB135E6B6A006FE604 /* hashset.h */; };
+		22C845A113F1E5C0003383F6 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		22C845A213F1E5DE003383F6 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D2DD6B136929100048244C /* yajl_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD57136929100048244C /* yajl_alloc.h */; };
 		22D2DD6D136929100048244C /* yajl_buf.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD59136929100048244C /* yajl_buf.h */; };
 		22D2DD6E136929100048244C /* yajl_bytestack.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD5A136929100048244C /* yajl_bytestack.h */; };
@@ -243,13 +243,6 @@
 			remoteGlobalIDString = 22678905134CD584001309F5;
 			remoteInfo = cmockery;
 		};
-		2223CD31134D8C69004FA7F9 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 224D0556132EC113007F5646;
-			remoteInfo = Riproc;
-		};
 		222FC40313607B4A00E64FC9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
@@ -314,6 +307,20 @@
 			remoteInfo = enron;
 		};
 		2288809F13A932B100D673A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
+		};
+		22C845A313F1E622003383F6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
+			remoteInfo = iproc;
+		};
+		22C845A513F1E631003383F6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
 			proxyType = 1;
@@ -654,8 +661,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22C845A213F1E5DE003383F6 /* libiproc.dylib in Frameworks */,
 				2223CD34134D8C88004FA7F9 /* libcmockery.dylib in Frameworks */,
-				2223CD35134D8C88004FA7F9 /* libRiproc.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -705,8 +712,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22C845A113F1E5C0003383F6 /* libiproc.dylib in Frameworks */,
 				22678934134CD75B001309F5 /* libcmockery.dylib in Frameworks */,
-				2267891F134CD6AB001309F5 /* libRiproc.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1196,7 +1203,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				2223CD32134D8C69004FA7F9 /* PBXTargetDependency */,
+				22C845A413F1E622003383F6 /* PBXTargetDependency */,
 				2223CD30134D8C65004FA7F9 /* PBXTargetDependency */,
 			);
 			name = darray_test;
@@ -1305,6 +1312,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				22C845A613F1E631003383F6 /* PBXTargetDependency */,
 				22678925134CD708001309F5 /* PBXTargetDependency */,
 			);
 			name = pqueue_test;
@@ -1719,11 +1727,6 @@
 			target = 22678905134CD584001309F5 /* cmockery */;
 			targetProxy = 2223CD2F134D8C65004FA7F9 /* PBXContainerItemProxy */;
 		};
-		2223CD32134D8C69004FA7F9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 224D0556132EC113007F5646 /* Riproc */;
-			targetProxy = 2223CD31134D8C69004FA7F9 /* PBXContainerItemProxy */;
-		};
 		222FC40413607B4A00E64FC9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 22678905134CD584001309F5 /* cmockery */;
@@ -1773,6 +1776,16 @@
 			isa = PBXTargetDependency;
 			target = 222FC40C13607C3F00E64FC9 /* iproc */;
 			targetProxy = 2288809F13A932B100D673A6 /* PBXContainerItemProxy */;
+		};
+		22C845A413F1E622003383F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 22C845A313F1E622003383F6 /* PBXContainerItemProxy */;
+		};
+		22C845A613F1E631003383F6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 222FC40C13607C3F00E64FC9 /* iproc */;
+			targetProxy = 22C845A513F1E631003383F6 /* PBXContainerItemProxy */;
 		};
 		22D2DD9713692AAF0048244C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
