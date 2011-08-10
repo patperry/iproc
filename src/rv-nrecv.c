@@ -60,81 +60,92 @@ static void nrecv_frame_deinit(struct frame_var *fv)
 	xfree(udata);
 }
 
-static void nrecv_frame_clear(struct frame_var *fv)
+static void handle_clear(void *udata, struct frame *f)
 {
+	struct frame_var *fv = udata;
+	struct nrecv_udata *fv_udata = fv->udata;
+	
 	assert(fv);
 	assert(fv->udata);
 
-	struct nrecv_udata *udata = fv->udata;
 	struct nrecv_active *active;
 
-	ARRAY_FOREACH(active, &udata->active) {
+	ARRAY_FOREACH(active, &fv_udata->active) {
 		intset_clear(&active->jrecv);
 	}
 }
 
-static void nrecv_handle_event(struct frame_var *fv,
-			       const struct frame_event *e, struct frame *f)
+static void handle_message_add(void *udata, struct frame *f, const struct message *msg)
 {
+	struct frame_var *fv = udata;
+	struct nrecv_udata *fv_udata = fv->udata;	
+	
 	assert(fv);
-	assert(e);
 	assert(f);
+	assert(msg);
 	assert(fv->design);
-	assert(fv->design->index >= 0);
-	assert(fv->design->index <=
-	       design_recv_dim(f->design) - fv->design->dim);
-	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
+	assert(fv->design->index >= design_recv_dyn_index(f->design));
+	assert(fv->design->index + fv->design->dim
+	       <= design_recv_dyn_index(f->design) + design_recv_dyn_dim(f->design) );
 
-	const struct dyad_event_meta *meta = &e->meta.dyad;
-	struct frame_event dx;
+	
+	ssize_t jrecv = msg->from;
+	ssize_t dyn_index = fv->design->index - design_recv_dyn_index(f->design);
+	
+	ssize_t ito, nto = msg->nto;
+	for (ito = 0; ito < nto; ito++) {
+		ssize_t isend = msg->to[ito];
 
-	if (e->type == DYAD_EVENT_INIT) {
-		struct nrecv_udata *udata = fv->udata;
-		struct nrecv_active *active =
-		    array_item(&udata->active, meta->msg_dyad.jrecv);
-		if (intset_add(&active->jrecv, meta->msg_dyad.isend)) {
-			dx.type = RECV_VAR_EVENT;
-			dx.time = e->time;
-			dx.id = -1;
-			dx.meta.recv_var.item.isend = meta->msg_dyad.jrecv;
-			dx.meta.recv_var.item.jrecv = meta->msg_dyad.isend;
-			dx.meta.recv_var.index = fv->design->index;
-			dx.meta.recv_var.delta = 1.0;
-			frame_events_add(f, &dx);
+		struct nrecv_active *active = array_item(&fv_udata->active, isend);
+		if (intset_add(&active->jrecv, jrecv)) {
+			frame_recv_update(f, isend, jrecv, dyn_index, 1.0);
 		}
-	}
 
-	dx.type = RECV_VAR_EVENT;
-	dx.time = e->time;
-	dx.id = -1;
-	dx.meta.recv_var.item.isend = meta->msg_dyad.jrecv;
-	dx.meta.recv_var.item.jrecv = meta->msg_dyad.isend;
-
-	if (e->type == DYAD_EVENT_MOVE) {
-		assert(meta->intvl > 0);
-		dx.meta.recv_var.index = fv->design->index + meta->intvl;
-		dx.meta.recv_var.delta = -1.0;
-		frame_events_add(f, &dx);
-	} else {
+		
 		ssize_t i, n = fv->design->dim;
 		for (i = 1; i < n; i++) {
-			dx.id = -1;
-			dx.meta.recv_var.index = fv->design->index + i;
-			dx.meta.recv_var.delta = 1.0;
-			frame_events_add(f, &dx);
+			frame_recv_update(f, isend, jrecv, dyn_index + i, 1.0);
 		}
 	}
 }
 
+static void handle_message_advance(void *udata, struct frame *f, const struct message *msg, ssize_t intvl)
+{
+	struct frame_var *fv = udata;
+	
+	assert(fv);
+	assert(f);
+	assert(msg);
+	assert(fv->design);
+	assert(fv->design->index >= design_recv_dyn_index(f->design));
+	assert(fv->design->index + fv->design->dim
+	       <= design_recv_dyn_index(f->design) + design_recv_dyn_dim(f->design) );
+		
+	ssize_t jrecv = msg->from;
+	ssize_t dyn_index = fv->design->index - design_recv_dyn_index(f->design);
+	
+	ssize_t ito, nto = msg->nto;
+	for (ito = 0; ito < nto; ito++) {
+		ssize_t isend = msg->to[ito];
+		
+		frame_recv_update(f, isend, jrecv, dyn_index + intvl, -1.0);
+	}
+}
+
+
 static struct var_type RECV_VAR_NRECV_REP = {
 	VAR_RECV_VAR,
-	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
 	nrecv_init,
 	nrecv_deinit,
 	nrecv_frame_init,
 	nrecv_frame_deinit,
-	nrecv_frame_clear,
-	nrecv_handle_event
+	{
+		handle_message_add,
+		handle_message_advance,
+		NULL, // recv_update
+		NULL, // send_update
+		handle_clear
+	}
 };
 
 const struct var_type *RECV_VAR_NRECV = &RECV_VAR_NRECV_REP;

@@ -150,7 +150,7 @@ static void test_dev(void **state)
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
-		frame_advance_to(&frame, t);			
+		frame_advance(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -210,7 +210,7 @@ static void test_mean(void **state)
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 
-		frame_advance_to(&frame, t);			
+		frame_advance(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -303,7 +303,7 @@ static void test_score(void **state)
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 		
-		frame_advance_to(&frame, t);			
+		frame_advance(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
@@ -398,7 +398,7 @@ static void test_imat(void **state)
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 		
-		frame_advance_to(&frame, t);			
+		frame_advance(&frame, t);			
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {

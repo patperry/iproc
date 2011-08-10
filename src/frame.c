@@ -3,24 +3,159 @@
 #include <stdlib.h>
 #include <math.h>
 #include "ieee754.h"
+#include "vars.h"
 #include "frame.h"
 
-void fprintf_event(FILE * stream, const struct frame_event *e)
-{
-	assert(e);
 
-	fprintf(stream, "{\n");
-	fprintf(stream, "  id: %" SSIZE_FMT "\n", e->id);
-	fprintf(stream, "  time: %" SSIZE_FMT "\n", (ssize_t)(e->time));
-	fprintf(stream, "  type: %s\n",
-		e->type == DYAD_EVENT_INIT ? "DYAD_EVENT_INIT" :
-		e->type == DYAD_EVENT_MOVE ? "DYAD_EVENT_MOVE" :
-		e->type == TRIAD_EVENT_INIT ? "TRIAD_EVENT_INIT" :
-		e->type == TRIAD_EVENT_MOVE1 ? "TRIAD_EVENT_MOVE1" :
-		e->type == TRIAD_EVENT_MOVE2 ? "TRIAD_EVENT_MOVE2" :
-		e->type == SEND_VAR_EVENT ? "SEND_VAR_EVENT" :
-		e->type == RECV_VAR_EVENT ? "RECV_VAR_EVENT" : "(undefined)");
-	fprintf(stream, "}\n");
+static void frame_vars_init(struct frame *f)
+{
+	assert(f);
+	assert(frame_design(f));
+	
+	const struct design *d = frame_design(f);
+	ssize_t i, n = array_count(&d->recv_vars);
+	struct design_var *dvs = array_to_ptr(&d->recv_vars);
+	struct frame_var *fvs = xcalloc(n, sizeof(*fvs));
+
+	for (i = 0; i < n; i++) {
+		struct design_var *dv = &dvs[i];
+		struct frame_var *fv = &fvs[i];
+		fv->design = dv;
+		
+		if (fv->design->type->frame_init) {
+			dv->type->frame_init(fv, f);
+		}
+		
+		frame_add_observer(f, fv, &dv->type->callbacks);
+	}
+	f->vars = fvs;
+}
+
+static void frame_vars_deinit(struct frame *f)
+{
+	assert(f);
+	
+	const struct design *d = frame_design(f);
+	ssize_t i, n = array_count(&d->recv_vars);
+	struct frame_var *fvs = f->vars;
+
+	for (i = 0; i < n; i++) {
+		struct frame_var *fv = &fvs[i];
+		
+		frame_remove_observer(f, fv);
+		
+		if (fv->design->type->frame_deinit) {
+			fv->design->type->frame_deinit(fv);
+		}
+	}
+	xfree(fvs);
+}
+
+static void recv_frame_init(struct recv_frame *rf, struct frame *f)
+{
+	assert(rf);
+
+	array_init(&rf->frame_messages, sizeof(struct frame_message));
+	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
+		    alignof(struct vector));
+}
+
+static void recv_frame_deinit(struct recv_frame *rf)
+{
+	assert(rf);
+
+	struct intmap_iter it;
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+		struct vector *dx = INTMAP_VAL(it);
+		vector_deinit(dx);
+	}
+	intmap_deinit(&rf->jrecv_dxs);
+	
+	array_deinit(&rf->frame_messages);
+}
+
+static void recv_frame_clear(struct recv_frame *rf)
+{
+	assert(rf);
+
+	array_clear(&rf->frame_messages);	
+	
+	struct intmap_iter it;
+	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
+		struct vector *dx = INTMAP_VAL(it);
+		vector_deinit(dx);
+	}
+	intmap_clear(&rf->jrecv_dxs);
+}
+
+static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv, ssize_t dyn_dim)
+{
+	assert(rf);
+
+	struct intmap_pos pos;
+	struct vector *dx;
+
+	if (!(dx = intmap_find(&rf->jrecv_dxs, jrecv, &pos))) {
+		dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
+		vector_init(dx, dyn_dim);
+	}
+	
+	assert(vector_dim(dx) == dyn_dim);
+	return dx;
+}
+
+static void recv_frames_init(struct frame *f)
+{
+	assert(f);
+	
+	const struct design *d = frame_design(f);
+	const struct actors *senders = design_senders(d);
+	ssize_t isend, nsend = actors_count(senders);
+	
+	struct recv_frame *rfs = xcalloc(nsend, sizeof(struct recv_frame));
+	
+	for (isend = 0; isend < nsend; isend++) {
+		recv_frame_init(&rfs[isend], f);
+	}
+	f->recv_frames = rfs;
+}
+
+static void recv_frames_deinit(struct frame *f)
+{
+	assert(f);
+	const struct design *d = frame_design(f);
+	const struct actors *senders = design_senders(d);
+	ssize_t isend, nsend = actors_count(senders);
+	
+	struct recv_frame *rfs = f->recv_frames;
+	
+	for (isend = 0; isend < nsend; isend++) {
+		recv_frame_deinit(&rfs[isend]);
+	}
+	xfree(rfs);
+}
+
+static void recv_frames_clear(struct frame *f)
+{
+	assert(f);
+	const struct design *d = frame_design(f);
+	const struct actors *senders = design_senders(d);
+	ssize_t isend, nsend = actors_count(senders);
+	
+	struct recv_frame *rfs = f->recv_frames;
+	
+	for (isend = 0; isend < nsend; isend++) {
+		recv_frame_clear(&rfs[isend]);
+	}
+}
+
+static struct recv_frame *recv_frames_item(const struct frame *f, ssize_t isend)
+{
+	assert(f);
+	assert(0 <= isend && isend < design_send_count(frame_design(f)));
+	
+	struct recv_frame *rf = &f->recv_frames[isend];
+	return rf;
 }
 
 static int frame_event_rcompare(const void *x1, const void *x2)
@@ -30,299 +165,63 @@ static int frame_event_rcompare(const void *x1, const void *x2)
 	return double_rcompare(&e1->time, &e2->time);
 }
 
-static void recv_frame_init(struct recv_frame *rf, struct frame *f)
-{
-	assert(rf);
-
-	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
-		    alignof(struct vector));
-	rf->frame = f;
-}
-
-static void recv_frame_deinit(struct recv_frame *rf)
-{
-	assert(rf);
-
-	struct intmap_iter it;
-	struct vector *dx;
-
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		dx = INTMAP_VAL(it);
-		vector_deinit(dx);
-	}
-	intmap_deinit(&rf->jrecv_dxs);
-}
-
-static void recv_frame_clear(struct recv_frame *rf)
-{
-	assert(rf);
-
-	struct intmap_iter it;
-	struct vector *dx;
-
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		dx = INTMAP_VAL(it);
-		vector_deinit(dx);
-	}
-	intmap_clear(&rf->jrecv_dxs);
-}
-
-static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv)
-{
-	assert(rf);
-
-	struct intmap_pos pos;
-	struct vector *dx;
-
-	if ((dx = intmap_find(&rf->jrecv_dxs, jrecv, &pos))) {
-		return dx;
-	}
-
-	dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
-	vector_init(dx, design_recv_dyn_dim(rf->frame->design));
-	return dx;
-}
-
-static void var_frames_init(struct frame *frame, const struct design *design)
-{
-	assert(frame);
-	assert(design);
-
-	array_init(&frame->vars, sizeof(struct frame_var));
-	array_set_capacity(&frame->vars, array_count(&design->recv_vars));
-
-	array_add_range(&frame->vars, NULL, array_count(&design->recv_vars));
-
-	ssize_t i, n = array_count(&design->recv_vars);
-	struct design_var *dv;
-	struct frame_var *fv;
-
-	for (i = 0; i < n; i++) {
-		dv = array_item(&design->recv_vars, i);
-		fv = array_item(&frame->vars, i);
-		fv->design = dv;
-
-		if (fv->design->type->frame_init) {
-			dv->type->frame_init(fv, frame);
-		}
-	}
-}
-
-static void var_frames_deinit(struct frame *frame)
-{
-	assert(frame);
-
-	ssize_t i, n = array_count(&frame->vars);
-	struct frame_var *fv;
-
-	for (i = 0; i < n; i++) {
-		fv = array_item(&frame->vars, i);
-
-		if (fv->design->type->frame_deinit) {
-			fv->design->type->frame_deinit(fv);
-		}
-	}
-
-	array_deinit(&frame->vars);
-}
-
-static void var_frames_clear(struct frame *frame)
-{
-	assert(frame);
-
-	ssize_t i, n = array_count(&frame->vars);
-	struct frame_var *fv;
-
-	for (i = 0; i < n; i++) {
-		fv = array_item(&frame->vars, i);
-
-		if (fv->design->type->frame_clear) {
-			fv->design->type->frame_clear(fv);
-		}
-	}
-}
-
-static void recv_frames_init(struct frame *f)
-{
-	assert(f);
-	intmap_init(&f->recv_frames, sizeof(struct recv_frame),
-		    alignof(struct recv_frame));
-}
-
-static void recv_frames_deinit(struct frame *f)
-{
-	assert(f);
-	struct intmap_iter it;
-	struct recv_frame *rf;
-
-	INTMAP_FOREACH(it, &f->recv_frames) {
-		rf = INTMAP_VAL(it);
-		recv_frame_deinit(rf);
-	}
-	intmap_deinit(&f->recv_frames);
-}
-
-static void recv_frames_clear(struct frame *f)
-{
-	assert(f);
-	struct intmap_iter it;
-	struct recv_frame *rf;
-
-	INTMAP_FOREACH(it, &f->recv_frames) {
-		rf = INTMAP_VAL(it);
-		recv_frame_clear(rf);
-	}
-}
-
 void frame_init(struct frame *f, const struct design *design)
 {
 	assert(f);
 	assert(design);
 
 	f->design = design;
-	history_init(&f->history);
-	recv_frames_init(f);
-	var_frames_init(f, design);
-	array_init(&f->events, sizeof(struct frame_event));
-	pqueue_init(&f->future_events, frame_event_rcompare,
+	f->time = -INFINITY;
+	
+	array_init(&f->observers, sizeof(struct frame_observer));		
+	array_init(&f->current_message_ptrs, sizeof(struct message *));
+	pqueue_init(&f->events, frame_event_rcompare,
 		    sizeof(struct frame_event));
-	array_init(&f->observers, sizeof(struct frame_observer));
-	// matrix_init(&f->send_xt, design_send_dim(design),
-	//          design_send_count(design));
-	refcount_init(&f->refcount);
+	recv_frames_init(f);
+	frame_vars_init(f);	
 
 	frame_clear(f);
 }
 
-struct frame *frame_alloc(struct design *design)
-{
-	assert(design);
-
-	struct frame *f = xcalloc(1, sizeof(*f));
-	frame_init(f, design);
-	return f;
-}
-
-struct frame *frame_ref(struct frame *f)
-{
-	assert(f);
-	refcount_get(&f->refcount);
-	return f;
-}
-
-void frame_free(struct frame *f)
-{
-	if (f && refcount_put(&f->refcount, NULL)) {
-		refcount_get(&f->refcount);
-		frame_deinit(f);
-		xfree(f);
-	}
-}
 
 void frame_deinit(struct frame *f)
 {
 	assert(f);
 
-	refcount_deinit(&f->refcount);
-	// matrix_deinit(&f->send_xt);
-	array_deinit(&f->observers);
-	pqueue_deinit(&f->future_events);
-	array_deinit(&f->events);
-	var_frames_deinit(f);
+	frame_vars_deinit(f);	
 	recv_frames_deinit(f);
-	history_deinit(&f->history);
+	pqueue_deinit(&f->events);	
+	array_deinit(&f->current_message_ptrs);	
+	array_deinit(&f->observers);	
 }
 
 void frame_clear(struct frame *f)
 {
 	assert(f);
 
-	history_clear(&f->history);
+	f->time = -INFINITY;
+	array_clear(&f->current_message_ptrs);
+	pqueue_clear(&f->events);	
 	recv_frames_clear(f);
-	var_frames_clear(f);
-	array_clear(&f->events);
-	pqueue_clear(&f->future_events);
-	f->next_event_id = 0;
-
-	// const struct actors *senders = design_senders(f->design);
-	// ssize_t ieff = design_send_effects_index(f->design);
-	// ssize_t itraits = design_send_traits_index(f->design);
-	// ssize_t ntraits = actors_dim(senders);
-	// ssize_t nsend = design_send_count(f->design);
-	// ssize_t isend;
-
-	// matrix_fill(&f->send_xt, 0.0);
-
-	// for (isend = 0; isend < nsend; isend++) {
-	// const struct vector *xi = actors_traits(senders, isend);
-	// struct vector col = matrix_col(&f->send_xt, isend);
-	// struct vector dst = vector_slice(&col, itraits, ntraits);
-
-	// vector_assign_copy(&dst, xi);
-
-	// if (design_send_effects(f->design)) {
-	//      matrix_set_item(&f->send_xt, ieff + isend, isend, 1.0);
-	// }
-	// }
-
+	
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
-		if (obs->h.handle_clear) {
-			obs->h.handle_clear(obs->udata, f);
+		if (obs->callbacks.clear) {
+			obs->callbacks.clear(obs->udata, f);
 		}
 	}
 }
 
-double frame_time(const struct frame *f)
-{
-	assert(f);
-	return history_tcur(&f->history);
-}
-
-const struct history *frame_history(const struct frame *f)
-{
-	assert(f);
-	return &f->history;
-}
-
-static struct recv_frame *frame_recv_frame(struct frame *f, ssize_t isend)
-{
-	assert(f);
-	assert(0 <= isend && isend < design_send_count(f->design));
-
-	struct intmap_pos pos;
-	struct recv_frame *rf;
-
-	if (!(rf = intmap_find(&f->recv_frames, isend, &pos))) {
-		rf = intmap_insert(&f->recv_frames, &pos, NULL);
-		recv_frame_init(rf, f);
-	}
-	return rf;
-}
-
-ssize_t frame_events_count(const struct frame *f)
-{
-	assert(f);
-	return array_count(&f->events);
-}
-
-struct frame_event *frame_events_item(const struct frame *f, ssize_t i)
-{
-	assert(f);
-	assert(0 <= i && i < frame_events_count(f));
-	return array_item(&f->events, i);
-}
-
 void frame_add_observer(struct frame *f, void *udata,
-			const struct frame_handlers *h)
+			const struct frame_callbacks *callbacks)
 {
 	assert(f);
 	assert(udata);
-	assert(h);
-
+	assert(callbacks);
+	
 	struct frame_observer *obs = array_add(&f->observers, NULL);
 	obs->udata = udata;
-	obs->h = *h;
+	obs->callbacks = *callbacks;
 }
 
 static bool observer_equals(const void *val, void *udata)
@@ -335,221 +234,30 @@ void frame_remove_observer(struct frame *f, void *udata)
 {
 	assert(f);
 	assert(udata);
-
+	
 	ssize_t pos =
-	    array_find_last_index(&f->observers, observer_equals, udata);
+	array_find_last_index(&f->observers, observer_equals, udata);
 	if (pos >= 0) {
 		array_remove_at(&f->observers, pos);
 	}
 }
 
-static void notify_observers(struct frame *f, const struct frame_event *e)
+double frame_time(const struct frame *f)
 {
 	assert(f);
-	assert(e);
-	assert(frame_time(f) == e->time);
-
-	const struct frame_observer *obs;
-	ARRAY_FOREACH(obs, &f->observers) {
-		if (obs->h.event_mask & e->type) {
-			obs->h.handle_event(obs->udata, e, f);
-		}
-	}
+	return f->time;
 }
 
-static void notify_vars(struct frame *f, const struct frame_event *e)
+double frame_next_time(const struct frame *f)
 {
 	assert(f);
-	assert(e);
-	assert(frame_time(f) == e->time);
-
-	struct frame_var *v;
-
-	ARRAY_FOREACH(v, &f->vars) {
-		if (v->design->type->handle_event
-		    && v->design->type->event_mask & e->type) {
-			v->design->type->handle_event(v, e, f);
-		}
-	}
-}
-
-static void dyad_event_before(struct frame *f, const struct frame_event *fe)
-{
-	assert(f);
-	assert(fe->time == frame_time(f));
-	assert(fe->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
-
-	const struct dyad_event_meta *meta = &fe->meta.dyad;
-	double t0, dt;
-
-	if (meta->intvl == vector_dim(&f->design->intervals)) {
-		/* pass */
-	} else {
-		struct frame_event e = *fe;
-		t0 = meta->msg_time;
-		dt = vector_item(&f->design->intervals, meta->intvl);
-
-		e.time = t0 + dt;
-		e.type = DYAD_EVENT_MOVE;
-		/* preserve e.id */
-		e.meta.dyad.intvl++;
-
-		frame_events_add(f, &e);
-	}
-}
-
-static void send_var_event_after(struct frame *f, const struct frame_event *fe)
-{
-	assert(f);
-	assert(fe->time == frame_time(f));
-	assert(fe->type == SEND_VAR_EVENT);
-
-	// const struct send_var_event_meta *meta = &fe->meta.send_var;
-	// ssize_t isend = meta->item;
-	// ssize_t index = meta->index;
-	// double delta = meta->delta;
-	// double *ptr = matrix_item_ptr(&f->send_xt, index, isend);
-	// *ptr += delta;
-}
-
-static void recv_var_event_after(struct frame *f, const struct frame_event *fe)
-{
-	assert(f);
-	assert(fe->time == frame_time(f));
-	assert(fe->type == RECV_VAR_EVENT);
-
-	const struct design *design = f->design;
-	ssize_t offset = design_recv_dyn_index(design);
-	const struct recv_var_event_meta *meta = &fe->meta.recv_var;
-	double *ptr;
-	struct vector *dx;
-
-	dx = frame_recv_dx(f, meta->item.isend, meta->item.jrecv);
-	ptr = vector_item_ptr(dx, meta->index - offset);
-	*ptr += meta->delta;
-}
-
-static void event_before(struct frame *f, const struct frame_event *e)
-{
-	assert(f);
-	assert(e->time == frame_time(f));
-
-	notify_vars(f, e);
-
-	switch (e->type) {
-	case DYAD_EVENT_INIT:
-	case DYAD_EVENT_MOVE:
-		dyad_event_before(f, e);
-		break;
-	case TRIAD_EVENT_INIT:
-	case TRIAD_EVENT_MOVE1:
-	case TRIAD_EVENT_MOVE2:
-		assert(0 && "Not implemented");
-	case SEND_VAR_EVENT:
-	case RECV_VAR_EVENT:
-		break;
-	}
-}
-
-static void event_after(struct frame *f, const struct frame_event *e)
-{
-	assert(f);
-	assert(e->time == frame_time(f));
-
-	switch (e->type) {
-	case DYAD_EVENT_INIT:
-	case DYAD_EVENT_MOVE:
-	case TRIAD_EVENT_INIT:
-	case TRIAD_EVENT_MOVE1:
-	case TRIAD_EVENT_MOVE2:
-		break;
-	case SEND_VAR_EVENT:
-		send_var_event_after(f, e);
-		break;
-	case RECV_VAR_EVENT:
-		recv_var_event_after(f, e);
-		break;
-	}
-
-	notify_observers(f, e);
-}
-
-ssize_t frame_events_add(struct frame *f, struct frame_event *e)
-{
-	assert(f);
-	assert(e);
-
-	if (e->id < 0)
-		e->id = f->next_event_id++;
-
-	if (e->time == frame_time(f)) {
-		array_add(&f->events, e);
-		event_before(f, e);
-	} else {
-		pqueue_push(&f->future_events, e);
-	}
-
-	return e->id;
-}
-
-double frame_next_change(const struct frame *f)
-{
-	assert(f);
-
-	if (pqueue_count(&f->future_events)) {
-		const struct frame_event *e = pqueue_top(&f->future_events);
+	
+	if (pqueue_count(&f->events)) {
+		const struct frame_event *e = pqueue_top(&f->events);
 		return e->time;
 	} else {
 		return INFINITY;
 	}
-}
-
-void frame_advance(struct frame *f)
-{
-	assert(f);
-	assert(frame_time(f) < INFINITY);
-
-	double t = frame_next_change(f);
-	const struct frame_event *e;
-
-	ARRAY_FOREACH(e, &f->events) {
-		event_after(f, e);
-	}
-	array_clear(&f->events);
-
-	history_advance_to(&f->history, t);
-
-	while (pqueue_count(&f->future_events)
-	       && (e = pqueue_top(&f->future_events))->time == t) {
-		// need to copy from top; process_event may invalidate pe */
-		struct frame_event ecopy = *e;
-		array_add(&f->events, &ecopy);
-		event_before(f, &ecopy);
-		pqueue_pop(&f->future_events);
-	}
-
-	assert(frame_time(f) == t);
-}
-
-void frame_advance_to(struct frame *f, double t)
-{
-	assert(f);
-	assert(t >= frame_time(f));
-
-	while (frame_next_change(f) <= t) {
-		frame_advance(f);
-	}
-
-	if (frame_time(f) < t) {
-		const struct frame_event *e;
-		ARRAY_FOREACH(e, &f->events) {
-			event_after(f, e);
-		}
-		array_clear(&f->events);
-		history_advance_to(&f->history, t);
-	}
-
-	assert(frame_time(f) == t);
 }
 
 void frame_add(struct frame *f, const struct message *msg)
@@ -557,26 +265,157 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(f);
 	assert(msg);
 	assert(msg->time == frame_time(f));
+	
+	array_add(&f->current_message_ptrs, &msg);
+}
 
-	ssize_t ito, nto = msg->nto;
-	struct frame_event e;
+static void process_current_messages(struct frame *f)
+{
+	assert(f);
+	
+	if (!array_count(&f->current_message_ptrs))
+		return;
+	
+	const struct design *d = frame_design(f);
+	const struct vector *intvls = design_intervals(d);
+	double delta = vector_dim(intvls) ? vector_item(intvls, 0) : INFINITY;
+	double tnext = frame_time(f) + delta;
+	
+	const struct message **msgp;
+	ARRAY_FOREACH(msgp, &f->current_message_ptrs) {
+		const struct message *msg = *msgp;
+		assert(msg->time == frame_time(f));
 
-	e.type = DYAD_EVENT_INIT;
-	e.time = msg->time;
-	e.meta.dyad.msg_time = msg->time;
-	e.meta.dyad.msg_dyad.isend = msg->from;
-	e.meta.dyad.msg_attr = msg->attr;
-	e.meta.dyad.intvl = 0;
+		// add the message to the appropriate recv_frame
+		struct recv_frame *rf = recv_frames_item(f, msg->from);
+		ssize_t imsg = array_count(&rf->frame_messages);
+		struct frame_message *fmsg = array_add(&rf->frame_messages, NULL);
+		fmsg->msg = msg;
+		fmsg->interval = 0;
+		
+		// create an advance event (if necessary)
+		if (isfinite(tnext)) {
+			struct frame_event e;
+			e.time = tnext;
+			e.isend = msg->from;
+			e.imsg = imsg;
+			pqueue_push(&f->events, &e);
+		}
+		
+#ifndef NDEBUG
+		ssize_t n = array_count(&f->current_message_ptrs);
+		double time = frame_time(f);
+#endif
 
-	for (ito = 0; ito < nto; ito++) {
-		e.id = -1;
-		e.meta.dyad.msg_dyad.jrecv = msg->to[ito];
-		frame_events_add(f, &e);
+		// notify all observers
+		const struct frame_observer *obs;
+		ARRAY_FOREACH(obs, &f->observers) {
+			if (obs->callbacks.message_advance) {
+				obs->callbacks.message_add(obs->udata, f, msg);
+				
+				// make sure observers don't add messages
+				// or advance time
+				assert(array_count(&f->current_message_ptrs) == n);
+				assert(frame_time(f) == time);				
+			}
+		}
+	}
+	array_clear(&f->current_message_ptrs);
+}
+
+static void process_event(struct frame *f)
+{
+	assert(pqueue_count(&f->events));
+	assert(!array_count(&f->current_message_ptrs));
+	assert(frame_time(f) == frame_next_time(f));
+		
+	struct frame_event *e = pqueue_top(&f->events);
+	
+	// advance the message interval
+	ssize_t isend = e->isend;
+	ssize_t imsg = e->imsg;
+	struct recv_frame *rf = recv_frames_item(f, isend);
+	struct frame_message *fmsg = array_item(&rf->frame_messages, imsg);
+	const struct message *msg = fmsg->msg;
+
+	ssize_t intvl0 = fmsg->interval;
+	ssize_t intvl = intvl0 + 1;
+	fmsg->interval = intvl;
+
+	// update the event queue
+	const struct design *d = frame_design(f);
+	const struct vector *intvls = design_intervals(d);
+
+	if (intvl < vector_dim(intvls)) {
+		double delta = vector_item(intvls, intvl);
+		double tnext = msg->time + delta;
+		e->time = tnext;
+		pqueue_update_top(&f->events);
+	} else {
+		pqueue_pop(&f->events);
 	}
 
-	assert(history_tcur(&f->history) == msg->time);
-	history_add(&f->history, msg->from, msg->to, msg->nto, msg->attr);
+#ifndef NDEBUG
+	double time = frame_time(f);
+#endif
+	
+	// notify all observers
+	const struct frame_observer *obs;
+	ARRAY_FOREACH(obs, &f->observers) {
+		if (obs->callbacks.message_advance) {
+			obs->callbacks.message_advance(obs->udata, f, msg, intvl);
+			
+			// make sure observers don't add messages
+			// or advance time
+			assert(!array_count(&f->current_message_ptrs));
+			assert(frame_time(f) == time);
+		}
+	}
 }
+
+void frame_advance(struct frame *f, double time)
+{
+	assert(f);
+	assert(time >= frame_time(f));
+	
+	if (frame_time(f) < time)
+		process_current_messages(f);
+	
+	while (frame_next_time(f) < time) {
+		f->time = frame_next_time(f);
+		process_event(f);
+	}
+	
+	assert(frame_time(f) <= time);
+	assert(!array_count(&f->current_message_ptrs));
+	assert(frame_next_time(f) >= time);
+	f->time = time;
+}
+
+
+void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
+		       ssize_t dyn_index, double delta)
+{
+	const struct design *d = frame_design(f);
+	
+	assert(0 <= isend && isend < design_send_count(d));
+	assert(0 <= jrecv && jrecv < design_recv_count(d));
+	assert(0 <= dyn_index && dyn_index < design_recv_dyn_dim(d));
+	assert(!isnan(delta));
+	
+	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
+	double *ptr = vector_item_ptr(dx, dyn_index);
+	*ptr += delta;
+	
+	const struct frame_observer *obs;
+	ARRAY_FOREACH(obs, &f->observers) {
+		if (obs->callbacks.recv_update) {
+			obs->callbacks.recv_update(obs->udata, f, isend,
+						    jrecv, dyn_index, delta);
+		}
+	}
+}
+
 
 //struct vector frame_send_x(struct frame *f, ssize_t isend)
 //{
@@ -586,15 +425,17 @@ void frame_add(struct frame *f, const struct message *msg)
 //      return matrix_col(&f->send_xt, isend);
 //}
 
-struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
-			     ssize_t jrecv)
+const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
+				   ssize_t jrecv)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(f->design));
 	assert(0 <= jrecv && jrecv < design_recv_count(f->design));
 
-	struct recv_frame *rf = frame_recv_frame((struct frame *)f, isend);
-	return recv_frame_dx(rf, jrecv);
+	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
+	const struct design *d = frame_design(f);
+	ssize_t dyn_dim = design_recv_dyn_dim(d);
+	return recv_frame_dx(rf, jrecv, dyn_dim);
 }
 
 /*
@@ -760,10 +601,7 @@ void frame_recv_dmul(double alpha, enum trans_op trans,
 	if (dim == 0)
 		return;
 
-	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
-	if (!rf)
-		return;
-
+	const struct recv_frame *rf = recv_frames_item(f, isend);
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct vector *dx;
@@ -830,10 +668,7 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 	if (dim == 0)
 		return;
 
-	const struct recv_frame *rf = intmap_item(&f->recv_frames, isend);
-	if (!rf)
-		return;
-
+	const struct recv_frame *rf = recv_frames_item(f, isend);
 	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct vector *dx;

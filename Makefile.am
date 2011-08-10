@@ -15,12 +15,8 @@ libiproc_la_SOURCES = \
 	src/actors.h \
 	src/design.c \
 	src/design.h \
-	src/event-trace.c \
-	src/event-trace.h \
 	src/frame.c \
 	src/frame.h \
-	src/history.c \
-	src/history.h \
 	src/messages.c \
 	src/messages.h \
 	src/recv_fit.c \
@@ -29,13 +25,9 @@ libiproc_la_SOURCES = \
 	src/recv_loglik.h \
 	src/recv_model.c \
 	src/recv_model.h \
-	src/rv-irecv.c \
 	src/rv-nrecv.c \
-	src/rv-nsend.c \
 	src/strata.c \
 	src/strata.h \
-	src/sv-irecv.c \
-	src/sv-nrecv.c \
 	src/vars.h
 
 libiproc_la_CPPFLAGS = \

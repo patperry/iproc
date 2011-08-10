@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "vars.h"
 #include "design.h"
 
 void design_deinit(struct design *design)

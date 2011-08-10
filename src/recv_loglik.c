@@ -1013,7 +1013,7 @@ void recv_loglik_add_all(struct recv_loglik *ll,
 
 	MESSAGES_FOREACH(it, msgs) {
 		double t = MESSAGES_TIME(it);
-		frame_advance_to(f, t);
+		frame_advance(f, t);
 
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i++) {

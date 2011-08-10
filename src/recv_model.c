@@ -329,65 +329,56 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 	return &m->sender_models[isend];
 }
 
-static void process_recv_var_event(struct recv_model *m, const struct frame *f,
-				   const struct frame_event *e)
+static void handle_recv_update (void *udata, struct frame *f, ssize_t isend, ssize_t jrecv, ssize_t dyn_index, double delta)
 {
-	assert(m);
-	assert(e->type == RECV_VAR_EVENT);
-
-	const struct recv_var_event_meta *meta = &e->meta.recv_var;
-	ssize_t isend = meta->item.isend;
+	struct recv_model *m = udata;
 	const struct actor *actors = actors_items(m->senders);
 	ssize_t icohort = actors[isend].cohort;
 	struct recv_model_sender *send = sender_raw(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
-
-	//if (isend == 119) {
-	//      printf("PROCESS\n");
-	//}
-
-	ssize_t jrecv = meta->item.jrecv;
+	
 	struct svector_pos pos;
 	double *pdeta = svector_find(&send->deta, jrecv, &pos);
-
+	
 	if (!pdeta) {
 		pdeta = svector_insert(&send->deta, &pos, 0.0);
 		ssize_t ix =
-		    array_binary_search(&send->active, &jrecv, ssize_compare);
+		array_binary_search(&send->active, &jrecv, ssize_compare);
 		assert(ix < 0);
 		array_insert(&send->active, ~ix, &jrecv);
 	}
 
-	ssize_t index = meta->index;
-	double dx = meta->delta;
-	double deta = vector_item(&coefs, index) * dx;
+	const struct design *d = recv_model_design(m);
+	ssize_t dyn_off = design_recv_dyn_index(d);
+	ssize_t index = dyn_off + dyn_index;
 
+	double deta = vector_item(&coefs, index) * delta;
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
 	double eta = vector_item(&cm->eta0, jrecv) + (*pdeta);
 	double eta1 = eta + deta;
-
+	
 	/* W' = W + exp(eta') - exp(eta)
-
-	   log(W') = log{ W * (1 + [exp(eta') - exp(eta)]/W) }
-	   = log(W) + log[ 1 + (exp(eta') - exp(eta))/W ]
-
-	   gamma' = W0 / W * W / W'
-	   = gamma / { 1 + [exp(eta') - exp(eta)] / W }
-	   = gamma / { 1 + [ exp(eta' - log(W)) - exp(eta - log(W)) ] }
+	 *
+	 * log(W') = log{ W * (1 + [exp(eta') - exp(eta)]/W) }
+	 *	   = log(W) + log[ 1 + (exp(eta') - exp(eta))/W ]
+	 *
+	 * gamma' = W0 / W * W / W'
+	 *        = gamma / { 1 + [exp(eta') - exp(eta)] / W }
+	 *        = gamma / { 1 + [ exp(eta' - log(W)) - exp(eta - log(W)) ] }
 	 */
 	double w = exp(eta - scale);
 	double w1 = exp(eta1 - scale);
 	double dw = (w1 - w) / exp(log_W);
 	double gamma1 = gamma / (1.0 + dw);
 	double log_W1 = log_W + log1p(dw);
-
+	
 	//if (isend == 119) {
 	//      printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
 	//}
-
+	
 	/* for dramatic changes in the weight sums, we recompute everything */
 	if (!(fabs(dw) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
@@ -399,23 +390,6 @@ static void process_recv_var_event(struct recv_model *m, const struct frame *f,
 		assert(send->gamma >= 0);
 		assert(isfinite(log_W1));
 		*pdeta += deta;
-	}
-}
-
-static void handle_frame_event(void *udata, const struct frame_event *e,
-			       struct frame *f)
-{
-	struct recv_model *m = udata;
-	assert(m);
-	assert(e);
-	assert(f == recv_model_frame(m));
-
-	switch (e->type) {
-	case RECV_VAR_EVENT:
-		process_recv_var_event(m, f, e);
-		break;
-	default:
-		break;		/* pass */
 	}
 }
 
@@ -431,7 +405,7 @@ static void model_clear(struct recv_model *m)
 	}
 }
 
-static void handle_frame_clear(void *udata, const struct frame *f)
+static void handle_clear(void *udata, struct frame *f)
 {
 	struct recv_model *m = udata;
 	assert(m);
@@ -481,12 +455,15 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	}
 	model->sender_models = sms;
 
-	struct frame_handlers h;
-	h.event_mask = RECV_VAR_EVENT;
-	h.handle_event = handle_frame_event;
-	h.handle_clear = handle_frame_clear;
-	frame_add_observer(f, model, &h);
-
+	struct frame_callbacks callbacks = {
+		NULL, // msg_add
+		NULL, // msg_advance
+		handle_recv_update,
+		NULL, // send_update
+		handle_clear
+	};
+	
+	frame_add_observer(f, model, &callbacks);
 }
 
 void recv_model_deinit(struct recv_model *model)

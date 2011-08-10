@@ -9,7 +9,6 @@
 #include "refcount.h"
 #include "svector.h"
 #include "vector.h"
-#include "vars.h"
 
 /* I. Introduction
  * ---------------
@@ -72,6 +71,8 @@
  * { j, dx[t,i,j] } pairs called ctx->dxs, where dx[t,i,j] is
  * a sparse vector.
  */
+
+struct var_type; // forward declaration
 
 struct design {
 	struct actors *senders;

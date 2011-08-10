@@ -1,31 +1,27 @@
 #ifndef _VARS_H
 #define _VARS_H
 
-/* forward declarations */
-struct design;
-struct design_var;
-struct frame;
-struct frame_event;
-struct frame_var;
+#include "design.h"
+#include "frame.h"
 
 enum var_class {
 	VAR_RECV_VAR,
 	VAR_SEND_VAR
 };
 
+struct design_var;
+struct frame_var;
+
 struct var_type {
 	enum var_class var_class;
-	uint8_t event_mask;
 
 	void (*init) (struct design_var * dv, const struct design * d);
 	void (*deinit) (struct design_var * dv);
 
 	void (*frame_init) (struct frame_var * fv, struct frame * f);
 	void (*frame_deinit) (struct frame_var * fv);
-	void (*frame_clear) (struct frame_var * fv);
 
-	void (*handle_event) (struct frame_var * fv,
-			      const struct frame_event * e, struct frame * f);
+	struct frame_callbacks callbacks;
 };
 
 struct design_var {

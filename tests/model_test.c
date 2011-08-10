@@ -151,7 +151,7 @@ static void test_probs(void **state)
 		// fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
-		frame_advance_to(&frame, t);			
+		frame_advance(&frame, t);			
 		
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i ++) {

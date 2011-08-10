@@ -52,7 +52,7 @@ static void setup(void) {
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV);
-	design_add_recv_var(&design, RECV_VAR_NSEND);	
+	// design_add_recv_var(&design, RECV_VAR_NSEND);	
 }
 
 static void teardown(void)
