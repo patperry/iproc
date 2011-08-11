@@ -15,13 +15,11 @@ struct frame_message {
 
 struct frame_event {
 	double time;
-	ssize_t isend;
 	ssize_t imsg;
 };
 
 /* dX[t,i] */
 struct recv_frame {
-	struct array frame_messages;
 	struct intmap jrecv_dxs;
 };
 
@@ -30,6 +28,7 @@ struct frame {
 	double time;
 
 	struct array observers;
+	struct array frame_messages;
 	struct array current_message_ptrs;
 	struct pqueue events;
 

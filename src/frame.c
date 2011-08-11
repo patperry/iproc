@@ -54,7 +54,6 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
 	assert(rf);
 
-	array_init(&rf->frame_messages, sizeof(struct frame_message));
 	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
 		    alignof(struct vector));
 }
@@ -69,15 +68,11 @@ static void recv_frame_deinit(struct recv_frame *rf)
 		vector_deinit(dx);
 	}
 	intmap_deinit(&rf->jrecv_dxs);
-
-	array_deinit(&rf->frame_messages);
 }
 
 static void recv_frame_clear(struct recv_frame *rf)
 {
 	assert(rf);
-
-	array_clear(&rf->frame_messages);
 
 	struct intmap_iter it;
 	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
@@ -174,6 +169,7 @@ void frame_init(struct frame *f, const struct design *design)
 	f->time = -INFINITY;
 
 	array_init(&f->observers, sizeof(struct frame_observer));
+	array_init(&f->frame_messages, sizeof(struct frame_message));
 	array_init(&f->current_message_ptrs, sizeof(struct message *));
 	pqueue_init(&f->events, frame_event_rcompare,
 		    sizeof(struct frame_event));
@@ -191,6 +187,7 @@ void frame_deinit(struct frame *f)
 	recv_frames_deinit(f);
 	pqueue_deinit(&f->events);
 	array_deinit(&f->current_message_ptrs);
+	array_deinit(&f->frame_messages);
 	array_deinit(&f->observers);
 }
 
@@ -199,6 +196,7 @@ void frame_clear(struct frame *f)
 	assert(f);
 
 	f->time = -INFINITY;
+	array_clear(&f->frame_messages);
 	array_clear(&f->current_message_ptrs);
 	pqueue_clear(&f->events);
 	recv_frames_clear(f);
@@ -285,11 +283,9 @@ static void process_current_messages(struct frame *f)
 		const struct message *msg = *msgp;
 		assert(msg->time == frame_time(f));
 
-		// add the message to the appropriate recv_frame
-		struct recv_frame *rf = recv_frames_item(f, msg->from);
-		ssize_t imsg = array_count(&rf->frame_messages);
+		ssize_t imsg = array_count(&f->frame_messages);
 		struct frame_message *fmsg =
-		    array_add(&rf->frame_messages, NULL);
+		    array_add(&f->frame_messages, NULL);
 		fmsg->msg = msg;
 		fmsg->interval = 0;
 
@@ -297,7 +293,6 @@ static void process_current_messages(struct frame *f)
 		if (isfinite(tnext)) {
 			struct frame_event e;
 			e.time = tnext;
-			e.isend = msg->from;
 			e.imsg = imsg;
 			pqueue_push(&f->events, &e);
 		}
@@ -332,10 +327,8 @@ static void process_event(struct frame *f)
 	struct frame_event *e = pqueue_top(&f->events);
 
 	// advance the message interval
-	ssize_t isend = e->isend;
 	ssize_t imsg = e->imsg;
-	struct recv_frame *rf = recv_frames_item(f, isend);
-	struct frame_message *fmsg = array_item(&rf->frame_messages, imsg);
+	struct frame_message *fmsg = array_item(&f->frame_messages, imsg);
 	const struct message *msg = fmsg->msg;
 
 	ssize_t intvl0 = fmsg->interval;
