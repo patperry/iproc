@@ -85,13 +85,13 @@ static void handle_message_add(void *udata, struct frame *f, const struct messag
 	assert(f);
 	assert(msg);
 	assert(fv->design);
-	assert(fv->design->index >= design_recv_dyn_index(f->design));
-	assert(fv->design->index + fv->design->dim
-	       <= design_recv_dyn_index(f->design) + design_recv_dyn_dim(f->design) );
+	assert(fv->design->dyn_index >= 0);
+	assert(fv->design->dyn_index + fv->design->dim
+	       <= design_recv_dyn_dim(f->design));
 
 	
 	ssize_t jrecv = msg->from;
-	ssize_t dyn_index = fv->design->index - design_recv_dyn_index(f->design);
+	ssize_t dyn_index = fv->design->dyn_index;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -118,12 +118,12 @@ static void handle_message_advance(void *udata, struct frame *f, const struct me
 	assert(f);
 	assert(msg);
 	assert(fv->design);
-	assert(fv->design->index >= design_recv_dyn_index(f->design));
-	assert(fv->design->index + fv->design->dim
-	       <= design_recv_dyn_index(f->design) + design_recv_dyn_dim(f->design) );
+	assert(fv->design->dyn_index >= 0);
+	assert(fv->design->dyn_index + fv->design->dim
+	       <= design_recv_dyn_dim(f->design));
 		
 	ssize_t jrecv = msg->from;
-	ssize_t dyn_index = fv->design->index - design_recv_dyn_index(f->design);
+	ssize_t dyn_index = fv->design->dyn_index;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {

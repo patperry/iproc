@@ -129,6 +129,9 @@ ssize_t design_send_traits_index(const struct design *design);
 ssize_t design_send_effects_index(const struct design *design);
 ssize_t design_send_var_index(const struct design *design,
 			      const struct var_type *type);
+static inline ssize_t design_send_dyn_index(const struct design *design);
+static inline ssize_t design_send_dyn_dim(const struct design *design);
+
 
 /*
 void design_send_mul0(double alpha,
@@ -215,6 +218,18 @@ bool design_loops(const struct design *design)
 {
 	assert(design);
 	return design->loops;
+}
+
+ssize_t design_send_dyn_index(const struct design *design)
+{
+	assert(design);
+	return design->isdynamic;
+}
+
+ssize_t design_send_dyn_dim(const struct design *design)
+{
+	assert(design);
+	return design->nsdynamic;
 }
 
 ssize_t design_recv_dyn_index(const struct design *design)

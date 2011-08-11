@@ -27,7 +27,7 @@ struct var_type {
 struct design_var {
 	const struct var_type *type;
 	ssize_t dim;
-	ssize_t index;
+	ssize_t dyn_index;
 	void *udata;
 };
 

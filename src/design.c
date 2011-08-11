@@ -588,11 +588,6 @@ static void design_set_effects(bool *peffects, bool effects, ssize_t neffects,
 
 	ssize_t delta = effects ? neffects : -neffects;
 
-	struct design_var *var;
-	ARRAY_FOREACH(var, vars) {
-		var->index += delta;
-	}
-
 	*istatic += delta;
 	*idynamic += delta;
 	*dim += delta;
@@ -628,7 +623,7 @@ static void design_add_var(struct design *design, const struct var_type *type,
 
 	type->init(var, design, params);
 	assert(var->dim >= 0);
-	var->index = (*idynamic) + (*ndynamic);
+	var->dyn_index = (*ndynamic);
 	var->type = type;
 	*ndynamic += var->dim;
 	*dim += var->dim;
@@ -692,8 +687,8 @@ static bool design_var_equals(const void *p1, const void *p2)
 	return v1->type == v2->type;
 }
 
-static ssize_t design_var_index(const struct array *vars,
-				const struct var_type *type)
+static ssize_t design_var_dyn_index(const struct array *vars,
+				    const struct var_type *type)
 {
 	assert(vars);
 	assert(type);
@@ -704,7 +699,7 @@ static ssize_t design_var_index(const struct array *vars,
 	    array_find(vars, (predicate_fn) design_var_equals, key);
 
 	if (var) {
-		return var->index;
+		return var->dyn_index;
 	}
 
 	return -1;
@@ -716,7 +711,14 @@ ssize_t design_send_var_index(const struct design *design,
 	assert(design);
 	assert(type);
 
-	return design_var_index(&design->send_vars, type);
+
+	ssize_t dyn_index = design_var_dyn_index(&design->send_vars, type);
+	if (dyn_index >= 0) {
+		ssize_t off = design_send_dyn_index(design);
+		return off + dyn_index;
+	} else {
+		return -1;
+	}
 }
 
 ssize_t design_recv_var_index(const struct design *design,
@@ -725,5 +727,12 @@ ssize_t design_recv_var_index(const struct design *design,
 	assert(design);
 	assert(type);
 
-	return design_var_index(&design->recv_vars, type);
+	ssize_t dyn_index = design_var_dyn_index(&design->recv_vars, type);
+	if (dyn_index >= 0) {
+		ssize_t off = design_recv_dyn_index(design);
+		return off + dyn_index;
+	} else {
+		return -1;
+	}
+
 }
