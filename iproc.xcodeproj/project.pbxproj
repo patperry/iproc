@@ -117,6 +117,8 @@
 		22708BBD13311B8E0055AD94 /* r-messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAB13311B8E0055AD94 /* r-messages.h */; };
 		22708BC013311B8E0055AD94 /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAE13311B8E0055AD94 /* r-utils.c */; };
 		22708BC113311B8E0055AD94 /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAF13311B8E0055AD94 /* r-utils.h */; };
+		227E08BE13F3F888003EC4BA /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08BD13F3F888003EC4BA /* rv-irecv.c */; };
+		227E08BF13F3FDDE003EC4BA /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08BD13F3F888003EC4BA /* rv-irecv.c */; };
 		228160DB13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DC13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DD13B00EF200B38330 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160DA13B00EF200B38330 /* dcstep.c */; };
@@ -564,6 +566,7 @@
 		22708BAB13311B8E0055AD94 /* r-messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-messages.h"; path = "interfaces/R/src/r-messages.h"; sourceTree = "<group>"; };
 		22708BAE13311B8E0055AD94 /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "interfaces/R/src/r-utils.c"; sourceTree = "<group>"; };
 		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
+		227E08BD13F3F888003EC4BA /* rv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-irecv.c"; path = "src/rv-irecv.c"; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
 		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
@@ -859,6 +862,7 @@
 				2259740F133D0AFB0022B52E /* recv_loglik.h */,
 				22597414133D0AFB0022B52E /* recv_model.c */,
 				22597415133D0AFB0022B52E /* recv_model.h */,
+				227E08BD13F3F888003EC4BA /* rv-irecv.c */,
 				22286F0D136F36340015CC42 /* rv-nrecv.c */,
 				22DB0A7F13CB68B5004149CE /* strata.c */,
 				22DB0A8013CB68B5004149CE /* strata.h */,
@@ -1491,6 +1495,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				227E08BF13F3FDDE003EC4BA /* rv-irecv.c in Sources */,
 				226E3CC013B00BB20083E9E0 /* linesearch.c in Sources */,
 				222FC41113607C7900E64FC9 /* actors.c in Sources */,
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
@@ -1576,6 +1581,7 @@
 				228160F813B0F60C00B38330 /* bfgs.c in Sources */,
 				22EFB31A13B3AE18007755EA /* linalg.c in Sources */,
 				22DB0A8113CB68B5004149CE /* strata.c in Sources */,
+				227E08BE13F3F888003EC4BA /* rv-irecv.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

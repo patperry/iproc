@@ -1,46 +1,24 @@
 #include "port.h"
-
 #include <assert.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include "compare.h"
-#include "ieee754.h"
-#include "design.h"
+
 #include "frame.h"
-#include "hashset.h"
-#include "intmap.h"
-#include "util.h"
 #include "vars.h"
 
 struct irecv_active {
-	struct dyad dyad;
-	ssize_t id;
-	ssize_t intvl;
+	struct intset jrecv;
 };
 
 struct irecv_udata {
-	struct hashset active;
+	struct array active;
 };
 
-static uint32_t irecv_active_hash(const void *x)
-{
-	const struct irecv_active *active = x;
-	return memory_hash(&active->dyad, sizeof(active->dyad));
-}
-
-static bool irecv_active_equals(const void *x, const void *y)
-{
-	const struct irecv_active *a = x, *b = y;
-	return a->dyad.isend == b->dyad.isend && a->dyad.jrecv == b->dyad.jrecv;
-}
-
-static void irecv_init(struct design_var *dv, const struct design *d)
+static void irecv_init(struct design_var *dv, const struct design *d, void *params)
 {
 	assert(dv);
 	assert(d);
+	assert(!params);
 
-	ssize_t n = vector_dim(design_intervals(d));
-	dv->dim = n + 1;
+	dv->dim = 1;
 }
 
 static void irecv_deinit(struct design_var *dv)
@@ -53,9 +31,16 @@ static void irecv_frame_init(struct frame_var *fv, struct frame *f)
 	assert(fv);
 	assert(f);
 
+	const struct design *d = frame_design(f);
 	struct irecv_udata *udata = xcalloc(1, sizeof(*udata));
-	hashset_init(&udata->active, irecv_active_hash, irecv_active_equals,
-		     sizeof(struct irecv_active));
+	array_init(&udata->active, sizeof(struct irecv_active));
+
+	ssize_t isend, nsend = design_send_count(d);
+	for (isend = 0; isend < nsend; isend++) {
+		struct irecv_active *active = array_add(&udata->active, NULL);
+		intset_init(&active->jrecv);
+	}
+
 	fv->udata = udata;
 }
 
@@ -65,89 +50,73 @@ static void irecv_frame_deinit(struct frame_var *fv)
 	assert(fv->udata);
 
 	struct irecv_udata *udata = fv->udata;
-	hashset_deinit(&udata->active);
-	free(udata);
-}
-
-static void irecv_frame_clear(struct frame_var *fv)
-{
-	assert(fv);
-	assert(fv->udata);
-
-	struct irecv_udata *udata = fv->udata;
-	hashset_clear(&udata->active);
-}
-
-static void irecv_handle_event(struct frame_var *fv,
-			       const struct frame_event *e, struct frame *f)
-{
-	assert(fv);
-	assert(e);
-	assert(f);
-	assert(fv->design);
-	assert(fv->design->index >= 0);
-	assert(fv->design->index <=
-	       design_recv_dim(f->design) - fv->design->dim);
-	assert(fv->udata);
-	assert(e->type & (DYAD_EVENT_INIT | DYAD_EVENT_MOVE));
-
-	const struct dyad_event_meta *meta = &e->meta.dyad;
-
-	ssize_t index = fv->design->index;
-	struct irecv_udata *udata = fv->udata;
-	const struct irecv_active *key =
-	    container_of(&meta->msg_dyad, const struct irecv_active, dyad);
 	struct irecv_active *active;
 
-	struct frame_event dx;
-	dx.type = RECV_VAR_EVENT;
-	dx.time = e->time;
-	dx.id = -1;
-	dx.meta.recv_var.item.isend = meta->msg_dyad.jrecv;
-	dx.meta.recv_var.item.jrecv = meta->msg_dyad.isend;
-
-	if (e->type == DYAD_EVENT_INIT) {
-		struct hashset_pos pos;
-
-		if ((active = hashset_find(&udata->active, key, &pos)))
-			goto move;
-
-		active = hashset_insert(&udata->active, &pos, key);
-		goto init;
-	} else {		// e->type == DYAD_EVENT_MOVE
-		active = hashset_item(&udata->active, key);
-		assert(active);
-
-		if (active->id == e->id) {
-			assert(active->intvl == meta->intvl - 1);
-			goto move;
-		}
-		goto out;
+	ARRAY_FOREACH(active, &udata->active) {
+		intset_deinit(&active->jrecv);
 	}
-move:
-	dx.meta.recv_var.index = index + active->intvl;
-	dx.meta.recv_var.delta = -1.0;
-	frame_events_add(f, &dx);
-init:
-	dx.meta.recv_var.index = index + meta->intvl;
-	dx.meta.recv_var.delta = +1.0;
-	frame_events_add(f, &dx);
 
-	active->id = e->id;
-	active->intvl = meta->intvl;
-out:
-	return;
+	array_deinit(&udata->active);
+	xfree(udata);
 }
+
+static void handle_clear(void *udata, struct frame *f)
+{
+	struct frame_var *fv = udata;
+	struct irecv_udata *fv_udata = fv->udata;
+	
+	assert(fv);
+	assert(fv->udata);
+
+	struct irecv_active *active;
+
+	ARRAY_FOREACH(active, &fv_udata->active) {
+		intset_clear(&active->jrecv);
+	}
+}
+
+static void handle_message_add(void *udata, struct frame *f, const struct message *msg)
+{
+	struct frame_var *fv = udata;
+	struct irecv_udata *fv_udata = fv->udata;	
+	
+	assert(fv);
+	assert(f);
+	assert(msg);
+	assert(fv->design);
+	assert(fv->design->dyn_index >= 0);
+	assert(fv->design->dyn_index + fv->design->dim
+	       <= design_recv_dyn_dim(f->design));
+
+	
+	ssize_t jrecv = msg->from;
+	ssize_t dyn_index = fv->design->dyn_index;
+	
+	ssize_t ito, nto = msg->nto;
+	for (ito = 0; ito < nto; ito++) {
+		ssize_t isend = msg->to[ito];
+
+		struct irecv_active *active = array_item(&fv_udata->active, isend);
+		if (intset_add(&active->jrecv, jrecv)) {
+			frame_recv_update(f, isend, jrecv, dyn_index, 1.0);
+		}
+	}
+}
+
 
 static struct var_type RECV_VAR_IRECV_REP = {
 	VAR_RECV_VAR,
-	DYAD_EVENT_INIT | DYAD_EVENT_MOVE,
 	irecv_init,
 	irecv_deinit,
 	irecv_frame_init,
 	irecv_frame_deinit,
-	irecv_frame_clear,
-	irecv_handle_event
+	{
+		handle_message_add,
+		NULL, // message_advance,
+		NULL, // recv_update
+		NULL, // send_update
+		handle_clear
+	}
 };
 
 const struct var_type *RECV_VAR_IRECV = &RECV_VAR_IRECV_REP;

@@ -15,8 +15,8 @@ struct frame_var;
 struct var_type {
 	enum var_class var_class;
 
-	void (*init) (struct design_var * dv, const struct design * d, void *params);
-	void (*deinit) (struct design_var * dv);
+	void (*init) (struct design_var *dv, const struct design *d, void *params);
+	void (*deinit) (struct design_var *dv);
 
 	void (*frame_init) (struct frame_var * fv, struct frame * f);
 	void (*frame_deinit) (struct frame_var * fv);

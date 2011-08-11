@@ -25,6 +25,7 @@ libiproc_la_SOURCES = \
 	src/recv_loglik.h \
 	src/recv_model.c \
 	src/recv_model.h \
+	src/rv-irecv.c \
 	src/rv-nrecv.c \
 	src/strata.c \
 	src/strata.h \

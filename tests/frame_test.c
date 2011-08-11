@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "cmockery.h"
 
 #include "enron.h"
@@ -23,7 +24,7 @@ static struct vector intervals;
 static struct messages messages;
 static struct design design;
 static ssize_t rv_nrecv_index;
-// static ssize_t rv_irecv_index;
+static ssize_t rv_irecv_index;
 static struct frame frame;
 
 
@@ -82,7 +83,7 @@ static void test_rv_nrecv(void **state)
 	matrix_fill(&xnrecv, 0.0);
 
 	vector_init(&x, design_recv_dim(&design));
-	vector_set_basis(&x, rv_nrecv_index + 1);
+	vector_set_basis(&x, rv_nrecv_index);
 	vector_init(&y, design_recv_count(&design));
 	
 	isend = 0;
@@ -112,7 +113,7 @@ static void test_rv_nrecv(void **state)
 	matrix_deinit(&xnrecv);
 }
 
-/*static void rv_irecv_setup(void **state)
+static void rv_irecv_setup(void **state)
 {
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
@@ -125,7 +126,7 @@ static void test_rv_nrecv(void **state)
 	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_IRECV);
+	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	rv_irecv_index = design_recv_var_index(&design, RECV_VAR_IRECV);
 	frame_init(&frame, &design);
 }
@@ -149,39 +150,32 @@ static void test_rv_irecv(void **state)
 	struct matrix tlast;
 	struct svector x;
 	struct vector y;
-	double delta, tmsg, tlo, thi;
-	ssize_t i, n = vector_dim(&intervals);
+	double tmsg;
 	
 	matrix_init(&tlast, design_send_count(&design), design_recv_count(&design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	ssize_t off = design_recv_dyn_index(&design);
 	svector_init(&x, design_recv_dyn_dim(&design));
 	vector_init(&y, design_recv_count(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance_to(&frame, t);
+		frame_advance(&frame, t);
 		
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
 		
-		for (i = 0; i <= n; i++) {
-			tlo = i == 0 ? 0 : vector_item(&intervals, i - 1);
-			thi = i == n ? INFINITY : vector_item(&intervals, i);
-			
-			svector_set_basis(&x, rv_irecv_index - off + i);
-			frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		svector_set_basis(&x, 0);
+		frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
-			for (j = 0; j < 1; j++) {
-				tmsg = matrix_item(&tlast, (jrecv + j) % nrecv, isend);
-				delta = t - tmsg;
-				if (isfinite(tmsg) && tlo < delta && delta <= thi) {
-					assert(vector_item(&y, jrecv) == 1.0);
-					assert_true(vector_item(&y, jrecv) == 1.0);
-				} else {
-					assert_true(vector_item(&y, (jrecv + j) % nrecv) == 0.0);
-				}
+		for (j = 0; j < 5; j++) {
+			ssize_t ix = (jrecv + j) % nrecv;
+			tmsg = matrix_item(&tlast, ix, isend);
+			if (isfinite(tmsg)) {
+				assert(vector_item(&y, ix) == 1.0);
+				assert_true(vector_item(&y, ix) == 1.0);
+			} else {
+				assert_true(vector_item(&y, ix) == 0.0);
 			}
 		}
 		ntie = MESSAGES_COUNT(it);
@@ -190,13 +184,13 @@ static void test_rv_irecv(void **state)
 			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				*matrix_item_ptr(&tlast, msg->from, msg->to[ito]) = msg->time;
+				matrix_set_item(&tlast, msg->from, msg->to[ito], msg->time);
 			}
 		}
 	}
 	
 	matrix_deinit(&tlast);
-}*/
+}
 
 
 int main(int argc, char **argv)
@@ -204,7 +198,7 @@ int main(int argc, char **argv)
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
 		unit_test_setup_teardown(test_rv_nrecv, rv_nrecv_setup, rv_nrecv_teardown),
-		//unit_test_setup_teardown(test_rv_irecv, rv_irecv_setup, rv_irecv_teardown),		
+		unit_test_setup_teardown(test_rv_irecv, rv_irecv_setup, rv_irecv_teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);
