@@ -37,23 +37,11 @@ struct frame_var {
 	void *udata;
 };
 
-/* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
- * are x{k}[t,i] = 1{ j -> i in [t - delta[k], t - delta[k-1]) }
- * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
- */
-extern const struct var_type *SEND_VAR_IRECV;
-
-/* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
- * are x{k}[t,i] = #{ j -> i in [t - delta[k], t - delta[k-1]) }
- * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
- */
-extern const struct var_type *SEND_VAR_NRECV;
-
-/* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
- * are x{k}[t,i,j] = 1{ j -> i in [t - delta[k], t - delta[k-1]) }
- * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
- */
+/* Indicator 1{ j -> i in (-Infty, t) } */
 extern const struct var_type *RECV_VAR_IRECV;
+
+/* Indicator 1{ i -> j in (-Infty, t) } */
+extern const struct var_type *RECV_VAR_ISEND;
 
 /* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
  * are x{k}[t,i,j] = #{ j -> i in [t - delta[k], t - delta[k-1]) }
@@ -61,7 +49,10 @@ extern const struct var_type *RECV_VAR_IRECV;
  */
 extern const struct var_type *RECV_VAR_NRECV;
 
-extern const struct var_type *RECV_VAR_ISEND;
+/* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
+ * are x{k}[t,i,j] = #{ i -> j in [t - delta[k], t - delta[k-1]) }
+ * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
+ */
 extern const struct var_type *RECV_VAR_NSEND;
 
 #endif /* _VARS_H */
