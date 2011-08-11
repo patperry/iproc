@@ -1,6 +1,7 @@
 #ifndef _FRAME_H
 #define _FRAME_H
 
+#include <math.h>
 #include <stdio.h>
 #include "actors.h"
 #include "messages.h"
@@ -9,7 +10,7 @@
 #include "design.h"
 
 struct frame_message {
-	const struct message *msg;
+	const struct message *message;
 	ssize_t interval;
 };
 
@@ -58,13 +59,20 @@ void frame_init(struct frame *f, const struct design *design);
 void frame_deinit(struct frame *f);
 void frame_clear(struct frame *f);
 
+/* properties */
+static inline const struct design *frame_design(const struct frame *f);
+
 /* time */
-double frame_time(const struct frame *f);	// current time
-double frame_next_time(const struct frame *f);	// next change
+static inline double frame_time(const struct frame *f);	// current time
+static inline double frame_next_time(const struct frame *f);	// next change
 void frame_advance(struct frame *f, double time);	// advance time
 
-/* add a message  */
+/* messages */
+static inline ssize_t frame_messages_count(const struct frame *f);
+static inline struct frame_message *frame_messages_item(const struct frame *f, ssize_t imsg);
 void frame_add(struct frame *f, const struct message *msg);
+
+
 
 /* current covariates */
 const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
@@ -103,10 +111,42 @@ void frame_recv_dmuls(double alpha, enum trans_op trans,
 //                   const struct svector *x, double beta, struct vector *y);
 
 /* inline function definitions */
-static inline const struct design *frame_design(const struct frame *f)
+const struct design *frame_design(const struct frame *f)
 {
 	assert(f);
 	return f->design;
+}
+
+double frame_time(const struct frame *f)
+{
+	assert(f);
+	return f->time;
+}
+
+double frame_next_time(const struct frame *f)
+{
+	assert(f);
+	
+	if (pqueue_count(&f->events)) {
+		const struct frame_event *e = pqueue_top(&f->events);
+		return e->time;
+	} else {
+		return INFINITY;
+	}
+}
+
+ssize_t frame_messages_count(const struct frame *f)
+{
+	assert(f);
+	return array_count(&f->frame_messages);
+}
+
+struct frame_message *frame_messages_item(const struct frame *f, ssize_t imsg)
+{
+	assert(f);
+	assert(0 <= imsg && imsg < frame_messages_count(f));
+	struct frame_message *base = array_to_ptr(&f->frame_messages);
+	return &base[imsg];
 }
 
 #endif /* _FRAME_H */

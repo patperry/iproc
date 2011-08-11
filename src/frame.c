@@ -238,24 +238,6 @@ void frame_remove_observer(struct frame *f, void *udata)
 	}
 }
 
-double frame_time(const struct frame *f)
-{
-	assert(f);
-	return f->time;
-}
-
-double frame_next_time(const struct frame *f)
-{
-	assert(f);
-
-	if (pqueue_count(&f->events)) {
-		const struct frame_event *e = pqueue_top(&f->events);
-		return e->time;
-	} else {
-		return INFINITY;
-	}
-}
-
 void frame_add(struct frame *f, const struct message *msg)
 {
 	assert(f);
@@ -263,7 +245,7 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg->time == frame_time(f));
 
 	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
-	fmsg->msg = msg;
+	fmsg->message = msg;
 	fmsg->interval = 0;
 }
 
@@ -289,7 +271,7 @@ static void process_current_messages(struct frame *f)
 	ssize_t imsg, nmsg = array_count(&f->frame_messages);
 	for (imsg = f->cur_fmsg; imsg < nmsg; imsg++) {
 		const struct frame_message *fmsg = &fmsgs[imsg];
-		const struct message *msg = fmsg->msg;
+		const struct message *msg = fmsg->message;
 		assert(msg->time == frame_time(f));
 
 		// create an advance event (if necessary)
@@ -330,8 +312,8 @@ static void process_event(struct frame *f)
 
 	// advance the message interval
 	ssize_t imsg = e->imsg;
-	struct frame_message *fmsg = array_item(&f->frame_messages, imsg);
-	const struct message *msg = fmsg->msg;
+	struct frame_message *fmsg = frame_messages_item(f, imsg);
+	const struct message *msg = fmsg->message;
 
 	ssize_t intvl0 = fmsg->interval;
 	ssize_t intvl = intvl0 + 1;
