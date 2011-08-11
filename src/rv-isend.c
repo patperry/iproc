@@ -12,7 +12,8 @@ struct isend_udata {
 	struct array active;
 };
 
-static void isend_init(struct design_var *dv, const struct design *d, void *params)
+static void isend_init(struct design_var *dv, const struct design *d,
+		       void *params)
 {
 	assert(dv);
 	assert(d);
@@ -64,7 +65,7 @@ static void handle_clear(void *udata, struct frame *f)
 {
 	struct frame_var *fv = udata;
 	struct isend_udata *fv_udata = fv->udata;
-	
+
 	assert(fv);
 	assert(fv->udata);
 
@@ -75,11 +76,12 @@ static void handle_clear(void *udata, struct frame *f)
 	}
 }
 
-static void handle_message_add(void *udata, struct frame *f, const struct message *msg)
+static void handle_message_add(void *udata, struct frame *f,
+			       const struct message *msg)
 {
 	struct frame_var *fv = udata;
-	struct isend_udata *fv_udata = fv->udata;	
-	
+	struct isend_udata *fv_udata = fv->udata;
+
 	assert(fv);
 	assert(f);
 	assert(msg);
@@ -88,21 +90,20 @@ static void handle_message_add(void *udata, struct frame *f, const struct messag
 	assert(fv->design->dyn_index + fv->design->dim
 	       <= design_recv_dyn_dim(f->design));
 
-	
 	ssize_t isend = msg->from;
 	ssize_t dyn_index = fv->design->dyn_index;
-	
+
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t jrecv = msg->to[ito];
 
-		struct isend_active *active = array_item(&fv_udata->active, isend);
+		struct isend_active *active =
+		    array_item(&fv_udata->active, isend);
 		if (intset_add(&active->jrecv, jrecv)) {
 			frame_recv_update(f, isend, jrecv, dyn_index, 1.0);
 		}
 	}
 }
-
 
 static struct var_type RECV_VAR_ISEND_REP = {
 	VAR_RECV_VAR,
@@ -111,12 +112,11 @@ static struct var_type RECV_VAR_ISEND_REP = {
 	isend_frame_init,
 	isend_frame_deinit,
 	{
-		handle_message_add,
-		NULL, // message_advance,
-		NULL, // recv_update
-		NULL, // send_update
-		handle_clear
-	}
+	 handle_message_add,
+	 NULL,			// message_advance,
+	 NULL,			// recv_update
+	 NULL,			// send_update
+	 handle_clear}
 };
 
 const struct var_type *RECV_VAR_ISEND = &RECV_VAR_ISEND_REP;

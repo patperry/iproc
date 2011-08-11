@@ -71,7 +71,7 @@
  * a sparse vector.
  */
 
-struct var_type; // forward declaration
+struct var_type;		// forward declaration
 
 struct design {
 	struct actors *senders;
@@ -124,14 +124,14 @@ void design_set_loops(struct design *design, bool loops);
 
 bool design_send_effects(const struct design *design);
 void design_set_send_effects(struct design *design, bool seffects);
-void design_add_send_var(struct design *design, const struct var_type *type, void *params);
+void design_add_send_var(struct design *design, const struct var_type *type,
+			 void *params);
 ssize_t design_send_traits_index(const struct design *design);
 ssize_t design_send_effects_index(const struct design *design);
 ssize_t design_send_var_index(const struct design *design,
 			      const struct var_type *type);
 static inline ssize_t design_send_dyn_index(const struct design *design);
 static inline ssize_t design_send_dyn_dim(const struct design *design);
-
 
 /*
 void design_send_mul0(double alpha,
@@ -146,7 +146,8 @@ void design_send_muls0(double alpha,
 
 bool design_recv_effects(const struct design *design);
 void design_set_recv_effects(struct design *design, bool reffects);
-void design_add_recv_var(struct design *design, const struct var_type *type, void *params);
+void design_add_recv_var(struct design *design, const struct var_type *type,
+			 void *params);
 ssize_t design_recv_effects_index(const struct design *design);
 ssize_t design_recv_traits_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,

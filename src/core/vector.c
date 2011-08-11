@@ -35,11 +35,11 @@ void vector_reinit(struct vector *v, ssize_t n)
 	assert(v->owner);
 
 	ssize_t nold = vector_dim(v);
-	
+
 	v->data = xrealloc(v->data, n * sizeof(v->data[0]));
 	v->dim = n;
 	v->owner = true;
-	
+
 	if (nold < n) {
 		struct vector vnew = vector_slice(v, nold, n - nold);
 		vector_fill(&vnew, 0.0);

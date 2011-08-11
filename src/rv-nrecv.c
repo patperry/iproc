@@ -4,7 +4,8 @@
 #include "frame.h"
 #include "vars.h"
 
-static void nrecv_init(struct design_var *dv, const struct design *d, void *params)
+static void nrecv_init(struct design_var *dv, const struct design *d,
+		       void *params)
 {
 	assert(dv);
 	assert(d);
@@ -30,10 +31,11 @@ static void nrecv_frame_deinit(struct frame_var *fv)
 	assert(fv);
 }
 
-static void handle_message_add(void *udata, struct frame *f, const struct message *msg)
+static void handle_message_add(void *udata, struct frame *f,
+			       const struct message *msg)
 {
 	struct frame_var *fv = udata;
-	
+
 	assert(fv);
 	assert(f);
 	assert(msg);
@@ -42,10 +44,9 @@ static void handle_message_add(void *udata, struct frame *f, const struct messag
 	assert(fv->design->dyn_index + fv->design->dim
 	       <= design_recv_dyn_dim(f->design));
 
-	
 	ssize_t jrecv = msg->from;
 	ssize_t dyn_index = fv->design->dyn_index;
-	
+
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t isend = msg->to[ito];
@@ -57,10 +58,11 @@ static void handle_message_add(void *udata, struct frame *f, const struct messag
 	}
 }
 
-static void handle_message_advance(void *udata, struct frame *f, const struct message *msg, ssize_t intvl)
+static void handle_message_advance(void *udata, struct frame *f,
+				   const struct message *msg, ssize_t intvl)
 {
 	struct frame_var *fv = udata;
-	
+
 	assert(fv);
 	assert(f);
 	assert(msg);
@@ -68,18 +70,17 @@ static void handle_message_advance(void *udata, struct frame *f, const struct me
 	assert(fv->design->dyn_index >= 0);
 	assert(fv->design->dyn_index + fv->design->dim
 	       <= design_recv_dyn_dim(f->design));
-		
+
 	ssize_t jrecv = msg->from;
 	ssize_t dyn_index = fv->design->dyn_index;
-	
+
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t isend = msg->to[ito];
-		
+
 		frame_recv_update(f, isend, jrecv, dyn_index + intvl - 1, -1.0);
 	}
 }
-
 
 static struct var_type RECV_VAR_NRECV_REP = {
 	VAR_RECV_VAR,
@@ -88,12 +89,12 @@ static struct var_type RECV_VAR_NRECV_REP = {
 	nrecv_frame_init,
 	nrecv_frame_deinit,
 	{
-		handle_message_add,
-		handle_message_advance,
-		NULL, // recv_update
-		NULL, // send_update
-		NULL, // clear
-	}
+	 handle_message_add,
+	 handle_message_advance,
+	 NULL,			// recv_update
+	 NULL,			// send_update
+	 NULL,			// clear
+	 }
 };
 
 const struct var_type *RECV_VAR_NRECV = &RECV_VAR_NRECV_REP;

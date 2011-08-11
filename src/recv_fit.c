@@ -29,53 +29,56 @@ static ssize_t constr_count(const struct recv_fit_constr *constr)
 	return vector_dim(&constr->be);
 }
 
-static void constr_add(struct recv_fit_constr *constr, const struct vector *ce, double be)
+static void constr_add(struct recv_fit_constr *constr, const struct vector *ce,
+		       double be)
 {
 	ssize_t ne0 = vector_dim(&constr->be);
 	ssize_t ne = ne0 + 1;
-	
+
 	matrix_reinit(&constr->ce, matrix_nrow(&constr->ce), ne);
-	
+
 	struct vector ce1 = matrix_col(&constr->ce, ne0);
 	vector_assign_copy(&ce1, ce);
-	
+
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, be);
 }
 
-static void constr_add_set(struct recv_fit_constr *constr, ssize_t i, ssize_t c, double val)
+static void constr_add_set(struct recv_fit_constr *constr, ssize_t i, ssize_t c,
+			   double val)
 {
 	assert(constr);
 	assert(0 <= i && i < constr->dim);
 	assert(0 <= c && c < constr->nc);
 	assert(isfinite(val));
-	
+
 	ssize_t ne0 = vector_dim(&constr->be);
 	ssize_t ne = ne0 + 1;
-	
+
 	matrix_reinit(&constr->ce, matrix_nrow(&constr->ce), ne);
 	matrix_set_item(&constr->ce, i + c * constr->dim, ne0, 1.0);
-	
+
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, val);
 }
 
-static void constr_add_eq(struct recv_fit_constr *constr, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2)
+static void constr_add_eq(struct recv_fit_constr *constr, ssize_t i1,
+			  ssize_t c1, ssize_t i2, ssize_t c2)
 {
 	assert(constr);
 	assert(0 <= i1 && i1 < constr->dim);
-	assert(0 <= i2 && i2 < constr->dim);	
+	assert(0 <= i2 && i2 < constr->dim);
 	assert(0 <= c1 && c1 < constr->nc);
 	assert(0 <= c2 && c2 < constr->nc);
 	assert(!(i1 == i2 && c1 == c2));
-	
+
 	ssize_t ne0 = vector_dim(&constr->be);
 	ssize_t ne = ne0 + 1;
 
 	matrix_reinit(&constr->ce, matrix_nrow(&constr->ce), ne);
 	matrix_set_item(&constr->ce, i1 + c1 * constr->dim, ne0, +1.0);
 	matrix_set_item(&constr->ce, i2 + c2 * constr->dim, ne0, -1.0);
-	
+
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, 0.0);
 }
@@ -126,7 +129,7 @@ static void resid_set(struct recv_fit_resid *resid,
 		ssize_t n = recv_loglik_count(ll, ic);
 
 		struct vector r1c = vector_slice(&r1, ic * dim, dim);
-		vector_axpy(-((double)n)/ntot, score, &r1c);
+		vector_axpy(-((double)n) / ntot, score, &r1c);
 	}
 
 	// r2 is the primal residual: ce' * x - be
@@ -140,7 +143,8 @@ static void resid_set(struct recv_fit_resid *resid,
 	resid->norm2 = vector_norm2(r);
 }
 
-static void _eval_setup(struct recv_fit_eval *eval, ssize_t dim, ssize_t nc, ssize_t ne)
+static void _eval_setup(struct recv_fit_eval *eval, ssize_t dim, ssize_t nc,
+			ssize_t ne)
 {
 	struct vector coefs_data = vector_slice(&eval->params, 0, dim * nc);
 	eval->coefs = matrix_make(&coefs_data, dim, nc);
@@ -258,7 +262,7 @@ static void kkt_add_constrs(struct recv_fit_kkt *kkt, ssize_t n)
 {
 	assert(n >= 0);
 	ssize_t m = matrix_nrow(&kkt->matrix) + n;
-	
+
 	kkt->factored = false;
 	kkt->uplo = UPLO_LOWER;
 	matrix_reinit(&kkt->matrix, m, m);
@@ -311,7 +315,7 @@ static void search_init(struct recv_fit_search *search, ssize_t nc, ssize_t dim,
 static void search_add_constrs(struct recv_fit_search *search, ssize_t n)
 {
 	assert(n >= 0);
-	
+
 	ssize_t m0 = vector_dim(&search->vector);
 	ssize_t m = m0 + n;
 	vector_reinit(&search->vector, m);
@@ -350,7 +354,7 @@ static void rgrad_init(struct recv_fit_rgrad *rgrad, ssize_t nc, ssize_t dim,
 static void rgrad_add_constrs(struct recv_fit_rgrad *rgrad, ssize_t n)
 {
 	assert(n >= 0);
-	
+
 	ssize_t m0 = vector_dim(&rgrad->vector);
 	ssize_t m = m0 + n;
 	vector_reinit(&rgrad->vector, m);
@@ -488,19 +492,19 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 	eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->msgs, &fit->frame,
 		 &fit->model);
 	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
-	fit->step = NAN;	
-	
+	fit->step = NAN;
+
 	// determine initial value and gradient
 	double f0 = fit->cur->resid.norm2;
 	double g0 = -2 * f0;
-	
+
 	// stop early if residual is below tolerance
 	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol) {
 		fit->task = RECV_FIT_CONV;
 	} else {
 		fit->task = RECV_FIT_STEP;
 	}
-	
+
 	return fit->task;
 }
 
@@ -523,7 +527,8 @@ ssize_t recv_fit_constr_count(const struct recv_fit *fit)
 	return constr_count(&fit->constr);
 }
 
-void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce, const struct vector **be)
+void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce,
+			 const struct vector **be)
 {
 	*ce = &fit->constr.ce;
 	*be = &fit->constr.be;
@@ -539,22 +544,25 @@ static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
 
 }
 
-void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce, double be)
+void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
+			 double be)
 {
 	constr_add(&fit->constr, ce, be);
 	_recv_fit_add_constrs(fit, 1);
 }
 
-void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c, double val)
+void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
+			     double val)
 {
 	constr_add_set(&fit->constr, i, c, val);
 	_recv_fit_add_constrs(fit, 1);
 }
 
-void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2)
+void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
+			    ssize_t i2, ssize_t c2)
 {
 	constr_add_eq(&fit->constr, i1, c1, i2, c2);
-	_recv_fit_add_constrs(fit, 1);	
+	_recv_fit_add_constrs(fit, 1);
 }
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
@@ -594,7 +602,7 @@ const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
 double recv_fit_dev(const struct recv_fit *fit)
 {
 	assert(fit);
-	
+
 	const struct recv_loglik *ll = &fit->cur->loglik;
 	double dev = 0.0;
 	ssize_t ic, nc = recv_model_cohort_count(&fit->model);
@@ -604,7 +612,7 @@ double recv_fit_dev(const struct recv_fit *fit)
 		double avg_dev = info->dev;
 		dev += nrecv * avg_dev;
 	}
-	
+
 	return dev;
 }
 

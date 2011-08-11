@@ -1040,13 +1040,13 @@ ssize_t recv_loglik_count(const struct recv_loglik *ll, ssize_t c)
 ssize_t recv_loglik_count_sum(const struct recv_loglik *ll)
 {
 	assert(ll);
-	
+
 	ssize_t n = 0;
 	ssize_t ic, nc = recv_model_cohort_count(ll->model);
 	for (ic = 0; ic < nc; ic++) {
 		n += recv_loglik_count(ll, ic);
 	}
-	
+
 	return n;
 }
 

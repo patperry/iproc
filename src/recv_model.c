@@ -329,7 +329,8 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 	return &m->sender_models[isend];
 }
 
-static void handle_recv_update (void *udata, struct frame *f, ssize_t isend, ssize_t jrecv, ssize_t dyn_index, double delta)
+static void handle_recv_update(void *udata, struct frame *f, ssize_t isend,
+			       ssize_t jrecv, ssize_t dyn_index, double delta)
 {
 	struct recv_model *m = udata;
 	const struct actor *actors = actors_items(m->senders);
@@ -337,14 +338,14 @@ static void handle_recv_update (void *udata, struct frame *f, ssize_t isend, ssi
 	struct recv_model_sender *send = sender_raw(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
-	
+
 	struct svector_pos pos;
 	double *pdeta = svector_find(&send->deta, jrecv, &pos);
-	
+
 	if (!pdeta) {
 		pdeta = svector_insert(&send->deta, &pos, 0.0);
 		ssize_t ix =
-		array_binary_search(&send->active, &jrecv, ssize_compare);
+		    array_binary_search(&send->active, &jrecv, ssize_compare);
 		assert(ix < 0);
 		array_insert(&send->active, ~ix, &jrecv);
 	}
@@ -359,11 +360,11 @@ static void handle_recv_update (void *udata, struct frame *f, ssize_t isend, ssi
 	double log_W = send->log_W;
 	double eta = vector_item(&cm->eta0, jrecv) + (*pdeta);
 	double eta1 = eta + deta;
-	
+
 	/* W' = W + exp(eta') - exp(eta)
 	 *
 	 * log(W') = log{ W * (1 + [exp(eta') - exp(eta)]/W) }
-	 *	   = log(W) + log[ 1 + (exp(eta') - exp(eta))/W ]
+	 *         = log(W) + log[ 1 + (exp(eta') - exp(eta))/W ]
 	 *
 	 * gamma' = W0 / W * W / W'
 	 *        = gamma / { 1 + [exp(eta') - exp(eta)] / W }
@@ -374,11 +375,11 @@ static void handle_recv_update (void *udata, struct frame *f, ssize_t isend, ssi
 	double dw = (w1 - w) / exp(log_W);
 	double gamma1 = gamma / (1.0 + dw);
 	double log_W1 = log_W + log1p(dw);
-	
+
 	//if (isend == 119) {
 	//      printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
 	//}
-	
+
 	/* for dramatic changes in the weight sums, we recompute everything */
 	if (!(fabs(dw) <= 0.5)) {
 		/* Recompute the diffs when there is overflow */
@@ -456,13 +457,13 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	model->sender_models = sms;
 
 	struct frame_callbacks callbacks = {
-		NULL, // msg_add
-		NULL, // msg_advance
+		NULL,		// msg_add
+		NULL,		// msg_advance
 		handle_recv_update,
-		NULL, // send_update
+		NULL,		// send_update
 		handle_clear
 	};
-	
+
 	frame_add_observer(f, model, &callbacks);
 }
 

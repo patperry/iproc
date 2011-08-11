@@ -629,7 +629,8 @@ static void design_add_var(struct design *design, const struct var_type *type,
 	*dim += var->dim;
 }
 
-void design_add_send_var(struct design *design, const struct var_type *type, void *params)
+void design_add_send_var(struct design *design, const struct var_type *type,
+			 void *params)
 {
 	assert(design);
 	assert(type);
@@ -640,7 +641,8 @@ void design_add_send_var(struct design *design, const struct var_type *type, voi
 		       &design->isdynamic, &design->nsdynamic, &design->sdim);
 }
 
-void design_add_recv_var(struct design *design, const struct var_type *type, void *params)
+void design_add_recv_var(struct design *design, const struct var_type *type,
+			 void *params)
 {
 	assert(design);
 	assert(type);
@@ -710,7 +712,6 @@ ssize_t design_send_var_index(const struct design *design,
 {
 	assert(design);
 	assert(type);
-
 
 	ssize_t dyn_index = design_var_dyn_index(&design->send_vars, type);
 	if (dyn_index >= 0) {

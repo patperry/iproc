@@ -6,12 +6,11 @@
 #include "vars.h"
 #include "frame.h"
 
-
 static void frame_vars_init(struct frame *f)
 {
 	assert(f);
 	assert(frame_design(f));
-	
+
 	const struct design *d = frame_design(f);
 	ssize_t i, n = array_count(&d->recv_vars);
 	struct design_var *dvs = array_to_ptr(&d->recv_vars);
@@ -21,11 +20,11 @@ static void frame_vars_init(struct frame *f)
 		struct design_var *dv = &dvs[i];
 		struct frame_var *fv = &fvs[i];
 		fv->design = dv;
-		
+
 		if (fv->design->type->frame_init) {
 			dv->type->frame_init(fv, f);
 		}
-		
+
 		frame_add_observer(f, fv, &dv->type->callbacks);
 	}
 	f->vars = fvs;
@@ -34,16 +33,16 @@ static void frame_vars_init(struct frame *f)
 static void frame_vars_deinit(struct frame *f)
 {
 	assert(f);
-	
+
 	const struct design *d = frame_design(f);
 	ssize_t i, n = array_count(&d->recv_vars);
 	struct frame_var *fvs = f->vars;
 
 	for (i = 0; i < n; i++) {
 		struct frame_var *fv = &fvs[i];
-		
+
 		frame_remove_observer(f, fv);
-		
+
 		if (fv->design->type->frame_deinit) {
 			fv->design->type->frame_deinit(fv);
 		}
@@ -70,7 +69,7 @@ static void recv_frame_deinit(struct recv_frame *rf)
 		vector_deinit(dx);
 	}
 	intmap_deinit(&rf->jrecv_dxs);
-	
+
 	array_deinit(&rf->frame_messages);
 }
 
@@ -78,8 +77,8 @@ static void recv_frame_clear(struct recv_frame *rf)
 {
 	assert(rf);
 
-	array_clear(&rf->frame_messages);	
-	
+	array_clear(&rf->frame_messages);
+
 	struct intmap_iter it;
 	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		struct vector *dx = INTMAP_VAL(it);
@@ -88,7 +87,8 @@ static void recv_frame_clear(struct recv_frame *rf)
 	intmap_clear(&rf->jrecv_dxs);
 }
 
-static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv, ssize_t dyn_dim)
+static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
+				    ssize_t dyn_dim)
 {
 	assert(rf);
 
@@ -99,7 +99,7 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv, ssize_
 		dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
 		vector_init(dx, dyn_dim);
 	}
-	
+
 	assert(vector_dim(dx) == dyn_dim);
 	return dx;
 }
@@ -107,13 +107,13 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv, ssize_
 static void recv_frames_init(struct frame *f)
 {
 	assert(f);
-	
+
 	const struct design *d = frame_design(f);
 	const struct actors *senders = design_senders(d);
 	ssize_t isend, nsend = actors_count(senders);
-	
+
 	struct recv_frame *rfs = xcalloc(nsend, sizeof(struct recv_frame));
-	
+
 	for (isend = 0; isend < nsend; isend++) {
 		recv_frame_init(&rfs[isend], f);
 	}
@@ -126,9 +126,9 @@ static void recv_frames_deinit(struct frame *f)
 	const struct design *d = frame_design(f);
 	const struct actors *senders = design_senders(d);
 	ssize_t isend, nsend = actors_count(senders);
-	
+
 	struct recv_frame *rfs = f->recv_frames;
-	
+
 	for (isend = 0; isend < nsend; isend++) {
 		recv_frame_deinit(&rfs[isend]);
 	}
@@ -141,9 +141,9 @@ static void recv_frames_clear(struct frame *f)
 	const struct design *d = frame_design(f);
 	const struct actors *senders = design_senders(d);
 	ssize_t isend, nsend = actors_count(senders);
-	
+
 	struct recv_frame *rfs = f->recv_frames;
-	
+
 	for (isend = 0; isend < nsend; isend++) {
 		recv_frame_clear(&rfs[isend]);
 	}
@@ -153,7 +153,7 @@ static struct recv_frame *recv_frames_item(const struct frame *f, ssize_t isend)
 {
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(frame_design(f)));
-	
+
 	struct recv_frame *rf = &f->recv_frames[isend];
 	return rf;
 }
@@ -172,27 +172,26 @@ void frame_init(struct frame *f, const struct design *design)
 
 	f->design = design;
 	f->time = -INFINITY;
-	
-	array_init(&f->observers, sizeof(struct frame_observer));		
+
+	array_init(&f->observers, sizeof(struct frame_observer));
 	array_init(&f->current_message_ptrs, sizeof(struct message *));
 	pqueue_init(&f->events, frame_event_rcompare,
 		    sizeof(struct frame_event));
 	recv_frames_init(f);
-	frame_vars_init(f);	
+	frame_vars_init(f);
 
 	frame_clear(f);
 }
-
 
 void frame_deinit(struct frame *f)
 {
 	assert(f);
 
-	frame_vars_deinit(f);	
+	frame_vars_deinit(f);
 	recv_frames_deinit(f);
-	pqueue_deinit(&f->events);	
-	array_deinit(&f->current_message_ptrs);	
-	array_deinit(&f->observers);	
+	pqueue_deinit(&f->events);
+	array_deinit(&f->current_message_ptrs);
+	array_deinit(&f->observers);
 }
 
 void frame_clear(struct frame *f)
@@ -201,9 +200,9 @@ void frame_clear(struct frame *f)
 
 	f->time = -INFINITY;
 	array_clear(&f->current_message_ptrs);
-	pqueue_clear(&f->events);	
+	pqueue_clear(&f->events);
 	recv_frames_clear(f);
-	
+
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.clear) {
@@ -218,7 +217,7 @@ void frame_add_observer(struct frame *f, void *udata,
 	assert(f);
 	assert(udata);
 	assert(callbacks);
-	
+
 	struct frame_observer *obs = array_add(&f->observers, NULL);
 	obs->udata = udata;
 	obs->callbacks = *callbacks;
@@ -234,9 +233,9 @@ void frame_remove_observer(struct frame *f, void *udata)
 {
 	assert(f);
 	assert(udata);
-	
+
 	ssize_t pos =
-	array_find_last_index(&f->observers, observer_equals, udata);
+	    array_find_last_index(&f->observers, observer_equals, udata);
 	if (pos >= 0) {
 		array_remove_at(&f->observers, pos);
 	}
@@ -251,7 +250,7 @@ double frame_time(const struct frame *f)
 double frame_next_time(const struct frame *f)
 {
 	assert(f);
-	
+
 	if (pqueue_count(&f->events)) {
 		const struct frame_event *e = pqueue_top(&f->events);
 		return e->time;
@@ -265,22 +264,22 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(f);
 	assert(msg);
 	assert(msg->time == frame_time(f));
-	
+
 	array_add(&f->current_message_ptrs, &msg);
 }
 
 static void process_current_messages(struct frame *f)
 {
 	assert(f);
-	
+
 	if (!array_count(&f->current_message_ptrs))
 		return;
-	
+
 	const struct design *d = frame_design(f);
 	const struct vector *intvls = design_intervals(d);
 	double delta = vector_dim(intvls) ? vector_item(intvls, 0) : INFINITY;
 	double tnext = frame_time(f) + delta;
-	
+
 	const struct message **msgp;
 	ARRAY_FOREACH(msgp, &f->current_message_ptrs) {
 		const struct message *msg = *msgp;
@@ -289,10 +288,11 @@ static void process_current_messages(struct frame *f)
 		// add the message to the appropriate recv_frame
 		struct recv_frame *rf = recv_frames_item(f, msg->from);
 		ssize_t imsg = array_count(&rf->frame_messages);
-		struct frame_message *fmsg = array_add(&rf->frame_messages, NULL);
+		struct frame_message *fmsg =
+		    array_add(&rf->frame_messages, NULL);
 		fmsg->msg = msg;
 		fmsg->interval = 0;
-		
+
 		// create an advance event (if necessary)
 		if (isfinite(tnext)) {
 			struct frame_event e;
@@ -301,7 +301,6 @@ static void process_current_messages(struct frame *f)
 			e.imsg = imsg;
 			pqueue_push(&f->events, &e);
 		}
-		
 #ifndef NDEBUG
 		ssize_t n = array_count(&f->current_message_ptrs);
 		double time = frame_time(f);
@@ -312,11 +311,12 @@ static void process_current_messages(struct frame *f)
 		ARRAY_FOREACH(obs, &f->observers) {
 			if (obs->callbacks.message_add) {
 				obs->callbacks.message_add(obs->udata, f, msg);
-				
+
 				// make sure observers don't add messages
 				// or advance time
-				assert(array_count(&f->current_message_ptrs) == n);
-				assert(frame_time(f) == time);				
+				assert(array_count(&f->current_message_ptrs) ==
+				       n);
+				assert(frame_time(f) == time);
 			}
 		}
 	}
@@ -328,9 +328,9 @@ static void process_event(struct frame *f)
 	assert(pqueue_count(&f->events));
 	assert(!array_count(&f->current_message_ptrs));
 	assert(frame_time(f) == frame_next_time(f));
-		
+
 	struct frame_event *e = pqueue_top(&f->events);
-	
+
 	// advance the message interval
 	ssize_t isend = e->isend;
 	ssize_t imsg = e->imsg;
@@ -358,13 +358,14 @@ static void process_event(struct frame *f)
 #ifndef NDEBUG
 	double time = frame_time(f);
 #endif
-	
+
 	// notify all observers
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.message_advance) {
-			obs->callbacks.message_advance(obs->udata, f, msg, intvl);
-			
+			obs->callbacks.message_advance(obs->udata, f, msg,
+						       intvl);
+
 			// make sure observers don't add messages
 			// or advance time
 			assert(!array_count(&f->current_message_ptrs));
@@ -377,45 +378,43 @@ void frame_advance(struct frame *f, double time)
 {
 	assert(f);
 	assert(time >= frame_time(f));
-	
+
 	if (frame_time(f) < time)
 		process_current_messages(f);
-	
+
 	while (frame_next_time(f) < time) {
 		f->time = frame_next_time(f);
 		process_event(f);
 	}
-	
+
 	assert(frame_time(f) <= time);
 	assert(!array_count(&f->current_message_ptrs));
 	assert(frame_next_time(f) >= time);
 	f->time = time;
 }
 
-
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 		       ssize_t dyn_index, double delta)
 {
 	const struct design *d = frame_design(f);
-	
+
 	assert(0 <= isend && isend < design_send_count(d));
 	assert(0 <= jrecv && jrecv < design_recv_count(d));
 	assert(0 <= dyn_index && dyn_index < design_recv_dyn_dim(d));
 	assert(!isnan(delta));
-	
+
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
 	double *ptr = vector_item_ptr(dx, dyn_index);
 	*ptr += delta;
-	
+
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
 			obs->callbacks.recv_update(obs->udata, f, isend,
-						    jrecv, dyn_index, delta);
+						   jrecv, dyn_index, delta);
 		}
 	}
 }
-
 
 //struct vector frame_send_x(struct frame *f, ssize_t isend)
 //{
