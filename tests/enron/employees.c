@@ -305,15 +305,9 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	
 	if (!parse_ok) {
 		actors_deinit(parse.actors);
-	} else {
-		const struct vector *level = strata_levels(&parse.strata);
-		ssize_t il, nl = strata_count(&parse.strata);
-
-		matrix_init(traits, nl, strata_dim(&parse.strata));
-		for (il = 0; il < nl; il++) {
-			matrix_set_row(traits, il, vector_to_ptr(&level[il]));
-		}
+		matrix_deinit(traits);
 	}
+	vector_deinit(&parse.traits);
 	strata_deinit(&parse.strata);
 	
 	return parse_ok;
