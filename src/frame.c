@@ -310,7 +310,7 @@ static void process_current_messages(struct frame *f)
 		// notify all observers
 		const struct frame_observer *obs;
 		ARRAY_FOREACH(obs, &f->observers) {
-			if (obs->callbacks.message_advance) {
+			if (obs->callbacks.message_add) {
 				obs->callbacks.message_add(obs->udata, f, msg);
 				
 				// make sure observers don't add messages
