@@ -36,11 +36,22 @@ static void setup(void) {
 	
 	double intvls[] = {
 		// 450.00,
-		900.00,
-		1800.00,     
-		3600.00,     7200.00,    14400.00,    28800.00,
-		57600.00,    115200.00,   230400.00,   460800.00,   921600.00,
-		1843200.00,  3686400.00,  7372800.00, 14745600.00, 29491200.00
+		//900.00,    // 15 min
+		1800.00,   // 30 min
+			   //3600.00,   //  1 hr
+		7200.00,   //  2 hr
+			   //14400.00,  //  4 hr
+		28800.00,  //  8 hr
+			   //57600.00,  // 16 hr
+		115200.00, // 32 hr
+			   // 230400.00, // 2.66 day 
+		460800.00, // 5.33 day
+			   // 921600.00, // 10.66 day
+		1843200.00, // 21.33 day
+			    // 3686400.00, // 42.66 day
+			    // 7372800.00, // 85.33 day
+			    // 14745600.00, // 170.66 day
+			    // 29491200.00 // 341.33 day
 		// 58982400.00
 	};
 	ssize_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
@@ -54,7 +65,8 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);	
+	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 }
 
 static void teardown(void)
@@ -221,7 +233,7 @@ int main(int argc, char **argv)
 {
 	setup();
 	
-	ssize_t maxit = 25;
+	ssize_t maxit = 100;
 	ssize_t report = 1;
 	bool trace = true;
 	
