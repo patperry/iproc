@@ -53,7 +53,8 @@ static void setup(void) {
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	// design_add_recv_var(&design, RECV_VAR_NSEND);	
+	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
+	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);	
 }
 
 static void teardown(void)

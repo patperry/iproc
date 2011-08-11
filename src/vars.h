@@ -60,6 +60,7 @@ extern const struct var_type *RECV_VAR_IRECV;
  */
 extern const struct var_type *RECV_VAR_NRECV;
 
+extern const struct var_type *RECV_VAR_ISEND;
 extern const struct var_type *RECV_VAR_NSEND;
 
 
