@@ -1,6 +1,7 @@
 #!/bin/sh
+INDENT=gindent
 PARAM="-npro -kr -i8 -ts8 -sob -l80 -ss -ncs -cp1 -T bool -T int8_t -T int16_T -T int32_t -T int64_t -T intptr_t -T intmax_t -T size_t -T ssize_t -T uint8_t -T uint16_t -T uint32_t -T uint64_t -T uintptr_t -T uintmax_t -T f77int"
-RES=`indent --version`
+RES=`$INDENT --version`
 V1=`echo $RES | cut -d' ' -f3 | cut -d'.' -f1`
 V2=`echo $RES | cut -d' ' -f3 | cut -d'.' -f2`
 V3=`echo $RES | cut -d' ' -f3 | cut -d'.' -f3`
@@ -15,4 +16,4 @@ elif [ $V1 -eq 2 ]; then
     fi
   fi
 fi
-indent $PARAM "$@"
+$INDENT $PARAM $@
