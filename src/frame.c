@@ -170,7 +170,7 @@ void frame_init(struct frame *f, const struct design *design)
 
 	array_init(&f->observers, sizeof(struct frame_observer));
 	array_init(&f->frame_messages, sizeof(struct frame_message));
-	array_init(&f->current_message_ptrs, sizeof(struct message *));
+	f->cur_fmsg = 0;
 	pqueue_init(&f->events, frame_event_rcompare,
 		    sizeof(struct frame_event));
 	recv_frames_init(f);
@@ -186,7 +186,6 @@ void frame_deinit(struct frame *f)
 	frame_vars_deinit(f);
 	recv_frames_deinit(f);
 	pqueue_deinit(&f->events);
-	array_deinit(&f->current_message_ptrs);
 	array_deinit(&f->frame_messages);
 	array_deinit(&f->observers);
 }
@@ -197,7 +196,7 @@ void frame_clear(struct frame *f)
 
 	f->time = -INFINITY;
 	array_clear(&f->frame_messages);
-	array_clear(&f->current_message_ptrs);
+	f->cur_fmsg = 0;
 	pqueue_clear(&f->events);
 	recv_frames_clear(f);
 
@@ -263,14 +262,22 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg);
 	assert(msg->time == frame_time(f));
 
-	array_add(&f->current_message_ptrs, &msg);
+	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
+	fmsg->msg = msg;
+	fmsg->interval = 0;
+}
+
+static bool has_pending_messages(const struct frame *f)
+{
+	assert(0 <= f->cur_fmsg && f->cur_fmsg <= array_count(&f->frame_messages));
+	return f->cur_fmsg < array_count(&f->frame_messages);
 }
 
 static void process_current_messages(struct frame *f)
 {
 	assert(f);
 
-	if (!array_count(&f->current_message_ptrs))
+	if (!has_pending_messages(f))
 		return;
 
 	const struct design *d = frame_design(f);
@@ -278,16 +285,12 @@ static void process_current_messages(struct frame *f)
 	double delta = vector_dim(intvls) ? vector_item(intvls, 0) : INFINITY;
 	double tnext = frame_time(f) + delta;
 
-	const struct message **msgp;
-	ARRAY_FOREACH(msgp, &f->current_message_ptrs) {
-		const struct message *msg = *msgp;
+	const struct frame_message *fmsgs = array_to_ptr(&f->frame_messages);
+	ssize_t imsg, nmsg = array_count(&f->frame_messages);
+	for (imsg = f->cur_fmsg; imsg < nmsg; imsg++) {
+		const struct frame_message *fmsg = &fmsgs[imsg];
+		const struct message *msg = fmsg->msg;
 		assert(msg->time == frame_time(f));
-
-		ssize_t imsg = array_count(&f->frame_messages);
-		struct frame_message *fmsg =
-		    array_add(&f->frame_messages, NULL);
-		fmsg->msg = msg;
-		fmsg->interval = 0;
 
 		// create an advance event (if necessary)
 		if (isfinite(tnext)) {
@@ -297,7 +300,7 @@ static void process_current_messages(struct frame *f)
 			pqueue_push(&f->events, &e);
 		}
 #ifndef NDEBUG
-		ssize_t n = array_count(&f->current_message_ptrs);
+		ssize_t nmsg1 = array_count(&f->frame_messages);
 		double time = frame_time(f);
 #endif
 
@@ -309,19 +312,18 @@ static void process_current_messages(struct frame *f)
 
 				// make sure observers don't add messages
 				// or advance time
-				assert(array_count(&f->current_message_ptrs) ==
-				       n);
+				assert(nmsg == nmsg1);
 				assert(frame_time(f) == time);
 			}
 		}
 	}
-	array_clear(&f->current_message_ptrs);
+	f->cur_fmsg = nmsg;
 }
 
 static void process_event(struct frame *f)
 {
 	assert(pqueue_count(&f->events));
-	assert(!array_count(&f->current_message_ptrs));
+	assert(!has_pending_messages(f));
 	assert(frame_time(f) == frame_next_time(f));
 
 	struct frame_event *e = pqueue_top(&f->events);
@@ -361,7 +363,7 @@ static void process_event(struct frame *f)
 
 			// make sure observers don't add messages
 			// or advance time
-			assert(!array_count(&f->current_message_ptrs));
+			assert(!has_pending_messages(f));
 			assert(frame_time(f) == time);
 		}
 	}
@@ -381,7 +383,7 @@ void frame_advance(struct frame *f, double time)
 	}
 
 	assert(frame_time(f) <= time);
-	assert(!array_count(&f->current_message_ptrs));
+	assert(!has_pending_messages(f));
 	assert(frame_next_time(f) >= time);
 	f->time = time;
 }

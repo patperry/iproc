@@ -29,7 +29,7 @@ struct frame {
 
 	struct array observers;
 	struct array frame_messages;
-	struct array current_message_ptrs;
+	ssize_t cur_fmsg;
 	struct pqueue events;
 
 	struct recv_frame *recv_frames;
