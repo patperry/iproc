@@ -53,7 +53,7 @@ static void rv_nrecv_setup(void **state)
 	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV);
+	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	rv_nrecv_index = design_recv_var_index(&design, RECV_VAR_NRECV);
 	frame_init(&frame, &design);
 }

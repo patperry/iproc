@@ -620,12 +620,13 @@ void design_set_recv_effects(struct design *design, bool reffects)
 }
 
 static void design_add_var(struct design *design, const struct var_type *type,
+			   void *params,
 			   struct array *vars,
 			   ssize_t *idynamic, ssize_t *ndynamic, ssize_t *dim)
 {
 	struct design_var *var = array_add(vars, NULL);
 
-	type->init(var, design);
+	type->init(var, design, params);
 	assert(var->dim >= 0);
 	var->index = (*idynamic) + (*ndynamic);
 	var->type = type;
@@ -633,25 +634,25 @@ static void design_add_var(struct design *design, const struct var_type *type,
 	*dim += var->dim;
 }
 
-void design_add_send_var(struct design *design, const struct var_type *type)
+void design_add_send_var(struct design *design, const struct var_type *type, void *params)
 {
 	assert(design);
 	assert(type);
 	assert(type->var_class == VAR_SEND_VAR);
 	assert(type->init);
 
-	design_add_var(design, type, &design->send_vars,
+	design_add_var(design, type, params, &design->send_vars,
 		       &design->isdynamic, &design->nsdynamic, &design->sdim);
 }
 
-void design_add_recv_var(struct design *design, const struct var_type *type)
+void design_add_recv_var(struct design *design, const struct var_type *type, void *params)
 {
 	assert(design);
 	assert(type);
 	assert(type->var_class == VAR_RECV_VAR);
 	assert(type->init);
 
-	design_add_var(design, type, &design->recv_vars,
+	design_add_var(design, type, params, &design->recv_vars,
 		       &design->irdynamic, &design->nrdynamic, &design->rdim);
 }
 

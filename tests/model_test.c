@@ -67,7 +67,7 @@ static void basic_setup(void **state)
 	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV);
+	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
 	
@@ -108,7 +108,7 @@ static void hard_setup(void **state)
 	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV);
+	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
 	

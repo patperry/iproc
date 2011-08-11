@@ -12,10 +12,11 @@ struct nrecv_udata {
 	struct array active;
 };
 
-static void nrecv_init(struct design_var *dv, const struct design *d)
+static void nrecv_init(struct design_var *dv, const struct design *d, void *params)
 {
 	assert(dv);
 	assert(d);
+	assert(!params);
 
 	ssize_t n = vector_dim(design_intervals(d));
 	dv->dim = n + 2;
