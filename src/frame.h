@@ -19,6 +19,10 @@ struct frame_event {
 	ssize_t imsg;
 };
 
+struct frame_actor {
+	struct array message_ixs;
+};
+
 /* dX[t,i] */
 struct recv_frame {
 	struct intmap jrecv_dxs;
@@ -30,6 +34,8 @@ struct frame {
 
 	struct array observers;
 	struct array frame_messages;
+	struct frame_actor *senders;
+	struct frame_actor *receivers;	
 	ssize_t cur_fmsg;
 	struct pqueue events;
 
@@ -69,10 +75,14 @@ void frame_advance(struct frame *f, double time);	// advance time
 
 /* messages */
 static inline ssize_t frame_messages_count(const struct frame *f);
-static inline struct frame_message *frame_messages_item(const struct frame *f, ssize_t imsg);
+static inline struct frame_message *frame_messages_item(const struct frame *f, ssize_t i);
 void frame_add(struct frame *f, const struct message *msg);
 
-
+/* actors */
+static inline ssize_t frame_senders_count(const struct frame *f);
+static inline ssize_t frame_receivers_count(const struct frame *f);
+static inline void frame_get_send_messages(const struct frame *f, ssize_t isend, ssize_t **imsg, ssize_t *nmsg);
+static inline void frame_get_recv_messages(const struct frame *f, ssize_t irecv, ssize_t **imsg, ssize_t *nmsg);
 
 /* current covariates */
 const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
@@ -147,6 +157,44 @@ struct frame_message *frame_messages_item(const struct frame *f, ssize_t imsg)
 	assert(0 <= imsg && imsg < frame_messages_count(f));
 	struct frame_message *base = array_to_ptr(&f->frame_messages);
 	return &base[imsg];
+}
+
+ssize_t frame_senders_count(const struct frame *f)
+{
+	assert(f);
+	const struct design *d = frame_design(f);
+	return design_send_count(d);
+}
+
+ssize_t frame_receivers_count(const struct frame *f)
+{
+	assert(f);
+	const struct design *d = frame_design(f);
+	return design_recv_count(d);
+}
+
+void frame_get_send_messages(const struct frame *f, ssize_t isend, ssize_t **imsg, ssize_t *nmsg)
+{
+	assert(f);
+	assert(0 <= isend && isend < frame_senders_count(f));
+	assert(imsg);
+	assert(nmsg);
+	
+	const struct frame_actor *a = &f->senders[isend];
+	*imsg = array_to_ptr(&a->message_ixs);
+	*nmsg = array_count(&a->message_ixs);
+}
+
+void frame_get_recv_messages(const struct frame *f, ssize_t irecv, ssize_t **imsg, ssize_t *nmsg)
+{
+	assert(f);
+	assert(0 <= irecv && irecv < frame_receivers_count(f));
+	assert(imsg);
+	assert(nmsg);
+	
+	const struct frame_actor *a = &f->receivers[irecv];
+	*imsg = array_to_ptr(&a->message_ixs);
+	*nmsg = array_count(&a->message_ixs);
 }
 
 #endif /* _FRAME_H */

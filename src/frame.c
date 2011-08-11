@@ -6,6 +6,119 @@
 #include "vars.h"
 #include "frame.h"
 
+static void frame_actor_init(struct frame_actor *fa)
+{
+	assert(fa);
+	array_init(&fa->message_ixs, sizeof(ssize_t));
+}
+
+static void frame_actor_clear(struct frame_actor *fa)
+{
+	assert(fa);
+	array_clear(&fa->message_ixs);
+}
+
+static void frame_actor_deinit(struct frame_actor *fa)
+{
+	assert(fa);
+	array_deinit(&fa->message_ixs);
+}
+
+static void frame_actors_init(struct frame_actor **pfas, ssize_t n)
+{
+	assert(pfas);
+	assert(n >= 0);
+
+	struct frame_actor *fas = xcalloc(n, sizeof(fas[0]));
+	ssize_t i;
+	for (i = 0; i < n; i++) {
+		frame_actor_init(&fas[i]);
+	}
+	
+	*pfas = fas;
+}
+
+static void frame_actors_clear(struct frame_actor *fas, ssize_t n)
+{
+	assert(fas);
+	assert(n >= 0);
+
+	ssize_t i;
+	for (i = 0; i < n; i++) {
+		frame_actor_clear(&fas[i]);
+	}
+}
+
+static void frame_actors_deinit(struct frame_actor *fas, ssize_t n)
+{
+	assert(fas);
+	assert(n >= 0);
+
+	ssize_t i;
+	for (i = 0; i < n; i++) {
+		frame_actor_deinit(&fas[i]);
+	}
+	
+	xfree(fas);
+}
+
+static void frame_senders_init(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_send_count(d);
+	frame_actors_init(&f->senders, n);
+}
+
+static void frame_senders_clear(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_send_count(d);
+	frame_actors_clear(f->senders, n);
+}
+
+static void frame_senders_deinit(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_send_count(d);
+	frame_actors_deinit(f->senders, n);
+}
+
+static struct frame_actor *frame_senders_item(const struct frame *f, ssize_t i)
+{
+	assert(f);
+	assert(0 <= i && i < frame_senders_count(f));
+	return &f->senders[i];
+}
+
+static void frame_receivers_init(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_recv_count(d);
+	frame_actors_init(&f->receivers, n);
+}
+
+static void frame_receivers_clear(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_recv_count(d);
+	frame_actors_clear(f->receivers, n);
+}
+
+static void frame_receivers_deinit(struct frame *f)
+{
+	const struct design *d = frame_design(f);
+	ssize_t n = design_recv_count(d);
+	frame_actors_deinit(f->receivers, n);
+}
+
+static struct frame_actor *frame_receivers_item(const struct frame *f, ssize_t i)
+{
+	assert(f);
+	assert(0 <= i && i < frame_receivers_count(f));
+	return &f->receivers[i];
+}
+
+
 static void frame_vars_init(struct frame *f)
 {
 	assert(f);
@@ -170,6 +283,8 @@ void frame_init(struct frame *f, const struct design *design)
 
 	array_init(&f->observers, sizeof(struct frame_observer));
 	array_init(&f->frame_messages, sizeof(struct frame_message));
+	frame_senders_init(f);
+	frame_receivers_init(f);	
 	f->cur_fmsg = 0;
 	pqueue_init(&f->events, frame_event_rcompare,
 		    sizeof(struct frame_event));
@@ -186,6 +301,8 @@ void frame_deinit(struct frame *f)
 	frame_vars_deinit(f);
 	recv_frames_deinit(f);
 	pqueue_deinit(&f->events);
+	frame_receivers_deinit(f);
+	frame_senders_deinit(f);
 	array_deinit(&f->frame_messages);
 	array_deinit(&f->observers);
 }
@@ -196,6 +313,8 @@ void frame_clear(struct frame *f)
 
 	f->time = -INFINITY;
 	array_clear(&f->frame_messages);
+	frame_senders_clear(f);
+	frame_receivers_clear(f);	
 	f->cur_fmsg = 0;
 	pqueue_clear(&f->events);
 	recv_frames_clear(f);
@@ -244,9 +363,20 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg);
 	assert(msg->time == frame_time(f));
 
+	ssize_t imsg = array_count(&f->frame_messages);
 	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
 	fmsg->message = msg;
 	fmsg->interval = 0;
+	
+	struct frame_actor *fa;
+	fa = frame_senders_item(f, msg->from);
+	array_add(&fa->message_ixs, &imsg);
+	
+	ssize_t ito, nto = msg->nto;
+	for (ito = 0; ito < nto; ito++) {
+		fa = frame_receivers_item(f, msg->to[ito]);
+		array_add(&fa->message_ixs, &imsg);
+	}
 }
 
 static bool has_pending_messages(const struct frame *f)
