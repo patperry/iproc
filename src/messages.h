@@ -2,7 +2,6 @@
 #define _MESSAGES_H
 
 #include "array.h"
-#include "history.h"
 #include "refcount.h"
 
 struct message {

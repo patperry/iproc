@@ -2,7 +2,6 @@
 #define _DESIGN_H
 
 #include "actors.h"
-#include "history.h"
 #include "array.h"
 #include "matrix.h"
 #include "messages.h"
