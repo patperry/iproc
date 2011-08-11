@@ -51,10 +51,7 @@ static void handle_message_add(void *udata, struct frame *f,
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t isend = msg->to[ito];
 
-		ssize_t i, n = fv->design->dim;
-		for (i = 0; i < n; i++) {
-			frame_recv_update(f, isend, jrecv, dyn_index + i, 1.0);
-		}
+		frame_recv_update(f, isend, jrecv, dyn_index, 1.0);
 	}
 }
 
@@ -78,6 +75,7 @@ static void handle_message_advance(void *udata, struct frame *f,
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t isend = msg->to[ito];
 
+		frame_recv_update(f, isend, jrecv, dyn_index + intvl,     +1.0);
 		frame_recv_update(f, isend, jrecv, dyn_index + intvl - 1, -1.0);
 	}
 }
