@@ -24,6 +24,7 @@ static struct vector intervals;
 static struct messages messages;
 static struct design design;
 static ssize_t rv_nrecv_index;
+static ssize_t rv_nsend_index;
 static ssize_t rv_irecv_index;
 static struct frame frame;
 
@@ -44,6 +45,71 @@ static void enron_teardown_fixture(void **state)
 	actors_deinit(&receivers);
 	actors_deinit(&senders);
 	print_message("\n\n");
+}
+
+static void rv_nsend_setup(void **state)
+{
+	has_reffects = false;
+	has_loops = false;
+	vector_init(&intervals, 0);
+	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_set_loops(&design, has_loops);
+	design_set_recv_effects(&design, has_reffects);
+	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
+	rv_nsend_index = design_recv_var_index(&design, RECV_VAR_NSEND);
+	frame_init(&frame, &design);
+}
+
+static void rv_nsend_teardown(void **state)
+{
+	frame_deinit(&frame);
+	vector_deinit(&intervals);	
+	design_deinit(&design);
+}
+
+static void test_rv_nsend(void **state)
+{
+	double t;
+	ssize_t itie, ntie, ito;
+	ssize_t isend;
+	ssize_t jrecv, nrecv = design_recv_count(&design);
+	const struct message *msg = NULL;
+	struct messages_iter it;
+	struct matrix xnsend;
+	struct vector x, y;
+	
+	matrix_init(&xnsend, design_send_count(&design), design_recv_count(&design));
+	matrix_fill(&xnsend, 0.0);
+	
+	vector_init(&x, design_recv_dim(&design));
+	vector_set_basis(&x, rv_nsend_index);
+	vector_init(&y, design_recv_count(&design));
+	
+	isend = 0;
+	
+	MESSAGES_FOREACH(it, &messages) {
+		t = MESSAGES_TIME(it);
+		frame_advance(&frame, t);
+		
+		isend = msg ? msg->from : 0;
+		frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
+			assert(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
+			assert_true(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
+		}
+		
+		ntie = MESSAGES_COUNT(it);
+		for (itie = 0; itie < ntie; itie++) {
+			msg = MESSAGES_VAL(it, itie);
+			frame_add(&frame, msg);
+			
+			for (ito = 0; ito < msg->nto; ito++) {
+				*matrix_item_ptr(&xnsend, msg->from, msg->to[ito]) += 1.0;
+			}
+		}
+	}
+	
+	matrix_deinit(&xnsend);
 }
 
 static void rv_nrecv_setup(void **state)
@@ -197,6 +263,7 @@ int main(int argc, char **argv)
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
+		unit_test_setup_teardown(test_rv_nsend, rv_nsend_setup, rv_nsend_teardown),
 		unit_test_setup_teardown(test_rv_nrecv, rv_nrecv_setup, rv_nrecv_teardown),
 		unit_test_setup_teardown(test_rv_irecv, rv_irecv_setup, rv_irecv_teardown),		
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
