@@ -16,7 +16,7 @@ static void nsend2_init(struct design_var *dv, const struct design *d,
 	dv->dim = n1 * n1;
 }
 
-static void handle_message_add(void *udata, struct frame *f,
+static void nsend2_message_add(void *udata, struct frame *f,
 			       const struct message *msg)
 {
 	struct frame_var *fv = udata;
@@ -72,7 +72,7 @@ static void handle_message_add(void *udata, struct frame *f,
 	}
 }
 
-static void handle_message_advance(void *udata, struct frame *f,
+static void nsend2_message_advance(void *udata, struct frame *f,
 				   const struct message *msg, ssize_t intvl)
 {
 	struct frame_var *fv = udata;
@@ -137,16 +137,16 @@ static void handle_message_advance(void *udata, struct frame *f,
 static struct var_type RECV_VAR_NSEND2_REP = {
 	VAR_RECV_VAR,
 	nsend2_init,
-	NULL,
-	NULL,
-	NULL,
+	NULL, // deinit
+	NULL, // frame_init
+	NULL, // frame_deinit
 	{
-	 handle_message_add,
-	 handle_message_advance,
-	 NULL,			// recv_update
-	 NULL,			// send_update
-	 NULL,			// clear
-	 }
+		nsend2_message_add,
+		nsend2_message_advance,
+		NULL,			// recv_update
+		NULL,			// send_update
+		NULL,			// clear
+	}
 };
 
 const struct var_type *RECV_VAR_NSEND2 = &RECV_VAR_NSEND2_REP;

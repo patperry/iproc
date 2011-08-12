@@ -857,7 +857,6 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				227E08C613F43F8F003EC4BA /* rv-nsend2.c */,
 				22597405133D0AFB0022B52E /* actors.c */,
 				22597406133D0AFB0022B52E /* actors.h */,
 				22597408133D0AFB0022B52E /* design.c */,
@@ -876,6 +875,7 @@
 				227E08C313F4160C003EC4BA /* rv-isend.c */,
 				22286F0D136F36340015CC42 /* rv-nrecv.c */,
 				227E08C013F41414003EC4BA /* rv-nsend.c */,
+				227E08C613F43F8F003EC4BA /* rv-nsend2.c */,
 				22DB0A7F13CB68B5004149CE /* strata.c */,
 				22DB0A8013CB68B5004149CE /* strata.h */,
 				223BFE4613AA98F200835B8F /* vars.h */,
