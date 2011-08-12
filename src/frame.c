@@ -363,20 +363,10 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg);
 	assert(msg->time == frame_time(f));
 
-	ssize_t imsg = array_count(&f->frame_messages);
 	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
 	fmsg->message = msg;
 	fmsg->interval = 0;
 	
-	struct frame_actor *fa;
-	fa = frame_senders_item(f, msg->from);
-	array_add(&fa->message_ixs, &imsg);
-	
-	ssize_t ito, nto = msg->nto;
-	for (ito = 0; ito < nto; ito++) {
-		fa = frame_receivers_item(f, msg->to[ito]);
-		array_add(&fa->message_ixs, &imsg);
-	}
 }
 
 static bool has_pending_messages(const struct frame *f)
@@ -404,6 +394,18 @@ static void process_current_messages(struct frame *f)
 		const struct message *msg = fmsg->message;
 		assert(msg->time == frame_time(f));
 
+		// add the message to the sender history
+		struct frame_actor *fa;
+		fa = frame_senders_item(f, msg->from);
+		array_add(&fa->message_ixs, &imsg);
+		
+		// add the message to the receiver histories
+		ssize_t ito, nto = msg->nto;
+		for (ito = 0; ito < nto; ito++) {
+			fa = frame_receivers_item(f, msg->to[ito]);
+			array_add(&fa->message_ixs, &imsg);
+		}
+		
 		// create an advance event (if necessary)
 		if (isfinite(tnext)) {
 			struct frame_event e;
