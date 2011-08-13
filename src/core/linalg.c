@@ -333,8 +333,8 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 	f77int *info = &svd->info;
 	
 	F77_FUNC(dgesdd) (jobz, &m, &n, pa, &lda, ps, pu, &ldu, pvt, &ldvt, work, &lwork, iwork, info);
-	assert(info >= 0);
-	return (info == 0);
+	assert(*info >= 0);
+	return (*info == 0);
 }
 
 

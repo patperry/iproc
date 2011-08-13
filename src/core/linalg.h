@@ -92,7 +92,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 static inline ssize_t svdfac_row_dim(const struct svdfac *svd)
 {
 	assert(svd);
-	return svd->n;
+	return svd->m;
 }
 
 static inline ssize_t svdfac_col_dim(const struct svdfac *svd)
