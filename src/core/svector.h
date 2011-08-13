@@ -71,6 +71,10 @@ static inline struct svector_iter svector_iter_make(const struct svector *v);
 static inline bool svector_iter_advance(struct svector_iter *it);
 static inline void svector_iter_reset(struct svector_iter *it);
 
+/* low-level access */
+static inline double *svector_data_ptr(const struct svector *v);
+static inline ssize_t *svector_index_ptr(const struct svector *v);
+
 /* inline function definitions */
 ssize_t svector_dim(const struct svector *v)
 {
@@ -82,6 +86,17 @@ ssize_t svector_count(const struct svector *v)
 {
 	assert(v);
 	return v->nnz;
+}
+double *svector_data_ptr(const struct svector *v)
+{
+	assert(v);
+	return v->data;
+}
+
+ssize_t *svector_index_ptr(const struct svector *v)
+{
+	assert(v);
+	return v->index;
 }
 
 struct svector_iter svector_iter_make(const struct svector *v)

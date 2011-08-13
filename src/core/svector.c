@@ -310,9 +310,10 @@ double *svector_find(const struct svector *v, ssize_t i,
 	assert(0 <= i && i < svector_dim(v));
 	assert(pos);
 	
+	const ssize_t *index = v->index;
 	ssize_t inz, nnz = v->nnz;
 	for (inz = 0; inz < nnz; inz++) {
-		if (v->index[inz] >= i) {
+		if (index[inz] >= i) {
 			break;
 		}
 	}
