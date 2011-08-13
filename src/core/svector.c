@@ -303,6 +303,7 @@ void svector_printf(const struct svector *v)
 	printf("\n}\n");
 }
 
+
 double *svector_find(const struct svector *v, ssize_t i,
 		     struct svector_pos *pos)
 {
@@ -310,22 +311,27 @@ double *svector_find(const struct svector *v, ssize_t i,
 	assert(0 <= i && i < svector_dim(v));
 	assert(pos);
 	
-	const ssize_t *index = v->index;
-	ssize_t inz, nnz = v->nnz;
-	for (inz = 0; inz < nnz; inz++) {
-		if (index[inz] >= i) {
-			break;
+	const ssize_t *base = v->index;
+	ssize_t len = v->nnz;
+	const ssize_t *begin = base, *end = base + len, *ptr;
+	
+	while (begin < end) {
+		ptr = begin + ((end - begin) >> 1);
+		if (*ptr < i) {
+			begin = ptr + 1;			
+		} else if (*ptr > i) {
+			end = ptr;
+		} else {
+			pos->inz = ptr - v->index;
+			pos->i = i;
+			return &v->data[pos->inz];
 		}
 	}
-
-	pos->i = i;
-	pos->inz = inz;
+	assert(begin == end);
 	
-	if (inz < nnz && v->index[inz] == i) {
-		return &v->data[inz];
-	} else {
-		return NULL;
-	}
+	pos->inz = begin - v->index;
+	pos->i = i;
+	return NULL;
 }
 
 double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
