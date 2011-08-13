@@ -22,10 +22,13 @@ void svector_init(struct svector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
-	assert(n <= INTPTR_MAX);
+	assert(n <= SSIZE_MAX);
 
-	intmap_init(&v->map, sizeof(double), alignof(double));
+	v->data = NULL;
+	v->index = NULL;
 	v->dim = n;
+	v->nnz = 0;
+	v->nnzmax = 0;
 }
 
 struct svector *svector_alloc_copy(const struct svector *src)
@@ -42,8 +45,8 @@ void svector_init_copy(struct svector *v, const struct svector *src)
 	assert(v);
 	assert(src);
 
-	intmap_init_copy(&v->map, &src->map);
-	v->dim = src->dim;
+	svector_init(v, svector_dim(src));
+	svector_assign_copy(v, src);
 }
 
 void svector_assign_copy(struct svector *dst, const struct svector *src)
@@ -52,7 +55,15 @@ void svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
 
-	intmap_assign_copy(&dst->map, &src->map);
+	ssize_t nnz = src->nnz;
+	if (dst->nnz < nnz) {
+		dst->data = xrealloc(dst->data, nnz * sizeof(dst->data[0]));
+		dst->index = xrealloc(dst->index, nnz * sizeof(dst->index[0]));
+		dst->nnzmax = nnz;
+	}
+	memcpy(dst->data, src->data, nnz * sizeof(dst->data[0]));
+	memcpy(dst->index, src->index, nnz * sizeof(dst->index[0]));
+	dst->nnz = nnz;
 }
 
 void svector_free(struct svector *v)
@@ -65,13 +76,14 @@ void svector_free(struct svector *v)
 
 void svector_deinit(struct svector *v)
 {
-	intmap_deinit(&v->map);
+	xfree(v->index);
+	xfree(v->data);
 }
 
 void svector_clear(struct svector *v)
 {
 	assert(v);
-	intmap_clear(&v->map);
+	v->nnz = 0;
 }
 
 void svector_set_basis(struct svector *v, ssize_t i)
@@ -79,8 +91,14 @@ void svector_set_basis(struct svector *v, ssize_t i)
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 
-	svector_clear(v);
-	svector_set_item(v, i, 1.0);
+	if (!v->nnzmax) {
+		v->data = xmalloc(sizeof(v->data[0]));
+		v->index = xmalloc(sizeof(v->index[0]));
+		v->nnzmax = 1;
+	}
+	v->data[0] = 1.0;
+	v->index[0] = i;
+	v->nnz = 1;
 }
 
 double svector_item(const struct svector *v, ssize_t i)
@@ -89,8 +107,14 @@ double svector_item(const struct svector *v, ssize_t i)
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	double *ptr = intmap_item(&v->map, i);
-	return ptr ? *ptr : 0.0;
+	struct svector_pos pos;
+	double *ptr;
+	
+	if ((ptr = svector_find(v, i, &pos))) {
+		return *ptr;
+	} else {
+		return 0.0;
+	}
 }
 
 double *svector_item_ptr(struct svector *v, ssize_t i)
@@ -98,24 +122,29 @@ double *svector_item_ptr(struct svector *v, ssize_t i)
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 
-	struct intmap_pos pos;
-	double zero = 0.0;
-	double *val;
-
-	if ((val = intmap_find(&v->map, i, &pos))) {
-		return val;
-	} else {
-		return intmap_insert(&v->map, &pos, &zero);
+	struct svector_pos pos;
+	double *ptr;
+	
+	if (!(ptr = svector_find(v, i, &pos))) {
+		ptr = svector_insert(v, &pos, 0.0);
 	}
+	return ptr;
 }
 
-double *svector_set_item(struct svector *v, ssize_t i, double val)
+void svector_set_item(struct svector *v, ssize_t i, double val)
 {
 	assert(v);
 	assert(0 <= i);
 	assert(i < svector_dim(v));
 
-	return intmap_set_item(&v->map, i, &val);
+	struct svector_pos pos;
+	double *ptr;
+	
+	if ((ptr = svector_find(v, i, &pos))) {
+		*ptr = val;
+	} else {
+		svector_insert(v, &pos, val);
+	}
 }
 
 void svector_remove(struct svector *v, ssize_t i)
@@ -280,42 +309,79 @@ double *svector_find(const struct svector *v, ssize_t i,
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
 	assert(pos);
+	
+	ssize_t inz, nnz = v->nnz;
+	for (inz = 0; inz < nnz; inz++) {
+		if (v->index[inz] >= i) {
+			break;
+		}
+	}
 
-	return intmap_find(&v->map, i, &pos->map_pos);
+	pos->i = i;
+	pos->inz = inz;
+	
+	if (inz < nnz && v->index[inz] == i) {
+		return &v->data[inz];
+	} else {
+		return NULL;
+	}
 }
 
 double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
 {
 	assert(v);
 	assert(pos);
+	assert(pos->inz == v->nnz || v->index[pos->inz] > pos->i);
 
-	return intmap_insert(&v->map, &pos->map_pos, &val);
+	if (v->nnz == v->nnzmax) {
+		ssize_t nnzmax1 = (v->nnzmax + 1) * 2;
+		v->data = xrealloc(v->data, nnzmax1 * sizeof(v->data[0]));
+		v->index = xrealloc(v->index, nnzmax1 * sizeof(v->index[0]));
+		v->nnzmax = nnzmax1;
+	}
+	assert(v->nnz < v->nnzmax);
+	
+	double *data = v->data;
+	ssize_t *index = v->index;
+	ssize_t inz = pos->inz;
+	ssize_t nnz = v->nnz;
+	ssize_t ntail = nnz - inz;
+
+	// Switch is just an optimization for memmove in default case
+	switch (ntail) {
+	case 2:
+		data[inz + 2] = data[inz + 1];
+		index[inz + 2] = index[inz + 1];
+	case 1:
+		data[inz + 1] = data[inz];
+		index[inz + 1] = index[inz];
+		break;
+	default:
+		memmove(data + inz + 1, data + inz, ntail * sizeof(data[0]));
+		memmove(index + inz + 1, index + inz, ntail * sizeof(index[0]));
+	}
+	
+	data[inz] = val;		
+	index[inz] = pos->i;
+	v->nnz = nnz + 1;	
+
+	return &data[inz];
 }
 
 void svector_remove_at(struct svector *v, struct svector_pos *pos)
 {
 	assert(v);
 	assert(pos);
-
-	intmap_remove_at(&v->map, &pos->map_pos);
+	assert(0 <= pos->inz && pos->inz < v->nnz);
+	
+	double *data = v->data;
+	ssize_t *index = v->index;
+	ssize_t inz = pos->inz;
+	ssize_t nnz = v->nnz;
+	ssize_t ntail = nnz - inz - 1;
+	
+	memmove(data + inz, data + inz + 1, ntail * sizeof(data[0]));
+	memmove(index + inz, index + inz + 1, ntail * sizeof(index[0]));
+	v->nnz = nnz - 1;
 }
 
-struct svector_iter svector_iter_make(const struct svector *v)
-{
-	assert(v);
-	struct svector_iter it;
-	it.map_it = intmap_iter_make(&v->map);
-	return it;
-}
-
-bool svector_iter_advance(struct svector_iter *it)
-{
-	assert(it);
-	return intmap_iter_advance(&it->map_it);
-}
-
-void svector_iter_reset(struct svector_iter *it)
-{
-	assert(it);
-	intmap_iter_reset(&it->map_it);
-}

@@ -5,20 +5,23 @@
 #include "vector.h"
 
 struct svector {
-	struct intmap map;
+	double *data;
+	ssize_t *index;
+	ssize_t nnz, nnzmax;
 	ssize_t dim;
 };
 
 struct svector_pos {
-	struct intmap_pos map_pos;
+	ssize_t i, inz;
 };
 
 struct svector_iter {
-	struct intmap_iter map_it;
+	const struct svector *x;
+	ssize_t inz;
 };
 
-#define SVECTOR_IDX(it) ((ssize_t)INTMAP_KEY((it).map_it))
-#define SVECTOR_PTR(it) ((double *)INTMAP_VAL((it).map_it))
+#define SVECTOR_IDX(it) ((it).x->index[(it).inz])
+#define SVECTOR_PTR(it) (&(it).x->data[(it).inz])
 #define SVECTOR_VAL(it) (*(const double *)SVECTOR_PTR(it))
 
 #define SVECTOR_FOREACH(it, v) \
@@ -41,7 +44,7 @@ static inline ssize_t svector_count(const struct svector *v);
 
 double svector_item(const struct svector *v, ssize_t i);
 double *svector_item_ptr(struct svector *v, ssize_t i);
-double *svector_set_item(struct svector *v, ssize_t i, double val);
+void svector_set_item(struct svector *v, ssize_t i, double val);
 
 double svector_max(const struct svector *v);
 
@@ -64,9 +67,9 @@ double *svector_insert(struct svector *v, struct svector_pos *pos, double val);
 void svector_remove_at(struct svector *v, struct svector_pos *pos);
 
 /* iteration */
-struct svector_iter svector_iter_make(const struct svector *v);
-bool svector_iter_advance(struct svector_iter *it);
-void svector_iter_reset(struct svector_iter *it);
+static inline struct svector_iter svector_iter_make(const struct svector *v);
+static inline bool svector_iter_advance(struct svector_iter *it);
+static inline void svector_iter_reset(struct svector_iter *it);
 
 /* inline function definitions */
 ssize_t svector_dim(const struct svector *v)
@@ -78,7 +81,30 @@ ssize_t svector_dim(const struct svector *v)
 ssize_t svector_count(const struct svector *v)
 {
 	assert(v);
-	return intmap_count(&v->map);
+	return v->nnz;
 }
+
+struct svector_iter svector_iter_make(const struct svector *v)
+{
+	assert(v);
+	struct svector_iter it;
+	it.x = v;
+	it.inz = -1;
+	return it;
+}
+
+bool svector_iter_advance(struct svector_iter *it)
+{
+	assert(it);
+	it->inz++;
+	return it->inz < it->x->nnz;
+}
+
+void svector_iter_reset(struct svector_iter *it)
+{
+	assert(it);
+	it->inz = -1;
+}
+
 
 #endif /* _SVECTOR_H */
