@@ -32,6 +32,23 @@ struct ldlfac {
 	f77int info;
 };
 
+enum svd_job {
+	SVD_ALL,
+	SVD_SEPARATE,
+	SVD_OVERWRITE,
+	SVD_NOVEC
+};
+
+struct svdfac {
+	ssize_t m;
+	ssize_t n;
+	enum svd_job job;
+	double *work;
+	f77int lwork;
+	f77int *iwork;
+	f77int info;
+};
+
 // replace b with a \ b; replace a with its cholesky factor
 // returns 0 on success, i > 0 if leading minor of order i is not pd
 ssize_t chol_solve(enum matrix_uplo uplo, struct matrix *a, struct matrix *b);
@@ -52,7 +69,7 @@ void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job);
 void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job);
 void symeig_deinit(struct symeig *eig);
 
-bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo, struct matrix *a, struct vector *w);	// destroys a and w
+bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo, struct matrix *a, struct vector *w);	// destroys a
 
 static inline ssize_t symeig_dim(const struct symeig *eig)
 {
@@ -65,5 +82,31 @@ static inline enum eig_job symeig_job(const struct symeig *eig)
 	assert(eig);
 	return eig->job;
 }
+
+void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job);
+void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job);
+void svdfac_deinit(struct svdfac *svd);
+
+bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt); // destroys a
+
+static inline ssize_t svdfac_row_dim(const struct svdfac *svd)
+{
+	assert(svd);
+	return svd->n;
+}
+
+static inline ssize_t svdfac_col_dim(const struct svdfac *svd)
+{
+	assert(svd);
+	return svd->n;
+}
+
+
+static inline enum svd_job svdfac_job(const struct svdfac *svd)
+{
+	assert(svd);
+	return svd->job;
+}
+
 
 #endif /* _LINALG_H */

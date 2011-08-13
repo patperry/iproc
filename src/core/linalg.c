@@ -193,3 +193,148 @@ bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo,
 
 	return (eig->info == 0);
 }
+
+static void svdfac_get_worksize(ssize_t m, ssize_t n, enum svd_job job,
+				f77int *lwork)
+{
+	assert(lwork);
+	assert(0 <= m && m <= F77INT_MAX);	
+	assert(0 <= n && n <= F77INT_MAX);
+	
+	f77int m1 = (f77int)m;
+	f77int n1 = (f77int)n;
+	f77int mn1 = MIN(m1, n1);
+	const char *jobz = (job == SVD_ALL ? "A"
+			    : job == SVD_SEPARATE ? "S"
+			    : job == SVD_OVERWRITE ? "O"
+			    : "N");
+	double *a = NULL;
+	f77int lda = MAX(1, m1);
+	double *s = NULL;
+	double *u = NULL;
+	f77int ldu = MAX(1, m1);
+	double *vt = NULL;
+	f77int ldvt = (job == SVD_ALL ? MAX(1, n1)
+		       : job == SVD_OVERWRITE && m >= n ? MAX(1, n1)
+		       : job == SVD_SEPARATE ? MAX(1, mn1)
+		       : 1);
+	double work = 0;
+	f77int inone = -1;
+	f77int *iwork = NULL;
+	f77int info = 0;
+	
+	F77_FUNC(dgesdd) (jobz, &m1, &n1, a, &lda, s, u, &ldu, vt, &ldvt, &work, &inone, iwork, &info);
+	assert(info == 0);
+	*lwork = (f77int)work;
+}
+
+void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
+{
+	assert(svd);
+	assert(0 <= m && m <= F77INT_MAX);	
+	assert(0 <= n && n <= F77INT_MAX);
+	
+	svd->work = NULL;
+	svd->iwork = NULL;
+	svdfac_reinit(svd, m, n, job);
+}
+
+void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
+{
+	assert(svd);
+	assert(0 <= m && m <= F77INT_MAX);	
+	assert(0 <= n && n <= F77INT_MAX);
+	
+	f77int lwork, liwork;
+	
+	svdfac_get_worksize(m, n, job, &lwork);
+	liwork = 8 * (f77int)MIN(m, n);
+	
+	svd->m = m;
+	svd->n = n;
+	svd->job = job;
+	svd->work = xrealloc(svd->work, lwork * sizeof(svd->work[0]));
+	svd->lwork = lwork;
+	svd->iwork = xrealloc(svd->iwork, liwork * sizeof(svd->iwork[0]));
+	svd->info = -1;
+}
+
+void svdfac_deinit(struct svdfac *svd)
+{
+	assert(svd);
+	
+	xfree(svd->work);
+	xfree(svd->iwork);
+}
+
+bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)
+{
+	f77int m = (f77int)svdfac_row_dim(svd);
+	f77int n = (f77int)svdfac_col_dim(svd);
+	f77int mn = MIN(m, n);
+	enum svd_job job = svdfac_job(svd);
+	
+	assert(svd);
+	assert(a);
+	assert(matrix_nrow(a) == m);
+	assert(matrix_ncol(a) == n);
+	assert(s);
+	assert(vector_dim(s) == mn);
+	switch(job) {
+	case SVD_ALL:
+		assert(u);
+		assert(matrix_nrow(u) == m);
+		assert(matrix_ncol(u) == m);
+		assert(vt);
+		assert(matrix_nrow(vt) == n);
+		assert(matrix_ncol(vt) == n);
+		break;
+	case SVD_SEPARATE:
+		assert(u);
+		assert(matrix_nrow(u) == m);
+		assert(matrix_ncol(u) == mn);
+		assert(vt);
+		assert(matrix_nrow(vt) == mn);
+		assert(matrix_ncol(vt) == n);
+		break;
+	case SVD_OVERWRITE:
+		if (m < n) {
+			assert(u);
+			assert(matrix_nrow(u) == m);
+			assert(matrix_ncol(u) == m);
+			assert(!vt);
+		} else {
+			assert(!u);
+			assert(vt);
+			assert(matrix_nrow(vt) == n);
+			assert(matrix_ncol(vt) == n);
+		}
+		break;
+	case SVD_NOVEC:
+		assert(!u);
+		assert(!vt);
+		break;
+	}
+
+	const char *jobz = (job == SVD_ALL ? "A"
+			    : job == SVD_SEPARATE ? "S"
+			    : job == SVD_OVERWRITE ? "O"
+			    : "N");
+	double *pa = matrix_to_ptr(a);
+	f77int lda = (f77int)matrix_lda(a);
+	double *ps = vector_to_ptr(s);
+	double *pu = u ? matrix_to_ptr(u) : NULL;
+	f77int ldu = u ? (f77int)matrix_lda(u) : 1;
+	double *pvt = vt ? matrix_to_ptr(vt) : NULL;
+	f77int ldvt = vt ? (f77int)matrix_lda(vt) : 1;
+	double *work = svd->work;
+	f77int lwork = svd->lwork;
+	f77int *iwork = svd->iwork;
+	f77int *info = &svd->info;
+	
+	F77_FUNC(dgesdd) (jobz, &m, &n, pa, &lda, ps, pu, &ldu, pvt, &ldvt, work, &lwork, iwork, info);
+	assert(info >= 0);
+	return (info == 0);
+}
+
+
