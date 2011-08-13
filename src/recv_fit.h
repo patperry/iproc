@@ -17,6 +17,7 @@
 #define RECV_FIT_LSCTRL0	LINESEARCH_CTRL0
 #define RECV_FIT_VARTOL		(1e-8)
 #define RECV_FIT_EIGTOL		(1e-8)
+#define RECV_FIT_SVTOL		(1e-8)
 
 #define RECV_FIT_CTRL0 ((struct recv_fit_ctrl) { \
 		RECV_FIT_GTOL0, \
@@ -24,7 +25,8 @@
 		RECV_FIT_LSMAX0, \
 		RECV_FIT_LSCTRL0, \
 		RECV_FIT_VARTOL, \
-		RECV_FIT_EIGTOL \
+		RECV_FIT_EIGTOL, \
+		RECV_FIT_SVTOL \
 	})
 
 struct recv_fit_ctrl {
@@ -34,6 +36,7 @@ struct recv_fit_ctrl {
 	struct linesearch_ctrl ls;
 	double vartol;
 	double eigtol;
+	double svtol;	
 };
 
 enum recv_fit_task {
@@ -90,7 +93,7 @@ struct recv_fit {
 
 	/* optimization constraints */
 	struct recv_fit_constr constr;
-
+	
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
 	struct recv_fit_kkt kkt;
@@ -120,7 +123,9 @@ void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
 			    ssize_t i2, ssize_t c2);
+ssize_t recv_fit_add_constr_identify(struct recv_fit *fit);
 
+/* fitting */
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 				  const struct matrix *coefs0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);

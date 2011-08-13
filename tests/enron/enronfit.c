@@ -335,9 +335,13 @@ int main(int argc, char **argv)
 		//recv_fit_add_constr(&fit, &ce, 0.0);
 		
 	}
-
-	
 	vector_deinit(&ce);
+	
+	
+	/* add constraints to make the model identifiable */
+	ssize_t nadd = recv_fit_add_constr_identify(fit);
+	if (nadd > 0)
+		fprintf(stderr, "Adding %"SSIZE_FMT" constraints to make parameters identifiable\n", nadd);
 	
 	enum recv_fit_task task;
 	ssize_t it = 0;

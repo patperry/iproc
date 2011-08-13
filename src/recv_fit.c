@@ -484,13 +484,183 @@ void recv_fit_init(struct recv_fit *fit,
 	kkt_init(&fit->kkt, nc, dim, ne);
 	search_init(&fit->search, nc, dim, ne);
 	rgrad_init(&fit->rgrad, nc, dim, ne);
+	
+	// evaluate the model at zero
+	eval_set(fit->cur, &fit->constr, NULL, NULL, fit->msgs, &fit->frame,
+		 &fit->model);
 }
+
+
+ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
+{
+	ssize_t i, dim = design_recv_dim(fit->design);
+	ssize_t ic, nc = actors_cohort_count(fit->senders);
+	ssize_t ne = constr_count(&fit->constr);
+	const struct recv_loglik *ll = &fit->cur->loglik;	
+	// ssize_t nmsg = recv_loglik_count_sum(ll);
+	const struct matrix *ce = &fit->constr.ce;
+	struct vector scale;
+	struct matrix imatc;
+	struct symeig eig;
+	struct vector evals;
+	struct matrix *nullspaces;
+	struct matrix proj;	
+	ssize_t nulldim;
+	
+	vector_init(&scale, dim * nc);
+	matrix_init(&imatc, dim, dim);
+	symeig_init(&eig, dim, EIG_VEC);
+	vector_init(&evals, dim);
+	nullspaces = xcalloc(nc, sizeof(nullspaces[0]));
+	
+	nulldim = 0;
+	
+	for (ic = 0; ic < nc; ic++) {
+		const struct recv_loglik_info *ll_info = recv_loglik_info(ll, ic);
+		// ssize_t nmsgc = recv_loglik_count(ll, ic);
+		
+		struct vector scalec = vector_slice(&scale, ic * dim, dim);
+		matrix_assign_copy(&imatc, TRANS_NOTRANS, &ll_info->imat);
+		
+		// compute the scale
+		for (i = 0; i < dim; i++) {
+			double s2 = matrix_item(&imatc, i, i);
+			double s;
+			
+			if (s2 < fit->ctrl.vartol) {
+				s = 1.0;
+			} else {
+				s = sqrt(s2);
+			}
+
+			vector_set_item(&scalec, i, 1.0 / s);
+		}
+		
+		// scale the information matrix
+		matrix_scale_rows(&imatc, &scalec);
+		matrix_scale_cols(&imatc, &scalec);
+		
+		// compute the eigendecomposition
+		symeig_factor(&eig, UPLO_LOWER, &imatc, &evals);
+		
+		// compute the rank of nullspace
+		ssize_t nulldimc = 0;
+		for (nulldimc = 0; nulldimc < dim; nulldimc++) {
+			if (vector_item(&evals, nulldimc) > fit->ctrl.eigtol)
+				break;
+		}
+
+		// update the global nullspace dim
+		nulldim += nulldimc;
+		
+		// copy the nullspace
+		struct matrix nullc = matrix_slice_cols(&imatc, 0, nulldimc);
+		matrix_init_copy(&nullspaces[ic], TRANS_NOTRANS, &nullc);
+		
+		// change back to the original scale
+		matrix_scale_rows(&nullspaces[ic], &scalec);
+	}
+	
+	// compute the projection of the constraints on to the nullsapce
+	matrix_init(&proj, ne, nulldim);
+	ssize_t off = 0;
+	for (ic = 0; ic < nc; ic++) {
+		struct matrix cec = matrix_slice_rows(ce, ic * dim, dim);
+		
+		struct matrix *nullc = &nullspaces[ic];
+		ssize_t nulldimc = matrix_ncol(nullc);
+		
+		struct matrix projc = matrix_slice_cols(&proj, off, nulldimc);
+		matrix_matmul(1.0, TRANS_TRANS, &cec, nullc, 0.0, &projc);
+		
+		off += nulldimc;
+	}
+	assert(off == nulldim);
+	
+	// compute the nullspace of the coefficient matrix
+	struct matrix ncoefs;
+	
+	if (ne > 0) {
+		struct vector s;
+		struct matrix u, vt;
+		struct svdfac svd;
+		bool ok;
+
+		vector_init(&s, MIN(ne, nulldim));
+		matrix_init(&u, ne, ne);
+		matrix_init(&vt, nulldim, nulldim);
+		svdfac_init(&svd, ne, nulldim, SVD_ALL);
+		ok = svdfac_factor(&svd, &proj, &s, &u, &vt);
+		assert(ok);
+		
+		ssize_t rank, maxrank = MIN(ne, nulldim);
+		for (rank = maxrank; rank > 0; rank--) {
+			if (vector_item(&s, rank - 1) > fit->ctrl.svtol)
+				break;
+		}
+		
+		struct matrix vt0 = matrix_slice_rows(&vt, rank, nulldim - rank);
+		matrix_init_copy(&ncoefs, TRANS_TRANS, &vt0);
+		
+		svdfac_deinit(&svd);
+		matrix_deinit(&vt);		
+		matrix_deinit(&u);
+		vector_deinit(&s);
+
+	} else {
+		matrix_init(&ncoefs, nulldim, nulldim);
+		matrix_assign_identity(&ncoefs);
+	}
+	
+	// add the new constraints
+	assert(matrix_nrow(&ncoefs) == nulldim);
+	struct vector ce1;
+	double be1 = 0.0;
+	vector_init(&ce1, dim * nc);
+	
+	ssize_t ic1, nc1 = matrix_ncol(&ncoefs);
+	for (ic1 = 0; ic1 < nc1; ic1++) {
+		struct vector y = matrix_col(&ncoefs, ic1);
+
+		vector_fill(&ce1, 0.0);
+		off = 0;
+		for (ic = 0; ic < nc; ic++) {
+			struct matrix *nullc = &nullspaces[ic];
+			ssize_t nulldimc = matrix_ncol(nullc);
+			
+			struct vector ce1c = vector_slice(&ce1, ic * dim, dim);
+			struct vector yc = vector_slice(&y, off, nulldimc);
+			matrix_mul(1.0, TRANS_NOTRANS, nullc, &yc, 0.0, &ce1c);
+		}
+		
+		recv_fit_add_constr(fit, &ce1, be1);
+	}
+	
+	vector_deinit(&ce1);
+	matrix_deinit(&ncoefs);
+	matrix_deinit(&proj);
+
+	for (ic = 0; ic < nc; ic++) {
+		matrix_deinit(&nullspaces[ic]);
+	}
+	xfree(nullspaces);
+	
+	vector_deinit(&evals);
+	symeig_deinit(&eig);
+	matrix_deinit(&imatc);
+	vector_deinit(&scale);
+	
+	return nc1;
+}
+
 
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 				  const struct matrix *coefs0)
 {
-	eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->msgs, &fit->frame,
-		 &fit->model);
+	if (coefs0 != NULL) {
+		eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->msgs, &fit->frame,
+			 &fit->model);
+	}
 	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
 	fit->step = NAN;
 
