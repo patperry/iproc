@@ -34,6 +34,8 @@ static inline struct matrix matrix_make_with_lda(const struct vector *v,
 						 ssize_t lda);
 static inline struct matrix matrix_slice(const struct matrix *a, ssize_t i,
 					 ssize_t j, ssize_t m, ssize_t n);
+static inline struct matrix matrix_slice_rows(const struct matrix *a, ssize_t i,
+					      ssize_t m);
 static inline struct matrix matrix_slice_cols(const struct matrix *a, ssize_t j,
 					      ssize_t n);
 static inline struct vector matrix_col(const struct matrix *a, ssize_t j);
@@ -148,12 +150,20 @@ struct matrix matrix_slice(const struct matrix *a, ssize_t i, ssize_t j,
 	return matrix_make_with_lda(&v, m, n, lda);
 }
 
+struct matrix matrix_slice_rows(const struct matrix *a, ssize_t i, ssize_t m)
+{
+	assert(a);
+	assert(0 <= i && i <= matrix_nrow(a) - m);	
+	assert(0 <= m && m <= matrix_nrow(a));
+
+	return matrix_slice(a, i, 0, m, matrix_ncol(a));
+}
+
 struct matrix matrix_slice_cols(const struct matrix *a, ssize_t j, ssize_t n)
 {
 	assert(a);
-	assert(j >= 0);
-	assert(n >= 0);
-	assert(j <= matrix_ncol(a) - n);
+	assert(0 <= j && j <= matrix_ncol(a) - n);
+	assert(0 <= n && n <= matrix_ncol(a));
 
 	return matrix_slice(a, 0, j, matrix_nrow(a), n);
 }
