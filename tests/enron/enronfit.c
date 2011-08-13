@@ -339,7 +339,7 @@ int main(int argc, char **argv)
 	
 	
 	/* add constraints to make the model identifiable */
-	ssize_t nadd = recv_fit_add_constr_identify(fit);
+	ssize_t nadd = recv_fit_add_constr_identify(&fit);
 	if (nadd > 0)
 		fprintf(stderr, "Adding %"SSIZE_FMT" constraints to make parameters identifiable\n", nadd);
 	
