@@ -329,8 +329,8 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 	return &m->sender_models[isend];
 }
 
-static void handle_recv_update(void *udata, struct frame *f, ssize_t isend,
-			       ssize_t jrecv, ssize_t dyn_index, double delta)
+static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
+				   ssize_t jrecv, ssize_t dyn_index, double delta)
 {
 	struct recv_model *m = udata;
 	const struct actor *actors = actors_items(m->senders);
@@ -339,15 +339,15 @@ static void handle_recv_update(void *udata, struct frame *f, ssize_t isend,
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
 
-	struct svector_pos pos;
-	double *pdeta = svector_find(&send->deta, jrecv, &pos);
+	double *pdeta = svector_item_ptr(&send->deta, jrecv);
+	//double *pdeta = svector_find(&send->deta, jrecv, &pos);
 
-	if (!pdeta) {
-		pdeta = svector_insert(&send->deta, &pos, 0.0);
-		ssize_t ix =
-		    array_binary_search(&send->active, &jrecv, ssize_compare);
-		assert(ix < 0);
-		array_insert(&send->active, ~ix, &jrecv);
+	if (svector_count(&send->deta) != array_count(&send->active)) {
+		assert(svector_count(&send->deta) == array_count(&send->active) + 1);
+		ssize_t ix = pdeta - svector_data_ptr(&send->deta);
+		assert(ix >= 0);
+		assert(svector_index_ptr(&send->deta)[ix] == jrecv);
+		array_insert(&send->active, ix, &jrecv);
 	}
 
 	const struct design *d = recv_model_design(m);
@@ -406,7 +406,7 @@ static void model_clear(struct recv_model *m)
 	}
 }
 
-static void handle_clear(void *udata, struct frame *f)
+static void recv_model_clear(void *udata, struct frame *f)
 {
 	struct recv_model *m = udata;
 	assert(m);
@@ -459,9 +459,9 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	struct frame_callbacks callbacks = {
 		NULL,		// msg_add
 		NULL,		// msg_advance
-		handle_recv_update,
+		recv_model_recv_update,
 		NULL,		// send_update
-		handle_clear
+		recv_model_clear
 	};
 
 	frame_add_observer(f, model, &callbacks);
