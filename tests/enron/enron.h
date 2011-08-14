@@ -57,7 +57,7 @@ extern bool enron_male[ENRON_NCOHORT];
 bool enron_employees_init(struct actors *employees, struct matrix *traits);
 bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, FILE *stream);
 
-bool enron_messages_init(struct messages *messages);
-bool enron_messages_init_fread(struct messages *messages, FILE *stream);
+bool enron_messages_init(struct messages *messages, ssize_t maxrecip);
+bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE *stream);
 
 #endif /* _ENRON_H */

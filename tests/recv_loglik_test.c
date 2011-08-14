@@ -43,7 +43,7 @@ static void enron_setup_fixture(void **state)
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);
 	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
-	enron_messages_init(&messages);
+	enron_messages_init(&messages, -1);
 }
 
 static void enron_teardown_fixture(void **state)

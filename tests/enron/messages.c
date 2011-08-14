@@ -14,6 +14,7 @@ enum message_map_key {
 };
 
 struct message_parse {
+	ssize_t maxrecip;
 	struct messages *messages;
 	ssize_t id;
 	double time;
@@ -24,7 +25,7 @@ struct message_parse {
 	bool multiple_receivers;
 };
 
-static bool message_parse_init(struct message_parse *parse, struct messages *messages)
+static bool message_parse_init(struct message_parse *parse, struct messages *messages, ssize_t maxrecip)
 {
 	array_init(&parse->receiver_id, sizeof(ssize_t));
 	parse->messages = messages;
@@ -34,6 +35,7 @@ static bool message_parse_init(struct message_parse *parse, struct messages *mes
 	parse->attr = 0;
 	parse->map_key = MAP_KEY_NONE;
 	parse->multiple_receivers = false;
+	parse->maxrecip = maxrecip;
 	return true;
 }
 
@@ -183,15 +185,14 @@ static int parse_end_map(void *ctx)
 		return 0;
 	}
 	
-	if (!messages_add(parse->messages,
-			      parse->time,
-			      parse->sender_id,
-			      array_item(&parse->receiver_id, 0),
-			      array_count(&parse->receiver_id),
-			      parse->attr)) {
-		fprintf(stderr, "not enough memory to insert message '%" SSIZE_FMT "'",
-			parse->id);
-		return 0;
+	if (array_count(&parse->receiver_id) <= parse->maxrecip
+	    || parse->maxrecip < 0) {
+		messages_add(parse->messages,
+			     parse->time,
+			     parse->sender_id,
+			     array_item(&parse->receiver_id, 0),
+			     array_count(&parse->receiver_id),
+			     parse->attr);
 	}
 
 	return 1;
@@ -226,7 +227,7 @@ static yajl_callbacks parse_callbacks = {
 	parse_end_array
 };
 
-bool enron_messages_init_fread(struct messages *messages, FILE *stream)
+bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -237,7 +238,7 @@ bool enron_messages_init_fread(struct messages *messages, FILE *stream)
 	
 	messages_init(messages);
 	
-	if (!message_parse_init(&parse, messages)) {
+	if (!message_parse_init(&parse, messages, maxrecip)) {
 		messages_deinit(messages);
 		return false;
 	}
@@ -281,7 +282,7 @@ bool enron_messages_init_fread(struct messages *messages, FILE *stream)
 	return parse_ok;
 }
 
-bool enron_messages_init(struct messages *messages)
+bool enron_messages_init(struct messages *messages, ssize_t maxrecip)
 {
 	FILE *f = fopen(ENRON_MESSAGES_FILE, "r");
 
@@ -291,7 +292,7 @@ bool enron_messages_init(struct messages *messages)
 		return false;
 	}
 	
-	if (!enron_messages_init_fread(messages, f)) {
+	if (!enron_messages_init_fread(messages, maxrecip, f)) {
 		fprintf(stderr, "Couldn't parse messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
 		fclose(f);

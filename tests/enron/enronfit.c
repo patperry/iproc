@@ -28,7 +28,7 @@ static struct design design;
 
 static void setup(void) {
 	enron_employees_init(&enron_actors, &enron_traits);
-	enron_messages_init(&messages);	
+	enron_messages_init(&messages, 10);	
 	
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);	

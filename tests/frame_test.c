@@ -36,7 +36,7 @@ static void enron_setup_fixture(void **state)
 	print_message("-----\n");
 	enron_employees_init(&receivers, &recv_traits);
 	actors_init_copy(&senders, &receivers);
-	enron_messages_init(&messages);
+	enron_messages_init(&messages, -1);
 }
 
 static void enron_teardown_fixture(void **state)
