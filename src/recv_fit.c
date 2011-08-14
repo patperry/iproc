@@ -396,17 +396,19 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 	// set up the linesearch control parameters
 	struct linesearch_ctrl ctrl = fit->ctrl.ls;
-	ctrl.stpmax = MIN(ctrl.stpmax, 10 / MAX(1.0, smax));
+	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, smax));
 	ctrl.stpmin = MIN(ctrl.stpmin, 1e-12 * ctrl.stpmax);
-	double stp0 = MIN(1.0, ctrl.stpmin + 0.5 * (ctrl.stpmax - ctrl.stpmin));
+	double stp0 = MIN(1.0, 100.0 / MAX(1.0, smax));
 
-	// fprintf(stderr, "smax = %.8f   stpmax = %.8f\n", smax, ctrl.stpmax);
+	fprintf(stderr, "> smax = %.8f   stpmax = %.8f   stp0 = %.8f\n", smax, ctrl.stpmax, stp0);
 	
 	// perform a linesearch to reduce the residual norm     
 	enum linesearch_task task;
 	ssize_t it = 0;
 	linesearch_start(&fit->ls, stp0, f0, g0, &ctrl);
 
+	fprintf(stderr, ">                    f0: %.8f  g0: %.8f\n", f0, g0);
+	
 	do {
 		// compute the new trial step length
 		it++;
@@ -430,6 +432,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		if (!isfinite(g)) {
 			goto domain_error_g;
 		}
+		fprintf(stderr, ">  stp: %.8f   f: %.8f   g: %.8f\n", fit->step, f, g);
 		// stop (linesearch converged) or get a new trial step
 		task = linesearch_advance(&fit->ls, f, g);
 		continue;
@@ -438,7 +441,7 @@ domain_error_f:
 domain_error_g:
 		assert(0 && "DOMAIN ERROR");
 	} while (it < fit->ctrl.ls_maxit
-		 && task == LINESEARCH_STEP && !linesearch_sdec(&fit->ls));
+		 && task == LINESEARCH_STEP); // && !linesearch_sdec(&fit->ls));
 
 	if (fit->step < fit->ctrl.xtol) {
 		return RECV_FIT_ERR_XTOL;
