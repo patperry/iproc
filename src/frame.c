@@ -192,7 +192,6 @@ static void recv_frame_clear(struct recv_frame *rf)
 		struct vector *dx = INTMAP_VAL(it);
 		vector_fill(dx, 0.0);
 	}
-	intmap_clear(&rf->jrecv_dxs);
 }
 
 static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
