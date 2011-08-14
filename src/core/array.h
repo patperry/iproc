@@ -106,7 +106,13 @@ void array_set_item(struct array *a, ssize_t i, const void *val)
 	assert(0 <= i && i < array_count(a));
 
 	void *ptr = array_item(a, i);
-	memcpy(ptr, val, array_elt_size(a));
+	size_t elt_size = array_elt_size(a);
+	
+	if (val) {
+		memcpy(ptr, val, elt_size);
+	} else {
+		memset(ptr, 0, elt_size);
+	}
 }
 
 #endif /* _ARRAY_H */
