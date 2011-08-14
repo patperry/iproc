@@ -112,7 +112,8 @@
  */
 struct recv_model_cohort {
 	double max_eta0;
-	double log_W0;		// log_W0 - max_eta0
+	double log_W0;		// (log_W0)_true - max_eta0
+	double W0;		// (W0)_true / exp(max_eta0)
 	struct vector eta0;
 	struct vector p0;
 	struct vector mean0;
@@ -120,15 +121,16 @@ struct recv_model_cohort {
 
 	/* debug */
 #ifndef NDEBUG
-	double W0;
+
 	struct vector w0;
 #endif
 };
 
 struct recv_model_sender {
 	double gamma;
-	double log_W;		// log_W - scale
-	double scale;
+	double scale;	
+	double log_W;		// (log_W)_true - scale
+	double W; // (W)_true / exp(scale)
 	struct svector deta;
 	struct array active;
 };

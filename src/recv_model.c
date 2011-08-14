@@ -16,7 +16,7 @@ static void
 compute_weight_changes(const struct frame *f,
 		       const struct recv_model_cohort *cm,
 		       const struct svector *deta, double *scale,
-		       double *gamma, double *log_W)
+		       double *gamma, double *log_W, double *pW)
 {
 	const struct design *design = f->design;
 	const struct vector *eta0 = &cm->eta0;
@@ -62,8 +62,10 @@ compute_weight_changes(const struct frame *f,
 		}
 
 		if (found_max) {
+			*pW = W + 1;
 			*log_W = log1p(W);
 		} else {
+			*pW = W;
 			*log_W = log(W);
 		}
 
@@ -99,6 +101,7 @@ compute_weight_changes(const struct frame *f,
 			logsumexp_insert(&lse, eta_j - *scale);
 		}
 		*log_W = logsumexp_value(&lse);
+		*pW = exp(*log_W);
 	}
 
 out:
@@ -236,6 +239,7 @@ static void sender_clear(const struct recv_model *m,
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
 	double max_eta0 = cm->max_eta0;
 	double log_W0 = cm->log_W0;
+	double W0 = cm->W0;
 
 	svector_clear(&send->deta);
 	array_clear(&send->active);
@@ -243,8 +247,9 @@ static void sender_clear(const struct recv_model *m,
 	/* take the initial values if there are self-loops */
 	if (design_loops(d)) {
 		send->gamma = 1.0;
+		send->scale = max_eta0;		
 		send->log_W = log_W0;
-		send->scale = max_eta0;
+		send->W = W0;
 	} else {
 		/* add the loop to the active set */
 		array_add(&send->active, &isend);
@@ -255,7 +260,7 @@ static void sender_clear(const struct recv_model *m,
 		/* compute the changes in weights */
 		compute_weight_changes(f, cm,
 				       &send->deta, &send->scale, &send->gamma,
-				       &send->log_W);
+				       &send->log_W, &send->W);
 
 	}
 }
@@ -284,7 +289,7 @@ static void sender_set(const struct recv_model *m,
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
 	compute_weight_changes(f, cm,
 			       &send->deta, &send->scale, &send->gamma,
-			       &send->log_W);
+			       &send->log_W, &send->W);
 
 	assert(send->gamma >= 0.0);
 	assert(isfinite(send->log_W));
@@ -358,6 +363,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
+	double W = send->W;	
 	double eta = vector_item(&cm->eta0, jrecv) + (*pdeta);
 	double eta1 = eta + deta;
 
@@ -372,9 +378,10 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	 */
 	double w = exp(eta - scale);
 	double w1 = exp(eta1 - scale);
-	double dw = (w1 - w) / exp(log_W);
+	double dw = (w1 - w) / W;
 	double gamma1 = gamma / (1.0 + dw);
 	double log_W1 = log_W + log1p(dw);
+	double W1 = W * dw + W;
 
 	//if (isend == 119) {
 	//      printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
@@ -388,6 +395,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	} else {
 		send->gamma = gamma1;
 		send->log_W = log_W1;
+		send->W = W1;
 		assert(send->gamma >= 0);
 		assert(isfinite(log_W1));
 		*pdeta += deta;
