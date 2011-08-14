@@ -90,7 +90,7 @@ struct message *messages_at(const struct messages *msgs, ssize_t i)
 	return &rep->message;
 }
 
-bool messages_add(struct messages *msgs, double time,
+void messages_add(struct messages *msgs, double time,
 		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
 {
 	assert(msgs);
@@ -123,8 +123,6 @@ bool messages_add(struct messages *msgs, double time,
 	msgs->to_cached = false;
 	msgs->tlast = time;
 	msgs->nrecv += nto;
-
-	return true;
 }
 
 ssize_t messages_max_from(const struct messages *msgs)
