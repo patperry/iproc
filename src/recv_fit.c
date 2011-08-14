@@ -396,10 +396,12 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 	// set up the linesearch control parameters
 	struct linesearch_ctrl ctrl = fit->ctrl.ls;
-	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, smax));
+	ctrl.stpmax = MIN(ctrl.stpmax, 10 / MAX(1.0, smax));
 	ctrl.stpmin = MIN(ctrl.stpmin, 1e-12 * ctrl.stpmax);
 	double stp0 = MIN(1.0, ctrl.stpmin + 0.5 * (ctrl.stpmax - ctrl.stpmin));
 
+	// fprintf(stderr, "smax = %.8f   stpmax = %.8f\n", smax, ctrl.stpmax);
+	
 	// perform a linesearch to reduce the residual norm     
 	enum linesearch_task task;
 	ssize_t it = 0;
