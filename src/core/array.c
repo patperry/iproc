@@ -22,12 +22,14 @@ static void array_grow(struct array *a, ssize_t delta)
 	ssize_t n = array_capacity(a);
 	ssize_t inc;
 
+	if (n >= nmin)
+		return;
+	
 	while (n < nmin && n < nmax) {
 		inc = n ? (n >> 1) + MIN_CAPACITY_DELTA	// grow by roughly 1.5
 		    : INITIAL_CAPACITY;
 		n = (n <= nmax - inc) ? n + inc : nmax;
 	}
-
 	array_set_capacity(a, n);
 }
 

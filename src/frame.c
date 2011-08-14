@@ -190,7 +190,7 @@ static void recv_frame_clear(struct recv_frame *rf)
 	struct intmap_iter it;
 	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
 		struct vector *dx = INTMAP_VAL(it);
-		vector_deinit(dx);
+		vector_fill(dx, 0.0);
 	}
 	intmap_clear(&rf->jrecv_dxs);
 }
