@@ -207,7 +207,11 @@ void hashset_clear(struct hashset *s)
 {
 	assert(s);
 
-	memset(s->status, 0, hashset_bucket_count(s) * sizeof(s->status[0]));
+	ssize_t n = hashset_bucket_count(s);
+	size_t elt_size = hashset_elt_size(s);
+	
+	memset(array_to_ptr(&s->array), 0, n * elt_size);
+	memset(s->status, 0, n * sizeof(s->status[0]));
 	s->count = 0;
 }
 
@@ -345,9 +349,7 @@ void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
 	s->status[ix] |= HASHSET_BIN_FULL;
 	
 	void *ptr = array_item(&s->array, ix);
-	if (!key) {
-		memset(ptr, 0, elt_size);
-	} else {
+	if (key) {
 		memcpy(ptr, key, elt_size);
 	}
 	
@@ -362,6 +364,7 @@ void hashset_remove_at(struct hashset *s, struct hashset_pos *pos)
 
 	ssize_t ix = pos->existing;
 	s->count--;
+	array_set_item(&s->array, ix, NULL);
 	s->status[ix] = HASHSET_BIN_DELETED;
 }
 
