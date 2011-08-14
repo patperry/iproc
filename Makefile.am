@@ -80,6 +80,8 @@ libcore_la_SOURCES = \
 	src/core/refcount.h \
 	src/core/slice.c \
 	src/core/slice.h \
+	src/core/shashset.c \
+	src/core/shashset.h \
 	src/core/sparsetable.c \
 	src/core/sparsetable.h \
 	src/core/svector.c \

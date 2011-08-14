@@ -127,6 +127,10 @@
 		227E08C813F43F8F003EC4BA /* rv-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08C613F43F8F003EC4BA /* rv-nsend2.c */; };
 		227E0AB413F57DD4003EC4BA /* rv-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB313F57DD4003EC4BA /* rv-isend2.c */; };
 		227E0AB513F57DD4003EC4BA /* rv-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB313F57DD4003EC4BA /* rv-isend2.c */; };
+		227E0AB813F7E9E3003EC4BA /* shashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB613F7E9E2003EC4BA /* shashset.c */; };
+		227E0AB913F7E9E3003EC4BA /* shashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB613F7E9E2003EC4BA /* shashset.c */; };
+		227E0ABA13F7E9E3003EC4BA /* shashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 227E0AB713F7E9E2003EC4BA /* shashset.h */; };
+		227E0ABB13F7E9E3003EC4BA /* shashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 227E0AB713F7E9E2003EC4BA /* shashset.h */; };
 		228160DB13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DC13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DD13B00EF200B38330 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160DA13B00EF200B38330 /* dcstep.c */; };
@@ -579,6 +583,8 @@
 		227E08C313F4160C003EC4BA /* rv-isend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend.c"; path = "src/rv-isend.c"; sourceTree = "<group>"; };
 		227E08C613F43F8F003EC4BA /* rv-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nsend2.c"; path = "src/rv-nsend2.c"; sourceTree = "<group>"; };
 		227E0AB313F57DD4003EC4BA /* rv-isend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend2.c"; path = "src/rv-isend2.c"; sourceTree = "<group>"; };
+		227E0AB613F7E9E2003EC4BA /* shashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = shashset.c; path = src/core/shashset.c; sourceTree = "<group>"; };
+		227E0AB713F7E9E2003EC4BA /* shashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = shashset.h; path = src/core/shashset.h; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
 		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
@@ -817,6 +823,8 @@
 				221FEE88132EC8710000097B /* refcount.h */,
 				221C5FEB134E230D0008B25B /* slice.c */,
 				221C5FEC134E230D0008B25B /* slice.h */,
+				227E0AB613F7E9E2003EC4BA /* shashset.c */,
+				227E0AB713F7E9E2003EC4BA /* shashset.h */,
 				22D6FA7B135D02A70082D129 /* sparsetable.c */,
 				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
@@ -1064,6 +1072,7 @@
 				22EFB31913B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31D13B3AE18007755EA /* linalg.h in Headers */,
 				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
+				227E0ABB13F7E9E3003EC4BA /* shashset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1132,6 +1141,7 @@
 				22EFB31813B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31C13B3AE18007755EA /* linalg.h in Headers */,
 				22DB0A8313CB68B5004149CE /* strata.h in Headers */,
+				227E0ABA13F7E9E3003EC4BA /* shashset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1548,6 +1558,7 @@
 				227E08C513F4160C003EC4BA /* rv-isend.c in Sources */,
 				227E08C813F43F8F003EC4BA /* rv-nsend2.c in Sources */,
 				227E0AB513F57DD4003EC4BA /* rv-isend2.c in Sources */,
+				227E0AB913F7E9E3003EC4BA /* shashset.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1606,6 +1617,7 @@
 				227E08C413F4160C003EC4BA /* rv-isend.c in Sources */,
 				227E08C713F43F8F003EC4BA /* rv-nsend2.c in Sources */,
 				227E0AB413F57DD4003EC4BA /* rv-isend2.c in Sources */,
+				227E0AB813F7E9E3003EC4BA /* shashset.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

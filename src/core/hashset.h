@@ -3,12 +3,17 @@
 
 #include <stddef.h>
 
+#include "array.h"
 #include "compare.h"
 #include "hash.h"
-#include "sparsetable.h"
+
+#define  HASHSET_BIN_FULL    1
+#define  HASHSET_BIN_DELETED 2
 
 struct hashset {
-	struct sparsetable table;
+	struct array array;
+	uint8_t *status;
+	ssize_t count;	
 	hash_fn hash;
 	equals_fn equals;
 	ssize_t enlarge_threshold;	// (table size) * enlarge_factor
@@ -16,16 +21,17 @@ struct hashset {
 
 struct hashset_pos {
 	uint32_t hash;
-	struct sparsetable_pos insert;
-	struct sparsetable_pos existing;
+	ssize_t insert;
+	ssize_t existing;
 	bool has_existing;
 	bool has_insert;
 };
 
 struct hashset_iter {
-	struct sparsetable_iter table_it;
+	const struct hashset *s;
+	ssize_t i;
 };
-#define HASHSET_KEY(it) SPARSETABLE_VAL((it).table_it)
+#define HASHSET_KEY(it) (array_item(&(it).s->array, (it).i))
 #define HASHSET_FOREACH(it, set) \
 	for ((it) = hashset_iter_make(set); hashset_iter_advance(&(it));)
 
@@ -68,12 +74,12 @@ bool hashset_iter_advance(struct hashset_iter *it);
 /* static method definitions */
 ssize_t hashset_count(const struct hashset *s)
 {
-	return sparsetable_count(&s->table);
+	return s->count;
 }
 
 size_t hashset_elt_size(const struct hashset *s)
 {
-	return sparsetable_elt_size(&s->table);
+	return array_elt_size(&s->array);
 }
 
 static inline bool hashset_equals(const struct hashset *s, const void *key1,

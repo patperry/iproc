@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "util.h"
-#include "hashset.h"
+#include "shashset.h"
 
 /* The probing method */
 /* #define JUMP_(key, num_probes) (1)          // Linear probing */
@@ -53,17 +53,17 @@ static ssize_t min_buckets(ssize_t num_elts, ssize_t min_buckets_wanted)
 }
 
 /* Reset the enlarge threshold */
-static void hashset_reset_thresholds(struct hashset *s, ssize_t num_buckets)
+static void shashset_reset_thresholds(struct shashset *s, ssize_t num_buckets)
 {
 	s->enlarge_threshold = num_buckets * HT_ENLARGE_FACTOR;
 }
 
-static ssize_t hashset_bucket_count(const struct hashset *s)
+static ssize_t shashset_bucket_count(const struct shashset *s)
 {
-	return array_count(&s->array);
+	return sparsetable_size(&s->table);
 }
 
-static void hashset_init_sized(struct hashset *s, hash_fn hash,
+static void shashset_init_sized(struct shashset *s, hash_fn hash,
 			       equals_fn equals, ssize_t num_buckets,
 			       size_t elt_size)
 {
@@ -72,17 +72,14 @@ static void hashset_init_sized(struct hashset *s, hash_fn hash,
 	assert(equals);
 	assert(num_buckets >= HT_MIN_BUCKETS);
 
-	array_init(&s->array, elt_size);
-	array_add_range(&s->array, NULL, num_buckets);
-	s->status = xcalloc(num_buckets, sizeof(s->status[0]));
-	s->count = 0;
+	sparsetable_init(&s->table, num_buckets, elt_size);
 	s->hash = hash;
 	s->equals = equals;
-	hashset_reset_thresholds(s, num_buckets);
+	shashset_reset_thresholds(s, num_buckets);
 }
 
-static void hashset_init_copy_sized(struct hashset *s,
-				    const struct hashset *src,
+static void shashset_init_copy_sized(struct shashset *s,
+				    const struct shashset *src,
 				    ssize_t num_buckets)
 {
 	assert(s);
@@ -90,44 +87,46 @@ static void hashset_init_copy_sized(struct hashset *s,
 	assert(s != src);
 	assert(num_buckets >= HT_MIN_BUCKETS);
 
-	struct hashset_iter it;
+	struct shashset_iter it;
 	const void *key;
 
-	hashset_init_sized(s, src->hash, src->equals, num_buckets,
-			   hashset_elt_size(src));
+	shashset_init_sized(s, src->hash, src->equals, num_buckets,
+			   shashset_elt_size(src));
 
-	HASHSET_FOREACH(it, src) {
-		key = HASHSET_KEY(it);
-		hashset_add(s, key);
+	SHASHSET_FOREACH(it, src) {
+		key = SHASHSET_KEY(it);
+		shashset_add(s, key);
 	}
 }
 
-static bool hashset_needs_grow_delta(const struct hashset *s, ssize_t delta)
+static bool shashset_needs_grow_delta(const struct shashset *s, ssize_t delta)
 {
 	assert(delta >= 0);
-	assert(array_count(&s->array) <= HT_MAX_SIZE - delta);
+	assert(sparsetable_count(&s->table) <= HT_MAX_SIZE - delta);
 
-	if (hashset_bucket_count(s) >= HT_MIN_BUCKETS
-	    && hashset_count(s) + delta <= s->enlarge_threshold) {
+	if (shashset_bucket_count(s) >= HT_MIN_BUCKETS
+	    && sparsetable_count(&s->table) + delta <= s->enlarge_threshold) {
 		return false;
 	} else {
 		return true;
 	}
 }
 
-static void hashset_grow_delta(struct hashset *s, ssize_t delta)
+/* the implementation is simpler than in sparsehashtable.h since we don't
+ * store deleted keys */
+static void shashset_grow_delta(struct shashset *s, ssize_t delta)
 {
-	ssize_t num_nonempty = hashset_count(s);
-	ssize_t bucket_count = hashset_bucket_count(s);
+	ssize_t num_nonempty = sparsetable_count(&s->table);
+	ssize_t bucket_count = shashset_bucket_count(s);
 	ssize_t resize_to = min_buckets(num_nonempty + delta, bucket_count);
 
-	struct hashset copy;
-	hashset_init_copy_sized(&copy, s, resize_to);
-	hashset_deinit(s);
+	struct shashset copy;
+	shashset_init_copy_sized(&copy, s, resize_to);
+	shashset_deinit(s);
 	*s = copy;
 }
 
-void hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
+void shashset_init(struct shashset *s, hash_fn hash, equals_fn equals,
 		  size_t elt_size)
 {
 	assert(s);
@@ -135,88 +134,90 @@ void hashset_init(struct hashset *s, hash_fn hash, equals_fn equals,
 	assert(equals);
 
 	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
-	hashset_init_sized(s, hash, equals, num_buckets, elt_size);
+	shashset_init_sized(s, hash, equals, num_buckets, elt_size);
 }
 
-void hashset_init_copy(struct hashset *s, const struct hashset *src)
+void shashset_init_copy(struct shashset *s, const struct shashset *src)
 {
 	assert(s);
 	assert(src);
 	assert(s != src);
 
-	ssize_t num_buckets = hashset_bucket_count(src);
-	hashset_init_copy_sized(s, src, num_buckets);
+	ssize_t num_buckets = shashset_bucket_count(src);
+	shashset_init_copy_sized(s, src, num_buckets);
 }
 
-void hashset_assign_copy(struct hashset *s, const struct hashset *src)
+void shashset_assign_copy(struct shashset *s, const struct shashset *src)
 {
 	assert(s);
 	assert(src);
 
-	hashset_deinit(s);
-	hashset_init_copy(s, src);
+	shashset_deinit(s);
+	shashset_init_copy(s, src);
 }
 
-void hashset_deinit(struct hashset *s)
+void shashset_deinit(struct shashset *s)
 {
 	assert(s);
 
-	xfree(s->status);
-	array_deinit(&s->array);
+	sparsetable_deinit(&s->table);
 }
 
-void *hashset_item(const struct hashset *s, const void *key)
-{
-	assert(s);
-	assert(key);
-
-	struct hashset_pos pos;
-	return hashset_find(s, key, &pos);
-}
-
-void *hashset_set_item(struct hashset *s, const void *key)
+void *shashset_item(const struct shashset *s, const void *key)
 {
 	assert(s);
 	assert(key);
 
-	struct hashset_pos pos;
+	struct shashset_pos pos;
+	return shashset_find(s, key, &pos);
+}
+
+void *shashset_set_item(struct shashset *s, const void *key)
+{
+	assert(s);
+	assert(key);
+
+	struct shashset_pos pos;
 	void *dst;
 
-	if ((dst = hashset_find(s, key, &pos))) {
-		memcpy(dst, key, hashset_elt_size(s));
+	if ((dst = shashset_find(s, key, &pos))) {
+		memcpy(dst, key, shashset_elt_size(s));
 		return dst;
 	} else {
-		return hashset_insert(s, &pos, key);
+		return shashset_insert(s, &pos, key);
 	}
 }
 
-void *hashset_add(struct hashset *s, const void *key)
+void *shashset_add(struct shashset *s, const void *key)
 {
 	assert(s);
 	assert(key);
 
-	struct hashset_pos pos;
-	if (hashset_find(s, key, &pos)) {
+	struct shashset_pos pos;
+	if (shashset_find(s, key, &pos)) {
 		return NULL;
 	} else {
-		return hashset_insert(s, &pos, key);
+		return shashset_insert(s, &pos, key);
 	}
 }
 
-void hashset_clear(struct hashset *s)
+void shashset_clear(struct shashset *s)
 {
 	assert(s);
 
-	memset(s->status, 0, hashset_bucket_count(s) * sizeof(s->status[0]));
-	s->count = 0;
+	ssize_t num_buckets = HT_DEFAULT_STARTING_BUCKETS;
+
+	sparsetable_clear(&s->table);
+	sparsetable_set_size(&s->table, num_buckets);
+	shashset_reset_thresholds(s, num_buckets);
 }
 
-bool hashset_contains(const struct hashset *s, const void *key)
+bool shashset_contains(const struct shashset *s, const void *key)
 {
 	assert(s);
 	assert(key);
 
-	return hashset_item(s, key);
+	return shashset_item(s, key);
 }
 
 /* MISSING copy_to */
@@ -237,18 +238,18 @@ bool hashset_contains(const struct hashset *s, const void *key)
 /* INVALID on_deserialization */
 /* MISSING overlaps */
 
-bool hashset_remove(struct hashset *s, const void *key)
+bool shashset_remove(struct shashset *s, const void *key)
 {
 	assert(s);
 	assert(key);
 
 	bool found;
 
-	struct hashset_pos pos;
-	if ((found = hashset_find(s, key, &pos))) {
-		hashset_remove_at(s, &pos);
+	struct shashset_pos pos;
+	if ((found = shashset_find(s, key, &pos))) {
+		shashset_remove_at(s, &pos);
 	}
-	assert(!hashset_contains(s, key));
+	assert(!shashset_contains(s, key));
 	return found;
 }
 
@@ -257,60 +258,59 @@ bool hashset_remove(struct hashset *s, const void *key)
 /* MISSING symmetric_except_with */
 /* MISSING to_string */
 
-void hashset_trim_excess(struct hashset *s)
+void shashset_trim_excess(struct shashset *s)
 {
 	assert(s);
 
-	ssize_t count = hashset_count(s);
+	ssize_t count = sparsetable_count(&s->table);
 	ssize_t resize_to = min_buckets(count, 0);
 
-	struct hashset copy;
-	hashset_init_copy_sized(&copy, s, resize_to);
-	hashset_deinit(s);
+	struct shashset copy;
+	shashset_init_copy_sized(&copy, s, resize_to);
+	shashset_deinit(s);
 	*s = copy;
 }
 
 /* MISSING union_with */
 
-void *hashset_find(const struct hashset *s, const void *key,
-		   struct hashset_pos *pos)
+void *shashset_find(const struct shashset *s, const void *key,
+		   struct shashset_pos *pos)
 {
 	assert(s);
 	assert(key);
 	assert(pos);
 
-	const struct array *array = &s->array;
-	const uint8_t *status = s->status;
-	const ssize_t bucket_count = array_count(array);
+	const struct sparsetable *table = &s->table;
+	const ssize_t bucket_count = sparsetable_size(table);
 	ssize_t num_probes = 0;	// how many times we've probed
 	const ssize_t bucket_count_minus_one = bucket_count - 1;
-	uint32_t hash = hashset_hash(s, key);
+	uint32_t hash = shashset_hash(s, key);
 	ssize_t bucknum = hash & bucket_count_minus_one;
+	struct sparsetable_pos table_pos;
 	void *ptr;
-	bool full, deleted;
+	bool deleted;
 
 	pos->hash = hash;
 	pos->has_insert = false;
 	pos->has_existing = false;
 
 	for (num_probes = 0; num_probes < bucket_count; num_probes++) {
-		ptr = array_item(array, bucknum);
-		full = status[bucknum] & HASHSET_BIN_FULL;
-		deleted = status[bucknum] & HASHSET_BIN_DELETED;
-		if (!full && !deleted) {	// bucket is empty
+		ptr = sparsetable_find(table, bucknum, &table_pos);
+		deleted = sparsetable_deleted(table, &table_pos);
+		if (!ptr && !deleted) {	// bucket is empty
 			if (!pos->has_insert) {	// found no prior place to insert
-				pos->insert = bucknum;
+				pos->insert = table_pos;
 				pos->has_insert = true;
 			}
 			pos->has_existing = false;
 			return NULL;
-		} else if (!full && deleted) {	// keep searching, but mark to insert
+		} else if (!ptr && deleted) {	// keep searching, but mark to insert
 			if (!pos->has_insert) {
-				pos->insert = bucknum;
+				pos->insert = table_pos;
 				pos->has_insert = true;
 			}
-		} else if (hashset_equals(s, key, ptr)) {
-			pos->existing = bucknum;
+		} else if (shashset_equals(s, key, ptr)) {
+			pos->existing = table_pos;
 			pos->has_existing = true;
 			return ptr;
 		}
@@ -322,82 +322,52 @@ void *hashset_find(const struct hashset *s, const void *key,
 	return NULL;		// table is full and key is not present
 }
 
-void *hashset_insert(struct hashset *s, struct hashset_pos *pos,
+void *shashset_insert(struct shashset *s, struct shashset_pos *pos,
 		     const void *key)
 {
 	assert(s);
 	assert(pos);
 	assert(!pos->has_existing);
 	assert(key);
-	assert(hashset_hash(s, key) == pos->hash);
+	assert(shashset_hash(s, key) == pos->hash);
 
-	if (hashset_needs_grow_delta(s, 1)) {
-		hashset_grow_delta(s, 1);
-		hashset_find(s, key, pos);	// need to recompute pos
+	if (shashset_needs_grow_delta(s, 1)) {
+		shashset_grow_delta(s, 1);
+		shashset_find(s, key, pos);	// need to recompute pos
 	}
 
 	assert(pos->has_insert);
-
-	ssize_t ix = pos->insert;
-	ssize_t elt_size = hashset_elt_size(s);
-	
-	s->count++;
-	s->status[ix] |= HASHSET_BIN_FULL;
-	
-	void *ptr = array_item(&s->array, ix);
-	if (!key) {
-		memset(ptr, 0, elt_size);
-	} else {
-		memcpy(ptr, key, elt_size);
-	}
-	
-	return ptr;
+	return sparsetable_insert(&s->table, &pos->insert, key);
 }
 
-void hashset_remove_at(struct hashset *s, struct hashset_pos *pos)
+void shashset_remove_at(struct shashset *s, struct shashset_pos *pos)
 {
 	assert(s);
 	assert(pos);
 	assert(pos->has_existing);
 
-	ssize_t ix = pos->existing;
-	s->count--;
-	s->status[ix] = HASHSET_BIN_DELETED;
+	sparsetable_remove_at(&s->table, &pos->existing);
 }
 
-struct hashset_iter hashset_iter_make(const struct hashset *s)
+struct shashset_iter shashset_iter_make(const struct shashset *s)
 {
 	assert(s);
 
-	struct hashset_iter it;
-	it.s = s;
-	it.i = -1;
+	struct shashset_iter it;
+	it.table_it = sparsetable_iter_make(&s->table);
 	return it;
 }
 
-void hashset_iter_reset(struct hashset_iter *it)
+void shashset_iter_reset(struct shashset_iter *it)
 {
 	assert(it);
 
-	it->i = -1;
+	sparsetable_iter_reset(&it->table_it);
 }
 
-bool hashset_iter_advance(struct hashset_iter *it)
+bool shashset_iter_advance(struct shashset_iter *it)
 {
 	assert(it);
 
-	const uint8_t *status = it->s->status;
-	ssize_t i, n = hashset_bucket_count(it->s);
-	bool has_full = false;
-	
-	
-	for (i = it->i + 1; i < n; i++) {
-		if (status[i] & HASHSET_BIN_FULL) {
-			has_full = true;
-			break;
-		}
-	}
-	
-	it->i = i;
-	return has_full;
+	return sparsetable_iter_advance(&it->table_it);
 }
