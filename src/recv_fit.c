@@ -392,13 +392,16 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 	// determine the search direction
 	search_set(&fit->search, &fit->prev->resid, &fit->kkt);
-	double smax = vector_max_abs(&fit->search.vector);
+	ssize_t ce = recv_fit_constr_count(fit);
+	ssize_t nparam = vector_dim(&fit->search.vector);
+	struct vector coef_search = vector_slice(&fit->search.vector, 0, nparam - ce);
+	double smax = vector_max_abs(&coef_search);
 
 	// set up the linesearch control parameters
 	struct linesearch_ctrl ctrl = fit->ctrl.ls;
-	ctrl.stpmax = MIN(ctrl.stpmax, 1000 / MAX(1.0, smax));
+	ctrl.stpmax = MIN(ctrl.stpmax, 100 / MAX(1.0, smax));
 	ctrl.stpmin = MIN(ctrl.stpmin, 1e-12 * ctrl.stpmax);
-	double stp0 = MIN(1.0, 100.0 / MAX(1.0, smax));
+	double stp0 = MIN(1.0, 4.0 / MAX(1.0, smax));
 
 	fprintf(stderr, "> smax = %.8f   stpmax = %.8f   stp0 = %.8f\n", smax, ctrl.stpmax, stp0);
 	
@@ -407,7 +410,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	ssize_t it = 0;
 	linesearch_start(&fit->ls, stp0, f0, g0, &ctrl);
 
-	fprintf(stderr, ">                    f0: %.8f  g0: %.8f\n", f0, g0);
+	fprintf(stderr, ">                   f0: %.8f  g0: %.8f\n", f0, g0);
 	
 	do {
 		// compute the new trial step length
