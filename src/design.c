@@ -12,8 +12,6 @@ void design_deinit(struct design *design)
 	assert(design);
 	struct design_var *v;
 
-	refcount_deinit(&design->refcount);
-
 	ARRAY_FOREACH(v, &design->recv_vars) {
 		if (v->type->deinit) {
 			v->type->deinit(v);
@@ -79,33 +77,6 @@ void design_init(struct design *design, struct actors *senders,
 	design->irdynamic = design->irstatic + design->nrstatic;
 	design->nrdynamic = 0;
 	design->rdim = design->irdynamic + design->nrdynamic;
-
-	refcount_init(&design->refcount);
-}
-
-struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    const struct matrix *traits,
-			    const struct vector *intervals)
-{
-	struct design *design = xcalloc(1, sizeof(*design));
-	design_init(design, senders, receivers, traits, intervals);
-	return design;
-}
-
-struct design *design_ref(struct design *design)
-{
-	assert(design);
-	refcount_get(&design->refcount);
-	return design;
-}
-
-void design_free(struct design *design)
-{
-	if (design && refcount_put(&design->refcount, NULL)) {
-		refcount_get(&design->refcount);
-		design_deinit(design);
-		xfree(design);
-	}
 }
 
 static void

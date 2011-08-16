@@ -5,7 +5,6 @@
 #include "array.h"
 #include "matrix.h"
 #include "messages.h"
-#include "refcount.h"
 #include "svector.h"
 #include "vector.h"
 
@@ -94,15 +93,7 @@ struct design {
 	ssize_t irstatic, nrstatic;
 	ssize_t irdynamic, nrdynamic;
 	ssize_t rdim;
-
-	struct refcount refcount;
 };
-
-struct design *design_alloc(struct actors *senders, struct actors *receivers,
-			    const struct matrix *traits,
-			    const struct vector *intervals);
-struct design *design_ref(struct design *design);
-void design_free(struct design *design);
 
 void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct matrix *traits,
