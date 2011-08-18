@@ -338,6 +338,12 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 				   ssize_t jrecv, ssize_t dyn_index, double delta)
 {
 	struct recv_model *m = udata;
+	const struct design *d = frame_design(f);
+	assert(recv_model_design(m) == d);
+	
+	if (isend == jrecv && !design_loops(d))
+		return;
+
 	const struct actor *actors = actors_items(m->senders);
 	ssize_t icohort = actors[isend].cohort;
 	struct recv_model_sender *send = sender_raw(m, isend);
@@ -355,7 +361,6 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 		array_insert(&send->active, ix, &jrecv);
 	}
 
-	const struct design *d = recv_model_design(m);
 	ssize_t dyn_off = design_recv_dyn_index(d);
 	ssize_t index = dyn_off + dyn_index;
 
