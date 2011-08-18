@@ -66,6 +66,8 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
+	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 }
@@ -346,6 +348,10 @@ int main(int argc, char **argv)
 	enum recv_fit_task task;
 	ssize_t it = 0;
 	
+	//struct matrix coefs0;
+	//matrix_init(&coefs0, dim, nc);
+	//matrix_fill(&coefs0, 0.0001);
+	
 	for (it = 0, task = recv_fit_start(&fit, NULL);
 	     it < maxit && task == RECV_FIT_STEP;
 	     it++, task = recv_fit_advance(&fit)) {
@@ -365,6 +371,8 @@ int main(int argc, char **argv)
 			//	it, dev, ngrad, step);
 		}
 	}
+	
+	//matrix_deinit(&coefs0);
 	
 	if (task != RECV_FIT_CONV) {
 		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(&fit));

@@ -27,9 +27,11 @@ libiproc_la_SOURCES = \
 	src/recv_model.h \
 	src/rv-irecv.c \
 	src/rv-isend.c \
+	src/rv-irecv2.c \
 	src/rv-isend2.c \
 	src/rv-nrecv.c \
 	src/rv-nsend.c \
+	src/rv-nrecv2.c \
 	src/rv-nsend2.c \
 	src/strata.c \
 	src/strata.h \
