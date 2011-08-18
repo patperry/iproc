@@ -5,6 +5,7 @@
 .deps
 .dirstamp
 .libs
+/a.out.dSYM
 /Makefile
 /Makefile.in
 /aclocal.m4
