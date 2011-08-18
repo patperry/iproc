@@ -127,7 +127,7 @@ bool linesearch_curv(const struct linesearch *ls)
 	assert(ls);
 	double g0 = linesearch_grad0(ls);
 	double g = linesearch_grad(ls);
-	double c2 = ls->ctrl.ftol;
+	double c2 = ls->ctrl.gtol;
 
 	return g >= c2 * g0;
 }
