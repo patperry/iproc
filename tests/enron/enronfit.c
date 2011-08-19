@@ -374,13 +374,15 @@ int main(int argc, char **argv)
 	
 	//matrix_deinit(&coefs0);
 	
+	int err = 0;
+	
 	if (task != RECV_FIT_CONV) {
 		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(&fit));
-		return -1;
-	} else {
-		output(&fit);
+		err = -1;
 	}
-	
+
+	output(&fit);
+	recv_fit_deinit(&fit);
 	teardown();
-	return 0;
+	return err;
 }
