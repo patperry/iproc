@@ -16,6 +16,9 @@ void vector_init_copy(struct vector *v, const struct vector *src);
 void vector_assign_copy(struct vector *v, const struct vector *src);
 void vector_deinit(struct vector *v);
 
+/* insertion */
+void vector_insert(struct vector *v, ssize_t i);
+
 /* views */
 static inline struct vector vector_make(const double *ptr, ssize_t n);
 static inline struct vector vector_slice(const struct vector *v, ssize_t i,
@@ -24,6 +27,7 @@ static inline struct vector vector_slice(const struct vector *v, ssize_t i,
 /* properties */
 static inline ssize_t vector_dim(const struct vector *v);
 static inline double *vector_to_ptr(const struct vector *v);
+static inline bool vector_owner(const struct vector *v);
 
 /* index */
 static inline double vector_item(const struct vector *v, ssize_t i);
@@ -106,6 +110,11 @@ ssize_t vector_dim(const struct vector *v)
 double *vector_to_ptr(const struct vector *v)
 {
 	return v->data;
+}
+
+bool vector_owner(const struct vector *v)
+{
+	return v->owner;
 }
 
 double *vector_item_ptr(const struct vector *v, ssize_t i)

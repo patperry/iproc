@@ -38,7 +38,6 @@ void vector_reinit(struct vector *v, ssize_t n)
 
 	v->data = xrealloc(v->data, n * sizeof(v->data[0]));
 	v->dim = n;
-	v->owner = true;
 
 	if (nold < n) {
 		struct vector vnew = vector_slice(v, nold, n - nold);
@@ -547,3 +546,22 @@ int vector_ptr_compare(const void *px1, const void *px2)
 
 	return vector_compare(*pvector1, *pvector2);
 }
+
+void vector_insert(struct vector *v, ssize_t i)
+{
+	assert(v);
+	assert(0 <= i && i <= vector_dim(v));
+	assert(vector_owner(v));
+	
+	ssize_t n0 = vector_dim(v);
+	ssize_t n1 = n0 + 1;
+	
+	vector_reinit(v, n1);
+	double *ptr = vector_to_ptr(v);
+	ssize_t j;
+	for (j = n1 - 1; j > i; j--) {
+		ptr[j] = ptr[j - 1];
+	}
+	ptr[i] = 0.0;
+}
+
