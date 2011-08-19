@@ -9,6 +9,7 @@ struct svector {
 	ssize_t *index;
 	ssize_t nnz, nnzmax;
 	ssize_t dim;
+	bool is_view;
 };
 
 struct svector_pos {
@@ -33,6 +34,10 @@ void svector_init_copy(struct svector *v, const struct svector *src);
 void svector_assign_copy(struct svector *v, const struct svector *src);
 void svector_deinit(struct svector *v);
 
+/* views */
+static inline struct svector svector_make(const ssize_t *index, const double *data, ssize_t nnz, ssize_t n);
+
+
 /* alloc/dealloc */
 struct svector *svector_alloc(ssize_t n);
 struct svector *svector_alloc_copy(const struct svector *v);
@@ -41,6 +46,7 @@ void svector_free(struct svector *v);
 /* properties */
 static inline ssize_t svector_dim(const struct svector *v);
 static inline ssize_t svector_count(const struct svector *v);
+static inline bool svector_owner(const struct svector *v);
 
 double svector_item(const struct svector *v, ssize_t i);
 double *svector_item_ptr(struct svector *v, ssize_t i);
@@ -76,6 +82,23 @@ static inline double *svector_data_ptr(const struct svector *v);
 static inline ssize_t *svector_index_ptr(const struct svector *v);
 
 /* inline function definitions */
+struct svector svector_make(const ssize_t *index, const double *data, ssize_t nnz, ssize_t n)
+{
+	assert(index || !nnz);
+	assert(data || !nnz);
+	assert(0 <= nnz && nnz <= n);
+	assert(0 <= n);
+	
+	struct svector v;
+	v.data = (double *)data;	
+	v.index = (ssize_t *)index;
+	v.nnz = nnz;
+	v.nnzmax = nnz;
+	v.dim = n;
+	v.is_view = true;
+	return v;
+}
+
 ssize_t svector_dim(const struct svector *v)
 {
 	assert(v);
@@ -87,6 +110,13 @@ ssize_t svector_count(const struct svector *v)
 	assert(v);
 	return v->nnz;
 }
+
+bool svector_owner(const struct svector *v)
+{
+	assert(v);
+	return !v->is_view;
+}
+
 double *svector_data_ptr(const struct svector *v)
 {
 	assert(v);

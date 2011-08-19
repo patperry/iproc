@@ -29,6 +29,7 @@ void svector_init(struct svector *v, ssize_t n)
 	v->dim = n;
 	v->nnz = 0;
 	v->nnzmax = 0;
+	v->is_view = false;
 }
 
 struct svector *svector_alloc_copy(const struct svector *src)
@@ -76,13 +77,16 @@ void svector_free(struct svector *v)
 
 void svector_deinit(struct svector *v)
 {
-	xfree(v->index);
-	xfree(v->data);
+	if (svector_owner(v)) {
+		xfree(v->index);
+		xfree(v->data);
+	}
 }
 
 void svector_clear(struct svector *v)
 {
 	assert(v);
+	assert(svector_owner(v));
 	v->nnz = 0;
 }
 
@@ -90,6 +94,7 @@ void svector_set_basis(struct svector *v, ssize_t i)
 {
 	assert(v);
 	assert(0 <= i && i < svector_dim(v));
+	assert(svector_owner(v));
 
 	if (!v->nnzmax) {
 		v->data = xmalloc(sizeof(v->data[0]));
@@ -205,7 +210,7 @@ double svector_dot(const struct svector *x, const struct vector *y)
 	SVECTOR_FOREACH(itx, x) {
 		i = SVECTOR_IDX(itx);
 		valx = SVECTOR_VAL(itx);
-		valy = *vector_item_ptr(y, i);
+		valy = vector_item(y, i);
 		dot += valx * valy;
 	}
 
@@ -337,6 +342,7 @@ double *svector_find(const struct svector *v, ssize_t i,
 double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
 {
 	assert(v);
+	assert(svector_owner(v));
 	assert(pos);
 	assert(pos->inz == v->nnz || v->index[pos->inz] > pos->i);
 
@@ -378,6 +384,7 @@ double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
 void svector_remove_at(struct svector *v, struct svector_pos *pos)
 {
 	assert(v);
+	assert(svector_owner(v));
 	assert(pos);
 	assert(0 <= pos->inz && pos->inz < v->nnz);
 	
