@@ -144,23 +144,7 @@ static void score_insert_active(struct recv_loglik_sender_score *score,
 	assert(score);
 	assert(0 <= i && i <= score_active_count(score));
 
-	ssize_t n0 = score_active_count(score);
-	ssize_t n1 = n0 + 1;
-	struct vector dp, src, dst;
-	vector_init(&dp, n1);
-
-	src = vector_slice(&score->dp, 0, i);
-	dst = vector_slice(&dp, 0, i);
-	vector_assign_copy(&dst, &src);
-
-	src = vector_slice(&score->dp, i, n0 - i);
-	dst = vector_slice(&dp, i + 1, n0 - i);
-	vector_assign_copy(&dst, &src);
-
-	vector_deinit(&score->dp);
-	score->dp = dp;
-
-	assert(score_active_count(score) == n1);
+	vector_insert(&score->dp, i);
 }
 
 static void imat_insert_active(struct recv_loglik_sender_imat *imat, ssize_t i)
@@ -168,77 +152,10 @@ static void imat_insert_active(struct recv_loglik_sender_imat *imat, ssize_t i)
 	assert(imat);
 	assert(0 <= i && i <= imat_active_count(imat));
 
-	ssize_t n0 = imat_active_count(imat);
-	ssize_t n1 = n0 + 1;
-	struct vector vdst, vsrc;
-	struct matrix dst, src;
-
-	/* gamma_dp */
-	struct vector gamma_dp;
-	vector_init(&gamma_dp, n1);
-
-	vsrc = vector_slice(&imat->gamma_dp, 0, i);
-	vdst = vector_slice(&gamma_dp, 0, i);
-	vector_assign_copy(&vdst, &vsrc);
-
-	vsrc = vector_slice(&imat->gamma_dp, i, n0 - i);
-	vdst = vector_slice(&gamma_dp, i + 1, n0 - i);
-	vector_assign_copy(&vdst, &vsrc);
-
-	vector_deinit(&imat->gamma_dp);
-	imat->gamma_dp = gamma_dp;
-
-	/* dx_p */
-	struct matrix dx_p;
-	matrix_init(&dx_p, matrix_nrow(&imat->dx_p), n1);
-
-	src = matrix_slice_cols(&imat->dx_p, 0, i);
-	dst = matrix_slice_cols(&dx_p, 0, i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	src = matrix_slice_cols(&imat->dx_p, i, n0 - i);
-	dst = matrix_slice_cols(&dx_p, i + 1, n0 - i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	matrix_deinit(&imat->dx_p);
-	imat->dx_p = dx_p;
-
-	/* mean_dx_dp */
-	struct matrix mean_dx_dp;
-	matrix_init(&mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), n1);
-
-	src = matrix_slice_cols(&imat->mean_dx_dp, 0, i);
-	dst = matrix_slice_cols(&mean_dx_dp, 0, i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	src = matrix_slice_cols(&imat->mean_dx_dp, i, n0 - i);
-	dst = matrix_slice_cols(&mean_dx_dp, i + 1, n0 - i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	matrix_deinit(&imat->mean_dx_dp);
-	imat->mean_dx_dp = mean_dx_dp;
-
-	/* dp2 */
-	struct matrix dp2;
-	matrix_init(&dp2, n1, n1);
-
-	dst = matrix_slice(&dp2, 0, 0, i, i);
-	src = matrix_slice(&imat->dp2, 0, 0, i, i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	dst = matrix_slice(&dp2, i + 1, 0, n0 - i, i);
-	src = matrix_slice(&imat->dp2, i, 0, n0 - i, i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	dst = matrix_slice(&dp2, 0, i + 1, i, n0 - i);
-	src = matrix_slice(&imat->dp2, 0, i, i, n0 - i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-
-	dst = matrix_slice(&dp2, i + 1, i + 1, n0 - i, n0 - i);
-	src = matrix_slice(&imat->dp2, i, i, n0 - i, n0 - i);
-	matrix_assign_copy(&dst, TRANS_NOTRANS, &src);
-	matrix_deinit(&imat->dp2);
-	imat->dp2 = dp2;
+	vector_insert(&imat->gamma_dp, i);
+	matrix_insert_col(&imat->dx_p, i);
+	matrix_insert_col(&imat->mean_dx_dp, i);
+	matrix_insert_row_col(&imat->dp2, i, i);
 }
 
 static void score_set_obs(struct recv_loglik_sender_score *score,
