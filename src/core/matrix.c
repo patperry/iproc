@@ -664,6 +664,7 @@ void matrix_insert_row_col(struct matrix *a, ssize_t i, ssize_t j)
 			for (k = 0; k < m1; k++) {
 				*(--dst) = 0.0;
 			}
+			assert(dst >= src);
 		} else {
 			for (k = 0; k < m0 - i; k++) {
 				*(--dst) = *(--src);
