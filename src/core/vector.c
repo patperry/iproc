@@ -23,7 +23,7 @@ void vector_init(struct vector *v, ssize_t n)
 
 	v->data = xcalloc(n, sizeof(v->data[0]));
 	v->dim = n;
-	v->owner = true;
+	v->is_view = false;
 }
 
 void vector_reinit(struct vector *v, ssize_t n)
@@ -32,7 +32,7 @@ void vector_reinit(struct vector *v, ssize_t n)
 	assert(n >= 0);
 	assert(n <= F77INT_MAX);
 	assert(n <= (ssize_t)(SSIZE_MAX / sizeof(double)));
-	assert(v->owner);
+	assert(vector_owner(v));
 
 	ssize_t nold = vector_dim(v);
 
@@ -69,7 +69,7 @@ void vector_assign_copy(struct vector *v, const struct vector *src)
 void vector_deinit(struct vector *v)
 {
 	assert(v);
-	if (v->owner)
+	if (vector_owner(v))
 		xfree(v->data);
 }
 

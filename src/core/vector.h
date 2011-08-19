@@ -6,7 +6,7 @@
 struct vector {
 	double *data;
 	ssize_t dim;
-	bool owner;
+	bool is_view;
 };
 
 /* create, destroy */
@@ -89,7 +89,7 @@ struct vector vector_make(const double *ptr, ssize_t n)
 	struct vector v;
 	v.data = (double *)ptr;
 	v.dim = n;
-	v.owner = false;
+	v.is_view = true;
 	return v;
 }
 
@@ -114,7 +114,7 @@ double *vector_to_ptr(const struct vector *v)
 
 bool vector_owner(const struct vector *v)
 {
-	return v->owner;
+	return !v->is_view;
 }
 
 double *vector_item_ptr(const struct vector *v, ssize_t i)
