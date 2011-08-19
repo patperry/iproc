@@ -458,9 +458,9 @@ domain_error_g:
 	} while (it < fit->ctrl.ls_maxit
 		 && task == LINESEARCH_STEP); // && !linesearch_sdec(&fit->ls));
 
-	if (fit->step < fit->ctrl.xtol) {
+	if (task == LINESEARCH_WARN_XTOL) {
 		return RECV_FIT_ERR_XTOL;
-	} else if (linesearch_sdec(&fit->ls)) {
+	} else if (task == LINESEARCH_CONV) {
 		return RECV_FIT_STEP;
 	} else {
 		return RECV_FIT_ERR_LNSRCH;
