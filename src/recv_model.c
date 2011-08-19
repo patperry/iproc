@@ -335,7 +335,7 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
 }
 
 static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
-				   ssize_t jrecv, ssize_t dyn_index, double delta)
+				   ssize_t jrecv, const struct svector *delta)
 {
 	struct recv_model *m = udata;
 	const struct design *d = frame_design(f);
@@ -362,9 +362,10 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	}
 
 	ssize_t dyn_off = design_recv_dyn_index(d);
-	ssize_t index = dyn_off + dyn_index;
+	ssize_t dyn_dim = design_recv_dyn_dim(d);
+	struct vector dyn_coefs = vector_slice(&coefs, dyn_off, dyn_dim);
 
-	double deta = vector_item(&coefs, index) * delta;
+	double deta = svector_dot(delta, &dyn_coefs);
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;

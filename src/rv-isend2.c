@@ -31,6 +31,12 @@ static void isend2_message_add(void *udata, struct frame *f,
 	ssize_t dyn_index = fv->design->dyn_index;
 	ssize_t *imsg, i, n;	
 	
+	double dx_data[1] = { +1.0 };
+	ssize_t dx_index[1] = { dyn_index };
+	ssize_t dx_nnz = 1;
+	ssize_t dx_n = design_recv_dyn_dim(f->design);
+	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
+	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		ssize_t jrecv = msg->to[ito];
@@ -47,7 +53,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 				const struct vector *dx = frame_recv_dx(f, isend, jrecv1);
 				
 				if (vector_item(dx, dyn_index) == 0.0) {
-					frame_recv_update(f, isend, jrecv1, dyn_index, +1.0);
+					frame_recv_update(f, isend, jrecv1, &delta);
 				}
 			}
 		}
@@ -64,7 +70,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 			const struct vector *dx = frame_recv_dx(f, isend1, jrecv);
 			
 			if (vector_item(dx, dyn_index) == 0.0) {
-				frame_recv_update(f, isend1, jrecv, dyn_index, +1.0);
+				frame_recv_update(f, isend1, jrecv, &delta);
 			}
 		}
 	}

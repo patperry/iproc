@@ -503,24 +503,22 @@ void frame_advance(struct frame *f, double time)
 }
 
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
-		       ssize_t dyn_index, double delta)
+		       const struct svector *delta)
 {
 	const struct design *d = frame_design(f);
 
 	assert(0 <= isend && isend < design_send_count(d));
 	assert(0 <= jrecv && jrecv < design_recv_count(d));
-	assert(0 <= dyn_index && dyn_index < design_recv_dyn_dim(d));
-	assert(!isnan(delta));
+	assert(svector_dim(delta) == design_recv_dyn_dim(d));
 
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
-	double *ptr = vector_item_ptr(dx, dyn_index);
-	*ptr += delta;
+	svector_axpy(1.0, delta, dx);
 
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
 			obs->callbacks.recv_update(obs->udata, f, isend,
-						   jrecv, dyn_index, delta);
+						   jrecv, delta);
 		}
 	}
 }

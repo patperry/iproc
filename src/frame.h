@@ -49,7 +49,7 @@ struct frame_callbacks {
 	void (*message_advance) (void *udata, struct frame * f,
 				 const struct message * msg, ssize_t intvl);
 	void (*recv_update) (void *udata, struct frame * f, ssize_t isend,
-			     ssize_t jrecv, ssize_t dyn_index, double delta);
+			     ssize_t jrecv, const struct svector *delta);
 	void (*send_update) (void *udata, struct frame * f, ssize_t isend,
 			     ssize_t dyn_index, double dx);
 	void (*clear) (void *udata, struct frame * f);
@@ -88,7 +88,7 @@ static inline void frame_get_recv_messages(const struct frame *f, ssize_t irecv,
 const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 				   ssize_t jrecv);
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
-		       ssize_t dyn_index, double delta);
+		       const struct svector *delta);
 
 // struct vector frame_send_x(struct frame *f, ssize_t isend);
 // void frame_send_update(const struct frame *f, ssize_t isend,
