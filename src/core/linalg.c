@@ -129,6 +129,17 @@ static void symeig_get_worksize(ssize_t n, enum eig_job job,
 			  &inone, &info);
 	assert(info == 0);
 	*lwork = (f77int)work;
+
+	if (n <= 1) {
+		assert(*lwork >= 1);
+		assert(*liwork >= 1);
+	} else if (job == EIG_NOVEC) {
+		assert(*lwork >= 2 * n + 1);
+		assert(*liwork >= 1);
+	} else {
+		assert(*lwork >= 1 + 6 * n + 2 * n * n);
+		assert(*liwork >= 3 + 5 * n);
+	}
 }
 
 void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
@@ -136,8 +147,13 @@ void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
 	assert(eig);
 	assert(0 <= n && n <= F77INT_MAX);
 
+	eig->n = 0;
+	eig->job = EIG_NOVEC;
 	eig->work = NULL;
+	eig->lwork = 0;
 	eig->iwork = NULL;
+	eig->liwork = 0;
+	eig->info = 0;
 	symeig_reinit(eig, n, job);
 }
 
@@ -156,7 +172,7 @@ void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job)
 	eig->lwork = lwork;
 	eig->iwork = xrealloc(eig->iwork, liwork * sizeof(eig->iwork[0]));
 	eig->liwork = liwork;
-	eig->info = -1;
+	eig->info = 0;
 }
 
 void symeig_deinit(struct symeig *eig)
@@ -187,6 +203,17 @@ bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo,
 	f77int *iwork = eig->iwork;
 	f77int liwork = eig->liwork;
 
+	if (n <= 1) {
+		assert(lwork >= 1);
+		assert(liwork >= 1);
+	} else if (eig->job == EIG_NOVEC) {
+		assert(lwork >= 2 * n + 1);
+		assert(liwork >= 1);
+	} else {
+		assert(lwork >= 1 + 6 * n + 2 * n * n);
+		assert(liwork >= 3 + 5 * n);
+	}
+	
 	F77_FUNC(dsyevd) (jobz, suplo, &n, pa, &lda, pw, work, &lwork, iwork,
 			  &liwork, &eig->info);
 	assert(eig->info >= 0);
