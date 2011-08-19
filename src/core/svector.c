@@ -97,8 +97,8 @@ void svector_set_basis(struct svector *v, ssize_t i)
 	assert(svector_owner(v));
 
 	if (!v->nnzmax) {
-		v->data = xmalloc(sizeof(v->data[0]));
-		v->index = xmalloc(sizeof(v->index[0]));
+		v->data = xrealloc(v->data, sizeof(v->data[0]));
+		v->index = xrealloc(v->index, sizeof(v->index[0]));
 		v->nnzmax = 1;
 	}
 	v->data[0] = 1.0;
