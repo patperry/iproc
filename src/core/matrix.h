@@ -29,6 +29,7 @@ void matrix_deinit(struct matrix *a);
 /* insertion (invalidates views) */
 void matrix_insert_row(struct matrix *a, ssize_t i);
 void matrix_insert_col(struct matrix *a, ssize_t j);
+void matrix_insert_row_col(struct matrix *a, ssize_t i, ssize_t j);
 
 /* views */
 static inline struct matrix matrix_make(const struct vector *v, ssize_t m,

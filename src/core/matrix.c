@@ -641,4 +641,42 @@ void matrix_insert_row(struct matrix *a, ssize_t i)
 	assert(src == data);
 }
 
+void matrix_insert_row_col(struct matrix *a, ssize_t i, ssize_t j)
+{
+	assert(a);
+	assert(0 <= i && i <= matrix_nrow(a));
+	assert(0 <= j && j <= matrix_ncol(a));
+	assert(matrix_owner(a));
+	
+	ssize_t m0 = matrix_nrow(a);
+	ssize_t m1 = m0 + 1;
+	ssize_t n0 = matrix_ncol(a);
+	ssize_t n1 = n0 + 1;
+	
+	matrix_reinit(a, m1, n1);
+	double *data = matrix_to_ptr(a);
+	double *src = data + m0 * n0;	
+	double *dst = data + m1 * n1;
+	
+	ssize_t k, l;
+	for (l = 0; l < n1; l++) {
+		if (l == n0 - j) {
+			for (k = 0; k < m1; k++) {
+				*(--dst) = 0.0;
+			}
+		} else {
+			for (k = 0; k < m0 - i; k++) {
+				*(--dst) = *(--src);
+			}
+			*(--dst) = 0.0;
+			for (k = 0; k < i; k++) {
+				*(--dst) = *(--src);
+			}
+		}
+	}
+	assert(dst == data);
+	assert(src == data);
+}
+
+
 
