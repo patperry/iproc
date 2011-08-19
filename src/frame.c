@@ -165,6 +165,7 @@ static void frame_vars_deinit(struct frame *f)
 
 static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
+	(void)f; // unused;
 	assert(rf);
 
 	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
@@ -505,8 +506,9 @@ void frame_advance(struct frame *f, double time)
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 		       const struct svector *delta)
 {
+#ifndef NDEBUG
 	const struct design *d = frame_design(f);
-
+#endif
 	assert(0 <= isend && isend < design_send_count(d));
 	assert(0 <= jrecv && jrecv < design_recv_count(d));
 	assert(svector_dim(delta) == design_recv_dyn_dim(d));

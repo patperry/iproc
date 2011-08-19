@@ -232,7 +232,7 @@ static void output(const struct recv_fit *fit)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
 	setup();
 	

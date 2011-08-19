@@ -35,7 +35,7 @@ static struct recv_model model;
 static struct recv_loglik recv_loglik;
 
 
-static void enron_setup_fixture(void **state)
+static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
@@ -46,7 +46,7 @@ static void enron_setup_fixture(void **state)
 	enron_messages_init(&messages, -1);
 }
 
-static void enron_teardown_fixture(void **state)
+static void enron_teardown_fixture()
 {
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
@@ -57,7 +57,7 @@ static void enron_teardown_fixture(void **state)
 	print_message("\n\n");
 }
 
-static void basic_setup(void **state)
+static void basic_setup()
 {
 	ssize_t c, i;
 	double intvls[3] = {
@@ -89,7 +89,7 @@ static void basic_setup(void **state)
 	recv_loglik_init(&recv_loglik, &model);
 }
 
-static void hard_setup(void **state)
+static void hard_setup()
 {	
 	ssize_t i, c;
 	double intvls[3] = {
@@ -120,7 +120,7 @@ static void hard_setup(void **state)
 	recv_loglik_init(&recv_loglik, &model);
 }
 
-static void teardown(void **state)
+static void teardown()
 {
 	recv_loglik_deinit(&recv_loglik);
 	recv_model_deinit(&model);
@@ -130,7 +130,7 @@ static void teardown(void **state)
 	design_deinit(&design);
 }
 
-static void test_dev(void **state)
+static void test_dev()
 {
 	struct messages_iter it;
 	const struct message *msg = NULL;
@@ -186,7 +186,7 @@ out:
 }
 
 
-static void test_mean(void **state)
+static void test_mean()
 {
 	struct vector probs, mean0, mean1, avg_mean1, diff;
 	struct matrix avg_mean0;
@@ -278,7 +278,7 @@ out:
 }
 
 
-static void test_score(void **state)
+static void test_score()
 {
 	struct vector score0, score1, avg_score1, diff;
 	struct matrix avg_score0;
@@ -368,7 +368,7 @@ out:
 }
 
 
-static void test_imat(void **state)
+static void test_imat()
 {
 	struct vector mean, y;
 	struct svector e_j;
@@ -486,7 +486,7 @@ out:
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),

@@ -214,6 +214,7 @@ void sparsegroup_realloc_group(struct sparsegroup *g, ssize_t n,
 
 void sparsegroup_free_group(struct sparsegroup *g, size_t elt_size)
 {
+	(void)elt_size; // unused
 	xfree(g->group);
 	g->group = NULL;
 }
@@ -293,6 +294,7 @@ ssize_t sparsegroup_count(const struct sparsegroup *g)
 
 ssize_t sparsegroup_size(const struct sparsegroup *g)
 {
+	(void)g; // unused;
 	return SPARSETABLE_GROUP_SIZE;
 }
 
@@ -592,6 +594,7 @@ void sparsetable_remove_at(struct sparsetable *t,
 bool sparsetable_deleted(const struct sparsetable *t,
 			 const struct sparsetable_pos *pos)
 {
+	(void)t; // unused
 	return sparsegroup_deleted(pos->group, &pos->group_pos);
 }
 

@@ -4,7 +4,9 @@
 
 DEFINE_COMPARE_FN(intptr_compare, intptr_t)
 
+#ifndef NDEBUG
 static intptr_t intset_at(const struct intset *s, ssize_t index);
+#endif
 
 void intset_init(struct intset *s)
 {
@@ -147,6 +149,7 @@ bool intset_iter_advance(struct intset_iter *it)
 	return it->index < intset_count(it->set);
 }
 
+#ifndef NDEBUG
 intptr_t intset_at(const struct intset *s, ssize_t index)
 {
 	assert(s);
@@ -155,3 +158,4 @@ intptr_t intset_at(const struct intset *s, ssize_t index)
 
 	return *(intptr_t *)array_item(&s->keys, index);
 }
+#endif

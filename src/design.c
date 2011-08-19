@@ -97,6 +97,7 @@ design_mul0_effects(double alpha,
 	}
 }
 
+/*
 static void
 design_send_mul0_effects(double alpha,
 			 enum trans_op trans,
@@ -110,6 +111,7 @@ design_send_mul0_effects(double alpha,
 	ssize_t dim = design_send_count(design);
 	design_mul0_effects(alpha, trans, off, dim, x, y);
 }
+ */
 
 static void
 design_recv_mul0_effects(double alpha,
@@ -153,6 +155,7 @@ design_muls0_effects(double alpha,
 	}
 }
 
+/*
 static void
 design_send_muls0_effects(double alpha,
 			  enum trans_op trans,
@@ -166,6 +169,7 @@ design_send_muls0_effects(double alpha,
 	ssize_t dim = design_send_count(design);
 	design_muls0_effects(alpha, trans, off, dim, x, y);
 }
+*/
 
 static void
 design_recv_muls0_effects(double alpha,
@@ -554,6 +558,8 @@ static void design_set_effects(bool *peffects, bool effects, ssize_t neffects,
 			       struct array *vars, ssize_t *istatic,
 			       ssize_t *idynamic, ssize_t *dim)
 {
+	(void)vars; // unused
+
 	if (*peffects == effects)
 		return;
 
@@ -590,6 +596,7 @@ static void design_add_var(struct design *design, const struct var_type *type,
 			   struct array *vars,
 			   ssize_t *idynamic, ssize_t *ndynamic, ssize_t *dim)
 {
+	(void)idynamic; // unused
 	struct design_var *var = array_add(vars, NULL);
 
 	type->init(var, design, params);

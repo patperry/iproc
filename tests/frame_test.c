@@ -30,7 +30,7 @@ static ssize_t rv_nsend_index;
 static struct frame frame;
 
 
-static void enron_setup_fixture(void **state)
+static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
@@ -39,7 +39,7 @@ static void enron_setup_fixture(void **state)
 	enron_messages_init(&messages, -1);
 }
 
-static void enron_teardown_fixture(void **state)
+static void enron_teardown_fixture()
 {
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
@@ -48,7 +48,7 @@ static void enron_teardown_fixture(void **state)
 	print_message("\n\n");
 }
 
-static void rv_nsend_setup(void **state)
+static void rv_nsend_setup()
 {
 	has_reffects = false;
 	has_loops = false;
@@ -61,14 +61,14 @@ static void rv_nsend_setup(void **state)
 	frame_init(&frame, &design);
 }
 
-static void rv_nsend_teardown(void **state)
+static void rv_nsend_teardown()
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 }
 
-static void test_rv_nsend(void **state)
+static void test_rv_nsend()
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -115,7 +115,7 @@ static void test_rv_nsend(void **state)
 	matrix_deinit(&xnsend);
 }
 
-static void rv_nrecv_setup(void **state)
+static void rv_nrecv_setup()
 {
 	has_reffects = false;
 	has_loops = false;
@@ -128,14 +128,14 @@ static void rv_nrecv_setup(void **state)
 	frame_init(&frame, &design);
 }
 
-static void rv_nrecv_teardown(void **state)
+static void rv_nrecv_teardown()
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 }
 
-static void test_rv_nrecv(void **state)
+static void test_rv_nrecv()
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -184,7 +184,7 @@ static void test_rv_nrecv(void **state)
 	matrix_deinit(&xnrecv);
 }
 
-static void rv_irecv_setup(void **state)
+static void rv_irecv_setup()
 {
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
@@ -202,7 +202,7 @@ static void rv_irecv_setup(void **state)
 	frame_init(&frame, &design);
 }
 
-static void rv_irecv_teardown(void **state)
+static void rv_irecv_teardown()
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
@@ -210,7 +210,7 @@ static void rv_irecv_teardown(void **state)
 }
 
 
-static void test_rv_irecv(void **state)
+static void test_rv_irecv()
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -266,7 +266,7 @@ static void test_rv_irecv(void **state)
 }
 
 
-static void rv_isend_setup(void **state)
+static void rv_isend_setup()
 {
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
@@ -284,7 +284,7 @@ static void rv_isend_setup(void **state)
 	frame_init(&frame, &design);
 }
 
-static void rv_isend_teardown(void **state)
+static void rv_isend_teardown()
 {
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
@@ -292,7 +292,7 @@ static void rv_isend_teardown(void **state)
 }
 
 
-static void test_rv_isend(void **state)
+static void test_rv_isend()
 {
 	double t;
 	ssize_t itie, ntie, ito;
@@ -349,7 +349,7 @@ static void test_rv_isend(void **state)
 
 
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),

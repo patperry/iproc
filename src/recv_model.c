@@ -422,6 +422,7 @@ static void model_clear(struct recv_model *m)
 
 static void recv_model_clear(void *udata, struct frame *f)
 {
+	(void)f; // unused
 	struct recv_model *m = udata;
 	assert(m);
 	assert(f == recv_model_frame(m));

@@ -14,13 +14,13 @@ static struct pqueue pqueue;
 static ssize_t count;
 static ssize_t *elts;		// elements sorted in decending order
 
-static void empty_setup_fixture(void **state)
+static void empty_setup_fixture()
 {
 	print_message("Empty pqueue\n");
 	print_message("------------\n");
 }
 
-static void empty_setup(void **state)
+static void empty_setup()
 {
 	static ssize_t *empty_elts = NULL;
 
@@ -29,13 +29,13 @@ static void empty_setup(void **state)
 	elts = empty_elts;
 }
 
-static void singleton_setup_fixture(void **state)
+static void singleton_setup_fixture()
 {
 	print_message("Singleton pqueue\n");
 	print_message("----------------\n");
 }
 
-static void singleton_setup(void **state)
+static void singleton_setup()
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
@@ -45,13 +45,13 @@ static void singleton_setup(void **state)
 	pqueue_push(&pqueue, elts);
 }
 
-static void sorted5_setup_fixture(void **state)
+static void sorted5_setup_fixture()
 {
 	print_message("Pqueue with 5 sorted elements\n");
 	print_message("-----------------------------\n");
 }
 
-static void sorted5_setup(void **state)
+static void sorted5_setup()
 {
 	static ssize_t sorted5_elts[] = { 5, 4, 3, 2, 1 };
 	ssize_t i;
@@ -65,13 +65,13 @@ static void sorted5_setup(void **state)
 
 }
 
-static void unsorted7_setup_fixture(void **state)
+static void unsorted7_setup_fixture()
 {
 	print_message("Pqueue with 7 unsorted elements\n");
 	print_message("-------------------------------\n");
 }
 
-static void unsorted7_setup(void **state)
+static void unsorted7_setup()
 {
 	static ssize_t sorted7_elts[] = { 7, 6, 5, 4, 3, 2, 1 };
 	ssize_t unsorted7_elts[] = { 2, 1, 3, 4, 7, 6, 5 };
@@ -85,22 +85,22 @@ static void unsorted7_setup(void **state)
 		pqueue_push(&pqueue, &unsorted7_elts[i]);
 }
 
-static void teardown(void **state)
+static void teardown()
 {
 	pqueue_deinit(&pqueue);
 }
 
-static void teardown_fixture(void **state)
+static void teardown_fixture()
 {
 	print_message("\n\n");
 }
 
-static void test_count(void **state)
+static void test_count()
 {
 	assert_int_equal(pqueue_count(&pqueue), count);
 }
 
-static void test_push_min_minus_one(void **state)
+static void test_push_min_minus_one()
 {
 	ssize_t min = elts[count - 1];
 	ssize_t min_minus_one = min - 1;
@@ -109,7 +109,7 @@ static void test_push_min_minus_one(void **state)
 	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), elts[0]);
 }
 
-static void test_push_min(void **state)
+static void test_push_min()
 {
 	ssize_t min = elts[count - 1];
 	ssize_t elt = min;
@@ -118,7 +118,7 @@ static void test_push_min(void **state)
 	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), elts[0]);
 }
 
-static void test_push_max_minus_one(void **state)
+static void test_push_max_minus_one()
 {
 	ssize_t max = elts[0];
 	ssize_t max_minus_one = max - 1;
@@ -127,7 +127,7 @@ static void test_push_max_minus_one(void **state)
 	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max);
 }
 
-static void test_push_max(void **state)
+static void test_push_max()
 {
 	ssize_t max = elts[0];
 	ssize_t elt = max;
@@ -136,7 +136,7 @@ static void test_push_max(void **state)
 	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max);
 }
 
-static void test_push_max_plus_one(void **state)
+static void test_push_max_plus_one()
 {
 	ssize_t max = (count ? elts[0] : 0);
 	ssize_t max_plus_one = max + 1;
@@ -145,7 +145,7 @@ static void test_push_max_plus_one(void **state)
 	assert_int_equal(*(ssize_t *)pqueue_top(&pqueue), max + 1);
 }
 
-static void test_push_existing(void **state)
+static void test_push_existing()
 {
 	ssize_t i, j;
 	ssize_t top;
@@ -174,7 +174,7 @@ static void test_push_existing(void **state)
 	}
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),

@@ -13,6 +13,7 @@ DEFINE_COMPARE_AND_EQUALS_FN(int_compare, int_equals, int)
 
 static uint32_t int_bad_hash(const void *x)
 {
+	(void)x; // unused
 	return 1337;
 }
 
@@ -23,18 +24,18 @@ static int *vals;
 static ssize_t count;
 
 
-static void empty_setup_fixture(void **state)
+static void empty_setup_fixture()
 {
 	print_message("empty hashset\n");
 	print_message("-------------\n");
 }
 
-static void teardown_fixture(void **state)
+static void teardown_fixture()
 {
 	print_message("\n\n");
 }
 
-static void empty_setup(void **state)
+static void empty_setup()
 {
 	static int *empty_vals = NULL;
 
@@ -46,20 +47,20 @@ static void empty_setup(void **state)
 	count = 0;
 }
 
-static void empty_teardown(void **state)
+static void empty_teardown()
 {
 	hashset_deinit(&set);
 }
 
-static void big_setup_fixture(void **state)
+static void big_setup_fixture()
 {
 	print_message("big hashset\n");
 	print_message("-----------\n");
 }
 
-static void big_setup(void **state)
+static void big_setup()
 {
-	empty_setup(state);
+	empty_setup();
 	
 	count = 555;
 	vals = malloc(count * sizeof(*vals));
@@ -71,19 +72,19 @@ static void big_setup(void **state)
 	}
 }
 
-static void big_teardown(void **state)
+static void big_teardown()
 {
 	free(vals);
-	empty_teardown(state);
+	empty_teardown();
 }
 
-static void big_bad_setup_fixture(void **state)
+static void big_bad_setup_fixture()
 {
 	print_message("big hashset (bad hash)\n");
 	print_message("----------------------\n");
 }
 
-static void big_bad_setup(void **state)
+static void big_bad_setup()
 {
 	hash = int_bad_hash;
 	equals = int_equals;
@@ -99,25 +100,25 @@ static void big_bad_setup(void **state)
 	}
 }
 
-static void big_bad_teardown(void **state)
+static void big_bad_teardown()
 {
 	free(vals);
-	empty_teardown(state);
+	empty_teardown();
 }
 
 
-static void test_count(void **state)
+static void test_count()
 {
 	assert_int_equal(hashset_count(&set), count);
 }
 
-static void test_clear(void **state)
+static void test_clear()
 {
 	hashset_clear(&set);
 	assert_true(hashset_count(&set) == 0);
 }
 
-static void test_lookup(void **state)
+static void test_lookup()
 {
 	ssize_t i;
 	const int *val;
@@ -130,7 +131,7 @@ static void test_lookup(void **state)
 	}
 }
 
-static void test_add(void **state)
+static void test_add()
 {
 	int val = 31337;
 	
@@ -140,7 +141,7 @@ static void test_add(void **state)
 	assert_int_equal(*(int *)hashset_item(&set, &val), val);
 }
 
-static void test_add_existing(void **state)
+static void test_add_existing()
 {
 	int val = 88888;
 	
@@ -151,7 +152,7 @@ static void test_add_existing(void **state)
 	assert_int_equal(*(int *)hashset_item(&set, &val), val);
 }
 
-static void test_remove(void **state)
+static void test_remove()
 {
 	int val = -1;
 	
@@ -162,7 +163,7 @@ static void test_remove(void **state)
 	assert_false(hashset_item(&set, &val));
 }
 
-static void test_remove_hard(void **state)
+static void test_remove_hard()
 {
 	ssize_t i, j;
 	
@@ -180,7 +181,7 @@ static void test_remove_hard(void **state)
 	assert_true(hashset_count(&set) == 0);
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),

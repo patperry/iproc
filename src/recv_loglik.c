@@ -126,17 +126,21 @@ static void imat_clear(struct recv_loglik_sender_imat *imat)
 	matrix_fill(&imat->var_dx, 0.0);
 }
 
+#ifndef NDEBUG
 static ssize_t score_active_count(const struct recv_loglik_sender_score *score)
 {
 	assert(score);
 	return vector_dim(&score->dp);
 }
+#endif
 
+#ifndef NDEBUG
 static ssize_t imat_active_count(const struct recv_loglik_sender_imat *imat)
 {
 	assert(imat);
 	return vector_dim(&imat->gamma_dp);
 }
+#endif
 
 static void score_insert_active(struct recv_loglik_sender_score *score,
 				ssize_t i)
@@ -385,6 +389,8 @@ static void score_axpy_obs(double alpha,
 			   const struct design *design,
 			   ssize_t isend, struct vector *y)
 {
+	(void)isend; // unused
+	
 	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 	struct vector ysub = vector_slice(y, off, dim);
@@ -403,6 +409,8 @@ static void score_axpy_mean(double alpha,
 			    const struct design *design,
 			    ssize_t isend, struct vector *y)
 {
+	(void)isend; // unused
+
 	const struct vector *mean0 = score->mean0;
 	double gamma = score->gamma;
 	vector_axpy(alpha * gamma, mean0, y);
@@ -444,6 +452,8 @@ static void imat_axpy(double alpha,
 		      const struct design *design,
 		      ssize_t isend, struct matrix *y)
 {
+	(void)isend; // unused
+
 	const ssize_t dim = design_recv_dim(design);
 	const ssize_t nrecv = design_recv_count(design);
 	const struct vector *mean0 = score->mean0;
@@ -675,7 +685,9 @@ void sender_add(struct recv_loglik_sender *ll,
 {
 	ssize_t isend = ll->isend;
 	const struct recv_model *model = ll->model;
+#ifndef NDEBUG
 	ssize_t nreceiver = recv_model_count(model);
+#endif
 
 	double ntot = ll->n + n;
 	double scale = n / ntot;
@@ -817,6 +829,7 @@ void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
 void cohort_init(struct recv_loglik_cohort *cll, const struct recv_model *m,
 		 ssize_t c)
 {
+	(void)c; // unused
 	assert(cll);
 	assert(m);
 	assert(0 <= c && c < recv_model_cohort_count(m));

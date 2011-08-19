@@ -343,6 +343,7 @@ static void search_set(struct recv_fit_search *search,
 	kkt->factored = true;
 
 	assert(info == 0);
+	(void)info; // compile warning;
 }
 
 static void rgrad_init(struct recv_fit_rgrad *rgrad, ssize_t nc, ssize_t dim,
@@ -453,8 +454,9 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		continue;
 
 domain_error_f:
-domain_error_g:
+		//domain_error_g:
 		assert(0 && "DOMAIN ERROR");
+		task = LINESEARCH_STEP;
 	} while (it < fit->ctrl.ls_maxit
 		 && task == LINESEARCH_STEP); // && !linesearch_sdec(&fit->ls));
 

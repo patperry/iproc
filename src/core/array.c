@@ -358,6 +358,7 @@ void array_sort(struct array *a, compare_fn compar)
 	int err = timsort(array_item(a, 0), array_count(a), array_elt_size(a),
 			  compar);
 	assert(!err);
+	(void)err;
 }
 
 /* UNNECESSARY to_array */

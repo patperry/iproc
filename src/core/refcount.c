@@ -12,6 +12,7 @@ void refcount_init(struct refcount *refcount)
 
 void refcount_deinit(struct refcount *refcount)
 {
+	(void)refcount; // unused
 	assert(refcount);
 	assert(refcount->count == 1);
 }

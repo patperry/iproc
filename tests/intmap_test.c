@@ -13,18 +13,18 @@ static char *vals;
 static ssize_t count;
 
 
-static void empty_setup_fixture(void **state)
+static void empty_setup_fixture()
 {
 	print_message("empty intmap\n");
 	print_message("------------\n");
 }
 
-static void teardown_fixture(void **state)
+static void teardown_fixture()
 {
 	print_message("\n\n");
 }
 
-static void empty_setup(void **state)
+static void empty_setup()
 {
 	static intptr_t *empty_keys = NULL;
 	static char *empty_vals = NULL;
@@ -35,17 +35,17 @@ static void empty_setup(void **state)
 	count = 0;
 }
 
-static void empty_teardown(void **state)
+static void empty_teardown()
 {
 	intmap_deinit(&map);
 }
 
-static void test_count(void **state)
+static void test_count()
 {
 	assert_int_equal(intmap_count(&map), count);
 }
 
-static void test_add(void **state)
+static void test_add()
 {
 	intptr_t key = 1;
 	char val = 'a';
@@ -55,7 +55,7 @@ static void test_add(void **state)
 	assert_int_equal(*(char *)intmap_item(&map, key), val);
 }
 
-static void test_add_hard(void **state)
+static void test_add_hard()
 {
 	char val = 'a';
 	int i, j, n = 100;
@@ -77,7 +77,7 @@ static void test_add_hard(void **state)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),

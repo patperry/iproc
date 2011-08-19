@@ -7,6 +7,8 @@
 static void nsend_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
+	(void)d; // unused
+	(void)params; // unused;
 	assert(dv);
 	assert(d);
 	assert(!params);

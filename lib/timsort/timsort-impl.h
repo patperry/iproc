@@ -35,6 +35,7 @@ static int NAME(mergeHi) (struct timsort * ts, void *base1, size_t len1,
 
 static int NAME(timsort) (void *a, size_t nel, size_t width,
 			int (*c) (const void *, const void *)) {
+	(void)width; // potentially unused
 	assert(a || !nel || !width);
 	assert(c);
 
@@ -111,6 +112,7 @@ out:
  */
 static void NAME(binarySort) (void *a, size_t hi, size_t start,
 			      comparator compare, size_t width) {
+	(void)width; // potentially unused
 	assert(start <= hi);
 
 	DEFINE_TEMP(pivot);
@@ -187,6 +189,7 @@ static void NAME(binarySort) (void *a, size_t hi, size_t start,
 static size_t NAME(countRunAndMakeAscending) (void *a, size_t hi,
 					      comparator compare, size_t width)
 {
+	(void)width; // potentially unused
 	assert(0 < hi);
 	size_t runHi = 1;
 	if (runHi == hi)
@@ -222,6 +225,7 @@ static size_t NAME(countRunAndMakeAscending) (void *a, size_t hi,
  * @param hi the index after the last element in the range to be reversed
  */
 static void NAME(reverseRange) (void *a, size_t hi, size_t width) {
+	(void)width; // potentially unused
 	assert(hi > 0);
 
 	DEFINE_TEMP(t);
@@ -250,6 +254,7 @@ static void NAME(reverseRange) (void *a, size_t hi, size_t width) {
  * entry to the method.
  */
 static int NAME(mergeCollapse) (struct timsort * ts, size_t width) {
+	(void)width; // potentially unused
 	int err = SUCCESS;
 
 	while (ts->stackSize > 1) {
@@ -279,6 +284,7 @@ static int NAME(mergeCollapse) (struct timsort * ts, size_t width) {
  * called once, to complete the sort.
  */
 static int NAME(mergeForceCollapse) (struct timsort * ts, size_t width) {
+	(void)width; // potentially unused
 	int err = SUCCESS;
 
 	while (ts->stackSize > 1) {
@@ -301,6 +307,7 @@ static int NAME(mergeForceCollapse) (struct timsort * ts, size_t width) {
  * @param i stack index of the first of the two runs to merge
  */
 static int NAME(mergeAt) (struct timsort * ts, size_t i, size_t width) {
+	(void)width; // potentially unused
 	assert(ts->stackSize >= 2);
 	assert(i == ts->stackSize - 2 || i == ts->stackSize - 3);
 
@@ -369,6 +376,7 @@ static int NAME(mergeAt) (struct timsort * ts, size_t i, size_t width) {
 static size_t NAME(gallopLeft) (void *key, void *base, size_t len,
 				size_t hint, comparator compare,
 				size_t width) {
+	(void)width; // potentially unused
 	assert(len > 0 && hint < len);
 	char *hintp = ELEM(base, hint);
 	size_t lastOfs = 0;
@@ -441,6 +449,7 @@ static size_t NAME(gallopLeft) (void *key, void *base, size_t len,
 static size_t NAME(gallopRight) (void *key, void *base, size_t len,
 				 size_t hint, comparator compare,
 				 size_t width) {
+	(void)width; // potentially unused
 	assert(len > 0 && hint < len);
 
 	char *hintp = ELEM(base, hint);
@@ -515,6 +524,7 @@ static size_t NAME(gallopRight) (void *key, void *base, size_t len,
  */
 static int NAME(mergeLo) (struct timsort * ts, void *base1, size_t len1,
 			  void *base2, size_t len2, size_t width) {
+	(void)width; // potentially unused
 	assert(len1 > 0 && len2 > 0 && ELEM(base1, len1) == base2);
 
 	// Copy first run into temp array
@@ -660,6 +670,7 @@ outer:
  */
 static int NAME(mergeHi) (struct timsort * ts, void *base1, size_t len1,
 			  void *base2, size_t len2, size_t width) {
+	(void)width; // potentially unused
 	assert(len1 > 0 && len2 > 0 && ELEM(base1, len1) == base2);
 
 	// Copy second run into temp array

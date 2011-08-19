@@ -296,10 +296,12 @@ void svdfac_deinit(struct svdfac *svd)
 
 bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)
 {
+	enum svd_job job = svdfac_job(svd);	
 	f77int m = (f77int)svdfac_row_dim(svd);
 	f77int n = (f77int)svdfac_col_dim(svd);
+#ifndef NDEBUG
 	f77int mn = MIN(m, n);
-	enum svd_job job = svdfac_job(svd);
+#endif
 	
 	assert(svd);
 	assert(a);

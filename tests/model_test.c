@@ -31,7 +31,7 @@ static struct matrix coefs;
 static struct recv_model model;
 
 
-static void enron_setup_fixture(void **state)
+static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
@@ -42,7 +42,7 @@ static void enron_setup_fixture(void **state)
 	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
 }
 
-static void enron_teardown_fixture(void **state)
+static void enron_teardown_fixture()
 {
 	matrix_deinit(&recv_traits);
 	actors_deinit(&receivers);
@@ -53,7 +53,7 @@ static void enron_teardown_fixture(void **state)
 	print_message("\n\n");
 }
 
-static void basic_setup(void **state)
+static void basic_setup()
 {
 	ssize_t i, c;
 	double intvls[3] = {
@@ -84,7 +84,7 @@ static void basic_setup(void **state)
 	recv_model_init(&model, &frame, &senders, &coefs);
 }
 
-static void teardown(void **state)
+static void teardown()
 {
 	recv_model_deinit(&model);
 	matrix_deinit(&coefs);
@@ -94,7 +94,7 @@ static void teardown(void **state)
 }
 
 
-static void hard_setup(void **state)
+static void hard_setup()
 {
 	ssize_t i, c;
 	double intvls[3] = {
@@ -127,7 +127,7 @@ static void hard_setup(void **state)
 }
 
 
-static void test_probs(void **state)
+static void test_probs()
 {
 	struct vector eta, probs, logprobs, y;
 	struct messages_iter it;
@@ -224,7 +224,7 @@ static void test_probs(void **state)
 	vector_deinit(&y);	
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),

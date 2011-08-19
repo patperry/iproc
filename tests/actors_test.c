@@ -13,7 +13,7 @@ static struct actors actors;
 static struct matrix traits;
 static struct matrix matrix;
 
-static void enron_setup_fixture(void **state)
+static void enron_setup_fixture()
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
@@ -35,7 +35,7 @@ static void enron_setup_fixture(void **state)
 	}
 }
 
-static void enron_teardown_fixture(void **state)
+static void enron_teardown_fixture()
 {
 	matrix_deinit(&matrix);
 	matrix_deinit(&traits);
@@ -43,21 +43,21 @@ static void enron_teardown_fixture(void **state)
 	print_message("\n\n");
 }
 
-static void enron_setup(void **state)
+static void enron_setup()
 {
 }
 
-static void enron_teardown(void **state)
+static void enron_teardown()
 {
 }
 
-static void enron_test_size(void **state)
+static void enron_test_size()
 {
 	assert_int_equal(actors_count(&actors), matrix_nrow(&matrix));
 	assert_int_equal(actors_cohort_count(&actors), matrix_nrow(&traits));	
 }
 
-static void test_mul(void **state)
+static void test_mul()
 {
 	struct vector x, y, y1;
 	ssize_t n = matrix_nrow(&matrix);
@@ -93,7 +93,7 @@ static void test_mul(void **state)
 	vector_deinit(&x);
 }
 
-static void test_tmul(void **state)
+static void test_tmul()
 {
 	struct vector x, y, y1;
 	ssize_t n = matrix_nrow(&matrix);
@@ -129,7 +129,7 @@ static void test_tmul(void **state)
 	vector_deinit(&x);
 }
 
-static void test_muls(void **state)
+static void test_muls()
 {
 	struct svector x, y;
 	struct vector y0, diff, zero;
@@ -180,7 +180,7 @@ static void test_muls(void **state)
 	svector_deinit(&x);
 }
 
-static void test_tmuls(void **state)
+static void test_tmuls()
 {
 	struct svector x, y;
 	struct vector y0, diff, zero;
@@ -230,7 +230,7 @@ static void test_tmuls(void **state)
 	svector_deinit(&x);
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),

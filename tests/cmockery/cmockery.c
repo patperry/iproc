@@ -216,6 +216,9 @@ static SourceLocation global_last_parameter_location;
 // List of all currently allocated blocks.
 static ListNode global_allocated_blocks;
 
+static void **global_state;
+static const ListNode *global_check_point;
+
 #ifndef _WIN32
 // Signals caught by exception_handler().
 static const int exception_signals[] = {
@@ -306,6 +309,7 @@ static void set_source_location(
 
 // Create function results and expected parameter lists.
 void initialize_testing(const char *test_name) {
+    (void)test_name; // unused
     list_initialize(&global_function_result_map_head);
     initialize_source_location(&global_last_mock_value_location);
     list_initialize(&global_function_parameter_map_head);
@@ -314,6 +318,7 @@ void initialize_testing(const char *test_name) {
 
 
 void fail_if_leftover_values(const char *test_name) {
+    (void)test_name; // unused
     int error_occurred = 0;
     remove_always_return_values(&global_function_result_map_head, 1);
     if (check_for_leftover_values(
@@ -335,6 +340,7 @@ void fail_if_leftover_values(const char *test_name) {
 
 
 void teardown_testing(const char *test_name) {
+    (void)test_name; // unused
     list_free(&global_function_result_map_head, free_symbol_map_value,
               (void*)0);
     initialize_source_location(&global_last_mock_value_location);
@@ -456,6 +462,7 @@ static int list_first(ListNode * const head, ListNode **output) {
 
 // Deallocate a value referenced by a list.
 static void free_value(const void *value, void *cleanup_value_data) {
+    (void)cleanup_value_data; // unused
     assert_true(value);
     free((void*)value);
 }
@@ -863,7 +870,7 @@ static int memory_equal_display_error(const char* const a, const char* const b,
  * returned. */
 static int memory_not_equal_display_error(
         const char* const a, const char* const b, const size_t size) {
-    int same = 0;
+    size_t same = 0;
     size_t i;
     for (i = 0; i < size; i++) {
         const char l = a[i];
@@ -1152,6 +1159,8 @@ void _expect_not_memory(
 // CheckParameterValue callback that always returns 1.
 static int check_any(const LargestIntegralType value,
                      const LargestIntegralType check_value_data) {
+    (void)value; // unused
+    (void)check_value_data; // unused
     return 1;
 }
 
@@ -1571,7 +1580,8 @@ int _run_test(
         const char * const function_name,  const UnitTestFunction Function,
         void ** const state, const UnitTestFunctionType function_type,
         const void* const heap_check_point) {
-    const ListNode * const check_point = heap_check_point ?
+    global_state = state;
+    global_check_point = heap_check_point ?
         heap_check_point : check_point_allocated_blocks();
     void *current_state = NULL;
     int rc = 1;
@@ -1602,13 +1612,13 @@ int _run_test(
     initialize_testing(function_name);
     global_running_test = 1;
     if (setjmp(global_run_test_env) == 0) {
-        Function(state ? state : &current_state);
+        Function(global_state ? global_state : &current_state);
         fail_if_leftover_values(function_name);
 
         /* If this is a setup function then ignore any allocated blocks
          * only ensure they're deallocated on tear down. */
         if (function_type != UNIT_TEST_FUNCTION_TYPE_SETUP) {
-            fail_if_blocks_allocated(check_point, function_name);
+            fail_if_blocks_allocated(global_check_point, function_name);
         }
 
         global_running_test = 0;

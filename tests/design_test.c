@@ -24,21 +24,21 @@ static struct vector intervals;
 static ssize_t dim;
 
 
-static void enron_setup_fixture(void **state)
+static void enron_setup_fixture()
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
 	enron_employees_init(&enron_employees, &enron_traits);
 }
 
-static void enron_teardown_fixture(void **state)
+static void enron_teardown_fixture()
 {
 	matrix_deinit(&enron_traits);
 	actors_deinit(&enron_employees);	
 	print_message("\n\n");
 }
 
-static void enron_setup(void **state)
+static void enron_setup()
 {
 	actors_init_copy(&senders, &enron_employees);
 	actors_init_copy(&receivers, &enron_employees);
@@ -53,7 +53,7 @@ static void enron_setup(void **state)
 	design_set_recv_effects(&design, has_reffects);
 }
 
-static void enron_teardown(void **state)
+static void enron_teardown()
 {
 	design_deinit(&design);
 	vector_deinit(&intervals);
@@ -62,21 +62,21 @@ static void enron_teardown(void **state)
 	actors_deinit(&senders);
 }
 
-static void enron_reff_setup_fixture(void **state)
+static void enron_reff_setup_fixture()
 {
 	print_message("Enron employees (with receiver effects)\n");
 	print_message("---------------------------------------\n");
 	enron_employees_init(&enron_employees, &enron_traits);
 }
 
-static void enron_reff_teardown_fixture(void **state)
+static void enron_reff_teardown_fixture()
 {
 	matrix_deinit(&enron_traits);
 	actors_deinit(&enron_employees);	
 	print_message("\n\n");
 }
 
-static void enron_reff_setup(void **state)
+static void enron_reff_setup()
 {
 	actors_init_copy(&senders, &enron_employees);
 	actors_init_copy(&receivers, &enron_employees);
@@ -91,7 +91,7 @@ static void enron_reff_setup(void **state)
 	design_set_recv_effects(&design, has_reffects);
 }
 
-static void enron_reff_teardown(void **state)
+static void enron_reff_teardown()
 {
 	design_deinit(&design);
 	vector_deinit(&intervals);
@@ -101,7 +101,7 @@ static void enron_reff_teardown(void **state)
 }
 
 
-static void test_size(void **state)
+static void test_size()
 {
 	assert_int_equal(design_recv_dim(&design), dim);
 	assert_int_equal(design_send_count(&design), actors_count(&senders));
@@ -136,6 +136,7 @@ static void matrix_assign_reffects(struct matrix *x,
 				   const struct actors *r,
 				   bool has_reffects)
 {
+	(void)r; // unused
 	assert(matrix_nrow(x) == actors_count(r));	
 
 	if (has_reffects) {
@@ -168,7 +169,7 @@ static void matrix_init_design0(struct matrix *x, const struct design *d)
 	matrix_assign_static(&xstat, r, traits);
 }
 
-static void test_mul0(void **state)
+static void test_mul0()
 {
 
 	struct matrix matrix;
@@ -212,7 +213,7 @@ static void test_mul0(void **state)
 }
 
 
-static void test_tmul0(void **state)
+static void test_tmul0()
 {
 	
 	struct matrix matrix;
@@ -254,7 +255,7 @@ static void test_tmul0(void **state)
 }
 
 
-static void test_tmuls0(void **state)
+static void test_tmuls0()
 {
 	
 	struct matrix matrix;
@@ -298,7 +299,7 @@ static void test_tmuls0(void **state)
 }
 
 
-static void test_muls0(void **state)
+static void test_muls0()
 {
 	
 	struct matrix matrix;
@@ -343,7 +344,7 @@ static void test_muls0(void **state)
 
 
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),

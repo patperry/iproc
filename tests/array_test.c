@@ -11,13 +11,13 @@ static struct array array;
 static ssize_t size;
 static ssize_t *elts;		// elements sorted in decending order
 
-static void empty_setup_fixture(void **state)
+static void empty_setup_fixture()
 {
 	print_message("empty array\n");
 	print_message("-----------\n");
 }
 
-static void empty_setup(void **state)
+static void empty_setup()
 {
 	static ssize_t *empty_elts = NULL;
 
@@ -26,13 +26,13 @@ static void empty_setup(void **state)
 	elts = empty_elts;
 }
 
-static void singleton_setup_fixture(void **state)
+static void singleton_setup_fixture()
 {
 	print_message("singleton array\n");
 	print_message("---------------\n");
 }
 
-static void singleton_setup(void **state)
+static void singleton_setup()
 {
 	static ssize_t singleton_elts[] = { 1234 };
 
@@ -42,22 +42,22 @@ static void singleton_setup(void **state)
 	array_add_range(&array, singleton_elts, size);
 }
 
-static void teardown(void **state)
+static void teardown()
 {
 	array_deinit(&array);
 }
 
-static void teardown_fixture(void **state)
+static void teardown_fixture()
 {
 	print_message("\n\n");
 }
 
-static void test_size(void **state)
+static void test_size()
 {
 	assert_int_equal(array_count(&array), size);
 }
 
-static void test_insert(void **state)
+static void test_insert()
 {
 	ssize_t i, j;
 	ssize_t val = 31337;
@@ -87,7 +87,7 @@ static void test_insert(void **state)
 	}
 }
 
-int main(int argc, char **argv)
+int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),
