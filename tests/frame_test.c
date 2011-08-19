@@ -110,6 +110,8 @@ static void test_rv_nsend(void **state)
 		}
 	}
 	
+	vector_deinit(&y);
+	vector_deinit(&x);	
 	matrix_deinit(&xnsend);
 }
 
@@ -177,6 +179,8 @@ static void test_rv_nrecv(void **state)
 		}
 	}
 	
+	vector_deinit(&y);
+	vector_deinit(&x);	
 	matrix_deinit(&xnrecv);
 }
 
@@ -255,7 +259,9 @@ static void test_rv_irecv(void **state)
 			}
 		}
 	}
-	
+
+	vector_deinit(&y);	
+	svector_deinit(&x);
 	matrix_deinit(&tlast);
 }
 
@@ -335,7 +341,9 @@ static void test_rv_isend(void **state)
 			}
 		}
 	}
-	
+
+	vector_deinit(&y);
+	svector_deinit(&x);	
 	matrix_deinit(&tlast);
 }
 
