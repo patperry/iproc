@@ -589,3 +589,56 @@ void matrix_printf(const struct matrix *a)
 	}
 	printf("), %" SSIZE_FMT ", %" SSIZE_FMT ")\n", m, n);
 }
+
+void matrix_insert_col(struct matrix *a, ssize_t j)
+{
+	assert(a);
+	assert(0 <= j && j <= matrix_ncol(a));
+	assert(matrix_owner(a));
+	
+	ssize_t m = matrix_nrow(a);
+	ssize_t n0 = matrix_ncol(a);
+	ssize_t n1 = n0 + 1;
+	
+	matrix_reinit(a, m, n1);
+	ssize_t j1;
+	for (j1 = n1 - 1; j1 > j; j1--) {
+		struct vector dst = matrix_col(a, j1);
+		struct vector src = matrix_col(a, j1 - 1);
+		vector_assign_copy(&dst, &src);
+	}
+	struct vector col = matrix_col(a, j);
+	vector_fill(&col, 0.0);
+}
+
+void matrix_insert_row(struct matrix *a, ssize_t i)
+{
+	assert(a);
+	assert(0 <= i && i <= matrix_nrow(a));
+	assert(matrix_owner(a));
+	
+	ssize_t m0 = matrix_nrow(a);
+	ssize_t m1 = m0 + 1;
+	ssize_t n = matrix_ncol(a);
+	
+	matrix_reinit(a, m1, n);
+	double *data = matrix_to_ptr(a);
+	double *src = data + m0 * n;	
+	double *dst = data + m1 * n;
+	
+	ssize_t j;
+	for (j = 0; j < n; j++) {
+		ssize_t k;
+		for (k = 0; k < m0 - i; k++) {
+			*(--dst) = *(--src);
+		}
+		*(--dst) = 0.0;
+		for (k = 0; k < i; k++) {
+			*(--dst) = *(--src);
+		}
+	}
+	assert(dst == data);
+	assert(src == data);
+}
+
+

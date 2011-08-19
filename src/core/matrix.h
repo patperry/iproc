@@ -26,6 +26,10 @@ void matrix_assign_copy(struct matrix *a, enum trans_op trans,
 			const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
+/* insertion (invalidates views) */
+void matrix_insert_row(struct matrix *a, ssize_t i);
+void matrix_insert_col(struct matrix *a, ssize_t j);
+
 /* views */
 static inline struct matrix matrix_make(const struct vector *v, ssize_t m,
 					ssize_t n);
@@ -46,6 +50,7 @@ static inline ssize_t matrix_ncol(const struct matrix *a);
 static inline ssize_t matrix_lda(const struct matrix *a);
 static inline ssize_t matrix_count(const struct matrix *a);
 static inline double *matrix_to_ptr(const struct matrix *a);
+static inline bool matrix_owner(const struct matrix *a);
 static inline ssize_t matrix_diag_dim(const struct matrix *a, ssize_t i);
 
 static inline double matrix_item(const struct matrix *a, ssize_t i, ssize_t j);
@@ -194,6 +199,12 @@ ssize_t matrix_lda(const struct matrix *a)
 {
 	assert(a);
 	return a->lda;
+}
+
+bool matrix_owner(const struct matrix *a)
+{
+	assert(a);
+	return vector_owner(&a->data);
 }
 
 ssize_t matrix_diag_dim(const struct matrix *a, ssize_t i)
