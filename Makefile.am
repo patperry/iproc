@@ -173,54 +173,54 @@ libyajl_la_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 
-dist_noinst_DATA = \
-	@RPACKAGE@
+## dist_noinst_DATA = \
+##	@RPACKAGE@
 
-rpkg_sources = \
-	interfaces/R/DESCRIPTION \
-	interfaces/R/LICENSE \
-	interfaces/R/NAMESPACE \
-	interfaces/R/data/enron.rda \
-	interfaces/R/inst/extdata/enron/employees.tsv \
-	interfaces/R/inst/extdata/enron/messages.tsv \
-	interfaces/R/inst/extdata/enron/recipients.tsv \
-	interfaces/R/inst/unitTests/runit.actors.R \
-	interfaces/R/R/actors.R \
-	interfaces/R/R/design.R \
-	interfaces/R/R/enron.R \
-	interfaces/R/R/fit.R \
-	interfaces/R/R/iproc.R \
-	interfaces/R/R/loglik.R \
-	interfaces/R/R/messages.R \
-	interfaces/R/R/methods.R \
-	interfaces/R/R/model.R \
-	interfaces/R/R/runit.R \
-	interfaces/R/R/utils.R \
-	interfaces/R/src/Makevars \
-	interfaces/R/src/Makevars.win \
-	interfaces/R/src/config.h \
-	interfaces/R/src/r-actors.c \
-	interfaces/R/src/r-actors.h \
-	interfaces/R/src/r-design.c \
-	interfaces/R/src/r-design.h \
-	interfaces/R/src/r-fit.c \
-	interfaces/R/src/r-fit.h \
-	interfaces/R/src/r-init.c \
-	interfaces/R/src/r-messages.c \
-	interfaces/R/src/r-messages.h \
-	interfaces/R/src/r-utils.c \
-	interfaces/R/src/r-utils.h \
-	interfaces/R/tests/doRUnit.R
+## rpkg_sources = \
+##	interfaces/R/DESCRIPTION \
+##	interfaces/R/LICENSE \
+##	interfaces/R/NAMESPACE \
+##	interfaces/R/data/enron.rda \
+##	interfaces/R/inst/extdata/enron/employees.tsv \
+##	interfaces/R/inst/extdata/enron/messages.tsv \
+##	interfaces/R/inst/extdata/enron/recipients.tsv \
+##	interfaces/R/inst/unitTests/runit.actors.R \
+##	interfaces/R/R/actors.R \
+##	interfaces/R/R/design.R \
+##	interfaces/R/R/enron.R \
+##	interfaces/R/R/fit.R \
+##	interfaces/R/R/iproc.R \
+##	interfaces/R/R/loglik.R \
+##	interfaces/R/R/messages.R \
+##	interfaces/R/R/methods.R \
+##	interfaces/R/R/model.R \
+##	interfaces/R/R/runit.R \
+##	interfaces/R/R/utils.R \
+##	interfaces/R/src/Makevars \
+##	interfaces/R/src/Makevars.win \
+##	interfaces/R/src/config.h \
+##	interfaces/R/src/r-actors.c \
+##	interfaces/R/src/r-actors.h \
+##	interfaces/R/src/r-design.c \
+##	interfaces/R/src/r-design.h \
+##	interfaces/R/src/r-fit.c \
+##	interfaces/R/src/r-fit.h \
+##	interfaces/R/src/r-init.c \
+##	interfaces/R/src/r-messages.c \
+##	interfaces/R/src/r-messages.h \
+##	interfaces/R/src/r-utils.c \
+##	interfaces/R/src/r-utils.h \
+##	interfaces/R/tests/doRUnit.R
 
-rpkg_extra_sources = \
-	$(libiproc_la_SOURCES) \
-	$(libcore_la_SOURCES) \
-	$(libf2c_la_SOURCES) \
-	$(libminpack_la_SOURCES)
+##rpkg_extra_sources = \
+##	$(libiproc_la_SOURCES) \
+##	$(libcore_la_SOURCES) \
+##	$(libf2c_la_SOURCES) \
+##	$(libminpack_la_SOURCES)
 
-@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
-	$(AM_V_GEN)cp $(rpkg_extra_sources)  interfaces/R/src
-	R CMD build interfaces/R
+##@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
+##	$(AM_V_GEN)cp $(rpkg_extra_sources)  interfaces/R/src
+##	R CMD build interfaces/R
 
 check_LTLIBRARIES = \
 	tests/libcmockery.la \
@@ -300,10 +300,10 @@ tests_enronfit_LDADD    = libiproc.la tests/libenron.la
 TESTS = \
 	$(check_PROGRAMS)
 
-check-local:
-	R CMD check --no-codoc --no-examples --no-manual --no-multiarch @RPACKAGE@
+##check-local:
+##	R CMD check --no-codoc --no-examples --no-manual --no-multiarch @RPACKAGE@
 
-clean-local:
-	rm -rf iproc.Rcheck
-	rm -f @RPACKAGE@
-	rm -f $(addprefix interfaces/R/src/,$(notdir $(rpkg_extra_sources)))
+##clean-local:
+##	rm -rf iproc.Rcheck
+##	rm -f @RPACKAGE@
+##	rm -f $(addprefix interfaces/R/src/,$(notdir $(rpkg_extra_sources)))

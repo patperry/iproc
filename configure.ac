@@ -57,5 +57,6 @@ AC_REPLACE_FUNCS([imaxabs])
 # Checks for system services
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile interfaces/R/DESCRIPTION])
+AC_CONFIG_FILES([Makefile])
+## AC_CONFIG_FILES([interfaces/R/DESCRIPTION])
 AC_OUTPUT
