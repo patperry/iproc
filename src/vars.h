@@ -61,5 +61,8 @@ extern const struct var_type *RECV_VAR_NRECV2;
 extern const struct var_type *RECV_VAR_ISEND2;
 extern const struct var_type *RECV_VAR_NSEND2;
 
+extern const struct var_type *RECV_VAR_ISIB;
+extern const struct var_type *RECV_VAR_NSIB;
+
 
 #endif /* _VARS_H */
