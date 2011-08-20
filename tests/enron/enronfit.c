@@ -242,14 +242,14 @@ int main()
 	
 	struct recv_fit fit;
 	recv_fit_init(&fit, &messages, &design, &senders, NULL);
-	ssize_t dim0 = matrix_ncol(&recv_traits);
+	ssize_t dim0 = 0; // matrix_ncol(&recv_traits);
 	ssize_t nc = actors_cohort_count(&senders);	
 	ssize_t dim = design_recv_dim(&design);
 	struct vector ce;
 	vector_init(&ce, dim * nc);
 	ssize_t i;
 	
-	/* constrain dynamic covariates */
+	/* constrain all covariates */
 	for (i = dim0; i < dim; i++) {
 		// 3-way interactions
 		vector_fill(&ce, 0.0);
