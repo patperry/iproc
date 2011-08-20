@@ -653,7 +653,9 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 			struct vector ce1c = vector_slice(&ce1, ic * dim, dim);
 			struct vector yc = vector_slice(&y, off, nulldimc);
 			matrix_mul(1.0, TRANS_NOTRANS, nullc, &yc, 0.0, &ce1c);
+			off += nulldimc;
 		}
+		assert(off == nulldim);
 		
 		recv_fit_add_constr(fit, &ce1, be1);
 	}
