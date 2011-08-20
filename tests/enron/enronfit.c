@@ -70,6 +70,10 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
+	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
+	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
+	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void teardown(void)

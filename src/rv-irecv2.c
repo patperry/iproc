@@ -52,6 +52,10 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	for (i = 0; i < n; i++) {
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
+		
+		if (msg1 == msg)
+			continue;
+		
 		ssize_t jrecv = msg1->from;
 		
 		for (ito = 0; ito < nto; ito++) {
@@ -71,6 +75,9 @@ static void irecv2_message_add(void *udata, struct frame *f,
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
+			
+			if (msg1 == msg)
+				continue;
 			
 			ssize_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {

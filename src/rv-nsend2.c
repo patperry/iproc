@@ -53,6 +53,10 @@ static void nsend2_message_add(void *udata, struct frame *f,
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
+			
+			if (msg1 == msg)
+				continue;
+			
 			ssize_t intvl1 = fmsg->interval;
 			ssize_t ix = dyn_index + intvl1 * (nintvl + 1);
 			assert(msg1->from == jrecv);
@@ -72,6 +76,10 @@ static void nsend2_message_add(void *udata, struct frame *f,
 	for (i = 0; i < n; i++) {
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
+		
+		if (msg1 == msg)
+			continue;
+		
 		ssize_t intvl1 = fmsg->interval;
 		ssize_t ix = dyn_index + intvl1;
 		ssize_t isend1 = msg1->from;
@@ -122,6 +130,10 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
+			
+			if (msg1 == msg)
+				continue;
+			
 			ssize_t intvl1 = fmsg->interval;
 			ssize_t ix0 = dyn_index + (intvl - 1) + intvl1 * (nintvl + 1);
 			ssize_t ix1 = ix0 + 1;
@@ -143,6 +155,10 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 	for (i = 0; i < n; i++) {
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
+		
+		if (msg1 == msg)
+			continue;
+		
 		ssize_t intvl1 = fmsg->interval;
 		ssize_t ix0 = dyn_index + intvl1 + (intvl - 1) * (nintvl + 1);
 		ssize_t ix1 = ix0 + (nintvl + 1);

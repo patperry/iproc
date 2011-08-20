@@ -57,6 +57,10 @@ static void isib_message_add(void *udata, struct frame *f,
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
+			
+			if (msg1 == msg)
+				continue;
+			
 			ssize_t intvl = fmsg->interval;
 			ssize_t ix = dyn_index + intvl * (nintvl + 1);
 			ssize_t coix = dyn_index + intvl;

@@ -125,6 +125,10 @@
 		2275567614002A0E004FC237 /* rv-nsib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567414002A0D004FC237 /* rv-nsib.c */; };
 		2275567914003833004FC237 /* rv-isib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567814003832004FC237 /* rv-isib.c */; };
 		2275567A14003833004FC237 /* rv-isib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567814003832004FC237 /* rv-isib.c */; };
+		2275567C14003AA2004FC237 /* rv-ncosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567B14003AA2004FC237 /* rv-ncosib.c */; };
+		2275567D14003AA2004FC237 /* rv-ncosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567B14003AA2004FC237 /* rv-ncosib.c */; };
+		2275567F140040D8004FC237 /* rv-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567E140040D7004FC237 /* rv-icosib.c */; };
+		22755680140040D8004FC237 /* rv-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275567E140040D7004FC237 /* rv-icosib.c */; };
 		227E08BE13F3F888003EC4BA /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08BD13F3F888003EC4BA /* rv-irecv.c */; };
 		227E08BF13F3FDDE003EC4BA /* rv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08BD13F3F888003EC4BA /* rv-irecv.c */; };
 		227E08C113F41415003EC4BA /* rv-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08C013F41414003EC4BA /* rv-nsend.c */; };
@@ -590,6 +594,8 @@
 		2275566213FB0932004FC237 /* rv-nrecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nrecv2.c"; path = "src/rv-nrecv2.c"; sourceTree = "<group>"; };
 		2275567414002A0D004FC237 /* rv-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nsib.c"; path = "src/rv-nsib.c"; sourceTree = "<group>"; };
 		2275567814003832004FC237 /* rv-isib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isib.c"; path = "src/rv-isib.c"; sourceTree = "<group>"; };
+		2275567B14003AA2004FC237 /* rv-ncosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-ncosib.c"; path = "src/rv-ncosib.c"; sourceTree = "<group>"; };
+		2275567E140040D7004FC237 /* rv-icosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-icosib.c"; path = "src/rv-icosib.c"; sourceTree = "<group>"; };
 		227E08BD13F3F888003EC4BA /* rv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-irecv.c"; path = "src/rv-irecv.c"; sourceTree = "<group>"; };
 		227E08C013F41414003EC4BA /* rv-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nsend.c"; path = "src/rv-nsend.c"; sourceTree = "<group>"; };
 		227E08C313F4160C003EC4BA /* rv-isend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend.c"; path = "src/rv-isend.c"; sourceTree = "<group>"; };
@@ -880,6 +886,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				2275567E140040D7004FC237 /* rv-icosib.c */,
+				2275567B14003AA2004FC237 /* rv-ncosib.c */,
 				2275567814003832004FC237 /* rv-isib.c */,
 				2275567414002A0D004FC237 /* rv-nsib.c */,
 				2275566113FB0932004FC237 /* rv-irecv2.c */,
@@ -1579,6 +1587,8 @@
 				2275566613FB0932004FC237 /* rv-nrecv2.c in Sources */,
 				2275567614002A0E004FC237 /* rv-nsib.c in Sources */,
 				2275567A14003833004FC237 /* rv-isib.c in Sources */,
+				2275567D14003AA2004FC237 /* rv-ncosib.c in Sources */,
+				22755680140040D8004FC237 /* rv-icosib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1642,6 +1652,8 @@
 				2275566513FB0932004FC237 /* rv-nrecv2.c in Sources */,
 				2275567514002A0E004FC237 /* rv-nsib.c in Sources */,
 				2275567914003833004FC237 /* rv-isib.c in Sources */,
+				2275567C14003AA2004FC237 /* rv-ncosib.c in Sources */,
+				2275567F140040D8004FC237 /* rv-icosib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

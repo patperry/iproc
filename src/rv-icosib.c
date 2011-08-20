@@ -4,7 +4,13 @@
 #include "frame.h"
 #include "vars.h"
 
-static void isend2_init(struct design_var *dv, const struct design *d,
+/*
+ *  v---- i
+ *  k
+ *  ^---- j
+ */
+
+static void icosib_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
 	(void)d; // unused
@@ -16,7 +22,7 @@ static void isend2_init(struct design_var *dv, const struct design *d,
 	dv->dim = 1;
 }
 
-static void isend2_message_add(void *udata, struct frame *f,
+static void icosib_message_add(void *udata, struct frame *f,
 			       const struct message *msg)
 {
 	struct frame_var *fv = udata;
@@ -29,7 +35,6 @@ static void isend2_message_add(void *udata, struct frame *f,
 	assert(fv->design->dyn_index + fv->design->dim
 	       <= design_recv_dyn_dim(f->design));
 
-	ssize_t isend = msg->from;
 	ssize_t dyn_index = fv->design->dyn_index;
 	ssize_t *imsg, i, n;	
 	
@@ -38,12 +43,15 @@ static void isend2_message_add(void *udata, struct frame *f,
 	ssize_t dx_nnz = 1;
 	ssize_t dx_n = design_recv_dyn_dim(f->design);
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
+
+	ssize_t isend = msg->from;
+	ssize_t cojrecv = isend;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		ssize_t jrecv = msg->to[ito];
+		ssize_t krecv = msg->to[ito];
 
-		frame_get_send_messages(f, jrecv, &imsg, &n);
+		frame_get_recv_messages(f, krecv, &imsg, &n);
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
@@ -51,47 +59,32 @@ static void isend2_message_add(void *udata, struct frame *f,
 			if (msg1 == msg)
 				continue;
 			
-			ssize_t ito1, nto1 = msg1->nto;
-			for (ito1 = 0; ito1 < nto1; ito1++) {
-				ssize_t jrecv1 = msg1->to[ito1];				
-				const struct vector *dx = frame_recv_dx(f, isend, jrecv1);
-				
-				if (vector_item(dx, dyn_index) == 0.0) {
-					frame_recv_update(f, isend, jrecv1, &delta);
-				}
-			}
-		}
-	}
-		
-	frame_get_recv_messages(f, isend, &imsg, &n);
-	for (i = 0; i < n; i++) {
-		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
-		const struct message *msg1 = fmsg->message;
-		
-		if (msg1 == msg)
-			continue;
-		
-		ssize_t isend1 = msg1->from;
-		
-		for (ito = 0; ito < nto; ito++) {
-			ssize_t jrecv = msg->to[ito];
-			const struct vector *dx = frame_recv_dx(f, isend1, jrecv);
+			ssize_t jrecv = msg1->from;
+			ssize_t coisend = jrecv;
+			
+			const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 			
 			if (vector_item(dx, dyn_index) == 0.0) {
-				frame_recv_update(f, isend1, jrecv, &delta);
+				frame_recv_update(f, isend, jrecv, &delta);
+			}
+			
+			const struct vector *codx = frame_recv_dx(f, coisend, cojrecv);
+			
+			if (vector_item(codx, dyn_index) == 0.0) {
+				frame_recv_update(f, coisend, cojrecv, &delta);
 			}
 		}
 	}
 }
 
-static struct var_type RECV_VAR_ISEND2_REP = {
+static struct var_type RECV_VAR_ICOSIB_REP = {
 	VAR_RECV_VAR,
-	isend2_init,
+	icosib_init,
 	NULL, // deinit
 	NULL, // frame_init
 	NULL, // frame_deinit
 	{
-		isend2_message_add,
+		icosib_message_add,
 		NULL,			// message_advance,
 		NULL,			// recv_update
 		NULL,			// send_update
@@ -99,4 +92,4 @@ static struct var_type RECV_VAR_ISEND2_REP = {
 	}
 };
 
-const struct var_type *RECV_VAR_ISEND2 = &RECV_VAR_ISEND2_REP;
+const struct var_type *RECV_VAR_ICOSIB = &RECV_VAR_ICOSIB_REP;
