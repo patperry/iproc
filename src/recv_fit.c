@@ -385,10 +385,10 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 	// determine initial value and gradient
 	double f0 = fit->prev->resid.norm2;
-	double g0 = -2 * f0;
+	//double g0 = -2 * f0;
 
 	// stop early if residual is below tolerance
-	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol)
+	if (f0 <= fit->ctrl.gtol * fit->ctrl.gtol)
 		return RECV_FIT_CONV;
 
 	// determine the search direction
@@ -413,14 +413,15 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	fit->step = stp0;
 	//linesearch_start(&fit->ls, stp0, f0, g0, &ctrl);
 
-	fprintf(stderr, ">                   f0: %.8f  g0: %.8f\n", f0, g0);
+	fprintf(stderr, ">                   f0: %.8f\n", f0);	
+	//fprintf(stderr, ">                   f0: %.8f  g0: %.8f\n", f0, g0);
 	
 	do {
 		// compute the new trial step length
 		it++;
 		fit->step = stp;
 		stp0 = stp;
-		stp = stp0 * 0.1;
+		stp = stp0 * 0.5;
 
 		// evaluate the function at the new point
 		eval_step(fit->cur, &fit->constr,
