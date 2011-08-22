@@ -8,8 +8,8 @@ enum message_map_key {
 	MAP_KEY_NONE = -1,
 	MAP_KEY_ID,
 	MAP_KEY_TIME,
-	MAP_KEY_SENDER_ID,
-	MAP_KEY_RECEIVER_ID,
+	MAP_KEY_SENDER,
+	MAP_KEY_RECEIVER,
 	MAP_KEY_OTHER
 };
 
@@ -18,8 +18,8 @@ struct message_parse {
 	struct messages *messages;
 	ssize_t id;
 	double time;
-	ssize_t sender_id;
-	struct array receiver_id;
+	ssize_t sender;
+	struct array receiver;
 	intptr_t attr;
 	enum message_map_key map_key;
 	bool multiple_receivers;
@@ -27,11 +27,11 @@ struct message_parse {
 
 static bool message_parse_init(struct message_parse *parse, struct messages *messages, ssize_t maxrecip)
 {
-	array_init(&parse->receiver_id, sizeof(ssize_t));
+	array_init(&parse->receiver, sizeof(ssize_t));
 	parse->messages = messages;
 	parse->id = -1;
 	parse->time = NAN;
-	parse->sender_id = -1;
+	parse->sender = -1;
 	parse->attr = 0;
 	parse->map_key = MAP_KEY_NONE;
 	parse->multiple_receivers = false;
@@ -41,7 +41,7 @@ static bool message_parse_init(struct message_parse *parse, struct messages *mes
 
 static void message_parse_deinit(struct message_parse *parse)
 {
-	array_deinit(&parse->receiver_id);
+	array_deinit(&parse->receiver);
 }
 
 static int parse_integer(void *ctx, long long integerVal)
@@ -61,21 +61,21 @@ static int parse_integer(void *ctx, long long integerVal)
 		case MAP_KEY_TIME:
 			parse->time = doubleVal;
 			break;
-		case MAP_KEY_SENDER_ID:
+		case MAP_KEY_SENDER:
 			if (ssizeVal <= 0) {
-				fprintf(stderr, "non-positive sender_id: '%"SSIZE_FMT"'", ssizeVal);
+				fprintf(stderr, "non-positive sender: '%"SSIZE_FMT"'", ssizeVal);
 				return 0;
 			}
-			parse->sender_id = ssizeVal - 1;
+			parse->sender = ssizeVal - 1;
 			break;
-		case MAP_KEY_RECEIVER_ID:
+		case MAP_KEY_RECEIVER:
 			if (ssizeVal <= 0) {
-				fprintf(stderr, "non-positive receiver_id: '%"SSIZE_FMT"'", ssizeVal);
+				fprintf(stderr, "non-positive receiver: '%"SSIZE_FMT"'", ssizeVal);
 				return 0;
 			}
 			
 			ssizeVal = ssizeVal - 1;
-			if (!array_add(&parse->receiver_id, &ssizeVal)) {
+			if (!array_add(&parse->receiver, &ssizeVal)) {
 				fprintf(stderr, "not enough memory");
 				return 0;
 			}
@@ -103,11 +103,11 @@ static int parse_double(void *ctx, double doubleVal)
 		case MAP_KEY_TIME:
 			parse->time = doubleVal;
 			break;
-		case MAP_KEY_SENDER_ID:
-			fprintf(stderr, "non-integer sender_id: '%g'", doubleVal);
+		case MAP_KEY_SENDER:
+			fprintf(stderr, "non-integer sender: '%g'", doubleVal);
 			return 0;
-		case MAP_KEY_RECEIVER_ID:
-			fprintf(stderr, "non-integer receiver_id: '%g'", doubleVal);
+		case MAP_KEY_RECEIVER:
+			fprintf(stderr, "non-integer receiver: '%g'", doubleVal);
 			return 0;
 		case MAP_KEY_OTHER:
 			break;
@@ -125,8 +125,8 @@ static int parse_start_map(void *ctx)
 	
 	parse->id = -1;
 	parse->time = NAN;
-	parse->sender_id = -1;
-	array_clear(&parse->receiver_id);
+	parse->sender = -1;
+	array_clear(&parse->receiver);
 	parse->map_key = MAP_KEY_NONE;
 	parse->multiple_receivers = false;
 	return 1;
@@ -141,10 +141,10 @@ static int parse_map_key(void *ctx, const unsigned char *stringVal, size_t strin
 		parse->map_key = MAP_KEY_ID;
 	} else if (strncmp("time", sstringVal, stringLen) == 0) {
 		parse->map_key = MAP_KEY_TIME;
-	} else if (strncmp("sender_id", sstringVal, stringLen) == 0) {
-		parse->map_key = MAP_KEY_SENDER_ID;
-	} else if (strncmp("receiver_id", sstringVal, stringLen) == 0) {
-		parse->map_key = MAP_KEY_RECEIVER_ID;
+	} else if (strncmp("sender", sstringVal, stringLen) == 0) {
+		parse->map_key = MAP_KEY_SENDER;
+	} else if (strncmp("receiver", sstringVal, stringLen) == 0) {
+		parse->map_key = MAP_KEY_RECEIVER;
 	} else {
 		parse->map_key = MAP_KEY_OTHER;
 	}
@@ -167,14 +167,14 @@ static int parse_end_map(void *ctx)
 		return 0;
 	}
 	
-	if (parse->sender_id < 0) {
-		fprintf(stderr, "missing sender_id for message '%" SSIZE_FMT "'",
+	if (parse->sender < 0) {
+		fprintf(stderr, "missing sender for message '%" SSIZE_FMT "'",
 			parse->id);
 		return 0;
 	}
 
-	if (!array_count(&parse->receiver_id)) {
-		fprintf(stderr, "missing receiver_id for message '%" SSIZE_FMT "'",
+	if (!array_count(&parse->receiver)) {
+		fprintf(stderr, "missing receiver for message '%" SSIZE_FMT "'",
 			parse->id);
 		return 0;
 	}
@@ -185,13 +185,13 @@ static int parse_end_map(void *ctx)
 		return 0;
 	}
 	
-	if (array_count(&parse->receiver_id) <= parse->maxrecip
+	if (array_count(&parse->receiver) <= parse->maxrecip
 	    || parse->maxrecip < 0) {
 		messages_add(parse->messages,
 			     parse->time,
-			     parse->sender_id,
-			     array_item(&parse->receiver_id, 0),
-			     array_count(&parse->receiver_id),
+			     parse->sender,
+			     array_item(&parse->receiver, 0),
+			     array_count(&parse->receiver),
 			     parse->attr);
 	}
 
@@ -201,7 +201,7 @@ static int parse_end_map(void *ctx)
 static int parse_begin_array(void *ctx)
 {
 	struct message_parse *parse = ctx;
-	if (parse->map_key == MAP_KEY_RECEIVER_ID)
+	if (parse->map_key == MAP_KEY_RECEIVER)
 		parse->multiple_receivers = true;
 	return 1;
 }
