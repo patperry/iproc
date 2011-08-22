@@ -21,11 +21,13 @@
 
 static struct actors enron_actors;
 static struct matrix enron_traits;
+static const char * const *enron_trait_names;
 
 
 static struct actors senders;
 static struct actors receivers;
 static struct matrix recv_traits;
+static const char * const *recv_trait_names;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
@@ -39,10 +41,11 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_actors, &enron_traits);
+	enron_employees_init(&enron_actors, &enron_traits, &enron_trait_names);
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);
 	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
+	recv_trait_names = enron_trait_names;
 	enron_messages_init(&messages, -1);
 }
 
@@ -68,7 +71,7 @@ static void basic_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
@@ -100,7 +103,7 @@ static void hard_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);

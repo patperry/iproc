@@ -18,6 +18,7 @@
 static struct actors senders;
 static struct actors receivers;
 static struct matrix recv_traits;
+static const char * const * recv_trait_names;
 static bool has_reffects;
 static bool has_loops;
 static struct vector intervals;
@@ -34,7 +35,7 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&receivers, &recv_traits);
+	enron_employees_init(&receivers, &recv_traits, &recv_trait_names);
 	actors_init_copy(&senders, &receivers);
 	enron_messages_init(&messages, -1);
 }
@@ -53,7 +54,7 @@ static void rv_nsend_setup()
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
@@ -120,7 +121,7 @@ static void rv_nrecv_setup()
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
@@ -194,7 +195,7 @@ static void rv_irecv_setup()
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
@@ -276,7 +277,7 @@ static void rv_isend_setup()
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);

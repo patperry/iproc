@@ -15,9 +15,11 @@ static struct matrix matrix;
 
 static void enron_setup_fixture()
 {
+	const char * const *names;
+	
 	print_message("Enron employees\n");
 	print_message("---------------\n");
-	enron_employees_init(&actors, &traits);
+	enron_employees_init(&actors, &traits, &names);
 	
 	ssize_t n = actors_count(&actors);
 	ssize_t c, nc = actors_cohort_count(&actors);
