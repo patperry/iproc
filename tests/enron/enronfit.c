@@ -96,6 +96,7 @@ static void teardown(void)
 	} while (0)
 #define YSTR(str) ((const unsigned char *)(str))
 
+#define INTERVALS		"intervals"
 #define COEFFICIENTS		"coefficients"
 #define COUNT			"count"
 #define SCORE			"score"
@@ -114,6 +115,7 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
+	const struct design *d = recv_model_design(ll->model);
 
 	ssize_t ne = recv_fit_constr_count(fit);
 	ssize_t dim = recv_model_dim(ll->model);
@@ -121,6 +123,11 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 	YG(yajl_gen_map_open(hand));
 	{
+		/* intervals */
+		YG(yajl_gen_string(hand, YSTR(INTERVALS), strlen(INTERVALS)));
+		const struct vector *intvls = design_intervals(d);
+		YG(yajl_gen_vector(hand, intvls));
+		
 		/* coefficients */
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS), strlen(COEFFICIENTS)));
 		const struct matrix *coefs = recv_fit_coefs(fit);		
