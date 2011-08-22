@@ -40,6 +40,7 @@ libiproc_la_SOURCES = \
 	src/rv-nsib.c \
 	src/strata.c \
 	src/strata.h \
+	src/vars.c \
 	src/vars.h
 
 libiproc_la_CPPFLAGS = \

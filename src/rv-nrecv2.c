@@ -23,6 +23,13 @@ static void nrecv2_init(struct design_var *dv, const struct design *d,
 	ssize_t n = vector_dim(design_intervals(d));
 	ssize_t n1 = n + 1;
 	dv->dim = n1 * n1;
+	dv->names = var_names_alloc2("NRecv", strlen("NRecv"), n + 1, n + 1);
+}
+
+static void nrecv2_deinit(struct design_var *dv)
+{
+	var_names_free(dv->names);
+
 }
 
 static void nrecv2_message_add(void *udata, struct frame *f,
@@ -187,7 +194,7 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 static struct var_type RECV_VAR_NRECV2_REP = {
 	VAR_RECV_VAR,
 	nrecv2_init,
-	NULL, // deinit
+	nrecv2_deinit,
 	NULL, // frame_init
 	NULL, // frame_deinit
 	{

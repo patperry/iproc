@@ -71,6 +71,7 @@
  */
 
 struct var_type;		// forward declaration
+struct design_var;
 
 struct design {
 	struct actors *senders;
@@ -145,6 +146,7 @@ void design_add_recv_var(struct design *design, const struct var_type *type,
 ssize_t design_recv_effects_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,
 			      const struct var_type *type);
+static inline void design_recv_get_dyn_vars(const struct design *d, const struct design_var **ptr, ssize_t *n);
 static inline ssize_t design_recv_traits_index(const struct design *design);
 static inline ssize_t design_recv_traits_dim(const struct design *design);
 
@@ -264,6 +266,12 @@ ssize_t design_recv_traits_dim(const struct design *design)
 	}
 #endif
 	return design->nrstatic;
+}
+
+void design_recv_get_dyn_vars(const struct design *d, const struct design_var **ptr, ssize_t *n)
+{
+	*ptr = array_to_ptr(&d->recv_vars);
+	*n = array_count(&d->recv_vars);
 }
 
 #endif /* _DESIGN_H */

@@ -10,6 +10,8 @@
  *  ^---- j
  */
 
+static char *icosib_names[] = { "ICosib" };
+
 static void icosib_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -20,6 +22,7 @@ static void icosib_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = icosib_names;
 }
 
 static void icosib_message_add(void *udata, struct frame *f,

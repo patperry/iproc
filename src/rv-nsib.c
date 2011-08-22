@@ -24,6 +24,12 @@ static void nsib_init(struct design_var *dv, const struct design *d,
 	ssize_t n = vector_dim(design_intervals(d));
 	ssize_t n1 = n + 1;
 	dv->dim = n1 * n1;
+	dv->names = var_names_alloc2("NSib", strlen("NSib"), n + 1, n + 1);
+}
+
+static void nsib_deinit(struct design_var *dv)
+{
+	var_names_free(dv->names);
 }
 
 static void nsib_message_add(void *udata, struct frame *f,
@@ -164,7 +170,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 static struct var_type RECV_VAR_NSIB_REP = {
 	VAR_RECV_VAR,
 	nsib_init,
-	NULL, // deinit
+	nsib_deinit,
 	NULL, // frame_init
 	NULL, // frame_deinit
 	{

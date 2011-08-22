@@ -9,6 +9,8 @@
  *  i <---- k <---- j
  */
 
+static char *irecv2_names[] = { "IRecv2" };
+
 static void irecv2_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -19,8 +21,8 @@ static void irecv2_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = irecv2_names;
 }
-
 
 static void irecv2_message_add(void *udata, struct frame *f,
 			       const struct message *msg)

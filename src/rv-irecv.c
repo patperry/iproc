@@ -4,6 +4,8 @@
 #include "frame.h"
 #include "vars.h"
 
+static char *irecv_names[] = { "IRecv" };
+
 static void irecv_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -14,6 +16,7 @@ static void irecv_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = irecv_names;
 }
 
 static void irecv_message_add(void *udata, struct frame *f,

@@ -8,6 +8,8 @@
  *  i ----> k ----> j
  */
 
+static char *isend2_names[] = { "ISend2" };
+
 static void isend2_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -18,6 +20,7 @@ static void isend2_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = isend2_names;
 }
 
 

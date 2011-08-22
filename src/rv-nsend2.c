@@ -22,6 +22,12 @@ static void nsend2_init(struct design_var *dv, const struct design *d,
 	ssize_t n = vector_dim(design_intervals(d));
 	ssize_t n1 = n + 1;
 	dv->dim = n1 * n1;
+	dv->names = var_names_alloc2("NSend2", strlen("NSend2"), n + 1, n + 1);
+}
+
+static void nsend2_deinit(struct design_var *dv)
+{
+	var_names_free(dv->names);
 }
 
 static void nsend2_message_add(void *udata, struct frame *f,
@@ -183,7 +189,7 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 static struct var_type RECV_VAR_NSEND2_REP = {
 	VAR_RECV_VAR,
 	nsend2_init,
-	NULL, // deinit
+	nsend2_deinit,
 	NULL, // frame_init
 	NULL, // frame_deinit
 	{

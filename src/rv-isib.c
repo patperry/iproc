@@ -10,6 +10,8 @@
  *   \----> j
  */
 
+static char *isib_names[] = { "ISib" };
+
 static void isib_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -20,6 +22,7 @@ static void isib_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = isib_names;
 }
 
 static void isib_message_add(void *udata, struct frame *f,

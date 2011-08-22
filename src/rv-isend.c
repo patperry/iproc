@@ -4,6 +4,8 @@
 #include "frame.h"
 #include "vars.h"
 
+static char *isend_names[] = { "ISend" };
+
 static void isend_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
@@ -14,6 +16,7 @@ static void isend_init(struct design_var *dv, const struct design *d,
 	assert(!params);
 
 	dv->dim = 1;
+	dv->names = isend_names;
 }
 
 static void isend_message_add(void *udata, struct frame *f,

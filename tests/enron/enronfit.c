@@ -63,12 +63,12 @@ static void setup(void) {
 	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
+	//design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
 	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
+	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
@@ -139,6 +139,18 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		assert(design_recv_traits_index(d) == 0);
 		for (i = 0; i < n; i++) {
 			YG(yajl_gen_string(hand, YSTR(trait_names[i]), strlen(trait_names[i])));
+		}
+		
+		assert(design_recv_dyn_index(d) == design_recv_traits_dim(d));
+		const struct design_var *rvs;
+		ssize_t irv, nrv;
+		design_recv_get_dyn_vars(d, &rvs, &nrv);
+		for (irv = 0; irv < nrv; irv++) {
+			n = rvs[irv].dim;
+			for (i = 0; i < n; i++) {
+				const char *name = rvs[irv].names[i];
+				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
+			}
 		}
 		YG(yajl_gen_array_close(hand));
 		
@@ -261,7 +273,7 @@ int main()
 {
 	setup();
 	
-	ssize_t maxit = 100;
+	ssize_t maxit = 0;
 	ssize_t report = 1;
 	bool trace = true;
 	
