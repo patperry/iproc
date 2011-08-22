@@ -5,6 +5,7 @@ lib_LTLIBRARIES = \
 
 noinst_LTLIBRARIES = \
 	libcore.la \
+	libdSFMT.la \
 	libf2c.la \
 	libjson.la \
 	libminpack.la \
@@ -125,6 +126,34 @@ libjson_la_CPPFLAGS = \
 	$(libcore_la_CPPFLAGS) \
 	$(libyajl_la_CPPFLAGS) \
 	$(AM_CPPFLAGS)
+
+libdSFMT_la_SOURCES = \
+	lib/dSFMT/dSFMT-params.h \
+	lib/dSFMT/dSFMT-params11213.h \
+	lib/dSFMT/dSFMT-params1279.h \
+	lib/dSFMT/dSFMT-params132049.h \
+	lib/dSFMT/dSFMT-params19937.h \
+	lib/dSFMT/dSFMT-params216091.h \
+	lib/dSFMT/dSFMT-params2203.h \
+	lib/dSFMT/dSFMT-params4253.h \
+	lib/dSFMT/dSFMT-params44497.h
+	lib/dSFMT/dSFMT-params521.h \
+	lib/dSFMT/dSFMT-params86243.h \
+	lib/dSFMT/dSFMT.c \
+	lib/dSFMT/dSFMT.h
+
+libdSFMT_la_CPPFLAGS = \
+	-Wmissing-prototypes -Wall \
+	-O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
+	-fno-strict-aliasing --param max-inline-insns-single=1800 \
+	-std=c99 \
+	-DDSFMT_MEXP=19937 \
+	$(AM_CPPFLAGS)
+
+libdSFMT_la_LIBADD = \
+	$(LIBS) \
+	$(FLIBS) \
+	$(LTLIBOBJS)
 
 libf2c_la_SOURCES = \
 	lib/libf2c/f2c.h \

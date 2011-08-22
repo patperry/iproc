@@ -117,6 +117,19 @@
 		22708BBD13311B8E0055AD94 /* r-messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAB13311B8E0055AD94 /* r-messages.h */; };
 		22708BC013311B8E0055AD94 /* r-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 22708BAE13311B8E0055AD94 /* r-utils.c */; };
 		22708BC113311B8E0055AD94 /* r-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 22708BAF13311B8E0055AD94 /* r-utils.h */; };
+		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
+		22749E501402A97000C5A955 /* dSFMT-params521.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E431402A97000C5A955 /* dSFMT-params521.h */; };
+		22749E511402A97000C5A955 /* dSFMT-params1279.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E441402A97000C5A955 /* dSFMT-params1279.h */; };
+		22749E521402A97000C5A955 /* dSFMT-params2203.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E451402A97000C5A955 /* dSFMT-params2203.h */; };
+		22749E531402A97000C5A955 /* dSFMT-params4253.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E461402A97000C5A955 /* dSFMT-params4253.h */; };
+		22749E541402A97000C5A955 /* dSFMT-params11213.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E471402A97000C5A955 /* dSFMT-params11213.h */; };
+		22749E551402A97000C5A955 /* dSFMT-params19937.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E481402A97000C5A955 /* dSFMT-params19937.h */; };
+		22749E561402A97000C5A955 /* dSFMT-params44497.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E491402A97000C5A955 /* dSFMT-params44497.h */; };
+		22749E571402A97000C5A955 /* dSFMT-params86243.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4A1402A97000C5A955 /* dSFMT-params86243.h */; };
+		22749E581402A97000C5A955 /* dSFMT-params132049.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4B1402A97000C5A955 /* dSFMT-params132049.h */; };
+		22749E591402A97000C5A955 /* dSFMT-params216091.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4C1402A97000C5A955 /* dSFMT-params216091.h */; };
+		22749E5A1402A97000C5A955 /* dSFMT.c in Sources */ = {isa = PBXBuildFile; fileRef = 22749E4D1402A97000C5A955 /* dSFMT.c */; settings = {COMPILER_FLAGS = "-Wmissing-prototypes -Wall -O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -DDSFMT_MEXP=19937"; }; };
+		22749E5B1402A97000C5A955 /* dSFMT.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4E1402A97000C5A955 /* dSFMT.h */; };
 		2275566313FB0932004FC237 /* rv-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275566113FB0932004FC237 /* rv-irecv2.c */; };
 		2275566413FB0932004FC237 /* rv-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275566113FB0932004FC237 /* rv-irecv2.c */; };
 		2275566513FB0932004FC237 /* rv-nrecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2275566213FB0932004FC237 /* rv-nrecv2.c */; };
@@ -590,6 +603,20 @@
 		22708BAB13311B8E0055AD94 /* r-messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-messages.h"; path = "interfaces/R/src/r-messages.h"; sourceTree = "<group>"; };
 		22708BAE13311B8E0055AD94 /* r-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "r-utils.c"; path = "interfaces/R/src/r-utils.c"; sourceTree = "<group>"; };
 		22708BAF13311B8E0055AD94 /* r-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "r-utils.h"; path = "interfaces/R/src/r-utils.h"; sourceTree = "<group>"; };
+		22749E3E1402A94A00C5A955 /* libdSFMT.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libdSFMT.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		22749E421402A97000C5A955 /* dSFMT-params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params.h"; path = "lib/dSFMT/dSFMT-params.h"; sourceTree = "<group>"; };
+		22749E431402A97000C5A955 /* dSFMT-params521.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params521.h"; path = "lib/dSFMT/dSFMT-params521.h"; sourceTree = "<group>"; };
+		22749E441402A97000C5A955 /* dSFMT-params1279.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params1279.h"; path = "lib/dSFMT/dSFMT-params1279.h"; sourceTree = "<group>"; };
+		22749E451402A97000C5A955 /* dSFMT-params2203.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params2203.h"; path = "lib/dSFMT/dSFMT-params2203.h"; sourceTree = "<group>"; };
+		22749E461402A97000C5A955 /* dSFMT-params4253.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params4253.h"; path = "lib/dSFMT/dSFMT-params4253.h"; sourceTree = "<group>"; };
+		22749E471402A97000C5A955 /* dSFMT-params11213.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params11213.h"; path = "lib/dSFMT/dSFMT-params11213.h"; sourceTree = "<group>"; };
+		22749E481402A97000C5A955 /* dSFMT-params19937.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params19937.h"; path = "lib/dSFMT/dSFMT-params19937.h"; sourceTree = "<group>"; };
+		22749E491402A97000C5A955 /* dSFMT-params44497.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params44497.h"; path = "lib/dSFMT/dSFMT-params44497.h"; sourceTree = "<group>"; };
+		22749E4A1402A97000C5A955 /* dSFMT-params86243.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params86243.h"; path = "lib/dSFMT/dSFMT-params86243.h"; sourceTree = "<group>"; };
+		22749E4B1402A97000C5A955 /* dSFMT-params132049.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params132049.h"; path = "lib/dSFMT/dSFMT-params132049.h"; sourceTree = "<group>"; };
+		22749E4C1402A97000C5A955 /* dSFMT-params216091.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params216091.h"; path = "lib/dSFMT/dSFMT-params216091.h"; sourceTree = "<group>"; };
+		22749E4D1402A97000C5A955 /* dSFMT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dSFMT.c; path = lib/dSFMT/dSFMT.c; sourceTree = "<group>"; };
+		22749E4E1402A97000C5A955 /* dSFMT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dSFMT.h; path = lib/dSFMT/dSFMT.h; sourceTree = "<group>"; };
 		2275566113FB0932004FC237 /* rv-irecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-irecv2.c"; path = "src/rv-irecv2.c"; sourceTree = "<group>"; };
 		2275566213FB0932004FC237 /* rv-nrecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nrecv2.c"; path = "src/rv-nrecv2.c"; sourceTree = "<group>"; };
 		2275567414002A0D004FC237 /* rv-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nsib.c"; path = "src/rv-nsib.c"; sourceTree = "<group>"; };
@@ -731,6 +758,13 @@
 			files = (
 				22C845A113F1E5C0003383F6 /* libiproc.dylib in Frameworks */,
 				22678934134CD75B001309F5 /* libcmockery.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22749E3B1402A94A00C5A955 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -946,6 +980,26 @@
 			name = cmockery;
 			sourceTree = "<group>";
 		};
+		22749E381402A8F700C5A955 /* DSFMT */ = {
+			isa = PBXGroup;
+			children = (
+				22749E421402A97000C5A955 /* dSFMT-params.h */,
+				22749E431402A97000C5A955 /* dSFMT-params521.h */,
+				22749E441402A97000C5A955 /* dSFMT-params1279.h */,
+				22749E451402A97000C5A955 /* dSFMT-params2203.h */,
+				22749E461402A97000C5A955 /* dSFMT-params4253.h */,
+				22749E471402A97000C5A955 /* dSFMT-params11213.h */,
+				22749E481402A97000C5A955 /* dSFMT-params19937.h */,
+				22749E491402A97000C5A955 /* dSFMT-params44497.h */,
+				22749E4A1402A97000C5A955 /* dSFMT-params86243.h */,
+				22749E4B1402A97000C5A955 /* dSFMT-params132049.h */,
+				22749E4C1402A97000C5A955 /* dSFMT-params216091.h */,
+				22749E4D1402A97000C5A955 /* dSFMT.c */,
+				22749E4E1402A97000C5A955 /* dSFMT.h */,
+			);
+			name = DSFMT;
+			sourceTree = "<group>";
+		};
 		2275BB84132EAC9D002D8876 = {
 			isa = PBXGroup;
 			children = (
@@ -978,6 +1032,7 @@
 				2288808D13A9325D00D673A6 /* model_test */,
 				22D4787E13AC4BF600FF46CD /* recv_loglik_test */,
 				2285AD0913B1474200C46E8B /* enronfit */,
+				22749E3E1402A94A00C5A955 /* libdSFMT.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1061,6 +1116,7 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
+				22749E381402A8F700C5A955 /* DSFMT */,
 				22867A14132FDA8E0090D617 /* Libf2c */,
 				22867A0E132FDA580090D617 /* Minpack */,
 				22FFF12213871A5A003DDA26 /* Timsort */,
@@ -1174,6 +1230,25 @@
 			buildActionMask = 2147483647;
 			files = (
 				2267890E134CD5B3001309F5 /* cmockery.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22749E3C1402A94A00C5A955 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */,
+				22749E501402A97000C5A955 /* dSFMT-params521.h in Headers */,
+				22749E511402A97000C5A955 /* dSFMT-params1279.h in Headers */,
+				22749E521402A97000C5A955 /* dSFMT-params2203.h in Headers */,
+				22749E531402A97000C5A955 /* dSFMT-params4253.h in Headers */,
+				22749E541402A97000C5A955 /* dSFMT-params11213.h in Headers */,
+				22749E551402A97000C5A955 /* dSFMT-params19937.h in Headers */,
+				22749E561402A97000C5A955 /* dSFMT-params44497.h in Headers */,
+				22749E571402A97000C5A955 /* dSFMT-params86243.h in Headers */,
+				22749E581402A97000C5A955 /* dSFMT-params132049.h in Headers */,
+				22749E591402A97000C5A955 /* dSFMT-params216091.h in Headers */,
+				22749E5B1402A97000C5A955 /* dSFMT.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1341,6 +1416,23 @@
 			productName = pqueue_test;
 			productReference = 22678913134CD651001309F5 /* pqueue_test */;
 			productType = "com.apple.product-type.tool";
+		};
+		22749E3D1402A94A00C5A955 /* dSFMT */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22749E3F1402A94A00C5A955 /* Build configuration list for PBXNativeTarget "dSFMT" */;
+			buildPhases = (
+				22749E3A1402A94A00C5A955 /* Sources */,
+				22749E3B1402A94A00C5A955 /* Frameworks */,
+				22749E3C1402A94A00C5A955 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = dSFMT;
+			productName = dSFMT;
+			productReference = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 		2285AD0813B1474200C46E8B /* enronfit */ = {
 			isa = PBXNativeTarget;
@@ -1512,6 +1604,7 @@
 				22D4787D13AC4BF600FF46CD /* recv_loglik_test */,
 				2285AD0813B1474200C46E8B /* enronfit */,
 				2235DBFB13C7ACE100053BAA /* json */,
+				22749E3D1402A94A00C5A955 /* dSFMT */,
 			);
 		};
 /* End PBXProject section */
@@ -1670,6 +1763,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				2267891D134CD66F001309F5 /* pqueue_test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22749E3A1402A94A00C5A955 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22749E5A1402A97000C5A955 /* dSFMT.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2090,6 +2191,40 @@
 			};
 			name = Release;
 		};
+		22749E401402A94A00C5A955 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		22749E411402A94A00C5A955 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		2275BB91132EAC9D002D8876 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2366,6 +2501,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		22749E3F1402A94A00C5A955 /* Build configuration list for PBXNativeTarget "dSFMT" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22749E401402A94A00C5A955 /* Debug */,
+				22749E411402A94A00C5A955 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		2275BB89132EAC9D002D8876 /* Build configuration list for PBXProject "iproc" */ = {
 			isa = XCConfigurationList;
