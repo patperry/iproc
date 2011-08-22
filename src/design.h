@@ -76,6 +76,7 @@ struct design {
 	struct actors *senders;
 	struct actors *receivers;
 	const struct matrix *traits;
+	const char * const *trait_names;
 	bool loops;
 
 	struct vector intervals;
@@ -97,6 +98,7 @@ struct design {
 
 void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct matrix *traits,
+		 const char * const *trait_names,
 		 const struct vector *intervals);
 void design_deinit(struct design *design);
 
@@ -107,6 +109,7 @@ static inline ssize_t design_recv_count(const struct design *design);
 static inline struct actors *design_senders(const struct design *design);
 static inline struct actors *design_receivers(const struct design *design);
 static inline const struct matrix *design_traits(const struct design *design);
+static inline const char * const * design_trait_names(const struct design *design);
 static inline const struct vector *design_intervals(const struct design
 						    *design);
 
@@ -140,9 +143,11 @@ void design_set_recv_effects(struct design *design, bool reffects);
 void design_add_recv_var(struct design *design, const struct var_type *type,
 			 void *params);
 ssize_t design_recv_effects_index(const struct design *design);
-ssize_t design_recv_traits_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,
 			      const struct var_type *type);
+static inline ssize_t design_recv_traits_index(const struct design *design);
+static inline ssize_t design_recv_traits_dim(const struct design *design);
+
 static inline ssize_t design_recv_dyn_index(const struct design *design);
 static inline ssize_t design_recv_dyn_dim(const struct design *design);
 
@@ -200,6 +205,12 @@ const struct matrix *design_traits(const struct design *design)
 	return design->traits;
 }
 
+static inline const char * const *design_trait_names(const struct design *design)
+{
+	assert(design);
+	return design->trait_names;
+}
+
 const struct vector *design_intervals(const struct design *design)
 {
 	assert(design);
@@ -234,6 +245,25 @@ ssize_t design_recv_dyn_dim(const struct design *design)
 {
 	assert(design);
 	return design->nrdynamic;
+}
+
+ssize_t design_recv_traits_index(const struct design *design)
+{
+	assert(design);
+	return design->irstatic;
+}
+
+ssize_t design_recv_traits_dim(const struct design *design)
+{
+	assert(design);
+#ifndef NDEBUG
+	if (design->nrstatic) {
+		assert(design->nrstatic == matrix_ncol(design_traits(design)));
+	} else {
+		assert(!design_traits(design) || !matrix_ncol(design_traits(design)));
+	}
+#endif
+	return design->nrstatic;
 }
 
 #endif /* _DESIGN_H */

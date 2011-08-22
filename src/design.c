@@ -33,6 +33,7 @@ void design_deinit(struct design *design)
 
 void design_init(struct design *design, struct actors *senders,
 		 struct actors *receivers, const struct matrix *traits,
+		 const char * const *trait_names,
 		 const struct vector *intervals)
 {
 	assert(design);
@@ -56,6 +57,7 @@ void design_init(struct design *design, struct actors *senders,
 	design->senders = actors_ref(senders);
 	design->receivers = actors_ref(receivers);
 	design->traits = traits;
+	design->trait_names = trait_names;
 	design->loops = false;
 
 	vector_init_copy(&design->intervals, intervals);
@@ -635,12 +637,6 @@ ssize_t design_send_traits_index(const struct design *design)
 {
 	assert(design);
 	return design->isstatic;
-}
-
-ssize_t design_recv_traits_index(const struct design *design)
-{
-	assert(design);
-	return design->irstatic;
 }
 
 ssize_t design_send_effects_index(const struct design *design)

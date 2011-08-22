@@ -17,6 +17,7 @@
 
 static struct actors enron_actors;
 static struct matrix enron_traits;
+static const char * const *enron_trait_names;
 
 static struct actors senders;
 static struct actors receivers;
@@ -27,7 +28,7 @@ static struct design design;
 
 
 static void setup(void) {
-	enron_employees_init(&enron_actors, &enron_traits);
+	enron_employees_init(&enron_actors, &enron_traits, &enron_trait_names);
 	enron_messages_init(&messages, 10);	
 	
 	actors_init_copy(&senders, &enron_actors);
@@ -59,21 +60,21 @@ static void setup(void) {
 	bool has_reffects = false;
 	bool has_loops = false;
 	vector_init_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, &intervals);
+	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
-	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
-	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
+	//design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
+	//design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void teardown(void)
@@ -97,6 +98,7 @@ static void teardown(void)
 #define YSTR(str) ((const unsigned char *)(str))
 
 #define INTERVALS		"intervals"
+#define VAR_NAMES		"var_names"
 #define COEFFICIENTS		"coefficients"
 #define COUNT			"count"
 #define SCORE			"score"
@@ -120,6 +122,7 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	ssize_t ne = recv_fit_constr_count(fit);
 	ssize_t dim = recv_model_dim(ll->model);
 	ssize_t ic, nc = recv_model_cohort_count(ll->model);
+	ssize_t i, n;
 
 	YG(yajl_gen_map_open(hand));
 	{
@@ -127,6 +130,17 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_string(hand, YSTR(INTERVALS), strlen(INTERVALS)));
 		const struct vector *intvls = design_intervals(d);
 		YG(yajl_gen_vector(hand, intvls));
+		
+		/* var_names */
+		YG(yajl_gen_string(hand, YSTR(VAR_NAMES), strlen(VAR_NAMES)));
+		YG(yajl_gen_array_open(hand));
+		const char * const *trait_names = design_trait_names(d);
+		n = design_recv_traits_dim(d);
+		assert(design_recv_traits_index(d) == 0);
+		for (i = 0; i < n; i++) {
+			YG(yajl_gen_string(hand, YSTR(trait_names[i]), strlen(trait_names[i])));
+		}
+		YG(yajl_gen_array_close(hand));
 		
 		/* coefficients */
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS), strlen(COEFFICIENTS)));

@@ -4,6 +4,13 @@
 #include "strata.h"
 #include "enron.h"
 
+static const char *ENRON_TRAIT_NAMES[] = {
+	"Leg", "Trad", "Jun", "Fem",
+	"Fem:Jun", "Trad:Jun", "Leg:Fem", "Trad:Fem", "Jun:Fem",
+	"Leg:Jun:Fem", "Trad:Jun:Fem"
+};
+
+
 enum gender_code { GENDER_NA = -1, GENDER_MALE, GENDER_FEMALE };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
 enum department_code { DEPARTMENT_NA = -1, DEPARTMENT_LEGAL, DEPARTMENT_TRADING, DEPARTMENT_OTHER };
@@ -247,7 +254,7 @@ static void traits_init(struct matrix *traits)
 	}
 }
 
-bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, FILE *stream)
+bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, const char * const **trait_names, FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -310,10 +317,12 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	vector_deinit(&parse.traits);
 	strata_deinit(&parse.strata);
 	
+	*trait_names = ENRON_TRAIT_NAMES;
+	
 	return parse_ok;
 }
 
-bool enron_employees_init(struct actors *employees, struct matrix *traits)
+bool enron_employees_init(struct actors *employees, struct matrix *traits, const char * const **trait_names)
 {
 	FILE *f = fopen(ENRON_EMPLOYEES_FILE, "r");
 
@@ -323,7 +332,7 @@ bool enron_employees_init(struct actors *employees, struct matrix *traits)
 		return false;
 	}
 	
-	if (!enron_employees_init_fread(employees, traits, f)) {
+	if (!enron_employees_init_fread(employees, traits, trait_names, f)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_EMPLOYEES_FILE);
 		fclose(f);
