@@ -244,10 +244,3 @@ char *xstrdup(const char *s1)
 	return s;
 }
 
-char *xstrndup(const char *s1, ssize_t n)
-{
-	char *s = strndup(s1, n);
-	if (s1 && !s)
-		abort();
-	return s;
-}

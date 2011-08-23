@@ -75,7 +75,6 @@ void xfree(void *ptr);
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *s1);
-char *xstrndup(const char *s1, ssize_t n);
 
 typedef void (*destroy_fn) (void *val);
 
