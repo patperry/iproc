@@ -23,7 +23,7 @@ static void nrecv2_init(struct design_var *dv, const struct design *d,
 	ssize_t n = vector_dim(design_intervals(d));
 	ssize_t n1 = n + 1;
 	dv->dim = n1 * n1;
-	dv->names = var_names_alloc2("NRecv", strlen("NRecv"), n + 1, n + 1);
+	dv->names = var_names_alloc2("NRecv2", strlen("NRecv2"), n + 1, n + 1);
 }
 
 static void nrecv2_deinit(struct design_var *dv)
