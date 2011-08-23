@@ -65,16 +65,16 @@ static void setup(void) {
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
-	//design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	//design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
+	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
+	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
+	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
+	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
+	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
+	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
+	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void teardown(void)
@@ -311,7 +311,7 @@ int main()
 {
 	setup();
 	
-	ssize_t maxit = 0;
+	ssize_t maxit = 100;
 	ssize_t report = 1;
 	bool trace = true;
 	
@@ -328,10 +328,10 @@ int main()
 	/* constrain all covariates */
 	for (i = dim0; i < dim; i++) {
 		// intercept
-		//vector_fill(&ce, 0.0);
-		//vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-		//snprintf(buf, sizeof(buf), "Var%"SSIZE_FMT"", i + 1);
-		//recv_fit_add_constr(&fit, &ce, 0.0, buf);
+		vector_fill(&ce, 0.0);
+		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+		snprintf(buf, sizeof(buf), "Var%"SSIZE_FMT"", i + 1);
+		recv_fit_add_constr(&fit, &ce, 0.0, buf);
 		
 		// main effects
 		vector_fill(&ce, 0.0);
