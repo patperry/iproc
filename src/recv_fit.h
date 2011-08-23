@@ -92,6 +92,9 @@ struct recv_fit {
 	struct frame frame;
 	struct recv_model model;
 
+	/* null deviance */
+	double dev0;
+	
 	/* optimization constraints */
 	struct recv_fit_constr constr;
 	
@@ -136,6 +139,7 @@ const char *recv_fit_errmsg(const struct recv_fit *fit);
 /* current values */
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
 double recv_fit_dev(const struct recv_fit *fit);
+double recv_fit_dev0(const struct recv_fit *fit);
 const struct matrix *recv_fit_coefs(const struct recv_fit *fit);
 const struct vector *recv_fit_duals(const struct recv_fit *fit);
 double recv_fit_step(const struct recv_fit *fit);

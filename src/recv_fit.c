@@ -529,10 +529,12 @@ void recv_fit_init(struct recv_fit *fit,
 	kkt_init(&fit->kkt, nc, dim, ne);
 	search_init(&fit->search, nc, dim, ne);
 	rgrad_init(&fit->rgrad, nc, dim, ne);
-	
+
 	// evaluate the model at zero
 	eval_set(fit->cur, &fit->constr, NULL, NULL, fit->msgs, &fit->frame,
 		 &fit->model);
+	
+	fit->dev0 = recv_fit_dev(fit);
 }
 
 
@@ -867,4 +869,9 @@ double recv_fit_grad_norm2(const struct recv_fit *fit)
 void recv_fit_get_constr_names(const struct recv_fit *fit, const char ***names)
 {
 	*names = array_to_ptr(&fit->constr.names);
+}
+
+double recv_fit_dev0(const struct recv_fit *fit)
+{
+	return fit->dev0;
 }

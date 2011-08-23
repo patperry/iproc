@@ -250,6 +250,10 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		ssize_t ntot = recv_loglik_count_sum(ll);
 		YG(yajl_gen_integer(hand, ntot - rank));
 		
+		/* null.deviance */
+		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
+		YG(yajl_gen_ieee754(hand, recv_fit_dev0(fit)));
+		
 		/* df.null */
 		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
 		YG(yajl_gen_integer(hand, ntot));
@@ -264,9 +268,6 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	/* linear.predictors (eta) */
 	/* aic */
 		
-	/* null.deviance */
-	//YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
-	//YG(yajl_gen_ieee754(hand, info->nrecv * recv_fit_dev0(fit, c)));
 		
 	/* iter */
 	/* weights = wt */
