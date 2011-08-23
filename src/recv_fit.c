@@ -15,10 +15,16 @@ static void constr_init(struct recv_fit_constr *constr, ssize_t nc, ssize_t dim)
 	constr->nc = nc;
 	matrix_init(&constr->ce, nc * dim, 0);
 	vector_init(&constr->be, 0);
+	array_init(&constr->names, sizeof(char *));
 }
 
 static void constr_deinit(struct recv_fit_constr *constr)
 {
+	char **pstr;
+	ARRAY_FOREACH(pstr, &constr->names) {
+		xfree(*pstr);
+	}
+	array_deinit(&constr->names);
 	vector_deinit(&constr->be);
 	matrix_deinit(&constr->ce);
 }
@@ -30,7 +36,7 @@ static ssize_t constr_count(const struct recv_fit_constr *constr)
 }
 
 static void constr_add(struct recv_fit_constr *constr, const struct vector *ce,
-		       double be)
+		       double be, const char *name)
 {
 	ssize_t ne0 = vector_dim(&constr->be);
 	ssize_t ne = ne0 + 1;
@@ -42,6 +48,8 @@ static void constr_add(struct recv_fit_constr *constr, const struct vector *ce,
 
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, be);
+	
+	array_add(&constr->names, &name);
 }
 
 static void constr_add_set(struct recv_fit_constr *constr, ssize_t i, ssize_t c,
@@ -60,6 +68,13 @@ static void constr_add_set(struct recv_fit_constr *constr, ssize_t i, ssize_t c,
 
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, val);
+	
+	const char *fmt = "Set(%"SSIZE_FMT",%"SSIZE_FMT",%g)";
+	char buf;
+	size_t len = snprintf(&buf, 1, fmt, i + 1, c + 1, val) + 1;
+	char *name = xcalloc(len, sizeof(char));
+	snprintf(name, len, fmt, i + 1, c + 1, val);
+	array_add(&constr->names, &name);
 }
 
 static void constr_add_eq(struct recv_fit_constr *constr, ssize_t i1,
@@ -81,6 +96,13 @@ static void constr_add_eq(struct recv_fit_constr *constr, ssize_t i1,
 
 	vector_reinit(&constr->be, ne);
 	vector_set_item(&constr->be, ne0, 0.0);
+	
+	const char *fmt = "Eq((%"SSIZE_FMT",%"SSIZE_FMT"),(%"SSIZE_FMT"),(%"SSIZE_FMT"))";
+	char buf;
+	size_t len = snprintf(&buf, 1, fmt, i1 + 1, c1 + 1, i2 + 1, c2 + 1) + 1;
+	char *name = xcalloc(len, sizeof(char));
+	snprintf(name, len, fmt, i1 + 1, c1 + 1, i2 + 1, c2 + 1);
+	array_add(&constr->names, &name);
 }
 
 static void resid_init(struct recv_fit_resid *resid, ssize_t nc, ssize_t dim,
@@ -658,7 +680,13 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		}
 		assert(off == nulldim);
 		
-		recv_fit_add_constr(fit, &ce1, be1);
+		const char *fmt = "Ident%"SSIZE_FMT"";
+		char zero;
+		size_t len = snprintf(&zero, 1, fmt, ic + 1) + 1;
+		char *name = xcalloc(len, sizeof(*name));
+		snprintf(name, len, fmt, ic1 + 1);
+		recv_fit_add_constr(fit, &ce1, be1, name);
+		xfree(name);
 	}
 	
 	vector_deinit(&ce1);
@@ -740,9 +768,10 @@ static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
 }
 
 void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
-			 double be)
+			 double be, const char *name)
 {
-	constr_add(&fit->constr, ce, be);
+	const char *name1 = xstrdup(name);
+	constr_add(&fit->constr, ce, be, name1);
 	_recv_fit_add_constrs(fit, 1);
 }
 
@@ -833,4 +862,9 @@ double recv_fit_grad_norm2(const struct recv_fit *fit)
 {
 	assert(fit);
 	return fit->cur->resid.norm2;
+}
+
+void recv_fit_get_constr_names(const struct recv_fit *fit, const char ***names)
+{
+	*names = array_to_ptr(&fit->constr.names);
 }

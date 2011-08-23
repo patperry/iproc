@@ -50,6 +50,7 @@ struct recv_fit_constr {
 	ssize_t dim, nc;
 	struct matrix ce;
 	struct vector be;
+	struct array names;
 };
 
 struct recv_fit_resid {
@@ -117,8 +118,9 @@ void recv_fit_deinit(struct recv_fit *fit);
 ssize_t recv_fit_constr_count(const struct recv_fit *fit);
 void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce,
 			 const struct vector **be);
+void recv_fit_get_constr_names(const struct recv_fit *fit, const char ***names);
 void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
-			 double be);
+			 double be, const char *name);
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
