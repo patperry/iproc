@@ -1,7 +1,20 @@
 require(RJSONIO)
 jmat <- function(j) { matrix(j$data, j$nrow, j$ncol) }
 
-fit <- fromJSON("~/Projects/iproc/fit.json")
+#fit <- fromJSON("~/Projects/iproc/fit.json")
+
+get.coefs <- function(fit) {
+    coefs <- jmat(fit$coefficients)
+    rownames(coefs) <- fit$variate_names
+    colnames(coefs) <- fit$cohort_names
+    coefs
+}
+
+get.duals <- function(fit) {
+    duals <- fit$duals
+    names(duals) <- fit$constraint_names
+    duals
+}
 
 get.imat <- function(fit, duals = FALSE) {
         n <- fit$count
