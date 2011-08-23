@@ -21,14 +21,12 @@ struct actor {
 
 struct cohort {
 	struct array actors;
+	const char *name;
 };
 
 struct actors {
 	struct array actors;
 	struct array cohorts;
-
-	/* deprecated */
-	struct refcount refcount;
 };
 
 void actors_init(struct actors *a);
@@ -44,7 +42,7 @@ static inline ssize_t actors_cohort_count(const struct actors *a);
 static inline const struct cohort *actors_cohorts(const struct actors *a);
 
 ssize_t actors_add(struct actors *a, ssize_t cohort);
-ssize_t actors_add_cohort(struct actors *a);
+ssize_t actors_add_cohort(struct actors *a, const char *name);
 
 void actors_mul(double alpha,
 		enum trans_op trans,
@@ -60,11 +58,6 @@ void actors_matmul(double alpha,
 		   enum trans_op trans,
 		   const struct actors *a,
 		   const struct matrix *x, double beta, struct matrix *y);
-
-/* deprecated */
-struct actors *actors_alloc(void);
-struct actors *actors_ref(struct actors *a);
-void actors_free(struct actors *a);
 
 /* inline function definitions */
 ssize_t actors_count(const struct actors *a)

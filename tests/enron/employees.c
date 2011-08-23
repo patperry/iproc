@@ -10,6 +10,21 @@ static const char *ENRON_TRAIT_NAMES[] = {
 	"Leg:Jun:Fem", "Trad:Jun:Fem"
 };
 
+static const char *ENRON_COHORT_NAMES[] = {
+	"LJF",
+	"LJM",
+	"LSF",
+	"LSM",
+	"TJF",
+	"TJM",
+	"TSF",
+	"TSM",
+	"OJF",
+	"OJM",
+	"OSF",
+	"OSM"
+};
+
 
 enum gender_code { GENDER_NA = -1, GENDER_MALE, GENDER_FEMALE };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
@@ -280,7 +295,7 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 		matrix_get_row(traits, ic, vector_to_ptr(&parse.traits));
 		strata_add(&parse.strata, &parse.traits);
 		assert(strata_count(&parse.strata) == ic + 1);
-		actors_add_cohort(parse.actors);
+		actors_add_cohort(parse.actors, ENRON_COHORT_NAMES[ic]);
 	}
 	
 	for (;;) {

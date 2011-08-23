@@ -63,12 +63,12 @@ static void setup(void) {
 	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	//design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
+	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
+	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	//design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	//design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
 	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
@@ -98,7 +98,8 @@ static void teardown(void)
 #define YSTR(str) ((const unsigned char *)(str))
 
 #define INTERVALS		"intervals"
-#define VAR_NAMES		"var_names"
+#define VARIATE_NAMES		"variate_names"
+#define COHORT_NAMES		"cohort_names"
 #define COEFFICIENTS		"coefficients"
 #define COUNT			"count"
 #define SCORE			"score"
@@ -117,11 +118,12 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
-	const struct design *d = recv_model_design(ll->model);
+	const struct recv_model *m = ll->model;
+	const struct design *d = recv_model_design(m);
 
 	ssize_t ne = recv_fit_constr_count(fit);
-	ssize_t dim = recv_model_dim(ll->model);
-	ssize_t ic, nc = recv_model_cohort_count(ll->model);
+	ssize_t dim = recv_model_dim(m);
+	ssize_t ic, nc = recv_model_cohort_count(m);
 	ssize_t i, n;
 
 	YG(yajl_gen_map_open(hand));
@@ -131,8 +133,8 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		const struct vector *intvls = design_intervals(d);
 		YG(yajl_gen_vector(hand, intvls));
 		
-		/* var_names */
-		YG(yajl_gen_string(hand, YSTR(VAR_NAMES), strlen(VAR_NAMES)));
+		/* variate_names */
+		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES), strlen(VARIATE_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		const char * const *trait_names = design_trait_names(d);
 		n = design_recv_traits_dim(d);
@@ -149,6 +151,19 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			n = rvs[irv].dim;
 			for (i = 0; i < n; i++) {
 				const char *name = rvs[irv].names[i];
+				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
+			}
+		}
+		YG(yajl_gen_array_close(hand));
+		
+		/* cohort names */
+		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES), strlen(COHORT_NAMES)));
+		YG(yajl_gen_array_open(hand));
+		{
+			const struct actors *receivers = recv_model_senders(m);
+			const struct cohort *cohorts = actors_cohorts(receivers);
+			for (ic = 0; ic < nc; ic++) {
+				const char *name = cohorts[ic].name;
 				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
 			}
 		}

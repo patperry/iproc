@@ -4,16 +4,18 @@
 #include <stdlib.h>
 #include "actors.h"
 
-static void cohort_init(struct cohort *c)
+static void cohort_init(struct cohort *c, const char *name)
 {
 	assert(c);
 	array_init(&c->actors, sizeof(ssize_t));
+	c->name = name;
 }
 
 static void cohort_init_copy(struct cohort *c, const struct cohort *src)
 {
 	assert(c);
 	array_init_copy(&c->actors, &src->actors);
+	c->name = src->name;
 }
 
 static void cohort_deinit(struct cohort *c)
@@ -28,7 +30,6 @@ void actors_init(struct actors *a)
 
 	array_init(&a->actors, sizeof(struct actor));
 	array_init(&a->cohorts, sizeof(struct cohort));
-	refcount_init(&a->refcount);
 }
 
 void actors_init_copy(struct actors *a, const struct actors *src)
@@ -43,8 +44,6 @@ void actors_init_copy(struct actors *a, const struct actors *src)
 		cdst = array_add(&a->cohorts, NULL);
 		cohort_init_copy(cdst, csrc);
 	}
-
-	refcount_init(&a->refcount);
 }
 
 void actors_clear(struct actors *a)
@@ -63,35 +62,8 @@ void actors_deinit(struct actors *a)
 	assert(a);
 
 	actors_clear(a);
-	refcount_deinit(&a->refcount);
 	array_deinit(&a->cohorts);
 	array_deinit(&a->actors);
-}
-
-struct actors *actors_alloc(void)
-{
-	struct actors *actors = xcalloc(1, sizeof(*actors));
-	actors_init(actors);
-	return actors;
-}
-
-void actors_free(struct actors *a)
-{
-	if (!a)
-		return;
-
-	if (refcount_put(&a->refcount, NULL)) {
-		refcount_get(&a->refcount);
-		actors_deinit(a);
-		xfree(a);
-	}
-}
-
-struct actors *actors_ref(struct actors *actors)
-{
-	assert(actors);
-	refcount_get(&actors->refcount);
-	return actors;
 }
 
 ssize_t actors_add(struct actors *a, ssize_t cohort)
@@ -106,13 +78,13 @@ ssize_t actors_add(struct actors *a, ssize_t cohort)
 	return id;
 }
 
-ssize_t actors_add_cohort(struct actors *a)
+ssize_t actors_add_cohort(struct actors *a, const char *name)
 {
 	assert(a);
 
 	ssize_t cid = array_count(&a->cohorts);
 	struct cohort *c = array_add(&a->cohorts, NULL);
-	cohort_init(c);
+	cohort_init(c, name);
 	return cid;
 }
 

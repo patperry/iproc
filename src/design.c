@@ -27,8 +27,6 @@ void design_deinit(struct design *design)
 	array_deinit(&design->send_vars);
 
 	vector_deinit(&design->intervals);
-	actors_free(design->receivers);
-	actors_free(design->senders);
 }
 
 void design_init(struct design *design, struct actors *senders,
@@ -54,8 +52,8 @@ void design_init(struct design *design, struct actors *senders,
 	ssize_t ps = 0;		// actors_dim(senders);
 	ssize_t pr = matrix_ncol(traits);
 
-	design->senders = actors_ref(senders);
-	design->receivers = actors_ref(receivers);
+	design->senders = senders;
+	design->receivers = receivers;
 	design->traits = traits;
 	design->trait_names = trait_names;
 	design->loops = false;
