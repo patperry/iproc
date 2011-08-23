@@ -6,7 +6,6 @@
 #include "array.h"
 #include "intset.h"
 #include "matrix.h"
-#include "refcount.h"
 #include "svector.h"
 #include "vector.h"
 
