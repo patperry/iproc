@@ -721,10 +721,10 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 
 	// determine initial value and gradient
 	double f0 = fit->cur->resid.norm2;
-	double g0 = -2 * f0;
+	//double g0 = -2 * f0;
 
 	// stop early if residual is below tolerance
-	if (-g0 < fit->ctrl.gtol * fit->ctrl.gtol) {
+	if (f0 <= fit->ctrl.gtol * fit->ctrl.gtol) {
 		fit->task = RECV_FIT_CONV;
 	} else {
 		fit->task = RECV_FIT_STEP;
