@@ -3,6 +3,38 @@ jmat <- function(j) { matrix(j$data, j$nrow, j$ncol) }
 
 #fit <- fromJSON("~/Projects/iproc/fit.json")
 
+get.traits <- function() {
+    L <- c(true, true, true, true, false, false,
+      	   false, false, false, false, false, false)
+    T <- c(false, false, false, false, true, true,
+      	   true, true, false, false, false, false)
+    J <- c(true, true, false, false, true, true,
+      	   false, false, true, true, false, false)
+    F <- c(true, false, true, false, true, false,
+      	   true, false, true, false, true, false)
+    x <- cbind(1,
+	       L, T, J, F,
+	       L * J, T * J, L * F, T * F, J * F,
+	       L * J * F, T * J * F)
+    colnames(x) <- c("(intercept)",
+    		     "L", "T", "J", "F",
+    		     "L*J", "T*J", "L*F", "T*F", "J*F",
+		     "L*J*F", "T*J*F")
+    rownames(x) <- c("LJF", "LJM", "LSF", "LSM", "TJF",
+    		     "TJM", "TSF", "TSM", "OJF", "OJM", "OSF", "OSM")
+    x
+}
+
+get.transform <- function(vec = FALSE) {
+    x <- get.traits()
+    a <- solve(t(x))
+    if (vec) {
+        a <- kronecker(t(a), diag(ncol(x) - 1))
+    }
+    a
+}
+
+
 get.coefs <- function(fit) {
     coefs <- jmat(fit$coefficients)
     rownames(coefs) <- fit$variate_names
@@ -57,7 +89,7 @@ get.kkt <- function(fit) {
         kkt
 }
 
-get.cov <- function(fit) {
+get.cov <- function(fit, duals=FALSE) {
         kkt <- get.kkt(fit)
         imat <- get.imat(fit, duals=TRUE)
         n <- sum(fit$count)
@@ -83,7 +115,7 @@ get.se <- function(fit) {
        nc <- length(imatc)
        ne <- ncol(ce)
 
-       cov <- get.cov(fit)
+       cov <- get.cov(fit, duals = TRUE)
        se2 <- diag(cov)
        se2[se2 < 0] <- 0
        se <- sqrt(se2)
