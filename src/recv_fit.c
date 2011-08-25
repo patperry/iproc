@@ -400,18 +400,18 @@ static void rgrad_set(struct recv_fit_rgrad *rgrad,
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 {
+	// determine initial value and gradient
+	double f0 = fit->cur->resid.norm2;
+	//double g0 = -2 * f0;
+	
+	// stop early if residual is below tolerance
+	if (f0 <= fit->ctrl.gtol * fit->ctrl.gtol)
+		return RECV_FIT_CONV;
+	
 	// swap prev and cur evals
 	struct recv_fit_eval *tmp = fit->prev;
 	fit->prev = fit->cur;
 	fit->cur = tmp;
-
-	// determine initial value and gradient
-	double f0 = fit->prev->resid.norm2;
-	//double g0 = -2 * f0;
-
-	// stop early if residual is below tolerance
-	if (f0 <= fit->ctrl.gtol * fit->ctrl.gtol)
-		return RECV_FIT_CONV;
 
 	// determine the search direction
 	search_set(&fit->search, &fit->prev->resid, &fit->kkt);
