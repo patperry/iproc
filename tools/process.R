@@ -66,11 +66,13 @@ get.cov <- function(fit) {
 	s[s < 1e-8] <- 1.0
 	s <- sqrt(s)
 
-	skkt <- diag(1/s) %*% kkt %*% diag(1/s)
-	simat <- diag(1/s) %*% imat %*% diag(1/s)
+        skkt <- sweep(kkt / s, 2, s, "/")
+	simat <- sweep(imat / s, 2, s, "/")
 
-        scov <- solve(skkt, t(solve(skkt, simat / n)))
-        cov <- diag(1/s) %*% scov %*% diag(1/s)
+        qr.skkt <- qr(skkt)
+        scov <- qr.solve(qr.skkt, t(qr.solve(qr.skkt, simat / n)))
+        #scov <- solve(skkt, t(solve(skkt, simat / n)))
+        cov <- sweep(scov / s, 2, s, "/")
 	cov
 }
 
