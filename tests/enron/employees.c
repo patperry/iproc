@@ -6,7 +6,7 @@
 
 static const char *ENRON_TRAIT_NAMES[] = {
 	"Leg", "Trad", "Jun", "Fem",
-	"Fem:Jun", "Trad:Jun", "Leg:Fem", "Trad:Fem", "Jun:Fem",
+	"Leg:Jun", "Trad:Jun", "Leg:Fem", "Trad:Fem", "Jun:Fem",
 	"Leg:Jun:Fem", "Trad:Jun:Fem"
 };
 
