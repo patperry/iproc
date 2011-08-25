@@ -13,6 +13,7 @@
 #include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
+#include "recv_resid.h"
 
 
 static struct actors enron_actors;
@@ -63,7 +64,7 @@ static void setup(void) {
 	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
+	/*design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
@@ -74,7 +75,7 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
 	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
 	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);*/
 }
 
 static void teardown(void)
@@ -113,8 +114,10 @@ static void teardown(void)
 #define NULL_DEVIANCE		"null_deviance"
 #define DF_RESIDUAL		"df_residual"
 #define DF_NULL			"df_null"
+#define OBSERVED_COUNTS		"observed_counts"
+#define EXPECTED_COUNTS		"expected_counts"
 
-yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
+yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 {
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
@@ -257,10 +260,22 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* df.null */
 		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
 		YG(yajl_gen_integer(hand, ntot));
+		
+		/* residuals */
+		struct recv_resid resid;
+		
+		recv_resid_init(&resid, fit->msgs, d, fit->senders, coefs);
+		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
+		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
+		
+		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS), strlen(EXPECTED_COUNTS)));
+		YG(yajl_gen_matrix(hand, &resid.exp.dyad));
+		
+		recv_resid_deinit(&resid);
 	}
 	YG(yajl_gen_map_close(hand));
 		
-	/* residuals */
+
 	/* fitted.values */
 	/* effects */
 
@@ -290,12 +305,13 @@ yajl_gen_status yaj_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	return err;
 }
 
+
 static void output(const struct recv_fit *fit)
 {
 	/* generator config */
 	yajl_gen g = yajl_gen_alloc(NULL);
 	yajl_gen_config(g, yajl_gen_beautify, 1);
-	yaj_gen_recv_fit(g, fit);
+	yajl_gen_recv_fit(g, fit);
 	
 	
 	/* output */
