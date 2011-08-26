@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
-
+#include "yajl/yajl_tree.h"
 
 #include "ieee754.h"
 #include "json.h"
@@ -498,7 +498,114 @@ static int do_fit(const struct messages *msgs, const struct matrix *coefs0)
 	return err;
 }
 
-void parse_options(int argc, char **argv)
+enum init_coefs_key {
+	KEY_COEFS,
+	KEY_NROW,	
+	KEY_NCOL,	
+	KEY_DATA,
+	KEY_NA
+};
+
+
+static void init_coefs(struct matrix *coefs, char *filename)
+{
+	int err = 1;
+	FILE *fp = fopen(filename, "rb");
+	if (!fp)
+		goto out;
+	
+	fseek(fp, 0L, SEEK_END);
+	size_t sz = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+	
+	char *filebuf = xmalloc(sz + 1);
+	size_t rd = fread(filebuf, 1, sz, fp);
+	
+	/* file read error handling */
+	if (rd == 0 && !feof(fp)) {
+		fprintf(stderr, "error encountered on file read\n");
+		goto cleanup_file;
+	}
+	assert(rd == sz);
+	filebuf[sz] = '\0';
+	
+	char errbuf[1024];
+	errbuf[0] = '\0';
+	
+	yajl_val node = yajl_tree_parse(filebuf, errbuf, sizeof(errbuf));
+
+	/* parse error handling */
+	if (node == NULL) {
+		fprintf(stderr, "parse_error: ");
+		if (strlen(errbuf)) fprintf(stderr, " %s", errbuf);
+		else fprintf(stderr, "unknown error");
+		fprintf(stderr, "\n");
+		goto cleanup_yajl;
+	}
+	
+	/* ... and extract a nested value from the config file */
+	const char * coefs_path[] = { COEFFICIENTS, NULL };
+	const char * nrow_path[] = { "nrow", NULL};
+	const char * ncol_path[] = { "ncol", NULL};		
+	const char * data_path[] = { "data", NULL};				
+
+	yajl_val vcoefs = yajl_tree_get(node, coefs_path, yajl_t_any);
+
+	if (!vcoefs)
+		goto cleanup_yajl;
+
+	yajl_val vnrow = yajl_tree_get(vcoefs, nrow_path, yajl_t_number);
+	yajl_val vncol = yajl_tree_get(vcoefs, ncol_path, yajl_t_number);
+	yajl_val vdata = yajl_tree_get(vcoefs, data_path, yajl_t_array);
+	
+	if (!vnrow || !vncol || !vdata)
+		goto cleanup_yajl;
+	
+	ssize_t nrow = YAJL_GET_INTEGER(vnrow);
+	ssize_t ncol = YAJL_GET_INTEGER(vncol);
+	size_t i, n = nrow * ncol;
+	
+	if (nrow < 0 || ncol < 0)
+		goto cleanup_yajl;
+	
+	if (YAJL_GET_ARRAY(vdata)->len != n)
+		goto cleanup_yajl;
+		
+	matrix_init(coefs, nrow, ncol);
+	yajl_val *item = YAJL_GET_ARRAY(vdata)->values;
+	double *ptr = matrix_to_ptr(coefs);
+
+	for (i = 0; i < n; i++) {
+		if (!YAJL_IS_NUMBER(item[i])) {
+			matrix_deinit(coefs);
+			err = 1;
+			goto cleanup_coefs;
+		}
+		ptr[i] = YAJL_GET_DOUBLE(item[i]);
+	}
+	err = 0;
+	goto cleanup_yajl;
+
+	
+cleanup_coefs:
+	matrix_deinit(coefs);
+cleanup_yajl:
+	yajl_tree_free(node);
+	xfree(filebuf);
+cleanup_file:
+	fclose(fp);
+out:
+	if (err)
+		exit(err);
+}
+
+struct options {
+	char *startfile;
+	bool boot;
+	ssize_t seed;
+};
+
+static struct options parse_options(int argc, char **argv)
 {
 	int c;
 	static struct option long_options[] = {
@@ -508,50 +615,61 @@ void parse_options(int argc, char **argv)
 	};
 	int option_index = 0;
 	
-	char *start = NULL;
-	bool boot = false;
-	ssize_t seed = 0;
+	struct options opts;
+	opts.startfile = NULL;
+	opts.boot = false;
+	opts.seed = 0;
 
 	
 	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
 		 switch (c) {
 		 case 's':
-			start = optarg;
-			fprintf(stderr, "start file: '%s'\n", start);
+			opts.startfile = optarg;
+			fprintf(stderr, "start file: '%s'\n", opts.startfile);
 			fflush(stderr);
 			break;
 		 case 'b':
-			boot = true;
+			opts.boot = true;
 			if (optarg) {
-				seed = (ssize_t)strtoll(optarg, NULL, 10);
+				opts.seed = (ssize_t)strtoll(optarg, NULL, 10);
 			}
-			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", seed);
+			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", opts.seed);
 			fflush(stderr);
 			break;
 		 default:
 			exit(-1);
 		 }
 	 }
+	return opts;
 }
 
 int main(int argc, char **argv)
 {
 	int err = 0;
 	
-	parse_options(argc, argv);
+	struct options opts = parse_options(argc, argv);
+	struct matrix coefs0;
+	bool has_coefs0 = 0;
+		
+	if (opts.startfile) {
+		has_coefs0 = true;
+		init_coefs(&coefs0, opts.startfile);
+	}
 	
 	struct messages messages;
 	
 	setup();	
 	enron_messages_init(&messages, 10);
-	
-	
 
-	err = do_fit(&messages, NULL);
-
+	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
+	err = do_fit(&messages, pcoefs0);
 	
 	messages_deinit(&messages);
-	teardown();	
+	teardown();
+	
+	if (has_coefs0) {
+		matrix_deinit(&coefs0);
+	}
 	
 	return err;
 }
