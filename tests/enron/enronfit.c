@@ -2,7 +2,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <getopt.h>
+
 
 #include "ieee754.h"
 #include "json.h"
@@ -496,9 +498,47 @@ static int do_fit(const struct messages *msgs, const struct matrix *coefs0)
 	return err;
 }
 
-int main()
+void parse_options(int argc, char **argv)
+{
+	int c;
+	static struct option long_options[] = {
+		{ "start", required_argument, 0, 's' },
+		{ "boot", optional_argument, 0, 'b' },
+		{ NULL, 0, NULL, 0 }
+	};
+	int option_index = 0;
+	
+	char *start = NULL;
+	bool boot = false;
+	ssize_t seed = 0;
+
+	
+	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
+		 switch (c) {
+		 case 's':
+			start = optarg;
+			fprintf(stderr, "start file: '%s'\n", start);
+			fflush(stderr);
+			break;
+		 case 'b':
+			boot = true;
+			if (optarg) {
+				seed = (ssize_t)strtoll(optarg, NULL, 10);
+			}
+			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", seed);
+			fflush(stderr);
+			break;
+		 default:
+			exit(-1);
+		 }
+	 }
+}
+
+int main(int argc, char **argv)
 {
 	int err = 0;
+	
+	parse_options(argc, argv);
 	
 	struct messages messages;
 	
