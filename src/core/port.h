@@ -85,14 +85,6 @@ typedef long long intptr_t;
 # error "Need a typedef for intptr_t in config.h"
 #endif /* HAVE_UINTPTR_T */
 
-#ifdef HAVE_INTTYPES_H
-/* imaxabs already defined */
-#elif  HAVE_IMAXABS
-/* imaxabs already defined */
-#else
-intmax_t imaxabs(intmax_t i);
-#endif
-
 #ifndef INT32_MAX
 # define INT32_MAX (~ ((int32_t)(-1) << 31))
 #endif

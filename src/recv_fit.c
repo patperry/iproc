@@ -209,7 +209,9 @@ static void eval_add_constrs(struct recv_fit_eval *eval, ssize_t n)
 
 static void _eval_update(struct recv_fit_eval *eval,
 			 const struct recv_fit_constr *constr,
-			 const struct messages *msgs, struct frame *frame,
+			 const struct messages *xmsgs,
+			 const struct messages *ymsgs,
+			 struct frame *frame,
 			 struct recv_model *model)
 {
 	// clear frame; set model coefs
@@ -218,7 +220,45 @@ static void _eval_update(struct recv_fit_eval *eval,
 
 	// set loglik
 	recv_loglik_clear(&eval->loglik);
-	recv_loglik_add_all(&eval->loglik, frame, msgs);
+	struct messages_iter xit = messages_iter_make(xmsgs);
+	struct messages_iter yit = messages_iter_make(ymsgs);
+	double xt = -INFINITY;
+	double yt = -INFINITY;	
+	const struct message *msg;
+	ssize_t i, n;
+	
+	if (messages_iter_advance(&xit)) {
+		xt = MESSAGES_TIME(xit);
+	} else {
+		xt = INFINITY;
+	}
+	
+	while (messages_iter_advance(&yit)) {
+		yt = MESSAGES_TIME(yit);
+
+		while (xt < yt) {
+			frame_advance(frame, xt);
+			
+			n = MESSAGES_COUNT(xit);
+			for (i = 0; i < n; i++) {
+				msg = MESSAGES_VAL(xit, i);
+				frame_add(frame, msg);
+			}
+
+			if (messages_iter_advance(&xit)) {
+				xt = MESSAGES_TIME(xit);
+			} else {
+				xt = INFINITY;
+			}
+		}
+		
+		frame_advance(frame, yt);
+		n = MESSAGES_COUNT(yit);
+		for (i = 0; i < n; i++) {
+			msg = MESSAGES_VAL(yit, i);
+			recv_loglik_add(&eval->loglik, frame, msg);
+		}
+	}
 
 	// set resid
 	resid_set(&eval->resid, &eval->loglik, constr, &eval->params);
@@ -231,7 +271,9 @@ static void _eval_update(struct recv_fit_eval *eval,
 static void eval_set(struct recv_fit_eval *eval,
 		     const struct recv_fit_constr *constr,
 		     const struct matrix *coefs, const struct vector *duals,
-		     const struct messages *msgs, struct frame *frame,
+		     const struct messages *xmsgs,
+		     const struct messages *ymsgs,
+		     struct frame *frame,
 		     struct recv_model *model)
 {
 	ssize_t dim = recv_model_dim(model);
@@ -255,18 +297,19 @@ static void eval_set(struct recv_fit_eval *eval,
 		vector_fill(&pduals, 0.0);
 	}
 
-	_eval_update(eval, constr, msgs, frame, model);
+	_eval_update(eval, constr, xmsgs, ymsgs, frame, model);
 }
 
 static void eval_step(struct recv_fit_eval *eval,
 		      const struct recv_fit_constr *constr,
 		      const struct vector *params0, double scale,
-		      const struct vector *dir, const struct messages *msgs,
+		      const struct vector *dir, const struct messages *xmsgs,
+		      const struct messages *ymsgs,
 		      struct frame *frame, struct recv_model *model)
 {
 	vector_assign_copy(&eval->params, params0);
 	vector_axpy(scale, dir, &eval->params);
-	_eval_update(eval, constr, msgs, frame, model);
+	_eval_update(eval, constr, xmsgs, ymsgs, frame, model);
 }
 
 static void kkt_init(struct recv_fit_kkt *kkt, ssize_t nc, ssize_t dim,
@@ -448,7 +491,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		// evaluate the function at the new point
 		eval_step(fit->cur, &fit->constr,
 			  &fit->prev->params, fit->step, &fit->search.vector,
-			  fit->msgs, &fit->frame, &fit->model);
+			  fit->xmsgs, fit->ymsgs, &fit->frame, &fit->model);
 
 		if (!fit->cur->in_domain) {
 			goto domain_error_f;
@@ -493,16 +536,19 @@ domain_error_f:
 }
 
 void recv_fit_init(struct recv_fit *fit,
-		   const struct messages *msgs,
+		   const struct messages *xmsgs,
+		   const struct messages *ymsgs,		   
 		   const struct design *design,
 		   const struct actors *senders,
 		   const struct recv_fit_ctrl *ctrl)
 {
 	assert(fit);
-	assert(msgs);
+	assert(xmsgs);
 	assert(design);
-	assert(messages_max_to(msgs) < design_send_count(design));
-	assert(messages_max_from(msgs) < design_recv_count(design));
+	assert(messages_max_to(xmsgs) < design_send_count(design));
+	assert(messages_max_from(xmsgs) < design_recv_count(design));
+	assert(!ymsgs || (messages_max_to(ymsgs) < design_send_count(design)));
+	assert(!ymsgs || (messages_max_from(ymsgs) < design_recv_count(design)));
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
 	ssize_t dim = design_recv_dim(design);
@@ -515,7 +561,8 @@ void recv_fit_init(struct recv_fit *fit,
 		fit->ctrl = *ctrl;
 	}
 
-	fit->msgs = msgs;
+	fit->xmsgs = xmsgs;
+	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
 	fit->design = design;
 	fit->senders = senders;
 
@@ -531,7 +578,7 @@ void recv_fit_init(struct recv_fit *fit,
 	rgrad_init(&fit->rgrad, nc, dim, ne);
 
 	// evaluate the model at zero
-	eval_set(fit->cur, &fit->constr, NULL, NULL, fit->msgs, &fit->frame,
+	eval_set(fit->cur, &fit->constr, NULL, NULL, fit->xmsgs, fit->ymsgs, &fit->frame,
 		 &fit->model);
 	
 	fit->dev0 = recv_fit_dev(fit);
@@ -713,7 +760,7 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 				  const struct matrix *coefs0)
 {
 	if (coefs0 != NULL) {
-		eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->msgs, &fit->frame,
+		eval_set(fit->cur, &fit->constr, coefs0, NULL, fit->xmsgs, fit->ymsgs, &fit->frame,
 			 &fit->model);
 	}
 	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);

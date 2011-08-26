@@ -52,7 +52,6 @@ AC_CHECK_SIZEOF([void *])
 # Checks for library functions
 AC_CONFIG_LIBOBJ_DIR([lib])
 AC_FUNC_ALLOCA
-AC_REPLACE_FUNCS([imaxabs])
 
 # Checks for system services
 

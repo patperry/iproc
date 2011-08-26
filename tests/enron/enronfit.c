@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include "yajl/yajl_tree.h"
+#define DSFMT_MEXP 19937
+#define DSFMT_DO_NOT_USE_OLD_NAMES
+#include "dSFMT/dSFMT.h"
 
 #include "ieee754.h"
 #include "json.h"
@@ -394,7 +397,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* y = y */		
 		struct recv_resid resid;
 		
-		recv_resid_init(&resid, fit->msgs, d, fit->senders, coefs);
+		recv_resid_init(&resid, fit->ymsgs, d, fit->senders, coefs);
 		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
 		
@@ -446,14 +449,15 @@ static void output(const struct recv_fit *fit)
 	yajl_gen_free(g);
 }
 
-static int do_fit(const struct messages *msgs, const struct matrix *coefs0)
+static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
+		  const struct matrix *coefs0)
 {
 	ssize_t maxit = 100;
 	ssize_t report = 1;
 	bool trace = true;
 	
 	struct recv_fit fit;
-	recv_fit_init(&fit, msgs, &design, &senders, NULL);
+	recv_fit_init(&fit, xmsgs, ymsgs, &design, &senders, NULL);
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
@@ -497,15 +501,6 @@ static int do_fit(const struct messages *msgs, const struct matrix *coefs0)
 	
 	return err;
 }
-
-enum init_coefs_key {
-	KEY_COEFS,
-	KEY_NROW,	
-	KEY_NCOL,	
-	KEY_DATA,
-	KEY_NA
-};
-
 
 static void init_coefs(struct matrix *coefs, char *filename)
 {
@@ -602,7 +597,7 @@ out:
 struct options {
 	char *startfile;
 	bool boot;
-	ssize_t seed;
+	int32_t seed;
 };
 
 static struct options parse_options(int argc, char **argv)
@@ -631,15 +626,21 @@ static struct options parse_options(int argc, char **argv)
 		 case 'b':
 			opts.boot = true;
 			if (optarg) {
-				opts.seed = (ssize_t)strtoll(optarg, NULL, 10);
+				opts.seed = (int32_t)strtol(optarg, NULL, 10);
 			}
-			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", opts.seed);
+			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", (ssize_t)opts.seed);
 			fflush(stderr);
 			break;
 		 default:
-			exit(-1);
+			exit(1);
 		 }
 	 }
+	
+	if (opts.boot && !opts.startfile) {
+		fprintf(stderr, "Must specify start file for bootstrap\n");
+		exit(1);
+	}
+	
 	return opts;
 }
 
@@ -656,13 +657,16 @@ int main(int argc, char **argv)
 		init_coefs(&coefs0, opts.startfile);
 	}
 	
+	dsfmt_t dsfmt;
+	dsfmt_init_gen_rand(&dsfmt, opts.seed);
+	
 	struct messages messages;
 	
 	setup();	
 	enron_messages_init(&messages, 10);
 
 	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
-	err = do_fit(&messages, pcoefs0);
+	err = do_fit(&messages, &messages, pcoefs0);
 	
 	messages_deinit(&messages);
 	teardown();

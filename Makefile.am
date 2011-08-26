@@ -20,6 +20,8 @@ libiproc_la_SOURCES = \
 	src/frame.h \
 	src/messages.c \
 	src/messages.h \
+	src/recv_boot.c \
+	src/recv_boot.h \
 	src/recv_fit.c \
 	src/recv_fit.h \
 	src/recv_loglik.c \
@@ -47,10 +49,12 @@ libiproc_la_SOURCES = \
 
 libiproc_la_CPPFLAGS = \
 	-I./src/core \
+	-I./lib \
 	$(AM_CPPFLAGS)
 
 libiproc_la_LIBADD = \
-	libcore.la
+	libcore.la \
+	libdSFMT.la
 
 libcore_la_SOURCES = \
 	lib/timsort/timsort.h \
@@ -139,7 +143,7 @@ libdSFMT_la_SOURCES = \
 	lib/dSFMT/dSFMT-params216091.h \
 	lib/dSFMT/dSFMT-params2203.h \
 	lib/dSFMT/dSFMT-params4253.h \
-	lib/dSFMT/dSFMT-params44497.h
+	lib/dSFMT/dSFMT-params44497.h \
 	lib/dSFMT/dSFMT-params521.h \
 	lib/dSFMT/dSFMT-params86243.h \
 	lib/dSFMT/dSFMT.c \
@@ -155,7 +159,6 @@ libdSFMT_la_CPPFLAGS = \
 
 libdSFMT_la_LIBADD = \
 	$(LIBS) \
-	$(FLIBS) \
 	$(LTLIBOBJS)
 
 libf2c_la_SOURCES = \

@@ -6,7 +6,7 @@
 #include "actors.h"
 #include "matrix.h"
 #include "recv_model.h"
-#include <math.h>
+
 
 struct recv_resid_count {
 	struct matrix dyad;

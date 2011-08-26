@@ -222,6 +222,12 @@
 		22E9213B1406DB1E008115DE /* recv_resid.c in Sources */ = {isa = PBXBuildFile; fileRef = 22E921381406DB1E008115DE /* recv_resid.c */; };
 		22E9213C1406DB1E008115DE /* recv_resid.h in Headers */ = {isa = PBXBuildFile; fileRef = 22E921391406DB1E008115DE /* recv_resid.h */; };
 		22E9213D1406DB1E008115DE /* recv_resid.h in Headers */ = {isa = PBXBuildFile; fileRef = 22E921391406DB1E008115DE /* recv_resid.h */; };
+		22E9214114082779008115DE /* recv_boot.c in Sources */ = {isa = PBXBuildFile; fileRef = 22E9213F14082779008115DE /* recv_boot.c */; };
+		22E9214214082779008115DE /* recv_boot.c in Sources */ = {isa = PBXBuildFile; fileRef = 22E9213F14082779008115DE /* recv_boot.c */; };
+		22E9214314082779008115DE /* recv_boot.h in Headers */ = {isa = PBXBuildFile; fileRef = 22E9214014082779008115DE /* recv_boot.h */; };
+		22E9214414082779008115DE /* recv_boot.h in Headers */ = {isa = PBXBuildFile; fileRef = 22E9214014082779008115DE /* recv_boot.h */; };
+		22E9214514082F8D008115DE /* libdSFMT.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */; };
+		22E9214A14083CEA008115DE /* libdSFMT.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */; };
 		22EA3327136B29CE00C5627F /* design_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3325136B29AE00C5627F /* design_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		22EA332E136B29E700C5627F /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22EA332F136B29E700C5627F /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -413,6 +419,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 222FC40C13607C3F00E64FC9;
 			remoteInfo = iproc;
+		};
+		22E9214614082F97008115DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22749E3D1402A94A00C5A955;
+			remoteInfo = dSFMT;
+		};
+		22E9214814083CE3008115DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 22749E3D1402A94A00C5A955;
+			remoteInfo = dSFMT;
 		};
 		22EA3315136B14D900C5627F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -686,6 +706,8 @@
 		22DB0A8013CB68B5004149CE /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = src/strata.h; sourceTree = "<group>"; };
 		22E921381406DB1E008115DE /* recv_resid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_resid.c; path = src/recv_resid.c; sourceTree = "<group>"; };
 		22E921391406DB1E008115DE /* recv_resid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_resid.h; path = src/recv_resid.h; sourceTree = "<group>"; };
+		22E9213F14082779008115DE /* recv_boot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_boot.c; path = src/recv_boot.c; sourceTree = "<group>"; };
+		22E9214014082779008115DE /* recv_boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_boot.h; path = src/recv_boot.h; sourceTree = "<group>"; };
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EA3325136B29AE00C5627F /* design_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_test.c; path = tests/design_test.c; sourceTree = "<group>"; };
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
@@ -732,6 +754,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22E9214514082F8D008115DE /* libdSFMT.dylib in Frameworks */,
 				222FC45813608F4200E64FC9 /* vecLib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -781,6 +804,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22E9214A14083CEA008115DE /* libdSFMT.dylib in Frameworks */,
 				2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */,
 				2235DC0A13C7BBA500053BAA /* libjson.dylib in Frameworks */,
 				2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */,
@@ -929,6 +953,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				22E9213F14082779008115DE /* recv_boot.c */,
+				22E9214014082779008115DE /* recv_boot.h */,
 				22E921381406DB1E008115DE /* recv_resid.c */,
 				22E921391406DB1E008115DE /* recv_resid.h */,
 				22597405133D0AFB0022B52E /* actors.c */,
@@ -1166,6 +1192,7 @@
 				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
 				227E0ABB13F7E9E3003EC4BA /* shashset.h in Headers */,
 				22E9213D1406DB1E008115DE /* recv_resid.h in Headers */,
+				22E9214414082779008115DE /* recv_boot.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1236,6 +1263,7 @@
 				22DB0A8313CB68B5004149CE /* strata.h in Headers */,
 				227E0ABA13F7E9E3003EC4BA /* shashset.h in Headers */,
 				22E9213C1406DB1E008115DE /* recv_resid.h in Headers */,
+				22E9214314082779008115DE /* recv_boot.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1352,6 +1380,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				22E9214714082F97008115DE /* PBXTargetDependency */,
 			);
 			name = iproc;
 			productName = iproc;
@@ -1459,6 +1488,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				22E9214914083CE3008115DE /* PBXTargetDependency */,
 				2285AD1E13B1480300C46E8B /* PBXTargetDependency */,
 				2285AD2013B1480300C46E8B /* PBXTargetDependency */,
 			);
@@ -1698,6 +1728,7 @@
 				22755680140040D8004FC237 /* rv-icosib.c in Sources */,
 				22749E5E1402E2EC00C5A955 /* vars.c in Sources */,
 				22E9213B1406DB1E008115DE /* recv_resid.c in Sources */,
+				22E9214214082779008115DE /* recv_boot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1765,6 +1796,7 @@
 				2275567F140040D8004FC237 /* rv-icosib.c in Sources */,
 				22749E5D1402E2EC00C5A955 /* vars.c in Sources */,
 				22E9213A1406DB1E008115DE /* recv_resid.c in Sources */,
+				22E9214114082779008115DE /* recv_boot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1979,6 +2011,16 @@
 			isa = PBXTargetDependency;
 			target = 222FC40C13607C3F00E64FC9 /* iproc */;
 			targetProxy = 22D4789113AC4C2C00FF46CD /* PBXContainerItemProxy */;
+		};
+		22E9214714082F97008115DE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22749E3D1402A94A00C5A955 /* dSFMT */;
+			targetProxy = 22E9214614082F97008115DE /* PBXContainerItemProxy */;
+		};
+		22E9214914083CE3008115DE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 22749E3D1402A94A00C5A955 /* dSFMT */;
+			targetProxy = 22E9214814083CE3008115DE /* PBXContainerItemProxy */;
 		};
 		22EA3316136B14D900C5627F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2255,6 +2297,7 @@
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -2270,6 +2313,7 @@
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				SDKROOT = macosx;
 			};

@@ -84,7 +84,7 @@ struct recv_fit_rgrad {
 
 struct recv_fit {
 	struct recv_fit_ctrl ctrl;
-	const struct messages *msgs;
+	const struct messages *xmsgs, *ymsgs;
 	const struct design *design;
 	const struct actors *senders;
 
@@ -111,7 +111,8 @@ struct recv_fit {
 };
 
 void recv_fit_init(struct recv_fit *fit,
-		   const struct messages *msgs,
+		   const struct messages *xmsgs,
+		   const struct messages *ymsgs,
 		   const struct design *design,
 		   const struct actors *senders,
 		   const struct recv_fit_ctrl *ctrl);
