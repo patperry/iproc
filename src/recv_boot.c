@@ -1,8 +1,8 @@
 #include "port.h"
 
 #include <assert.h>
-
-
+#include <stdlib.h>
+#include "vector.h"
 #include "recv_boot.h"
 
 
@@ -102,7 +102,16 @@ void recv_boot_init(struct recv_boot *boot,
 			vector_fill(&probs, 0.0);			
 			recv_model_axpy_probs(1.0, &boot->model, from, &probs);			
 			
-			sample_subset(p, nrecv, dsfmt, maxntry, to, nto);
+			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
+				fprintf(stdout, "Failed to sample subset of size %"SSIZE_FMT"\n", nto);
+				fprintf(stderr, "Failed to sample subset of size %"SSIZE_FMT"\n", nto);				
+				
+				printf("probs:\n");
+				for (i = 0; i < vector_dim(&probs); i++) {
+					printf("%.10e, ", vector_item(&probs, i));
+				}
+				exit(1);
+			}
 
 			messages_add(&boot->messages, t, from, to, nto, msg->attr);
 		}
