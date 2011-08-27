@@ -70,7 +70,7 @@ static void setup(void) {
 	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
-	/*design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
+	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
@@ -81,7 +81,7 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
 	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
 	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);*/
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -664,7 +664,7 @@ int main(int argc, char **argv)
 	xmsgs = ymsgs = &enron_messages;
 	
 	setup();	
-	enron_messages_init(&enron_messages, 10);
+	enron_messages_init(&enron_messages, 5);
 	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
 	
 	if (opts.boot) {
