@@ -16,6 +16,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
+#include "recv_boot.h"
 #include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
@@ -657,18 +658,31 @@ int main(int argc, char **argv)
 		init_coefs(&coefs0, opts.startfile);
 	}
 	
-	dsfmt_t dsfmt;
-	dsfmt_init_gen_rand(&dsfmt, opts.seed);
-	
-	struct messages messages;
+	struct recv_boot boot;
+	struct messages enron_messages;
+	struct messages *xmsgs, *ymsgs;
+	xmsgs = ymsgs = &enron_messages;
 	
 	setup();	
-	enron_messages_init(&messages, 10);
-
+	enron_messages_init(&enron_messages, 10);
 	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
-	err = do_fit(&messages, &messages, pcoefs0);
 	
-	messages_deinit(&messages);
+	if (opts.boot) {
+		dsfmt_t dsfmt;
+		dsfmt_init_gen_rand(&dsfmt, opts.seed);
+
+		recv_boot_init(&boot, &enron_messages, &design, &senders, pcoefs0, &dsfmt);
+		ymsgs = &boot.messages;
+	}
+	
+	err = do_fit(xmsgs, ymsgs, pcoefs0);
+	
+	messages_deinit(&enron_messages);
+	
+	if (opts.boot) {
+		recv_boot_deinit(&boot);
+	}
+	
 	teardown();
 	
 	if (has_coefs0) {
