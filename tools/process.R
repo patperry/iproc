@@ -4,6 +4,8 @@ jmat <- function(j) { matrix(j$data, j$nrow, j$ncol) }
 #fit <- fromJSON("~/Projects/iproc/fit.json")
 
 get.traits <- function() {
+    true <- 1
+    false <- 0
     L <- c(true, true, true, true, false, false,
       	   false, false, false, false, false, false)
     T <- c(false, false, false, false, true, true,
