@@ -86,7 +86,7 @@ void recv_boot_init(struct recv_boot *boot,
 	vector_init(&probs, nrecv);
 	double *p = vector_to_ptr(&probs);	
 	
-	ssize_t maxntry = 100;
+	ssize_t maxntry = 100000;
 	
 	MESSAGES_FOREACH(it, msgs) {
 		t = MESSAGES_TIME(it);
