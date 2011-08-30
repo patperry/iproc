@@ -364,10 +364,11 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg);
 	assert(msg->time == frame_time(f));
 
+	//fprintf(stderr, "================= Add (%p) =================\n", msg);
+	
 	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
 	fmsg->message = msg;
 	fmsg->interval = 0;
-	
 }
 
 static bool has_pending_messages(const struct frame *f)
@@ -419,6 +420,15 @@ static void process_current_messages(struct frame *f)
 		double time = frame_time(f);
 #endif
 
+		//fprintf(stderr, "-> message_add %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
+		
+		//if (msg->nto > 0)
+		//	fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+		//for (ito = 1; ito < msg->nto; ito++) {
+		//	fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+		//}
+		//fprintf(stderr, " ] }\n");
+		
 		// notify all observers
 		const struct frame_observer *obs;
 		ARRAY_FOREACH(obs, &f->observers) {
@@ -469,9 +479,21 @@ static void process_event(struct frame *f)
 	double time = frame_time(f);
 #endif
 
+	//fprintf(stderr, "-> message_advance %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
+	//ssize_t ito;
+	
+	//if (msg->nto > 0)
+	//	fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+	//for (ito = 1; ito < msg->nto; ito++) {
+	//	fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+	//}
+	//fprintf(stderr, " ] }\n");
+	
 	// notify all observers
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
+		
+
 		if (obs->callbacks.message_advance) {
 			obs->callbacks.message_advance(obs->udata, f, msg,
 						       intvl);
@@ -489,6 +511,8 @@ void frame_advance(struct frame *f, double time)
 	assert(f);
 	assert(time >= frame_time(f));
 
+	//fprintf(stderr, "=============== Advance (%"SSIZE_FMT") ===============\n", (ssize_t)time);
+	
 	if (frame_time(f) < time)
 		process_current_messages(f);
 
@@ -516,9 +540,12 @@ void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
 	svector_axpy(1.0, delta, dx);
 
+	//fprintf(stderr, "-> recv_update %" SSIZE_FMT ", %" SSIZE_FMT "\n", isend, jrecv);
+	
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
+
 			obs->callbacks.recv_update(obs->udata, f, isend,
 						   jrecv, delta);
 		}
