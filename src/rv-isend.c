@@ -43,6 +43,9 @@ static void isend_message_add(void *udata, struct frame *f,
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->to[ito] == msg->from)
+			continue;
+		
 		ssize_t jrecv = msg->to[ito];
 		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 		if (vector_item(dx, dyn_index) == 0.0) {

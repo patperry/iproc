@@ -65,8 +65,8 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 	for (i = 0; i < n; i++) {
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
-		
-		if (msg1 == msg)
+
+		if (msg1->from == msg->from)
 			continue;
 		
 		ssize_t intvl2 = fmsg->interval;
@@ -76,21 +76,30 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 		dx_index = ix; // affects delta
 		
 		for (ito = 0; ito < nto; ito++) {
+			if (msg->to[ito] == msg->from
+			    || msg->to[ito] == msg1->from)
+				continue;
+			
 			ssize_t isend = msg->to[ito];
+			
+			assert(isend != jrecv);
+			assert(isend != krecv);
+			assert(jrecv != krecv);
+
 			frame_recv_update(f, isend, jrecv, &delta);
 		}
 	}
 	
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->from == msg->to[ito])
+			continue;
+
 		ssize_t coksend = msg->to[ito];
 
 		frame_get_send_messages(f, coksend, &imsg, &n);
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
-			
-			if (msg1 == msg)
-				continue;
 			
 			ssize_t intvl1 = fmsg->interval;
 			ssize_t coix = dyn_index + intvl1;
@@ -99,7 +108,15 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 			
 			ssize_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
+				if (msg1->to[ito1] == msg1->from
+				    || msg1->to[ito1] == msg->from)
+					continue;
+				
 				ssize_t coisend = msg1->to[ito1];
+				
+				assert(coisend != cojrecv);
+				assert(coisend != coksend);
+				assert(cojrecv != coksend);
 				
 				frame_recv_update(f, coisend, cojrecv, &delta);
 			}
@@ -144,9 +161,9 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
 		
-		if (msg1 == msg)
+		if (msg1->from == msg->from)
 			continue;
-		
+				
 		ssize_t intvl2 = fmsg->interval;
 		ssize_t ix0 = dyn_index + (intvl - 1) + intvl2 * (nintvl + 1);
 		ssize_t ix1 = ix0 + 1;
@@ -156,22 +173,31 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 		dx_index[1] = ix1; //
 		
 		for (ito = 0; ito < nto; ito++) {
+			if (msg->to[ito] == msg->from
+			    || msg->to[ito] == msg1->from)
+				continue;
+			
 			ssize_t isend = msg->to[ito];
+			
+			assert(isend != jrecv);
+			assert(isend != krecv);
+			assert(jrecv != krecv);
+			
 			frame_recv_update(f, isend, jrecv, &delta);
 		}
 	}
 	
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->from == msg->to[ito])
+			continue;
+
 		ssize_t coksend = msg->to[ito];
 
 		frame_get_send_messages(f, coksend, &imsg, &n);
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
-			
-			if (msg1 == msg)
-				continue;
-			
+						
 			ssize_t intvl1 = fmsg->interval;
 			ssize_t coix0 = dyn_index + intvl1 + (intvl - 1) * (nintvl + 1);
 			ssize_t coix1 = coix0 + (nintvl + 1);
@@ -181,8 +207,16 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 			
 			ssize_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
+				if (msg1->to[ito1] == msg1->from
+				    || msg1->to[ito1] == msg->from)
+					continue;
+				
 				ssize_t coisend = msg1->to[ito1];
 
+				assert(coisend != cojrecv);
+				assert(coisend != coksend);
+				assert(cojrecv != coksend);
+				
 				frame_recv_update(f, coisend, cojrecv, &delta);
 			}
 		}

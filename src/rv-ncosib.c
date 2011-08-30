@@ -59,10 +59,13 @@ static void ncosib_message_add(void *udata, struct frame *f,
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	ssize_t isend = msg->from;
-	ssize_t cojrecv = isend;
+	ssize_t cojrecv = msg->from;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->to[ito] == msg->from)
+			continue;
+		
 		ssize_t krecv = msg->to[ito];
 
 		frame_get_recv_messages(f, krecv, &imsg, &n);
@@ -70,19 +73,26 @@ static void ncosib_message_add(void *udata, struct frame *f,
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
 			
-			if (msg1 == msg)
+			assert(msg1->to[ito] == msg1->to[ito]);
+			if (msg1->from == msg->from || msg1->from == msg->to[ito])
 				continue;
 			
 			ssize_t intvl = fmsg->interval;
-			ssize_t ix = dyn_index + intvl * (nintvl + 1);
-			ssize_t coix = dyn_index + intvl;
+			ssize_t coix = dyn_index + intvl;			
+			ssize_t ix = dyn_index + intvl * (nintvl + 1);			
+			ssize_t jrecv = msg1->from;
+			ssize_t coisend = msg1->from;			
+			
+			assert(isend != jrecv);
+			assert(isend != krecv);
+			assert(jrecv != krecv);
 			
 			dx_index[0] = ix;
-			
-			ssize_t jrecv = msg1->from;
-			ssize_t coisend = jrecv;
-			
 			frame_recv_update(f, isend, jrecv, &delta);
+			
+			assert(coisend != cojrecv);
+			assert(coisend != krecv);
+			assert(cojrecv != krecv);
 			
 			dx_index[0] = coix;
 			frame_recv_update(f, coisend, cojrecv, &delta);
@@ -118,17 +128,21 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 	
 	ssize_t isend = msg->from;
-	ssize_t cojrecv = isend;
+	ssize_t cojrecv = msg->from;
 	
 	for (ito = 0; ito < nto; ito++) {
-		ssize_t krecv = msg->to[ito];
+		if (msg->to[ito] == msg->from)
+			continue;
 
+		ssize_t krecv = msg->to[ito];
+		
 		frame_get_recv_messages(f, krecv, &imsg, &n);
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
 			
-			if (msg1 == msg)
+			assert(msg1->to[ito] == msg1->to[ito]);
+			if (msg1->from == msg->from || msg1->from == msg->to[ito])
 				continue;
 			
 			ssize_t intvl1 = fmsg->interval;
@@ -137,17 +151,23 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 			ssize_t coix0 = dyn_index + intvl1 + (intvl - 1) * (nintvl + 1);
 			ssize_t coix1 = coix0 + (nintvl + 1);
 			
-			dx_index[0] = ix0;
-			dx_index[1] = ix1;
-			
 			ssize_t jrecv = msg1->from;
 			ssize_t coisend = jrecv;
-
+			
+			assert(isend != jrecv);
+			assert(isend != krecv);
+			assert(jrecv != krecv);
+			
+			dx_index[0] = ix0;
+			dx_index[1] = ix1;
 			frame_recv_update(f, isend, jrecv, &delta);
+			
+			assert(coisend != cojrecv);
+			assert(coisend != krecv);
+			assert(cojrecv != krecv);
 			
 			dx_index[0] = coix0;
 			dx_index[1] = coix1;
-			
 			frame_recv_update(f, coisend, cojrecv, &delta);
 		}
 	}

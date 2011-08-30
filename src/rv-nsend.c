@@ -47,6 +47,9 @@ static void nsend_message_add(void *udata, struct frame *f,
 
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->to[ito] == msg->from)
+			continue;
+
 		ssize_t jrecv = msg->to[ito];
 
 		frame_recv_update(f, isend, jrecv, &delta);
@@ -78,6 +81,9 @@ static void nsend_message_advance(void *udata, struct frame *f,
 
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->to[ito] == msg->from)
+			continue;
+
 		ssize_t jrecv = msg->to[ito];
 
 		ssize_t ix1 = dyn_index + intvl;

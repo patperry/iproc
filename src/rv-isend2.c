@@ -47,10 +47,13 @@ static void isend2_message_add(void *udata, struct frame *f,
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	ssize_t isend = msg->from;
-	ssize_t cokrecv = isend;
+	ssize_t cokrecv =  msg->from;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->from == msg->to[ito])
+			continue;
+		
 		ssize_t ksend = msg->to[ito];
 
 		frame_get_send_messages(f, ksend, &imsg, &n);
@@ -58,12 +61,18 @@ static void isend2_message_add(void *udata, struct frame *f,
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
 			
-			if (msg1 == msg)
-				continue;
-			
 			ssize_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
+				if (msg1->to[ito1] == msg1->from
+				    || msg1->to[ito1] == msg->from)
+					continue;
+				
 				ssize_t jrecv = msg1->to[ito1];
+				
+				assert(isend != jrecv);
+				assert(isend != ksend);
+				assert(jrecv != ksend);
+				
 				const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 				
 				if (vector_item(dx, dyn_index) == 0.0) {
@@ -78,7 +87,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 		const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 		const struct message *msg1 = fmsg->message;
 		
-		if (msg1 == msg)
+		if (msg1->from == msg->from)
 			continue;
 		
 		ssize_t intvl1 = fmsg->interval;
@@ -88,7 +97,15 @@ static void isend2_message_add(void *udata, struct frame *f,
 		dx_index[0] = ix;
 		
 		for (ito = 0; ito < nto; ito++) {
+			if (msg->from == msg->to[ito]
+			    || msg1->from == msg->to[ito])
+				continue;
+			
 			ssize_t cojrecv = msg->to[ito];
+			
+			assert(coisend != cojrecv);
+			assert(coisend != cokrecv);
+			assert(cojrecv != cokrecv);
 			
 			const struct vector *codx = frame_recv_dx(f, coisend, cojrecv);
 			

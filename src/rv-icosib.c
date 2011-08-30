@@ -48,31 +48,41 @@ static void icosib_message_add(void *udata, struct frame *f,
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	ssize_t isend = msg->from;
-	ssize_t cojrecv = isend;
+	ssize_t cojrecv = msg->from;
 	
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		ssize_t krecv = msg->to[ito];
+		if (msg->to[ito] == msg->from)
+			continue;
 
+		ssize_t krecv = msg->to[ito];
+		
 		frame_get_recv_messages(f, krecv, &imsg, &n);
 		for (i = 0; i < n; i++) {
 			const struct frame_message *fmsg = frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
 			
-			if (msg1 == msg)
+			assert(msg1->to[ito] == msg1->to[ito]);
+			if (msg1->from == msg->from || msg1->from == msg->to[ito])
 				continue;
 			
 			ssize_t jrecv = msg1->from;
-			ssize_t coisend = jrecv;
+			ssize_t coisend = msg1->from;			
+			
+			assert(isend != jrecv);
+			assert(isend != krecv);
+			assert(jrecv != krecv);
 			
 			const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-			
 			if (vector_item(dx, dyn_index) == 0.0) {
 				frame_recv_update(f, isend, jrecv, &delta);
 			}
 			
-			const struct vector *codx = frame_recv_dx(f, coisend, cojrecv);
+			assert(coisend != cojrecv);
+			assert(coisend != krecv);
+			assert(cojrecv != krecv);
 			
+			const struct vector *codx = frame_recv_dx(f, coisend, cojrecv);
 			if (vector_item(codx, dyn_index) == 0.0) {
 				frame_recv_update(f, coisend, cojrecv, &delta);
 			}

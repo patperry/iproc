@@ -47,8 +47,10 @@ static void nrecv_message_add(void *udata, struct frame *f,
 
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->from == msg->to[ito])
+			continue;
+		
 		ssize_t isend = msg->to[ito];
-
 		frame_recv_update(f, isend, jrecv, &delta);
 	}
 }
@@ -77,6 +79,9 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		if (msg->from == msg->to[ito])
+			continue;
+		
 		ssize_t isend = msg->to[ito];
 		ssize_t ix1 = dyn_index + intvl;
 		ssize_t ix0 = ix1 - 1;
