@@ -288,6 +288,38 @@ void svector_axpys(double scale, const struct svector *x, struct svector *y)
 	}
 }
 
+void svector_scatter(const struct svector *src, struct vector *dst)
+{
+	assert(src);
+	assert(dst);
+	assert(svector_dim(src) == vector_dim(dst));
+	
+	struct svector_iter it;
+	ssize_t i;
+	double val;
+	SVECTOR_FOREACH(it, src) {
+		i = SVECTOR_IDX(it);
+		val = SVECTOR_VAL(it);
+		vector_set_item(dst, i, val);
+	}
+}
+
+void svector_gather(struct svector *dst, const struct vector *src)
+{
+	assert(src);
+	assert(dst);
+	assert(svector_dim(dst) == vector_dim(src));
+	
+	ssize_t inz, nnz = svector_count(dst);
+	const ssize_t *index = svector_index_ptr(dst);
+	double *value = svector_data_ptr(dst);
+	
+	for (inz = 0; inz < nnz; inz++) {
+		ssize_t i = index[inz];
+		value[i] = vector_item(src, i);
+	}
+}
+
 void svector_printf(const struct svector *v)
 {
 	struct svector_iter it;

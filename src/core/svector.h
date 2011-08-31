@@ -66,6 +66,10 @@ double svector_dots(const struct svector *v1, const struct svector *v2);
 void svector_axpy(double scale, const struct svector *x, struct vector *y);
 void svector_axpys(double scale, const struct svector *x, struct svector *y);
 
+/* sparse operations */
+void svector_scatter(const struct svector *src, struct vector *dst);
+void svector_gather(struct svector *dst, const struct vector *src);
+
 /* position-based operations */
 double *svector_find(const struct svector *v, ssize_t i,
 		     struct svector_pos *pos);
