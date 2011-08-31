@@ -351,7 +351,6 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
 
 	double *pdeta = svector_item_ptr(&send->deta, jrecv);
-	//double *pdeta = svector_find(&send->deta, jrecv, &pos);
 
 	if (svector_count(&send->deta) != array_count(&send->active)) {
 		assert(svector_count(&send->deta) == array_count(&send->active) + 1);
