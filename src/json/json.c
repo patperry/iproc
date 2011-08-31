@@ -15,6 +15,11 @@
 #define VECTOR_DIM  "dim"
 #define VECTOR_DATA "data"
 
+#define SVECTOR_DIM   "dim"
+#define SVECTOR_COUNT "count"
+#define SVECTOR_PATTERN "pattern"
+#define SVECTOR_DATA "data"
+
 #define MATRIX_NROW "nrow"
 #define MATRIX_NCOL "ncol"
 #define MATRIX_DATA "data"
@@ -45,6 +50,42 @@ yajl_gen_status yajl_gen_vector(yajl_gen hand, const struct vector * x)
 	}
 	YG(yajl_gen_array_close(hand));
 
+	return err;
+}
+
+yajl_gen_status yajl_gen_svector(yajl_gen hand, const struct svector *x)
+{
+	assert(x);
+	yajl_gen_status err = yajl_gen_status_ok;
+	
+	ssize_t inz, nnz = svector_count(x);
+	const ssize_t *index = svector_index_ptr(x);
+	const double *data = svector_data_ptr(x);
+	
+	YG(yajl_gen_map_open(hand));
+	
+	YG(yajl_gen_string(hand, YSTR(SVECTOR_DIM), strlen(SVECTOR_DIM)));
+	YG(yajl_gen_integer(hand, svector_dim(x)));
+	
+	YG(yajl_gen_string(hand, YSTR(SVECTOR_COUNT), strlen(SVECTOR_COUNT)));
+	YG(yajl_gen_integer(hand, nnz));
+
+	YG(yajl_gen_string(hand, YSTR(SVECTOR_PATTERN), strlen(SVECTOR_PATTERN)));
+	YG(yajl_gen_array_open(hand));
+	for (inz = 0; inz < nnz; inz++) {
+		YG(yajl_gen_integer(hand, index[inz] + 1));
+	}
+	YG(yajl_gen_array_close(hand));
+	
+	YG(yajl_gen_string(hand, YSTR(SVECTOR_DATA), strlen(SVECTOR_DATA)));
+	YG(yajl_gen_array_open(hand));
+	for (inz = 0; inz < nnz; inz++) {
+		YG(yajl_gen_ieee754(hand, data[inz]));
+	}
+	YG(yajl_gen_array_close(hand));
+	
+	YG(yajl_gen_map_close(hand));
+	
 	return err;
 }
 
