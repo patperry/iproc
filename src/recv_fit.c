@@ -18,17 +18,17 @@ static void constrs_deinit(struct array *constrs)
 {
 	struct recv_fit_constr *c;
 	ARRAY_FOREACH(c, constrs) {
-		vector_deinit(&c->weights);
+		svector_deinit(&c->weights);
 		xfree(c->name);
 	}
 	array_deinit(constrs);
 }
 
-static void constrs_add(struct array *constrs, const struct vector *weights,
+static void constrs_add(struct array *constrs, const struct svector *weights,
 		        double value, const char *name)
 {
 	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	vector_init_copy(&constr->weights, weights);
+	svector_init_copy(&constr->weights, weights);
 	constr->value = value;
 	constr->name = xstrdup(name);
 }
@@ -42,9 +42,9 @@ static void constrs_add_set(struct array *constrs, ssize_t dim, ssize_t nc,
 	assert(isfinite(val));
 
 	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	vector_init(&constr->weights, dim * nc);
+	svector_init(&constr->weights, dim * nc);
 	
-	vector_set_item(&constr->weights, i + c * dim, 1.0);
+	svector_set_item(&constr->weights, i + c * dim, 1.0);
 	constr->value = val;
 
 	const char *fmt = "Set(%"SSIZE_FMT",%"SSIZE_FMT",%g)";
@@ -67,10 +67,10 @@ static void constrs_add_eq(struct array *constrs, ssize_t dim, ssize_t nc,
 	assert(!(i1 == i2 && c1 == c2));
 
 	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	vector_init(&constr->weights, dim * nc);
+	svector_init(&constr->weights, dim * nc);
 
-	vector_set_item(&constr->weights, i1 + c1 * dim, +1.0);
-	vector_set_item(&constr->weights, i2 + c2 * dim, -1.0);
+	svector_set_item(&constr->weights, i1 + c1 * dim, +1.0);
+	svector_set_item(&constr->weights, i2 + c2 * dim, -1.0);
 	constr->value = 0.0;
 
 	const char *fmt = "Eq((%"SSIZE_FMT",%"SSIZE_FMT"),(%"SSIZE_FMT"),(%"SSIZE_FMT"))";
@@ -123,7 +123,7 @@ static void resid_set(struct recv_fit_resid *resid,
 	
 	vector_fill(&r1, 0.0);
 	for (ice = 0; ice < nce; ice++) {
-		vector_axpy(vector_item(&duals, ice), &ce[ice].weights, &r1);
+		svector_axpy(vector_item(&duals, ice), &ce[ice].weights, &r1);
 	}
 
 	for (ic = 0; ic < nc; ic++) {
@@ -140,7 +140,7 @@ static void resid_set(struct recv_fit_resid *resid,
 	struct vector primals = vector_slice(params, 0, nc * dim);
 
 	for (ice = 0; ice < nce; ice++) {
-		double val = (vector_dot(&ce[ice].weights, &primals)
+		double val = (svector_dot(&ce[ice].weights, &primals)
 			      - ce[ice].value);
 		vector_set_item(&r2, ice, val);
 	}
@@ -347,9 +347,10 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	// k12
 	struct matrix k12 = matrix_slice(k, 0, nc * dim, nc * dim, nce);
 	ssize_t ice;
+	matrix_fill(&k12, 0.0);
 	for (ice = 0; ice < nce; ice++) {
 		struct vector dst = matrix_col(&k12, ice);
-		vector_assign_copy(&dst, &ce[ice].weights);
+		svector_scatter(&ce[ice].weights, &dst);
 	}
 	
 	// k21
@@ -795,7 +796,7 @@ ssize_t recv_fit_constr_count(const struct recv_fit *fit)
 }
 
 void recv_fit_get_constr(const struct recv_fit *fit, ssize_t i,
-			 const struct vector **pweights, double *pvalue,
+			 const struct svector **pweights, double *pvalue,
 			 const char **pname)
 {
 	const struct recv_fit_constr *c = array_item(&fit->constrs, i);
@@ -818,7 +819,7 @@ static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
 
 }
 
-void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
+void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
 			 double be, const char *name)
 {
 	constrs_add(&fit->constrs, ce, be, name);

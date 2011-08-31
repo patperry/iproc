@@ -9,6 +9,7 @@
 #include "messages.h"
 #include "recv_loglik.h"
 #include "recv_model.h"
+#include "svector.h"
 #include "vector.h"
 
 #define RECV_FIT_GTOL0		(1e-8)
@@ -47,7 +48,7 @@ enum recv_fit_task {
 };
 
 struct recv_fit_constr {
-	struct vector weights;
+	struct svector weights;
 	double value;
 	char *name;
 };
@@ -120,9 +121,9 @@ void recv_fit_deinit(struct recv_fit *fit);
 /* constraints */
 ssize_t recv_fit_constr_count(const struct recv_fit *fit);
 void recv_fit_get_constr(const struct recv_fit *fit, ssize_t i,
-			 const struct vector **pweights, double *pvalue,
+			 const struct svector **pweights, double *pvalue,
 			 const char **pname);
-void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
+void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
 			 double be, const char *name);
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val);

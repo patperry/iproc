@@ -74,14 +74,14 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	/*design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
 	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
 	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);*/
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -91,8 +91,8 @@ static void add_constraints(struct recv_fit *fit)
 	ssize_t dim = recv_model_dim(m);
 	ssize_t nc = recv_model_cohort_count(m);
 
-	struct vector ce;
-	vector_init(&ce, dim * nc);
+	struct svector ce;
+	svector_init(&ce, dim * nc);
 	ssize_t i;
 	char buf[1024];
 	
@@ -103,106 +103,106 @@ static void add_constraints(struct recv_fit *fit)
 		if (!((0 <= i && i < 9) // 2nd-order interactions
 		      || (11 <= i) // dynamic effects
 		      )) {		
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
 		
 		if (!((0 <= i && i < 9) // 2nd-order interactions
 		      )) {		
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "L*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "T*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "J*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "F*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			// 2-way interactions
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_LJM, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);		
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_LJM, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);		
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "LJ*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_TJM, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_TJM, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "TJ*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_LSF, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_LSF, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "LF*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_TSF, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_TSF, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "TF*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
-			vector_fill(&ce, 0.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, +1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
-			vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
+			svector_clear(&ce);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, +1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "JF*Var%"SSIZE_FMT"", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
 		
 		// 3-way interactions
-		vector_fill(&ce, 0.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_LJF, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_LJM, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_LSF, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);		
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		svector_clear(&ce);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_LJF, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_LJM, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_LSF, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);		
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 		snprintf(buf, sizeof(buf), "LJF*Var%"SSIZE_FMT"", i + 1);
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
 		
-		vector_fill(&ce, 0.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_TJF, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_TJM, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_TSF, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);		
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
-		vector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
+		svector_clear(&ce);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_TJF, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_TJM, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_TSF, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);		
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
+		svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 		snprintf(buf, sizeof(buf), "TJF*Var%"SSIZE_FMT"", i + 1);
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
 	}
-	vector_deinit(&ce);
+	svector_deinit(&ce);
 	
 	/* add constraints to make the model identifiable (TODO/not implemented) */
 	//ssize_t nadd = recv_fit_add_constr_identify(fit);
@@ -331,9 +331,9 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			n = recv_fit_constr_count(fit);
 			
 			for (i = 0; i < n; i++) {
-				const struct vector *weights;
+				const struct svector *weights;
 				recv_fit_get_constr(fit, i, &weights, NULL, NULL);
-				YG(yajl_gen_vector(hand, weights));
+				YG(yajl_gen_svector(hand, weights));
 			}
 		}
 		YG(yajl_gen_array_close(hand));
