@@ -47,10 +47,9 @@ enum recv_fit_task {
 };
 
 struct recv_fit_constr {
-	ssize_t dim, nc;
-	struct matrix ce;
-	struct vector be;
-	struct array names;
+	struct vector weights;
+	double value;
+	char *name;
 };
 
 struct recv_fit_resid {
@@ -96,7 +95,7 @@ struct recv_fit {
 	double dev0;
 	
 	/* optimization constraints */
-	struct recv_fit_constr constr;
+	struct array constrs;
 	
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
@@ -120,16 +119,16 @@ void recv_fit_deinit(struct recv_fit *fit);
 
 /* constraints */
 ssize_t recv_fit_constr_count(const struct recv_fit *fit);
-void recv_fit_get_constr(const struct recv_fit *fit, const struct matrix **ce,
-			 const struct vector **be);
-void recv_fit_get_constr_names(const struct recv_fit *fit, const char ***names);
+void recv_fit_get_constr(const struct recv_fit *fit, ssize_t i,
+			 const struct vector **pweights, double *pvalue,
+			 const char **pname);
 void recv_fit_add_constr(struct recv_fit *fit, const struct vector *ce,
 			 double be, const char *name);
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
 			    ssize_t i2, ssize_t c2);
-ssize_t recv_fit_add_constr_identify(struct recv_fit *fit);
+//ssize_t recv_fit_add_constr_identify(struct recv_fit *fit);
 
 /* fitting */
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,

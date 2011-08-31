@@ -74,14 +74,14 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	/*design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
 	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
 	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);*/
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -204,10 +204,10 @@ static void add_constraints(struct recv_fit *fit)
 	}
 	vector_deinit(&ce);
 	
-	/* add constraints to make the model identifiable */
-	ssize_t nadd = recv_fit_add_constr_identify(fit);
-	if (nadd > 0)
-		fprintf(stderr, "Adding %"SSIZE_FMT" constraints to make parameters identifiable\n", nadd);
+	/* add constraints to make the model identifiable (TODO/not implemented) */
+	//ssize_t nadd = recv_fit_add_constr_identify(fit);
+	//if (nadd > 0)
+	//	fprintf(stderr, "Adding %"SSIZE_FMT" constraints to make parameters identifiable\n", nadd);
 }
 
 static void teardown(void)
@@ -314,27 +314,43 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES), strlen(CONSTRAINT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
-			const char **cnames;
-			recv_fit_get_constr_names(fit, &cnames);
 			n = recv_fit_constr_count(fit);
 			
 			for (i = 0; i < n; i++) {
-				const char *name = cnames[i];
+				const char *name;
+				recv_fit_get_constr(fit, i, NULL, NULL, &name);
 				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
 			}
 		}
 		YG(yajl_gen_array_close(hand));
 		
 		/* constraints */
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));	
-		const struct matrix *ce;
-		const struct vector *be;
-		recv_fit_get_constr(fit, &ce, &be);
-		YG(yajl_gen_matrix(hand, ce));
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
+		YG(yajl_gen_array_open(hand));
+		{
+			n = recv_fit_constr_count(fit);
+			
+			for (i = 0; i < n; i++) {
+				const struct vector *weights;
+				recv_fit_get_constr(fit, i, &weights, NULL, NULL);
+				YG(yajl_gen_vector(hand, weights));
+			}
+		}
+		YG(yajl_gen_array_close(hand));
 		
 		/* constraint values */
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
-		YG(yajl_gen_vector(hand, be));
+		YG(yajl_gen_array_open(hand));
+		{
+			n = recv_fit_constr_count(fit);
+			
+			for (i = 0; i < n; i++) {
+				double value;
+				recv_fit_get_constr(fit, i, NULL, &value, NULL);
+				YG(yajl_gen_ieee754(hand, value));
+			}
+		}
+		YG(yajl_gen_array_close(hand));
 		
 		/* duals */
 		YG(yajl_gen_string(hand, YSTR(DUALS), strlen(DUALS)));
