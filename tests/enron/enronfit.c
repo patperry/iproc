@@ -474,7 +474,9 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	bool trace = true;
 	
 	struct recv_fit fit;
-	recv_fit_init(&fit, xmsgs, ymsgs, &design, &senders, NULL);
+	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
+	ctrl.gtol = 1e-7;
+	recv_fit_init(&fit, xmsgs, ymsgs, &design, &senders, &ctrl);
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
