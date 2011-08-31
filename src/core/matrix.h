@@ -17,6 +17,11 @@ enum trans_op {
 	TRANS_CONJTRANS
 };
 
+enum matrix_uplo {
+	UPLO_UPPER,
+	UPLO_LOWER
+};
+
 /* create, destroy */
 void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
 void matrix_reinit(struct matrix *a, ssize_t nrow, ssize_t ncol);
@@ -104,6 +109,11 @@ void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
 void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
+void matrix_sym_update1(enum matrix_uplo uplo, struct matrix *a, double alpha,
+			const struct vector *x);
+void matrix_sym_update2(enum matrix_uplo uplo, struct matrix *a, double alpha,
+			const struct vector *x, const struct vector *y);
+
 
 /* debug */
 void matrix_printf(const struct matrix *a);

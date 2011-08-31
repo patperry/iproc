@@ -4,10 +4,6 @@
 #include "vector.h"
 #include "matrix.h"
 
-enum matrix_uplo {
-	UPLO_UPPER,
-	UPLO_LOWER
-};
 
 enum eig_job {
 	EIG_NOVEC,

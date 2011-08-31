@@ -570,6 +570,52 @@ matrix_update1(struct matrix *a,
 	F77_FUNC(dger) (&m, &n, &alpha, px, &incx, py, &incy, pa, &lda);
 }
 
+void matrix_sym_update1(enum matrix_uplo uplo, struct matrix *a, double alpha,
+			const struct vector *x)
+{
+	assert(a);
+	assert(x);
+	assert(matrix_nrow(a) == matrix_ncol(a));
+	assert(matrix_nrow(a) == vector_dim(x));
+	
+	if (!vector_dim(x))
+		return;
+	
+	const char *puplo = uplo == UPLO_LOWER ? "L" : "U";
+	f77int n = (f77int)matrix_ncol(a);
+	void *px = vector_to_ptr(x);
+	f77int incx = 1;
+	void *pa = matrix_to_ptr(a);
+	f77int lda = (f77int)matrix_lda(a);	
+	
+	F77_FUNC(dsyr) (puplo, &n, &alpha, px, &incx, pa, &lda);
+}
+
+void matrix_sym_update2(enum matrix_uplo uplo, struct matrix *a, double alpha,
+			const struct vector *x, const struct vector *y)
+{
+	assert(a);
+	assert(x);
+	assert(y);
+	assert(matrix_nrow(a) == matrix_ncol(a));
+	assert(matrix_nrow(a) == vector_dim(x));
+	assert(matrix_nrow(a) == vector_dim(y));	
+	
+	if (!vector_dim(x))
+		return;
+
+	const char *puplo = uplo == UPLO_LOWER ? "L" : "U";
+	f77int n = (f77int)matrix_ncol(a);
+	void *px = vector_to_ptr(x);
+	f77int incx = 1;
+	void *py = vector_to_ptr(y);
+	f77int incy = 1;
+	void *pa = matrix_to_ptr(a);
+	f77int lda = (f77int)matrix_lda(a);	
+	
+	F77_FUNC(dsyr2) (puplo, &n, &alpha, px, &incx, py, &incy, pa, &lda);
+}
+
 void matrix_printf(const struct matrix *a)
 {
 	ssize_t m = matrix_nrow(a);
