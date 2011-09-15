@@ -49,7 +49,7 @@ se <- c(se0, se1)
 bias.mean <- apply(bias, c(1,2), mean)[tix]
 bias.sd <- apply(bias, c(1,2), sd)[tix]
 
-save(bias.mean, bias.sd, se, bias, "boot.rda")
+save(bias.mean, bias.sd, se, bias, file="boot.rda")
 
 
 par(las = 1)
