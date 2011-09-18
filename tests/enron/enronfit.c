@@ -74,8 +74,8 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
 	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
