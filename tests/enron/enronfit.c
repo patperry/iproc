@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include "xalloc.h"
 #include "yajl/yajl_tree.h"
 #define DSFMT_MEXP 19937
 #define DSFMT_DO_NOT_USE_OLD_NAMES
@@ -76,12 +77,12 @@ static void setup(void) {
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
 	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
 	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
-	design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
-	design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
+	//design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
+	//design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
+	//design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -605,7 +606,7 @@ cleanup_coefs:
 	matrix_deinit(coefs);
 cleanup_yajl:
 	yajl_tree_free(node);
-	xfree(filebuf);
+	free(filebuf);
 cleanup_file:
 	fclose(fp);
 out:

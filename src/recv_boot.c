@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include "xalloc.h"
 #include "vector.h"
 #include "recv_boot.h"
 
@@ -123,7 +124,7 @@ void recv_boot_init(struct recv_boot *boot,
 	}
 	
 	vector_deinit(&probs);
-	xfree(to);
+	free(to);
 }
 
 

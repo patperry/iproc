@@ -4,11 +4,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "xalloc.h"
 #include "compare.h"
 #include "ieee754.h"
 #include "logsumexp.h"
 #include "recv_model.h"
-#include "util.h"
 
 DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
@@ -492,14 +492,14 @@ void recv_model_deinit(struct recv_model *model)
 	for (isend = 0; isend < nsend; isend++) {
 		sender_deinit(&sms[isend]);
 	}
-	xfree(sms);
+	free(sms);
 
 	struct recv_model_cohort *cms = model->cohort_models;
 	ssize_t ic, nc = recv_model_cohort_count(model);
 	for (ic = 0; ic < nc; ic++) {
 		cohort_deinit(&cms[ic]);
 	}
-	xfree(cms);
+	free(cms);
 
 	matrix_deinit(&model->coefs);
 }

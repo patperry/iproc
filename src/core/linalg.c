@@ -1,7 +1,8 @@
 #include "port.h"
 #include <assert.h>
+#include <stdlib.h>
 #include "lapack-private.h"
-#include "util.h"
+#include "xalloc.h"
 #include "linalg.h"
 
 ssize_t chol_solve(enum matrix_uplo uplo, struct matrix *a, struct matrix *b)
@@ -77,8 +78,8 @@ void ldlfac_reinit(struct ldlfac *fac, ssize_t n)
 void ldlfac_deinit(struct ldlfac *fac)
 {
 	assert(fac);
-	xfree(fac->ipiv);
-	xfree(fac->work);
+	free(fac->ipiv);
+	free(fac->work);
 }
 
 ssize_t ldlfac_solve(struct ldlfac *fac, enum matrix_uplo uplo,
@@ -179,8 +180,8 @@ void symeig_deinit(struct symeig *eig)
 {
 	assert(eig);
 
-	xfree(eig->work);
-	xfree(eig->iwork);
+	free(eig->work);
+	free(eig->iwork);
 }
 
 bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo,
@@ -290,8 +291,8 @@ void svdfac_deinit(struct svdfac *svd)
 {
 	assert(svd);
 	
-	xfree(svd->work);
-	xfree(svd->iwork);
+	free(svd->work);
+	free(svd->iwork);
 }
 
 bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)

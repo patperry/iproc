@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include "util.h"
+#include "xalloc.h"
 #include "recv_loglik.h"
 
 static void cohort_init(struct recv_loglik_cohort *cll,
@@ -877,14 +877,14 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 	for (isend = 0; isend < nsend; isend++) {
 		sender_deinit(&senders[isend]);
 	}
-	xfree(senders);
+	free(senders);
 
 	struct recv_loglik_cohort *cohorts = ll->cohorts;
 	ssize_t ic, nc = recv_model_cohort_count(ll->model);
 	for (ic = 0; ic < nc; ic++) {
 		cohort_deinit(&cohorts[ic]);
 	}
-	xfree(cohorts);
+	free(cohorts);
 }
 
 void cohort_clear(struct recv_loglik_cohort *cll)

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include "xalloc.h"
 #include "ieee754.h"
 #include "vars.h"
 #include "frame.h"
@@ -59,7 +60,7 @@ static void frame_actors_deinit(struct frame_actor *fas, ssize_t n)
 		frame_actor_deinit(&fas[i]);
 	}
 	
-	xfree(fas);
+	free(fas);
 }
 
 static void frame_senders_init(struct frame *f)
@@ -160,7 +161,7 @@ static void frame_vars_deinit(struct frame *f)
 			fv->design->type->frame_deinit(fv);
 		}
 	}
-	xfree(fvs);
+	free(fvs);
 }
 
 static void recv_frame_init(struct recv_frame *rf, struct frame *f)
@@ -241,7 +242,7 @@ static void recv_frames_deinit(struct frame *f)
 	for (isend = 0; isend < nsend; isend++) {
 		recv_frame_deinit(&rfs[isend]);
 	}
-	xfree(rfs);
+	free(rfs);
 }
 
 static void recv_frames_clear(struct frame *f)

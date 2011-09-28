@@ -27,9 +27,9 @@ struct intmap_iter {
 };
 
 #define INTMAP_KEY(it) \
-	(*(const intptr_t *)HASHSET_KEY((it).pairs_it))
+	(*(const intptr_t *)HASHSET_VAL((it).pairs_it))
 #define INTMAP_VAL(it) \
-	((void *)((char *)HASHSET_KEY((it).pairs_it) + (it).map->val_offset))
+	((void *)((char *)HASHSET_VAL((it).pairs_it) + (it).map->val_offset))
 #define INTMAP_FOREACH(it, m) \
 	for ((it) = intmap_iter_make(m); intmap_iter_advance(&(it));)
 

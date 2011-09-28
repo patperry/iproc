@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include "blas-private.h"
-#include "util.h"
+#include "xalloc.h"
 #include "matrix.h"
 
 void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol)
@@ -120,7 +120,7 @@ void matrix_free(struct matrix *a)
 {
 	if (a) {
 		matrix_deinit(a);
-		xfree(a);
+		free(a);
 	}
 }
 

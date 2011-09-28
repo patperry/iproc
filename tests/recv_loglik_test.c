@@ -8,6 +8,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include "cmockery.h"
+#include "xalloc.h"
 
 #include "ieee754.h"
 #include "enron.h"
@@ -484,7 +485,7 @@ out:
 	for (c = 0; c < recv_model_cohort_count(&model); c++) {
 		matrix_deinit(&avg_imat0[c]);
 	}
-	xfree(avg_imat0);
+	free(avg_imat0);
 	matrix_deinit(&avg_imat1);
 }
 

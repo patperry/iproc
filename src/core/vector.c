@@ -6,12 +6,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "xalloc.h"
 
 #include "blas-private.h"
 #include "compare.h"
 #include "hash.h"
 #include "ieee754.h"
-#include "util.h"
 #include "vector.h"
 
 void vector_init(struct vector *v, ssize_t n)
@@ -70,7 +70,7 @@ void vector_deinit(struct vector *v)
 {
 	assert(v);
 	if (vector_owner(v))
-		xfree(v->data);
+		free(v->data);
 }
 
 struct vector *vector_alloc(ssize_t n)
@@ -92,7 +92,7 @@ void vector_free(struct vector *v)
 {
 	if (v) {
 		vector_deinit(v);
-		xfree(v);
+		free(v);
 	}
 }
 

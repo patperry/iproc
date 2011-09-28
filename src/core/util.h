@@ -70,12 +70,6 @@ void *sorted_find(const void *begin,
 ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 		      compare_fn compar, size_t elt_size);
 
-void *xcalloc(size_t count, size_t size);
-void xfree(void *ptr);
-void *xmalloc(size_t size);
-void *xrealloc(void *ptr, size_t size);
-char *xstrdup(const char *s1);
-
 typedef void (*destroy_fn) (void *val);
 
 #endif /* _UTIL_H */

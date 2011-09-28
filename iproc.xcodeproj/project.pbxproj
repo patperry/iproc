@@ -51,8 +51,6 @@
 		222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 2259740E133D0AFB0022B52E /* recv_loglik.c */; };
 		222FC41F13607C7900E64FC9 /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
 		222FC42213607C7900E64FC9 /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597414133D0AFB0022B52E /* recv_model.c */; };
-		222FC42A13607C7900E64FC9 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
-		222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
 		222FC42E13607C7900E64FC9 /* slice.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* slice.c */; };
 		222FC43113607C7900E64FC9 /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
 		222FC43313607C7900E64FC9 /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE74132EC8710000097B /* hash.c */; };
@@ -76,6 +74,16 @@
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223BFE4713AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
 		223BFE4813AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
+		223D80421432A5430073B608 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80401432A5430073B608 /* hashset.c */; };
+		223D80431432A5430073B608 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80401432A5430073B608 /* hashset.c */; };
+		223D80441432A5430073B608 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 223D80411432A5430073B608 /* hashset.h */; };
+		223D80451432A5430073B608 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 223D80411432A5430073B608 /* hashset.h */; };
+		223D80491432A5570073B608 /* xalloc-die.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80461432A5570073B608 /* xalloc-die.c */; };
+		223D804A1432A5570073B608 /* xalloc-die.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80461432A5570073B608 /* xalloc-die.c */; };
+		223D804B1432A5570073B608 /* xalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80471432A5570073B608 /* xalloc.c */; };
+		223D804C1432A5570073B608 /* xalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 223D80471432A5570073B608 /* xalloc.c */; };
+		223D804D1432A5570073B608 /* xalloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 223D80481432A5570073B608 /* xalloc.h */; };
+		223D804E1432A5570073B608 /* xalloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 223D80481432A5570073B608 /* xalloc.h */; };
 		225973FF133CE9AD0022B52E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		22597402133D081B0022B52E /* matrix.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597400133D081A0022B52E /* matrix.c */; };
 		22597403133D081B0022B52E /* matrix.h in Headers */ = {isa = PBXBuildFile; fileRef = 22597401133D081A0022B52E /* matrix.h */; };
@@ -154,10 +162,6 @@
 		227E08C813F43F8F003EC4BA /* rv-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E08C613F43F8F003EC4BA /* rv-nsend2.c */; };
 		227E0AB413F57DD4003EC4BA /* rv-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB313F57DD4003EC4BA /* rv-isend2.c */; };
 		227E0AB513F57DD4003EC4BA /* rv-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB313F57DD4003EC4BA /* rv-isend2.c */; };
-		227E0AB813F7E9E3003EC4BA /* shashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB613F7E9E2003EC4BA /* shashset.c */; };
-		227E0AB913F7E9E3003EC4BA /* shashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 227E0AB613F7E9E2003EC4BA /* shashset.c */; };
-		227E0ABA13F7E9E3003EC4BA /* shashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 227E0AB713F7E9E2003EC4BA /* shashset.h */; };
-		227E0ABB13F7E9E3003EC4BA /* shashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 227E0AB713F7E9E2003EC4BA /* shashset.h */; };
 		228160DB13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DC13B00EF200B38330 /* dcsrch.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160D913B00EF200B38330 /* dcsrch.c */; };
 		228160DD13B00EF200B38330 /* dcstep.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160DA13B00EF200B38330 /* dcstep.c */; };
@@ -176,8 +180,6 @@
 		228C2FFF137A380400B5A3B9 /* delegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 228C2FFE137A380400B5A3B9 /* delegate.h */; };
 		228C3000137A380400B5A3B9 /* delegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 228C2FFE137A380400B5A3B9 /* delegate.h */; };
 		22A2F8A2133158B000E97C79 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A2F8A1133158B000E97C79 /* config.h */; };
-		22A88EBC135E6B6A006FE604 /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A88EBA135E6B6A006FE604 /* hashset.c */; };
-		22A88EBD135E6B6A006FE604 /* hashset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22A88EBB135E6B6A006FE604 /* hashset.h */; };
 		22C845A113F1E5C0003383F6 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22C845A213F1E5DE003383F6 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D2DD6B136929100048244C /* yajl_alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D2DD57136929100048244C /* yajl_alloc.h */; };
@@ -212,8 +214,6 @@
 		22D4788A13AC4C2400FF46CD /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22D4788B13AC4C2400FF46CD /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22D4788C13AC4C2400FF46CD /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
-		22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D6FA7B135D02A70082D129 /* sparsetable.c */; };
-		22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */ = {isa = PBXBuildFile; fileRef = 22D6FA7C135D02A70082D129 /* sparsetable.h */; };
 		22DB0A8113CB68B5004149CE /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22DB0A7F13CB68B5004149CE /* strata.c */; };
 		22DB0A8213CB68B5004149CE /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22DB0A7F13CB68B5004149CE /* strata.c */; };
 		22DB0A8313CB68B5004149CE /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 22DB0A8013CB68B5004149CE /* strata.h */; };
@@ -590,6 +590,11 @@
 		2235DC0013C7AD0300053BAA /* json.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = json.c; path = src/json/json.c; sourceTree = "<group>"; };
 		2235DC0113C7AD0300053BAA /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = json.h; path = src/json/json.h; sourceTree = "<group>"; };
 		223BFE4613AA98F200835B8F /* vars.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vars.h; path = src/vars.h; sourceTree = "<group>"; };
+		223D80401432A5430073B608 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = lib/hashset/hashset.c; sourceTree = "<group>"; };
+		223D80411432A5430073B608 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = lib/hashset/hashset.h; sourceTree = "<group>"; };
+		223D80461432A5570073B608 /* xalloc-die.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "xalloc-die.c"; path = "lib/xalloc-die.c"; sourceTree = "<group>"; };
+		223D80471432A5570073B608 /* xalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xalloc.c; path = lib/xalloc.c; sourceTree = "<group>"; };
+		223D80481432A5570073B608 /* xalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = xalloc.h; path = lib/xalloc.h; sourceTree = "<group>"; };
 		224D0557132EC113007F5646 /* libRiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libRiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		225973FD133CE9AD0022B52E /* compare.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compare.h; path = src/core/compare.h; sourceTree = "<group>"; };
 		22597400133D081A0022B52E /* matrix.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = matrix.c; path = src/core/matrix.c; sourceTree = "<group>"; };
@@ -655,8 +660,6 @@
 		227E08C313F4160C003EC4BA /* rv-isend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend.c"; path = "src/rv-isend.c"; sourceTree = "<group>"; };
 		227E08C613F43F8F003EC4BA /* rv-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nsend2.c"; path = "src/rv-nsend2.c"; sourceTree = "<group>"; };
 		227E0AB313F57DD4003EC4BA /* rv-isend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend2.c"; path = "src/rv-isend2.c"; sourceTree = "<group>"; };
-		227E0AB613F7E9E2003EC4BA /* shashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = shashset.c; path = src/core/shashset.c; sourceTree = "<group>"; };
-		227E0AB713F7E9E2003EC4BA /* shashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = shashset.h; path = src/core/shashset.h; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
 		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
@@ -668,8 +671,6 @@
 		228C2FFE137A380400B5A3B9 /* delegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = delegate.h; path = src/core/delegate.h; sourceTree = "<group>"; };
 		22950A9413611D8D0074897C /* intmap_test.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = intmap_test.c; path = tests/intmap_test.c; sourceTree = "<group>"; };
 		22A2F8A1133158B000E97C79 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = interfaces/R/src/config.h; sourceTree = "<group>"; };
-		22A88EBA135E6B6A006FE604 /* hashset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hashset.c; path = src/core/hashset.c; sourceTree = "<group>"; };
-		22A88EBB135E6B6A006FE604 /* hashset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hashset.h; path = src/core/hashset.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D2DD56136929100048244C /* yajl_alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = yajl_alloc.c; path = lib/yajl/yajl_alloc.c; sourceTree = "<group>"; };
 		22D2DD57136929100048244C /* yajl_alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_alloc.h; path = lib/yajl/yajl_alloc.h; sourceTree = "<group>"; };
@@ -700,8 +701,6 @@
 		22D2DDB3136A5E5B0048244C /* libenron.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libenron.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D4787E13AC4BF600FF46CD /* recv_loglik_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = recv_loglik_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik_test.c; path = tests/recv_loglik_test.c; sourceTree = "<group>"; };
-		22D6FA7B135D02A70082D129 /* sparsetable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sparsetable.c; path = src/core/sparsetable.c; sourceTree = "<group>"; };
-		22D6FA7C135D02A70082D129 /* sparsetable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sparsetable.h; path = src/core/sparsetable.h; sourceTree = "<group>"; };
 		22DB0A7F13CB68B5004149CE /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = src/strata.c; sourceTree = "<group>"; };
 		22DB0A8013CB68B5004149CE /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = src/strata.h; sourceTree = "<group>"; };
 		22E921381406DB1E008115DE /* recv_resid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_resid.c; path = src/recv_resid.c; sourceTree = "<group>"; };
@@ -874,6 +873,11 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				223D80461432A5570073B608 /* xalloc-die.c */,
+				223D80471432A5570073B608 /* xalloc.c */,
+				223D80481432A5570073B608 /* xalloc.h */,
+				223D80401432A5430073B608 /* hashset.c */,
+				223D80411432A5430073B608 /* hashset.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
 				228160F613B0F60C00B38330 /* bfgs.c */,
@@ -883,8 +887,6 @@
 				228C2FFE137A380400B5A3B9 /* delegate.h */,
 				221FEE74132EC8710000097B /* hash.c */,
 				221FEE75132EC8710000097B /* hash.h */,
-				22A88EBA135E6B6A006FE604 /* hashset.c */,
-				22A88EBB135E6B6A006FE604 /* hashset.h */,
 				221FEE78132EC8710000097B /* ieee754.c */,
 				221FEE79132EC8710000097B /* ieee754.h */,
 				221C601E1352D36D0008B25B /* intmap.c */,
@@ -908,10 +910,6 @@
 				221FEE88132EC8710000097B /* refcount.h */,
 				221C5FEB134E230D0008B25B /* slice.c */,
 				221C5FEC134E230D0008B25B /* slice.h */,
-				227E0AB613F7E9E2003EC4BA /* shashset.c */,
-				227E0AB713F7E9E2003EC4BA /* shashset.h */,
-				22D6FA7B135D02A70082D129 /* sparsetable.c */,
-				22D6FA7C135D02A70082D129 /* sparsetable.h */,
 				221FEE8B132EC8710000097B /* svector.c */,
 				221FEE8C132EC8710000097B /* svector.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
@@ -1190,9 +1188,10 @@
 				22EFB31913B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31D13B3AE18007755EA /* linalg.h in Headers */,
 				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
-				227E0ABB13F7E9E3003EC4BA /* shashset.h in Headers */,
 				22E9213D1406DB1E008115DE /* recv_resid.h in Headers */,
 				22E9214414082779008115DE /* recv_boot.h in Headers */,
+				223D80451432A5430073B608 /* hashset.h in Headers */,
+				223D804E1432A5570073B608 /* xalloc.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1237,8 +1236,6 @@
 				221C601513511ADA0008B25B /* macconfig.h in Headers */,
 				221C601D1352B8700008B25B /* intset.h in Headers */,
 				221C60211352D3820008B25B /* intmap.h in Headers */,
-				22D6FA7E135D02A70082D129 /* sparsetable.h in Headers */,
-				22A88EBD135E6B6A006FE604 /* hashset.h in Headers */,
 				22D2DD6B136929100048244C /* yajl_alloc.h in Headers */,
 				22D2DD6D136929100048244C /* yajl_buf.h in Headers */,
 				22D2DD6E136929100048244C /* yajl_bytestack.h in Headers */,
@@ -1261,9 +1258,10 @@
 				22EFB31813B3AE18007755EA /* lapack-private.h in Headers */,
 				22EFB31C13B3AE18007755EA /* linalg.h in Headers */,
 				22DB0A8313CB68B5004149CE /* strata.h in Headers */,
-				227E0ABA13F7E9E3003EC4BA /* shashset.h in Headers */,
 				22E9213C1406DB1E008115DE /* recv_resid.h in Headers */,
 				22E9214314082779008115DE /* recv_boot.h in Headers */,
+				223D80441432A5430073B608 /* hashset.h in Headers */,
+				223D804D1432A5570073B608 /* xalloc.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1690,8 +1688,6 @@
 				222FC41C13607C7900E64FC9 /* recv_loglik.c in Sources */,
 				222FC41F13607C7900E64FC9 /* messages.c in Sources */,
 				222FC42213607C7900E64FC9 /* recv_model.c in Sources */,
-				222FC42A13607C7900E64FC9 /* hashset.c in Sources */,
-				222FC42C13607C7900E64FC9 /* sparsetable.c in Sources */,
 				222FC42E13607C7900E64FC9 /* slice.c in Sources */,
 				222FC43113607C7900E64FC9 /* array.c in Sources */,
 				222FC43313607C7900E64FC9 /* hash.c in Sources */,
@@ -1719,7 +1715,6 @@
 				227E08C513F4160C003EC4BA /* rv-isend.c in Sources */,
 				227E08C813F43F8F003EC4BA /* rv-nsend2.c in Sources */,
 				227E0AB513F57DD4003EC4BA /* rv-isend2.c in Sources */,
-				227E0AB913F7E9E3003EC4BA /* shashset.c in Sources */,
 				2275566413FB0932004FC237 /* rv-irecv2.c in Sources */,
 				2275566613FB0932004FC237 /* rv-nrecv2.c in Sources */,
 				2275567614002A0E004FC237 /* rv-nsib.c in Sources */,
@@ -1729,6 +1724,9 @@
 				22749E5E1402E2EC00C5A955 /* vars.c in Sources */,
 				22E9213B1406DB1E008115DE /* recv_resid.c in Sources */,
 				22E9214214082779008115DE /* recv_boot.c in Sources */,
+				223D80431432A5430073B608 /* hashset.c in Sources */,
+				223D804A1432A5570073B608 /* xalloc-die.c in Sources */,
+				223D804C1432A5570073B608 /* xalloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1769,8 +1767,6 @@
 				221C5FF1134EB7E60008B25B /* util.c in Sources */,
 				221C601C1352B8700008B25B /* intset.c in Sources */,
 				221C60201352D3820008B25B /* intmap.c in Sources */,
-				22D6FA7D135D02A70082D129 /* sparsetable.c in Sources */,
-				22A88EBC135E6B6A006FE604 /* hashset.c in Sources */,
 				22EA3333136B440B00C5627F /* frame.c in Sources */,
 				22286F0F136F36340015CC42 /* rv-nrecv.c in Sources */,
 				22FFF12813871A8B003DDA26 /* timsort.c in Sources */,
@@ -1787,7 +1783,6 @@
 				227E08C413F4160C003EC4BA /* rv-isend.c in Sources */,
 				227E08C713F43F8F003EC4BA /* rv-nsend2.c in Sources */,
 				227E0AB413F57DD4003EC4BA /* rv-isend2.c in Sources */,
-				227E0AB813F7E9E3003EC4BA /* shashset.c in Sources */,
 				2275566313FB0932004FC237 /* rv-irecv2.c in Sources */,
 				2275566513FB0932004FC237 /* rv-nrecv2.c in Sources */,
 				2275567514002A0E004FC237 /* rv-nsib.c in Sources */,
@@ -1797,6 +1792,9 @@
 				22749E5D1402E2EC00C5A955 /* vars.c in Sources */,
 				22E9213A1406DB1E008115DE /* recv_resid.c in Sources */,
 				22E9214114082779008115DE /* recv_boot.c in Sources */,
+				223D80421432A5430073B608 /* hashset.c in Sources */,
+				223D80491432A5570073B608 /* xalloc-die.c in Sources */,
+				223D804B1432A5570073B608 /* xalloc.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

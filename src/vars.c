@@ -2,7 +2,8 @@
 #include "port.h"
 #include <assert.h>
 #include <stdio.h>
-#include "util.h"
+#include <stdlib.h>
+#include "xalloc.h"
 
 
 char **var_names_alloc(char *name, size_t len, ssize_t n)
@@ -50,9 +51,9 @@ void var_names_free(char **names)
 	if (names) {
 		size_t i = 0;
 		while (names[i]) {
-			xfree(names[i]);
+			free(names[i]);
 			i++;
 		}
-		xfree(names);
+		free(names);
 	}
 }

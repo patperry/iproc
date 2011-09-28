@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "timsort.h"
+#include "xalloc.h"
 #include "util.h"
 #include "array.h"
 
@@ -68,7 +69,7 @@ void array_assign_copy(struct array *a, const struct array *src)
 void array_deinit(struct array *a)
 {
 	assert(a);
-	xfree(a->data);
+	free(a->data);
 }
 
 void array_set_capacity(struct array *a, ssize_t n)

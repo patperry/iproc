@@ -1,5 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4 --install
 
+AM_CPPFLAGS = -Ilib -Isrc -Ilib/hashset
+
 lib_LTLIBRARIES = \
 	libiproc.la
 
@@ -57,6 +59,11 @@ libiproc_la_LIBADD = \
 	libdSFMT.la
 
 libcore_la_SOURCES = \
+	lib/xalloc.c \
+	lib/xalloc.h \
+	lib/xalloc-die.c \
+	lib/hashset/hashset.c \
+	lib/hashset/hashset.h \
 	lib/timsort/timsort.h \
 	lib/timsort/timsort-impl.h \
 	lib/timsort/timsort.c \
@@ -69,8 +76,6 @@ libcore_la_SOURCES = \
 	src/core/delegate.h \
 	src/core/hash.c \
 	src/core/hash.h \
-	src/core/hashset.c \
-	src/core/hashset.h \
 	src/core/intmap.c \
 	src/core/intmap.h \
 	src/core/intset.c \
@@ -94,10 +99,6 @@ libcore_la_SOURCES = \
 	src/core/refcount.h \
 	src/core/slice.c \
 	src/core/slice.h \
-	src/core/shashset.c \
-	src/core/shashset.h \
-	src/core/sparsetable.c \
-	src/core/sparsetable.h \
 	src/core/svector.c \
 	src/core/svector.h \
 	src/core/util.h \
@@ -333,7 +334,7 @@ tests_recv_loglik_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd
 
 check_PROGRAMS += tests/enronfit
 tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = -Isrc -Isrc/core -Isrc/json -Itests/enron -Ilib
+tests_enronfit_CPPFLAGS = -Isrc/core -Isrc/json -Itests/enron $(AM_CPPFLAGS)
 tests_enronfit_LDADD    = libiproc.la tests/libenron.la
 
 TESTS = \

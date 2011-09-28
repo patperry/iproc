@@ -1,7 +1,6 @@
 #include "port.h"
 
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include "util.h"
 
@@ -205,42 +204,5 @@ ssize_t binary_search(const void *begin, ssize_t size, const void *key,
 	}
 
 	return ~right;		// left == right, not found
-}
-
-void *xcalloc(size_t count, size_t size)
-{
-	void *ptr = calloc(count, size);
-	if (size && !ptr)
-		abort();
-	return ptr;
-}
-
-void xfree(void *ptr)
-{
-	free(ptr);
-}
-
-void *xmalloc(size_t size)
-{
-	void *ptr = malloc(size);
-	if (size && !ptr)
-		abort();
-	return ptr;
-}
-
-void *xrealloc(void *ptr, size_t size)
-{
-	ptr = realloc(ptr, size);
-	if (size && !ptr)
-		abort();
-	return ptr;
-}
-
-char *xstrdup(const char *s1)
-{
-	char *s = strdup(s1);
-	if (s1 && !s)
-		abort();
-	return s;
 }
 

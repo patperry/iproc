@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // memcpy, memmove
+#include "xalloc.h"
 #include "blas-private.h"
 #include "hash.h"
 #include "compare.h"
@@ -71,15 +73,15 @@ void svector_free(struct svector *v)
 {
 	if (v) {
 		svector_deinit(v);
-		xfree(v);
+		free(v);
 	}
 }
 
 void svector_deinit(struct svector *v)
 {
 	if (svector_owner(v)) {
-		xfree(v->index);
-		xfree(v->data);
+		free(v->index);
+		free(v->data);
 	}
 }
 

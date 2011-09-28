@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "xalloc.h"
 #include "linesearch.h"
-#include "util.h"
 #include "recv_fit.h"
 
 static void constrs_init(struct array *constrs)
@@ -19,7 +19,7 @@ static void constrs_deinit(struct array *constrs)
 	struct recv_fit_constr *c;
 	ARRAY_FOREACH(c, constrs) {
 		svector_deinit(&c->weights);
-		xfree(c->name);
+		free(c->name);
 	}
 	array_deinit(constrs);
 }
@@ -727,7 +727,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		char *name = xcalloc(len, sizeof(*name));
 		snprintf(name, len, fmt, ic1 + 1);
 		recv_fit_add_constr(fit, &ce1, be1, name);
-		xfree(name);
+		free(name);
 	}
 	
 	vector_deinit(&ce1);
@@ -737,7 +737,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 	for (ic = 0; ic < nc; ic++) {
 		matrix_deinit(&nullspaces[ic]);
 	}
-	xfree(nullspaces);
+	free(nullspaces);
 	
 	vector_deinit(&evals);
 	symeig_deinit(&eig);

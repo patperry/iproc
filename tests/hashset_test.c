@@ -1,27 +1,34 @@
-#include "port.h"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include <cmockery.h>
+#include "cmockery.h"
 
 #include "hashset.h"
 
-DEFINE_HASH_FN(int_hash, int)
-DEFINE_COMPARE_AND_EQUALS_FN(int_compare, int_equals, int)
 
-static uint32_t int_bad_hash(const void *x)
+static size_t int_hash(const void *x)
+{
+	return *(int *)x;
+}
+
+static int int_compar(const void *x, const void *y)
+{
+	return *(int *)x - *(int *)y;
+}
+
+static size_t int_bad_hash(const void *x)
 {
 	(void)x; // unused
 	return 1337;
 }
 
 static struct hashset set;
-static hash_fn hash;
-static equals_fn equals;
+static size_t (*hash) (const void *);
+static int (*compar) (const void *, const void *);
 static int *vals;
-static ssize_t count;
+static size_t count;
 
 
 static void empty_setup_fixture()
@@ -40,8 +47,8 @@ static void empty_setup()
 	static int *empty_vals = NULL;
 
 	hash = int_hash;
-	equals = int_equals;
-	hashset_init(&set, hash, equals, sizeof(int));
+	compar = int_compar;
+	hashset_init(&set, sizeof(int), hash, compar);
 	
 	vals = empty_vals;
 	count = 0;
@@ -64,7 +71,7 @@ static void big_setup()
 	
 	count = 555;
 	vals = malloc(count * sizeof(*vals));
-	ssize_t i;
+	size_t i;
 	
 	for (i = 0; i < count; i++) {
 		vals[i] = (int)i;
@@ -87,12 +94,12 @@ static void big_bad_setup_fixture()
 static void big_bad_setup()
 {
 	hash = int_bad_hash;
-	equals = int_equals;
-	hashset_init(&set, hash, equals, sizeof(int));
+	compar = int_compar;
+	hashset_init(&set, sizeof(int), hash, compar);
 	
 	count = 151;
 	vals = malloc(count * sizeof(*vals));
-	ssize_t i;
+	size_t i;
 	
 	for (i = 0; i < count; i++) {
 		vals[i] = (int)i;
@@ -120,7 +127,7 @@ static void test_clear()
 
 static void test_lookup()
 {
-	ssize_t i;
+	size_t i;
 	const int *val;
 	
 	for (i = 0; i < count; i++) {
@@ -165,7 +172,7 @@ static void test_remove()
 
 static void test_remove_hard()
 {
-	ssize_t i, j;
+	size_t i, j;
 	
 	for (i = 0; i < count; i++) {
 		hashset_remove(&set, &vals[i]);

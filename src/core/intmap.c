@@ -1,15 +1,19 @@
 #include "port.h"
 #include <assert.h>
+#include <string.h>  // memcpy, memset
 #include "intmap.h"
 
 //DEFINE_HASH_FN(intptr_hash, intptr_t)
-static uint32_t intptr_hash(const void *x)
+static size_t intptr_hash(const void *x)
 {
 	intptr_t val = *(intptr_t *)x;
-	return (uint32_t)(val * 2654435761UL);	/* Knuth's multiplicative method */
+	return (size_t)val;
 }
 
-DEFINE_EQUALS_FN(intptr_equals, intptr_t)
+static int intptr_compar(const void *x, const void *y)
+{
+	return *(intptr_t *)x != *(intptr_t *)y;
+}
 
 void intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 {
@@ -29,7 +33,7 @@ void intmap_init(struct intmap *m, size_t elt_size, size_t elt_align)
 	m->elt_align = elt_align;
 	m->val_offset = val_offset;
 
-	hashset_init(&m->pairs, intptr_hash, intptr_equals, pair_size);
+	hashset_init(&m->pairs, pair_size, intptr_hash, intptr_compar);
 }
 
 void intmap_init_copy(struct intmap *m, const struct intmap *src)

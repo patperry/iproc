@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
-#include "util.h"
+#include "xalloc.h"
 #include "messages.h"
 
 void messages_init(struct messages *msgs)
@@ -52,7 +52,7 @@ void messages_free(struct messages *msgs)
 	if (refcount_put(&msgs->refcount, NULL)) {
 		refcount_get(&msgs->refcount);
 		messages_deinit(msgs);
-		xfree(msgs);
+		free(msgs);
 	}
 }
 
