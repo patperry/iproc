@@ -873,11 +873,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				223D80461432A5570073B608 /* xalloc-die.c */,
-				223D80471432A5570073B608 /* xalloc.c */,
-				223D80481432A5570073B608 /* xalloc.h */,
-				223D80401432A5430073B608 /* hashset.c */,
-				223D80411432A5430073B608 /* hashset.h */,
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
 				228160F613B0F60C00B38330 /* bfgs.c */,
@@ -1092,6 +1087,15 @@
 			name = Libf2c;
 			sourceTree = "<group>";
 		};
+		22A2DE46143BC167008D17FC /* Hashset */ = {
+			isa = PBXGroup;
+			children = (
+				223D80401432A5430073B608 /* hashset.c */,
+				223D80411432A5430073B608 /* hashset.h */,
+			);
+			name = Hashset;
+			sourceTree = "<group>";
+		};
 		22D2DD4D136928C30048244C /* Yajl */ = {
 			isa = PBXGroup;
 			children = (
@@ -1152,6 +1156,10 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
+				223D80461432A5570073B608 /* xalloc-die.c */,
+				223D80471432A5570073B608 /* xalloc.c */,
+				223D80481432A5570073B608 /* xalloc.h */,
+				22A2DE46143BC167008D17FC /* Hashset */,
 				22749E381402A8F700C5A955 /* DSFMT */,
 				22867A14132FDA8E0090D617 /* Libf2c */,
 				22867A0E132FDA580090D617 /* Minpack */,
