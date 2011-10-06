@@ -62,6 +62,7 @@ libcore_la_SOURCES = \
 	lib/xalloc.c \
 	lib/xalloc.h \
 	lib/xalloc-die.c \
+	lib/hashset/hash.h \
 	lib/hashset/hashset.c \
 	lib/hashset/hashset.h \
 	lib/linalg/blas.c \
@@ -82,8 +83,6 @@ libcore_la_SOURCES = \
 	src/core/bfgs.h \
 	src/core/compare.h \
 	src/core/delegate.h \
-	src/core/hash.c \
-	src/core/hash.h \
 	src/core/intmap.c \
 	src/core/intmap.h \
 	src/core/intset.c \
@@ -306,10 +305,6 @@ check_PROGRAMS = # empty
 check_PROGRAMS += tests/array_test
 tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
-
-check_PROGRAMS += tests/hashset_test
-tests_hashset_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_hashset_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/pqueue_test
 tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)

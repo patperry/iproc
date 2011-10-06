@@ -111,8 +111,10 @@ static size_t hashset_bucket_count(const struct hashset *s)
 
 static void hashset_init_sized(struct hashset *s,
 			       size_t width,
-			       size_t (*hash) (const void *),
-			       int (*compar) (const void *, const void *),
+			       size_t (*hash) (const struct hashset *,
+					       const void *),
+			       int (*compar) (const struct hashset *,
+					      const void *, const void *),
 			       size_t nbucket)
 {
 	assert(s);
@@ -171,10 +173,26 @@ static void hashset_grow_delta(struct hashset *s, size_t delta)
 	size_t nbucket = min_buckets(count, nbucket0);
 
 	if (nbucket > nbucket0) {
-		struct hashset copy;
-		hashset_init_copy_sized(&copy, s, nbucket);
-		hashset_deinit(s);
-		*s = copy;
+		/* This is a little delicate:
+		 * hashset_add will call the hash and compar functions,
+		 * which expect the original set as the first argument.
+		 *
+		 * Fortunately, HASHSET_FOREACH, HASHSET_VAL and 
+		 * hashset_deinit do *not* call either of these functions.
+		 */
+		struct hashset old = *s;
+		struct hashset_iter it;
+		void *val;
+
+		memset(s, 0, sizeof(*s));
+		hashset_init_sized(s, old.width, old.hash, old.compar, nbucket);
+
+		HASHSET_FOREACH(it, &old) {
+			val = HASHSET_VAL(it);
+			hashset_add(s, val);
+		}
+
+		hashset_deinit(&old);
 	}
 }
 
@@ -193,8 +211,9 @@ void hashset_ensure_capacity(struct hashset *s, size_t n)
 
 void hashset_init(struct hashset *s,
 		  size_t width,
-		  size_t (*hash) (const void *),
-		  int (*compar) (const void *, const void *))
+		  size_t (*hash) (const struct hashset *, const void *),
+		  int (*compar) (const struct hashset *, const void *,
+				 const void *))
 {
 	assert(s);
 	assert(hash);
@@ -384,13 +403,23 @@ void hashset_trim_excess(struct hashset *s)
 {
 	assert(s);
 
+	/* This is a little delicate; see hashset_grow_delta for
+	 * explanation. */
 	size_t count = hashset_count(s);
-	size_t resize_to = min_buckets(count, 0);
+	size_t nbucket = min_buckets(count, 0);
+	struct hashset old = *s;
+	struct hashset_iter it;
+	void *val;
 
-	struct hashset copy;
-	hashset_init_copy_sized(&copy, s, resize_to);
-	hashset_deinit(s);
-	*s = copy;
+	memset(s, 0, sizeof(*s));
+	hashset_init_sized(s, old.width, old.hash, old.compar, nbucket);
+
+	HASHSET_FOREACH(it, &old) {
+		val = HASHSET_VAL(it);
+		hashset_add(s, val);
+	}
+
+	hashset_deinit(&old);
 }
 
 /* MISSING union_with */

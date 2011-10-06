@@ -40,7 +40,6 @@ void vector_fill(struct vector *v, double val);
 void vector_set_basis(struct vector *v, ssize_t i);
 
 /* hash, compare */
-uint32_t vector_hash(const void *v);
 bool vector_equals(const void *v1, const void *v2);
 int vector_compare(const void *v1, const void *v2);
 int vector_ptr_compare(const void *pv1, const void *pv2);

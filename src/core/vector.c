@@ -10,7 +10,6 @@
 
 #include "blas.h"
 #include "compare.h"
-#include "hash.h"
 #include "ieee754.h"
 #include "vector.h"
 
@@ -461,23 +460,6 @@ void vector_printf(const struct vector *v)
 		printf(", %.22f", vector_item(v, i));
 	}
 	printf(")\n");
-}
-
-uint32_t vector_hash(const void *v)
-{
-	const struct vector *vector = v;
-	uint32_t seed = 0;
-	ssize_t i, n = vector_dim(vector);
-
-	for (i = 0; i < n; i++) {
-		double x = *vector_item_ptr(vector, i);
-		uint32_t hash_value = double_hash(&x);
-		hash_combine(&seed, hash_value);
-	}
-
-	hash_finalize(&seed);
-
-	return seed;
 }
 
 bool vector_equals(const void *v1, const void *v2)

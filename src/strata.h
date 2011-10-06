@@ -1,44 +1,42 @@
-#ifndef _STRATA_H
-#define _STRATA_H
+#ifndef STRATA_H
+#define STRATA_H
 
-#include "array.h"
-#include "intset.h"
-#include "intmap.h"
-#include "vector.h"
+#include <stddef.h>
+#include "hashset.h"
 
 struct strata {
-	ssize_t dim;
-	struct array levels;
-	struct intmap level_hashes;
+	size_t dim;
+	size_t nlevel;
+	size_t nlevel_max;
+	double **levels;
+	struct hashset levels_set;
 };
 
-void strata_init(struct strata *s, ssize_t dim);
+void strata_init(struct strata *s, size_t dim);
 void strata_deinit(struct strata *s);
+void strata_clear(struct strata *s);
 
-static inline ssize_t strata_dim(const struct strata *s);
-static inline ssize_t strata_count(const struct strata *s);
+static inline size_t strata_dim(const struct strata *s);
+static inline size_t strata_count(const struct strata *s);
 
-ssize_t strata_add(struct strata *s, const struct vector *level);
-ssize_t strata_lookup(const struct strata *s, const struct vector *level);
-static inline struct vector *strata_levels(const struct strata *s);
+size_t strata_add(struct strata *s, const double *level);
+ptrdiff_t strata_find(const struct strata *s, const double *level);
+static inline double **strata_levels(const struct strata *s);
 
 /* inline function definitions */
-ssize_t strata_dim(const struct strata *s)
+size_t strata_dim(const struct strata *s)
 {
-	assert(s);
 	return s->dim;
 }
 
-ssize_t strata_count(const struct strata *s)
+size_t strata_count(const struct strata *s)
 {
-	assert(s);
-	return array_count(&s->levels);
+	return s->nlevel;
 }
 
-struct vector *strata_levels(const struct strata *s)
+double **strata_levels(const struct strata *s)
 {
-	assert(s);
-	return array_to_ptr(&s->levels);
+	return s->levels;
 }
 
-#endif /* _STRATA_H */
+#endif /* STRATA_H */

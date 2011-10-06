@@ -4,14 +4,17 @@
 #include "intmap.h"
 
 //DEFINE_HASH_FN(intptr_hash, intptr_t)
-static size_t intptr_hash(const void *x)
+static size_t intptr_hash(const struct hashset *set, const void *x)
 {
+	(void)set;
 	intptr_t val = *(intptr_t *)x;
 	return (size_t)val;
 }
 
-static int intptr_compar(const void *x, const void *y)
+static int intptr_compar(const struct hashset *set, const void *x,
+			 const void *y)
 {
+	(void)set;
 	return *(intptr_t *)x != *(intptr_t *)y;
 }
 

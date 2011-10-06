@@ -214,7 +214,7 @@ static int parse_end_map(void *ctx)
 	    && parse->gender == GENDER_FEMALE)
 		vector_set_item(traits, ENRON_TRAIT_TJF, 1.0);
 
-	ssize_t cohort = strata_add(&parse->strata, traits);
+	size_t cohort = strata_add(&parse->strata, vector_to_ptr(traits));
 	assert(cohort < ENRON_NCOHORT);
 	actors_add(parse->actors, cohort);
 	
@@ -293,7 +293,7 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	ssize_t ic, nc = ENRON_NCOHORT;
 	for (ic = 0; ic < nc; ic++) {
 		matrix_get_row(traits, ic, vector_to_ptr(&parse.traits));
-		strata_add(&parse.strata, &parse.traits);
+		strata_add(&parse.strata, vector_to_ptr(&parse.traits));
 		assert(strata_count(&parse.strata) == ic + 1);
 		actors_add_cohort(parse.actors, ENRON_COHORT_NAMES[ic]);
 	}
