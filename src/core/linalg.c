@@ -1,57 +1,41 @@
 #include "port.h"
 #include <assert.h>
 #include <stdlib.h>
-#include "lapack-private.h"
+#include "lapack.h"
 #include "xalloc.h"
 #include "linalg.h"
 
-ssize_t chol_solve(enum matrix_uplo uplo, struct matrix *a, struct matrix *b)
+ssize_t chol_solve(enum blas_uplo uplo, struct matrix *a, struct matrix *b)
 {
 	assert(matrix_nrow(a) == matrix_ncol(a));
 	assert(matrix_nrow(b) == matrix_nrow(a));
 
-	char *cuplo = uplo == UPLO_LOWER ? "L" : "U";
-	f77int n = (f77int)matrix_nrow(b);
-	f77int nrhs = (f77int)matrix_ncol(b);
+	size_t n = matrix_nrow(b);
+	size_t nrhs = matrix_ncol(b);
 	double *pa = matrix_to_ptr(a);
-	f77int lda = (f77int)matrix_lda(a);
+	size_t lda = matrix_lda(a);
 	double *pb = matrix_to_ptr(b);
-	f77int ldb = (f77int)matrix_lda(b);
-	f77int info = 0;
+	size_t ldb = matrix_lda(b);
+	ptrdiff_t info;
 
-	F77_FUNC(dposv) (cuplo, &n, &nrhs, pa, &lda, pb, &ldb, &info);
+	info = lapack_dposv(uplo, n, nrhs, pa, lda, pb, ldb);
 	assert(info >= 0);
 
 	return (ssize_t)info;
 }
 
-static void ldlfac_get_worksize(ssize_t n, f77int *lwork)
+static void ldlfac_get_worksize(ssize_t n, size_t *lwork)
 {
 	assert(lwork);
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(0 <= n);
 
-	const char *uplo = "U";
-	f77int n1 = (f77int)n;
-	f77int nrhs = 1;
-	double *a = NULL;
-	f77int lda = MAX(1, n1);
-	f77int *ipiv = NULL;
-	double *b = NULL;
-	f77int ldb = lda;
-	double work = 0;
-	f77int info = 0;
-
-	*lwork = -1;
-	F77_FUNC(dsysv) (uplo, &n1, &nrhs, a, &lda, ipiv, b, &ldb, &work,
-			 lwork, &info);
-	*lwork = (f77int)work;
-	assert(info == 0);
+	*lwork = lapack_dsysv_lwork(n);
 }
 
 void ldlfac_init(struct ldlfac *fac, ssize_t n)
 {
 	assert(fac);
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(0 <= n);
 
 	fac->n = 0;
 	fac->work = NULL;
@@ -66,7 +50,7 @@ void ldlfac_init(struct ldlfac *fac, ssize_t n)
 void ldlfac_reinit(struct ldlfac *fac, ssize_t n)
 {
 	assert(fac);
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(0 <= n);
 
 	fac->n = n;
 	ldlfac_get_worksize(n, &fac->lwork);
@@ -82,8 +66,8 @@ void ldlfac_deinit(struct ldlfac *fac)
 	free(fac->work);
 }
 
-ssize_t ldlfac_solve(struct ldlfac *fac, enum matrix_uplo uplo,
-		     struct matrix *a, struct matrix *b)
+ptrdiff_t ldlfac_solve(struct ldlfac *fac, enum blas_uplo uplo,
+		       struct matrix *a, struct matrix *b)
 {
 	assert(fac);
 	assert(a);
@@ -92,61 +76,36 @@ ssize_t ldlfac_solve(struct ldlfac *fac, enum matrix_uplo uplo,
 	assert(matrix_ncol(a) == ldlfac_dim(fac));
 	assert(matrix_nrow(b) == ldlfac_dim(fac));
 
-	const char *cuplo = uplo == UPLO_LOWER ? "L" : "U";
-	f77int n = (f77int)matrix_nrow(b);
-	f77int nrhs = (f77int)matrix_ncol(b);
+	size_t n = matrix_nrow(b);
+	size_t nrhs = matrix_ncol(b);
 	double *pa = matrix_to_ptr(a);
-	f77int lda = (f77int)matrix_lda(a);
-	f77int *ipiv = fac->ipiv;
+	size_t lda = matrix_lda(a);
+	ptrdiff_t *ipiv = fac->ipiv;
 	double *pb = matrix_to_ptr(b);
-	f77int ldb = (f77int)matrix_lda(b);
+	size_t ldb = matrix_lda(b);
 	double *work = fac->work;
-	f77int lwork = fac->lwork;
+	size_t lwork = fac->lwork;
 
-	F77_FUNC(dsysv) (cuplo, &n, &nrhs, pa, &lda, ipiv, pb, &ldb, work,
-			 &lwork, &fac->info);
+	fac->info = lapack_dsysv(uplo, n, nrhs, pa, lda, ipiv, pb, ldb, work,
+			  	 lwork);
 
-	return (ssize_t)fac->info;
+	return fac->info;
 }
 
 static void symeig_get_worksize(ssize_t n, enum eig_job job,
-				f77int *lwork, f77int *liwork)
+				size_t *lwork, size_t *liwork)
 {
+	assert(0 <= n);
 	assert(lwork);
 	assert(liwork);
-	assert(0 <= n && n <= F77INT_MAX);
 
-	f77int n1 = (f77int)n;
-	const char *jobz = job == EIG_NOVEC ? "N" : "V";
-	const char *uplo = "U";
-	double *a = NULL;
-	f77int lda = MAX(1, n1);
-	double *w = NULL;
-	double work = 0;
-	f77int inone = -1;
-	f77int info = 0;
-
-	F77_FUNC(dsyevd) (jobz, uplo, &n1, a, &lda, w, &work, &inone, liwork,
-			  &inone, &info);
-	assert(info == 0);
-	*lwork = (f77int)work;
-
-	if (n <= 1) {
-		assert(*lwork >= 1);
-		assert(*liwork >= 1);
-	} else if (job == EIG_NOVEC) {
-		assert(*lwork >= 2 * n + 1);
-		assert(*liwork >= 1);
-	} else {
-		assert(*lwork >= 1 + 6 * n + 2 * n * n);
-		assert(*liwork >= 3 + 5 * n);
-	}
+	*lwork = lapack_dsyevd_lwork(job, n, liwork);
 }
 
 void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
 {
 	assert(eig);
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(0 <= n);
 
 	eig->n = 0;
 	eig->job = EIG_NOVEC;
@@ -161,9 +120,9 @@ void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
 void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job)
 {
 	assert(eig);
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(0 <= n);
 
-	f77int lwork, liwork;
+	size_t lwork, liwork;
 
 	symeig_get_worksize(n, job, &lwork, &liwork);
 
@@ -184,25 +143,22 @@ void symeig_deinit(struct symeig *eig)
 	free(eig->iwork);
 }
 
-bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo,
+bool symeig_factor(struct symeig *eig, enum blas_uplo uplo,
 		   struct matrix *a, struct vector *w)
 {
 	assert(eig);
 	assert(matrix_nrow(a) == symeig_dim(eig));
 	assert(matrix_ncol(a) == symeig_dim(eig));
 	assert(vector_dim(w) == symeig_dim(eig));
-	assert(matrix_lda(a) <= F77INT_MAX);
 
-	f77int n = (f77int)symeig_dim(eig);
-	const char *jobz = eig->job == EIG_NOVEC ? "N" : "V";
-	const char *suplo = uplo == UPLO_UPPER ? "U" : "L";
+	size_t n = symeig_dim(eig);
 	double *pa = matrix_to_ptr(a);
-	f77int lda = (f77int)matrix_lda(a);
+	size_t lda = (size_t)matrix_lda(a);
 	double *pw = vector_to_ptr(w);
 	double *work = eig->work;
-	f77int lwork = eig->lwork;
-	f77int *iwork = eig->iwork;
-	f77int liwork = eig->liwork;
+	size_t lwork = eig->lwork;
+	ptrdiff_t *iwork = eig->iwork;
+	size_t liwork = eig->liwork;
 
 	if (n <= 1) {
 		assert(lwork >= 1);
@@ -215,45 +171,21 @@ bool symeig_factor(struct symeig *eig, enum matrix_uplo uplo,
 		assert(liwork >= 3 + 5 * n);
 	}
 	
-	F77_FUNC(dsyevd) (jobz, suplo, &n, pa, &lda, pw, work, &lwork, iwork,
-			  &liwork, &eig->info);
+	eig->info = lapack_dsyevd(eig->job, uplo, n, pa, lda, pw, work, lwork,
+				  iwork, liwork);
 	assert(eig->info >= 0);
-
 	return (eig->info == 0);
 }
 
 static void svdfac_get_worksize(ssize_t m, ssize_t n, enum svd_job job,
-				f77int *lwork)
+				size_t *lwork, size_t *liwork)
 {
+	assert(0 <= m);
+	assert(0 <= n);
 	assert(lwork);
-	assert(0 <= m && m <= F77INT_MAX);	
-	assert(0 <= n && n <= F77INT_MAX);
+	assert(liwork);
 	
-	f77int m1 = (f77int)m;
-	f77int n1 = (f77int)n;
-	f77int mn1 = MIN(m1, n1);
-	const char *jobz = (job == SVD_ALL ? "A"
-			    : job == SVD_SEPARATE ? "S"
-			    : job == SVD_OVERWRITE ? "O"
-			    : "N");
-	double *a = NULL;
-	f77int lda = MAX(1, m1);
-	double *s = NULL;
-	double *u = NULL;
-	f77int ldu = MAX(1, m1);
-	double *vt = NULL;
-	f77int ldvt = (job == SVD_ALL ? MAX(1, n1)
-		       : job == SVD_OVERWRITE && m >= n ? MAX(1, n1)
-		       : job == SVD_SEPARATE ? MAX(1, mn1)
-		       : 1);
-	double work = 0;
-	f77int inone = -1;
-	f77int *iwork = NULL;
-	f77int info = 0;
-	
-	F77_FUNC(dgesdd) (jobz, &m1, &n1, a, &lda, s, u, &ldu, vt, &ldvt, &work, &inone, iwork, &info);
-	assert(info == 0);
-	*lwork = (f77int)work;
+	*lwork = lapack_dgesdd_lwork(job, m, n, liwork);
 }
 
 void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
@@ -273,10 +205,9 @@ void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
 	assert(0 <= m && m <= F77INT_MAX);	
 	assert(0 <= n && n <= F77INT_MAX);
 	
-	f77int lwork, liwork;
+	size_t lwork, liwork;
 	
-	svdfac_get_worksize(m, n, job, &lwork);
-	liwork = 8 * (f77int)MIN(m, n);
+	svdfac_get_worksize(m, n, job, &lwork, &liwork);
 	
 	svd->m = m;
 	svd->n = n;
@@ -298,10 +229,10 @@ void svdfac_deinit(struct svdfac *svd)
 bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)
 {
 	enum svd_job job = svdfac_job(svd);	
-	f77int m = (f77int)svdfac_row_dim(svd);
-	f77int n = (f77int)svdfac_col_dim(svd);
+	size_t m = svdfac_row_dim(svd);
+	size_t n = svdfac_col_dim(svd);
 #ifndef NDEBUG
-	f77int mn = MIN(m, n);
+	size_t mn = MIN(m, n);
 #endif
 	
 	assert(svd);
@@ -346,25 +277,20 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 		break;
 	}
 
-	const char *jobz = (job == SVD_ALL ? "A"
-			    : job == SVD_SEPARATE ? "S"
-			    : job == SVD_OVERWRITE ? "O"
-			    : "N");
 	double *pa = matrix_to_ptr(a);
-	f77int lda = (f77int)matrix_lda(a);
+	size_t lda = (size_t)matrix_lda(a);
 	double *ps = vector_to_ptr(s);
 	double *pu = u ? matrix_to_ptr(u) : NULL;
-	f77int ldu = u ? (f77int)matrix_lda(u) : 1;
+	size_t ldu = u ? (size_t)matrix_lda(u) : 1;
 	double *pvt = vt ? matrix_to_ptr(vt) : NULL;
-	f77int ldvt = vt ? (f77int)matrix_lda(vt) : 1;
+	size_t ldvt = vt ? (size_t)matrix_lda(vt) : 1;
 	double *work = svd->work;
-	f77int lwork = svd->lwork;
-	f77int *iwork = svd->iwork;
-	f77int *info = &svd->info;
+	size_t lwork = svd->lwork;
+	ptrdiff_t *iwork = svd->iwork;
 	
-	F77_FUNC(dgesdd) (jobz, &m, &n, pa, &lda, ps, pu, &ldu, pvt, &ldvt, work, &lwork, iwork, info);
-	assert(*info >= 0);
-	return (*info == 0);
+	svd->info = lapack_dgesdd(job, m, n, pa, lda, ps, pu, ldu, pvt, ldvt,
+				  work, lwork, iwork);
+	return (svd->info == 0);
 }
 
 

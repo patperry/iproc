@@ -8,7 +8,7 @@
 #include <string.h>
 #include "xalloc.h"
 
-#include "blas-private.h"
+#include "blas.h"
 #include "compare.h"
 #include "hash.h"
 #include "ieee754.h"
@@ -18,7 +18,6 @@ void vector_init(struct vector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
-	assert(n <= F77INT_MAX);
 	assert(n <= (ssize_t)(SSIZE_MAX / sizeof(double)));
 
 	v->data = xcalloc(n, sizeof(v->data[0]));
@@ -30,7 +29,6 @@ void vector_reinit(struct vector *v, ssize_t n)
 {
 	assert(v);
 	assert(n >= 0);
-	assert(n <= F77INT_MAX);
 	assert(n <= (ssize_t)(SSIZE_MAX / sizeof(double)));
 	assert(vector_owner(v));
 
@@ -137,12 +135,12 @@ void vector_scale(struct vector *vector, double scale)
 	if (!vector_dim(vector))
 		return;
 
-	f77int n = (f77int)vector_dim(vector);
+	size_t n = (size_t)vector_dim(vector);
 	double alpha = scale;
 	void *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 
-	F77_FUNC(dscal) (&n, &alpha, px, &incx);
+	blas_dscal(n, alpha, px, incx);
 }
 
 void vector_shift(struct vector *vector, double shift)
@@ -188,14 +186,15 @@ void vector_mul(struct vector *dst_vector, const struct vector *vector)
 	if (!vector_dim(dst_vector))
 		return;
 
-	f77int n = (f77int)vector_dim(dst_vector);
-	f77int k = 0;
+	size_t n = (size_t)vector_dim(dst_vector);
+	size_t k = 0;
 	double *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 	double *py = vector_to_ptr(dst_vector);
-	f77int incy = 1;
+	size_t incy = 1;
 
-	F77_FUNC(dtbmv) ("U", "N", "N", &n, &k, px, &incx, py, &incy);
+	blas_dtbmv(BLAS_UPPER, BLAS_NOTRANS, BLAS_NONUNIT, n, k, px,
+		   incx, py, incy);
 }
 
 void vector_div(struct vector *dst_vector, const struct vector *vector)
@@ -207,14 +206,15 @@ void vector_div(struct vector *dst_vector, const struct vector *vector)
 	if (!vector_dim(dst_vector))
 		return;
 
-	f77int n = (f77int)vector_dim(dst_vector);
-	f77int k = 0;
+	size_t n = (size_t)vector_dim(dst_vector);
+	size_t k = 0;
 	double *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 	double *py = vector_to_ptr(dst_vector);
-	f77int incy = 1;
+	size_t incy = 1;
 
-	F77_FUNC(dtbsv) ("U", "N", "N", &n, &k, px, &incx, py, &incy);
+	blas_dtbsv(BLAS_UPPER, BLAS_NOTRANS, BLAS_NONUNIT, n, k, px, incx,
+		   py, incy);
 }
 
 void vector_axpy(double alpha, const struct vector *x, struct vector *y)
@@ -226,13 +226,13 @@ void vector_axpy(double alpha, const struct vector *x, struct vector *y)
 	if (!vector_dim(x))
 		return;
 
-	f77int n = (f77int)vector_dim(y);
+	size_t n = (size_t)vector_dim(y);
 	double *px = vector_to_ptr(x);
-	f77int incx = 1;
+	size_t incx = 1;
 	double *py = vector_to_ptr(y);
-	f77int incy = 1;
+	size_t incy = 1;
 
-	F77_FUNC(daxpy) (&n, &alpha, px, &incx, py, &incy);
+	blas_daxpy(n, alpha, px, incx, py, incy);
 }
 
 double vector_dot(const struct vector *vector1, const struct vector *vector2)
@@ -244,13 +244,13 @@ double vector_dot(const struct vector *vector1, const struct vector *vector2)
 	if (!vector_dim(vector1))
 		return 0.0;
 
-	f77int n = (f77int)vector_dim(vector1);
+	size_t n = (size_t)vector_dim(vector1);
 	double *px = vector_to_ptr(vector1);
-	f77int incx = 1;
+	size_t incx = 1;
 	double *py = vector_to_ptr(vector2);
-	f77int incy = 1;
+	size_t incy = 1;
 
-	double dot = F77_FUNC(ddot) (&n, px, &incx, py, &incy);
+	double dot = blas_ddot(n, px, incx, py, incy);
 	return dot;
 }
 
@@ -280,11 +280,11 @@ double vector_norm(const struct vector *vector)
 	if (!vector_dim(vector))
 		return 0.0;
 
-	f77int n = (f77int)vector_dim(vector);
+	size_t n = (size_t)vector_dim(vector);
 	void *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 
-	double norm = F77_FUNC(dnrm2) (&n, px, &incx);
+	double norm = blas_dnrm2(n, px, incx);
 	return norm;
 }
 
@@ -301,11 +301,11 @@ double vector_sum_abs(const struct vector *vector)
 	if (!vector_dim(vector))
 		return 0.0;
 
-	f77int n = (f77int)vector_dim(vector);
+	size_t n = (size_t)vector_dim(vector);
 	void *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 
-	double sum_abs = F77_FUNC(dasum) (&n, px, &incx);
+	double sum_abs = blas_dasum(n, px, incx);
 	return sum_abs;
 }
 
@@ -328,11 +328,11 @@ ssize_t vector_max_abs_index(const struct vector *vector)
 	assert(vector);
 	assert(vector_dim(vector));
 
-	f77int n = (f77int)vector_dim(vector);
+	size_t n = (size_t)vector_dim(vector);
 	void *px = vector_to_ptr(vector);
-	f77int incx = 1;
+	size_t incx = 1;
 
-	f77int index1 = F77_FUNC(idamax) (&n, px, &incx);
+	size_t index1 = blas_idamax(n, px, incx);
 
 	ssize_t index = index1 - 1;
 	return index;

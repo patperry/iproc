@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4 --install
 
-AM_CPPFLAGS = -Ilib -Isrc -Ilib/hashset
+AM_CPPFLAGS = -Ilib -Isrc -Ilib/hashset -Ilib/linalg
 
 lib_LTLIBRARIES = \
 	libiproc.la
@@ -64,6 +64,15 @@ libcore_la_SOURCES = \
 	lib/xalloc-die.c \
 	lib/hashset/hashset.c \
 	lib/hashset/hashset.h \
+	lib/linalg/blas.c \
+	lib/linalg/blas.h \
+	lib/linalg/f77.c \
+	lib/linalg/f77.h \
+	lib/linalg/f77blas.h \
+	lib/linalg/f77lapack.h \
+	lib/linalg/lapack.c \
+	lib/linalg/lapack.h \
+	lib/linalg/xerbla.c \
 	lib/timsort/timsort.h \
 	lib/timsort/timsort-impl.h \
 	lib/timsort/timsort.c \
@@ -71,7 +80,6 @@ libcore_la_SOURCES = \
 	src/core/array.h \
 	src/core/bfgs.c \
 	src/core/bfgs.h \
-	src/core/blas-private.h \
 	src/core/compare.h \
 	src/core/delegate.h \
 	src/core/hash.c \
@@ -82,7 +90,6 @@ libcore_la_SOURCES = \
 	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
-	src/core/lapack-private.h \
 	src/core/linalg.c \
 	src/core/linalg.h \
 	src/core/linesearch.c \

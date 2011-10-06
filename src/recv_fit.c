@@ -268,7 +268,7 @@ static void eval_set(struct recv_fit_eval *eval,
 	struct matrix pcoefs = matrix_make(&pcoefs_data, dim, nc);
 
 	if (coefs) {
-		matrix_assign_copy(&pcoefs, TRANS_NOTRANS, coefs);
+		matrix_assign_copy(&pcoefs, BLAS_NOTRANS, coefs);
 	} else {
 		matrix_fill(&pcoefs, 0.0);
 	}
@@ -302,7 +302,7 @@ static void kkt_init(struct recv_fit_kkt *kkt, ssize_t nc, ssize_t dim,
 	ssize_t n = nc * dim + nce;
 
 	kkt->factored = false;
-	kkt->uplo = UPLO_LOWER;
+	kkt->uplo = BLAS_LOWER;
 	matrix_init(&kkt->matrix, n, n);
 	ldlfac_init(&kkt->ldl, n);
 }
@@ -340,7 +340,7 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		struct recv_loglik_info *info = recv_loglik_info(ll, ic);
 		ssize_t n = recv_loglik_count(ll, ic);
 		struct matrix h = matrix_slice(k, ic * dim, ic * dim, dim, dim);
-		matrix_assign_copy(&h, TRANS_NOTRANS, &info->imat);
+		matrix_assign_copy(&h, BLAS_NOTRANS, &info->imat);
 		matrix_scale(&h, ((double)n) / ntot);
 	}
 
@@ -355,7 +355,7 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	
 	// k21
 	struct matrix k21 = matrix_slice(k, nc * dim, 0, nce, nc * dim);
-	matrix_assign_copy(&k21, TRANS_TRANS, &k12);
+	matrix_assign_copy(&k21, BLAS_TRANS, &k12);
 	
 	kkt->factored = false;
 }
@@ -427,7 +427,7 @@ static void rgrad_set(struct recv_fit_rgrad *rgrad,
 	assert(!kkt->factored);
 
 	struct vector *g = &rgrad->vector;
-	matrix_mul(2.0, TRANS_NOTRANS, &kkt->matrix, &resid->vector, 0.0, g);
+	matrix_mul(2.0, BLAS_NOTRANS, &kkt->matrix, &resid->vector, 0.0, g);
 }
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
@@ -606,7 +606,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		// ssize_t nmsgc = recv_loglik_count(ll, ic);
 		
 		struct vector scalec = vector_slice(&scale, ic * dim, dim);
-		matrix_assign_copy(&imatc, TRANS_NOTRANS, &ll_info->imat);
+		matrix_assign_copy(&imatc, BLAS_NOTRANS, &ll_info->imat);
 		
 		// compute the scale
 		for (i = 0; i < dim; i++) {
@@ -627,7 +627,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		matrix_scale_cols(&imatc, &scalec);
 		
 		// compute the eigendecomposition
-		symeig_factor(&eig, UPLO_LOWER, &imatc, &evals);
+		symeig_factor(&eig, BLAS_LOWER, &imatc, &evals);
 		
 		// compute the rank of nullspace
 		ssize_t nulldimc = 0;
@@ -641,7 +641,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		
 		// copy the nullspace
 		struct matrix nullc = matrix_slice_cols(&imatc, 0, nulldimc);
-		matrix_init_copy(&nullspaces[ic], TRANS_NOTRANS, &nullc);
+		matrix_init_copy(&nullspaces[ic], BLAS_NOTRANS, &nullc);
 		
 		// change back to the original scale
 		matrix_scale_rows(&nullspaces[ic], &scalec);
@@ -657,7 +657,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		ssize_t nulldimc = matrix_ncol(nullc);
 		
 		struct matrix projc = matrix_slice_cols(&proj, off, nulldimc);
-		matrix_matmul(1.0, TRANS_TRANS, &cec, nullc, 0.0, &projc);
+		matrix_matmul(1.0, BLAS_TRANS, &cec, nullc, 0.0, &projc);
 		
 		off += nulldimc;
 	}
@@ -686,7 +686,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		}
 		
 		struct matrix vt0 = matrix_slice_rows(&vt, rank, nulldim - rank);
-		matrix_init_copy(&ncoefs, TRANS_TRANS, &vt0);
+		matrix_init_copy(&ncoefs, BLAS_TRANS, &vt0);
 		
 		svdfac_deinit(&svd);
 		matrix_deinit(&vt);		
@@ -716,7 +716,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 			
 			struct vector ce1c = vector_slice(&ce1, ic * dim, dim);
 			struct vector yc = vector_slice(&y, off, nulldimc);
-			matrix_mul(1.0, TRANS_NOTRANS, nullc, &yc, 0.0, &ce1c);
+			matrix_mul(1.0, BLAS_NOTRANS, nullc, &yc, 0.0, &ce1c);
 			off += nulldimc;
 		}
 		assert(off == nulldim);

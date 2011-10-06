@@ -40,7 +40,7 @@ static void enron_setup_fixture()
 	enron_messages_init(&messages, -1);
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);	
-	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
+	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 }
 
 static void enron_teardown_fixture()
@@ -160,7 +160,7 @@ static void test_probs()
 			isend = msg->from;
 			ssize_t c = actors_items(&senders)[isend].cohort;
 			const struct vector col = matrix_col(&coefs, c);
-			frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &col, 0.0, &eta);
+			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			
 			if (!design_loops(&design))
 				vector_set_item(&eta, isend, -INFINITY);

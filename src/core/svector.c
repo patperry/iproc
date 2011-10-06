@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h> // memcpy, memmove
 #include "xalloc.h"
-#include "blas-private.h"
 #include "hash.h"
 #include "compare.h"
 #include "svector.h"

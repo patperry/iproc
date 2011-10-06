@@ -134,7 +134,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	 */
 
 	/* eta0 */
-	design_recv_mul0(1.0, TRANS_NOTRANS, design, recv_coefs, 0.0,
+	design_recv_mul0(1.0, BLAS_NOTRANS, design, recv_coefs, 0.0,
 			 &cm->eta0);
 	assert(isfinite(vector_max_abs(&cm->eta0)));
 
@@ -151,7 +151,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	vector_exp(&cm->p0);
 
 	/* mean0 */
-	design_recv_mul0(1.0, TRANS_TRANS, design, &cm->p0, 0.0, &cm->mean0);
+	design_recv_mul0(1.0, BLAS_TRANS, design, &cm->p0, 0.0, &cm->mean0);
 
 	/* imat0 */
 	struct vector y;
@@ -166,7 +166,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
 		svector_set_basis(&ej, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, &ej, -1.0, &y);
+		design_recv_muls0(1.0, BLAS_TRANS, design, &ej, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 
 		matrix_update1(&cm->imat0, pj, &y, &y);
@@ -279,7 +279,7 @@ static void sender_set(const struct recv_model *m,
 	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
 
 	/* compute the eta values */
-	frame_recv_dmul(1.0, TRANS_NOTRANS, f, isend, &beta, 0.0, &send->deta);
+	frame_recv_dmul(1.0, BLAS_NOTRANS, f, isend, &beta, 0.0, &send->deta);
 	if (!has_loops) {
 		svector_set_item(&send->deta, isend, -INFINITY);
 	}
@@ -449,7 +449,7 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	model->senders = senders;
 
 	if (coefs) {
-		matrix_init_copy(&model->coefs, TRANS_NOTRANS, coefs);
+		matrix_init_copy(&model->coefs, BLAS_NOTRANS, coefs);
 	} else {
 		matrix_init(&model->coefs, design_recv_dim(d), ncohort);
 	}
@@ -600,7 +600,7 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
 	       || design_recv_dim(recv_model_design(m)) == matrix_nrow(coefs));
 
 	if (coefs) {
-		matrix_assign_copy(&m->coefs, TRANS_NOTRANS, coefs);
+		matrix_assign_copy(&m->coefs, BLAS_NOTRANS, coefs);
 	} else {
 		matrix_fill(&m->coefs, 0.0);
 	}

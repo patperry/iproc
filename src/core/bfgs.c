@@ -51,7 +51,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 
 	/* compute H_y */
 	struct vector *H_y = &opt->H_dg;
-	matrix_mul(1.0, TRANS_NOTRANS, H, y, 0.0, H_y);
+	matrix_mul(1.0, BLAS_NOTRANS, H, y, 0.0, H_y);
 
 	double y_H_y = vector_dot(H_y, y);
 	double scale1 = (1.0 + (y_H_y / s_y)) / s_y;
@@ -63,7 +63,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	matrix_update1(H, -rho, s, H_y);
 
 	/* update search direction */
-	matrix_mul(-1.0, TRANS_NOTRANS, &opt->inv_hess, grad,
+	matrix_mul(-1.0, BLAS_NOTRANS, &opt->inv_hess, grad,
 		   0.0, &opt->search);
 	assert(isfinite(vector_norm(&opt->search)));
 

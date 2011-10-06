@@ -94,7 +94,7 @@ static void test_rv_nsend()
 		frame_advance(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
 			assert(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
 			assert_true(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
@@ -163,7 +163,7 @@ static void test_rv_nrecv()
 		frame_advance(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_recv_mul(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
 			assert(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
 			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
@@ -238,7 +238,7 @@ static void test_rv_irecv()
 		jrecv = msg ? msg->to[0] : 0;
 		
 		svector_set_basis(&x, 0);
-		frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 		for (j = 0; j < 5; j++) {
 			ssize_t ix = (jrecv + j) % nrecv;
@@ -320,7 +320,7 @@ static void test_rv_isend()
 		jrecv = msg ? msg->to[0] : 0;
 		
 		svector_set_basis(&x, 0);
-		frame_recv_dmuls(1.0, TRANS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		
 		for (j = 0; j < 5; j++) {
 			ssize_t ix = (jrecv + j) % nrecv;

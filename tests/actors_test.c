@@ -74,20 +74,20 @@ static void test_mul()
 		vector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 	
-	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
-	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y1);
+	actors_mul(1.0, BLAS_NOTRANS, &actors, &x, 0.0, &y);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 
-	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, 1.0, &y);
-	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y1);
+	actors_mul(1.0, BLAS_NOTRANS, &actors, &x, 1.0, &y);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
-	actors_mul(1.0, TRANS_NOTRANS, &actors, &x, -1.0, &y);
-	matrix_mul(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y1);
+	actors_mul(1.0, BLAS_NOTRANS, &actors, &x, -1.0, &y);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 
-	actors_mul(2.0, TRANS_NOTRANS, &actors, &x, 2.0, &y);
-	matrix_mul(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y1);
+	actors_mul(2.0, BLAS_NOTRANS, &actors, &x, 2.0, &y);
+	matrix_mul(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
 	vector_deinit(&y1);
@@ -110,20 +110,20 @@ static void test_tmul()
 		vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 	
-	actors_mul(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);
-	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y1);
+	actors_mul(1.0, BLAS_TRANS, &actors, &x, 0.0, &y);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
-	actors_mul(1.0, TRANS_TRANS, &actors, &x, 1.0, &y);
-	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y1);
+	actors_mul(1.0, BLAS_TRANS, &actors, &x, 1.0, &y);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
-	actors_mul(1.0, TRANS_TRANS, &actors, &x, -1.0, &y);
-	matrix_mul(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y1);
+	actors_mul(1.0, BLAS_TRANS, &actors, &x, -1.0, &y);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
-	actors_mul(2.0, TRANS_TRANS, &actors, &x, 2.0, &y);
-	matrix_mul(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y1);
+	actors_mul(2.0, BLAS_TRANS, &actors, &x, 2.0, &y);
+	matrix_mul(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_equals(&y, &y1));
 	
 	vector_deinit(&y1);
@@ -151,26 +151,26 @@ static void test_muls()
 			svector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 	
-	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 0.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 0.0, &y0);
+	actors_muls(1.0, BLAS_NOTRANS, &actors, &x, 0.0, &y);
+	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, 1.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, 1.0, &y0);
+	actors_muls(1.0, BLAS_NOTRANS, &actors, &x, 1.0, &y);
+	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(1.0, TRANS_NOTRANS, &actors, &x, -1.0, &y);
-	matrix_muls(1.0, TRANS_NOTRANS, &matrix, &x, -1.0, &y0);
+	actors_muls(1.0, BLAS_NOTRANS, &actors, &x, -1.0, &y);
+	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(2.0, TRANS_NOTRANS, &actors, &x, 2.0, &y);
-	matrix_muls(2.0, TRANS_NOTRANS, &matrix, &x, 2.0, &y0);
+	actors_muls(2.0, BLAS_NOTRANS, &actors, &x, 2.0, &y);
+	matrix_muls(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
@@ -201,26 +201,26 @@ static void test_tmuls()
 			svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 	
-	actors_muls(1.0, TRANS_TRANS, &actors, &x, 0.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 0.0, &y0);
+	actors_muls(1.0, BLAS_TRANS, &actors, &x, 0.0, &y);
+	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(1.0, TRANS_TRANS, &actors, &x, 1.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, 1.0, &y0);
+	actors_muls(1.0, BLAS_TRANS, &actors, &x, 1.0, &y);
+	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(1.0, TRANS_TRANS, &actors, &x, -1.0, &y);
-	matrix_muls(1.0, TRANS_TRANS, &matrix, &x, -1.0, &y0);
+	actors_muls(1.0, BLAS_TRANS, &actors, &x, -1.0, &y);
+	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));
 	
-	actors_muls(2.0, TRANS_TRANS, &actors, &x, 2.0, &y);
-	matrix_muls(2.0, TRANS_TRANS, &matrix, &x, 2.0, &y0);
+	actors_muls(2.0, BLAS_TRANS, &actors, &x, 2.0, &y);
+	matrix_muls(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y0);
 	vector_assign_copy(&diff, &y0);
 	svector_axpy(-1.0, &y, &diff);
 	assert_true(vector_equals(&diff, &zero));

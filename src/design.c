@@ -81,14 +81,14 @@ void design_init(struct design *design, struct actors *senders,
 
 static void
 design_mul0_effects(double alpha,
-		    enum trans_op trans,
+		    enum blas_trans trans,
 		    ssize_t ieffects, ssize_t neffects,
 		    const struct vector *x, struct vector *y)
 {
 	ssize_t off = ieffects;
 	ssize_t dim = neffects;
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
 		vector_axpy(alpha, &xsub, y);
 	} else {
@@ -100,7 +100,7 @@ design_mul0_effects(double alpha,
 /*
 static void
 design_send_mul0_effects(double alpha,
-			 enum trans_op trans,
+			 enum blas_trans trans,
 			 const struct design *design,
 			 const struct vector *x, struct vector *y)
 {
@@ -115,7 +115,7 @@ design_send_mul0_effects(double alpha,
 
 static void
 design_recv_mul0_effects(double alpha,
-			 enum trans_op trans,
+			 enum blas_trans trans,
 			 const struct design *design,
 			 const struct vector *x, struct vector *y)
 {
@@ -129,7 +129,7 @@ design_recv_mul0_effects(double alpha,
 
 static void
 design_muls0_effects(double alpha,
-		     enum trans_op trans,
+		     enum blas_trans trans,
 		     ssize_t ieffects, ssize_t neffects,
 		     const struct svector *x, struct vector *y)
 {
@@ -137,7 +137,7 @@ design_muls0_effects(double alpha,
 	ssize_t dim = neffects;
 	ssize_t end = off + dim;
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct svector_iter itx;
 		ssize_t i;
 		double x_i;
@@ -158,7 +158,7 @@ design_muls0_effects(double alpha,
 /*
 static void
 design_send_muls0_effects(double alpha,
-			  enum trans_op trans,
+			  enum blas_trans trans,
 			  const struct design *design,
 			  const struct svector *x, struct vector *y)
 {
@@ -173,7 +173,7 @@ design_send_muls0_effects(double alpha,
 
 static void
 design_recv_muls0_effects(double alpha,
-			  enum trans_op trans,
+			  enum blas_trans trans,
 			  const struct design *design,
 			  const struct svector *x, struct vector *y)
 {
@@ -188,7 +188,7 @@ design_recv_muls0_effects(double alpha,
 /*
 static void
 design_send_mul0_static(double alpha,
-			enum trans_op trans,
+			enum blas_trans trans,
 			const struct design *design,
 			const struct vector *x, struct vector *y)
 {
@@ -199,9 +199,9 @@ design_send_mul0_static(double alpha,
 	ssize_t off = design->isstatic;
 	ssize_t dim = design->nsstatic;
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
-		actors_mul(alpha, TRANS_NOTRANS, senders, &xsub, 1.0, y);
+		actors_mul(alpha, BLAS_NOTRANS, senders, &xsub, 1.0, y);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
 		actors_mul(alpha, TRANS_TRANS, senders, x, 1.0, &ysub);
@@ -211,7 +211,7 @@ design_send_mul0_static(double alpha,
 
 static void
 design_recv_mul0_static(double alpha,
-			enum trans_op trans,
+			enum blas_trans trans,
 			const struct design *design,
 			const struct vector *x, struct vector *y)
 {
@@ -228,7 +228,7 @@ design_recv_mul0_static(double alpha,
 	struct vector z;
 	vector_init(&z, actors_cohort_count(receivers));
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
 
 		matrix_mul(1.0, trans, traits, &xsub, 0.0, &z);
@@ -251,7 +251,7 @@ design_recv_mul0_static(double alpha,
 	   const struct vector *s = actors_traits(senders, isend);
 	   struct vector *z = vector_alloc(q);
 
-	   if (trans == TRANS_NOTRANS) {
+	   if (trans == BLAS_NOTRANS) {
 	   struct vector xsub = vector_slice(x, ix_begin, nstatic);
 
 	   // z := alpha t(x) s
@@ -260,7 +260,7 @@ design_recv_mul0_static(double alpha,
 	   matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
 
 	   // y := y + R z
-	   actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
+	   actors_mul(1.0, BLAS_NOTRANS, receivers, z, 1.0, y);
 	   } else {
 	   // z := alpha t(R) x
 	   actors_mul(alpha, TRANS_TRANS, receivers, x, 0.0, z);
@@ -271,7 +271,7 @@ design_recv_mul0_static(double alpha,
 	   struct matrix smat = matrix_make(s, p, 1);
 	   struct matrix zmat = matrix_make(z, 1, q);
 
-	   matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
+	   matrix_matmul(1.0, BLAS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	   }
 
 	   vector_free(z);
@@ -281,7 +281,7 @@ design_recv_mul0_static(double alpha,
 /*
 static void
 design_send_muls0_static(double alpha,
-			 enum trans_op trans,
+			 enum blas_trans trans,
 			 const struct design *design,
 			 const struct svector *x, struct vector *y)
 {
@@ -292,7 +292,7 @@ design_send_muls0_static(double alpha,
 	ssize_t off = design->isstatic;
 	ssize_t dim = design->nsstatic;
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct svector xsub;
 		struct svector_iter it;
 		ssize_t i;
@@ -304,7 +304,7 @@ design_send_muls0_static(double alpha,
 				continue;
 			svector_set_item(&xsub, i, SVECTOR_VAL(it));
 		}
-		actors_muls(alpha, TRANS_NOTRANS, senders, &xsub, 1.0, y);
+		actors_muls(alpha, BLAS_NOTRANS, senders, &xsub, 1.0, y);
 		svector_deinit(&xsub);
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
@@ -315,7 +315,7 @@ design_send_muls0_static(double alpha,
 
 static void
 design_recv_muls0_static(double alpha,
-			 enum trans_op trans,
+			 enum blas_trans trans,
 			 const struct design *design,
 			 const struct svector *x, struct vector *y)
 {
@@ -329,7 +329,7 @@ design_recv_muls0_static(double alpha,
 	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
 	assert(dim == matrix_ncol(traits));
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		struct vector z;
 		vector_init(&z, actors_cohort_count(receivers));
 
@@ -371,7 +371,7 @@ design_recv_muls0_static(double alpha,
 	   const struct vector *s = actors_traits(senders, isend);
 	   struct vector *z = vector_alloc(q);
 
-	   if (trans == TRANS_NOTRANS) {
+	   if (trans == BLAS_NOTRANS) {
 	   // z := alpha t(x) s 
 	   // z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
 
@@ -398,7 +398,7 @@ design_recv_muls0_static(double alpha,
 	   vector_scale(z, alpha);
 
 	   // y := y + R z
-	   actors_mul(1.0, TRANS_NOTRANS, receivers, z, 1.0, y);
+	   actors_mul(1.0, BLAS_NOTRANS, receivers, z, 1.0, y);
 	   } else {
 	   // z := alpha t(R) x
 	   actors_muls(alpha, TRANS_TRANS, receivers, x, 0.0, z);
@@ -409,7 +409,7 @@ design_recv_muls0_static(double alpha,
 	   struct matrix smat = matrix_make(s, p, 1);
 	   struct matrix zmat = matrix_make(z, 1, q);
 
-	   matrix_matmul(1.0, TRANS_NOTRANS, &smat, &zmat, 1.0, &ymat);
+	   matrix_matmul(1.0, BLAS_NOTRANS, &smat, &zmat, 1.0, &ymat);
 	   }
 
 	   vector_free(z);
@@ -419,20 +419,20 @@ design_recv_muls0_static(double alpha,
 /*
 void
 design_send_mul0(double alpha,
-		 enum trans_op trans,
+		 enum blas_trans trans,
 		 const struct design *design,
 		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(x) == design_send_dim(design));
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(y) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(x) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(y) == design_send_dim(design));
 
 	// y := beta y
@@ -449,20 +449,20 @@ design_send_mul0(double alpha,
 
 void
 design_recv_mul0(double alpha,
-		 enum trans_op trans,
+		 enum blas_trans trans,
 		 const struct design *design,
 		 const struct vector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(x) == design_recv_dim(design));
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(y) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(x) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(y) == design_recv_dim(design));
 
 	/* y := beta y */
@@ -479,20 +479,20 @@ design_recv_mul0(double alpha,
 /*
 void
 design_send_muls0(double alpha,
-		  enum trans_op trans,
+		  enum blas_trans trans,
 		  const struct design *design,
 		  const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || svector_dim(x) == design_send_dim(design));
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(y) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || svector_dim(x) == design_send_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(y) == design_send_dim(design));
 
 	// y := beta y
@@ -509,20 +509,20 @@ design_send_muls0(double alpha,
 
 void
 design_recv_muls0(double alpha,
-		  enum trans_op trans,
+		  enum blas_trans trans,
 		  const struct design *design,
 		  const struct svector *x, double beta, struct vector *y)
 {
 	assert(design);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || svector_dim(x) == design_recv_dim(design));
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(y) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || svector_dim(x) == design_recv_count(design));
-	assert(trans == TRANS_NOTRANS
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(y) == design_recv_dim(design));
 
 	/* y := beta y */

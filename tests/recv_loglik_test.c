@@ -45,7 +45,7 @@ static void enron_setup_fixture()
 	enron_employees_init(&enron_actors, &enron_traits, &enron_trait_names);
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);
-	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
+	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 	recv_trait_names = enron_trait_names;
 	enron_messages_init(&messages, -1);
 }
@@ -234,7 +234,7 @@ static void test_mean()
 			vector_fill(&probs, 0.0);
 			recv_model_axpy_probs(1.0, &model, isend, &probs);
 			
-			frame_recv_mul(msg->nto, TRANS_TRANS, &frame, isend, &probs,
+			frame_recv_mul(msg->nto, BLAS_TRANS, &frame, isend, &probs,
 				       0.0, &mean0);
 			
 			vector_fill(&mean1, 0.0);
@@ -328,7 +328,7 @@ static void test_score()
 				*svector_item_ptr(&nrecv, msg->to[ito]) += 1.0;
 			}
 
-			frame_recv_muls(1.0, TRANS_TRANS, &frame, isend, &nrecv,
+			frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &nrecv,
 					0.0, &score0);
 			recv_loglik_axpy_last_mean(-1.0, &recv_loglik, &score0);
 			
@@ -430,7 +430,7 @@ static void test_imat()
 				vector_assign_copy(&y, &mean);				
 				svector_set_basis(&e_j, jrecv);
 				
-				frame_recv_muls(1.0, TRANS_TRANS, &frame, isend, &e_j, -1.0, &y);
+				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &e_j, -1.0, &y);
 				matrix_update1(&imat0, p, &y, &y);
 			}
 			matrix_scale(&imat0, msg->nto);
@@ -448,7 +448,7 @@ static void test_imat()
 				}
 			}
 			
-			matrix_assign_copy(&diff, TRANS_NOTRANS, &avg_imat0[c]);
+			matrix_assign_copy(&diff, BLAS_NOTRANS, &avg_imat0[c]);
 			matrix_axpy(-1.0/msg->nto, &imat0, &diff);
 			matrix_axpy(-((double)msg->nto) / n, &diff, &avg_imat0[c]);
 			
@@ -469,7 +469,7 @@ static void test_imat()
 				}
 			}
 			
-			matrix_assign_copy(&avg_imat0[c], TRANS_NOTRANS, &avg_imat1);
+			matrix_assign_copy(&avg_imat0[c], BLAS_NOTRANS, &avg_imat1);
 
 		}
 		

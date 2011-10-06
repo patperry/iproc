@@ -70,7 +70,7 @@ struct recv_fit_eval {
 struct recv_fit_kkt {
 	struct matrix matrix;
 	struct ldlfac ldl;
-	enum matrix_uplo uplo;
+	enum blas_uplo uplo;
 	bool factored;
 };
 

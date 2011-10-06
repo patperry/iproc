@@ -1,6 +1,7 @@
 #ifndef _MATRIX_H
 #define _MATRIX_H
 
+#include "blas.h"
 #include "svector.h"
 #include "vector.h"
 
@@ -11,23 +12,12 @@ struct matrix {
 	ssize_t lda;
 };
 
-enum trans_op {
-	TRANS_NOTRANS,
-	TRANS_TRANS,
-	TRANS_CONJTRANS
-};
-
-enum matrix_uplo {
-	UPLO_UPPER,
-	UPLO_LOWER
-};
-
 /* create, destroy */
 void matrix_init(struct matrix *a, ssize_t nrow, ssize_t ncol);
 void matrix_reinit(struct matrix *a, ssize_t nrow, ssize_t ncol);
-void matrix_init_copy(struct matrix *a, enum trans_op trans,
+void matrix_init_copy(struct matrix *a, enum blas_trans trans,
 		      const struct matrix *src);
-void matrix_assign_copy(struct matrix *a, enum trans_op trans,
+void matrix_assign_copy(struct matrix *a, enum blas_trans trans,
 			const struct matrix *src);
 void matrix_deinit(struct matrix *a);
 
@@ -100,18 +90,18 @@ void matrix_sub(struct matrix *a, const struct matrix *src);
 void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y);
 
 /* linear algebra */
-void matrix_mul(double alpha, enum trans_op trans, const struct matrix *a,
+void matrix_mul(double alpha, enum blas_trans trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y);
-void matrix_matmul(double alpha, enum trans_op trans, const struct matrix *a,
+void matrix_matmul(double alpha, enum blas_trans trans, const struct matrix *a,
 		   const struct matrix *x, double beta, struct matrix *y);
-void matrix_muls(double alpha, enum trans_op trans, const struct matrix *a,
+void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
 		 const struct svector *x, double beta, struct vector *y);
 void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
-void matrix_sym_update1(enum matrix_uplo uplo, struct matrix *a, double alpha,
+void matrix_sym_update1(enum blas_uplo uplo, struct matrix *a, double alpha,
 			const struct vector *x);
-void matrix_sym_update2(enum matrix_uplo uplo, struct matrix *a, double alpha,
+void matrix_sym_update2(enum blas_uplo uplo, struct matrix *a, double alpha,
 			const struct vector *x, const struct vector *y);
 
 
@@ -120,7 +110,7 @@ void matrix_printf(const struct matrix *a);
 
 /* deprecated */
 struct matrix *matrix_alloc(ssize_t nrow, ssize_t ncol);
-struct matrix *matrix_alloc_copy(enum trans_op trans, const struct matrix *src);
+struct matrix *matrix_alloc_copy(enum blas_trans trans, const struct matrix *src);
 void matrix_free(struct matrix *a);
 
 /* inline function definitions */

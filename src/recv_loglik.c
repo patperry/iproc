@@ -173,7 +173,7 @@ static void score_set_obs(struct recv_loglik_sender_score *score,
 		*svector_item_ptr(&score->nrecv, jrecv[i]) += 1.0;
 	}
 
-	frame_recv_dmuls(1.0 / n, TRANS_TRANS, f, isend,
+	frame_recv_dmuls(1.0 / n, BLAS_TRANS, f, isend,
 			 &score->nrecv, 0.0, &score->mean_obs_dx);
 }
 
@@ -314,7 +314,7 @@ static void matrix_mean_update(double scale, const struct matrix *val,
 	struct vector vwork = vector_slice(work, 0, m * n);
 	struct matrix diff = matrix_make(&vwork, m, n);
 
-	matrix_assign_copy(&diff, TRANS_NOTRANS, val);
+	matrix_assign_copy(&diff, BLAS_NOTRANS, val);
 	matrix_sub(&diff, mean);
 	matrix_axpy(scale, &diff, mean);
 }
@@ -396,7 +396,7 @@ static void score_axpy_obs(double alpha,
 	struct vector ysub = vector_slice(y, off, dim);
 
 	// (X[0,i])^T n[i]
-	design_recv_muls0(alpha / nsend, TRANS_TRANS,
+	design_recv_muls0(alpha / nsend, BLAS_TRANS,
 			  design, &score->nrecv, 1.0, y);
 
 	// sum{dx[t,i,j]}
@@ -424,7 +424,7 @@ static void score_axpy_mean(double alpha,
 		svector_set_item(&dp, jrecv, val);
 	}
 
-	design_recv_muls0(alpha, TRANS_TRANS, design, &dp, 1.0, y);
+	design_recv_muls0(alpha, BLAS_TRANS, design, &dp, 1.0, y);
 	svector_deinit(&dp);
 
 	const struct vector *mean_dx = &score->mean_dx;
@@ -473,7 +473,7 @@ static void imat_axpy(double alpha,
 
 	struct vector gamma_x0_dp;
 	vector_init(&gamma_x0_dp, dim);
-	design_recv_muls0(1.0, TRANS_TRANS, design, &gamma_dp, 0.0,
+	design_recv_muls0(1.0, BLAS_TRANS, design, &gamma_dp, 0.0,
 			  &gamma_x0_dp);
 
 	struct matrix x0_dp2;
@@ -489,7 +489,7 @@ static void imat_axpy(double alpha,
 			svector_set_item(&dp2_j, jrecv, val);
 		}
 		struct vector dst = matrix_col(&x0_dp2, j);
-		design_recv_muls0(1.0, TRANS_TRANS, design, &dp2_j, 0.0, &dst);
+		design_recv_muls0(1.0, BLAS_TRANS, design, &dp2_j, 0.0, &dst);
 	}
 
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
@@ -510,7 +510,7 @@ static void imat_axpy(double alpha,
 			svector_set_item(&x0_dp2_k, jrecv, val);
 		}
 		struct vector dst = matrix_col(y, k);
-		design_recv_muls0(alpha, TRANS_TRANS, design, &x0_dp2_k,
+		design_recv_muls0(alpha, BLAS_TRANS, design, &x0_dp2_k,
 				  1.0, &dst);
 	}
 
@@ -542,7 +542,7 @@ static void imat_axpy(double alpha,
 		ssize_t jrecv = *(ssize_t *)array_item(active, i);
 
 		svector_set_basis(&e_j, jrecv);
-		design_recv_muls0(1.0, TRANS_TRANS, design, &e_j, 0.0, &x0_j);
+		design_recv_muls0(1.0, BLAS_TRANS, design, &e_j, 0.0, &x0_j);
 
 		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
 		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
@@ -1129,7 +1129,7 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 
 			matrix_fill(&new_imat, 0.0);
 			sender_axpy_avg_imat(1.0, sll, &new_imat);
-			matrix_assign_copy(&diff, TRANS_NOTRANS, &avg_imat);
+			matrix_assign_copy(&diff, BLAS_NOTRANS, &avg_imat);
 			matrix_axpy(-1.0, &new_imat, &diff);
 			//sender_axpy_avg_imat(-1.0, sll, &diff);
 			matrix_axpy(-((double)n) / ntot, &diff, &avg_imat);

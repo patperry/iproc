@@ -88,17 +88,17 @@ ssize_t actors_add_cohort(struct actors *a, const char *name)
 	return cid;
 }
 
-void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
+void actors_mul(double alpha, enum blas_trans trans, const struct actors *a,
 		const struct vector *x, double beta, struct vector *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || vector_dim(x) == actors_cohort_count(a));
-	assert(trans != TRANS_NOTRANS || vector_dim(y) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || vector_dim(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS || vector_dim(y) == actors_count(a));
+	assert(trans == BLAS_NOTRANS || vector_dim(x) == actors_count(a));
+	assert(trans == BLAS_NOTRANS
 	       || vector_dim(y) == actors_cohort_count(a));
 
 	if (beta == 0) {
@@ -107,7 +107,7 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 		vector_scale(y, beta);
 	}
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		const struct actor *item = actors_items(a);
 		ssize_t i, n = actors_count(a);
 
@@ -137,18 +137,18 @@ void actors_mul(double alpha, enum trans_op trans, const struct actors *a,
 
 void
 actors_muls(double alpha,
-	    enum trans_op trans,
+	    enum blas_trans trans,
 	    const struct actors *a,
 	    const struct svector *x, double beta, struct svector *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || svector_dim(x) == actors_cohort_count(a));
-	assert(trans != TRANS_NOTRANS || svector_dim(y) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || svector_dim(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS || svector_dim(y) == actors_count(a));
+	assert(trans == BLAS_NOTRANS || svector_dim(x) == actors_count(a));
+	assert(trans == BLAS_NOTRANS
 	       || svector_dim(y) == actors_cohort_count(a));
 
 	if (beta == 0) {
@@ -157,7 +157,7 @@ actors_muls(double alpha,
 		svector_scale(y, beta);
 	}
 
-	if (trans == TRANS_NOTRANS) {
+	if (trans == BLAS_NOTRANS) {
 		const struct cohort *cohort = actors_cohorts(a);
 		struct svector_iter itx;
 		SVECTOR_FOREACH(itx, x) {
@@ -187,18 +187,18 @@ actors_muls(double alpha,
 
 void
 actors_matmul(double alpha,
-	      enum trans_op trans,
+	      enum blas_trans trans,
 	      const struct actors *a,
 	      const struct matrix *x, double beta, struct matrix *y)
 {
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS
 	       || matrix_nrow(x) == actors_cohort_count(a));
-	assert(trans != TRANS_NOTRANS || matrix_nrow(y) == actors_count(a));
-	assert(trans == TRANS_NOTRANS || matrix_nrow(x) == actors_count(a));
-	assert(trans == TRANS_NOTRANS
+	assert(trans != BLAS_NOTRANS || matrix_nrow(y) == actors_count(a));
+	assert(trans == BLAS_NOTRANS || matrix_nrow(x) == actors_count(a));
+	assert(trans == BLAS_NOTRANS
 	       || matrix_nrow(y) == actors_cohort_count(a));
 	assert(matrix_ncol(x) == matrix_ncol(y));
 

@@ -4,8 +4,8 @@
 #include <stddef.h>
 
 #include "array.h"
-#include "intset.h"
 #include "matrix.h"
+#include "intset.h"
 #include "svector.h"
 #include "vector.h"
 
@@ -44,17 +44,17 @@ ssize_t actors_add(struct actors *a, ssize_t cohort);
 ssize_t actors_add_cohort(struct actors *a, const char *name);
 
 void actors_mul(double alpha,
-		enum trans_op trans,
+		enum blas_trans trans,
 		const struct actors *a,
 		const struct vector *x, double beta, struct vector *y);
 
 void actors_muls(double alpha,
-		 enum trans_op trans,
+		 enum blas_trans trans,
 		 const struct actors *a,
 		 const struct svector *x, double beta, struct svector *y);
 
 void actors_matmul(double alpha,
-		   enum trans_op trans,
+		   enum blas_trans trans,
 		   const struct actors *a,
 		   const struct matrix *x, double beta, struct matrix *y);
 

@@ -99,24 +99,24 @@ void frame_add_observer(struct frame *f, void *udata,
 			const struct frame_callbacks *callbacks);
 void frame_remove_observer(struct frame *f, void *udata);
 
-void frame_recv_mul(double alpha, enum trans_op trans,
+void frame_recv_mul(double alpha, enum blas_trans trans,
 		    const struct frame *f, ssize_t isend,
 		    const struct vector *x, double beta, struct vector *y);
-void frame_recv_muls(double alpha, enum trans_op trans,
+void frame_recv_muls(double alpha, enum blas_trans trans,
 		     const struct frame *f, ssize_t isend,
 		     const struct svector *x, double beta, struct vector *y);
 
-void frame_recv_dmul(double alpha, enum trans_op trans,
+void frame_recv_dmul(double alpha, enum blas_trans trans,
 		     const struct frame *f, ssize_t isend,
 		     const struct vector *x, double beta, struct svector *y);
-void frame_recv_dmuls(double alpha, enum trans_op trans,
+void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		      const struct frame *f, ssize_t isend,
 		      const struct svector *x, double beta, struct vector *y);
 
-// void frame_send_mul(double alpha, enum trans_op trans,
+// void frame_send_mul(double alpha, enum blas_trans trans,
 //                  const struct frame *f,
 //                  const struct vector *x, double beta, struct vector *y);
-//void frame_send_muls(double alpha, enum trans_op trans,
+//void frame_send_muls(double alpha, enum blas_trans trans,
 //                   const struct frame *f,
 //                   const struct svector *x, double beta, struct vector *y);
 

@@ -41,7 +41,7 @@ static void setup(void) {
 	
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);	
-	matrix_init_copy(&recv_traits, TRANS_NOTRANS, &enron_traits);
+	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 	
 	double intvls[] = {
 		// 450.00,

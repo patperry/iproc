@@ -1,5 +1,18 @@
-#ifndef _BLAS_PRIVATE_H
-#define _BLAS_PRIVATE_H
+#ifndef F77BLAS_H
+#define F77BLAS_H
+
+#include "f77.h"
+
+#define F77_INT(n) f77int n ## _ = (f77int) n
+
+#define F77_TRANS(t) const char *t ## _ = (t == BLAS_TRANS ? "T" \
+		 			   : t == BLAS_CONJTRANS ? "C" : "N")
+#define F77_UPLO(u) const char *u ## _ = (u == BLAS_LOWER ? "L" : "U")
+#define F77_DIAG(d) const char *d ## _ = (d == BLAS_UNIT ? "U" : "D")
+#define F77_SIDE(s) const char *s ## _ = (s == BLAS_RIGHT ? "R" : "L")
+
+
+
 
 extern double F77_FUNC(ddot) (const f77int *n,
 			      const double *x,
@@ -205,4 +218,4 @@ extern void F77_FUNC(dsyr2k) (const char *uplo,
 			      const f77int *ldb,
 			      const double *beta, double *c, const f77int *ldc);
 
-#endif /* _BLAS_PRIVATE_H */
+#endif /* F77BLAS_H */

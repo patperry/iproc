@@ -37,7 +37,7 @@ static void recv_resid_clear(struct recv_resid_count *c)
 static void recv_resid_count_compute_dyad(struct recv_resid_count *c)
 {
 	if (!c->dyad_cached) {
-		matrix_assign_copy(&c->dyad, TRANS_TRANS, &c->dyad_trans);
+		matrix_assign_copy(&c->dyad, BLAS_TRANS, &c->dyad_trans);
 		c->dyad_cached = true;
 	}
 }
