@@ -1,6 +1,13 @@
 ACLOCAL_AMFLAGS = -I m4 --install
 
-AM_CPPFLAGS = -Ilib -Isrc -Ilib/hashset -Ilib/linalg
+AM_CPPFLAGS = \
+	-Ilib/core/src \
+	-Ilib/linalg/lib \
+	-Ilib/linalg/src \
+	-Ilib/include \
+	-Ilib \
+	-Isrc/core \
+	-Isrc
 
 lib_LTLIBRARIES = \
 	libiproc.la
@@ -59,24 +66,25 @@ libiproc_la_LIBADD = \
 	libdSFMT.la
 
 libcore_la_SOURCES = \
-	lib/xalloc.c \
-	lib/xalloc.h \
-	lib/xalloc-die.c \
-	lib/hashset/hash.h \
-	lib/hashset/hashset.c \
-	lib/hashset/hashset.h \
-	lib/linalg/blas.c \
-	lib/linalg/blas.h \
-	lib/linalg/f77.c \
-	lib/linalg/f77.h \
-	lib/linalg/f77blas.h \
-	lib/linalg/f77lapack.h \
-	lib/linalg/lapack.c \
-	lib/linalg/lapack.h \
-	lib/linalg/xerbla.c \
-	lib/timsort/timsort.h \
-	lib/timsort/timsort-impl.h \
-	lib/timsort/timsort.c \
+	lib/core/src/coreutil.h \
+	lib/core/src/hash.h \
+	lib/core/src/hashset.c \
+	lib/core/src/hashset.h \
+	lib/core/src/timsort-impl.h \
+	lib/core/src/timsort.c \
+	lib/core/src/timsort.h \
+	lib/core/src/xalloc-die.c \
+	lib/core/src/xalloc.c \
+	lib/core/src/xalloc.h ) \
+	lib/linalg/lib/f77.c \
+	lib/linalg/lib/f77.h \
+	lib/linalg/lib/f77blas.h \
+	lib/linalg/lib/f77lapack.h \
+	lib/linalg/lib/xerbla.c ) \
+	lib/linalg/src/blas.c \
+	lib/linalg/src/blas.h \
+	lib/linalg/src/lapack.c \
+	lib/linalg/src/lapack.h ) \
 	src/core/array.c \
 	src/core/array.h \
 	src/core/bfgs.c \
@@ -111,11 +119,6 @@ libcore_la_SOURCES = \
 	src/core/util.c \
 	src/core/vector.c \
 	src/core/vector.h
-
-libcore_la_CPPFLAGS = \
-	-I./src/core \
-	-I./lib/timsort \
-	$(AM_CPPFLAGS)
 
 libcore_la_LIBADD = \
 	libminpack.la \
@@ -188,34 +191,28 @@ libminpack_la_LIBADD = \
 	$(FLIBS)
 
 libyajl_la_SOURCES = \
-	lib/yajl/yajl_common.h \
-	lib/yajl/yajl_gen.h \
-	lib/yajl/yajl_parse.h \
-	lib/yajl/yajl_tree.h \
-	lib/yajl/yajl_version.h \
-	lib/yajl/api/yajl_common.h \
-	lib/yajl/api/yajl_gen.h \
-	lib/yajl/api/yajl_parse.h \
-	lib/yajl/api/yajl_tree.h \
-	lib/yajl/yajl.c \
-	lib/yajl/yajl_alloc.c \
-	lib/yajl/yajl_alloc.h \
-	lib/yajl/yajl_buf.c \
-	lib/yajl/yajl_buf.h \
-	lib/yajl/yajl_bytestack.h \
-	lib/yajl/yajl_encode.c \
-	lib/yajl/yajl_encode.h \
-	lib/yajl/yajl_gen.c \
-	lib/yajl/yajl_lex.c \
-	lib/yajl/yajl_lex.h \
-	lib/yajl/yajl_parser.c \
-	lib/yajl/yajl_parser.h \
-	lib/yajl/yajl_tree.c \
-	lib/yajl/yajl_version.c
+	lib/yajl/src/api/yajl_common.h \
+	lib/yajl/src/api/yajl_gen.h \
+	lib/yajl/src/api/yajl_parse.h \
+	lib/yajl/src/api/yajl_tree.h \
+	lib/yajl/src/yajl.c \
+	lib/yajl/src/yajl_alloc.c \
+	lib/yajl/src/yajl_alloc.h \
+	lib/yajl/src/yajl_buf.c \
+	lib/yajl/src/yajl_buf.h \
+	lib/yajl/src/yajl_bytestack.h \
+	lib/yajl/src/yajl_encode.c \
+	lib/yajl/src/yajl_encode.h \
+	lib/yajl/src/yajl_gen.c \
+	lib/yajl/src/yajl_lex.c \
+	lib/yajl/src/yajl_lex.h \
+	lib/yajl/src/yajl_parser.c \
+	lib/yajl/src/yajl_parser.h \
+	lib/yajl/src/yajl_tree.c
 
 libyajl_la_CPPFLAGS = \
-	-I./lib/ \
-	-I./lib/yajl \
+	-I./lib/yajl/src \
+	-I./lib/yajl/src/api \
 	$(AM_CPPFLAGS)
 
 
