@@ -268,8 +268,10 @@ static struct recv_frame *recv_frames_item(const struct frame *f, ssize_t isend)
 	return rf;
 }
 
-static int frame_event_rcompare(const void *x1, const void *x2)
+static int frame_event_rcompare(const struct pqueue *q, const void *x1,
+				const void *x2)
 {
+	(void)q;
 	const struct frame_event *e1 = x1;
 	const struct frame_event *e2 = x2;
 	return double_rcompare(&e1->time, &e2->time);
@@ -288,8 +290,9 @@ void frame_init(struct frame *f, const struct design *design)
 	frame_senders_init(f);
 	frame_receivers_init(f);	
 	f->cur_fmsg = 0;
-	pqueue_init(&f->events, frame_event_rcompare,
-		    sizeof(struct frame_event));
+	pqueue_init(&f->events, sizeof(struct frame_event),
+		    frame_event_rcompare);
+
 	recv_frames_init(f);
 	frame_vars_init(f);
 

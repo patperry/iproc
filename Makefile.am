@@ -70,6 +70,8 @@ libcore_la_SOURCES = \
 	lib/core/src/hash.h \
 	lib/core/src/hashset.c \
 	lib/core/src/hashset.h \
+	lib/core/src/pqueue.c \
+	lib/core/src/pqueue.h \
 	lib/core/src/timsort-impl.h \
 	lib/core/src/timsort.c \
 	lib/core/src/timsort.h \
@@ -107,8 +109,6 @@ libcore_la_SOURCES = \
 	src/core/matrix.c \
 	src/core/matrix.h \
 	src/core/port.h \
-	src/core/pqueue.c \
-	src/core/pqueue.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
 	src/core/slice.c \
@@ -302,10 +302,6 @@ check_PROGRAMS = # empty
 check_PROGRAMS += tests/array_test
 tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
-
-check_PROGRAMS += tests/pqueue_test
-tests_pqueue_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_pqueue_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/intmap_test
 tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
