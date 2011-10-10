@@ -17,7 +17,11 @@
 
 static struct actors senders;
 static struct actors receivers;
+static size_t nactor;
+static size_t ncohort;
+static ptrdiff_t *cohorts;
 static struct matrix recv_traits;
+static const char * const * recv_cohort_names;
 static const char * const * recv_trait_names;
 static bool has_reffects;
 static bool has_loops;
@@ -35,13 +39,16 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&receivers, &recv_traits, &recv_trait_names);
+	enron_employees_init(&nactor, &ncohort, &cohorts, &receivers,
+			     &recv_traits, &recv_cohort_names,
+			     &recv_trait_names);
 	actors_init_copy(&senders, &receivers);
 	enron_messages_init(&messages, -1);
 }
 
 static void enron_teardown_fixture()
 {
+	free(cohorts);
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
 	actors_deinit(&receivers);

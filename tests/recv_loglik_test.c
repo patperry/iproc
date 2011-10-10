@@ -21,12 +21,19 @@
 
 
 static struct actors enron_actors;
+static size_t enron_nactor;
+static size_t enron_ncohort;
+static ptrdiff_t *enron_cohorts;
 static struct matrix enron_traits;
+static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
 
 static struct actors senders;
 static struct actors receivers;
+static size_t nactor;
+static size_t ncohort;
+static ptrdiff_t *cohorts;
 static struct matrix recv_traits;
 static const char * const *recv_trait_names;
 static struct vector intervals;
@@ -42,7 +49,9 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_actors, &enron_traits, &enron_trait_names);
+	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
+			     &enron_actors, &enron_traits,
+			     &enron_cohort_names, &enron_trait_names);
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);
 	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
@@ -52,6 +61,7 @@ static void enron_setup_fixture()
 
 static void enron_teardown_fixture()
 {
+	free(enron_cohorts);
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
 	actors_deinit(&receivers);
@@ -89,7 +99,11 @@ static void basic_setup()
 		}
 	}
 	
-	recv_model_init(&model, &frame, &senders, &coefs);
+	nactor = enron_nactor;
+	ncohort = enron_ncohort;
+	cohorts = enron_cohorts;
+
+	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 
@@ -120,7 +134,12 @@ static void hard_setup()
 			matrix_set_item(&coefs, i, c, val);
 		}
 	}
-	recv_model_init(&model, &frame, &senders, &coefs);
+
+	nactor = enron_nactor;
+	ncohort = enron_ncohort;
+	cohorts = enron_cohorts;
+
+	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
 

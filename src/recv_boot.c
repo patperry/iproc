@@ -64,13 +64,14 @@ static bool sample_subset(const double *probs, ssize_t n, dsfmt_t *dsfmt,
 void recv_boot_init(struct recv_boot *boot,
 		    const struct messages *msgs,
 		    const struct design *design,
-		    const struct actors *senders,
+		    size_t ncohort,
+		    const ptrdiff_t *cohorts,
 		    const struct matrix *coefs,
 		    dsfmt_t *dsfmt)
 {
 	messages_init(&boot->messages);	
 	frame_init(&boot->frame, design);
-	recv_model_init(&boot->model, &boot->frame, senders, coefs);
+	recv_model_init(&boot->model, &boot->frame, ncohort, cohorts, coefs);
 	ssize_t nrecv = design_recv_count(design);
 	
 	ssize_t max_nto = messages_max_nto(msgs);

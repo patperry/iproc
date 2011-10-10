@@ -328,9 +328,8 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 {
 	struct matrix *k = &kkt->matrix;
 	const struct recv_model *m = recv_loglik_model(ll);
-	const struct actors *s = recv_model_senders(m);
 	ssize_t dim = recv_model_dim(m);
-	ssize_t ic, nc = actors_cohort_count(s);
+	ssize_t ic, nc = recv_model_cohort_count(m);
 	ssize_t ntot = recv_loglik_count_sum(ll);
 
 	matrix_fill(k, 0.0);
@@ -531,7 +530,8 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,		   
 		   const struct design *design,
-		   const struct actors *senders,
+		   size_t ncohort,
+		   const ptrdiff_t *cohorts,
 		   const struct recv_fit_ctrl *ctrl)
 {
 	assert(fit);
@@ -543,9 +543,9 @@ void recv_fit_init(struct recv_fit *fit,
 	assert(!ymsgs || (messages_max_from(ymsgs) < design_recv_count(design)));
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
-	ssize_t dim = design_recv_dim(design);
-	ssize_t nc = actors_cohort_count(senders);
-	ssize_t ne = 0;
+	size_t dim = design_recv_dim(design);
+	size_t nc = ncohort;
+	size_t ne = 0;
 
 	if (!ctrl) {
 		fit->ctrl = RECV_FIT_CTRL0;
@@ -556,10 +556,9 @@ void recv_fit_init(struct recv_fit *fit,
 	fit->xmsgs = xmsgs;
 	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
 	fit->design = design;
-	fit->senders = senders;
 
 	frame_init(&fit->frame, fit->design);
-	recv_model_init(&fit->model, &fit->frame, fit->senders, NULL);
+	recv_model_init(&fit->model, &fit->frame, ncohort, cohorts, NULL);
 	constrs_init(&fit->constrs);
 	eval_init(&fit->eval[0], &fit->model, ne);
 	eval_init(&fit->eval[1], &fit->model, ne);
@@ -830,7 +829,7 @@ void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val)
 {
 	ssize_t dim = design_recv_dim(fit->design);
-	ssize_t nc = actors_cohort_count(fit->senders);
+	ssize_t nc = recv_model_cohort_count(&fit->model);
 	
 	constrs_add_set(&fit->constrs, dim, nc, i, c, val);
 	_recv_fit_add_constrs(fit, 1);
@@ -840,7 +839,7 @@ void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
 			    ssize_t i2, ssize_t c2)
 {
 	ssize_t dim = design_recv_dim(fit->design);
-	ssize_t nc = actors_cohort_count(fit->senders);
+	ssize_t nc = recv_model_cohort_count(&fit->model);
 
 	constrs_add_eq(&fit->constrs, dim, nc, i1, c1, i2, c2);
 	_recv_fit_add_constrs(fit, 1);

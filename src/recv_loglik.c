@@ -993,16 +993,16 @@ static double recv_loglik_avg_dev_nocache(const struct recv_loglik *ll,
 	assert(ll);
 	assert(0 <= c && c < recv_model_cohort_count(ll->model));
 
-	const struct actors *senders = recv_model_senders(ll->model);
-	const struct cohort *cohorts = actors_cohorts(senders);
-	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
-	ssize_t ic, nc = array_count(&cohorts[c].actors);
+	const ptrdiff_t *cohorts = recv_model_cohorts(ll->model);
+	size_t isend, nsend = recv_model_count(ll->model);
 	ssize_t ntot = 0;
 	double dev_avg = 0.0;
 
-	for (ic = 0; ic < nc; ic++) {
-		ssize_t i = ids[ic];
-		struct recv_loglik_sender *sll = &ll->senders[i];
+	for (isend = 0; isend < nsend; isend++) {
+		if (cohorts[isend] != c)
+			continue;
+
+		struct recv_loglik_sender *sll = &ll->senders[isend];
 		ssize_t n = sender_count(sll);
 		if (n > 0) {
 			double dev = sender_avg_dev(sll);
@@ -1024,10 +1024,8 @@ static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 	assert(y);
 	assert(vector_dim(y) == recv_model_dim(ll->model));
 
-	const struct actors *senders = recv_model_senders(ll->model);
-	const struct cohort *cohorts = actors_cohorts(senders);
-	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
-	ssize_t ic, nc = array_count(&cohorts[c].actors);
+	const ptrdiff_t *cohorts = recv_model_cohorts(ll->model);
+	size_t isend, nsend = recv_model_count(ll->model);
 
 	struct vector avg_mean, diff;
 	vector_init(&avg_mean, recv_model_dim(ll->model));
@@ -1036,9 +1034,11 @@ static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 
 	ntot = 0;
 
-	for (ic = 0; ic < nc; ic++) {
-		ssize_t i = ids[ic];
-		struct recv_loglik_sender *sll = &ll->senders[i];
+	for (isend = 0; isend < nsend; isend++) {
+		if (cohorts[isend] != c)
+			continue;
+
+		struct recv_loglik_sender *sll = &ll->senders[isend];
 
 		n = sender_count(sll);
 		if (n > 0) {
@@ -1064,10 +1064,8 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha,
 	assert(y);
 	assert(vector_dim(y) == recv_model_dim(ll->model));
 
-	const struct actors *senders = recv_model_senders(ll->model);
-	const struct cohort *cohorts = actors_cohorts(senders);
-	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
-	ssize_t ic, nc = array_count(&cohorts[c].actors);
+	const ptrdiff_t *cohorts = recv_model_cohorts(ll->model);
+	size_t isend, nsend = recv_model_count(ll->model);
 
 	struct vector avg_score, diff;
 	vector_init(&avg_score, recv_model_dim(ll->model));
@@ -1076,9 +1074,11 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha,
 
 	ntot = 0;
 
-	for (ic = 0; ic < nc; ic++) {
-		ssize_t i = ids[ic];
-		struct recv_loglik_sender *sll = &ll->senders[i];
+	for (isend = 0; isend < nsend; isend++) {
+		if (cohorts[isend] != c)
+			continue;
+
+		struct recv_loglik_sender *sll = &ll->senders[isend];
 
 		n = sender_count(sll);
 		if (n > 0) {
@@ -1105,10 +1105,8 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 	assert(matrix_nrow(y) == recv_model_dim(ll->model));
 	assert(matrix_ncol(y) == recv_model_dim(ll->model));
 
-	const struct actors *senders = recv_model_senders(ll->model);
-	const struct cohort *cohorts = actors_cohorts(senders);
-	const ssize_t *ids = array_to_ptr(&cohorts[c].actors);
-	ssize_t ic, nc = array_count(&cohorts[c].actors);
+	const ptrdiff_t *cohorts = recv_model_cohorts(ll->model);
+	size_t isend, nsend = recv_model_count(ll->model);
 
 	struct matrix avg_imat, new_imat, diff;
 	ssize_t dim = recv_model_dim(ll->model);
@@ -1119,9 +1117,11 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 
 	ntot = 0;
 
-	for (ic = 0; ic < nc; ic++) {
-		ssize_t i = ids[ic];
-		struct recv_loglik_sender *sll = &ll->senders[i];
+	for (isend = 0; isend < nsend; isend++) {
+		if (cohorts[isend] != c)
+			continue;
+
+		struct recv_loglik_sender *sll = &ll->senders[isend];
 
 		n = sender_count(sll);
 		if (n > 0) {

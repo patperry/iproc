@@ -25,7 +25,11 @@
 
 
 static struct actors enron_actors;
+static size_t nactor;
+static size_t ncohort;
+static ptrdiff_t *cohorts;
 static struct matrix enron_traits;
+static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
 static struct actors senders;
@@ -37,7 +41,9 @@ static struct design design;
 
 
 static void setup(void) {
-	enron_employees_init(&enron_actors, &enron_traits, &enron_trait_names);
+	enron_employees_init(&nactor, &ncohort, &cohorts, &enron_actors,
+			     &enron_traits, &enron_cohort_names,
+			     &enron_trait_names);
 	
 	actors_init_copy(&senders, &enron_actors);
 	actors_init_copy(&receivers, &enron_actors);	
@@ -297,10 +303,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES), strlen(COHORT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
-			const struct actors *receivers = recv_model_senders(m);
-			const struct cohort *cohorts = actors_cohorts(receivers);
 			for (ic = 0; ic < nc; ic++) {
-				const char *name = cohorts[ic].name;
+				const char *name = enron_cohort_names[ic];
 				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
 			}
 		}
@@ -415,7 +419,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* y = y */		
 		struct recv_resid resid;
 		
-		recv_resid_init(&resid, fit->ymsgs, d, fit->senders, coefs);
+		recv_resid_init(&resid, fit->ymsgs, d, fit->model.ncohort, fit->model.cohorts, coefs);
 		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
 		
@@ -477,7 +481,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
 	ctrl.gtol = 1e-7;
-	recv_fit_init(&fit, xmsgs, ymsgs, &design, &senders, &ctrl);
+	recv_fit_init(&fit, xmsgs, ymsgs, &design, ncohort, cohorts, &ctrl);
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
@@ -690,7 +694,7 @@ int main(int argc, char **argv)
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		recv_boot_init(&boot, &enron_messages, &design, &senders, pcoefs0, &dsfmt);
+		recv_boot_init(&boot, &enron_messages, &design, ncohort, cohorts, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}
 	

@@ -77,16 +77,18 @@ libcore_la_SOURCES = \
 	lib/core/src/timsort.h \
 	lib/core/src/xalloc-die.c \
 	lib/core/src/xalloc.c \
-	lib/core/src/xalloc.h ) \
+	lib/core/src/xalloc.h \
 	lib/linalg/lib/f77.c \
 	lib/linalg/lib/f77.h \
 	lib/linalg/lib/f77blas.h \
 	lib/linalg/lib/f77lapack.h \
-	lib/linalg/lib/xerbla.c ) \
+	lib/linalg/lib/xerbla.c \
 	lib/linalg/src/blas.c \
 	lib/linalg/src/blas.h \
 	lib/linalg/src/lapack.c \
-	lib/linalg/src/lapack.h ) \
+	lib/linalg/src/lapack.h \
+	lib/linalg/src/sblas.c \
+	lib/linalg/src/sblas.h \
 	src/core/array.c \
 	src/core/array.h \
 	src/core/bfgs.c \
@@ -307,9 +309,9 @@ check_PROGRAMS += tests/intmap_test
 tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
 
-check_PROGRAMS += tests/actors_test
-tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-tests_actors_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+## check_PROGRAMS += tests/actors_test
+## tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
+## tests_actors_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)

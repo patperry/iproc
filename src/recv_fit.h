@@ -86,7 +86,6 @@ struct recv_fit {
 	struct recv_fit_ctrl ctrl;
 	const struct messages *xmsgs, *ymsgs;
 	const struct design *design;
-	const struct actors *senders;
 
 	/* working frame + model */
 	struct frame frame;
@@ -112,9 +111,10 @@ struct recv_fit {
 
 void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *xmsgs,
-		   const struct messages *ymsgs,
+		   const struct messages *ymsgs,		   
 		   const struct design *design,
-		   const struct actors *senders,
+		   size_t ncohort,
+		   const ptrdiff_t *cohorts,
 		   const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 

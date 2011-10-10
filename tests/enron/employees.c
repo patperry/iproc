@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <yajl/yajl_parse.h>
 #include "strata.h"
+#include "xalloc.h"
 #include "enron.h"
 
 static const char *ENRON_TRAIT_NAMES[] = {
@@ -269,7 +270,12 @@ static void traits_init(struct matrix *traits)
 	}
 }
 
-bool enron_employees_init_fread(struct actors *employees, struct matrix *traits, const char * const **trait_names, FILE *stream)
+bool enron_employees_init_fread(size_t *nactorp, size_t *ncohortp,
+				ptrdiff_t **cohortsp, struct actors *employees,
+			       	struct matrix *traits,
+				const char * const **cohort_names,
+				const char * const **trait_names,
+				FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -290,7 +296,7 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	
 	
 	traits_init(traits);
-	ssize_t ic, nc = ENRON_NCOHORT;
+	size_t ic, nc = ENRON_NCOHORT;
 	for (ic = 0; ic < nc; ic++) {
 		matrix_get_row(traits, ic, vector_to_ptr(&parse.traits));
 		strata_add(&parse.strata, vector_to_ptr(&parse.traits));
@@ -328,16 +334,32 @@ bool enron_employees_init_fread(struct actors *employees, struct matrix *traits,
 	if (!parse_ok) {
 		actors_deinit(parse.actors);
 		matrix_deinit(traits);
+		*nactorp = 0;
+		*ncohortp = 0;
+		*cohortsp = NULL;
 	}
 	vector_deinit(&parse.traits);
 	strata_deinit(&parse.strata);
 	
+
+	*nactorp = actors_count(employees);
+	*ncohortp = actors_cohort_count(employees);
+	size_t i, n = *nactorp;
+	ptrdiff_t *cohorts = xmalloc(n * sizeof(cohorts[0]));
+	for (i = 0; i < n; i++) {
+		cohorts[i] = actors_items(employees)[i].cohort;
+	}
+	*cohortsp = cohorts;
+	*cohort_names = ENRON_COHORT_NAMES;
 	*trait_names = ENRON_TRAIT_NAMES;
 	
 	return parse_ok;
 }
-
-bool enron_employees_init(struct actors *employees, struct matrix *traits, const char * const **trait_names)
+bool enron_employees_init(size_t *nactorp, size_t *ncohortp,
+			  ptrdiff_t **cohortsp, struct actors *employees,
+			  struct matrix *traits,
+			  const char * const **cohort_names,
+			  const char * const **trait_names)
 {
 	FILE *f = fopen(ENRON_EMPLOYEES_FILE, "r");
 
@@ -347,7 +369,8 @@ bool enron_employees_init(struct actors *employees, struct matrix *traits, const
 		return false;
 	}
 	
-	if (!enron_employees_init_fread(employees, traits, trait_names, f)) {
+	if (!enron_employees_init_fread(nactorp, ncohortp, cohortsp, employees,
+					traits, cohort_names, trait_names, f)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_EMPLOYEES_FILE);
 		fclose(f);

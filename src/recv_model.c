@@ -217,13 +217,11 @@ static void cohort_deinit(struct recv_model_cohort *cm)
 	vector_deinit(&cm->eta0);
 }
 
-ssize_t recv_model_cohort(const struct recv_model *m, ssize_t isend)
+ptrdiff_t recv_model_cohort(const struct recv_model *m, ssize_t isend)
 {
 	assert(m);
 	assert(0 <= isend && isend < recv_model_send_count(m));
-	const struct actor *actors = actors_items(m->senders);
-	ssize_t c = actors[isend].cohort;
-	return c;
+	return m->cohorts[isend];
 }
 
 static void sender_clear(const struct recv_model *m,
@@ -344,8 +342,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	if (isend == jrecv && !design_loops(d))
 		return;
 
-	const struct actor *actors = actors_items(m->senders);
-	ssize_t icohort = actors[isend].cohort;
+	ptrdiff_t icohort = recv_model_cohort(m, isend);
 	struct recv_model_sender *send = sender_raw(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
@@ -428,25 +425,31 @@ static void recv_model_clear(void *udata, struct frame *f)
 	model_clear(m);
 }
 
-void recv_model_init(struct recv_model *model, struct frame *f,
-		     const struct actors *senders, const struct matrix *coefs)
+
+void recv_model_init(struct recv_model *model,
+		     struct frame *f,
+		     size_t ncohort,
+		     const ptrdiff_t *cohorts,
+		     const struct matrix *coefs)
 {
 	assert(model);
 	assert(f);
-	assert(senders);
-	assert(actors_count(senders) == design_send_count(frame_design(f)));
+	assert(ncohort > 0);
+	assert(cohorts);
 	assert(!coefs
 	       || design_recv_dim(frame_design(f)) == matrix_nrow(coefs));
-	assert(!coefs || actors_cohort_count(senders) == matrix_ncol(coefs));
+	assert(!coefs || ncohort);
 	assert(design_recv_count(frame_design(f)) > 0);
 	assert(!design_loops(frame_design(f))
 	       || design_recv_count(frame_design(f)) > 1);
 
 	const struct design *d = frame_design(f);
-	ssize_t ncohort = actors_cohort_count(senders);
+	const size_t nsend = design_send_count(d);
 
 	model->frame = f;
-	model->senders = senders;
+	model->ncohort = ncohort;
+	model->cohorts = xmalloc(nsend * sizeof(cohorts[0]));
+	memcpy(model->cohorts, cohorts, sizeof(cohorts[0]) * nsend);
 
 	if (coefs) {
 		matrix_init_copy(&model->coefs, BLAS_NOTRANS, coefs);
@@ -455,14 +458,14 @@ void recv_model_init(struct recv_model *model, struct frame *f,
 	}
 
 	struct recv_model_cohort *cms = xcalloc(ncohort, sizeof(*cms));
-	ssize_t ic;
+	size_t ic;
 	for (ic = 0; ic < ncohort; ic++) {
 		struct vector col = matrix_col(&model->coefs, ic);
 		cohort_init(&cms[ic], d, &col);
 	}
 	model->cohort_models = cms;
 
-	ssize_t isend, nsend = design_send_count(d);
+	size_t isend;
 	struct recv_model_sender *sms = xcalloc(nsend, sizeof(*sms));
 
 	for (isend = 0; isend < nsend; isend++) {
@@ -502,6 +505,7 @@ void recv_model_deinit(struct recv_model *model)
 	free(cms);
 
 	matrix_deinit(&model->coefs);
+	free(model->cohorts);
 }
 
 const struct frame *recv_model_frame(const struct recv_model *model)
@@ -531,7 +535,7 @@ ssize_t recv_model_send_count(const struct recv_model *model)
 ssize_t recv_model_cohort_count(const struct recv_model *model)
 {
 	assert(model);
-	return actors_cohort_count(model->senders);
+	return model->ncohort;
 }
 
 ssize_t recv_model_count(const struct recv_model *model)
@@ -607,19 +611,20 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
 
 	const struct frame *f = recv_model_frame(m);
 	const struct design *d = frame_design(f);
-	const struct cohort *cohorts = actors_cohorts(m->senders);
 	struct recv_model_sender *senders = m->sender_models;
 
-	ssize_t ic, nc = recv_model_cohort_count(m);
+	size_t ic, nc = recv_model_cohort_count(m);
 	for (ic = 0; ic < nc; ic++) {
 		struct vector col = matrix_col(&m->coefs, ic);
 		cohort_set(&m->cohort_models[ic], d, &col);
+	}
 
-		const ssize_t *isend = array_to_ptr(&cohorts[ic].actors);
-		ssize_t i, n = array_count(&cohorts[ic].actors);
-		for (i = 0; i < n; i++) {
-			sender_set(m, &senders[isend[i]], isend[i], f, &col);
-		}
+	const ptrdiff_t *cohorts = recv_model_cohorts(m);
+	size_t isend, nsend = recv_model_send_count(m);
+	for (isend = 0; isend < nsend; isend++) {
+		ptrdiff_t ic = cohorts[isend];
+		struct vector col = matrix_col(&m->coefs, ic);
+		sender_set(m, &senders[isend], isend, f, &col);
 	}
 }
 
@@ -727,8 +732,9 @@ void recv_model_axpy_probs(double alpha,
 	}
 }
 
-const struct actors *recv_model_senders(const struct recv_model *model)
+const ptrdiff_t *recv_model_cohorts(const struct recv_model *model)
 {
 	assert(model);
-	return model->senders;
+	return model->cohorts;
 }
+

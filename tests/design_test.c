@@ -11,7 +11,11 @@
 
 
 static struct actors enron_employees;
+static size_t enron_nactor;
+static size_t enron_ncohort;
+static ptrdiff_t *enron_cohorts;
 static struct matrix enron_traits;
+static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
 static struct design design;
@@ -29,11 +33,14 @@ static void enron_setup_fixture()
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
-	enron_employees_init(&enron_employees, &enron_traits, &enron_trait_names);
+	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
+			     &enron_employees, &enron_traits,
+			     &enron_cohort_names, &enron_trait_names);
 }
 
 static void enron_teardown_fixture()
 {
+	free(enron_cohorts);
 	matrix_deinit(&enron_traits);
 	actors_deinit(&enron_employees);	
 	print_message("\n\n");
@@ -67,11 +74,15 @@ static void enron_reff_setup_fixture()
 {
 	print_message("Enron employees (with receiver effects)\n");
 	print_message("---------------------------------------\n");
-	enron_employees_init(&enron_employees, &enron_traits, &enron_trait_names);
+	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
+			     &enron_employees, &enron_traits,
+			     &enron_cohort_names,
+			     &enron_trait_names);
 }
 
 static void enron_reff_teardown_fixture()
 {
+	free(enron_cohorts);
 	matrix_deinit(&enron_traits);
 	actors_deinit(&enron_employees);	
 	print_message("\n\n");

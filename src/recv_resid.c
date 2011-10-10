@@ -114,11 +114,12 @@ static void recv_resid_set(struct recv_resid *resid,
 void recv_resid_init(struct recv_resid *resid,
 		     const struct messages *msgs,
 		     const struct design *design,
-		     const struct actors *senders,
+		     size_t ncohort,
+		     const ptrdiff_t *cohorts,
 		     const struct matrix *coefs)
 {
 	frame_init(&resid->frame, design);
-	recv_model_init(&resid->model, &resid->frame, senders, coefs);
+	recv_model_init(&resid->model, &resid->frame, ncohort, cohorts, coefs);
 	
 	ssize_t nsend = design_send_count(design);
 	ssize_t nrecv = design_recv_count(design);
