@@ -21,8 +21,6 @@ noinst_LTLIBRARIES = \
 	libyajl.la
 
 libiproc_la_SOURCES = \
-	src/actors.c \
-	src/actors.h \
 	src/design.c \
 	src/design.h \
 	src/frame.c \
@@ -308,10 +306,6 @@ tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
 check_PROGRAMS += tests/intmap_test
 tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
-
-## check_PROGRAMS += tests/actors_test
-## tests_actors_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-## tests_actors_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)

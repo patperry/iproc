@@ -3,7 +3,6 @@
 
 #include "messages.h"
 #include "design.h"
-#include "actors.h"
 #include "matrix.h"
 #include "recv_model.h"
 

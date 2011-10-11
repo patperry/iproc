@@ -15,9 +15,8 @@
 #include "frame.h"
 
 
-static struct actors senders;
-static struct actors receivers;
-static size_t nactor;
+static size_t nsend;
+static size_t nrecv;
 static size_t ncohort;
 static ptrdiff_t *cohorts;
 static struct matrix recv_traits;
@@ -39,10 +38,10 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nactor, &ncohort, &cohorts, &receivers,
-			     &recv_traits, &recv_cohort_names,
-			     &recv_trait_names);
-	actors_init_copy(&senders, &receivers);
+	enron_employees_init(&nsend,
+			     &ncohort, &cohorts, &recv_cohort_names,
+			     &recv_traits, &recv_trait_names);
+	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 }
 
@@ -51,8 +50,6 @@ static void enron_teardown_fixture()
 	free(cohorts);
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
-	actors_deinit(&receivers);
-	actors_deinit(&senders);
 	print_message("\n\n");
 }
 
@@ -61,7 +58,7 @@ static void rv_nsend_setup()
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
@@ -128,7 +125,7 @@ static void rv_nrecv_setup()
 	has_reffects = false;
 	has_loops = false;
 	vector_init(&intervals, 0);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
@@ -202,7 +199,7 @@ static void rv_irecv_setup()
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
@@ -284,7 +281,7 @@ static void rv_isend_setup()
 	has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);

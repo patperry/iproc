@@ -2,7 +2,6 @@
 #define _ENRON_H
 
 #include <stdio.h>
-#include "actors.h"
 #include "matrix.h"
 #include "messages.h"
 
@@ -54,8 +53,17 @@ extern bool enron_female[ENRON_NCOHORT];
 extern bool enron_male[ENRON_NCOHORT];
 
 
-bool enron_employees_init(size_t *nactorp, size_t *ncohortp, ptrdiff_t **cohortsp, struct actors *employees, struct matrix *traits,  const char * const **cohort_names, const char * const **trait_names);
-bool enron_employees_init_fread(size_t *nactorp, size_t *ncohortp, ptrdiff_t **cohortsp, struct actors *employees, struct matrix *traits, const char * const **cohort_names, const char * const **trait_names, FILE *stream);
+int enron_employees_init(size_t *nactorp,
+			 size_t *ncohortp, ptrdiff_t **cohortsp,
+			 const char * const **cohort_names,
+			 struct matrix *traits,
+			 const char * const **trait_names);
+int enron_employees_init_fread(size_t *nactorp,
+			       size_t *ncohortp, ptrdiff_t **cohortsp,
+			       const char * const **cohort_names,
+			       struct matrix *traits,
+			       const char * const **trait_names,
+			       FILE *stream);
 
 bool enron_messages_init(struct messages *messages, ssize_t maxrecip);
 bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE *stream);

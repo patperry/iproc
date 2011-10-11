@@ -1,7 +1,6 @@
 #ifndef _DESIGN_H
 #define _DESIGN_H
 
-#include "actors.h"
 #include "array.h"
 #include "matrix.h"
 #include "messages.h"
@@ -74,8 +73,8 @@ struct var_type;		// forward declaration
 struct design_var;
 
 struct design {
-	struct actors *senders;
-	struct actors *receivers;
+	size_t nsend;
+	size_t nrecv;
 	const struct matrix *traits;
 	const char * const *trait_names;
 	bool loops;
@@ -97,8 +96,8 @@ struct design {
 	ssize_t rdim;
 };
 
-void design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, const struct matrix *traits,
+void design_init(struct design *design, size_t nsend, size_t nrecv,
+		 const struct matrix *traits,
 		 const char * const *trait_names,
 		 const struct vector *intervals);
 void design_deinit(struct design *design);
@@ -107,8 +106,6 @@ static inline ssize_t design_send_dim(const struct design *design);
 static inline ssize_t design_recv_dim(const struct design *design);
 static inline ssize_t design_send_count(const struct design *design);
 static inline ssize_t design_recv_count(const struct design *design);
-static inline struct actors *design_senders(const struct design *design);
-static inline struct actors *design_receivers(const struct design *design);
 static inline const struct matrix *design_traits(const struct design *design);
 static inline const char * const * design_trait_names(const struct design *design);
 static inline const struct vector *design_intervals(const struct design
@@ -178,27 +175,13 @@ ssize_t design_recv_dim(const struct design *design)
 ssize_t design_send_count(const struct design *design)
 {
 	assert(design);
-	const struct actors *senders = design_senders(design);
-	return actors_count(senders);
+	return design->nsend;
 }
 
 ssize_t design_recv_count(const struct design *design)
 {
 	assert(design);
-	const struct actors *receivers = design_receivers(design);
-	return actors_count(receivers);
-}
-
-struct actors *design_senders(const struct design *design)
-{
-	assert(design);
-	return design->senders;
-}
-
-struct actors *design_receivers(const struct design *design)
-{
-	assert(design);
-	return design->receivers;
+	return design->nrecv;
 }
 
 const struct matrix *design_traits(const struct design *design)

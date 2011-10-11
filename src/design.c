@@ -29,16 +29,14 @@ void design_deinit(struct design *design)
 	vector_deinit(&design->intervals);
 }
 
-void design_init(struct design *design, struct actors *senders,
-		 struct actors *receivers, const struct matrix *traits,
+void design_init(struct design *design, size_t nsend, size_t nrecv,
+		 const struct matrix *traits,
 		 const char * const *trait_names,
 		 const struct vector *intervals)
 {
 	assert(design);
-	assert(senders);
-	assert(receivers);
 	assert(traits);
-	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
+	assert(nrecv == (size_t)matrix_nrow(traits));
 	assert(intervals);
 
 #ifndef NDEBUG
@@ -52,8 +50,8 @@ void design_init(struct design *design, struct actors *senders,
 	ssize_t ps = 0;		// actors_dim(senders);
 	ssize_t pr = matrix_ncol(traits);
 
-	design->senders = senders;
-	design->receivers = receivers;
+	design->nsend = nsend;
+	design->nrecv = nrecv;
 	design->traits = traits;
 	design->trait_names = trait_names;
 	design->loops = false;
@@ -218,29 +216,19 @@ design_recv_mul0_static(double alpha,
 	if (design->nrstatic == 0)
 		return;
 
-	const struct actors *receivers = design_receivers(design);
 	const struct matrix *traits = design_traits(design);
 	ssize_t off = design->irstatic;
 	ssize_t dim = design->nrstatic;
 	assert(dim == matrix_ncol(traits));
-	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
-
-	struct vector z;
-	vector_init(&z, actors_cohort_count(receivers));
 
 	if (trans == BLAS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
-
-		matrix_mul(1.0, trans, traits, &xsub, 0.0, &z);
-		actors_mul(alpha, trans, receivers, &z, 1.0, y);
+		matrix_mul(alpha, trans, traits, &xsub, 1.0, y);
 
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_mul(1.0, trans, receivers, x, 0.0, &z);
-		matrix_mul(alpha, trans, traits, &z, 1.0, &ysub);
+		matrix_mul(alpha, trans, traits, x, 1.0, &ysub);
 	}
-
-	vector_deinit(&z);
 
 	/*
 	   const struct actors *senders = design_senders(design);        
@@ -322,17 +310,12 @@ design_recv_muls0_static(double alpha,
 	if (design->nrstatic == 0)
 		return;
 
-	const struct actors *receivers = design_receivers(design);
 	const struct matrix *traits = design_traits(design);
 	ssize_t off = design->irstatic;
 	ssize_t dim = design->nrstatic;
-	assert(actors_cohort_count(receivers) == matrix_nrow(traits));
 	assert(dim == matrix_ncol(traits));
 
 	if (trans == BLAS_NOTRANS) {
-		struct vector z;
-		vector_init(&z, actors_cohort_count(receivers));
-
 		struct svector xsub;
 		struct svector_iter it;
 		ssize_t i;
@@ -345,19 +328,11 @@ design_recv_muls0_static(double alpha,
 			svector_set_item(&xsub, i, SVECTOR_VAL(it));
 		}
 
-		matrix_muls(1.0, trans, traits, &xsub, 0.0, &z);
-		actors_mul(alpha, trans, receivers, &z, 1.0, y);
+		matrix_muls(alpha, trans, traits, &xsub, 1.0, y);
 		svector_deinit(&xsub);
-		vector_deinit(&z);
 	} else {
-		struct svector z;
-		svector_init(&z, actors_cohort_count(receivers));
-
 		struct vector ysub = vector_slice(y, off, dim);
-		actors_muls(1.0, trans, receivers, x, 0.0, &z);
-		matrix_muls(alpha, trans, traits, &z, 1.0, &ysub);
-
-		svector_deinit(&z);
+		matrix_muls(alpha, trans, traits, x, 1.0, &ysub);
 	}
 
 	/*

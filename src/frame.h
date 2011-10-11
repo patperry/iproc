@@ -3,7 +3,6 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "actors.h"
 #include "messages.h"
 #include "intmap.h"
 #include "pqueue.h"

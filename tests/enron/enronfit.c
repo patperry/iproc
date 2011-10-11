@@ -24,16 +24,14 @@
 #include "recv_resid.h"
 
 
-static struct actors enron_actors;
-static size_t nactor;
+static size_t nsend;
+static size_t nrecv;
 static size_t ncohort;
 static ptrdiff_t *cohorts;
 static struct matrix enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
-static struct actors senders;
-static struct actors receivers;
 static struct matrix recv_traits;
 static struct vector intervals;
 
@@ -41,12 +39,11 @@ static struct design design;
 
 
 static void setup(void) {
-	enron_employees_init(&nactor, &ncohort, &cohorts, &enron_actors,
-			     &enron_traits, &enron_cohort_names,
+	enron_employees_init(&nsend, &ncohort, &cohorts,
+			     &enron_cohort_names,
+			     &enron_traits,
 			     &enron_trait_names);
-	
-	actors_init_copy(&senders, &enron_actors);
-	actors_init_copy(&receivers, &enron_actors);	
+	nrecv = nsend;
 	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 	
 	double intvls[] = {
@@ -74,7 +71,7 @@ static void setup(void) {
 	bool has_reffects = false;
 	bool has_loops = false;
 	vector_init_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, enron_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, enron_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
@@ -222,11 +219,7 @@ static void teardown(void)
 	vector_deinit(&intervals);	
 	design_deinit(&design);
 	matrix_deinit(&recv_traits);
-	actors_deinit(&receivers);	
-	actors_deinit(&senders);	
-
 	matrix_deinit(&enron_traits);
-	actors_deinit(&enron_actors);
 }
 
 
@@ -694,7 +687,8 @@ int main(int argc, char **argv)
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		recv_boot_init(&boot, &enron_messages, &design, ncohort, cohorts, pcoefs0, &dsfmt);
+		recv_boot_init(&boot, &enron_messages, &design, ncohort,
+			       cohorts, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}
 	

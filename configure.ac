@@ -2,7 +2,7 @@ AC_INIT([iproc], [0.1], [patperry@gmail.com])
 AC_SUBST([PACKAGE_DATE], [2011-03-17])
 AC_SUBST([RPACKAGE], AC_PACKAGE_NAME[_]AC_PACKAGE_VERSION[.tar.gz])
 
-AC_CONFIG_SRCDIR([src/actors.h])
+AC_CONFIG_SRCDIR([src/messages.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 

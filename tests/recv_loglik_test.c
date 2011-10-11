@@ -20,7 +20,6 @@
 #include "recv_loglik.h"
 
 
-static struct actors enron_actors;
 static size_t enron_nactor;
 static size_t enron_ncohort;
 static ptrdiff_t *enron_cohorts;
@@ -29,9 +28,8 @@ static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
 
-static struct actors senders;
-static struct actors receivers;
-static size_t nactor;
+static size_t nsend;
+static size_t nrecv;
 static size_t ncohort;
 static ptrdiff_t *cohorts;
 static struct matrix recv_traits;
@@ -49,11 +47,15 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
-			     &enron_actors, &enron_traits,
-			     &enron_cohort_names, &enron_trait_names);
-	actors_init_copy(&senders, &enron_actors);
-	actors_init_copy(&receivers, &enron_actors);
+	enron_employees_init(&enron_nactor,
+			     &enron_ncohort, &enron_cohorts,
+			     &enron_cohort_names,
+			     &enron_traits,
+			     &enron_trait_names);
+	nsend = enron_nactor;
+	nrecv = enron_nactor;
+	ncohort = enron_ncohort;
+	cohorts = enron_cohorts;
 	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 	recv_trait_names = enron_trait_names;
 	enron_messages_init(&messages, -1);
@@ -64,10 +66,7 @@ static void enron_teardown_fixture()
 	free(enron_cohorts);
 	messages_deinit(&messages);
 	matrix_deinit(&recv_traits);
-	actors_deinit(&receivers);
-	actors_deinit(&senders);
 	matrix_deinit(&enron_traits);
-	actors_deinit(&enron_actors);
 	print_message("\n\n");
 }
 
@@ -82,12 +81,12 @@ static void basic_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
+	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
 	for (c = 0; c < matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < matrix_nrow(&coefs); i++) {
@@ -99,10 +98,6 @@ static void basic_setup()
 		}
 	}
 	
-	nactor = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
-
 	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }
@@ -118,12 +113,12 @@ static void hard_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
+	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	for (c = 0; c < matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < matrix_nrow(&coefs); i++) {
 			double val = (i + (c + 1) % 7 == 0 ?  0.1 :
@@ -134,10 +129,6 @@ static void hard_setup()
 			matrix_set_item(&coefs, i, c, val);
 		}
 	}
-
-	nactor = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
 
 	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
@@ -163,7 +154,7 @@ static void test_dev()
 	double mean_dev0, mean_dev1, old;
 	
 	struct vector mean_dev_old;
-	vector_init(&mean_dev_old, actors_cohort_count(&senders));
+	vector_init(&mean_dev_old, ncohort);
 	
 	nrecv = design_recv_count(&design);
 
@@ -194,7 +185,7 @@ static void test_dev()
 
 			assert_in_range(double_eqrel(last_dev0, last_dev1), 53, DBL_MANT_DIG);
 			
-			ssize_t c = actors_items(&senders)[msg->from].cohort;
+			ssize_t c = cohorts[msg->from];
 			ssize_t n = recv_loglik_count(&recv_loglik, c);
 			old = vector_item(&mean_dev_old, c);
 			mean_dev0 = old + msg->nto * (((last_dev0 / msg->nto) - old) / n);
@@ -224,7 +215,7 @@ static void test_mean()
 	vector_init(&probs, design_recv_count(&design));
 	vector_init(&mean0, design_recv_dim(&design));
 	vector_init(&mean1, design_recv_dim(&design));
-	matrix_init(&avg_mean0, design_recv_dim(&design), actors_cohort_count(&senders));
+	matrix_init(&avg_mean0, design_recv_dim(&design), ncohort);
 	vector_init(&avg_mean1, design_recv_dim(&design));
 	vector_init(&diff, design_recv_dim(&design));
 	

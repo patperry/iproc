@@ -80,7 +80,7 @@ void matrix_assign_copy(struct matrix *a, enum blas_trans trans,
 		return;
 
 	if (trans == BLAS_NOTRANS) {
-		if (matrix_lda(a) == m && matrix_lda(src) == m) {
+		if ((size_t)matrix_lda(a) == m && (size_t)matrix_lda(src) == m) {
 			blas_dcopy(m * n, matrix_to_ptr(src), 1,
 			      	   matrix_to_ptr(a), 1);
 		} else {
@@ -332,7 +332,7 @@ void matrix_axpy(double alpha, const struct matrix *x, struct matrix *y)
 	if (m == 0 || n == 0)
 		return;
 
-	if (matrix_lda(x) == m && matrix_lda(y) == m) {
+	if ((size_t)matrix_lda(x) == m && (size_t)matrix_lda(y) == m) {
 		size_t mn = m * n;
 		blas_daxpy(mn, alpha, matrix_to_ptr(x), 1,
 			   matrix_to_ptr(y), 1);

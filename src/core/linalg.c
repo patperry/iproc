@@ -237,38 +237,38 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 	
 	assert(svd);
 	assert(a);
-	assert(matrix_nrow(a) == m);
-	assert(matrix_ncol(a) == n);
+	assert((size_t)matrix_nrow(a) == m);
+	assert((size_t)matrix_ncol(a) == n);
 	assert(s);
-	assert(vector_dim(s) == mn);
+	assert((size_t)vector_dim(s) == mn);
 	switch(job) {
 	case SVD_ALL:
 		assert(u);
-		assert(matrix_nrow(u) == m);
-		assert(matrix_ncol(u) == m);
+		assert((size_t)matrix_nrow(u) == m);
+		assert((size_t)matrix_ncol(u) == m);
 		assert(vt);
-		assert(matrix_nrow(vt) == n);
-		assert(matrix_ncol(vt) == n);
+		assert((size_t)matrix_nrow(vt) == n);
+		assert((size_t)matrix_ncol(vt) == n);
 		break;
 	case SVD_SEPARATE:
 		assert(u);
-		assert(matrix_nrow(u) == m);
-		assert(matrix_ncol(u) == mn);
+		assert((size_t)matrix_nrow(u) == m);
+		assert((size_t)matrix_ncol(u) == mn);
 		assert(vt);
-		assert(matrix_nrow(vt) == mn);
-		assert(matrix_ncol(vt) == n);
+		assert((size_t)matrix_nrow(vt) == mn);
+		assert((size_t)matrix_ncol(vt) == n);
 		break;
 	case SVD_OVERWRITE:
 		if (m < n) {
 			assert(u);
-			assert(matrix_nrow(u) == m);
-			assert(matrix_ncol(u) == m);
+			assert((size_t)matrix_nrow(u) == m);
+			assert((size_t)matrix_ncol(u) == m);
 			assert(!vt);
 		} else {
 			assert(!u);
 			assert(vt);
-			assert(matrix_nrow(vt) == n);
-			assert(matrix_ncol(vt) == n);
+			assert((size_t)matrix_nrow(vt) == n);
+			assert((size_t)matrix_ncol(vt) == n);
 		}
 		break;
 	case SVD_NOVEC:

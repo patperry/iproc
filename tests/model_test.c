@@ -17,15 +17,13 @@
 #include "frame.h"
 #include "recv_model.h"
 
-static struct actors enron_actors;
 static size_t enron_nactor;
 static size_t enron_ncohort;
 static ptrdiff_t *enron_cohorts;
 static struct matrix enron_traits;
 
-static struct actors senders;
-static struct actors receivers;
-static size_t nactor;
+static size_t nsend;
+static size_t nrecv;
 static size_t ncohort;
 static ptrdiff_t *cohorts;
 static struct matrix recv_traits;
@@ -43,12 +41,16 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
-			     &enron_actors, &enron_traits, &recv_cohort_names,
+	enron_employees_init(&enron_nactor,
+			     &enron_ncohort, &enron_cohorts,
+			     &recv_cohort_names,
+			     &enron_traits,
 			     &recv_trait_names);
 	enron_messages_init(&messages, -1);
-	actors_init_copy(&senders, &enron_actors);
-	actors_init_copy(&receivers, &enron_actors);	
+	nsend = enron_nactor;
+	nrecv = enron_nactor;
+	ncohort = enron_ncohort;
+	cohorts = enron_cohorts;
 	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
 }
 
@@ -56,11 +58,8 @@ static void enron_teardown_fixture()
 {
 	free(enron_cohorts);
 	matrix_deinit(&recv_traits);
-	actors_deinit(&receivers);
-	actors_deinit(&senders);
 	messages_deinit(&messages);
 	matrix_deinit(&enron_traits);
-	actors_deinit(&enron_actors);	
 	print_message("\n\n");
 }
 
@@ -75,12 +74,12 @@ static void basic_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
+	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
 	for (c = 0; c < matrix_ncol(&coefs); c++) {
 		for (i = 0; i < matrix_nrow(&coefs); i++) {
@@ -92,10 +91,6 @@ static void basic_setup()
 		}
 	}
 	
-	nactor = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
-
 	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 }
 
@@ -120,12 +115,12 @@ static void hard_setup()
 	bool has_loops = false;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, &senders, &receivers, &recv_traits, recv_trait_names, &intervals);
+	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
 	design_set_loops(&design, has_loops);
 	design_set_recv_effects(&design, has_reffects);
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), actors_cohort_count(&senders));
+	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
 	for (c = 0; c < matrix_ncol(&coefs); c++) {
 		for (i = 0; i < matrix_nrow(&coefs); i++) {
@@ -138,10 +133,6 @@ static void hard_setup()
 		}
 	}
 	
-	nactor = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
-
 	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 }
 
@@ -176,7 +167,7 @@ static void test_probs()
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			ssize_t c = actors_items(&senders)[isend].cohort;
+			ssize_t c = cohorts[isend];
 			const struct vector col = matrix_col(&coefs, c);
 			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			

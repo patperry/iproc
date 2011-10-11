@@ -219,8 +219,7 @@ static void recv_frames_init(struct frame *f)
 	assert(f);
 
 	const struct design *d = frame_design(f);
-	const struct actors *senders = design_senders(d);
-	ssize_t isend, nsend = actors_count(senders);
+	ssize_t isend, nsend = design_send_count(d);
 
 	struct recv_frame *rfs = xcalloc(nsend, sizeof(struct recv_frame));
 
@@ -234,8 +233,7 @@ static void recv_frames_deinit(struct frame *f)
 {
 	assert(f);
 	const struct design *d = frame_design(f);
-	const struct actors *senders = design_senders(d);
-	ssize_t isend, nsend = actors_count(senders);
+	ssize_t isend, nsend = design_send_count(d);
 
 	struct recv_frame *rfs = f->recv_frames;
 
@@ -249,9 +247,7 @@ static void recv_frames_clear(struct frame *f)
 {
 	assert(f);
 	const struct design *d = frame_design(f);
-	const struct actors *senders = design_senders(d);
-	ssize_t isend, nsend = actors_count(senders);
-
+	ssize_t isend, nsend = design_send_count(d);
 	struct recv_frame *rfs = f->recv_frames;
 
 	for (isend = 0; isend < nsend; isend++) {
