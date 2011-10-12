@@ -31,8 +31,7 @@ void design_deinit(struct design *design)
 
 void design_init(struct design *design, size_t nsend, size_t nrecv,
 		 const struct matrix *traits,
-		 const char * const *trait_names,
-		 const struct vector *intervals)
+		 const char *const *trait_names, const struct vector *intervals)
 {
 	assert(design);
 	assert(traits);
@@ -443,7 +442,7 @@ static void design_set_effects(bool *peffects, bool effects, ssize_t neffects,
 			       struct array *vars, ssize_t *istatic,
 			       ssize_t *idynamic, ssize_t *dim)
 {
-	(void)vars; // unused
+	(void)vars;		// unused
 
 	if (*peffects == effects)
 		return;
@@ -481,7 +480,7 @@ static void design_add_var(struct design *design, const struct var_type *type,
 			   struct array *vars,
 			   ssize_t *idynamic, ssize_t *ndynamic, ssize_t *dim)
 {
-	(void)idynamic; // unused
+	(void)idynamic;		// unused
 	struct design_var *var = array_add(vars, NULL);
 
 	type->init(var, design, params);

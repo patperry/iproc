@@ -1,10 +1,10 @@
 #include "port.h"
-#include <stdint.h>	// uint64_t
-#include <stdlib.h>	// free
-#include <string.h>	// memcpy
-#include "hash.h"	// double_hash, hash_combine
-#include "util.h"	// container_of
-#include "xalloc.h"	// xmalloc, xrealloc
+#include <stdint.h>		// uint64_t
+#include <stdlib.h>		// free
+#include <string.h>		// memcpy
+#include "hash.h"		// double_hash, hash_combine
+#include "util.h"		// container_of
+#include "xalloc.h"		// xmalloc, xrealloc
 #include "strata.h"
 
 struct level {
@@ -25,8 +25,7 @@ static size_t level_hash(const struct hashset *set, const void *x)
 	return seed;
 }
 
-static int level_compar(const struct hashset *set, const void *x,
-			const void *y)
+static int level_compar(const struct hashset *set, const void *x, const void *y)
 {
 	const uint64_t *u = *(const uint64_t **)x;
 	const uint64_t *v = *(const uint64_t **)y;
@@ -90,7 +89,7 @@ size_t strata_add(struct strata *s, const double *x)
 		s->levels = xrealloc(s->levels,
 				     s->nlevel_max * sizeof(s->levels[0]));
 	}
-	
+
 	/* duplicate x */
 	size_t n = s->dim;
 	double *x1 = xmalloc(n * sizeof(x[0]));
@@ -100,7 +99,7 @@ size_t strata_add(struct strata *s, const double *x)
 	size_t index = s->nlevel;
 	s->levels[index] = x1;
 	s->nlevel++;
-	
+
 	/* insert the new level into the levels set */
 	struct level l1 = { x1, index };
 	hashset_insert(&s->levels_set, &pos, &l1);
@@ -117,4 +116,3 @@ ptrdiff_t strata_find(const struct strata *s, const double *level)
 		return -1;
 	}
 }
-

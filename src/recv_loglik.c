@@ -389,8 +389,8 @@ static void score_axpy_obs(double alpha,
 			   const struct design *design,
 			   ssize_t isend, struct vector *y)
 {
-	(void)isend; // unused
-	
+	(void)isend;		// unused
+
 	ssize_t off = design_recv_dyn_index(design);
 	ssize_t dim = design_recv_dyn_dim(design);
 	struct vector ysub = vector_slice(y, off, dim);
@@ -409,7 +409,7 @@ static void score_axpy_mean(double alpha,
 			    const struct design *design,
 			    ssize_t isend, struct vector *y)
 {
-	(void)isend; // unused
+	(void)isend;		// unused
 
 	const struct vector *mean0 = score->mean0;
 	double gamma = score->gamma;
@@ -452,7 +452,7 @@ static void imat_axpy(double alpha,
 		      const struct design *design,
 		      ssize_t isend, struct matrix *y)
 {
-	(void)isend; // unused
+	(void)isend;		// unused
 
 	const ssize_t dim = design_recv_dim(design);
 	const ssize_t nrecv = design_recv_count(design);
@@ -829,7 +829,7 @@ void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
 void cohort_init(struct recv_loglik_cohort *cll, const struct recv_model *m,
 		 ssize_t c)
 {
-	(void)c; // unused
+	(void)c;		// unused
 	assert(cll);
 	assert(m);
 	assert(0 <= c && c < recv_model_cohort_count(m));

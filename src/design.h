@@ -76,7 +76,7 @@ struct design {
 	size_t nsend;
 	size_t nrecv;
 	const struct matrix *traits;
-	const char * const *trait_names;
+	const char *const *trait_names;
 	bool loops;
 
 	struct vector intervals;
@@ -98,7 +98,7 @@ struct design {
 
 void design_init(struct design *design, size_t nsend, size_t nrecv,
 		 const struct matrix *traits,
-		 const char * const *trait_names,
+		 const char *const *trait_names,
 		 const struct vector *intervals);
 void design_deinit(struct design *design);
 
@@ -107,7 +107,8 @@ static inline ssize_t design_recv_dim(const struct design *design);
 static inline ssize_t design_send_count(const struct design *design);
 static inline ssize_t design_recv_count(const struct design *design);
 static inline const struct matrix *design_traits(const struct design *design);
-static inline const char * const * design_trait_names(const struct design *design);
+static inline const char *const *design_trait_names(const struct design
+						    *design);
 static inline const struct vector *design_intervals(const struct design
 						    *design);
 
@@ -143,7 +144,9 @@ void design_add_recv_var(struct design *design, const struct var_type *type,
 ssize_t design_recv_effects_index(const struct design *design);
 ssize_t design_recv_var_index(const struct design *design,
 			      const struct var_type *type);
-static inline void design_recv_get_dyn_vars(const struct design *d, const struct design_var **ptr, ssize_t *n);
+static inline void design_recv_get_dyn_vars(const struct design *d,
+					    const struct design_var **ptr,
+					    ssize_t *n);
 static inline ssize_t design_recv_traits_index(const struct design *design);
 static inline ssize_t design_recv_traits_dim(const struct design *design);
 
@@ -190,7 +193,7 @@ const struct matrix *design_traits(const struct design *design)
 	return design->traits;
 }
 
-static inline const char * const *design_trait_names(const struct design *design)
+static inline const char *const *design_trait_names(const struct design *design)
 {
 	assert(design);
 	return design->trait_names;
@@ -245,13 +248,15 @@ ssize_t design_recv_traits_dim(const struct design *design)
 	if (design->nrstatic) {
 		assert(design->nrstatic == matrix_ncol(design_traits(design)));
 	} else {
-		assert(!design_traits(design) || !matrix_ncol(design_traits(design)));
+		assert(!design_traits(design)
+		       || !matrix_ncol(design_traits(design)));
 	}
 #endif
 	return design->nrstatic;
 }
 
-void design_recv_get_dyn_vars(const struct design *d, const struct design_var **ptr, ssize_t *n)
+void design_recv_get_dyn_vars(const struct design *d,
+			      const struct design_var **ptr, ssize_t *n)
 {
 	*ptr = array_to_ptr(&d->recv_vars);
 	*n = array_count(&d->recv_vars);

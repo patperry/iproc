@@ -11,7 +11,6 @@
 #include "sblas.h"
 #include "recv_model.h"
 
-
 static void
 compute_weight_changes(struct recv_model_sender *sm,
 		       const struct recv_model_cohort *cm)
@@ -84,8 +83,8 @@ compute_weight_changes(struct recv_model_sender *sm,
 				if (ia < na && sm->active[ia] == jrecv) {
 					deta_j = sm->deta[ia];
 					ia++;
-				}		
-				
+				}
+
 				double eta_j = eta0_j + deta_j;
 
 				max = MAX(max, eta_j);
@@ -101,11 +100,11 @@ compute_weight_changes(struct recv_model_sender *sm,
 		for (jrecv = 0; jrecv < nrecv; jrecv++) {
 			double eta0_j = vector_item(eta0, jrecv);
 			double deta_j = 0.0;
-		
+
 			if (ia < na && sm->active[ia] == jrecv) {
 				deta_j = sm->deta[ia];
 				ia++;
-			}	
+			}
 
 			double eta_j = eta0_j + deta_j;
 
@@ -145,8 +144,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	 */
 
 	/* eta0 */
-	design_recv_mul0(1.0, BLAS_NOTRANS, design, recv_coefs, 0.0,
-			 &cm->eta0);
+	design_recv_mul0(1.0, BLAS_NOTRANS, design, recv_coefs, 0.0, &cm->eta0);
 	assert(isfinite(vector_max_abs(&cm->eta0)));
 
 	/* max_eta0 */
@@ -242,9 +240,9 @@ static void sender_grow_active(struct recv_model_sender *send)
 	if (send->nactive == nactive_max) {
 		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
 		send->deta = xrealloc(send->deta, nactive_max *
-				sizeof(send->deta[0]));
+				      sizeof(send->deta[0]));
 		send->active = xrealloc(send->active, nactive_max *
-				sizeof(send->active[0]));
+					sizeof(send->active[0]));
 		send->nactive_max = nactive_max;
 	}
 }
@@ -269,7 +267,7 @@ static void sender_clear(const struct recv_model *m,
 	/* take the initial values if there are self-loops */
 	if (design_loops(d)) {
 		send->gamma = 1.0;
-		send->scale = max_eta0;		
+		send->scale = max_eta0;
 		send->log_W = log_W0;
 		send->W = W0;
 	} else {
@@ -371,7 +369,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	struct recv_model *m = udata;
 	const struct design *d = frame_design(f);
 	assert(recv_model_design(m) == d);
-	
+
 	if (isend == jrecv && !design_loops(d))
 		return;
 
@@ -402,7 +400,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
-	double W = send->W;	
+	double W = send->W;
 	double eta = vector_item(&cm->eta0, jrecv) + (*pdeta);
 	double eta1 = eta + deta;
 
@@ -455,19 +453,17 @@ static void model_clear(struct recv_model *m)
 
 static void recv_model_clear(void *udata, struct frame *f)
 {
-	(void)f; // unused
+	(void)f;		// unused
 	struct recv_model *m = udata;
 	assert(m);
 	assert(f == recv_model_frame(m));
 	model_clear(m);
 }
 
-
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
 		     size_t ncohort,
-		     const ptrdiff_t *cohorts,
-		     const struct matrix *coefs)
+		     const ptrdiff_t *cohorts, const struct matrix *coefs)
 {
 	assert(model);
 	assert(f);
@@ -780,4 +776,3 @@ const ptrdiff_t *recv_model_cohorts(const struct recv_model *model)
 	assert(model);
 	return model->cohorts;
 }
-

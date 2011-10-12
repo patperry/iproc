@@ -7,8 +7,8 @@
 static void nsend_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
-	(void)d; // unused
-	(void)params; // unused;
+	(void)d;		// unused
+	(void)params;		// unused;
 	assert(dv);
 	assert(d);
 	assert(!params);
@@ -24,7 +24,7 @@ static void nsend_deinit(struct design_var *dv)
 }
 
 static void nsend_message_add(void *udata, struct frame *f,
-			       const struct message *msg)
+			      const struct message *msg)
 {
 	struct frame_var *fv = udata;
 
@@ -57,7 +57,7 @@ static void nsend_message_add(void *udata, struct frame *f,
 }
 
 static void nsend_message_advance(void *udata, struct frame *f,
-				   const struct message *msg, ssize_t intvl)
+				  const struct message *msg, ssize_t intvl)
 {
 	struct frame_var *fv = udata;
 
@@ -72,7 +72,6 @@ static void nsend_message_advance(void *udata, struct frame *f,
 	ssize_t isend = msg->from;
 	ssize_t dyn_index = fv->design->dyn_index;
 
-	
 	double dx_data[2] = { -1.0, +1.0 };
 	ssize_t dx_index[2] = { 0, 1 };
 	ssize_t dx_nnz = 2;
@@ -88,10 +87,10 @@ static void nsend_message_advance(void *udata, struct frame *f,
 
 		ssize_t ix1 = dyn_index + intvl;
 		ssize_t ix0 = ix1 - 1;
-		
+
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;
-		
+
 		frame_recv_update(f, isend, jrecv, &delta);
 	}
 }
@@ -100,15 +99,15 @@ static struct var_type RECV_VAR_NSEND_REP = {
 	VAR_RECV_VAR,
 	nsend_init,
 	nsend_deinit,
-	NULL, // frame_init
-	NULL, // frame_deinit
+	NULL,			// frame_init
+	NULL,			// frame_deinit
 	{
-		nsend_message_add,
-		nsend_message_advance,
-		NULL,			// recv_update
-		NULL,			// send_update
-		NULL,			// clear
-	}
+	 nsend_message_add,
+	 nsend_message_advance,
+	 NULL,			// recv_update
+	 NULL,			// send_update
+	 NULL,			// clear
+	 }
 };
 
 const struct var_type *RECV_VAR_NSEND = &RECV_VAR_NSEND_REP;

@@ -7,8 +7,8 @@
 static void nrecv_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
-	(void)d; // unused
-	(void)params; // unused;
+	(void)d;		// unused
+	(void)params;		// unused;
 	assert(dv);
 	assert(d);
 	assert(!params);
@@ -49,7 +49,7 @@ static void nrecv_message_add(void *udata, struct frame *f,
 	for (ito = 0; ito < nto; ito++) {
 		if (msg->from == msg->to[ito])
 			continue;
-		
+
 		ssize_t isend = msg->to[ito];
 		frame_recv_update(f, isend, jrecv, &delta);
 	}
@@ -81,14 +81,14 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 	for (ito = 0; ito < nto; ito++) {
 		if (msg->from == msg->to[ito])
 			continue;
-		
+
 		ssize_t isend = msg->to[ito];
 		ssize_t ix1 = dyn_index + intvl;
 		ssize_t ix0 = ix1 - 1;
 
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;
-		
+
 		frame_recv_update(f, isend, jrecv, &delta);
 	}
 }
@@ -97,15 +97,15 @@ static struct var_type RECV_VAR_NRECV_REP = {
 	VAR_RECV_VAR,
 	nrecv_init,
 	nrecv_deinit,
-	NULL, // frame_init
-	NULL, // frame_deinit
+	NULL,			// frame_init
+	NULL,			// frame_deinit
 	{
-		nrecv_message_add,
-		nrecv_message_advance,
-		NULL,			// recv_update
-		NULL,			// send_update
-		NULL,			// clear
-	}
+	 nrecv_message_add,
+	 nrecv_message_advance,
+	 NULL,			// recv_update
+	 NULL,			// send_update
+	 NULL,			// clear
+	 }
 };
 
 const struct var_type *RECV_VAR_NRECV = &RECV_VAR_NRECV_REP;

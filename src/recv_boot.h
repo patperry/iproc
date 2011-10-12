@@ -12,7 +12,6 @@
 #include "matrix.h"
 #include "recv_model.h"
 
-
 struct recv_boot {
 	struct frame frame;
 	struct recv_model model;
@@ -24,10 +23,8 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct design *design,
 		    size_t ncohort,
 		    const ptrdiff_t *cohorts,
-		    const struct matrix *coefs,
-		    dsfmt_t *dsfmt);
+		    const struct matrix *coefs, dsfmt_t * dsfmt);
 
 void recv_boot_deinit(struct recv_boot *boot);
-
 
 #endif /* _RECV_BOOT_H */

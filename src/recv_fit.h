@@ -37,7 +37,7 @@ struct recv_fit_ctrl {
 	struct linesearch_ctrl ls;
 	double vartol;
 	double eigtol;
-	double svtol;	
+	double svtol;
 };
 
 enum recv_fit_task {
@@ -93,10 +93,10 @@ struct recv_fit {
 
 	/* null deviance */
 	double dev0;
-	
+
 	/* optimization constraints */
 	struct array constrs;
-	
+
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
 	struct recv_fit_kkt kkt;
@@ -111,11 +111,10 @@ struct recv_fit {
 
 void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *xmsgs,
-		   const struct messages *ymsgs,		   
+		   const struct messages *ymsgs,
 		   const struct design *design,
 		   size_t ncohort,
-		   const ptrdiff_t *cohorts,
-		   const struct recv_fit_ctrl *ctrl);
+		   const ptrdiff_t *cohorts, const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 
 /* constraints */

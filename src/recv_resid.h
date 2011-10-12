@@ -6,13 +6,12 @@
 #include "matrix.h"
 #include "recv_model.h"
 
-
 struct recv_resid_count {
 	struct matrix dyad;
 	struct vector send;
 	struct vector recv;
 	ssize_t tot;
-	
+
 	// internal
 	struct matrix dyad_trans;
 	bool dyad_cached;
@@ -29,9 +28,7 @@ void recv_resid_init(struct recv_resid *resid,
 		     const struct messages *msgs,
 		     const struct design *design,
 		     size_t ncohort,
-		     const ptrdiff_t *cohorts,
-		     const struct matrix *coefs);
+		     const ptrdiff_t *cohorts, const struct matrix *coefs);
 void recv_resid_deinit(struct recv_resid *resid);
-
 
 #endif /* _RECV_RESID_H */

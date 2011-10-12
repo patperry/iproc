@@ -68,11 +68,8 @@ extern const struct var_type *RECV_VAR_NSIB;
 extern const struct var_type *RECV_VAR_ICOSIB;
 extern const struct var_type *RECV_VAR_NCOSIB;
 
-
 char **var_names_alloc(char *name, size_t len, ssize_t n);
 char **var_names_alloc2(char *name, size_t len, ssize_t m, ssize_t n);
 void var_names_free(char **names);
-
-
 
 #endif /* _VARS_H */

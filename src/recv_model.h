@@ -126,9 +126,9 @@ struct recv_model_cohort {
 
 struct recv_model_sender {
 	double gamma;
-	double scale;	
+	double scale;
 	double log_W;		// (log_W)_true - scale
-	double W; // (W)_true / exp(scale)
+	double W;		// (W)_true / exp(scale)
 	double *deta;
 	ptrdiff_t *active;
 	size_t nactive, nactive_max;
@@ -146,8 +146,7 @@ struct recv_model {
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
 		     size_t ncohort,
-		     const ptrdiff_t *cohorts,
-		     const struct matrix *coefs);
+		     const ptrdiff_t *cohorts, const struct matrix *coefs);
 void recv_model_deinit(struct recv_model *model);
 
 const struct frame *recv_model_frame(const struct recv_model *model);

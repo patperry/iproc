@@ -9,8 +9,8 @@ static char *isend_names[] = { "ISend" };
 static void isend_init(struct design_var *dv, const struct design *d,
 		       void *params)
 {
-	(void)d; // unused
-	(void)params; // unused;
+	(void)d;		// unused
+	(void)params;		// unused;
 	assert(dv);
 	assert(d);
 	assert(!params);
@@ -20,7 +20,7 @@ static void isend_init(struct design_var *dv, const struct design *d,
 }
 
 static void isend_message_add(void *udata, struct frame *f,
-			       const struct message *msg)
+			      const struct message *msg)
 {
 	struct frame_var *fv = udata;
 
@@ -40,12 +40,12 @@ static void isend_message_add(void *udata, struct frame *f,
 	ssize_t dx_nnz = 1;
 	ssize_t dx_n = design_recv_dyn_dim(f->design);
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
-	
+
 	ssize_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		if (msg->to[ito] == msg->from)
 			continue;
-		
+
 		ssize_t jrecv = msg->to[ito];
 		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 		if (vector_item(dx, dyn_index) == 0.0) {
@@ -57,16 +57,16 @@ static void isend_message_add(void *udata, struct frame *f,
 static struct var_type RECV_VAR_ISEND_REP = {
 	VAR_RECV_VAR,
 	isend_init,
-	NULL, // deinit
-	NULL, // frame_init
-	NULL, // frame_deinit
+	NULL,			// deinit
+	NULL,			// frame_init
+	NULL,			// frame_deinit
 	{
-		isend_message_add,
-		NULL,			// message_advance,
-		NULL,			// recv_update
-		NULL,			// send_update
-		NULL			// clear
-	}
+	 isend_message_add,
+	 NULL,			// message_advance,
+	 NULL,			// recv_update
+	 NULL,			// send_update
+	 NULL			// clear
+	 }
 };
 
 const struct var_type *RECV_VAR_ISEND = &RECV_VAR_ISEND_REP;

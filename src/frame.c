@@ -37,7 +37,7 @@ static void frame_actors_init(struct frame_actor **pfas, ssize_t n)
 	for (i = 0; i < n; i++) {
 		frame_actor_init(&fas[i]);
 	}
-	
+
 	*pfas = fas;
 }
 
@@ -61,7 +61,7 @@ static void frame_actors_deinit(struct frame_actor *fas, ssize_t n)
 	for (i = 0; i < n; i++) {
 		frame_actor_deinit(&fas[i]);
 	}
-	
+
 	free(fas);
 }
 
@@ -114,13 +114,13 @@ static void frame_receivers_deinit(struct frame *f)
 	frame_actors_deinit(f->receivers, n);
 }
 
-static struct frame_actor *frame_receivers_item(const struct frame *f, ssize_t i)
+static struct frame_actor *frame_receivers_item(const struct frame *f,
+						ssize_t i)
 {
 	assert(f);
 	assert(0 <= i && i < frame_receivers_count(f));
 	return &f->receivers[i];
 }
-
 
 static void frame_vars_init(struct frame *f)
 {
@@ -168,7 +168,7 @@ static void frame_vars_deinit(struct frame *f)
 
 static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
-	(void)f; // unused;
+	(void)f;		// unused;
 	assert(rf);
 
 	rf->active = NULL;
@@ -184,11 +184,11 @@ static void recv_frame_grow_active(struct recv_frame *rf)
 	if (rf->nactive == nactive_max) {
 		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
 		rf->dx = xrealloc(rf->dx, nactive_max * sizeof(rf->dx[0]));
-		rf->active = xrealloc(rf->active, nactive_max * sizeof(rf->active[0]));
+		rf->active =
+		    xrealloc(rf->active, nactive_max * sizeof(rf->active[0]));
 		rf->nactive_max = nactive_max;
 	}
 }
-
 
 static void recv_frame_clear(struct recv_frame *rf)
 {
@@ -303,7 +303,7 @@ void frame_init(struct frame *f, const struct design *design)
 	array_init(&f->observers, sizeof(struct frame_observer));
 	array_init(&f->frame_messages, sizeof(struct frame_message));
 	frame_senders_init(f);
-	frame_receivers_init(f);	
+	frame_receivers_init(f);
 	f->cur_fmsg = 0;
 	pqueue_init(&f->events, sizeof(struct frame_event),
 		    frame_event_rcompare);
@@ -334,7 +334,7 @@ void frame_clear(struct frame *f)
 	f->time = -INFINITY;
 	array_clear(&f->frame_messages);
 	frame_senders_clear(f);
-	frame_receivers_clear(f);	
+	frame_receivers_clear(f);
 	f->cur_fmsg = 0;
 	pqueue_clear(&f->events);
 	recv_frames_clear(f);
@@ -384,7 +384,7 @@ void frame_add(struct frame *f, const struct message *msg)
 	assert(msg->time == frame_time(f));
 
 	//fprintf(stderr, "================= Add (%p) =================\n", msg);
-	
+
 	struct frame_message *fmsg = array_add(&f->frame_messages, NULL);
 	fmsg->message = msg;
 	fmsg->interval = 0;
@@ -392,7 +392,8 @@ void frame_add(struct frame *f, const struct message *msg)
 
 static bool has_pending_messages(const struct frame *f)
 {
-	assert(0 <= f->cur_fmsg && f->cur_fmsg <= array_count(&f->frame_messages));
+	assert(0 <= f->cur_fmsg
+	       && f->cur_fmsg <= array_count(&f->frame_messages));
 	return f->cur_fmsg < array_count(&f->frame_messages);
 }
 
@@ -419,14 +420,14 @@ static void process_current_messages(struct frame *f)
 		struct frame_actor *fa;
 		fa = frame_senders_item(f, msg->from);
 		array_add(&fa->message_ixs, &imsg);
-		
+
 		// add the message to the receiver histories
 		ssize_t ito, nto = msg->nto;
 		for (ito = 0; ito < nto; ito++) {
 			fa = frame_receivers_item(f, msg->to[ito]);
 			array_add(&fa->message_ixs, &imsg);
 		}
-		
+
 		// create an advance event (if necessary)
 		if (isfinite(tnext)) {
 			struct frame_event e;
@@ -440,14 +441,14 @@ static void process_current_messages(struct frame *f)
 #endif
 
 		//fprintf(stderr, "-> message_add %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
-		
+
 		//if (msg->nto > 0)
-		//	fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+		//      fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
 		//for (ito = 1; ito < msg->nto; ito++) {
-		//	fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+		//      fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
 		//}
 		//fprintf(stderr, " ] }\n");
-		
+
 		// notify all observers
 		const struct frame_observer *obs;
 		ARRAY_FOREACH(obs, &f->observers) {
@@ -500,18 +501,17 @@ static void process_event(struct frame *f)
 
 	//fprintf(stderr, "-> message_advance %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
 	//ssize_t ito;
-	
+
 	//if (msg->nto > 0)
-	//	fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+	//      fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
 	//for (ito = 1; ito < msg->nto; ito++) {
-	//	fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+	//      fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
 	//}
 	//fprintf(stderr, " ] }\n");
-	
+
 	// notify all observers
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
-		
 
 		if (obs->callbacks.message_advance) {
 			obs->callbacks.message_advance(obs->udata, f, msg,
@@ -531,7 +531,7 @@ void frame_advance(struct frame *f, double time)
 	assert(time >= frame_time(f));
 
 	//fprintf(stderr, "=============== Advance (%"SSIZE_FMT") ===============\n", (ssize_t)time);
-	
+
 	if (frame_time(f) < time)
 		process_current_messages(f);
 
@@ -560,7 +560,7 @@ void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 	svector_axpy(1.0, delta, dx);
 
 	//fprintf(stderr, "-> recv_update %" SSIZE_FMT ", %" SSIZE_FMT "\n", isend, jrecv);
-	
+
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
@@ -593,9 +593,9 @@ const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 }
 
 void frame_recv_get_dx(const struct frame *f, ptrdiff_t isend,
-		       struct vector **dxp, ptrdiff_t **activep, size_t *nactivep)
+		       struct vector **dxp, ptrdiff_t **activep,
+		       size_t *nactivep)
 {
-
 	assert(f);
 	assert(0 <= isend && isend < design_send_count(f->design));
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);

@@ -23,7 +23,7 @@ struct frame_actor {
 
 /* dX[t,i] */
 struct recv_frame {
-	ptrdiff_t *active; // active jrecv
+	ptrdiff_t *active;	// active jrecv
 	struct vector *dx;
 	size_t nactive;
 	size_t nactive_max;
@@ -36,7 +36,7 @@ struct frame {
 	struct array observers;
 	struct array frame_messages;
 	struct frame_actor *senders;
-	struct frame_actor *receivers;	
+	struct frame_actor *receivers;
 	ssize_t cur_fmsg;
 	struct pqueue events;
 
@@ -50,7 +50,7 @@ struct frame_callbacks {
 	void (*message_advance) (void *udata, struct frame * f,
 				 const struct message * msg, ssize_t intvl);
 	void (*recv_update) (void *udata, struct frame * f, ssize_t isend,
-			     ssize_t jrecv, const struct svector *delta);
+			     ssize_t jrecv, const struct svector * delta);
 	void (*send_update) (void *udata, struct frame * f, ssize_t isend,
 			     ssize_t dyn_index, double dx);
 	void (*clear) (void *udata, struct frame * f);
@@ -76,18 +76,22 @@ void frame_advance(struct frame *f, double time);	// advance time
 
 /* messages */
 static inline ssize_t frame_messages_count(const struct frame *f);
-static inline struct frame_message *frame_messages_item(const struct frame *f, ssize_t i);
+static inline struct frame_message *frame_messages_item(const struct frame *f,
+							ssize_t i);
 void frame_add(struct frame *f, const struct message *msg);
 
 /* actors */
 static inline ssize_t frame_senders_count(const struct frame *f);
 static inline ssize_t frame_receivers_count(const struct frame *f);
-static inline void frame_get_send_messages(const struct frame *f, ssize_t isend, ssize_t **imsg, ssize_t *nmsg);
-static inline void frame_get_recv_messages(const struct frame *f, ssize_t irecv, ssize_t **imsg, ssize_t *nmsg);
+static inline void frame_get_send_messages(const struct frame *f, ssize_t isend,
+					   ssize_t **imsg, ssize_t *nmsg);
+static inline void frame_get_recv_messages(const struct frame *f, ssize_t irecv,
+					   ssize_t **imsg, ssize_t *nmsg);
 
 /* current covariates */
 void frame_recv_get_dx(const struct frame *f, ptrdiff_t isend,
-		       struct vector **dxp, ptrdiff_t **activep, size_t *nactivep);
+		       struct vector **dxp, ptrdiff_t **activep,
+		       size_t *nactivep);
 const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 				   ssize_t jrecv);
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
@@ -139,7 +143,7 @@ double frame_time(const struct frame *f)
 double frame_next_time(const struct frame *f)
 {
 	assert(f);
-	
+
 	if (pqueue_count(&f->events)) {
 		const struct frame_event *e = pqueue_top(&f->events);
 		return e->time;
@@ -176,25 +180,27 @@ ssize_t frame_receivers_count(const struct frame *f)
 	return design_recv_count(d);
 }
 
-void frame_get_send_messages(const struct frame *f, ssize_t isend, ssize_t **imsg, ssize_t *nmsg)
+void frame_get_send_messages(const struct frame *f, ssize_t isend,
+			     ssize_t **imsg, ssize_t *nmsg)
 {
 	assert(f);
 	assert(0 <= isend && isend < frame_senders_count(f));
 	assert(imsg);
 	assert(nmsg);
-	
+
 	const struct frame_actor *a = &f->senders[isend];
 	*imsg = array_to_ptr(&a->message_ixs);
 	*nmsg = array_count(&a->message_ixs);
 }
 
-void frame_get_recv_messages(const struct frame *f, ssize_t irecv, ssize_t **imsg, ssize_t *nmsg)
+void frame_get_recv_messages(const struct frame *f, ssize_t irecv,
+			     ssize_t **imsg, ssize_t *nmsg)
 {
 	assert(f);
 	assert(0 <= irecv && irecv < frame_receivers_count(f));
 	assert(imsg);
 	assert(nmsg);
-	
+
 	const struct frame_actor *a = &f->receivers[irecv];
 	*imsg = array_to_ptr(&a->message_ixs);
 	*nmsg = array_count(&a->message_ixs);
