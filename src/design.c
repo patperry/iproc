@@ -229,41 +229,6 @@ design_recv_mul0_static(double alpha,
 		struct vector ysub = vector_slice(y, off, dim);
 		matrix_mul(alpha, trans, traits, x, 1.0, &ysub);
 	}
-
-	/*
-	   const struct actors *senders = design_senders(design);        
-	   ssize_t p = actors_dim(senders);
-	   ssize_t q = actors_dim(receivers);
-	   ssize_t ix_begin = design->irstatic;
-	   ssize_t nstatic = design->nrstatic;
-	   const struct vector *s = actors_traits(senders, isend);
-	   struct vector *z = vector_alloc(q);
-
-	   if (trans == BLAS_NOTRANS) {
-	   struct vector xsub = vector_slice(x, ix_begin, nstatic);
-
-	   // z := alpha t(x) s
-	   struct matrix xmat = matrix_make(&xsub, p, q);
-
-	   matrix_mul(alpha, TRANS_TRANS, &xmat, s, 0.0, z);
-
-	   // y := y + R z
-	   actors_mul(1.0, BLAS_NOTRANS, receivers, z, 1.0, y);
-	   } else {
-	   // z := alpha t(R) x
-	   actors_mul(alpha, TRANS_TRANS, receivers, x, 0.0, z);
-
-	   // y := y + s \otimes z
-	   struct vector ysub = vector_slice(y, ix_begin, nstatic);
-	   struct matrix ymat = matrix_make(&ysub, p, q);
-	   struct matrix smat = matrix_make(s, p, 1);
-	   struct matrix zmat = matrix_make(z, 1, q);
-
-	   matrix_matmul(1.0, BLAS_NOTRANS, &smat, &zmat, 1.0, &ymat);
-	   }
-
-	   vector_free(z);
-	 */
 }
 
 /*
@@ -334,61 +299,6 @@ design_recv_muls0_static(double alpha,
 		struct vector ysub = vector_slice(y, off, dim);
 		matrix_muls(alpha, trans, traits, x, 1.0, &ysub);
 	}
-
-	/*
-	   const struct actors *receivers = design_receivers(design);
-	   const struct actors *senders = design_senders(design);       
-	   ssize_t p = actors_dim(senders);
-	   ssize_t q = actors_dim(receivers);
-	   ssize_t off = design->irstatic;
-	   ssize_t nstatic = design->nrstatic;
-	   ssize_t ix_end = off + nstatic;
-	   const struct vector *s = actors_traits(senders, isend);
-	   struct vector *z = vector_alloc(q);
-
-	   if (trans == BLAS_NOTRANS) {
-	   // z := alpha t(x) s 
-	   // z[j] = alpha * { \sum_i (x[i,j] * s[i]) }
-
-	   struct svector_iter itx;
-	   double x_ij, s_i;
-	   ssize_t ix, i, j;
-	   imaxdiv_t ij;
-
-	   vector_fill(z, 0.0);
-
-	   SVECTOR_FOREACH(itx, x) {
-	   ix = SVECTOR_IDX(itx);
-	   if (ix < off || ix >= ix_end)
-	   continue;
-
-	   ij = imaxdiv(ix - off, p);
-	   i = (ssize_t)ij.rem; // ix % p
-	   j = (ssize_t)ij.quot;        // ix / p
-	   x_ij = SVECTOR_VAL(itx);
-	   s_i = *vector_item_ptr(s, i);
-	   *vector_item_ptr(z, j) += x_ij * s_i;
-	   }
-
-	   vector_scale(z, alpha);
-
-	   // y := y + R z
-	   actors_mul(1.0, BLAS_NOTRANS, receivers, z, 1.0, y);
-	   } else {
-	   // z := alpha t(R) x
-	   actors_muls(alpha, TRANS_TRANS, receivers, x, 0.0, z);
-
-	   // y := y + s \otimes z
-	   struct vector ysub = vector_slice(y, off, nstatic);
-	   struct matrix ymat = matrix_make(&ysub, p, q);
-	   struct matrix smat = matrix_make(s, p, 1);
-	   struct matrix zmat = matrix_make(z, 1, q);
-
-	   matrix_matmul(1.0, BLAS_NOTRANS, &smat, &zmat, 1.0, &ymat);
-	   }
-
-	   vector_free(z);
-	 */
 }
 
 /*
