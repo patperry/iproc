@@ -1,9 +1,7 @@
 #ifndef _IPROC_MODEL_H
 #define _IPROC_MODEL_H
 
-#include <stdbool.h>
-#include "refcount.h"
-#include "array.h"
+#include <stddef.h>
 #include "design.h"
 #include "frame.h"
 #include "vector.h"
@@ -131,8 +129,9 @@ struct recv_model_sender {
 	double scale;	
 	double log_W;		// (log_W)_true - scale
 	double W; // (W)_true / exp(scale)
-	struct svector deta;
-	struct array active;
+	double *deta;
+	ptrdiff_t *active;
+	size_t nactive, nactive_max;
 };
 
 struct recv_model {
@@ -182,7 +181,7 @@ void recv_model_axpy_probs(double alpha, const struct recv_model *m,
 			   ssize_t isend, struct vector *y);
 
 void recv_model_get_active(const struct recv_model *m, ssize_t isend,
-			   ssize_t **jrecv, ssize_t *n);
+			   ptrdiff_t **jrecv, ssize_t *n);
 double recv_model_invgrow(const struct recv_model *m, ssize_t isend);
 
 #endif /* _IPROC_MODEL_H */

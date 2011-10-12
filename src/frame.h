@@ -4,7 +4,6 @@
 #include <math.h>
 #include <stdio.h>
 #include "messages.h"
-#include "intmap.h"
 #include "pqueue.h"
 #include "design.h"
 
@@ -24,7 +23,10 @@ struct frame_actor {
 
 /* dX[t,i] */
 struct recv_frame {
-	struct intmap jrecv_dxs;
+	ptrdiff_t *active; // active jrecv
+	struct vector *dx;
+	size_t nactive;
+	size_t nactive_max;
 };
 
 struct frame {
@@ -84,6 +86,8 @@ static inline void frame_get_send_messages(const struct frame *f, ssize_t isend,
 static inline void frame_get_recv_messages(const struct frame *f, ssize_t irecv, ssize_t **imsg, ssize_t *nmsg);
 
 /* current covariates */
+void frame_recv_get_dx(const struct frame *f, ptrdiff_t isend,
+		       struct vector **dxp, ptrdiff_t **activep, size_t *nactivep);
 const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 				   ssize_t jrecv);
 void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,

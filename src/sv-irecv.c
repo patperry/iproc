@@ -8,7 +8,6 @@
 #include "design.h"
 #include "frame.h"
 #include "hashset.h"
-#include "intmap.h"
 #include "util.h"
 #include "vars.h"
 

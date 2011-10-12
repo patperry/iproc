@@ -4,72 +4,69 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "coreutil.h"
 #include "xalloc.h"
-#include "compare.h"
 #include "ieee754.h"
 #include "logsumexp.h"
+#include "sblas.h"
 #include "recv_model.h"
 
-DEFINE_COMPARE_FN(ssize_compare, ssize_t)
 
 static void
-compute_weight_changes(const struct frame *f,
-		       const struct recv_model_cohort *cm,
-		       const struct svector *deta, double *scale,
-		       double *gamma, double *log_W, double *pW)
+compute_weight_changes(struct recv_model_sender *sm,
+		       const struct recv_model_cohort *cm)
 {
-	const struct design *design = f->design;
 	const struct vector *eta0 = &cm->eta0;
 	double max_eta0 = cm->max_eta0;
 	double log_W0 = cm->log_W0;
-	ssize_t jrecv, nrecv = design_recv_count(design);
-	struct svector_iter it;
+	ssize_t jrecv, nrecv = vector_dim(eta0);
 	bool shrink = false;
+	size_t ia, na = sm->nactive;
 
 	/* compute the maximum eta value */
-	*scale = max_eta0;
+	sm->scale = max_eta0;
 
-	SVECTOR_FOREACH(it, deta) {
-		ssize_t jrecv = SVECTOR_IDX(it);
+	for (ia = 0; ia < na; ia++) {
+		ptrdiff_t jrecv = sm->active[ia];
 		double eta0_j = vector_item(eta0, jrecv);
-		double deta_j = SVECTOR_VAL(it);
+		double deta_j = sm->deta[ia];
 		double eta_j = eta0_j + deta_j;
 
 		if (eta0_j == max_eta0 && deta_j < 0)
 			shrink = true;
 
-		*scale = MAX(*scale, eta_j);
+		sm->scale = MAX(sm->scale, eta_j);
 	}
 
 	// fast:
 	{
-		double W = exp(log_W0 + (max_eta0 - *scale));
+		double W = exp(log_W0 + (max_eta0 - sm->scale));
 		bool found_max = false;
 
-		SVECTOR_FOREACH(it, deta) {
-			ssize_t jrecv = SVECTOR_IDX(it);
+		for (ia = 0; ia < na; ia++) {
+			ssize_t jrecv = sm->active[ia];
 			double eta0_j = vector_item(eta0, jrecv);
-			double deta_j = SVECTOR_VAL(it);
+			double deta_j = sm->deta[ia];
 			double eta_j = eta0_j + deta_j;
 
-			if (!found_max && eta_j == *scale) {
+			if (!found_max && eta_j == sm->scale) {
 				found_max = true;
-				W += -exp(eta0_j - *scale);
+				W += -exp(eta0_j - sm->scale);
 			} else {
-				W += (exp(eta_j - *scale)
-				      - exp(eta0_j - *scale));
+				W += (exp(eta_j - sm->scale)
+				      - exp(eta0_j - sm->scale));
 			}
 		}
 
 		if (found_max) {
-			*pW = W + 1;
-			*log_W = log1p(W);
+			sm->W = W + 1;
+			sm->log_W = log1p(W);
 		} else {
-			*pW = W;
-			*log_W = log(W);
+			sm->W = W;
+			sm->log_W = log(W);
 		}
 
-		if (*log_W > 0)
+		if (sm->log_W > 0)
 			goto out;
 	}
 
@@ -77,37 +74,51 @@ compute_weight_changes(const struct frame *f,
 	{
 		//fprintf(stderr, "!"); fflush(stderr);
 		/* compute the new max_eta */
-		if (shrink && *scale == max_eta0) {
+		ia = 0;
+		if (shrink && sm->scale == max_eta0) {
 			double max = -INFINITY;
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double eta0_j = vector_item(eta0, jrecv);
-				double deta_j = svector_item(deta, jrecv);
+				double deta_j = 0.0;
+
+				if (ia < na && sm->active[ia] == jrecv) {
+					deta_j = sm->deta[ia];
+					ia++;
+				}		
+				
 				double eta_j = eta0_j + deta_j;
 
 				max = MAX(max, eta_j);
 			}
-			*scale = max;
+			sm->scale = max;
 		}
 
 		/* compute the new log_W */
 		struct logsumexp lse;
 		logsumexp_init(&lse);
 
+		ia = 0;
 		for (jrecv = 0; jrecv < nrecv; jrecv++) {
 			double eta0_j = vector_item(eta0, jrecv);
-			double deta_j = svector_item(deta, jrecv);
+			double deta_j = 0.0;
+		
+			if (ia < na && sm->active[ia] == jrecv) {
+				deta_j = sm->deta[ia];
+				ia++;
+			}	
+
 			double eta_j = eta0_j + deta_j;
 
-			logsumexp_insert(&lse, eta_j - *scale);
+			logsumexp_insert(&lse, eta_j - sm->scale);
 		}
-		*log_W = logsumexp_value(&lse);
-		*pW = exp(*log_W);
+		sm->log_W = logsumexp_value(&lse);
+		sm->W = exp(sm->log_W);
 	}
 
 out:
-	*gamma = exp((log_W0 + (max_eta0 - *scale)) - *log_W);
-	assert(*gamma >= 0.0);
-	assert(isfinite(*log_W));
+	sm->gamma = exp((log_W0 + (max_eta0 - sm->scale)) - sm->log_W);
+	assert(sm->gamma >= 0.0);
+	assert(isfinite(sm->log_W));
 }
 
 static void cohort_set(struct recv_model_cohort *cm,
@@ -224,6 +235,20 @@ ptrdiff_t recv_model_cohort(const struct recv_model *m, ssize_t isend)
 	return m->cohorts[isend];
 }
 
+static void sender_grow_active(struct recv_model_sender *send)
+{
+	size_t nactive_max = send->nactive_max;
+
+	if (send->nactive == nactive_max) {
+		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
+		send->deta = xrealloc(send->deta, nactive_max *
+				sizeof(send->deta[0]));
+		send->active = xrealloc(send->active, nactive_max *
+				sizeof(send->active[0]));
+		send->nactive_max = nactive_max;
+	}
+}
+
 static void sender_clear(const struct recv_model *m,
 			 struct recv_model_sender *send, ssize_t isend)
 {
@@ -239,8 +264,7 @@ static void sender_clear(const struct recv_model *m,
 	double log_W0 = cm->log_W0;
 	double W0 = cm->W0;
 
-	svector_clear(&send->deta);
-	array_clear(&send->active);
+	send->nactive = 0;
 
 	/* take the initial values if there are self-loops */
 	if (design_loops(d)) {
@@ -249,17 +273,15 @@ static void sender_clear(const struct recv_model *m,
 		send->log_W = log_W0;
 		send->W = W0;
 	} else {
-		/* add the loop to the active set */
-		array_add(&send->active, &isend);
+		sender_grow_active(send);
 
-		/* compute the eta values */
-		svector_set_item(&send->deta, isend, -INFINITY);
+		/* add the loop to the active set */
+		send->active[0] = isend;
+		send->deta[0] = -INFINITY;
+		send->nactive = 1;
 
 		/* compute the changes in weights */
-		compute_weight_changes(f, cm,
-				       &send->deta, &send->scale, &send->gamma,
-				       &send->log_W, &send->W);
-
+		compute_weight_changes(send, cm);
 	}
 }
 
@@ -277,32 +299,41 @@ static void sender_set(const struct recv_model *m,
 	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
 
 	/* compute the eta values */
-	frame_recv_dmul(1.0, BLAS_NOTRANS, f, isend, &beta, 0.0, &send->deta);
+	struct vector *dx;
+	ptrdiff_t *active;
+	size_t iz, nz;
+	frame_recv_get_dx(f, isend, &dx, &active, &nz);
+
+	send->nactive = 0;
+	for (iz = 0; iz < nz; iz++) {
+		sender_grow_active(send);
+		send->active[iz] = active[iz];
+		send->deta[iz] = vector_dot(&beta, &dx[iz]);
+		send->nactive++;
+	}
+
 	if (!has_loops) {
-		svector_set_item(&send->deta, isend, -INFINITY);
+		ptrdiff_t ix = sblas_find(send->nactive, send->active, isend);
+		if (ix < 0) {
+			sender_grow_active(send);
+			ix = ~ix;
+			memmove(send->active + ix + 1, send->active + ix,
+				(send->nactive - ix) * sizeof(send->active[0]));
+			memmove(send->deta + ix + 1, send->deta + ix,
+				(send->nactive - ix) * sizeof(send->deta[0]));
+			send->active[ix] = isend;
+			send->nactive++;
+		}
+		send->deta[ix] = -INFINITY;
 	}
 
 	/* compute the changes in weights */
 	ssize_t c = recv_model_cohort(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
-	compute_weight_changes(f, cm,
-			       &send->deta, &send->scale, &send->gamma,
-			       &send->log_W, &send->W);
+	compute_weight_changes(send, cm);
 
 	assert(send->gamma >= 0.0);
 	assert(isfinite(send->log_W));
-
-	/* compute the active set */
-	struct svector_iter it;
-	SVECTOR_FOREACH(it, &send->deta) {
-		ssize_t ix = SVECTOR_IDX(it);
-		ssize_t k =
-		    array_binary_search(&send->active, &ix, ssize_compare);
-		if (k < 0) {
-			array_insert(&send->active, ~k, &ix);
-		}
-	}
-	assert(array_count(&send->active) == svector_count(&send->deta));
 }
 
 static void sender_init(const struct recv_model *m,
@@ -312,16 +343,18 @@ static void sender_init(const struct recv_model *m,
 	assert(m);
 	assert(0 <= isend && isend < recv_model_send_count(m));
 
-	svector_init(&send->deta, recv_model_count(m));
-	array_init(&send->active, sizeof(ssize_t));
+	send->deta = NULL;
+	send->active = NULL;
+	send->nactive = 0;
+	send->nactive_max = 0;
 	sender_clear(m, send, isend);
 }
 
-static void sender_deinit(struct recv_model_sender *rm)
+static void sender_deinit(struct recv_model_sender *send)
 {
-	assert(rm);
-	array_deinit(&rm->active);
-	svector_deinit(&rm->deta);
+	assert(send);
+	free(send->active);
+	free(send->deta);
 }
 
 static struct recv_model_sender *sender_raw(struct recv_model *m, ssize_t isend)
@@ -347,15 +380,19 @@ static void recv_model_recv_update(void *udata, struct frame *f, ssize_t isend,
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
 
-	double *pdeta = svector_item_ptr(&send->deta, jrecv);
-
-	if (svector_count(&send->deta) != array_count(&send->active)) {
-		assert(svector_count(&send->deta) == array_count(&send->active) + 1);
-		ssize_t ix = pdeta - svector_data_ptr(&send->deta);
-		assert(ix >= 0);
-		assert(svector_index_ptr(&send->deta)[ix] == jrecv);
-		array_insert(&send->active, ix, &jrecv);
+	ptrdiff_t ix = sblas_find(send->nactive, send->active, jrecv);
+	if (ix < 0) {
+		sender_grow_active(send);
+		ix = ~ix;
+		memmove(send->active + ix + 1, send->active + ix,
+			(send->nactive - ix) * sizeof(send->active[0]));
+		memmove(send->deta + ix + 1, send->deta + ix,
+			(send->nactive - ix) * sizeof(send->deta[0]));
+		send->active[ix] = jrecv;
+		send->deta[ix] = 0.0;
+		send->nactive++;
 	}
+	double *pdeta = &send->deta[ix];
 
 	ssize_t dyn_off = design_recv_dyn_index(d);
 	ssize_t dyn_dim = design_recv_dyn_dim(d);
@@ -639,16 +676,16 @@ struct recv_model_sender *recv_model_send(const struct recv_model *m,
 }
 
 void recv_model_get_active(const struct recv_model *m, ssize_t isend,
-			   ssize_t **jrecv, ssize_t *n)
+			   ptrdiff_t **jrecv, ssize_t *n)
 {
 	assert(m);
 	assert(0 <= isend && isend < recv_model_send_count(m));
 	assert(jrecv);
 	assert(n);
 
-	const struct recv_model_sender *rm = recv_model_send(m, isend);
-	*jrecv = array_to_ptr(&rm->active);
-	*n = array_count(&rm->active);
+	const struct recv_model_sender *sm = recv_model_send(m, isend);
+	*jrecv = sm->active;
+	*n = sm->nactive;
 }
 
 double recv_model_logsumwt(const struct recv_model *m, ssize_t isend)
@@ -691,10 +728,16 @@ double recv_model_logprob(const struct recv_model *m, ssize_t isend,
 	   return log(p);
 	 */
 
+	double deta = 0.0;
+	ptrdiff_t iactive = sblas_find(send->nactive, send->active, jrecv);
+
+	if (iactive >= 0) {
+		deta = send->deta[iactive];
+	}
+
 	double scale = send->scale;
 	double log_W = send->log_W;
 	double eta0 = vector_item(&cm->eta0, jrecv);
-	double deta = svector_item(&send->deta, jrecv);
 	double eta = eta0 + deta;
 	double log_p = (eta - scale) - log_W;
 

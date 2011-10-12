@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <math.h>
+#include "sblas.h"
+#include "coreutil.h"
 #include "xalloc.h"
 #include "ieee754.h"
 #include "vars.h"
@@ -169,32 +171,43 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 	(void)f; // unused;
 	assert(rf);
 
-	intmap_init(&rf->jrecv_dxs, sizeof(struct vector),
-		    alignof(struct vector));
+	rf->active = NULL;
+	rf->dx = NULL;
+	rf->nactive = 0;
+	rf->nactive_max = 0;
+}
+
+static void recv_frame_grow_active(struct recv_frame *rf)
+{
+	size_t nactive_max = rf->nactive_max;
+
+	if (rf->nactive == nactive_max) {
+		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
+		rf->dx = xrealloc(rf->dx, nactive_max * sizeof(rf->dx[0]));
+		rf->active = xrealloc(rf->active, nactive_max * sizeof(rf->active[0]));
+		rf->nactive_max = nactive_max;
+	}
+}
+
+
+static void recv_frame_clear(struct recv_frame *rf)
+{
+	assert(rf);
+
+	size_t i, n = rf->nactive;
+	for (i = 0; i < n; i++) {
+		vector_deinit(&rf->dx[i]);
+	}
+	rf->nactive = 0;
 }
 
 static void recv_frame_deinit(struct recv_frame *rf)
 {
 	assert(rf);
 
-	struct intmap_iter it;
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		struct vector *dx = INTMAP_VAL(it);
-		vector_deinit(dx);
-	}
-	intmap_deinit(&rf->jrecv_dxs);
-}
-
-static void recv_frame_clear(struct recv_frame *rf)
-{
-	assert(rf);
-
-	struct intmap_iter it;
-	INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-		struct vector *dx = INTMAP_VAL(it);
-		vector_deinit(dx);
-	}
-	intmap_clear(&rf->jrecv_dxs);
+	recv_frame_clear(rf);
+	free(rf->dx);
+	free(rf->active);
 }
 
 static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
@@ -202,14 +215,20 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
 {
 	assert(rf);
 
-	struct intmap_pos pos;
-	struct vector *dx;
-
-	if (!(dx = intmap_find(&rf->jrecv_dxs, jrecv, &pos))) {
-		dx = intmap_insert(&rf->jrecv_dxs, &pos, NULL);
-		vector_init(dx, dyn_dim);
+	ptrdiff_t ix = sblas_find(rf->nactive, rf->active, jrecv);
+	if (ix < 0) {
+		recv_frame_grow_active(rf);
+		ix = ~ix;
+		memmove(rf->active + ix + 1, rf->active + ix,
+			(rf->nactive - ix) * sizeof(rf->active[0]));
+		memmove(rf->dx + ix + 1, rf->dx + ix,
+			(rf->nactive - ix) * sizeof(rf->dx[0]));
+		rf->active[ix] = jrecv;
+		vector_init(&rf->dx[ix], dyn_dim);
+		rf->nactive++;
 	}
 
+	struct vector *dx = &rf->dx[ix];
 	assert(vector_dim(dx) == dyn_dim);
 	return dx;
 }
@@ -573,6 +592,18 @@ const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
 	return recv_frame_dx(rf, jrecv, dyn_dim);
 }
 
+void frame_recv_get_dx(const struct frame *f, ptrdiff_t isend,
+		       struct vector **dxp, ptrdiff_t **activep, size_t *nactivep)
+{
+
+	assert(f);
+	assert(0 <= isend && isend < design_send_count(f->design));
+	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
+	*dxp = rf->dx;
+	*activep = rf->active;
+	*nactivep = rf->nactive;
+}
+
 /*
 void frame_send_mul(double alpha, enum blas_trans trans,
 		    const struct frame *f,
@@ -737,23 +768,24 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 		return;
 
 	const struct recv_frame *rf = recv_frames_item(f, isend);
-	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {
-		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-			jrecv = INTMAP_KEY(it);
-			dx = INTMAP_VAL(it);
+		size_t iz, nz = rf->nactive;
+		for (iz = 0; iz < nz; iz++) {
+			jrecv = rf->active[iz];
+			dx = &rf->dx[iz];
 
 			double dot = vector_dot(dx, x);
 			double *yjrecv = svector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
 		}
 	} else {
-		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-			jrecv = INTMAP_KEY(it);
-			dx = INTMAP_VAL(it);
+		size_t iz, nz = rf->nactive;
+		for (iz = 0; iz < nz; iz++) {
+			jrecv = rf->active[iz];
+			dx = &rf->dx[iz];
 
 			double xjrecv = *vector_item_ptr(x, jrecv);
 
@@ -804,23 +836,24 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		return;
 
 	const struct recv_frame *rf = recv_frames_item(f, isend);
-	struct intmap_iter it;
 	ssize_t jrecv;
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {
-		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-			jrecv = INTMAP_KEY(it);
-			dx = INTMAP_VAL(it);
+		size_t iz, nz = rf->nactive;
+		for (iz = 0; iz < nz; iz++) {
+			jrecv = rf->active[iz];
+			dx = &rf->dx[iz];
 
 			double dot = svector_dot(x, dx);
 			double *yjrecv = vector_item_ptr(y, jrecv);
 			*yjrecv += alpha * dot;
 		}
 	} else {
-		INTMAP_FOREACH(it, &rf->jrecv_dxs) {
-			jrecv = INTMAP_KEY(it);
-			dx = INTMAP_VAL(it);
+		size_t iz, nz = rf->nactive;
+		for (iz = 0; iz < nz; iz++) {
+			jrecv = rf->active[iz];
+			dx = &rf->dx[iz];
 
 			double xjrecv = svector_item(x, jrecv);
 
