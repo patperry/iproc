@@ -93,10 +93,6 @@ libcore_la_SOURCES = \
 	src/core/bfgs.h \
 	src/core/compare.h \
 	src/core/delegate.h \
-	src/core/intmap.c \
-	src/core/intmap.h \
-	src/core/intset.c \
-	src/core/intset.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
 	src/core/linalg.c \
@@ -302,10 +298,6 @@ check_PROGRAMS = # empty
 check_PROGRAMS += tests/array_test
 tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
 tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
-
-check_PROGRAMS += tests/intmap_test
-tests_intmap_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_intmap_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)

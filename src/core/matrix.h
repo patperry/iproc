@@ -2,6 +2,7 @@
 #define _MATRIX_H
 
 #include "blas.h"
+#include "coreutil.h"
 #include "svector.h"
 #include "vector.h"
 

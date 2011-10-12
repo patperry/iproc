@@ -1,7 +1,6 @@
 #ifndef _SVECTOR_H
 #define _SVECTOR_H
 
-#include "intmap.h"
 #include "vector.h"
 
 struct svector {
