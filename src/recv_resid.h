@@ -28,7 +28,7 @@ void recv_resid_init(struct recv_resid *resid,
 		     const struct messages *msgs,
 		     const struct design *design,
 		     size_t ncohort,
-		     const ptrdiff_t *cohorts, const struct matrix *coefs);
+		     const size_t *cohorts, const struct matrix *coefs);
 void recv_resid_deinit(struct recv_resid *resid);
 
 #endif /* _RECV_RESID_H */

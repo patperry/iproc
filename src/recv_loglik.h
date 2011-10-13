@@ -69,9 +69,9 @@ struct recv_loglik_sender_imat {
 
 struct recv_loglik_sender {
 	struct recv_model *model;
-	ssize_t isend;
+	size_t isend;
 
-	ssize_t n_last, n;
+	size_t n_last, n;
 	double dev_last, dev_avg;
 	struct array active;
 	struct recv_loglik_sender_score score_last, score_avg;
@@ -83,8 +83,8 @@ struct recv_loglik_info {
 	struct vector score;
 	struct vector mean;
 	double dev;
-	ssize_t nrecv;
-	ssize_t nsend;
+	size_t nrecv;
+	size_t nsend;
 };
 
 struct recv_loglik_cohort {
@@ -112,18 +112,18 @@ void recv_loglik_add_all(struct recv_loglik *ll,
 void recv_loglik_clear(struct recv_loglik *ll);
 
 struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll,
-					  ssize_t c);
-ssize_t recv_loglik_count_sum(const struct recv_loglik *ll);
-ssize_t recv_loglik_count(const struct recv_loglik *ll, ssize_t c);
-double recv_loglik_avg_dev(const struct recv_loglik *ll, ssize_t c);
+					  size_t c);
+size_t recv_loglik_count_sum(const struct recv_loglik *ll);
+size_t recv_loglik_count(const struct recv_loglik *ll, size_t c);
+double recv_loglik_avg_dev(const struct recv_loglik *ll, size_t c);
 void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
-			       ssize_t c, struct vector *y);
+			       size_t c, struct vector *y);
 void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
-				ssize_t c, struct vector *y);
+				size_t c, struct vector *y);
 void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
-			       ssize_t c, struct matrix *y);
+			       size_t c, struct matrix *y);
 
-ssize_t recv_loglik_last_count(const struct recv_loglik *ll);
+size_t recv_loglik_last_count(const struct recv_loglik *ll);
 double recv_loglik_last_dev(const struct recv_loglik *ll);
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
 				struct vector *y);

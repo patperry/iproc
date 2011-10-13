@@ -531,7 +531,7 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct messages *ymsgs,
 		   const struct design *design,
 		   size_t ncohort,
-		   const ptrdiff_t *cohorts, const struct recv_fit_ctrl *ctrl)
+		   const size_t *cohorts, const struct recv_fit_ctrl *ctrl)
 {
 	assert(fit);
 	assert(xmsgs);

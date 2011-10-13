@@ -19,13 +19,13 @@
 
 static size_t enron_nactor;
 static size_t enron_ncohort;
-static ptrdiff_t *enron_cohorts;
+static size_t *enron_cohorts;
 static struct matrix enron_traits;
 
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
-static ptrdiff_t *cohorts;
+static size_t *cohorts;
 static struct matrix recv_traits;
 static const char * const *recv_cohort_names;
 static const char * const *recv_trait_names;
@@ -65,7 +65,7 @@ static void enron_teardown_fixture()
 
 static void basic_setup()
 {
-	ssize_t i, c;
+	size_t i, c;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -81,8 +81,8 @@ static void basic_setup()
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
-	for (c = 0; c < matrix_ncol(&coefs); c++) {
-		for (i = 0; i < matrix_nrow(&coefs); i++) {
+	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
+		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
 			double val = (i + 2 * c % 5 == 0 ? -2.0 :
 				      i + 3 * c % 5 == 1 ?  1.0 :
 				      i + 7 * c % 5 == 2 ? -1.0 :
@@ -106,7 +106,7 @@ static void teardown()
 
 static void hard_setup()
 {
-	ssize_t i, c;
+	size_t i, c;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -122,8 +122,8 @@ static void hard_setup()
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
-	for (c = 0; c < matrix_ncol(&coefs); c++) {
-		for (i = 0; i < matrix_nrow(&coefs); i++) {
+	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
+		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
 			double val = (i + 2 * c % 7 == 0 ?  0.1 :
 				      i + 3 * c % 7 == 1 ?  0.3 :
 				      i + 5 * c % 7 == 2 ? -0.2 :
@@ -143,8 +143,8 @@ static void test_probs()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	ssize_t isend, jrecv, nrecv;
-	ssize_t i, n;
+	size_t isend, jrecv, nrecv;
+	size_t i, n;
 	
 	nrecv = design_recv_count(&design);
 	vector_init(&eta, nrecv);	
@@ -155,7 +155,7 @@ static void test_probs()
 	double alpha = 2.0;
 	double y0 = 3.14;
 
-	ssize_t minprec = DBL_MANT_DIG;
+	size_t minprec = DBL_MANT_DIG;
 	
 	MESSAGES_FOREACH(it, &messages) {
 		// fprintf(stderr, "."); fflush(stderr);
@@ -167,7 +167,7 @@ static void test_probs()
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			ssize_t c = cohorts[isend];
+			size_t c = cohorts[isend];
 			const struct vector col = matrix_col(&coefs, c);
 			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			
@@ -207,7 +207,7 @@ static void test_probs()
 				double p1 = recv_model_prob(&model, isend, jrecv);
 
 				if (fabs(p0) >= 5e-4) {
-					minprec = MIN(minprec, double_eqrel(p0, p1));
+					minprec = MIN(minprec, (size_t)double_eqrel(p0, p1));
 					assert(double_eqrel(p0, p1) >= 38);
 					assert_in_range(double_eqrel(p0, p1), 38, DBL_MANT_DIG);
 				} else {

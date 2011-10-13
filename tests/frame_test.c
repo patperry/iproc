@@ -18,7 +18,7 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
-static ptrdiff_t *cohorts;
+static size_t *cohorts;
 static struct matrix recv_traits;
 static const char * const * recv_cohort_names;
 static const char * const * recv_trait_names;
@@ -27,10 +27,10 @@ static bool has_loops;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
-static ssize_t rv_irecv_index;
-static ssize_t rv_isend_index;
-static ssize_t rv_nrecv_index;
-static ssize_t rv_nsend_index;
+static size_t rv_irecv_index;
+static size_t rv_isend_index;
+static size_t rv_nrecv_index;
+static size_t rv_nsend_index;
 static struct frame frame;
 
 
@@ -76,9 +76,9 @@ static void rv_nsend_teardown()
 static void test_rv_nsend()
 {
 	double t;
-	ssize_t itie, ntie, ito;
-	ssize_t isend;
-	ssize_t jrecv, nrecv = design_recv_count(&design);
+	size_t itie, ntie, ito;
+	size_t isend;
+	size_t jrecv, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnsend;
@@ -143,9 +143,9 @@ static void rv_nrecv_teardown()
 static void test_rv_nrecv()
 {
 	double t;
-	ssize_t itie, ntie, ito;
-	ssize_t isend;
-	ssize_t jrecv, nrecv = design_recv_count(&design);
+	size_t itie, ntie, ito;
+	size_t isend;
+	size_t jrecv, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnrecv;
@@ -218,9 +218,9 @@ static void rv_irecv_teardown()
 static void test_rv_irecv()
 {
 	double t;
-	ssize_t itie, ntie, ito;
-	ssize_t isend;
-	ssize_t jrecv, j, nrecv = design_recv_count(&design);
+	size_t itie, ntie, ito;
+	size_t isend;
+	size_t jrecv, j, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
@@ -245,7 +245,7 @@ static void test_rv_irecv()
 		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 
 		for (j = 0; j < 5; j++) {
-			ssize_t ix = (jrecv + j) % nrecv;
+			size_t ix = (jrecv + j) % nrecv;
 			tmsg = matrix_item(&tlast, ix, isend);
 			if (isfinite(tmsg)) {
 				assert(vector_item(&y, ix) == 1.0);
@@ -300,9 +300,9 @@ static void rv_isend_teardown()
 static void test_rv_isend()
 {
 	double t;
-	ssize_t itie, ntie, ito;
-	ssize_t isend;
-	ssize_t jrecv, j, nrecv = design_recv_count(&design);
+	size_t itie, ntie, ito;
+	size_t isend;
+	size_t jrecv, j, nrecv = design_recv_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
@@ -327,7 +327,7 @@ static void test_rv_isend()
 		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
 		
 		for (j = 0; j < 5; j++) {
-			ssize_t ix = (jrecv + j) % nrecv;
+			size_t ix = (jrecv + j) % nrecv;
 			tmsg = matrix_item(&tlast, isend, ix);
 			if (isfinite(tmsg)) {
 				assert(vector_item(&y, ix) == 1.0);

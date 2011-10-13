@@ -27,7 +27,7 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
-static ptrdiff_t *cohorts;
+static size_t *cohorts;
 static struct matrix enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
@@ -66,7 +66,7 @@ static void setup(void) {
 			    // 29491200.00 // 341.33 day
 		// 58982400.00
 	};
-	ssize_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
+	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
 	struct vector vintvls = vector_make(intvls, nintvls);
 	bool has_reffects = false;
 	bool has_loops = false;
@@ -92,12 +92,12 @@ static void add_constraints(struct recv_fit *fit)
 {
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
 	const struct recv_model *m = ll->model;
-	ssize_t dim = recv_model_dim(m);
-	ssize_t nc = recv_model_cohort_count(m);
+	int dim = recv_model_dim(m);
+	size_t nc = recv_model_cohort_count(m);
 
 	struct svector ce;
 	svector_init(&ce, dim * nc);
-	ssize_t i;
+	int i;
 	char buf[1024];
 	
 	
@@ -109,7 +109,7 @@ static void add_constraints(struct recv_fit *fit)
 		      )) {		
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
 		
@@ -118,25 +118,25 @@ static void add_constraints(struct recv_fit *fit)
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-			snprintf(buf, sizeof(buf), "L*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "L*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-			snprintf(buf, sizeof(buf), "T*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "T*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-			snprintf(buf, sizeof(buf), "J*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "J*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-			snprintf(buf, sizeof(buf), "F*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "F*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			// 2-way interactions
@@ -145,7 +145,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);		
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "LJ*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "LJ*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
@@ -153,7 +153,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "TJ*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "TJ*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
@@ -161,7 +161,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "LF*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "LF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
@@ -169,7 +169,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "TF*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "TF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 			
 			svector_clear(&ce);
@@ -177,7 +177,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
-			snprintf(buf, sizeof(buf), "JF*Var%"SSIZE_FMT"", i + 1);
+			snprintf(buf, sizeof(buf), "JF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
 		
@@ -191,7 +191,7 @@ static void add_constraints(struct recv_fit *fit)
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-		snprintf(buf, sizeof(buf), "LJF*Var%"SSIZE_FMT"", i + 1);
+		snprintf(buf, sizeof(buf), "LJF*Var%d", i + 1);
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
 		
 		svector_clear(&ce);
@@ -203,15 +203,15 @@ static void add_constraints(struct recv_fit *fit)
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
-		snprintf(buf, sizeof(buf), "TJF*Var%"SSIZE_FMT"", i + 1);
+		snprintf(buf, sizeof(buf), "TJF*Var%d", i + 1);
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
 	}
 	svector_deinit(&ce);
 	
 	/* add constraints to make the model identifiable (TODO/not implemented) */
-	//ssize_t nadd = recv_fit_add_constr_identify(fit);
+	//size_t nadd = recv_fit_add_constr_identify(fit);
 	//if (nadd > 0)
-	//	fprintf(stderr, "Adding %"SSIZE_FMT" constraints to make parameters identifiable\n", nadd);
+	//	fprintf(stderr, "Adding %d constraints to make parameters identifiable\n", nadd);
 }
 
 static void teardown(void)
@@ -257,10 +257,10 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	const struct recv_model *m = ll->model;
 	const struct design *d = recv_model_design(m);
 
-	ssize_t ne = recv_fit_constr_count(fit);
-	ssize_t dim = recv_model_dim(m);
-	ssize_t ic, nc = recv_model_cohort_count(m);
-	ssize_t i, n;
+	size_t ne = recv_fit_constr_count(fit);
+	size_t dim = recv_model_dim(m);
+	size_t ic, nc = recv_model_cohort_count(m);
+	size_t i, n;
 
 	YG(yajl_gen_map_open(hand));
 	{
@@ -281,7 +281,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		
 		assert(design_recv_dyn_index(d) == design_recv_traits_dim(d));
 		const struct design_var *rvs;
-		ssize_t irv, nrv;
+		size_t irv, nrv;
 		design_recv_get_dyn_vars(d, &rvs, &nrv);
 		for (irv = 0; irv < nrv; irv++) {
 			n = rvs[irv].dim;
@@ -359,7 +359,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_string(hand, YSTR(COUNT), strlen(COUNT)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
-			ssize_t count = recv_loglik_count(ll, ic);
+			size_t count = recv_loglik_count(ll, ic);
 			YG(yajl_gen_integer(hand, count));
 		}
 		YG(yajl_gen_array_close(hand));
@@ -386,7 +386,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		
 		/* rank */
 		YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
-		ssize_t rank = dim * nc - ne;
+		size_t rank = dim * nc - ne;
 		YG(yajl_gen_integer(hand, rank));
 		
 		/* deviance */
@@ -396,7 +396,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		
 		/* df.residual */
 		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
-		ssize_t ntot = recv_loglik_count_sum(ll);
+		size_t ntot = recv_loglik_count_sum(ll);
 		YG(yajl_gen_integer(hand, ntot - rank));
 		
 		/* null.deviance */
@@ -467,8 +467,8 @@ static void output(const struct recv_fit *fit)
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 		  const struct matrix *coefs0)
 {
-	ssize_t maxit = 100;
-	ssize_t report = 1;
+	size_t maxit = 100;
+	size_t report = 1;
 	bool trace = true;
 	
 	struct recv_fit fit;
@@ -478,7 +478,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
-	ssize_t it = 0;
+	size_t it = 0;
 	
 	//struct matrix coefs0;
 	//matrix_init(&coefs0, dim, nc);
@@ -490,7 +490,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
 			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
 			// const struct recv_loglik_info *info = recv_loglik_info(ll);
-			// ssize_t n = info->nrecv;
+			// size_t n = info->nrecv;
 			// double dev = n * info->dev;
 			// const struct vector *score = &info->score;
 			// double ngrad = vector_max_abs(score);
@@ -573,8 +573,8 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	if (!vnrow || !vncol || !vdata)
 		goto cleanup_yajl;
 	
-	ssize_t nrow = YAJL_GET_INTEGER(vnrow);
-	ssize_t ncol = YAJL_GET_INTEGER(vncol);
+	long long nrow = YAJL_GET_INTEGER(vnrow);
+	long long ncol = YAJL_GET_INTEGER(vncol);
 	size_t i, n = nrow * ncol;
 	
 	if (nrow < 0 || ncol < 0)
@@ -645,7 +645,7 @@ static struct options parse_options(int argc, char **argv)
 			if (optarg) {
 				opts.seed = (int32_t)strtol(optarg, NULL, 10);
 			}
-			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", (ssize_t)opts.seed);
+			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", (size_t)opts.seed);
 			fflush(stderr);
 			break;
 		 default:

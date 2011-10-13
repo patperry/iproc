@@ -6,33 +6,33 @@
 
 struct message {
 	double time;
-	ssize_t from;
-	ssize_t *to;
-	ssize_t nto;
+	size_t from;
+	size_t *to;
+	size_t nto;
 	intptr_t attr;
 };
 
 struct message_rep {
 	struct message message;
-	ssize_t ito;
+	size_t ito;
 };
 
 struct messages {
 	struct array message_reps;
 	struct array recipients;
 	struct refcount refcount;
-	ssize_t nrecv;
+	size_t nrecv;
 	double tlast;
-	ssize_t max_from;
-	ssize_t max_to;
-	ssize_t max_nto;
+	size_t max_from;
+	size_t max_to;
+	size_t max_nto;
 	bool to_cached;
 };
 
 struct messages_iter {
 	struct messages *messages;
-	ssize_t offset;
-	ssize_t ntie;
+	ptrdiff_t offset;
+	size_t ntie;
 	struct message_rep *message_rep;
 };
 
@@ -49,17 +49,17 @@ struct messages *messages_alloc();
 struct messages *messages_ref(struct messages *msgs);
 void messages_free(struct messages *msgs);
 
-ssize_t messages_count(const struct messages *msgs);
-ssize_t messages_recv_count(const struct messages *msgs);
+size_t messages_count(const struct messages *msgs);
+size_t messages_recv_count(const struct messages *msgs);
 double messages_tlast(const struct messages *msgs);
 void messages_add(struct messages *msgs, double time,
-		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr);
+		  size_t from, size_t *to, size_t nto, intptr_t attr);
 
-struct message *messages_at(const struct messages *msgs, ssize_t i);
+struct message *messages_at(const struct messages *msgs, size_t i);
 
-ssize_t messages_max_from(const struct messages *msgs);
-ssize_t messages_max_to(const struct messages *msgs);
-ssize_t messages_max_nto(const struct messages *msgs);
+size_t messages_max_from(const struct messages *msgs);
+size_t messages_max_to(const struct messages *msgs);
+size_t messages_max_nto(const struct messages *msgs);
 
 struct messages_iter messages_iter_make(const struct messages *msgs);
 void messages_iter_reset(struct messages_iter *it);

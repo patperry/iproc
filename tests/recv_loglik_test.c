@@ -22,7 +22,7 @@
 
 static size_t enron_nactor;
 static size_t enron_ncohort;
-static ptrdiff_t *enron_cohorts;
+static size_t *enron_cohorts;
 static struct matrix enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
@@ -31,7 +31,7 @@ static const char * const *enron_trait_names;
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
-static ptrdiff_t *cohorts;
+static size_t *cohorts;
 static struct matrix recv_traits;
 static const char * const *recv_trait_names;
 static struct vector intervals;
@@ -72,7 +72,7 @@ static void enron_teardown_fixture()
 
 static void basic_setup()
 {
-	ssize_t c, i;
+	size_t c, i;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -88,8 +88,8 @@ static void basic_setup()
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), ncohort);
 	
-	for (c = 0; c < matrix_ncol(&coefs); c++) {	
-		for (i = 0; i < matrix_nrow(&coefs); i++) {
+	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
+		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
 			double val = (i + (c + 1) % 5 == 0 ? -2.0 :
 				      i + 2 * (c + 1) % 5 == 1 ?  1.0 :
 				      i + 3 * (c + 1) % 5 == 2 ? -1.0 :
@@ -104,7 +104,7 @@ static void basic_setup()
 
 static void hard_setup()
 {	
-	ssize_t i, c;
+	size_t i, c;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
@@ -119,8 +119,8 @@ static void hard_setup()
 	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, &design);
 	matrix_init(&coefs, design_recv_dim(&design), ncohort);
-	for (c = 0; c < matrix_ncol(&coefs); c++) {	
-		for (i = 0; i < matrix_nrow(&coefs); i++) {
+	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
+		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
 			double val = (i + (c + 1) % 7 == 0 ?  0.1 :
 				      i + 2 * (c + 1) % 7 == 1 ?  0.3 :
 				      i + 3 * (c + 1) % 7 == 2 ? -0.2 :
@@ -149,7 +149,7 @@ static void test_dev()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	ssize_t i, itie, ntie, nrecv, nmsg;
+	size_t i, itie, ntie, nrecv, nmsg;
 	double last_dev0, last_dev1;
 	double mean_dev0, mean_dev1, old;
 	
@@ -185,8 +185,8 @@ static void test_dev()
 
 			assert_in_range(double_eqrel(last_dev0, last_dev1), 53, DBL_MANT_DIG);
 			
-			ssize_t c = cohorts[msg->from];
-			ssize_t n = recv_loglik_count(&recv_loglik, c);
+			size_t c = cohorts[msg->from];
+			size_t n = recv_loglik_count(&recv_loglik, c);
 			old = vector_item(&mean_dev_old, c);
 			mean_dev0 = old + msg->nto * (((last_dev0 / msg->nto) - old) / n);
 			mean_dev1 = recv_loglik_avg_dev(&recv_loglik, c);
@@ -207,10 +207,10 @@ static void test_mean()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	ssize_t isend;
-	ssize_t itie, ntie;
-	ssize_t index, dim = design_recv_dim(&design);
-	ssize_t nmsg;
+	size_t isend;
+	size_t itie, ntie;
+	size_t index, dim = design_recv_dim(&design);
+	size_t nmsg;
 	
 	vector_init(&probs, design_recv_count(&design));
 	vector_init(&mean0, design_recv_dim(&design));
@@ -238,8 +238,8 @@ static void test_mean()
 				goto out;
 
 			isend = msg->from;
-			ssize_t c = recv_model_cohort(&model, isend);
-			ssize_t n = recv_loglik_count(&recv_loglik, c);			
+			size_t c = recv_model_cohort(&model, isend);
+			size_t n = recv_loglik_count(&recv_loglik, c);			
 			
 			vector_fill(&probs, 0.0);
 			recv_model_axpy_probs(1.0, &model, isend, &probs);
@@ -300,10 +300,10 @@ static void test_score()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	ssize_t isend, c, ito;
-	ssize_t itie, ntie;
-	ssize_t index, dim = design_recv_dim(&design);
-	ssize_t n, nmsg;
+	size_t isend, c, ito;
+	size_t itie, ntie;
+	size_t index, dim = design_recv_dim(&design);
+	size_t n, nmsg;
 	
 	svector_init(&nrecv, design_recv_count(&design));
 	vector_init(&score0, design_recv_dim(&design));
@@ -390,9 +390,9 @@ static void test_imat()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	ssize_t isend, jrecv, nrecv = design_recv_count(&design);
-	ssize_t itie, ntie, c, n, nmsg;
-	ssize_t index1, index2, dim = design_recv_dim(&design);
+	size_t isend, jrecv, nrecv = design_recv_count(&design);
+	size_t itie, ntie, c, n, nmsg;
+	size_t index1, index2, dim = design_recv_dim(&design);
 	
 	vector_init(&mean, dim);
 	vector_init(&y, dim);	

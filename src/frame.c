@@ -12,7 +12,7 @@
 static void frame_actor_init(struct frame_actor *fa)
 {
 	assert(fa);
-	array_init(&fa->message_ixs, sizeof(ssize_t));
+	array_init(&fa->message_ixs, sizeof(size_t));
 }
 
 static void frame_actor_clear(struct frame_actor *fa)
@@ -27,13 +27,12 @@ static void frame_actor_deinit(struct frame_actor *fa)
 	array_deinit(&fa->message_ixs);
 }
 
-static void frame_actors_init(struct frame_actor **pfas, ssize_t n)
+static void frame_actors_init(struct frame_actor **pfas, size_t n)
 {
 	assert(pfas);
-	assert(n >= 0);
 
 	struct frame_actor *fas = xcalloc(n, sizeof(fas[0]));
-	ssize_t i;
+	size_t i;
 	for (i = 0; i < n; i++) {
 		frame_actor_init(&fas[i]);
 	}
@@ -41,23 +40,21 @@ static void frame_actors_init(struct frame_actor **pfas, ssize_t n)
 	*pfas = fas;
 }
 
-static void frame_actors_clear(struct frame_actor *fas, ssize_t n)
+static void frame_actors_clear(struct frame_actor *fas, size_t n)
 {
 	assert(fas);
-	assert(n >= 0);
 
-	ssize_t i;
+	size_t i;
 	for (i = 0; i < n; i++) {
 		frame_actor_clear(&fas[i]);
 	}
 }
 
-static void frame_actors_deinit(struct frame_actor *fas, ssize_t n)
+static void frame_actors_deinit(struct frame_actor *fas, size_t n)
 {
 	assert(fas);
-	assert(n >= 0);
 
-	ssize_t i;
+	size_t i;
 	for (i = 0; i < n; i++) {
 		frame_actor_deinit(&fas[i]);
 	}
@@ -68,57 +65,57 @@ static void frame_actors_deinit(struct frame_actor *fas, ssize_t n)
 static void frame_senders_init(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_send_count(d);
+	size_t n = design_send_count(d);
 	frame_actors_init(&f->senders, n);
 }
 
 static void frame_senders_clear(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_send_count(d);
+	size_t n = design_send_count(d);
 	frame_actors_clear(f->senders, n);
 }
 
 static void frame_senders_deinit(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_send_count(d);
+	size_t n = design_send_count(d);
 	frame_actors_deinit(f->senders, n);
 }
 
-static struct frame_actor *frame_senders_item(const struct frame *f, ssize_t i)
+static struct frame_actor *frame_senders_item(const struct frame *f, size_t i)
 {
 	assert(f);
-	assert(0 <= i && i < frame_senders_count(f));
+	assert(i < frame_senders_count(f));
 	return &f->senders[i];
 }
 
 static void frame_receivers_init(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_recv_count(d);
+	size_t n = design_recv_count(d);
 	frame_actors_init(&f->receivers, n);
 }
 
 static void frame_receivers_clear(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_recv_count(d);
+	size_t n = design_recv_count(d);
 	frame_actors_clear(f->receivers, n);
 }
 
 static void frame_receivers_deinit(struct frame *f)
 {
 	const struct design *d = frame_design(f);
-	ssize_t n = design_recv_count(d);
+	size_t n = design_recv_count(d);
 	frame_actors_deinit(f->receivers, n);
 }
 
 static struct frame_actor *frame_receivers_item(const struct frame *f,
-						ssize_t i)
+						size_t i)
 {
 	assert(f);
-	assert(0 <= i && i < frame_receivers_count(f));
+	assert(i < frame_receivers_count(f));
 	return &f->receivers[i];
 }
 
@@ -128,7 +125,7 @@ static void frame_vars_init(struct frame *f)
 	assert(frame_design(f));
 
 	const struct design *d = frame_design(f);
-	ssize_t i, n = array_count(&d->recv_vars);
+	size_t i, n = array_count(&d->recv_vars);
 	struct design_var *dvs = array_to_ptr(&d->recv_vars);
 	struct frame_var *fvs = xcalloc(n, sizeof(*fvs));
 
@@ -151,7 +148,7 @@ static void frame_vars_deinit(struct frame *f)
 	assert(f);
 
 	const struct design *d = frame_design(f);
-	ssize_t i, n = array_count(&d->recv_vars);
+	size_t i, n = array_count(&d->recv_vars);
 	struct frame_var *fvs = f->vars;
 
 	for (i = 0; i < n; i++) {
@@ -210,8 +207,8 @@ static void recv_frame_deinit(struct recv_frame *rf)
 	free(rf->active);
 }
 
-static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
-				    ssize_t dyn_dim)
+static struct vector *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
+				    size_t dyn_dim)
 {
 	assert(rf);
 
@@ -229,7 +226,7 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, ssize_t jrecv,
 	}
 
 	struct vector *dx = &rf->dx[ix];
-	assert(vector_dim(dx) == dyn_dim);
+	assert((size_t)vector_dim(dx) == dyn_dim);
 	return dx;
 }
 
@@ -238,7 +235,7 @@ static void recv_frames_init(struct frame *f)
 	assert(f);
 
 	const struct design *d = frame_design(f);
-	ssize_t isend, nsend = design_send_count(d);
+	size_t isend, nsend = design_send_count(d);
 
 	struct recv_frame *rfs = xcalloc(nsend, sizeof(struct recv_frame));
 
@@ -252,7 +249,7 @@ static void recv_frames_deinit(struct frame *f)
 {
 	assert(f);
 	const struct design *d = frame_design(f);
-	ssize_t isend, nsend = design_send_count(d);
+	size_t isend, nsend = design_send_count(d);
 
 	struct recv_frame *rfs = f->recv_frames;
 
@@ -266,7 +263,7 @@ static void recv_frames_clear(struct frame *f)
 {
 	assert(f);
 	const struct design *d = frame_design(f);
-	ssize_t isend, nsend = design_send_count(d);
+	size_t isend, nsend = design_send_count(d);
 	struct recv_frame *rfs = f->recv_frames;
 
 	for (isend = 0; isend < nsend; isend++) {
@@ -274,10 +271,10 @@ static void recv_frames_clear(struct frame *f)
 	}
 }
 
-static struct recv_frame *recv_frames_item(const struct frame *f, ssize_t isend)
+static struct recv_frame *recv_frames_item(const struct frame *f, size_t isend)
 {
 	assert(f);
-	assert(0 <= isend && isend < design_send_count(frame_design(f)));
+	assert(isend < design_send_count(frame_design(f)));
 
 	struct recv_frame *rf = &f->recv_frames[isend];
 	return rf;
@@ -370,7 +367,7 @@ void frame_remove_observer(struct frame *f, void *udata)
 	assert(f);
 	assert(udata);
 
-	ssize_t pos =
+	ptrdiff_t pos =
 	    array_find_last_index(&f->observers, observer_equals, udata);
 	if (pos >= 0) {
 		array_remove_at(&f->observers, pos);
@@ -392,9 +389,8 @@ void frame_add(struct frame *f, const struct message *msg)
 
 static bool has_pending_messages(const struct frame *f)
 {
-	assert(0 <= f->cur_fmsg
-	       && f->cur_fmsg <= array_count(&f->frame_messages));
-	return f->cur_fmsg < array_count(&f->frame_messages);
+	assert(f->cur_fmsg <= (size_t)array_count(&f->frame_messages));
+	return f->cur_fmsg < (size_t)array_count(&f->frame_messages);
 }
 
 static void process_current_messages(struct frame *f)
@@ -410,7 +406,7 @@ static void process_current_messages(struct frame *f)
 	double tnext = frame_time(f) + delta;
 
 	const struct frame_message *fmsgs = array_to_ptr(&f->frame_messages);
-	ssize_t imsg, nmsg = array_count(&f->frame_messages);
+	size_t imsg, nmsg = array_count(&f->frame_messages);
 	for (imsg = f->cur_fmsg; imsg < nmsg; imsg++) {
 		const struct frame_message *fmsg = &fmsgs[imsg];
 		const struct message *msg = fmsg->message;
@@ -422,7 +418,7 @@ static void process_current_messages(struct frame *f)
 		array_add(&fa->message_ixs, &imsg);
 
 		// add the message to the receiver histories
-		ssize_t ito, nto = msg->nto;
+		size_t ito, nto = msg->nto;
 		for (ito = 0; ito < nto; ito++) {
 			fa = frame_receivers_item(f, msg->to[ito]);
 			array_add(&fa->message_ixs, &imsg);
@@ -436,7 +432,7 @@ static void process_current_messages(struct frame *f)
 			pqueue_push(&f->events, &e);
 		}
 #ifndef NDEBUG
-		ssize_t nmsg1 = array_count(&f->frame_messages);
+		size_t nmsg1 = array_count(&f->frame_messages);
 		double time = frame_time(f);
 #endif
 
@@ -474,19 +470,19 @@ static void process_event(struct frame *f)
 	struct frame_event *e = pqueue_top(&f->events);
 
 	// advance the message interval
-	ssize_t imsg = e->imsg;
+	size_t imsg = e->imsg;
 	struct frame_message *fmsg = frame_messages_item(f, imsg);
 	const struct message *msg = fmsg->message;
 
-	ssize_t intvl0 = fmsg->interval;
-	ssize_t intvl = intvl0 + 1;
+	size_t intvl0 = fmsg->interval;
+	size_t intvl = intvl0 + 1;
 	fmsg->interval = intvl;
 
 	// update the event queue
 	const struct design *d = frame_design(f);
 	const struct vector *intvls = design_intervals(d);
 
-	if (intvl < vector_dim(intvls)) {
+	if (intvl < (size_t)vector_dim(intvls)) {
 		double delta = vector_item(intvls, intvl);
 		double tnext = msg->time + delta;
 		e->time = tnext;
@@ -500,7 +496,7 @@ static void process_event(struct frame *f)
 #endif
 
 	//fprintf(stderr, "-> message_advance %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
-	//ssize_t ito;
+	//size_t ito;
 
 	//if (msg->nto > 0)
 	//      fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
@@ -530,7 +526,7 @@ void frame_advance(struct frame *f, double time)
 	assert(f);
 	assert(time >= frame_time(f));
 
-	//fprintf(stderr, "=============== Advance (%"SSIZE_FMT") ===============\n", (ssize_t)time);
+	//fprintf(stderr, "=============== Advance (%"SSIZE_FMT") ===============\n", (size_t)time);
 
 	if (frame_time(f) < time)
 		process_current_messages(f);
@@ -546,15 +542,15 @@ void frame_advance(struct frame *f, double time)
 	f->time = time;
 }
 
-void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
+void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
 		       const struct svector *delta)
 {
 #ifndef NDEBUG
 	const struct design *d = frame_design(f);
 #endif
-	assert(0 <= isend && isend < design_send_count(d));
-	assert(0 <= jrecv && jrecv < design_recv_count(d));
-	assert(svector_dim(delta) == design_recv_dyn_dim(d));
+	assert(isend < design_send_count(d));
+	assert(jrecv < design_recv_count(d));
+	assert((size_t)svector_dim(delta) == design_recv_dyn_dim(d));
 
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
 	svector_axpy(1.0, delta, dx);
@@ -571,7 +567,7 @@ void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 	}
 }
 
-//struct vector frame_send_x(struct frame *f, ssize_t isend)
+//struct vector frame_send_x(struct frame *f, size_t isend)
 //{
 //      assert(f);
 //      assert(0 <= isend && isend < design_send_count(f->design));
@@ -579,25 +575,25 @@ void frame_recv_update(struct frame *f, ssize_t isend, ssize_t jrecv,
 //      return matrix_col(&f->send_xt, isend);
 //}
 
-const struct vector *frame_recv_dx(const struct frame *f, ssize_t isend,
-				   ssize_t jrecv)
+const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
+				   size_t jrecv)
 {
 	assert(f);
-	assert(0 <= isend && isend < design_send_count(f->design));
-	assert(0 <= jrecv && jrecv < design_recv_count(f->design));
+	assert(isend < design_send_count(f->design));
+	assert(jrecv < design_recv_count(f->design));
 
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 	const struct design *d = frame_design(f);
-	ssize_t dyn_dim = design_recv_dyn_dim(d);
+	size_t dyn_dim = design_recv_dyn_dim(d);
 	return recv_frame_dx(rf, jrecv, dyn_dim);
 }
 
-void frame_recv_get_dx(const struct frame *f, ptrdiff_t isend,
-		       struct vector **dxp, ptrdiff_t **activep,
+void frame_recv_get_dx(const struct frame *f, size_t isend,
+		       struct vector **dxp, size_t **activep,
 		       size_t *nactivep)
 {
 	assert(f);
-	assert(0 <= isend && isend < design_send_count(f->design));
+	assert(isend < design_send_count(f->design));
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 	*dxp = rf->dx;
 	*activep = rf->active;
@@ -651,26 +647,26 @@ void frame_send_muls(double alpha, enum blas_trans trans,
  */
 
 void frame_recv_mul(double alpha, enum blas_trans trans,
-		    const struct frame *f, ssize_t isend,
+		    const struct frame *f, size_t isend,
 		    const struct vector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_send_count(f->design));
+	assert(isend < design_send_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
-	       || vector_dim(x) == design_recv_dim(f->design));
+	       || (size_t)vector_dim(x) == design_recv_dim(f->design));
 	assert(trans != BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_count(f->design));
+	       || (size_t)vector_dim(y) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || vector_dim(x) == design_recv_count(f->design));
+	       || (size_t)vector_dim(x) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_dim(f->design));
+	       || (size_t)vector_dim(y) == design_recv_dim(f->design));
 
 	const struct design *design = f->design;
-	ssize_t off = design_recv_dyn_index(design);
-	ssize_t dim = design_recv_dyn_dim(design);
+	size_t off = design_recv_dyn_index(design);
+	size_t dim = design_recv_dyn_dim(design);
 
 	design_recv_mul0(alpha, trans, f->design, x, beta, y);
 	if (trans == BLAS_NOTRANS) {
@@ -693,26 +689,26 @@ void frame_recv_mul(double alpha, enum blas_trans trans,
 }
 
 void frame_recv_muls(double alpha, enum blas_trans trans,
-		     const struct frame *f, ssize_t isend,
+		     const struct frame *f, size_t isend,
 		     const struct svector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_send_count(f->design));
+	assert(isend < design_send_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
-	       || svector_dim(x) == design_recv_dim(f->design));
+	       || (size_t)svector_dim(x) == design_recv_dim(f->design));
 	assert(trans != BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_count(f->design));
+	       || (size_t)vector_dim(y) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || svector_dim(x) == design_recv_count(f->design));
+	       || (size_t)svector_dim(x) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_dim(f->design));
+	       || (size_t)vector_dim(y) == design_recv_dim(f->design));
 
 	const struct design *design = f->design;
-	ssize_t off = design_recv_dyn_index(design);
-	ssize_t dim = design_recv_dyn_dim(design);
+	size_t off = design_recv_dyn_index(design);
+	size_t dim = design_recv_dyn_dim(design);
 
 	design_recv_muls0(alpha, trans, f->design, x, beta, y);
 
@@ -722,9 +718,9 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 
 		svector_init(&xsub, dim);
 		SVECTOR_FOREACH(it, x) {
-			ssize_t i = SVECTOR_IDX(it) - off;
-			if (0 <= i && i < dim) {
-				svector_set_item(&xsub, i, SVECTOR_VAL(it));
+			size_t i = SVECTOR_IDX(it);
+			if (off <= i && i < off + dim) {
+				svector_set_item(&xsub, i - off, SVECTOR_VAL(it));
 			}
 		}
 		frame_recv_dmuls(alpha, trans, f, isend, &xsub, 1.0, y);
@@ -736,22 +732,22 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 }
 
 void frame_recv_dmul(double alpha, enum blas_trans trans,
-		     const struct frame *f, ssize_t isend,
+		     const struct frame *f, size_t isend,
 		     const struct vector *x, double beta, struct svector *y)
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_send_count(f->design));
+	assert(isend < design_send_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
-	       || vector_dim(x) == design_recv_dyn_dim(f->design));
+	       || (size_t)vector_dim(x) == design_recv_dyn_dim(f->design));
 	assert(trans != BLAS_NOTRANS
-	       || svector_dim(y) == design_recv_count(f->design));
+	       || (size_t)svector_dim(y) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || vector_dim(x) == design_recv_count(f->design));
+	       || (size_t)vector_dim(x) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || svector_dim(y) == design_recv_dyn_dim(f->design));
+	       || (size_t)svector_dim(y) == design_recv_dyn_dim(f->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -761,14 +757,14 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 	}
 
 	const struct design *design = f->design;
-	ssize_t dim = design_recv_dyn_dim(design);
-	ssize_t i;
+	size_t dim = design_recv_dyn_dim(design);
+	size_t i;
 
 	if (dim == 0)
 		return;
 
 	const struct recv_frame *rf = recv_frames_item(f, isend);
-	ssize_t jrecv;
+	size_t jrecv;
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {
@@ -805,22 +801,22 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 }
 
 void frame_recv_dmuls(double alpha, enum blas_trans trans,
-		      const struct frame *f, ssize_t isend,
+		      const struct frame *f, size_t isend,
 		      const struct svector *x, double beta, struct vector *y)
 {
 	assert(f);
 	assert(f->design);
-	assert(0 <= isend && isend < design_send_count(f->design));
+	assert(isend < design_send_count(f->design));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
-	       || svector_dim(x) == design_recv_dyn_dim(f->design));
+	       || (size_t)svector_dim(x) == design_recv_dyn_dim(f->design));
 	assert(trans != BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_count(f->design));
+	       || (size_t)vector_dim(y) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || svector_dim(x) == design_recv_count(f->design));
+	       || (size_t)svector_dim(x) == design_recv_count(f->design));
 	assert(trans == BLAS_NOTRANS
-	       || vector_dim(y) == design_recv_dyn_dim(f->design));
+	       || (size_t)vector_dim(y) == design_recv_dyn_dim(f->design));
 
 	/* y := beta y */
 	if (beta == 0.0) {
@@ -830,13 +826,13 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 	}
 
 	const struct design *design = f->design;
-	ssize_t dim = design_recv_dyn_dim(design);
+	size_t dim = design_recv_dyn_dim(design);
 
 	if (dim == 0)
 		return;
 
 	const struct recv_frame *rf = recv_frames_item(f, isend);
-	ssize_t jrecv;
+	size_t jrecv;
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {

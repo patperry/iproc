@@ -6,9 +6,9 @@
 #include "vector.h"
 #include "recv_boot.h"
 
-static ssize_t sample1(const double *probs, ssize_t n, dsfmt_t * dsfmt)
+static size_t sample1(const double *probs, size_t n, dsfmt_t * dsfmt)
 {
-	ssize_t i;
+	size_t i;
 	double u = dsfmt_genrand_close_open(dsfmt);
 	double sum = 0;
 
@@ -21,9 +21,9 @@ static ssize_t sample1(const double *probs, ssize_t n, dsfmt_t * dsfmt)
 	return i;
 }
 
-static bool unique(ssize_t *vals, ssize_t len)
+static bool unique(size_t *vals, size_t len)
 {
-	ssize_t i, j;
+	size_t i, j;
 
 	if (len == 1)
 		return true;
@@ -31,7 +31,7 @@ static bool unique(ssize_t *vals, ssize_t len)
 		return vals[0] != vals[1];
 
 	for (i = 0; i < len; i++) {
-		ssize_t val = vals[i];
+		size_t val = vals[i];
 
 		for (j = i + 1; j < len; j++) {
 			if (val == vals[j])
@@ -41,11 +41,11 @@ static bool unique(ssize_t *vals, ssize_t len)
 	return true;
 }
 
-static bool sample_subset(const double *probs, ssize_t n, dsfmt_t * dsfmt,
-			  ssize_t maxntry, ssize_t *out, ssize_t nout)
+static bool sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
+			  size_t maxntry, size_t *out, size_t nout)
 {
-	ssize_t itry;
-	ssize_t i;
+	size_t itry;
+	size_t i;
 
 	for (itry = 0; itry < maxntry; itry++) {
 		for (i = 0; i < nout; i++) {
@@ -61,29 +61,29 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct messages *msgs,
 		    const struct design *design,
 		    size_t ncohort,
-		    const ptrdiff_t *cohorts,
+		    const size_t *cohorts,
 		    const struct matrix *coefs, dsfmt_t * dsfmt)
 {
 	messages_init(&boot->messages);
 	frame_init(&boot->frame, design);
 	recv_model_init(&boot->model, &boot->frame, ncohort, cohorts, coefs);
-	ssize_t nrecv = design_recv_count(design);
+	size_t nrecv = design_recv_count(design);
 
-	ssize_t max_nto = messages_max_nto(msgs);
-	ssize_t *to = xcalloc(max_nto, sizeof(to[0]));
+	size_t max_nto = messages_max_nto(msgs);
+	size_t *to = xcalloc(max_nto, sizeof(to[0]));
 
 	struct vector probs;
 
 	struct messages_iter it;
 	const struct message *msg;
 	double t;
-	ssize_t i, n;
-	ssize_t from, nto;
+	size_t i, n;
+	size_t from, nto;
 
 	vector_init(&probs, nrecv);
 	double *p = vector_to_ptr(&probs);
 
-	ssize_t maxntry = 100000000;
+	size_t maxntry = 100000000;
 
 	MESSAGES_FOREACH(it, msgs) {
 		t = MESSAGES_TIME(it);
@@ -108,7 +108,7 @@ void recv_boot_init(struct recv_boot *boot,
 					SSIZE_FMT "\n", nto);
 
 				printf("probs:\n");
-				for (i = 0; i < vector_dim(&probs); i++) {
+				for (i = 0; i < (size_t)vector_dim(&probs); i++) {
 					printf("%.10e, ",
 					       vector_item(&probs, i));
 				}

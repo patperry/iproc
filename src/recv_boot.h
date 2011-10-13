@@ -22,7 +22,7 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct messages *msgs,
 		    const struct design *design,
 		    size_t ncohort,
-		    const ptrdiff_t *cohorts,
+		    const size_t *cohorts,
 		    const struct matrix *coefs, dsfmt_t * dsfmt);
 
 void recv_boot_deinit(struct recv_boot *boot);

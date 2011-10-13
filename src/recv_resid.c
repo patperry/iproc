@@ -5,7 +5,7 @@
 #include "recv_resid.h"
 
 static void recv_resid_count_init(struct recv_resid_count *c,
-				  ssize_t nsend, ssize_t nrecv)
+				  size_t nsend, size_t nrecv)
 {
 	matrix_init(&c->dyad, nsend, nrecv);
 	matrix_init(&c->dyad_trans, nrecv, nsend);
@@ -43,14 +43,14 @@ static void recv_resid_count_compute_dyad(struct recv_resid_count *c)
 
 static void update_obs(struct recv_resid_count *obs, const struct message *msg)
 {
-	ssize_t isend = msg->from;
-	ssize_t ito, nto = msg->nto;
+	size_t isend = msg->from;
+	size_t ito, nto = msg->nto;
 
 	double *ps = vector_item_ptr(&obs->send, isend);
 	*ps += nto;
 
 	for (ito = 0; ito < nto; ito++) {
-		ssize_t jrecv = msg->to[ito];
+		size_t jrecv = msg->to[ito];
 
 		double *pd = matrix_item_ptr(&obs->dyad_trans, jrecv, isend);
 		*pd += 1.0;
@@ -66,8 +66,8 @@ static void update_obs(struct recv_resid_count *obs, const struct message *msg)
 static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 		       const struct recv_model *model)
 {
-	ssize_t isend = msg->from;
-	ssize_t nto = msg->nto;
+	size_t isend = msg->from;
+	size_t nto = msg->nto;
 
 	exp->tot += nto;
 
@@ -93,7 +93,7 @@ static void recv_resid_set(struct recv_resid *resid,
 
 	struct messages_iter it;
 	MESSAGES_FOREACH(it, msgs) {
-		ssize_t i, n = MESSAGES_COUNT(it);
+		size_t i, n = MESSAGES_COUNT(it);
 		double t = MESSAGES_TIME(it);
 
 		frame_advance(&resid->frame, t);
@@ -114,13 +114,13 @@ void recv_resid_init(struct recv_resid *resid,
 		     const struct messages *msgs,
 		     const struct design *design,
 		     size_t ncohort,
-		     const ptrdiff_t *cohorts, const struct matrix *coefs)
+		     const size_t *cohorts, const struct matrix *coefs)
 {
 	frame_init(&resid->frame, design);
 	recv_model_init(&resid->model, &resid->frame, ncohort, cohorts, coefs);
 
-	ssize_t nsend = design_send_count(design);
-	ssize_t nrecv = design_recv_count(design);
+	size_t nsend = design_send_count(design);
+	size_t nrecv = design_recv_count(design);
 
 	recv_resid_count_init(&resid->obs, nsend, nrecv);
 	recv_resid_count_init(&resid->exp, nsend, nrecv);

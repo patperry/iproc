@@ -84,7 +84,7 @@ struct employee_parse {
 	size_t ncohort;
 	size_t dim;
 	double *traits_t;
-	ptrdiff_t *cohorts;
+	size_t *cohorts;
 	size_t nactor_max;
 
 	ptrdiff_t id;
@@ -124,7 +124,7 @@ static int parse_integer(void *ctx, long long integerVal)
 
 	switch (parse->map_key) {
 	case MAP_KEY_ID:
-		parse->id = (ssize_t)integerVal;
+		parse->id = (ptrdiff_t)integerVal;
 		break;
 	case MAP_KEY_OTHER:
 		break;
@@ -231,10 +231,10 @@ static int parse_end_map(void *ctx)
 		parse->nactor_max = nactor_max;
 	}
 
-	ptrdiff_t id = parse->nactor;
+	size_t id = parse->nactor;
 	double *x = parse->traits_t + id * parse->dim;
 
-	assert(parse->id - 1 == (ptrdiff_t)parse->nactor);
+	assert(parse->id == (ptrdiff_t)parse->nactor + 1);
 	assert(parse->department != DEPARTMENT_NA);
 	assert(parse->gender != GENDER_NA);
 	assert(parse->seniority != SENIORITY_NA);
@@ -309,7 +309,7 @@ static yajl_callbacks parse_callbacks = {
 };
 
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t *ncohortp, ptrdiff_t **cohortsp,
+			       size_t *ncohortp, size_t **cohortsp,
 			       const char *const **cohort_namesp,
 			       struct matrix *traits,
 			       const char *const **trait_namesp, FILE * stream)
@@ -389,7 +389,7 @@ int enron_employees_init_fread(size_t *nactorp,
 }
 
 int enron_employees_init(size_t *nactorp,
-			 size_t *ncohortp, ptrdiff_t **cohortsp,
+			 size_t *ncohortp, size_t **cohortsp,
 			 const char *const **cohort_namesp,
 			 struct matrix *traits, const char *const **trait_namesp)
 {

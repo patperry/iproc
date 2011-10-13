@@ -11,13 +11,13 @@ void messages_init(struct messages *msgs)
 	assert(msgs);
 
 	array_init(&msgs->message_reps, sizeof(struct message_rep));
-	array_init(&msgs->recipients, sizeof(ssize_t));
+	array_init(&msgs->recipients, sizeof(size_t));
 	refcount_init(&msgs->refcount);
 
 	msgs->nrecv = 0;
 	msgs->tlast = -INFINITY;
-	msgs->max_to = -1;
-	msgs->max_from = -1;
+	msgs->max_to = 0;
+	msgs->max_from = 0;
 	msgs->max_nto = 0;
 	msgs->to_cached = false;
 }
@@ -56,13 +56,13 @@ void messages_free(struct messages *msgs)
 	}
 }
 
-ssize_t messages_count(const struct messages *msgs)
+size_t messages_count(const struct messages *msgs)
 {
 	assert(msgs);
 	return array_count(&msgs->message_reps);
 }
 
-ssize_t messages_recv_count(const struct messages *msgs)
+size_t messages_recv_count(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->nrecv;
@@ -74,16 +74,16 @@ double messages_tlast(const struct messages *msgs)
 	return msgs->tlast;
 }
 
-struct message *messages_at(const struct messages *msgs, ssize_t i)
+struct message *messages_at(const struct messages *msgs, size_t i)
 {
 	assert(msgs);
-	assert(0 <= i && i < messages_count(msgs));
+	assert(i < messages_count(msgs));
 
 	struct message_rep *rep = array_item(&msgs->message_reps, i);
 
 	if (!msgs->to_cached) {
-		ssize_t msg_ito = rep->ito;
-		ssize_t *msg_to = array_item(&msgs->recipients, msg_ito);
+		size_t msg_ito = rep->ito;
+		size_t *msg_to = array_item(&msgs->recipients, msg_ito);
 		rep->message.to = msg_to;
 	}
 
@@ -91,24 +91,20 @@ struct message *messages_at(const struct messages *msgs, ssize_t i)
 }
 
 void messages_add(struct messages *msgs, double time,
-		  ssize_t from, ssize_t *to, ssize_t nto, intptr_t attr)
+		  size_t from, size_t *to, size_t nto, intptr_t attr)
 {
 	assert(msgs);
 	assert(time >= messages_tlast(msgs));
-	assert(from >= 0);
-	assert(nto >= 0);
 	assert(to || nto == 0);
 
 	struct array *message_reps = &msgs->message_reps;
 	struct array *recipients = &msgs->recipients;
 
-	ssize_t ito = array_count(recipients);
+	size_t ito = array_count(recipients);
 	struct message_rep m = { {time, from, NULL, nto, attr}, ito };
-	ssize_t i;
+	size_t i;
 
 	for (i = 0; i < nto; i++) {
-		assert(to[i] >= 0);
-
 		array_add(recipients, to + i);	// always succeeds
 		if (to[i] > msgs->max_to)
 			msgs->max_to = to[i];
@@ -125,19 +121,19 @@ void messages_add(struct messages *msgs, double time,
 	msgs->nrecv += nto;
 }
 
-ssize_t messages_max_from(const struct messages *msgs)
+size_t messages_max_from(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_from;
 }
 
-ssize_t messages_max_to(const struct messages *msgs)
+size_t messages_max_to(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_to;
 }
 
-ssize_t messages_max_nto(const struct messages *msgs)
+size_t messages_max_nto(const struct messages *msgs)
 {
 	assert(msgs);
 	return msgs->max_nto;
@@ -167,26 +163,26 @@ void messages_iter_reset(struct messages_iter *it)
 bool messages_iter_advance(struct messages_iter *it)
 {
 	assert(it);
-	assert(it->offset < messages_count(it->messages));
+	assert(it->offset < (ptrdiff_t)messages_count(it->messages));
 
-	ssize_t offset = it->offset + it->ntie;
+	size_t offset = it->offset + it->ntie;
 
 	struct array *message_reps = &it->messages->message_reps;
 	struct array *recipients = &it->messages->recipients;
-	ssize_t n = array_count(message_reps);
+	size_t n = array_count(message_reps);
 	bool has_next = offset < n;
 
 	if (has_next) {
 		struct message_rep *message_rep =
 		    array_item(message_reps, offset);
 		double time = message_rep[0].message.time;
-		ssize_t ntie_max = n - offset;
-		ssize_t ntie = 0;
+		size_t ntie_max = n - offset;
+		size_t ntie = 0;
 
 		do {
 			if (!it->messages->to_cached) {
-				ssize_t msg_ito = message_rep[ntie].ito;
-				ssize_t *msg_to =
+				size_t msg_ito = message_rep[ntie].ito;
+				size_t *msg_to =
 				    array_item(recipients, msg_ito);
 				message_rep[ntie].message.to = msg_to;
 			}

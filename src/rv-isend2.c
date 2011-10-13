@@ -32,28 +32,27 @@ static void isend2_message_add(void *udata, struct frame *f,
 	assert(f);
 	assert(msg);
 	assert(fv->design);
-	assert(fv->design->dyn_index >= 0);
 	assert(fv->design->dyn_index + fv->design->dim
 	       <= design_recv_dyn_dim(f->design));
 
-	ssize_t dyn_index = fv->design->dyn_index;
-	ssize_t *imsg, i, n;
+	size_t dyn_index = fv->design->dyn_index;
+	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
 	ssize_t dx_index[1] = { dyn_index };
-	ssize_t dx_nnz = 1;
-	ssize_t dx_n = design_recv_dyn_dim(f->design);
+	size_t dx_nnz = 1;
+	size_t dx_n = design_recv_dyn_dim(f->design);
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
-	ssize_t isend = msg->from;
-	ssize_t cokrecv = msg->from;
+	size_t isend = msg->from;
+	size_t cokrecv = msg->from;
 
-	ssize_t ito, nto = msg->nto;
+	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
 		if (msg->from == msg->to[ito])
 			continue;
 
-		ssize_t ksend = msg->to[ito];
+		size_t ksend = msg->to[ito];
 
 		frame_get_send_messages(f, ksend, &imsg, &n);
 		for (i = 0; i < n; i++) {
@@ -61,13 +60,13 @@ static void isend2_message_add(void *udata, struct frame *f,
 			    frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
 
-			ssize_t ito1, nto1 = msg1->nto;
+			size_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
 				if (msg1->to[ito1] == msg1->from
 				    || msg1->to[ito1] == msg->from)
 					continue;
 
-				ssize_t jrecv = msg1->to[ito1];
+				size_t jrecv = msg1->to[ito1];
 
 				assert(isend != jrecv);
 				assert(isend != ksend);
@@ -93,9 +92,9 @@ static void isend2_message_add(void *udata, struct frame *f,
 		if (msg1->from == msg->from)
 			continue;
 
-		ssize_t intvl1 = fmsg->interval;
-		ssize_t ix = dyn_index + intvl1;
-		ssize_t coisend = msg1->from;
+		size_t intvl1 = fmsg->interval;
+		size_t ix = dyn_index + intvl1;
+		size_t coisend = msg1->from;
 
 		dx_index[0] = ix;
 
@@ -104,7 +103,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 			    || msg1->from == msg->to[ito])
 				continue;
 
-			ssize_t cojrecv = msg->to[ito];
+			size_t cojrecv = msg->to[ito];
 
 			assert(coisend != cojrecv);
 			assert(coisend != cokrecv);

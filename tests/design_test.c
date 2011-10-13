@@ -12,7 +12,7 @@
 
 static size_t enron_nactor;
 static size_t enron_ncohort;
-static ptrdiff_t *enron_cohorts;
+static size_t *enron_cohorts;
 static struct matrix enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
@@ -24,7 +24,7 @@ static struct matrix recv_traits;
 static bool has_reffects;
 static bool has_loops;
 static struct vector intervals;
-static ssize_t dim;
+static size_t dim;
 
 
 static void enron_setup_fixture()
@@ -138,13 +138,13 @@ static void matrix_init_design0(struct matrix *x, const struct design *d)
 	bool has_reffects = design_recv_effects(d);
 	struct matrix xstat, xreff;
 	
-	ssize_t nrecv = design_recv_count(d);
-	ssize_t pr = matrix_ncol(traits);
-	ssize_t ireff = 0;
-	ssize_t nreff = has_reffects ? nrecv : 0;
-	ssize_t istat = ireff + nreff;
-	ssize_t nstat = pr;
-	ssize_t dim =  istat + nstat;
+	size_t nrecv = design_recv_count(d);
+	size_t pr = matrix_ncol(traits);
+	size_t ireff = 0;
+	size_t nreff = has_reffects ? nrecv : 0;
+	size_t istat = ireff + nreff;
+	size_t nstat = pr;
+	size_t dim =  istat + nstat;
 	
 	matrix_init(x, nrecv, dim);
 	xreff = matrix_slice_cols(x, ireff, nreff);
@@ -158,7 +158,7 @@ static void test_mul0()
 
 	struct matrix matrix;
 	struct vector x, y, y1;	
-	ssize_t i, n, p;
+	size_t i, n, p;
 	
 	n = design_recv_count(&design);
 	p = design_recv_dim(&design);
@@ -202,7 +202,7 @@ static void test_tmul0()
 	
 	struct matrix matrix;
 	struct vector x, y, y1;	
-	ssize_t i, n, p;
+	size_t i, n, p;
 	
 	n = design_recv_count(&design);
 	p = design_recv_dim(&design);
@@ -245,7 +245,7 @@ static void test_tmuls0()
 	struct matrix matrix;
 	struct svector x;
 	struct vector y, y1;	
-	ssize_t i, n, p;
+	size_t i, n, p;
 	
 	n = design_recv_count(&design);
 	p = design_recv_dim(&design);
@@ -289,7 +289,7 @@ static void test_muls0()
 	struct matrix matrix;
 	struct svector x;
 	struct vector y, y1;	
-	ssize_t i, n, p;
+	size_t i, n, p;
 	
 	n = design_recv_count(&design);
 	p = design_recv_dim(&design);

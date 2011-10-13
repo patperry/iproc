@@ -54,12 +54,12 @@ extern bool enron_male[ENRON_NCOHORT];
 
 
 int enron_employees_init(size_t *nactorp,
-			 size_t *ncohortp, ptrdiff_t **cohortsp,
+			 size_t *ncohortp, size_t **cohortsp,
 			 const char * const **cohort_names,
 			 struct matrix *traits,
 			 const char * const **trait_names);
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t *ncohortp, ptrdiff_t **cohortsp,
+			       size_t *ncohortp, size_t **cohortsp,
 			       const char * const **cohort_names,
 			       struct matrix *traits,
 			       const char * const **trait_names,
