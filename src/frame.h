@@ -30,6 +30,8 @@ struct recv_frame {
 };
 
 struct frame {
+	size_t nsend, nrecv;
+	int has_loops;
 	const struct design *design;
 	double time;
 
@@ -62,7 +64,8 @@ struct frame_observer {
 };
 
 /* create/destroy/clear */
-void frame_init(struct frame *f, const struct design *design);
+void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
+		const struct design *design);
 void frame_deinit(struct frame *f);
 void frame_clear(struct frame *f);
 
@@ -83,6 +86,7 @@ void frame_add(struct frame *f, const struct message *msg);
 /* actors */
 static inline size_t frame_senders_count(const struct frame *f);
 static inline size_t frame_receivers_count(const struct frame *f);
+static inline int frame_has_loops(const struct frame *f);
 static inline void frame_get_send_messages(const struct frame *f, size_t isend,
 					   size_t **imsg, size_t *nmsg);
 static inline void frame_get_recv_messages(const struct frame *f, size_t irecv,
@@ -169,15 +173,18 @@ struct frame_message *frame_messages_item(const struct frame *f, size_t imsg)
 size_t frame_senders_count(const struct frame *f)
 {
 	assert(f);
-	const struct design *d = frame_design(f);
-	return design_send_count(d);
+	return f->nsend;
 }
 
 size_t frame_receivers_count(const struct frame *f)
 {
 	assert(f);
-	const struct design *d = frame_design(f);
-	return design_recv_count(d);
+	return f->nrecv;
+}
+
+int frame_has_loops(const struct frame *f)
+{
+	return f->has_loops;
 }
 
 void frame_get_send_messages(const struct frame *f, size_t isend,

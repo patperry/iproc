@@ -85,6 +85,8 @@ libcore_la_SOURCES = \
 	lib/linalg/src/blas.h \
 	lib/linalg/src/lapack.c \
 	lib/linalg/src/lapack.h \
+	lib/linalg/src/matrixutil.c \
+	lib/linalg/src/matrixutil.h \
 	lib/linalg/src/sblas.c \
 	lib/linalg/src/sblas.h \
 	src/core/array.c \

@@ -17,18 +17,15 @@
 #include "frame.h"
 #include "recv_model.h"
 
-static size_t enron_nactor;
-static size_t enron_ncohort;
-static size_t *enron_cohorts;
-static struct matrix enron_traits;
 
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
+static size_t ntrait;
 static size_t *cohorts;
-static struct matrix recv_traits;
-static const char * const *recv_cohort_names;
-static const char * const *recv_trait_names;
+static double *traits;
+static const char * const *cohort_names;
+static const char * const *trait_names;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
@@ -41,25 +38,18 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_nactor,
-			     &enron_ncohort, &enron_cohorts,
-			     &recv_cohort_names,
-			     &enron_traits,
-			     &recv_trait_names);
+	enron_employees_init(&nsend, &cohorts, &ncohort, 
+			     &cohort_names,
+			     &traits, &ntrait, &trait_names);
 	enron_messages_init(&messages, -1);
-	nsend = enron_nactor;
-	nrecv = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
-	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
+	nrecv = nsend;
 }
 
 static void enron_teardown_fixture()
 {
-	free(enron_cohorts);
-	matrix_deinit(&recv_traits);
+	free(cohorts);
+	free(traits);
 	messages_deinit(&messages);
-	matrix_deinit(&enron_traits);
 	print_message("\n\n");
 }
 
@@ -70,16 +60,16 @@ static void basic_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	bool has_reffects = false;
-	bool has_loops = false;
+	int has_effects = 0;
+	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), ncohort);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+                    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
+	matrix_init(&coefs, design_dim(&design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -111,16 +101,16 @@ static void hard_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	bool has_reffects = false;
-	bool has_loops = false;
+	int has_effects = 0;
+	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), ncohort);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+                    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
+	matrix_init(&coefs, design_dim(&design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -146,7 +136,7 @@ static void test_probs()
 	size_t isend, jrecv, nrecv;
 	size_t i, n;
 	
-	nrecv = design_recv_count(&design);
+	nrecv = design_count(&design);
 	vector_init(&eta, nrecv);	
 	vector_init(&probs, nrecv);
 	vector_init(&logprobs, nrecv);
@@ -171,7 +161,7 @@ static void test_probs()
 			const struct vector col = matrix_col(&coefs, c);
 			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			
-			if (!design_loops(&design))
+			if (!frame_has_loops(&frame))
 				vector_set_item(&eta, isend, -INFINITY);
 			
 			vector_assign_copy(&logprobs, &eta);

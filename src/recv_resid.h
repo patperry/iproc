@@ -25,6 +25,7 @@ struct recv_resid {
 };
 
 void recv_resid_init(struct recv_resid *resid,
+		     size_t nsend, size_t nrecv, int has_loops,
 		     const struct messages *msgs,
 		     const struct design *design,
 		     size_t ncohort,

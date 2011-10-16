@@ -1,265 +1,148 @@
-#ifndef _DESIGN_H
-#define _DESIGN_H
+#ifndef DESIGN_H
+#define DESIGN_H
 
-#include "array.h"
-#include "matrix.h"
+#include "blas.h"
 #include "messages.h"
 #include "svector.h"
 #include "vector.h"
 
-/* I. Introduction
- * ---------------
- *
- * A "design" holds the covariates for the interaction process.  It can
- * be thought of as a J-by-p matrix, indexed by time and sender.
- * 
- *         X[t,i] = [ x[t,i,1], ..., x[t,i,J] ]^T;
- * 
- * that is, the j-th row of X[t,i] is x[t,i,j].
- *
- * We represent the design as
- *
- *         X[t,i] = X[0,i] + dX[t,i].
- *
- *
- * II. Static part
- * ---------------
- * The matrix X[0,i] is referred to as the static design matrix.  This matrix
- * has a special structure which enables efficent multiplication.  Let
- * s[i] be the vector of sender i's traits and let
- * R = [ r[1], ..., r[J] ]^T be the matrix of the receivers' traits.  Then,
- *
- *         X[0,i] = [ kronecker(R, s[i]^T)  0 ]
- *
- * Suppose that s is p-dimensional and R is J-by-q.  If Y is a p-by-q
- * matrix, then
- *
- *         kronecker(R, s[i]^T) * vec(Y) = R * (Y^T * s[i]).
- *
- * If y is J-dimensional, then
- *
- *         (kronecker(R, s[i]^T))^T * y = vec(s[i]^T * (R^T * y)^T).
- *
- *
- * III. Dynamic part
- * -----------------
- * The dynamic part dX[t,i] is computed by client-supplied functions.  These
- * functions in general will depend on the history of the process.  The only
- * restriction is that dX[0,i] = 0.  Write
- *
- *         dX[t,i] = [  0  dX{1}[t,i]  dX{2}[t,i]  ...  dX{K}[t,i] ]
- *
- * The presumption is that each dX{k}[t,i] is sparse, in the sence that
- * (a) most of the rows of dX{k}[t,i] are zero, and (b) the nonzero rows
- * of dX{k}[t,i] are sparse vectors.  For each dX{k}[t,i], the client
- * must provide the following:
- *
- *         A. `dim` : the number of columns in dX{k}[t,i];
- *
- *         B. `get_dxs(dX{k}, ctx[t,i], offset)` : a function that
- *            copies the rows of dX{k}[t,i] into
- *            ctx->dxs[:,offset:(offset+dim-1)];
- *
- *         C. `free(dX{k})` : a funciton to free the memory associated
- *            with dX{k}
- *
- *
- * In context ctx, the matrix dX[t,i] is represented as an array of
- * { j, dx[t,i,j] } pairs called ctx->dxs, where dx[t,i,j] is
- * a sparse vector.
- */
 
 struct var_type;		// forward declaration
 struct design_var;
 
 struct design {
-	size_t nsend;
-	size_t nrecv;
-	const struct matrix *traits;
-	const char *const *trait_names;
-	bool loops;
+	size_t count;
+	double *intvls;
+	size_t nintvl;
 
-	struct vector intervals;
+	size_t dim;
+	int has_effects;
 
-	struct array send_vars;
-	bool seffects;
-	size_t iseffects;
-	size_t isstatic, nsstatic;
-	size_t isdynamic, nsdynamic;
-	size_t sdim;
+	size_t trait_off;
+	size_t trait_dim;
+	double *traits;
+	char **trait_names;
 
-	struct array recv_vars;
-	bool reffects;
-	size_t ireffects;
-	size_t irstatic, nrstatic;
-	size_t irdynamic, nrdynamic;
-	size_t rdim;
+	size_t dvar_off;
+	size_t dvar_dim;
+	struct design_var *dvars;
+	size_t ndvar, ndvar_max;
 };
 
-void design_init(struct design *design, size_t nsend, size_t nrecv,
-		 const struct matrix *traits,
-		 const char *const *trait_names,
-		 const struct vector *intervals);
-void design_deinit(struct design *design);
+void design_init(struct design *d, size_t count,
+		 const double *intvls, size_t nintvl,
+		 const double *traits, size_t trait_dim,
+		 const char *const *trait_names);
+void design_deinit(struct design *d);
 
-static inline size_t design_send_dim(const struct design *design);
-static inline size_t design_recv_dim(const struct design *design);
-static inline size_t design_send_count(const struct design *design);
-static inline size_t design_recv_count(const struct design *design);
-static inline const struct matrix *design_traits(const struct design *design);
-static inline const char *const *design_trait_names(const struct design
-						    *design);
-static inline const struct vector *design_intervals(const struct design
-						    *design);
+static inline size_t design_count(const struct design *d);
+static inline const double *design_intervals(const struct design *d);
+static inline size_t design_interval_count(const struct design *d);
 
-static inline bool design_loops(const struct design *design);
-void design_set_loops(struct design *design, bool loops);
+static inline size_t design_dim(const struct design *d);
 
-bool design_send_effects(const struct design *design);
-void design_set_send_effects(struct design *design, bool seffects);
-void design_add_send_var(struct design *design, const struct var_type *type,
-			 void *params);
-size_t design_send_traits_index(const struct design *design);
-ptrdiff_t design_send_effects_index(const struct design *design);
-ptrdiff_t design_send_var_index(const struct design *design,
-			      const struct var_type *type);
-static inline size_t design_send_dyn_index(const struct design *design);
-static inline size_t design_send_dyn_dim(const struct design *design);
+static inline int design_has_effects(const struct design *d);
+void design_set_has_effects(struct design *d, int has_effects);
+static inline size_t design_effects_index(const struct design *d);
 
-/*
-void design_send_mul0(double alpha,
+static inline size_t design_traits_index(const struct design *d);
+static inline size_t design_traits_dim(const struct design *d);
+static inline const double *design_traits(const struct design *d);
+static inline const char *const *design_trait_names(const struct design *d);
+
+
+void design_add_dvar(struct design *d, const struct var_type *type,
+		     void *params);
+ptrdiff_t design_dvar_index(const struct design *d,
+			    const struct var_type *type);
+static inline void design_get_dvars(const struct design *d,
+				    const struct design_var **dvarsp,
+				    size_t *np);
+
+static inline size_t design_dvars_index(const struct design *d);
+static inline size_t design_dvars_dim(const struct design *d);
+
+void design_mul0(double alpha,
 		      enum blas_trans trans,
-		      const struct design *design,
+		      const struct design *d,
 		      const struct vector *x, double beta, struct vector *y);
-void design_send_muls0(double alpha,
+void design_muls0(double alpha,
 		       enum blas_trans trans,
-		       const struct design *design,
-		       const struct svector *x, double beta, struct vector *y);
-*/
-
-bool design_recv_effects(const struct design *design);
-void design_set_recv_effects(struct design *design, bool reffects);
-void design_add_recv_var(struct design *design, const struct var_type *type,
-			 void *params);
-ptrdiff_t design_recv_effects_index(const struct design *design);
-ptrdiff_t design_recv_var_index(const struct design *design,
-			      const struct var_type *type);
-static inline void design_recv_get_dyn_vars(const struct design *d,
-					    const struct design_var **ptr,
-					    size_t *n);
-static inline size_t design_recv_traits_index(const struct design *design);
-static inline size_t design_recv_traits_dim(const struct design *design);
-
-static inline size_t design_recv_dyn_index(const struct design *design);
-static inline size_t design_recv_dyn_dim(const struct design *design);
-
-void design_recv_mul0(double alpha,
-		      enum blas_trans trans,
-		      const struct design *design,
-		      const struct vector *x, double beta, struct vector *y);
-void design_recv_muls0(double alpha,
-		       enum blas_trans trans,
-		       const struct design *design,
+		       const struct design *d,
 		       const struct svector *x, double beta, struct vector *y);
 
 /* inline funciton definitions */
-size_t design_send_dim(const struct design *design)
+size_t design_count(const struct design *d)
 {
-	assert(design);
-	return design->sdim;
+	assert(d);
+	return d->count;
 }
 
-size_t design_recv_dim(const struct design *design)
+const double *design_intervals(const struct design *d)
 {
-	assert(design);
-	return design->rdim;
+	assert(d);
+	return d->intvls;
 }
 
-size_t design_send_count(const struct design *design)
+size_t design_interval_count(const struct design *d)
 {
-	assert(design);
-	return design->nsend;
+	assert(d);
+	return d->nintvl;
 }
 
-size_t design_recv_count(const struct design *design)
+size_t design_dim(const struct design *d)
 {
-	assert(design);
-	return design->nrecv;
+	return d->dim;
 }
 
-const struct matrix *design_traits(const struct design *design)
+int design_has_effects(const struct design *d)
 {
-	assert(design);
-	return design->traits;
+	return d->has_effects;
 }
 
-static inline const char *const *design_trait_names(const struct design *design)
+size_t design_effects_index(const struct design *d)
 {
-	assert(design);
-	return design->trait_names;
+	assert(design_has_effects(d));
+	(void)d;
+	return 0;
 }
 
-const struct vector *design_intervals(const struct design *design)
+size_t design_traits_index(const struct design *d)
 {
-	assert(design);
-	return &design->intervals;
+	return d->trait_off;
 }
 
-bool design_loops(const struct design *design)
+size_t design_traits_dim(const struct design *d)
 {
-	assert(design);
-	return design->loops;
+	return d->trait_dim;
 }
 
-size_t design_send_dyn_index(const struct design *design)
+const double *design_traits(const struct design *d)
 {
-	assert(design);
-	return design->isdynamic;
+	return d->traits;
 }
 
-size_t design_send_dyn_dim(const struct design *design)
+const char * const *design_trait_names(const struct design *d)
 {
-	assert(design);
-	return design->nsdynamic;
+	return (const char * const *)d->trait_names;
 }
 
-size_t design_recv_dyn_index(const struct design *design)
+void design_get_dvars(const struct design *d,
+				    const struct design_var **dvarsp,
+				    size_t *np)
 {
-	assert(design);
-	return design->irdynamic;
+	*dvarsp = d->dvars;
+	*np = d->ndvar;
 }
 
-size_t design_recv_dyn_dim(const struct design *design)
+size_t design_dvars_index(const struct design *d)
 {
-	assert(design);
-	return design->nrdynamic;
+	return d->dvar_off;
 }
 
-size_t design_recv_traits_index(const struct design *design)
+size_t design_dvars_dim(const struct design *d)
 {
-	assert(design);
-	return design->irstatic;
+	return d->dvar_dim;
 }
 
-size_t design_recv_traits_dim(const struct design *design)
-{
-	assert(design);
-#ifndef NDEBUG
-	if (design->nrstatic) {
-		assert(design->nrstatic == (size_t)matrix_ncol(design_traits(design)));
-	} else {
-		assert(!design_traits(design)
-		       || !matrix_ncol(design_traits(design)));
-	}
-#endif
-	return design->nrstatic;
-}
-
-void design_recv_get_dyn_vars(const struct design *d,
-			      const struct design_var **ptr, size_t *n)
-{
-	*ptr = array_to_ptr(&d->recv_vars);
-	*n = array_count(&d->recv_vars);
-}
-
-#endif /* _DESIGN_H */
+#endif /* DESIGN_H */

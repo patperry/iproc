@@ -33,13 +33,13 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	assert(msg);
 	assert(fv->design);
 	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_recv_dyn_dim(f->design));
+	       <= design_dvars_dim(f->design));
 
 	size_t dyn_index = fv->design->dyn_index;
 	double dx_data = 1.0;
 	ssize_t dx_index = dyn_index;
 	size_t dx_nnz = 1;
-	size_t dx_n = design_recv_dyn_dim(f->design);
+	size_t dx_n = design_dvars_dim(f->design);
 	struct svector delta = svector_make(&dx_index, &dx_data, dx_nnz, dx_n);
 	size_t *imsg, i, n;
 

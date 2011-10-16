@@ -9,6 +9,7 @@
 #include "cmockery.h"
 
 #include "enron.h"
+#include "matrix.h"
 #include "messages.h"
 #include "design.h"
 #include "vars.h"
@@ -18,12 +19,13 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
+static size_t ntrait;
 static size_t *cohorts;
-static struct matrix recv_traits;
-static const char * const * recv_cohort_names;
-static const char * const * recv_trait_names;
-static bool has_reffects;
-static bool has_loops;
+static double *traits;
+static const char * const * cohort_names;
+static const char * const * trait_names;
+static int has_effects;
+static int has_loops;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
@@ -39,8 +41,8 @@ static void enron_setup_fixture()
 	print_message("Enron\n");
 	print_message("-----\n");
 	enron_employees_init(&nsend,
-			     &ncohort, &cohorts, &recv_cohort_names,
-			     &recv_traits, &recv_trait_names);
+			     &cohorts, &ncohort, &cohort_names,
+			     &traits, &ntrait, &trait_names);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 }
@@ -49,21 +51,21 @@ static void enron_teardown_fixture()
 {
 	free(cohorts);
 	messages_deinit(&messages);
-	matrix_deinit(&recv_traits);
+	free(traits);
 	print_message("\n\n");
 }
 
 static void rv_nsend_setup()
 {
-	has_reffects = false;
-	has_loops = false;
+	has_effects = 0;
+	has_loops = 0;
 	vector_init(&intervals, 0);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	rv_nsend_index = design_recv_var_index(&design, RECV_VAR_NSEND);
-	frame_init(&frame, &design);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+		    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_NSEND, NULL);
+	rv_nsend_index = design_dvar_index(&design, RECV_VAR_NSEND);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
 }
 
 static void rv_nsend_teardown()
@@ -77,19 +79,18 @@ static void test_rv_nsend()
 {
 	double t;
 	size_t itie, ntie, ito;
-	size_t isend;
-	size_t jrecv, nrecv = design_recv_count(&design);
+	size_t isend, jrecv;
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnsend;
 	struct vector x, y;
 	
-	matrix_init(&xnsend, design_send_count(&design), design_recv_count(&design));
+	matrix_init(&xnsend, nsend, nrecv);
 	matrix_fill(&xnsend, 0.0);
 	
-	vector_init(&x, design_recv_dim(&design));
+	vector_init(&x, design_dim(&design));
 	vector_set_basis(&x, rv_nsend_index);
-	vector_init(&y, design_recv_count(&design));
+	vector_init(&y, design_count(&design));
 	
 	isend = 0;
 	
@@ -122,15 +123,15 @@ static void test_rv_nsend()
 
 static void rv_nrecv_setup()
 {
-	has_reffects = false;
-	has_loops = false;
+	has_effects = 0;
+	has_loops = 0;
 	vector_init(&intervals, 0);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	rv_nrecv_index = design_recv_var_index(&design, RECV_VAR_NRECV);
-	frame_init(&frame, &design);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+		    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	rv_nrecv_index = design_dvar_index(&design, RECV_VAR_NRECV);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
 }
 
 static void rv_nrecv_teardown()
@@ -145,7 +146,7 @@ static void test_rv_nrecv()
 	double t;
 	size_t itie, ntie, ito;
 	size_t isend;
-	size_t jrecv, nrecv = design_recv_count(&design);
+	size_t jrecv, nrecv = design_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnrecv;
@@ -153,12 +154,12 @@ static void test_rv_nrecv()
 	
 	
 	
-	matrix_init(&xnrecv, design_send_count(&design), design_recv_count(&design));
+	matrix_init(&xnrecv, nsend, design_count(&design));
 	matrix_fill(&xnrecv, 0.0);
 
-	vector_init(&x, design_recv_dim(&design));
+	vector_init(&x, design_dim(&design));
 	vector_set_basis(&x, rv_nrecv_index);
-	vector_init(&y, design_recv_count(&design));
+	vector_init(&y, design_count(&design));
 	
 	isend = 0;
 	
@@ -195,16 +196,16 @@ static void rv_irecv_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	has_reffects = false;
-	has_loops = false;
+	has_effects = 0;
+	has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
-	rv_irecv_index = design_recv_var_index(&design, RECV_VAR_IRECV);
-	frame_init(&frame, &design);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+		    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_IRECV, NULL);
+	rv_irecv_index = design_dvar_index(&design, RECV_VAR_IRECV);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
 }
 
 static void rv_irecv_teardown()
@@ -220,7 +221,7 @@ static void test_rv_irecv()
 	double t;
 	size_t itie, ntie, ito;
 	size_t isend;
-	size_t jrecv, j, nrecv = design_recv_count(&design);
+	size_t jrecv, j, nrecv = design_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
@@ -228,11 +229,11 @@ static void test_rv_irecv()
 	struct vector y;
 	double tmsg;
 	
-	matrix_init(&tlast, design_send_count(&design), design_recv_count(&design));
+	matrix_init(&tlast, nsend, design_count(&design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	svector_init(&x, design_recv_dyn_dim(&design));
-	vector_init(&y, design_recv_count(&design));
+	svector_init(&x, design_dvars_dim(&design));
+	vector_init(&y, design_count(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -277,16 +278,16 @@ static void rv_isend_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	has_reffects = false;
-	has_loops = false;
+	has_effects = 0;
+	has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
-	rv_isend_index = design_recv_var_index(&design, RECV_VAR_ISEND);
-	frame_init(&frame, &design);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+		    vector_dim(&intervals), traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_ISEND, NULL);
+	rv_isend_index = design_dvar_index(&design, RECV_VAR_ISEND);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
 }
 
 static void rv_isend_teardown()
@@ -302,7 +303,7 @@ static void test_rv_isend()
 	double t;
 	size_t itie, ntie, ito;
 	size_t isend;
-	size_t jrecv, j, nrecv = design_recv_count(&design);
+	size_t jrecv, j, nrecv = design_count(&design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
@@ -310,11 +311,11 @@ static void test_rv_isend()
 	struct vector y;
 	double tmsg;
 	
-	matrix_init(&tlast, design_send_count(&design), design_recv_count(&design));
+	matrix_init(&tlast, nsend, design_count(&design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	svector_init(&x, design_recv_dyn_dim(&design));
-	vector_init(&y, design_recv_count(&design));
+	svector_init(&x, design_dvars_dim(&design));
+	vector_init(&y, design_count(&design));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);

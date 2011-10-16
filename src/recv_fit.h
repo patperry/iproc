@@ -110,6 +110,7 @@ struct recv_fit {
 };
 
 void recv_fit_init(struct recv_fit *fit,
+		   size_t nsend, size_t nrecv, int has_loops,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,
 		   const struct design *design,

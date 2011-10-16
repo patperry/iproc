@@ -2,7 +2,6 @@
 #define _ENRON_H
 
 #include <stdio.h>
-#include "matrix.h"
 #include "messages.h"
 
 #define PARENT_DIR "/Users/patperry/Projects/iproc/"
@@ -54,15 +53,15 @@ extern bool enron_male[ENRON_NCOHORT];
 
 
 int enron_employees_init(size_t *nactorp,
-			 size_t *ncohortp, size_t **cohortsp,
-			 const char * const **cohort_names,
-			 struct matrix *traits,
-			 const char * const **trait_names);
+		         size_t **cohortsp, size_t *ncohortp, 
+			 const char * const **cohort_namesp,
+			 double **traitsp, size_t *ntraitp,
+			 const char * const **trait_namesp);
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t *ncohortp, size_t **cohortsp,
-			       const char * const **cohort_names,
-			       struct matrix *traits,
-			       const char * const **trait_names,
+			       size_t **cohortsp, size_t *ncohortp, 
+			       const char * const **cohort_namesp,
+			       double **traitsp, size_t *ntraitp,
+			       const char * const **trait_namesp,
 			       FILE *stream);
 
 bool enron_messages_init(struct messages *messages, ssize_t maxrecip);

@@ -5,6 +5,7 @@
 #include "design.h"
 #include "frame.h"
 #include "vector.h"
+#include "matrix.h"
 
 /* I. Model
  * --------

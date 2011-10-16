@@ -8,22 +8,28 @@
 
 #include "enron.h"
 #include "design.h"
+#include "lapack.h"
+#include "matrix.h"
 
 
 static size_t enron_nactor;
 static size_t enron_ncohort;
+static size_t enron_ntrait;
 static size_t *enron_cohorts;
-static struct matrix enron_traits;
+static double *enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
 static struct design design;
 
 static size_t nsend, nrecv;
-static struct matrix recv_traits;
-static bool has_reffects;
-static bool has_loops;
-static struct vector intervals;
+static double *traits;
+static size_t ntrait;
+static const char * const *trait_names;
+static int has_effects;
+static int has_loops;
+static double *intvls;
+size_t nintvl;
 static size_t dim;
 
 
@@ -31,15 +37,15 @@ static void enron_setup_fixture()
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
-	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
+	enron_employees_init(&enron_nactor, &enron_cohorts, &enron_ncohort,
 			     &enron_cohort_names, &enron_traits,
-			     &enron_trait_names);
+			     &enron_ntrait, &enron_trait_names);
 }
 
 static void enron_teardown_fixture()
 {
 	free(enron_cohorts);
-	matrix_deinit(&enron_traits);
+	free(enron_traits);
 	print_message("\n\n");
 }
 
@@ -47,37 +53,39 @@ static void enron_setup()
 {
 	nsend = enron_nactor;
 	nrecv = enron_nactor;
-	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
-	dim = matrix_ncol(&recv_traits);
-	has_reffects = false;
-	has_loops = false;
-	vector_init(&intervals, 0);
+	traits = enron_traits;
+	ntrait = enron_ntrait;
+	trait_names = enron_trait_names;
+	dim = enron_ntrait;
+	has_effects = 0;
+	has_loops = 0;
+	intvls = NULL;
+	nintvl = 0;
 
-	design_init(&design, nsend, nrecv, &recv_traits, enron_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
+	design_init(&design, nrecv, intvls, nintvl,
+		    traits, ntrait, trait_names);
+	design_set_has_effects(&design, has_effects);
 }
 
 static void enron_teardown()
 {
 	design_deinit(&design);
-	vector_deinit(&intervals);
-	matrix_deinit(&recv_traits);
+	free(intvls);
 }
 
 static void enron_reff_setup_fixture()
 {
 	print_message("Enron employees (with receiver effects)\n");
 	print_message("---------------------------------------\n");
-	enron_employees_init(&enron_nactor, &enron_ncohort, &enron_cohorts,
+	enron_employees_init(&enron_nactor, &enron_cohorts, &enron_ncohort,
 			     &enron_cohort_names, &enron_traits,
-			     &enron_trait_names);
+			     &enron_ntrait, &enron_trait_names);
 }
 
 static void enron_reff_teardown_fixture()
 {
 	free(enron_cohorts);
-	matrix_deinit(&enron_traits);
+	free(enron_traits);
 	print_message("\n\n");
 }
 
@@ -85,36 +93,44 @@ static void enron_reff_setup()
 {
 	nsend = enron_nactor;
 	nrecv = enron_nactor;
-	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
-	dim = matrix_ncol(&recv_traits) + nrecv;
-	has_reffects = true;
-	has_loops = false;
-	vector_init(&intervals, 0);
+	traits = enron_traits;
+	ntrait = enron_ntrait;
+	trait_names = enron_trait_names;
+	dim = ntrait + nrecv;
+	has_effects = 1;
+	has_loops = 0;
+	intvls = NULL;
+	nintvl = 0;
 	
-	design_init(&design, nsend, nrecv, &recv_traits, enron_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
+	design_init(&design, nrecv, intvls, nintvl, traits, ntrait,
+		    trait_names);
+	design_set_has_effects(&design, has_effects);
 }
 
 static void enron_reff_teardown()
 {
 	design_deinit(&design);
-	vector_deinit(&intervals);
-	matrix_deinit(&recv_traits);
+	free(intvls);
 }
 
 
 static void test_size()
 {
-	assert_int_equal(design_recv_dim(&design), dim);
-	assert_int_equal(design_send_count(&design), nsend);
-	assert_int_equal(design_recv_count(&design), nrecv);
+	assert_int_equal(design_dim(&design), dim);
+	assert_int_equal(design_count(&design), nrecv);
 }
 
 static void matrix_assign_static(struct matrix *x,
-				 const struct matrix *traits)
+				 const double *traits)
 {
-	matrix_assign_copy(x, BLAS_NOTRANS, traits);
+	size_t m = matrix_nrow(x);
+	size_t n = matrix_ncol(x);
+	const double *a = traits;
+	size_t lda = MAX(1, m);
+	double *b = matrix_to_ptr(x);
+	size_t ldb = matrix_lda(x);
+
+	lapack_dlacpy(LA_COPY_ALL, m, n, a, lda, b, ldb);
 }
 
 static void matrix_assign_reffects(struct matrix *x,
@@ -134,12 +150,12 @@ static void matrix_assign_reffects(struct matrix *x,
 
 static void matrix_init_design0(struct matrix *x, const struct design *d)
 {
-	const struct matrix *traits = design_traits(d);
-	bool has_reffects = design_recv_effects(d);
+	const double *traits = design_traits(d);
+	int has_reffects = design_has_effects(d);
 	struct matrix xstat, xreff;
 	
-	size_t nrecv = design_recv_count(d);
-	size_t pr = matrix_ncol(traits);
+	size_t nrecv = design_count(d);
+	size_t pr = design_traits_dim(d);
 	size_t ireff = 0;
 	size_t nreff = has_reffects ? nrecv : 0;
 	size_t istat = ireff + nreff;
@@ -160,8 +176,8 @@ static void test_mul0()
 	struct vector x, y, y1;	
 	size_t i, n, p;
 	
-	n = design_recv_count(&design);
-	p = design_recv_dim(&design);
+	n = design_count(&design);
+	p = design_dim(&design);
 	
 	vector_init(&x, p);
 	vector_init(&y, n);
@@ -173,19 +189,19 @@ static void test_mul0()
 		vector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 		
-	design_recv_mul0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_mul0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_mul0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_mul0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
+	design_mul0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
 	matrix_mul(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
@@ -204,8 +220,8 @@ static void test_tmul0()
 	struct vector x, y, y1;	
 	size_t i, n, p;
 	
-	n = design_recv_count(&design);
-	p = design_recv_dim(&design);
+	n = design_count(&design);
+	p = design_dim(&design);
 	
 	vector_init(&x, n);
 	vector_init(&y, p);
@@ -216,19 +232,19 @@ static void test_tmul0()
 		vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 		
-	design_recv_mul0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
+	design_mul0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_mul0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
+	design_mul0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_mul0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
+	design_mul0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_mul0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
+	design_mul0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
 	matrix_mul(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -247,8 +263,8 @@ static void test_tmuls0()
 	struct vector y, y1;	
 	size_t i, n, p;
 	
-	n = design_recv_count(&design);
-	p = design_recv_dim(&design);
+	n = design_count(&design);
+	p = design_dim(&design);
 	
 	svector_init(&x, n);
 	vector_init(&y, p);
@@ -260,19 +276,19 @@ static void test_tmuls0()
 			svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 		
-	design_recv_muls0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
+	design_muls0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_muls0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
+	design_muls0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_muls0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
+	design_muls0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_muls0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
+	design_muls0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
 	matrix_muls(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -291,8 +307,8 @@ static void test_muls0()
 	struct vector y, y1;	
 	size_t i, n, p;
 	
-	n = design_recv_count(&design);
-	p = design_recv_dim(&design);
+	n = design_count(&design);
+	p = design_dim(&design);
 	
 	svector_init(&x, p);
 	vector_init(&y, n);
@@ -304,19 +320,19 @@ static void test_muls0()
 			svector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 		
-	design_recv_muls0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_muls0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_recv_muls0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_recv_muls0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
+	design_muls0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
 	matrix_muls(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		

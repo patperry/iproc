@@ -527,6 +527,7 @@ domain_error_f:
 }
 
 void recv_fit_init(struct recv_fit *fit,
+		   size_t nsend, size_t nrecv, int has_loops,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,
 		   const struct design *design,
@@ -536,14 +537,13 @@ void recv_fit_init(struct recv_fit *fit,
 	assert(fit);
 	assert(xmsgs);
 	assert(design);
-	assert(messages_max_to(xmsgs) < design_send_count(design));
-	assert(messages_max_from(xmsgs) < design_recv_count(design));
-	assert(!ymsgs || (messages_max_to(ymsgs) < design_send_count(design)));
-	assert(!ymsgs
-	       || (messages_max_from(ymsgs) < design_recv_count(design)));
+	assert(messages_max_to(xmsgs) < nsend);
+	assert(messages_max_from(xmsgs) < nrecv);
+	assert(!ymsgs || (messages_max_to(ymsgs) < nsend));
+	assert(!ymsgs || (messages_max_from(ymsgs) < nrecv));
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
-	size_t dim = design_recv_dim(design);
+	size_t dim = design_dim(design);
 	size_t nc = ncohort;
 	size_t ne = 0;
 
@@ -557,7 +557,7 @@ void recv_fit_init(struct recv_fit *fit,
 	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
 	fit->design = design;
 
-	frame_init(&fit->frame, fit->design);
+	frame_init(&fit->frame, nsend, nrecv, has_loops, fit->design);
 	recv_model_init(&fit->model, &fit->frame, ncohort, cohorts, NULL);
 	constrs_init(&fit->constrs);
 	eval_init(&fit->eval[0], &fit->model, ne);
@@ -830,7 +830,7 @@ void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val)
 {
-	ssize_t dim = design_recv_dim(fit->design);
+	ssize_t dim = design_dim(fit->design);
 	ssize_t nc = recv_model_cohort_count(&fit->model);
 
 	constrs_add_set(&fit->constrs, dim, nc, i, c, val);
@@ -840,7 +840,7 @@ void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
 			    ssize_t i2, ssize_t c2)
 {
-	ssize_t dim = design_recv_dim(fit->design);
+	ssize_t dim = design_dim(fit->design);
 	ssize_t nc = recv_model_cohort_count(&fit->model);
 
 	constrs_add_eq(&fit->constrs, dim, nc, i1, c1, i2, c2);

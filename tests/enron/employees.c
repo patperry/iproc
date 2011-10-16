@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <yajl/yajl_parse.h>
 #include "coreutil.h"
+#include "matrixutil.h"
 #include "xalloc.h"
 #include "enron.h"
 
@@ -309,10 +310,11 @@ static yajl_callbacks parse_callbacks = {
 };
 
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t *ncohortp, size_t **cohortsp,
-			       const char *const **cohort_namesp,
-			       struct matrix *traits,
-			       const char *const **trait_namesp, FILE * stream)
+			       size_t **cohortsp, size_t *ncohortp, 
+			       const char * const **cohort_namesp,
+			       double **traitsp, size_t *ntraitp,
+			       const char * const **trait_namesp,
+			       FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -362,11 +364,13 @@ int enron_employees_init_fread(size_t *nactorp,
 
 	if (!parse_ok) {
 		*nactorp = 0;
-		*ncohortp = 0;
 		*cohortsp = NULL;
+		*ncohortp = 0;
 		free(parse.cohorts);
 		*cohort_namesp = NULL;
+		*traitsp = NULL;
 		free(parse.traits_t);
+		*ntraitp = 0;
 		*trait_namesp = NULL;
 	} else {
 		*nactorp = parse.nactor;
@@ -377,11 +381,13 @@ int enron_employees_init_fread(size_t *nactorp,
 
 		size_t n = parse.nactor;
 		size_t p = parse.dim;
-		struct vector vtraits_t = vector_make(parse.traits_t, p * n);
-		struct matrix traits_t = matrix_make(&vtraits_t, p, n);
+		double *traits_t = parse.traits_t;
+		double *traits = xmalloc(n * p * sizeof(traits[0]));
 
-		matrix_init_copy(traits, BLAS_TRANS, &traits_t);
-		free(parse.traits_t);
+		matrix_dtrans(p, n, traits_t, MAX(1, p), traits, MAX(1, n));
+		free(traits_t);
+		*traitsp = traits;
+		*ntraitp = p;
 		*trait_namesp = ENRON_TRAIT_NAMES;
 	}
 
@@ -389,9 +395,10 @@ int enron_employees_init_fread(size_t *nactorp,
 }
 
 int enron_employees_init(size_t *nactorp,
-			 size_t *ncohortp, size_t **cohortsp,
-			 const char *const **cohort_namesp,
-			 struct matrix *traits, const char *const **trait_namesp)
+		         size_t **cohortsp, size_t *ncohortp, 
+			 const char * const **cohort_namesp,
+			 double **traitsp, size_t *ntraitsp,
+			 const char * const **trait_namesp)
 {
 	FILE *f = fopen(ENRON_EMPLOYEES_FILE, "r");
 
@@ -401,8 +408,9 @@ int enron_employees_init(size_t *nactorp,
 		return errno;
 	}
 
-	if (!enron_employees_init_fread(nactorp, ncohortp, cohortsp,
-				cohort_namesp, traits, trait_namesp, f)) {
+	if (!enron_employees_init_fread(nactorp, cohortsp, ncohortp,
+				cohort_namesp, traitsp, ntraitsp,
+				trait_namesp, f)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_EMPLOYEES_FILE);
 		fclose(f);

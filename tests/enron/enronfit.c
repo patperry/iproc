@@ -27,24 +27,23 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
+static size_t ntrait;
 static size_t *cohorts;
-static struct matrix enron_traits;
-static const char * const *enron_cohort_names;
-static const char * const *enron_trait_names;
+static double *traits;
+static const char * const *cohort_names;
+static const char * const *trait_names;
+static int has_loops;
 
-static struct matrix recv_traits;
 static struct vector intervals;
 
 static struct design design;
 
 
 static void setup(void) {
-	enron_employees_init(&nsend, &ncohort, &cohorts,
-			     &enron_cohort_names,
-			     &enron_traits,
-			     &enron_trait_names);
+	enron_employees_init(&nsend, &cohorts, &ncohort, &cohort_names,
+			     &traits, &ntrait, &trait_names);
 	nrecv = nsend;
-	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
+	has_loops = 0;
 	
 	double intvls[] = {
 		// 450.00,
@@ -68,24 +67,23 @@ static void setup(void) {
 	};
 	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
 	struct vector vintvls = vector_make(intvls, nintvls);
-	bool has_reffects = false;
-	bool has_loops = false;
+	int has_effects = 0;
 	vector_init_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, enron_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_IRECV, NULL);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	design_add_recv_var(&design, RECV_VAR_ISEND, NULL);
-	design_add_recv_var(&design, RECV_VAR_NSEND, NULL);
-	//design_add_recv_var(&design, RECV_VAR_IRECV2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NRECV2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ISEND2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_NSEND2, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ISIB, NULL);		
-	//design_add_recv_var(&design, RECV_VAR_NSIB, NULL);
-	//design_add_recv_var(&design, RECV_VAR_ICOSIB, NULL);		
-	//design_add_recv_var(&design, RECV_VAR_NCOSIB, NULL);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+                    vector_dim(&intervals), traits, ntrait, trait_names);
+        design_set_has_effects(&design, has_effects);
+	design_add_dvar(&design, RECV_VAR_IRECV, NULL);
+	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	design_add_dvar(&design, RECV_VAR_ISEND, NULL);
+	design_add_dvar(&design, RECV_VAR_NSEND, NULL);
+	//design_add_dvar(&design, RECV_VAR_IRECV2, NULL);
+	//design_add_dvar(&design, RECV_VAR_NRECV2, NULL);
+	//design_add_dvar(&design, RECV_VAR_ISEND2, NULL);
+	//design_add_dvar(&design, RECV_VAR_NSEND2, NULL);
+	//design_add_dvar(&design, RECV_VAR_ISIB, NULL);		
+	//design_add_dvar(&design, RECV_VAR_NSIB, NULL);
+	//design_add_dvar(&design, RECV_VAR_ICOSIB, NULL);		
+	//design_add_dvar(&design, RECV_VAR_NCOSIB, NULL);
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -218,8 +216,8 @@ static void teardown(void)
 {
 	vector_deinit(&intervals);	
 	design_deinit(&design);
-	matrix_deinit(&recv_traits);
-	matrix_deinit(&enron_traits);
+	free(traits);
+	free(cohorts);
 }
 
 
@@ -266,23 +264,28 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	{
 		/* intervals */
 		YG(yajl_gen_string(hand, YSTR(INTERVALS), strlen(INTERVALS)));
-		const struct vector *intvls = design_intervals(d);
-		YG(yajl_gen_vector(hand, intvls));
+		const double *intvls = design_intervals(d);
+		n = design_interval_count(d);
+		YG(yajl_gen_array_open(hand));
+		for (i = 0; i < n; i++) {
+			YG(yajl_gen_ieee754(hand, intvls[i]));
+		}
+		YG(yajl_gen_array_close(hand));
 		
 		/* variate_names */
 		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES), strlen(VARIATE_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		const char * const *trait_names = design_trait_names(d);
-		n = design_recv_traits_dim(d);
-		assert(design_recv_traits_index(d) == 0);
+		n = design_traits_dim(d);
+		assert(design_traits_index(d) == 0);
 		for (i = 0; i < n; i++) {
 			YG(yajl_gen_string(hand, YSTR(trait_names[i]), strlen(trait_names[i])));
 		}
 		
-		assert(design_recv_dyn_index(d) == design_recv_traits_dim(d));
+		assert(design_dvars_index(d) == design_traits_dim(d));
 		const struct design_var *rvs;
 		size_t irv, nrv;
-		design_recv_get_dyn_vars(d, &rvs, &nrv);
+		design_get_dvars(d, &rvs, &nrv);
 		for (irv = 0; irv < nrv; irv++) {
 			n = rvs[irv].dim;
 			for (i = 0; i < n; i++) {
@@ -297,7 +300,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_array_open(hand));
 		{
 			for (ic = 0; ic < nc; ic++) {
-				const char *name = enron_cohort_names[ic];
+				const char *name = cohort_names[ic];
 				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
 			}
 		}
@@ -412,7 +415,9 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* y = y */		
 		struct recv_resid resid;
 		
-		recv_resid_init(&resid, fit->ymsgs, d, fit->model.ncohort, fit->model.cohorts, coefs);
+		recv_resid_init(&resid, nsend, nrecv, has_loops, fit->ymsgs,
+				d, fit->model.ncohort, fit->model.cohorts,
+				coefs);
 		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
 		
@@ -474,7 +479,8 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
 	ctrl.gtol = 1e-7;
-	recv_fit_init(&fit, xmsgs, ymsgs, &design, ncohort, cohorts, &ctrl);
+	recv_fit_init(&fit, nsend, nrecv, has_loops, xmsgs, ymsgs, &design,
+		      ncohort, cohorts, &ctrl);
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
@@ -687,7 +693,8 @@ int main(int argc, char **argv)
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		recv_boot_init(&boot, &enron_messages, &design, ncohort,
+		recv_boot_init(&boot, nsend, nrecv, has_loops,
+			       &enron_messages, &design, ncohort,
 			       cohorts, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}

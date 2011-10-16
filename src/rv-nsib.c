@@ -21,7 +21,7 @@ static void nsib_init(struct design_var *dv, const struct design *d,
 	assert(d);
 	assert(!params);
 
-	size_t n = vector_dim(design_intervals(d));
+	size_t n = design_interval_count(d);
 	size_t n1 = n + 1;
 	dv->dim = n1 * n1;
 	dv->names = var_names_alloc2("NSib", strlen("NSib"), n + 1, n + 1);
@@ -42,11 +42,10 @@ static void nsib_message_add(void *udata, struct frame *f,
 	assert(msg);
 	assert(fv->design);
 	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_recv_dyn_dim(f->design));
+	       <= design_dvars_dim(f->design));
 
 	const struct design *d = frame_design(f);
-	const struct vector *intvls = design_intervals(d);
-	size_t nintvl = vector_dim(intvls);
+	size_t nintvl = design_interval_count(d);
 	size_t ksend = msg->from;
 	size_t dyn_index = fv->design->dyn_index;
 	size_t *imsg, i, n;
@@ -54,7 +53,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 	double dx_data[1] = { +1.0 };
 	ssize_t dx_index[1] = { 0 };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_recv_dyn_dim(f->design);
+	size_t dx_n = design_dvars_dim(f->design);
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
@@ -122,11 +121,10 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	assert(msg);
 	assert(fv->design);
 	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_recv_dyn_dim(f->design));
+	       <= design_dvars_dim(f->design));
 
 	const struct design *d = frame_design(f);
-	const struct vector *intvls = design_intervals(d);
-	size_t nintvl = vector_dim(intvls);
+	size_t nintvl = design_interval_count(d);
 	size_t ksend = msg->from;
 	size_t dyn_index = fv->design->dyn_index;
 
@@ -136,7 +134,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	double dx_data[2] = { -1.0, +1.0 };
 	ssize_t dx_index[2] = { 0, 1 };
 	size_t dx_nnz = 2;
-	size_t dx_n = design_recv_dyn_dim(f->design);
+	size_t dx_n = design_dvars_dim(f->design);
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	for (ito = 0; ito < nto; ito++) {

@@ -57,7 +57,8 @@ static bool sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
 	return false;
 }
 
-void recv_boot_init(struct recv_boot *boot,
+void recv_boot_init(struct recv_boot *boot, size_t nsend, size_t nrecv,
+		    int has_loops,
 		    const struct messages *msgs,
 		    const struct design *design,
 		    size_t ncohort,
@@ -65,9 +66,8 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct matrix *coefs, dsfmt_t * dsfmt)
 {
 	messages_init(&boot->messages);
-	frame_init(&boot->frame, design);
+	frame_init(&boot->frame, nsend, nrecv, has_loops, design);
 	recv_model_init(&boot->model, &boot->frame, ncohort, cohorts, coefs);
-	size_t nrecv = design_recv_count(design);
 
 	size_t max_nto = messages_max_nto(msgs);
 	size_t *to = xcalloc(max_nto, sizeof(to[0]));

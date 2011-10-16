@@ -512,9 +512,6 @@ void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
 		return;
 	}
 
-	struct svector_iter itx;
-	ssize_t i, j;
-	double x_i, x_j;
 
 	if (beta == 0) {
 		vector_fill(y, 0.0);
@@ -522,16 +519,19 @@ void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
 		vector_scale(y, beta);
 	}
 
-	SVECTOR_FOREACH(itx, x) {
-		if (trans == BLAS_NOTRANS) {
-			j = SVECTOR_IDX(itx);
-			x_j = SVECTOR_VAL(itx);
+	if (trans == BLAS_NOTRANS) {
+		struct svector_iter itx;
+		SVECTOR_FOREACH(itx, x) {
+			size_t j = SVECTOR_IDX(itx);
+			double x_j = SVECTOR_VAL(itx);
 			matrix_axpy_col(alpha * x_j, a, j, y);
-		} else {
-
-			i = SVECTOR_IDX(itx);
-			x_i = SVECTOR_VAL(itx);
-			matrix_axpy_row(alpha * x_i, a, i, y);
+		}
+	} else {
+		size_t j, n = matrix_ncol(a);
+		for (j = 0; j < n; j++) {
+			struct vector a_j = matrix_col(a, j);
+			double dot = svector_dot(x, &a_j);
+			*vector_item_ptr(y, j) += alpha * dot;
 		}
 	}
 }

@@ -20,20 +20,16 @@
 #include "recv_loglik.h"
 
 
-static size_t enron_nactor;
-static size_t enron_ncohort;
-static size_t *enron_cohorts;
-static struct matrix enron_traits;
-static const char * const *enron_cohort_names;
-static const char * const *enron_trait_names;
 
 
 static size_t nsend;
 static size_t nrecv;
 static size_t ncohort;
+static size_t ntrait;
 static size_t *cohorts;
-static struct matrix recv_traits;
-static const char * const *recv_trait_names;
+static double *traits;
+static const char * const *trait_names;
+static const char * const *cohort_names;
 static struct vector intervals;
 static struct messages messages;
 static struct design design;
@@ -47,26 +43,17 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&enron_nactor,
-			     &enron_ncohort, &enron_cohorts,
-			     &enron_cohort_names,
-			     &enron_traits,
-			     &enron_trait_names);
-	nsend = enron_nactor;
-	nrecv = enron_nactor;
-	ncohort = enron_ncohort;
-	cohorts = enron_cohorts;
-	matrix_init_copy(&recv_traits, BLAS_NOTRANS, &enron_traits);
-	recv_trait_names = enron_trait_names;
+	enron_employees_init(&nsend, &cohorts, &ncohort, &cohort_names,
+			     &traits, &ntrait, &trait_names);
+	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 }
 
 static void enron_teardown_fixture()
 {
-	free(enron_cohorts);
+	free(cohorts);
+	free(traits);
 	messages_deinit(&messages);
-	matrix_deinit(&recv_traits);
-	matrix_deinit(&enron_traits);
 	print_message("\n\n");
 }
 
@@ -77,16 +64,16 @@ static void basic_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	bool has_reffects = false;
-	bool has_loops = false;
+	int has_effects = 0;
+	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), ncohort);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+                    vector_dim(&intervals), traits, ntrait, trait_names);
+        design_set_has_effects(&design, has_effects);
+        design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
+	matrix_init(&coefs, design_dim(&design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -109,16 +96,17 @@ static void hard_setup()
 		112.50,  450.00, 1800.00,
 	};
 	struct vector vintvls = vector_make(intvls, 3);
-	bool has_reffects = false;
-	bool has_loops = false;
+	int has_effects = 0;
+	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nsend, nrecv, &recv_traits, recv_trait_names, &intervals);
-	design_set_loops(&design, has_loops);
-	design_set_recv_effects(&design, has_reffects);
-	design_add_recv_var(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, &design);
-	matrix_init(&coefs, design_recv_dim(&design), ncohort);
+	design_init(&design, nrecv, vector_to_ptr(&intervals),
+                    vector_dim(&intervals), traits, ntrait, trait_names);
+        design_set_has_effects(&design, has_effects);
+        design_add_dvar(&design, RECV_VAR_NRECV, NULL);
+	frame_init(&frame, nsend, nrecv, has_loops, &design);
+	matrix_init(&coefs, design_dim(&design), ncohort);
+
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
 			double val = (i + (c + 1) % 7 == 0 ?  0.1 :
@@ -156,7 +144,7 @@ static void test_dev()
 	struct vector mean_dev_old;
 	vector_init(&mean_dev_old, ncohort);
 	
-	nrecv = design_recv_count(&design);
+	nrecv = design_count(&design);
 
 	nmsg = 0;
 
@@ -209,15 +197,15 @@ static void test_mean()
 	double t;
 	size_t isend;
 	size_t itie, ntie;
-	size_t index, dim = design_recv_dim(&design);
+	size_t index, dim = design_dim(&design);
 	size_t nmsg;
 	
-	vector_init(&probs, design_recv_count(&design));
-	vector_init(&mean0, design_recv_dim(&design));
-	vector_init(&mean1, design_recv_dim(&design));
-	matrix_init(&avg_mean0, design_recv_dim(&design), ncohort);
-	vector_init(&avg_mean1, design_recv_dim(&design));
-	vector_init(&diff, design_recv_dim(&design));
+	vector_init(&probs, design_count(&design));
+	vector_init(&mean0, design_dim(&design));
+	vector_init(&mean1, design_dim(&design));
+	matrix_init(&avg_mean0, design_dim(&design), ncohort);
+	vector_init(&avg_mean1, design_dim(&design));
+	vector_init(&diff, design_dim(&design));
 	
 	nmsg = 0;
 	
@@ -302,15 +290,15 @@ static void test_score()
 	double t;
 	size_t isend, c, ito;
 	size_t itie, ntie;
-	size_t index, dim = design_recv_dim(&design);
+	size_t index, dim = design_dim(&design);
 	size_t n, nmsg;
 	
-	svector_init(&nrecv, design_recv_count(&design));
-	vector_init(&score0, design_recv_dim(&design));
-	vector_init(&score1, design_recv_dim(&design));
-	matrix_init(&avg_score0, design_recv_dim(&design), recv_model_cohort_count(&model));
-	vector_init(&avg_score1, design_recv_dim(&design));
-	vector_init(&diff, design_recv_dim(&design));
+	svector_init(&nrecv, design_count(&design));
+	vector_init(&score0, design_dim(&design));
+	vector_init(&score1, design_dim(&design));
+	matrix_init(&avg_score0, design_dim(&design), recv_model_cohort_count(&model));
+	vector_init(&avg_score1, design_dim(&design));
+	vector_init(&diff, design_dim(&design));
 	
 	nmsg = 0;
 	
@@ -390,9 +378,9 @@ static void test_imat()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	size_t isend, jrecv, nrecv = design_recv_count(&design);
+	size_t isend, jrecv, nrecv = design_count(&design);
 	size_t itie, ntie, c, n, nmsg;
-	size_t index1, index2, dim = design_recv_dim(&design);
+	size_t index1, index2, dim = design_dim(&design);
 	
 	vector_init(&mean, dim);
 	vector_init(&y, dim);	
