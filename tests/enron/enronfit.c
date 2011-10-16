@@ -70,8 +70,9 @@ static void setup(void) {
 	int has_effects = 0;
 	vector_init_copy(&intervals, &vintvls);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-                    vector_dim(&intervals), traits, ntrait, trait_names);
+                    vector_dim(&intervals));
         design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 	design_add_dvar(&design, RECV_VAR_IRECV, NULL);
 	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
 	design_add_dvar(&design, RECV_VAR_ISEND, NULL);

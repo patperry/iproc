@@ -61,8 +61,9 @@ static void rv_nsend_setup()
 	has_loops = 0;
 	vector_init(&intervals, 0);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-		    vector_dim(&intervals), traits, ntrait, trait_names);
+		    vector_dim(&intervals));
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 	design_add_dvar(&design, RECV_VAR_NSEND, NULL);
 	rv_nsend_index = design_dvar_index(&design, RECV_VAR_NSEND);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);
@@ -127,8 +128,9 @@ static void rv_nrecv_setup()
 	has_loops = 0;
 	vector_init(&intervals, 0);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-		    vector_dim(&intervals), traits, ntrait, trait_names);
+		    vector_dim(&intervals));
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
 	rv_nrecv_index = design_dvar_index(&design, RECV_VAR_NRECV);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);
@@ -201,8 +203,9 @@ static void rv_irecv_setup()
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-		    vector_dim(&intervals), traits, ntrait, trait_names);
+		    vector_dim(&intervals));
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 	design_add_dvar(&design, RECV_VAR_IRECV, NULL);
 	rv_irecv_index = design_dvar_index(&design, RECV_VAR_IRECV);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);
@@ -283,8 +286,9 @@ static void rv_isend_setup()
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-		    vector_dim(&intervals), traits, ntrait, trait_names);
+		    vector_dim(&intervals));
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 	design_add_dvar(&design, RECV_VAR_ISEND, NULL);
 	rv_isend_index = design_dvar_index(&design, RECV_VAR_ISEND);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);

@@ -69,8 +69,9 @@ static void basic_setup()
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-                    vector_dim(&intervals), traits, ntrait, trait_names);
+                    vector_dim(&intervals));
         design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
         design_add_dvar(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);
 	matrix_init(&coefs, design_dim(&design), ncohort);
@@ -101,8 +102,9 @@ static void hard_setup()
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
 	design_init(&design, nrecv, vector_to_ptr(&intervals),
-                    vector_dim(&intervals), traits, ntrait, trait_names);
+                    vector_dim(&intervals));
         design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
         design_add_dvar(&design, RECV_VAR_NRECV, NULL);
 	frame_init(&frame, nsend, nrecv, has_loops, &design);
 	matrix_init(&coefs, design_dim(&design), ncohort);

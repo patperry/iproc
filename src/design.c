@@ -13,6 +13,9 @@
 
 static char **xstrdup2(const char *const *strs, size_t len)
 {
+	if (!strs)
+		return NULL;
+
 	char **res = xmalloc(len * sizeof(res[0]));
 	size_t i;
 
@@ -23,9 +26,7 @@ static char **xstrdup2(const char *const *strs, size_t len)
 }
 
 void design_init(struct design *d, size_t count,
-		 const double *intvls, size_t nintvl,
-		 const double *traits, size_t trait_dim,
-		 const char *const *trait_names)
+		 const double *intvls, size_t nintvl)
 {
 	assert(d);
 	assert(intvls || !nintvl);
@@ -37,19 +38,18 @@ void design_init(struct design *d, size_t count,
 		}
 	}
 #endif
-	assert(traits || !trait_dim);
 
 	d->count= count;
 	d->intvls = xmemdup(intvls, nintvl * sizeof(intvls[0]));
 	d->nintvl = nintvl;
 
+	d->dim = 0;
 	d->has_effects = 0;
-	d->dim = trait_dim;
 	d->trait_off = 0;
-	d->trait_dim = trait_dim;
-	d->traits = xmemdup(traits, count * trait_dim * sizeof(traits[0]));
-	d->trait_names = xstrdup2(trait_names, trait_dim);
-	d->dvar_off = trait_dim;
+	d->trait_dim = 0;
+	d->traits = NULL;
+	d->trait_names = NULL;
+	d->dvar_off = 0;
 	d->dvar_dim = 0;
 	d->dvars = NULL;
 	d->ndvar = 0;
@@ -59,6 +59,9 @@ void design_init(struct design *d, size_t count,
 static void free2(void **ptrs, size_t len)
 {
 	size_t i;
+
+	if (!ptrs)
+		return;
 
 	for (i = len; i > 0; i--) {
 		free(ptrs[i-1]);
@@ -284,6 +287,25 @@ void design_set_has_effects(struct design *d, int has_effects)
 	}
 
 	d->has_effects = has_effects;
+}
+
+void design_set_traits(struct design *d, const double *traits,
+		       size_t dim, const char *const *names)
+{
+	free2((void **)d->trait_names, d->trait_dim);
+	free(d->traits);
+
+	if (dim >= d->trait_dim) {
+		d->dim += (dim - d->trait_dim);
+		d->dvar_off += (dim - d->trait_dim);
+	} else {
+		d->dim -= (d->trait_dim - dim);
+		d->dvar_off -= (d->trait_dim - dim);
+	}
+
+	d->trait_dim = dim;
+	d->traits = xmemdup(traits, d->count * dim * sizeof(traits[0]));
+	d->trait_names = xstrdup2(names, dim);
 }
 
 static void design_grow_dvars(struct design *d)

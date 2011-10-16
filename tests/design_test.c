@@ -62,9 +62,9 @@ static void enron_setup()
 	intvls = NULL;
 	nintvl = 0;
 
-	design_init(&design, nrecv, intvls, nintvl,
-		    traits, ntrait, trait_names);
+	design_init(&design, nrecv, intvls, nintvl);
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 }
 
 static void enron_teardown()
@@ -102,9 +102,9 @@ static void enron_reff_setup()
 	intvls = NULL;
 	nintvl = 0;
 	
-	design_init(&design, nrecv, intvls, nintvl, traits, ntrait,
-		    trait_names);
+	design_init(&design, nrecv, intvls, nintvl);
 	design_set_has_effects(&design, has_effects);
+	design_set_traits(&design, traits, ntrait, trait_names);
 }
 
 static void enron_reff_teardown()
