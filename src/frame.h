@@ -84,8 +84,8 @@ static inline struct frame_message *frame_messages_item(const struct frame *f,
 void frame_add(struct frame *f, const struct message *msg);
 
 /* actors */
-static inline size_t frame_senders_count(const struct frame *f);
-static inline size_t frame_receivers_count(const struct frame *f);
+static inline size_t frame_send_count(const struct frame *f);
+static inline size_t frame_recv_count(const struct frame *f);
 static inline int frame_has_loops(const struct frame *f);
 static inline void frame_get_send_messages(const struct frame *f, size_t isend,
 					   size_t **imsg, size_t *nmsg);
@@ -170,13 +170,13 @@ struct frame_message *frame_messages_item(const struct frame *f, size_t imsg)
 	return &base[imsg];
 }
 
-size_t frame_senders_count(const struct frame *f)
+size_t frame_send_count(const struct frame *f)
 {
 	assert(f);
 	return f->nsend;
 }
 
-size_t frame_receivers_count(const struct frame *f)
+size_t frame_recv_count(const struct frame *f)
 {
 	assert(f);
 	return f->nrecv;
@@ -191,7 +191,7 @@ void frame_get_send_messages(const struct frame *f, size_t isend,
 			     size_t **imsg, size_t *nmsg)
 {
 	assert(f);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	assert(imsg);
 	assert(nmsg);
 
@@ -204,7 +204,7 @@ void frame_get_recv_messages(const struct frame *f, size_t irecv,
 			     size_t **imsg, size_t *nmsg)
 {
 	assert(f);
-	assert(irecv < frame_receivers_count(f));
+	assert(irecv < frame_recv_count(f));
 	assert(imsg);
 	assert(nmsg);
 

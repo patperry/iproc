@@ -471,11 +471,11 @@ void recv_model_init(struct recv_model *model,
 	assert(!coefs
 	       || design_dim(frame_design(f)) == (size_t)matrix_nrow(coefs));
 	assert(!coefs || ncohort);
-	assert(frame_receivers_count(f) > 0);
-	assert(!frame_has_loops(f) || frame_receivers_count(f) > 1);
+	assert(frame_recv_count(f) > 0);
+	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
 	const struct design *d = frame_design(f);
-	const size_t nsend = frame_senders_count(f);
+	const size_t nsend = frame_send_count(f);
 
 	model->frame = f;
 	model->ncohort = ncohort;
@@ -559,7 +559,7 @@ const struct matrix *recv_model_coefs(const struct recv_model *model)
 size_t recv_model_send_count(const struct recv_model *model)
 {
 	assert(model);
-	return frame_senders_count(model->frame);
+	return frame_send_count(model->frame);
 }
 
 size_t recv_model_cohort_count(const struct recv_model *model)

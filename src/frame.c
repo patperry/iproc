@@ -64,44 +64,44 @@ static void frame_actors_deinit(struct frame_actor *fas, size_t n)
 
 static void frame_senders_init(struct frame *f)
 {
-	size_t n = frame_senders_count(f);
+	size_t n = frame_send_count(f);
 	frame_actors_init(&f->senders, n);
 }
 
 static void frame_senders_clear(struct frame *f)
 {
-	size_t n = frame_senders_count(f);
+	size_t n = frame_send_count(f);
 	frame_actors_clear(f->senders, n);
 }
 
 static void frame_senders_deinit(struct frame *f)
 {
-	size_t n = frame_senders_count(f);
+	size_t n = frame_send_count(f);
 	frame_actors_deinit(f->senders, n);
 }
 
 static struct frame_actor *frame_senders_item(const struct frame *f, size_t i)
 {
 	assert(f);
-	assert(i < frame_senders_count(f));
+	assert(i < frame_send_count(f));
 	return &f->senders[i];
 }
 
 static void frame_receivers_init(struct frame *f)
 {
-	size_t n = frame_receivers_count(f);
+	size_t n = frame_recv_count(f);
 	frame_actors_init(&f->receivers, n);
 }
 
 static void frame_receivers_clear(struct frame *f)
 {
-	size_t n = frame_receivers_count(f);
+	size_t n = frame_recv_count(f);
 	frame_actors_clear(f->receivers, n);
 }
 
 static void frame_receivers_deinit(struct frame *f)
 {
-	size_t n = frame_receivers_count(f);
+	size_t n = frame_recv_count(f);
 	frame_actors_deinit(f->receivers, n);
 }
 
@@ -109,7 +109,7 @@ static struct frame_actor *frame_receivers_item(const struct frame *f,
 						size_t i)
 {
 	assert(f);
-	assert(i < frame_receivers_count(f));
+	assert(i < frame_recv_count(f));
 	return &f->receivers[i];
 }
 
@@ -235,7 +235,7 @@ static void recv_frames_init(struct frame *f)
 {
 	assert(f);
 
-	size_t isend, nsend = frame_senders_count(f);
+	size_t isend, nsend = frame_send_count(f);
 
 	struct recv_frame *rfs = xcalloc(nsend, sizeof(struct recv_frame));
 
@@ -248,7 +248,7 @@ static void recv_frames_init(struct frame *f)
 static void recv_frames_deinit(struct frame *f)
 {
 	assert(f);
-	size_t isend, nsend = frame_senders_count(f);
+	size_t isend, nsend = frame_send_count(f);
 
 	struct recv_frame *rfs = f->recv_frames;
 
@@ -261,7 +261,7 @@ static void recv_frames_deinit(struct frame *f)
 static void recv_frames_clear(struct frame *f)
 {
 	assert(f);
-	size_t isend, nsend = frame_senders_count(f);
+	size_t isend, nsend = frame_send_count(f);
 	struct recv_frame *rfs = f->recv_frames;
 
 	for (isend = 0; isend < nsend; isend++) {
@@ -272,7 +272,7 @@ static void recv_frames_clear(struct frame *f)
 static struct recv_frame *recv_frames_item(const struct frame *f, size_t isend)
 {
 	assert(f);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 
 	struct recv_frame *rf = &f->recv_frames[isend];
 	return rf;
@@ -552,8 +552,8 @@ void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
 #ifndef NDEBUG
 	const struct design *d = frame_design(f);
 #endif
-	assert(isend < frame_senders_count(f));
-	assert(jrecv < frame_receivers_count(f));
+	assert(isend < frame_send_count(f));
+	assert(jrecv < frame_recv_count(f));
 	assert((size_t)svector_dim(delta) == design_dvars_dim(d));
 
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
@@ -583,8 +583,8 @@ const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
 				   size_t jrecv)
 {
 	assert(f);
-	assert(isend < frame_senders_count(f));
-	assert(jrecv < frame_receivers_count(f));
+	assert(isend < frame_send_count(f));
+	assert(jrecv < frame_recv_count(f));
 
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 	const struct design *d = frame_design(f);
@@ -597,7 +597,7 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 		       size_t *nactivep)
 {
 	assert(f);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 	*dxp = rf->dx;
 	*activep = rf->active;
@@ -656,7 +656,7 @@ void frame_recv_mul(double alpha, enum blas_trans trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
@@ -698,7 +698,7 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
@@ -741,7 +741,7 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
@@ -810,7 +810,7 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 {
 	assert(f);
 	assert(f->design);
-	assert(isend < frame_senders_count(f));
+	assert(isend < frame_send_count(f));
 	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
