@@ -12,41 +12,38 @@
 
 static char *isib_names[] = { "ISib" };
 
-static void isib_init(struct design_var *dv, const struct design *d,
+static void isib_init(struct design_var *v, const struct design *d,
 		      void *params)
 {
 	(void)d;		// unused
 	(void)params;		// unused;
-	assert(dv);
+	assert(v);
 	assert(d);
 	assert(!params);
 
-	dv->dim = 1;
-	dv->names = isib_names;
+	v->dim = 1;
+	v->names = isib_names;
 }
 
 static void isib_message_add(void *udata, struct frame *f,
 			     const struct message *msg)
 {
-	struct frame_var *fv = udata;
+	struct design_var *v = udata;
 
-	assert(fv);
+	assert(v);
 	assert(f);
 	assert(msg);
-	assert(fv->design);
-	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_dvars_dim(f->design));
+	assert(v->dyn_index + v->dim
+	       <= design_dvars_dim(frame_recv_design(f)));
 
-	const struct design *d = frame_design(f);
-	size_t nintvl = design_interval_count(d);
 	size_t ksend = msg->from;
-	size_t dyn_index = fv->design->dyn_index;
+	size_t dyn_index = v->dyn_index;
 	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
 	ssize_t dx_index[1] = { dyn_index };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(f->design);
+	size_t dx_n = design_dvars_dim(frame_recv_design(f));
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
@@ -62,13 +59,7 @@ static void isib_message_add(void *udata, struct frame *f,
 			const struct frame_message *fmsg =
 			    frame_messages_item(f, imsg[i]);
 			const struct message *msg1 = fmsg->message;
-
-			size_t intvl = fmsg->interval;
-			size_t ix = dyn_index + intvl * (nintvl + 1);
-			size_t coix = dyn_index + intvl;
 			assert(msg1->from == ksend);
-
-			dx_index[0] = ix;
 
 			size_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
@@ -89,8 +80,6 @@ static void isib_message_add(void *udata, struct frame *f,
 							  &delta);
 				}
 			}
-
-			dx_index[0] = coix;
 
 			for (ito1 = 0; ito1 < nto1; ito1++) {
 				if (msg1->to[ito1] == msg1->from
@@ -118,8 +107,6 @@ static struct var_type RECV_VAR_ISIB_REP = {
 	VAR_RECV_VAR,
 	isib_init,
 	NULL,			// deinit
-	NULL,			// frame_init
-	NULL,			// frame_deinit
 	{
 	 isib_message_add,
 	 NULL,			// message_advance,

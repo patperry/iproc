@@ -18,10 +18,9 @@ struct recv_boot {
 	struct messages messages;
 };
 
-void recv_boot_init(struct recv_boot *boot, size_t nsend, size_t nrecv,
-		    int has_loops,
+void recv_boot_init(struct recv_boot *boot,
+		    struct frame *f,
 		    const struct messages *msgs,
-		    const struct design *design,
 		    size_t ncohort,
 		    const size_t *cohorts,
 		    const struct matrix *coefs, dsfmt_t * dsfmt);

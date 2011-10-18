@@ -4,44 +4,43 @@
 #include "frame.h"
 #include "vars.h"
 
-static void nrecv_init(struct design_var *dv, const struct design *d,
+static void nrecv_init(struct design_var *v, const struct design *d,
 		       void *params)
 {
 	(void)d;		// unused
 	(void)params;		// unused;
-	assert(dv);
+	assert(v);
 	assert(d);
 	assert(!params);
 
-	size_t n = design_interval_count(d);
-	dv->dim = n + 1;
-	dv->names = var_names_alloc("NRecv", strlen("NRecv"), n + 1);
+	size_t n = frame_interval_count(design_frame(d));
+	v->dim = n + 1;
+	v->names = var_names_alloc("NRecv", strlen("NRecv"), n + 1);
 }
 
-static void nrecv_deinit(struct design_var *dv)
+static void nrecv_deinit(struct design_var *v)
 {
-	var_names_free(dv->names);
+	var_names_free(v->names);
 }
 
 static void nrecv_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
-	struct frame_var *fv = udata;
+	struct design_var *v = udata;
 
-	assert(fv);
+	assert(v);
 	assert(f);
 	assert(msg);
-	assert(fv->design);
-	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_dvars_dim(f->design));
+	assert(v->dyn_index + v->dim
+	       <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t jrecv = msg->from;
-	size_t dyn_index = fv->design->dyn_index;
+	size_t dyn_index = v->dyn_index;
 
 	double dx_data = +1.0;
 	ssize_t dx_index = dyn_index;
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(f->design);
+	size_t dx_n = design_dvars_dim(frame_recv_design(f));
 	struct svector delta = svector_make(&dx_index, &dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
@@ -57,22 +56,21 @@ static void nrecv_message_add(void *udata, struct frame *f,
 static void nrecv_message_advance(void *udata, struct frame *f,
 				  const struct message *msg, size_t intvl)
 {
-	struct frame_var *fv = udata;
+	struct design_var *v = udata;
 
-	assert(fv);
+	assert(v);
 	assert(f);
 	assert(msg);
-	assert(fv->design);
-	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_dvars_dim(f->design));
+	assert(v->dyn_index + v->dim
+	       <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t jrecv = msg->from;
-	size_t dyn_index = fv->design->dyn_index;
+	size_t dyn_index = v->dyn_index;
 
 	double dx_data[2] = { -1.0, +1.0 };
 	ssize_t dx_index[2] = { 0, 1 };
 	size_t dx_nnz = 2;
-	size_t dx_n = design_dvars_dim(f->design);
+	size_t dx_n = design_dvars_dim(frame_recv_design(f));
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
@@ -95,8 +93,6 @@ static struct var_type RECV_VAR_NRECV_REP = {
 	VAR_RECV_VAR,
 	nrecv_init,
 	nrecv_deinit,
-	NULL,			// frame_init
-	NULL,			// frame_deinit
 	{
 	 nrecv_message_add,
 	 nrecv_message_advance,

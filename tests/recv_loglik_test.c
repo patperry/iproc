@@ -32,7 +32,7 @@ static const char * const *trait_names;
 static const char * const *cohort_names;
 static struct vector intervals;
 static struct messages messages;
-static struct design design;
+static struct design *design;
 static struct frame frame;
 static struct matrix coefs;
 static struct recv_model model;
@@ -68,13 +68,13 @@ static void basic_setup()
 	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nrecv, vector_to_ptr(&intervals),
+	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
                     vector_dim(&intervals));
-        design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
-        design_add_dvar(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, nsend, nrecv, has_loops, &design);
-	matrix_init(&coefs, design_dim(&design), ncohort);
+	design = frame_recv_design(&frame);
+        design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
+        design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	matrix_init(&coefs, design_dim(design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -101,13 +101,13 @@ static void hard_setup()
 	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nrecv, vector_to_ptr(&intervals),
+	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
                     vector_dim(&intervals));
-        design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
-        design_add_dvar(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, nsend, nrecv, has_loops, &design);
-	matrix_init(&coefs, design_dim(&design), ncohort);
+	design = frame_recv_design(&frame);
+        design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
+        design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	matrix_init(&coefs, design_dim(design), ncohort);
 
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -131,7 +131,6 @@ static void teardown()
 	matrix_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
-	design_deinit(&design);
 }
 
 static void test_dev()
@@ -146,7 +145,7 @@ static void test_dev()
 	struct vector mean_dev_old;
 	vector_init(&mean_dev_old, ncohort);
 	
-	nrecv = design_count(&design);
+	nrecv = design_count(design);
 
 	nmsg = 0;
 
@@ -199,15 +198,15 @@ static void test_mean()
 	double t;
 	size_t isend;
 	size_t itie, ntie;
-	size_t index, dim = design_dim(&design);
+	size_t index, dim = design_dim(design);
 	size_t nmsg;
 	
-	vector_init(&probs, design_count(&design));
-	vector_init(&mean0, design_dim(&design));
-	vector_init(&mean1, design_dim(&design));
-	matrix_init(&avg_mean0, design_dim(&design), ncohort);
-	vector_init(&avg_mean1, design_dim(&design));
-	vector_init(&diff, design_dim(&design));
+	vector_init(&probs, design_count(design));
+	vector_init(&mean0, design_dim(design));
+	vector_init(&mean1, design_dim(design));
+	matrix_init(&avg_mean0, design_dim(design), ncohort);
+	vector_init(&avg_mean1, design_dim(design));
+	vector_init(&diff, design_dim(design));
 	
 	nmsg = 0;
 	
@@ -292,15 +291,15 @@ static void test_score()
 	double t;
 	size_t isend, c, ito;
 	size_t itie, ntie;
-	size_t index, dim = design_dim(&design);
+	size_t index, dim = design_dim(design);
 	size_t n, nmsg;
 	
-	svector_init(&nrecv, design_count(&design));
-	vector_init(&score0, design_dim(&design));
-	vector_init(&score1, design_dim(&design));
-	matrix_init(&avg_score0, design_dim(&design), recv_model_cohort_count(&model));
-	vector_init(&avg_score1, design_dim(&design));
-	vector_init(&diff, design_dim(&design));
+	svector_init(&nrecv, design_count(design));
+	vector_init(&score0, design_dim(design));
+	vector_init(&score1, design_dim(design));
+	matrix_init(&avg_score0, design_dim(design), recv_model_cohort_count(&model));
+	vector_init(&avg_score1, design_dim(design));
+	vector_init(&diff, design_dim(design));
 	
 	nmsg = 0;
 	
@@ -380,9 +379,9 @@ static void test_imat()
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	size_t isend, jrecv, nrecv = design_count(&design);
+	size_t isend, jrecv, nrecv = design_count(design);
 	size_t itie, ntie, c, n, nmsg;
-	size_t index1, index2, dim = design_dim(&design);
+	size_t index1, index2, dim = design_dim(design);
 	
 	vector_init(&mean, dim);
 	vector_init(&y, dim);	

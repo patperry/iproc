@@ -150,7 +150,7 @@ void recv_model_init(struct recv_model *model,
 		     const size_t *cohorts, const struct matrix *coefs);
 void recv_model_deinit(struct recv_model *model);
 
-const struct frame *recv_model_frame(const struct recv_model *model);
+struct frame *recv_model_frame(const struct recv_model *model);
 const struct design *recv_model_design(const struct recv_model *model);
 const size_t *recv_model_cohorts(const struct recv_model *model);
 const struct matrix *recv_model_coefs(const struct recv_model *model);

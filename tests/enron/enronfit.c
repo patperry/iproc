@@ -36,7 +36,7 @@ static int has_loops;
 
 static struct vector intervals;
 
-static struct design design;
+static struct frame frame;
 
 
 static void setup(void) {
@@ -69,22 +69,23 @@ static void setup(void) {
 	struct vector vintvls = vector_make(intvls, nintvls);
 	int has_effects = 0;
 	vector_init_copy(&intervals, &vintvls);
-	design_init(&design, nrecv, vector_to_ptr(&intervals),
+	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
                     vector_dim(&intervals));
-        design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
-	design_add_dvar(&design, RECV_VAR_IRECV, NULL);
-	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
-	design_add_dvar(&design, RECV_VAR_ISEND, NULL);
-	design_add_dvar(&design, RECV_VAR_NSEND, NULL);
-	//design_add_dvar(&design, RECV_VAR_IRECV2, NULL);
-	//design_add_dvar(&design, RECV_VAR_NRECV2, NULL);
-	//design_add_dvar(&design, RECV_VAR_ISEND2, NULL);
-	//design_add_dvar(&design, RECV_VAR_NSEND2, NULL);
-	//design_add_dvar(&design, RECV_VAR_ISIB, NULL);		
-	//design_add_dvar(&design, RECV_VAR_NSIB, NULL);
-	//design_add_dvar(&design, RECV_VAR_ICOSIB, NULL);		
-	//design_add_dvar(&design, RECV_VAR_NCOSIB, NULL);
+	struct design *d = frame_recv_design(&frame);
+        design_set_has_effects(d, has_effects);
+	design_set_traits(d, traits, ntrait, trait_names);
+	design_add_dvar(d, RECV_VAR_IRECV, NULL);
+	design_add_dvar(d, RECV_VAR_NRECV, NULL);
+	design_add_dvar(d, RECV_VAR_ISEND, NULL);
+	design_add_dvar(d, RECV_VAR_NSEND, NULL);
+	//design_add_dvar(d, RECV_VAR_IRECV2, NULL);
+	//design_add_dvar(d, RECV_VAR_NRECV2, NULL);
+	//design_add_dvar(d, RECV_VAR_ISEND2, NULL);
+	//design_add_dvar(d, RECV_VAR_NSEND2, NULL);
+	//design_add_dvar(d, RECV_VAR_ISIB, NULL);		
+	//design_add_dvar(d, RECV_VAR_NSIB, NULL);
+	//design_add_dvar(d, RECV_VAR_ICOSIB, NULL);		
+	//design_add_dvar(d, RECV_VAR_NCOSIB, NULL);
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -216,7 +217,7 @@ static void add_constraints(struct recv_fit *fit)
 static void teardown(void)
 {
 	vector_deinit(&intervals);	
-	design_deinit(&design);
+	frame_deinit(&frame);
 	free(traits);
 	free(cohorts);
 }
@@ -254,6 +255,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	yajl_gen_status err = yajl_gen_status_ok;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
 	const struct recv_model *m = ll->model;
+	struct frame *f = recv_model_frame(m);
 	const struct design *d = recv_model_design(m);
 
 	size_t ne = recv_fit_constr_count(fit);
@@ -265,8 +267,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	{
 		/* intervals */
 		YG(yajl_gen_string(hand, YSTR(INTERVALS), strlen(INTERVALS)));
-		const double *intvls = design_intervals(d);
-		n = design_interval_count(d);
+		const double *intvls = frame_intervals(f);
+		n = frame_interval_count(f);
 		YG(yajl_gen_array_open(hand));
 		for (i = 0; i < n; i++) {
 			YG(yajl_gen_ieee754(hand, intvls[i]));
@@ -416,8 +418,9 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* y = y */		
 		struct recv_resid resid;
 		
-		recv_resid_init(&resid, nsend, nrecv, has_loops, fit->ymsgs,
-				d, fit->model.ncohort, fit->model.cohorts,
+		frame_clear(f);
+		recv_resid_init(&resid, f, fit->ymsgs,
+				fit->model.ncohort, fit->model.cohorts,
 				coefs);
 		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
@@ -480,8 +483,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
 	ctrl.gtol = 1e-7;
-	recv_fit_init(&fit, nsend, nrecv, has_loops, xmsgs, ymsgs, &design,
-		      ncohort, cohorts, &ctrl);
+	recv_fit_init(&fit, &frame, xmsgs, ymsgs, ncohort, cohorts, &ctrl);
 	add_constraints(&fit);
 	
 	enum recv_fit_task task;
@@ -694,8 +696,7 @@ int main(int argc, char **argv)
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		recv_boot_init(&boot, nsend, nrecv, has_loops,
-			       &enron_messages, &design, ncohort,
+		recv_boot_init(&boot, &frame, &enron_messages, ncohort,
 			       cohorts, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}

@@ -18,16 +18,14 @@ struct recv_resid_count {
 };
 
 struct recv_resid {
-	struct frame frame;
 	struct recv_model model;
 	struct recv_resid_count obs;
 	struct recv_resid_count exp;
 };
 
 void recv_resid_init(struct recv_resid *resid,
-		     size_t nsend, size_t nrecv, int has_loops,
+		     struct frame *f,
 		     const struct messages *msgs,
-		     const struct design *design,
 		     size_t ncohort,
 		     const size_t *cohorts, const struct matrix *coefs);
 void recv_resid_deinit(struct recv_resid *resid);

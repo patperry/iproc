@@ -6,38 +6,37 @@
 
 static char *isend_names[] = { "ISend" };
 
-static void isend_init(struct design_var *dv, const struct design *d,
+static void isend_init(struct design_var *v, const struct design *d,
 		       void *params)
 {
 	(void)d;		// unused
 	(void)params;		// unused;
-	assert(dv);
+	assert(v);
 	assert(d);
 	assert(!params);
 
-	dv->dim = 1;
-	dv->names = isend_names;
+	v->dim = 1;
+	v->names = isend_names;
 }
 
 static void isend_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
-	struct frame_var *fv = udata;
+	struct design_var *v = udata;
 
-	assert(fv);
+	assert(v);
 	assert(f);
 	assert(msg);
-	assert(fv->design);
-	assert(fv->design->dyn_index + fv->design->dim
-	       <= design_dvars_dim(f->design));
+	assert(v->dyn_index + v->dim
+	       <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t isend = msg->from;
-	size_t dyn_index = fv->design->dyn_index;
+	size_t dyn_index = v->dyn_index;
 
 	double dx_data[1] = { +1.0 };
 	ssize_t dx_index[1] = { dyn_index };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(f->design);
+	size_t dx_n = design_dvars_dim(frame_recv_design(f));
 	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
@@ -57,8 +56,6 @@ static struct var_type RECV_VAR_ISEND_REP = {
 	VAR_RECV_VAR,
 	isend_init,
 	NULL,			// deinit
-	NULL,			// frame_init
-	NULL,			// frame_deinit
 	{
 	 isend_message_add,
 	 NULL,			// message_advance,

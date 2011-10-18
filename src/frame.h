@@ -32,7 +32,11 @@ struct recv_frame {
 struct frame {
 	size_t nsend, nrecv;
 	int has_loops;
-	const struct design *design;
+
+	double *intvls;
+	size_t nintvl;
+
+	struct design recv_design;
 	double time;
 
 	struct array observers;
@@ -43,7 +47,6 @@ struct frame {
 	struct pqueue events;
 
 	struct recv_frame *recv_frames;
-	struct frame_var *vars;
 };
 
 struct frame_callbacks {
@@ -65,12 +68,15 @@ struct frame_observer {
 
 /* create/destroy/clear */
 void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
-		const struct design *design);
+		const double *intvls, size_t nintvl);				
 void frame_deinit(struct frame *f);
 void frame_clear(struct frame *f);
 
 /* properties */
-static inline const struct design *frame_design(const struct frame *f);
+static inline const double *frame_intervals(const struct frame *f);
+static inline size_t frame_interval_count(const struct frame *f);
+
+static inline struct design *frame_recv_design(const struct frame *f);
 
 /* time */
 static inline double frame_time(const struct frame *f);	// current time
@@ -132,10 +138,20 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 //                   const struct svector *x, double beta, struct vector *y);
 
 /* inline function definitions */
-const struct design *frame_design(const struct frame *f)
+const double *frame_intervals(const struct frame *f)
+{
+	return f->intvls;
+}
+
+size_t frame_interval_count(const struct frame *f)
+{
+	return f->nintvl;
+}
+
+struct design *frame_recv_design(const struct frame *f)
 {
 	assert(f);
-	return f->design;
+	return &((struct frame *)f)->recv_design;
 }
 
 double frame_time(const struct frame *f)

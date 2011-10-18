@@ -28,7 +28,7 @@ static const char * const *cohort_names;
 static const char * const *trait_names;
 static struct vector intervals;
 static struct messages messages;
-static struct design design;
+static struct design *design;
 static struct frame frame;
 static struct matrix coefs;
 static struct recv_model model;
@@ -64,13 +64,13 @@ static void basic_setup()
 	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nrecv, vector_to_ptr(&intervals),
+	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
                     vector_dim(&intervals));
-	design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
-	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, nsend, nrecv, has_loops, &design);
-	matrix_init(&coefs, design_dim(&design), ncohort);
+	design = frame_recv_design(&frame);
+	design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
+	design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	matrix_init(&coefs, design_dim(design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -91,7 +91,6 @@ static void teardown()
 	matrix_deinit(&coefs);
 	frame_deinit(&frame);
 	vector_deinit(&intervals);	
-	design_deinit(&design);
 }
 
 
@@ -106,13 +105,13 @@ static void hard_setup()
 	int has_loops = 0;
 	vector_init(&intervals, 3);
 	vector_assign_copy(&intervals, &vintvls);
-	design_init(&design, nrecv, vector_to_ptr(&intervals),
+	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
                     vector_dim(&intervals));
-	design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
-	design_add_dvar(&design, RECV_VAR_NRECV, NULL);
-	frame_init(&frame, nsend, nrecv, has_loops, &design);
-	matrix_init(&coefs, design_dim(&design), ncohort);
+	design = frame_recv_design(&frame);
+	design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
+	design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	matrix_init(&coefs, design_dim(design), ncohort);
 	
 	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
 		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
@@ -138,7 +137,7 @@ static void test_probs()
 	size_t isend, jrecv, nrecv;
 	size_t i, n;
 	
-	nrecv = design_count(&design);
+	nrecv = design_count(design);
 	vector_init(&eta, nrecv);	
 	vector_init(&probs, nrecv);
 	vector_init(&logprobs, nrecv);

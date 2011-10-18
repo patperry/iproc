@@ -83,10 +83,10 @@ static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 }
 
 static void recv_resid_set(struct recv_resid *resid,
+		           struct frame *f,
 			   const struct messages *msgs,
 			   const struct matrix *coefs)
 {
-	frame_clear(&resid->frame);
 	recv_model_set_coefs(&resid->model, coefs);
 	recv_resid_clear(&resid->obs);
 	recv_resid_clear(&resid->exp);
@@ -96,10 +96,10 @@ static void recv_resid_set(struct recv_resid *resid,
 		size_t i, n = MESSAGES_COUNT(it);
 		double t = MESSAGES_TIME(it);
 
-		frame_advance(&resid->frame, t);
+		frame_advance(f, t);
 		for (i = 0; i < n; i++) {
 			struct message *msg = MESSAGES_VAL(it, i);
-			frame_add(&resid->frame, msg);
+			frame_add(f, msg);
 
 			update_obs(&resid->obs, msg);
 			update_exp(&resid->exp, msg, &resid->model);
@@ -111,19 +111,19 @@ static void recv_resid_set(struct recv_resid *resid,
 }
 
 void recv_resid_init(struct recv_resid *resid,
-		     size_t nsend, size_t nrecv, int has_loops,
+		     struct frame *f,
 		     const struct messages *msgs,
-		     const struct design *design,
 		     size_t ncohort,
 		     const size_t *cohorts, const struct matrix *coefs)
 {
-	frame_init(&resid->frame, nsend, nrecv, has_loops, design);
-	recv_model_init(&resid->model, &resid->frame, ncohort, cohorts, coefs);
+	size_t nsend = frame_send_count(f);
+	size_t nrecv = frame_recv_count(f);
 
+	recv_model_init(&resid->model, f, ncohort, cohorts, coefs);
 	recv_resid_count_init(&resid->obs, nsend, nrecv);
 	recv_resid_count_init(&resid->exp, nsend, nrecv);
 
-	recv_resid_set(resid, msgs, coefs);
+	recv_resid_set(resid, f, msgs, coefs);
 }
 
 void recv_resid_deinit(struct recv_resid *resid)
@@ -131,5 +131,4 @@ void recv_resid_deinit(struct recv_resid *resid)
 	recv_resid_count_deinit(&resid->exp);
 	recv_resid_count_deinit(&resid->obs);
 	recv_model_deinit(&resid->model);
-	frame_deinit(&resid->frame);
 }

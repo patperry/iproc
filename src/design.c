@@ -25,24 +25,12 @@ static char **xstrdup2(const char *const *strs, size_t len)
 	return res;
 }
 
-void design_init(struct design *d, size_t count,
-		 const double *intvls, size_t nintvl)
+void design_init(struct design *d, struct frame *f, size_t count)
 {
 	assert(d);
-	assert(intvls || !nintvl);
-#ifndef NDEBUG
-	{
-		size_t i;
-		for (i = 1; i < nintvl; i++) {
-			assert(intvls[i - 1] < intvls[i]);
-		}
-	}
-#endif
 
+	d->frame = f;
 	d->count= count;
-	d->intvls = xmemdup(intvls, nintvl * sizeof(intvls[0]));
-	d->nintvl = nintvl;
-
 	d->dim = 0;
 	d->has_effects = 0;
 	d->trait_off = 0;
@@ -69,13 +57,14 @@ static void free2(void **ptrs, size_t len)
 	free(ptrs);
 }
 
-static void free_dvars(struct design_var *dvars, size_t len)
+static void free_dvars(struct design_var *dvars, size_t len, struct frame *f)
 {
 	struct design_var *v;
 	size_t i;
 
 	for (i = len; i > 0; i--) {
 		v = &dvars[i - 1];
+		frame_remove_observer(f, v);
 		if (v->type->deinit) {
 			v->type->deinit(v);
 		}
@@ -87,10 +76,9 @@ void design_deinit(struct design *d)
 {
 	assert(d);
 
-	free_dvars(d->dvars, d->ndvar);
+	free_dvars(d->dvars, d->ndvar, d->frame);
 	free2((void **)d->trait_names, d->trait_dim);
 	free(d->traits);
-	free(d->intvls);
 }
 
 static void
@@ -330,6 +318,7 @@ void design_add_dvar(struct design *d, const struct var_type *type,
 	type->init(v, d, params);
 	v->dyn_index = d->dvar_dim;
 	v->type = type;
+	frame_add_observer(d->frame, v, &v->type->callbacks);
 
 	d->ndvar++;
 	d->dvar_dim += v->dim;

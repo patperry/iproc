@@ -9,11 +9,11 @@
 
 struct var_type;		// forward declaration
 struct design_var;
+struct frame;
 
 struct design {
+	struct frame *frame;
 	size_t count;
-	double *intvls;
-	size_t nintvl;
 
 	size_t dim;
 	int has_effects;
@@ -29,14 +29,11 @@ struct design {
 	size_t ndvar, ndvar_max;
 };
 
-void design_init(struct design *d, size_t count, const double *intvls,
-		 size_t nintvl);
+void design_init(struct design *d, struct frame *f, size_t count);
 void design_deinit(struct design *d);
 
+static inline struct frame *design_frame(const struct design *d);
 static inline size_t design_count(const struct design *d);
-static inline const double *design_intervals(const struct design *d);
-static inline size_t design_interval_count(const struct design *d);
-
 static inline size_t design_dim(const struct design *d);
 
 static inline int design_has_effects(const struct design *d);
@@ -71,22 +68,15 @@ void design_muls0(double alpha,
 		       const struct svector *x, double beta, struct vector *y);
 
 /* inline funciton definitions */
+struct frame *design_frame(const struct design *d)
+{
+	return d->frame;
+}
+
 size_t design_count(const struct design *d)
 {
 	assert(d);
 	return d->count;
-}
-
-const double *design_intervals(const struct design *d)
-{
-	assert(d);
-	return d->intvls;
-}
-
-size_t design_interval_count(const struct design *d)
-{
-	assert(d);
-	return d->nintvl;
 }
 
 size_t design_dim(const struct design *d)

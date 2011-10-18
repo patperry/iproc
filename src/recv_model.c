@@ -366,7 +366,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 				   size_t jrecv, const struct svector *delta)
 {
 	struct recv_model *m = udata;
-	const struct design *d = frame_design(f);
+	const struct design *d = frame_recv_design(f);
 	assert(recv_model_design(m) == d);
 
 	if (isend == jrecv && !frame_has_loops(f))
@@ -469,12 +469,12 @@ void recv_model_init(struct recv_model *model,
 	assert(ncohort > 0);
 	assert(cohorts);
 	assert(!coefs
-	       || design_dim(frame_design(f)) == (size_t)matrix_nrow(coefs));
+	       || design_dim(frame_recv_design(f)) == (size_t)matrix_nrow(coefs));
 	assert(!coefs || ncohort);
 	assert(frame_recv_count(f) > 0);
 	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
-	const struct design *d = frame_design(f);
+	const struct design *d = frame_recv_design(f);
 	const size_t nsend = frame_send_count(f);
 
 	model->frame = f;
@@ -539,7 +539,7 @@ void recv_model_deinit(struct recv_model *model)
 	free(model->cohorts);
 }
 
-const struct frame *recv_model_frame(const struct recv_model *model)
+struct frame *recv_model_frame(const struct recv_model *model)
 {
 	assert(model);
 	return model->frame;
@@ -547,7 +547,7 @@ const struct frame *recv_model_frame(const struct recv_model *model)
 
 const struct design *recv_model_design(const struct recv_model *model)
 {
-	return frame_design(recv_model_frame(model));
+	return frame_recv_design(recv_model_frame(model));
 }
 
 const struct matrix *recv_model_coefs(const struct recv_model *model)
@@ -640,7 +640,7 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
 	}
 
 	const struct frame *f = recv_model_frame(m);
-	const struct design *d = frame_design(f);
+	const struct design *d = frame_recv_design(f);
 	struct recv_model_sender *senders = m->sender_models;
 
 	size_t ic, nc = recv_model_cohort_count(m);

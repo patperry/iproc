@@ -8,6 +8,7 @@
 
 #include "enron.h"
 #include "design.h"
+#include "frame.h"
 #include "lapack.h"
 #include "matrix.h"
 
@@ -20,9 +21,11 @@ static double *enron_traits;
 static const char * const *enron_cohort_names;
 static const char * const *enron_trait_names;
 
-static struct design design;
+static struct frame frame;
+static struct design *design;
 
 static size_t nsend, nrecv;
+static int has_loops;
 static double *traits;
 static size_t ntrait;
 static const char * const *trait_names;
@@ -53,6 +56,7 @@ static void enron_setup()
 {
 	nsend = enron_nactor;
 	nrecv = enron_nactor;
+	has_loops = 0;
 	traits = enron_traits;
 	ntrait = enron_ntrait;
 	trait_names = enron_trait_names;
@@ -62,14 +66,15 @@ static void enron_setup()
 	intvls = NULL;
 	nintvl = 0;
 
-	design_init(&design, nrecv, intvls, nintvl);
-	design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
+	design = frame_recv_design(&frame);
+	design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
 }
 
 static void enron_teardown()
 {
-	design_deinit(&design);
+	frame_deinit(&frame);
 	free(intvls);
 }
 
@@ -93,6 +98,7 @@ static void enron_reff_setup()
 {
 	nsend = enron_nactor;
 	nrecv = enron_nactor;
+	has_loops = 0;
 	traits = enron_traits;
 	ntrait = enron_ntrait;
 	trait_names = enron_trait_names;
@@ -102,22 +108,23 @@ static void enron_reff_setup()
 	intvls = NULL;
 	nintvl = 0;
 	
-	design_init(&design, nrecv, intvls, nintvl);
-	design_set_has_effects(&design, has_effects);
-	design_set_traits(&design, traits, ntrait, trait_names);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
+	design = frame_recv_design(&frame);
+	design_set_has_effects(design, has_effects);
+	design_set_traits(design, traits, ntrait, trait_names);
 }
 
 static void enron_reff_teardown()
 {
-	design_deinit(&design);
+	frame_deinit(&frame);
 	free(intvls);
 }
 
 
 static void test_size()
 {
-	assert_int_equal(design_dim(&design), dim);
-	assert_int_equal(design_count(&design), nrecv);
+	assert_int_equal(design_dim(design), dim);
+	assert_int_equal(design_count(design), nrecv);
 }
 
 static void matrix_assign_static(struct matrix *x,
@@ -176,32 +183,32 @@ static void test_mul0()
 	struct vector x, y, y1;	
 	size_t i, n, p;
 	
-	n = design_count(&design);
-	p = design_dim(&design);
+	n = design_count(design);
+	p = design_dim(design);
 	
 	vector_init(&x, p);
 	vector_init(&y, n);
 	vector_init(&y1, n);
 	
-	matrix_init_design0(&matrix, &design);
+	matrix_init_design0(&matrix, design);
 	
 	for (i = 0; i < p; i++) {
 		vector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 		
-	design_mul0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, design, &x, 0.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_mul0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, design, &x, 1.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_mul0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
+	design_mul0(1.0, BLAS_NOTRANS, design, &x, -1.0, &y);
 	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_mul0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
+	design_mul0(2.0, BLAS_NOTRANS, design, &x, 2.0, &y);
 	matrix_mul(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
@@ -220,31 +227,31 @@ static void test_tmul0()
 	struct vector x, y, y1;	
 	size_t i, n, p;
 	
-	n = design_count(&design);
-	p = design_dim(&design);
+	n = design_count(design);
+	p = design_dim(design);
 	
 	vector_init(&x, n);
 	vector_init(&y, p);
 	vector_init(&y1, p);
-	matrix_init_design0(&matrix, &design);
+	matrix_init_design0(&matrix, design);
 		
 	for (i = 0; i < n; i++) {
 		vector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 		
-	design_mul0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
+	design_mul0(1.0, BLAS_TRANS, design, &x, 0.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_mul0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
+	design_mul0(1.0, BLAS_TRANS, design, &x, 1.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_mul0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
+	design_mul0(1.0, BLAS_TRANS, design, &x, -1.0, &y);
 	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_mul0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
+	design_mul0(2.0, BLAS_TRANS, design, &x, 2.0, &y);
 	matrix_mul(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -263,32 +270,32 @@ static void test_tmuls0()
 	struct vector y, y1;	
 	size_t i, n, p;
 	
-	n = design_count(&design);
-	p = design_dim(&design);
+	n = design_count(design);
+	p = design_dim(design);
 	
 	svector_init(&x, n);
 	vector_init(&y, p);
 	vector_init(&y1, p);
-	matrix_init_design0(&matrix, &design);
+	matrix_init_design0(&matrix, design);
 		
 	for (i = 0; i < n; i++) {
 		if (i % 3 == 0)
 			svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
 	}
 		
-	design_muls0(1.0, BLAS_TRANS, &design, &x, 0.0, &y);
+	design_muls0(1.0, BLAS_TRANS, design, &x, 0.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_muls0(1.0, BLAS_TRANS, &design, &x, 1.0, &y);
+	design_muls0(1.0, BLAS_TRANS, design, &x, 1.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_muls0(1.0, BLAS_TRANS, &design, &x, -1.0, &y);
+	design_muls0(1.0, BLAS_TRANS, design, &x, -1.0, &y);
 	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_muls0(2.0, BLAS_TRANS, &design, &x, 2.0, &y);
+	design_muls0(2.0, BLAS_TRANS, design, &x, 2.0, &y);
 	matrix_muls(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
@@ -307,32 +314,32 @@ static void test_muls0()
 	struct vector y, y1;	
 	size_t i, n, p;
 	
-	n = design_count(&design);
-	p = design_dim(&design);
+	n = design_count(design);
+	p = design_dim(design);
 	
 	svector_init(&x, p);
 	vector_init(&y, n);
 	vector_init(&y1, n);
-	matrix_init_design0(&matrix, &design);
+	matrix_init_design0(&matrix, design);
 
 	for (i = 0; i < p; i++) {
 		if (i % 2 == 0)
 			svector_set_item(&x, i, (7 * i) % 5 - 2);
 	}
 		
-	design_muls0(1.0, BLAS_NOTRANS, &design, &x, 0.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, design, &x, 0.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_muls0(1.0, BLAS_NOTRANS, &design, &x, 1.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, design, &x, 1.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
-	design_muls0(1.0, BLAS_NOTRANS, &design, &x, -1.0, &y);
+	design_muls0(1.0, BLAS_NOTRANS, design, &x, -1.0, &y);
 	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
-	design_muls0(2.0, BLAS_NOTRANS, &design, &x, 2.0, &y);
+	design_muls0(2.0, BLAS_NOTRANS, design, &x, 2.0, &y);
 	matrix_muls(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		

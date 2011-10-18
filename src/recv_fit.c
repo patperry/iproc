@@ -483,7 +483,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		// evaluate the function at the new point
 		eval_step(fit->cur, ce, nce,
 			  &fit->prev->params, fit->step, &fit->search.vector,
-			  fit->xmsgs, fit->ymsgs, &fit->frame, &fit->model);
+			  fit->xmsgs, fit->ymsgs, fit->frame, &fit->model);
 
 		if (!fit->cur->in_domain) {
 			goto domain_error_f;
@@ -527,22 +527,22 @@ domain_error_f:
 }
 
 void recv_fit_init(struct recv_fit *fit,
-		   size_t nsend, size_t nrecv, int has_loops,
+		   struct frame *f,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,
-		   const struct design *design,
 		   size_t ncohort,
 		   const size_t *cohorts, const struct recv_fit_ctrl *ctrl)
 {
 	assert(fit);
 	assert(xmsgs);
-	assert(design);
-	assert(messages_max_to(xmsgs) < nsend);
-	assert(messages_max_from(xmsgs) < nrecv);
-	assert(!ymsgs || (messages_max_to(ymsgs) < nsend));
-	assert(!ymsgs || (messages_max_from(ymsgs) < nrecv));
+	assert(f);
+	assert(messages_max_to(xmsgs) < frame_send_count(f));
+	assert(messages_max_from(xmsgs) < frame_recv_count(f));
+	assert(!ymsgs || (messages_max_to(ymsgs) < frame_send_count(f)));
+	assert(!ymsgs || (messages_max_from(ymsgs) < frame_recv_count(f)));
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
+	const struct design *design = frame_recv_design(f);
 	size_t dim = design_dim(design);
 	size_t nc = ncohort;
 	size_t ne = 0;
@@ -553,12 +553,12 @@ void recv_fit_init(struct recv_fit *fit,
 		fit->ctrl = *ctrl;
 	}
 
+	frame_clear(f);
+	fit->frame = f;
 	fit->xmsgs = xmsgs;
 	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
-	fit->design = design;
 
-	frame_init(&fit->frame, nsend, nrecv, has_loops, fit->design);
-	recv_model_init(&fit->model, &fit->frame, ncohort, cohorts, NULL);
+	recv_model_init(&fit->model, f, ncohort, cohorts, NULL);
 	constrs_init(&fit->constrs);
 	eval_init(&fit->eval[0], &fit->model, ne);
 	eval_init(&fit->eval[1], &fit->model, ne);
@@ -570,7 +570,7 @@ void recv_fit_init(struct recv_fit *fit,
 
 	// evaluate the model at zero
 	eval_set(fit->cur, NULL, 0, NULL, NULL, fit->xmsgs, fit->ymsgs,
-		 &fit->frame, &fit->model);
+		 fit->frame, &fit->model);
 
 	fit->dev0 = recv_fit_dev(fit);
 }
@@ -757,7 +757,7 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 
 	if (coefs0 != NULL) {
 		eval_set(fit->cur, ce, nce,
-			 coefs0, NULL, fit->xmsgs, fit->ymsgs, &fit->frame,
+			 coefs0, NULL, fit->xmsgs, fit->ymsgs, fit->frame,
 			 &fit->model);
 	}
 	kkt_set(&fit->kkt, &fit->cur->loglik, ce, nce);
@@ -788,7 +788,6 @@ void recv_fit_deinit(struct recv_fit *fit)
 	eval_deinit(&fit->eval[0]);
 	constrs_deinit(&fit->constrs);
 	recv_model_deinit(&fit->model);
-	frame_deinit(&fit->frame);
 }
 
 ssize_t recv_fit_constr_count(const struct recv_fit *fit)
@@ -830,8 +829,9 @@ void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
 void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 			     double val)
 {
-	ssize_t dim = design_dim(fit->design);
-	ssize_t nc = recv_model_cohort_count(&fit->model);
+	const struct design *d = frame_recv_design(fit->frame);
+	size_t dim = design_dim(d);
+	size_t nc = recv_model_cohort_count(&fit->model);
 
 	constrs_add_set(&fit->constrs, dim, nc, i, c, val);
 	_recv_fit_add_constrs(fit, 1);
@@ -840,8 +840,9 @@ void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
 void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
 			    ssize_t i2, ssize_t c2)
 {
-	ssize_t dim = design_dim(fit->design);
-	ssize_t nc = recv_model_cohort_count(&fit->model);
+	const struct design *d = frame_recv_design(fit->frame);
+	size_t dim = design_dim(d);
+	size_t nc = recv_model_cohort_count(&fit->model);
 
 	constrs_add_eq(&fit->constrs, dim, nc, i1, c1, i2, c2);
 	_recv_fit_add_constrs(fit, 1);

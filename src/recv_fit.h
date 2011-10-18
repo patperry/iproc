@@ -85,10 +85,9 @@ struct recv_fit_rgrad {
 struct recv_fit {
 	struct recv_fit_ctrl ctrl;
 	const struct messages *xmsgs, *ymsgs;
-	const struct design *design;
 
 	/* working frame + model */
-	struct frame frame;
+	struct frame *frame;
 	struct recv_model model;
 
 	/* null deviance */
@@ -110,10 +109,9 @@ struct recv_fit {
 };
 
 void recv_fit_init(struct recv_fit *fit,
-		   size_t nsend, size_t nrecv, int has_loops,
+		   struct frame *f,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,
-		   const struct design *design,
 		   size_t ncohort,
 		   const size_t *cohorts, const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);

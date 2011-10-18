@@ -10,17 +10,12 @@ enum var_class {
 };
 
 struct design_var;
-struct frame_var;
 
 struct var_type {
 	enum var_class var_class;
-
-	void (*init) (struct design_var * dv, const struct design * d,
+	void (*init) (struct design_var *dv, const struct design *d,
 		      void *params);
 	void (*deinit) (struct design_var * dv);
-
-	void (*frame_init) (struct frame_var * fv, struct frame * f);
-	void (*frame_deinit) (struct frame_var * fv);
 
 	struct frame_callbacks callbacks;
 };
@@ -30,11 +25,6 @@ struct design_var {
 	char **names;
 	size_t dim;
 	size_t dyn_index;
-	void *udata;
-};
-
-struct frame_var {
-	struct design_var *design;
 	void *udata;
 };
 
