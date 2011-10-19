@@ -299,8 +299,24 @@ void design_set_traits(struct design *d, const double *traits,
 static void design_grow_dvars(struct design *d)
 {
 	if (d->ndvar == d->ndvar_max) {
+		struct frame *f = d->frame;
+		size_t i;
+
+		/* we need to update the frame observers since the call
+		 * to realloc might relocate the dvars array
+		 */
+		for (i = d->ndvar; i > 0; i--) {
+			frame_remove_observer(f, &d->dvars[i-1]);
+		}
+
 		size_t nmax = ARRAY_GROW(d->ndvar_max, SIZE_MAX);
 		d->dvars = xrealloc(d->dvars, nmax * sizeof(d->dvars[0]));
+
+		for (i = 0; i < d->ndvar; i++) {
+			struct design_var *v = &d->dvars[i];
+			frame_add_observer(f, v, &v->type->callbacks);
+		}
+
 		d->ndvar_max = nmax;
 	}
 }

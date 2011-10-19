@@ -1,6 +1,7 @@
 #include "port.h"
 #include <assert.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <yajl/yajl_parse.h>
 #include "coreutil.h"
 #include "matrixutil.h"

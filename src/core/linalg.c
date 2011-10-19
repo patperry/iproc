@@ -92,7 +92,7 @@ ptrdiff_t ldlfac_solve(struct ldlfac *fac, enum blas_uplo uplo,
 	return fac->info;
 }
 
-static void symeig_get_worksize(ssize_t n, enum eig_job job,
+static void symeig_get_worksize(ssize_t n, enum lapack_eigjob job,
 				size_t *lwork, size_t *liwork)
 {
 	assert(0 <= n);
@@ -102,13 +102,13 @@ static void symeig_get_worksize(ssize_t n, enum eig_job job,
 	*lwork = lapack_dsyevd_lwork(job, n, liwork);
 }
 
-void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
+void symeig_init(struct symeig *eig, ssize_t n, enum lapack_eigjob job)
 {
 	assert(eig);
 	assert(0 <= n);
 
 	eig->n = 0;
-	eig->job = EIG_NOVEC;
+	eig->job = LA_EIG_NOVEC;
 	eig->work = NULL;
 	eig->lwork = 0;
 	eig->iwork = NULL;
@@ -117,7 +117,7 @@ void symeig_init(struct symeig *eig, ssize_t n, enum eig_job job)
 	symeig_reinit(eig, n, job);
 }
 
-void symeig_reinit(struct symeig *eig, ssize_t n, enum eig_job job)
+void symeig_reinit(struct symeig *eig, ssize_t n, enum lapack_eigjob job)
 {
 	assert(eig);
 	assert(0 <= n);
@@ -163,7 +163,7 @@ bool symeig_factor(struct symeig *eig, enum blas_uplo uplo,
 	if (n <= 1) {
 		assert(lwork >= 1);
 		assert(liwork >= 1);
-	} else if (eig->job == EIG_NOVEC) {
+	} else if (eig->job == LA_EIG_NOVEC) {
 		assert(lwork >= 2 * n + 1);
 		assert(liwork >= 1);
 	} else {
@@ -177,7 +177,7 @@ bool symeig_factor(struct symeig *eig, enum blas_uplo uplo,
 	return (eig->info == 0);
 }
 
-static void svdfac_get_worksize(ssize_t m, ssize_t n, enum svd_job job,
+static void svdfac_get_worksize(ssize_t m, ssize_t n, enum lapack_svdjob job,
 				size_t *lwork, size_t *liwork)
 {
 	assert(0 <= m);
@@ -188,7 +188,7 @@ static void svdfac_get_worksize(ssize_t m, ssize_t n, enum svd_job job,
 	*lwork = lapack_dgesdd_lwork(job, m, n, liwork);
 }
 
-void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
+void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum lapack_svdjob job)
 {
 	assert(svd);
 	assert(0 <= m && m <= F77INT_MAX);	
@@ -199,7 +199,7 @@ void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
 	svdfac_reinit(svd, m, n, job);
 }
 
-void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum svd_job job)
+void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum lapack_svdjob job)
 {
 	assert(svd);
 	assert(0 <= m && m <= F77INT_MAX);	
@@ -228,7 +228,7 @@ void svdfac_deinit(struct svdfac *svd)
 
 bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)
 {
-	enum svd_job job = svdfac_job(svd);	
+	enum lapack_svdjob job = svdfac_job(svd);	
 	size_t m = svdfac_row_dim(svd);
 	size_t n = svdfac_col_dim(svd);
 #ifndef NDEBUG
@@ -242,7 +242,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 	assert(s);
 	assert((size_t)vector_dim(s) == mn);
 	switch(job) {
-	case SVD_ALL:
+	case LA_SVD_ALL:
 		assert(u);
 		assert((size_t)matrix_nrow(u) == m);
 		assert((size_t)matrix_ncol(u) == m);
@@ -250,7 +250,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 		assert((size_t)matrix_nrow(vt) == n);
 		assert((size_t)matrix_ncol(vt) == n);
 		break;
-	case SVD_SEPARATE:
+	case LA_SVD_SEP:
 		assert(u);
 		assert((size_t)matrix_nrow(u) == m);
 		assert((size_t)matrix_ncol(u) == mn);
@@ -258,7 +258,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 		assert((size_t)matrix_nrow(vt) == mn);
 		assert((size_t)matrix_ncol(vt) == n);
 		break;
-	case SVD_OVERWRITE:
+	case LA_SVD_OVER:
 		if (m < n) {
 			assert(u);
 			assert((size_t)matrix_nrow(u) == m);
@@ -271,7 +271,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 			assert((size_t)matrix_ncol(vt) == n);
 		}
 		break;
-	case SVD_NOVEC:
+	case LA_SVD_NOVEC:
 		assert(!u);
 		assert(!vt);
 		break;

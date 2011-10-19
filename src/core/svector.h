@@ -84,6 +84,9 @@ static inline void svector_iter_reset(struct svector_iter *it);
 static inline double *svector_data_ptr(const struct svector *v);
 static inline ssize_t *svector_index_ptr(const struct svector *v);
 
+/* debug */
+void svector_printf(const struct svector *v);
+
 /* inline function definitions */
 struct svector svector_make(const ssize_t *index, const double *data, ssize_t nnz, ssize_t n)
 {

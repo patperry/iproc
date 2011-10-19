@@ -12,6 +12,11 @@
 
 #include "f2c.h"
 
+int dcsrch_(doublereal *stp, doublereal *f, doublereal *g, 
+	    doublereal *ftol, doublereal *gtol, doublereal *xtol, char *task, 
+	    doublereal *stpmin, doublereal *stpmax, integer *isave, doublereal *
+	    dsave, ftnlen task_len);
+
 /* Subroutine */ int dcsrch_(doublereal *stp, doublereal *f, doublereal *g, 
 	doublereal *ftol, doublereal *gtol, doublereal *xtol, char *task, 
 	doublereal *stpmin, doublereal *stpmax, integer *isave, doublereal *

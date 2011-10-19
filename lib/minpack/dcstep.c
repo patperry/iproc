@@ -12,6 +12,11 @@
 
 #include "f2c.h"
 
+int dcstep_(doublereal *stx, doublereal *fx, doublereal *dx, 
+		doublereal *sty, doublereal *fy, doublereal *dy, doublereal *stp, 
+			     doublereal *fp, doublereal *dp, logical *brackt, doublereal *stpmin, 
+	    doublereal *stpmax);
+
 /* Subroutine */ int dcstep_(doublereal *stx, doublereal *fx, doublereal *dx, 
 	doublereal *sty, doublereal *fy, doublereal *dy, doublereal *stp, 
 	doublereal *fp, doublereal *dp, logical *brackt, doublereal *stpmin, 

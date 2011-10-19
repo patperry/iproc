@@ -74,6 +74,9 @@ ssize_t vector_max_index(const struct vector *vector);
 double vector_max_abs(const struct vector *vector);
 ssize_t vector_max_abs_index(const struct vector *vector);
 
+/* debug */
+void vector_printf(const struct vector *v);
+
 /* DEPRECATED */
 struct vector *vector_alloc(ssize_t n);
 struct vector *vector_alloc_copy(const struct vector *v);

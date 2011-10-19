@@ -28,7 +28,6 @@ static void nrecv2_init(struct design_var *v, const struct design *d,
 static void nrecv2_deinit(struct design_var *v)
 {
 	var_names_free(v->names);
-
 }
 
 static void nrecv2_message_add(void *udata, struct frame *f,
