@@ -1,7 +1,6 @@
 #ifndef _RECV_LOGLIK_H
 #define _RECV_LOGLIK_H
 
-#include "array.h"
 #include "frame.h"
 #include "messages.h"
 #include "recv_model.h"
@@ -73,7 +72,8 @@ struct recv_loglik_sender {
 
 	size_t n_last, n;
 	double dev_last, dev_avg;
-	struct array active;
+	size_t *active;
+	size_t nactive, nactive_max;
 	struct recv_loglik_sender_score score_last, score_avg;
 	struct recv_loglik_sender_imat imat_last, imat_avg;
 };

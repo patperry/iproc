@@ -400,7 +400,7 @@ static void score_axpy_obs(double alpha,
 
 static void score_axpy_mean(double alpha,
 			    const struct recv_loglik_sender_score *score,
-			    const struct array *active,
+			    const size_t *active, size_t nactive,
 			    const struct design *design,
 			    size_t isend, struct vector *y)
 {
@@ -410,11 +410,11 @@ static void score_axpy_mean(double alpha,
 	double gamma = score->gamma;
 	vector_axpy(alpha * gamma, mean0, y);
 
-	size_t i, n = array_count(active);
+	size_t i, n = nactive;
 	struct svector dp;
 	svector_init(&dp, design_count(design));
 	for (i = 0; i < n; i++) {
-		size_t jrecv = *(size_t *)array_item(active, i);
+		size_t jrecv = active[i];
 		double val = vector_item(&score->dp, i);
 		svector_set_item(&dp, jrecv, val);
 	}
@@ -432,18 +432,18 @@ static void score_axpy_mean(double alpha,
 static void score_axpy(double alpha,
 		       const struct recv_loglik_sender_score *score,
 		       size_t nsend,
-		       const struct array *active,
+		       const size_t *active, size_t nactive,
 		       const struct design *design,
 		       size_t isend, struct vector *y)
 {
 	score_axpy_obs(alpha, score, nsend, design, isend, y);
-	score_axpy_mean(-alpha, score, active, design, isend, y);
+	score_axpy_mean(-alpha, score, active, nactive, design, isend, y);
 }
 
 static void imat_axpy(double alpha,
 		      const struct recv_loglik_sender_imat *imat,
 		      const struct recv_loglik_sender_score *score,
-		      const struct array *active,
+		      const size_t *active, size_t nactive,
 		      const struct design *design,
 		      size_t isend, struct matrix *y)
 {
@@ -456,12 +456,12 @@ static void imat_axpy(double alpha,
 	const double gamma = score->gamma;
 	const double gamma2 = imat->gamma2;
 
-	const size_t n = array_count(active);
+	const size_t n = nactive;
 	size_t i, j, k;
 	struct svector gamma_dp;
 	svector_init(&gamma_dp, nrecv);
 	for (i = 0; i < n; i++) {
-		size_t jrecv = *(size_t *)array_item(active, i);
+		size_t jrecv = active[i];
 		double val = vector_item(&imat->gamma_dp, i);
 		svector_set_item(&gamma_dp, jrecv, val);
 	}
@@ -478,7 +478,7 @@ static void imat_axpy(double alpha,
 	for (j = 0; j < n; j++) {
 		svector_clear(&dp2_j);
 		for (i = 0; i < n; i++) {
-			size_t jrecv = *(size_t *)array_item(active, i);
+			size_t jrecv = active[i];
 			double val = matrix_item(&imat->dp2, i, j);
 			svector_set_item(&dp2_j, jrecv, val);
 		}
@@ -499,7 +499,7 @@ static void imat_axpy(double alpha,
 	for (k = 0; k < dim; k++) {
 		svector_clear(&x0_dp2_k);
 		for (j = 0; j < n; j++) {
-			size_t jrecv = *(size_t *)array_item(active, j);
+			size_t jrecv = active[j];
 			double val = matrix_item(&x0_dp2, k, j);
 			svector_set_item(&x0_dp2_k, jrecv, val);
 		}
@@ -533,7 +533,7 @@ static void imat_axpy(double alpha,
 	svector_init(&e_j, design_count(design));
 
 	for (i = 0; i < n; i++) {
-		size_t jrecv = *(size_t *)array_item(active, i);
+		size_t jrecv = active[i];
 
 		svector_set_basis(&e_j, jrecv);
 		design_muls0(1.0, BLAS_TRANS, design, &e_j, 0.0, &x0_j);
@@ -606,7 +606,9 @@ void sender_init(struct recv_loglik_sender *ll, const struct recv_model *model,
 	ll->n_last = 0;
 	ll->dev_avg = 0.0;
 	ll->dev_last = 0.0;
-	array_init(&ll->active, sizeof(size_t));
+	ll->active = NULL;
+	ll->nactive = 0;
+	ll->nactive_max = 0;
 	score_init(&ll->score_last, model, isend);
 	score_init(&ll->score_avg, model, isend);
 	imat_init(&ll->imat_last, model, isend);
@@ -621,7 +623,7 @@ void sender_deinit(struct recv_loglik_sender *ll)
 	imat_deinit(&ll->imat_last);
 	score_deinit(&ll->score_avg);
 	score_deinit(&ll->score_last);
-	array_deinit(&ll->active);
+	free(ll->active);
 }
 
 void sender_clear(struct recv_loglik_sender *ll)
@@ -632,11 +634,30 @@ void sender_clear(struct recv_loglik_sender *ll)
 	ll->n = 0;
 	ll->dev_last = 0.0;
 	ll->dev_avg = 0.0;
-	array_clear(&ll->active);
+	ll->nactive = 0;
 	score_clear(&ll->score_last);
 	score_clear(&ll->score_avg);
 	imat_clear(&ll->imat_last);
 	imat_clear(&ll->imat_avg);
+}
+
+static void sender_grow_active(struct recv_loglik_sender *ll, size_t delta)
+{
+	size_t n0 = ll->nactive;
+	assert(n0 <= SIZE_MAX - delta);
+
+	size_t n = n0 + delta;
+	size_t nmax = ll->nactive_max;
+
+	if (n <= nmax)
+		return;
+
+	while (n > nmax) {
+		nmax = ARRAY_GROW(nmax, SIZE_MAX);
+	}
+
+	ll->active = xrealloc(ll->active, nmax * sizeof(ll->active[0]));
+	ll->nactive_max = nmax;
 }
 
 static void sender_update_active(struct recv_loglik_sender *ll,
@@ -645,9 +666,12 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 	assert(ll);
 	assert(active);
 
-	if (n > (size_t)array_count(&ll->active)) {
-		const size_t n0 = array_count(&ll->active);
-		const size_t *begin0 = array_to_ptr(&ll->active);
+	size_t n0 = ll->nactive;
+
+	if (n > n0) {
+		sender_grow_active(ll, n - n0);
+
+		const size_t *begin0 = ll->active;
 		const size_t *end0 = begin0 + n0;
 		const size_t *begin1 = active;
 		const size_t *end1 = begin1 + n;
@@ -667,8 +691,8 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 		assert(score_active_count(&ll->score_avg) == n);
 		assert(imat_active_count(&ll->imat_avg) == n);
 
-		array_clear(&ll->active);
-		array_add_range(&ll->active, active, n);
+		memcpy(ll->active, active, n * sizeof(active[0]));
+		ll->nactive = n;
 	}
 }
 
@@ -742,7 +766,8 @@ void sender_axpy_avg_mean(double alpha, const struct recv_loglik_sender *sll,
 	const struct design *design = recv_model_design(model);
 	size_t isend = sll->isend;
 
-	score_axpy_mean(alpha, &sll->score_avg, &sll->active, design, isend, y);
+	score_axpy_mean(alpha, &sll->score_avg, sll->active, sll->nactive,
+			design, isend, y);
 }
 
 void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
@@ -755,8 +780,8 @@ void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
 	const struct design *design = recv_model_design(model);
 	size_t isend = sll->isend;
 
-	score_axpy_mean(sll->n_last * alpha, &sll->score_last, &sll->active,
-			design, isend, y);
+	score_axpy_mean(sll->n_last * alpha, &sll->score_last, sll->active,
+			sll->nactive, design, isend, y);
 }
 
 void sender_axpy_avg_score(double alpha, const struct recv_loglik_sender *sll,
@@ -769,8 +794,8 @@ void sender_axpy_avg_score(double alpha, const struct recv_loglik_sender *sll,
 	const struct design *design = recv_model_design(model);
 	size_t isend = sll->isend;
 
-	score_axpy(alpha, &sll->score_avg, sll->n, &sll->active, design, isend,
-		   y);
+	score_axpy(alpha, &sll->score_avg, sll->n, sll->active, sll->nactive,
+		   design, isend, y);
 }
 
 void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
@@ -784,7 +809,7 @@ void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
 	size_t isend = sll->isend;
 
 	score_axpy(sll->n_last * alpha, &sll->score_last, sll->n_last,
-		   &sll->active, design, isend, y);
+		   sll->active, sll->nactive, design, isend, y);
 }
 
 void sender_axpy_avg_imat(double alpha, const struct recv_loglik_sender *sll,
@@ -797,8 +822,8 @@ void sender_axpy_avg_imat(double alpha, const struct recv_loglik_sender *sll,
 	const struct design *design = recv_model_design(model);
 	size_t isend = sll->isend;
 
-	imat_axpy(alpha, &sll->imat_avg, &sll->score_avg, &sll->active, design,
-		  isend, y);
+	imat_axpy(alpha, &sll->imat_avg, &sll->score_avg, sll->active,
+		  sll->nactive, design, isend, y);
 }
 
 void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
@@ -812,7 +837,7 @@ void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
 	size_t isend = sll->isend;
 
 	imat_axpy(sll->n_last * alpha, &sll->imat_last, &sll->score_last,
-		  &sll->active, design, isend, y);
+		  sll->active, sll->nactive, design, isend, y);
 }
 
 /* recv_loglik */

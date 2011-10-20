@@ -666,7 +666,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 {
 	ssize_t i, dim = design_recv_dim(fit->design);
 	ssize_t ic, nc = actors_cohort_count(fit->senders);
-	ssize_t ne = array_count(&fit->constrs);
+	ssize_t ne = recv_fit_constr_count(fit);
 	const struct recv_loglik *ll = &fit->cur->loglik;
 	// ssize_t nmsg = recv_loglik_count_sum(ll);
 	//const struct matrix *ce = &fit->constr.ce;
