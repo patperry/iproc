@@ -49,10 +49,8 @@ static void ncosib_message_add(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
-	ssize_t dx_index[1] = { 0 };
+	size_t dx_index[1] = { 0 };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
@@ -86,14 +84,16 @@ static void ncosib_message_add(void *udata, struct frame *f,
 			assert(jrecv != krecv);
 
 			dx_index[0] = ix;
-			frame_recv_update(f, isend, jrecv, &delta);
+			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
+					  dx_nnz);
 
 			assert(coisend != cojrecv);
 			assert(coisend != krecv);
 			assert(cojrecv != krecv);
 
 			dx_index[0] = coix;
-			frame_recv_update(f, coisend, cojrecv, &delta);
+			frame_recv_update(f, coisend, cojrecv, dx_data,
+					  dx_index, dx_nnz);
 		}
 	}
 }
@@ -115,10 +115,8 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[2] = { -1.0, +1.0 };
-	ssize_t dx_index[2] = { 0, 1 };
+	size_t dx_index[2] = { 0, 1 };
 	size_t dx_nnz = 2;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
@@ -157,7 +155,8 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 
 			dx_index[0] = ix0;
 			dx_index[1] = ix1;
-			frame_recv_update(f, isend, jrecv, &delta);
+			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
+					  dx_nnz);
 
 			assert(coisend != cojrecv);
 			assert(coisend != krecv);
@@ -165,7 +164,8 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 
 			dx_index[0] = coix0;
 			dx_index[1] = coix1;
-			frame_recv_update(f, coisend, cojrecv, &delta);
+			frame_recv_update(f, coisend, cojrecv, dx_data,
+					  dx_index, dx_nnz);
 		}
 	}
 }
@@ -178,7 +178,6 @@ static struct var_type RECV_VAR_NCOSIB_REP = {
 	 ncosib_message_add,
 	 ncosib_message_advance,
 	 NULL,			// recv_update
-	 NULL,			// send_update
 	 NULL,			// clear
 	 }
 };

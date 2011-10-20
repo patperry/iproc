@@ -47,10 +47,8 @@ static void nsend2_message_add(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
-	ssize_t dx_index[1] = { 0 };
+	size_t dx_index[1] = { 0 };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t isend = msg->from;
 	size_t cokrecv = isend;
@@ -85,7 +83,8 @@ static void nsend2_message_add(void *udata, struct frame *f,
 				assert(isend != ksend);
 				assert(jrecv != ksend);
 
-				frame_recv_update(f, isend, jrecv, &delta);
+				frame_recv_update(f, isend, jrecv, dx_data,
+						  dx_index, dx_nnz);
 			}
 		}
 	}
@@ -116,7 +115,8 @@ static void nsend2_message_add(void *udata, struct frame *f,
 			assert(coisend != cokrecv);
 			assert(cojrecv != cokrecv);
 
-			frame_recv_update(f, coisend, cojrecv, &delta);
+			frame_recv_update(f, coisend, cojrecv, dx_data,
+					  dx_index, dx_nnz);
 		}
 	}
 }
@@ -139,10 +139,8 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[2] = { -1.0, +1.0 };
-	ssize_t dx_index[2] = { 0, 1 };
+	size_t dx_index[2] = { 0, 1 };
 	size_t dx_nnz = 2;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t isend = msg->from;
 	size_t cokrecv = isend;
@@ -179,7 +177,8 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 				assert(isend != ksend);
 				assert(jrecv != ksend);
 
-				frame_recv_update(f, isend, jrecv, &delta);
+				frame_recv_update(f, isend, jrecv, dx_data,
+						  dx_index, dx_nnz);
 			}
 		}
 	}
@@ -212,7 +211,8 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 			assert(coisend != cokrecv);
 			assert(cojrecv != cokrecv);
 
-			frame_recv_update(f, coisend, cojrecv, &delta);
+			frame_recv_update(f, coisend, cojrecv, dx_data,
+					  dx_index, dx_nnz);
 		}
 	}
 }
@@ -225,7 +225,6 @@ static struct var_type RECV_VAR_NSEND2_REP = {
 	 nsend2_message_add,
 	 nsend2_message_advance,
 	 NULL,			// recv_update
-	 NULL,			// send_update
 	 NULL,			// clear
 	 }
 };

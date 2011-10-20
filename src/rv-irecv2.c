@@ -34,11 +34,9 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t dyn_index = v->dyn_index;
-	double dx_data = 1.0;
-	ssize_t dx_index = dyn_index;
+	double dx_data[1] = { 1.0 };
+	size_t dx_index[1] = { dyn_index };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(&dx_index, &dx_data, dx_nnz, dx_n);
 	size_t *imsg, i, n;
 
 	size_t krecv = msg->from;
@@ -72,7 +70,8 @@ static void irecv2_message_add(void *udata, struct frame *f,
 			    frame_recv_dx(f, isend, jrecv);
 
 			if (vector_item(dx, dyn_index) == 0.0) {
-				frame_recv_update(f, isend, jrecv, &delta);
+				frame_recv_update(f, isend, jrecv, dx_data,
+						  dx_index, dx_nnz);
 			}
 		}
 	}
@@ -106,7 +105,8 @@ static void irecv2_message_add(void *udata, struct frame *f,
 
 				if (vector_item(dx, dyn_index) == 0.0) {
 					frame_recv_update(f, coisend, cojrecv,
-							  &delta);
+							  dx_data, dx_index,
+							  dx_nnz);
 				}
 			}
 		}
@@ -121,7 +121,6 @@ static struct var_type RECV_VAR_IRECV2_REP = {
 	 irecv2_message_add,
 	 NULL,			// message_advance,
 	 NULL,			// recv_update
-	 NULL,			// send_update
 	 NULL,			// clear
 	 }
 };

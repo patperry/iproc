@@ -503,26 +503,21 @@ void frame_advance(struct frame *f, double time)
 }
 
 void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const struct svector *delta)
+		       const double *delta, const size_t *ind, size_t nz)
 {
-#ifndef NDEBUG
-	const struct design *d = frame_recv_design(f);
-#endif
 	assert(isend < frame_send_count(f));
 	assert(jrecv < frame_recv_count(f));
-	assert((size_t)svector_dim(delta) == design_dvars_dim(d));
 
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
-	svector_axpy(1.0, delta, dx);
+	sblas_daxpyi(nz, 1.0, delta, ind, vector_to_ptr(dx));
 
 	//fprintf(stderr, "-> recv_update %" SSIZE_FMT ", %" SSIZE_FMT "\n", isend, jrecv);
 
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
-
 			obs->callbacks.recv_update(obs->udata, f, isend,
-						   jrecv, delta);
+						   jrecv, delta, ind, nz);
 		}
 	}
 }

@@ -1353,6 +1353,7 @@
 		2275BB86132EAC9D002D8876 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 0420;
 				ORGANIZATIONNAME = "Patrick Perry";
 			};
 			buildConfigurationList = 2275BB89132EAC9D002D8876 /* Build configuration list for PBXProject "iproc" */;
@@ -2048,6 +2049,7 @@
 				22234168144F363900D99D8E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		222FC40E13607C3F00E64FC9 /* Build configuration list for PBXNativeTarget "iproc" */ = {
 			isa = XCConfigurationList;

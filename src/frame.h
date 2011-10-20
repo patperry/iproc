@@ -55,9 +55,8 @@ struct frame_callbacks {
 	void (*message_advance) (void *udata, struct frame * f,
 				 const struct message * msg, size_t intvl);
 	void (*recv_update) (void *udata, struct frame * f, size_t isend,
-			     size_t jrecv, const struct svector * delta);
-	void (*send_update) (void *udata, struct frame * f, size_t isend,
-			     size_t dyn_index, double dx);
+			     size_t jrecv, const double *delta,
+			     const size_t *ind, size_t nz);
 	void (*clear) (void *udata, struct frame * f);
 };
 
@@ -68,7 +67,7 @@ struct frame_observer {
 
 /* create/destroy/clear */
 void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
-		const double *intvls, size_t nintvl);				
+		const double *intvls, size_t nintvl);
 void frame_deinit(struct frame *f);
 void frame_clear(struct frame *f);
 
@@ -105,7 +104,7 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
 				   size_t jrecv);
 void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const struct svector *delta);
+		       const double *delta, const size_t *ind, size_t nz);
 
 // struct vector frame_send_x(struct frame *f, size_t isend);
 // void frame_send_update(const struct frame *f, size_t isend,

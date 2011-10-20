@@ -43,11 +43,9 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 
 	size_t nintvl = frame_interval_count(f);
 	size_t dyn_index = v->dyn_index;
-	double dx_data = 1.0;
-	ssize_t dx_index = dyn_index + 0;
+	double dx_data[1] = { 1.0 };
+	size_t dx_index[1] = { dyn_index };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(&dx_index, &dx_data, dx_nnz, dx_n);
 	size_t *imsg, i, n;
 
 	size_t krecv = msg->from;
@@ -68,7 +66,7 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 		size_t ix = dyn_index + intvl2 * (nintvl + 1);
 		size_t jrecv = msg1->from;
 
-		dx_index = ix;	// affects delta
+		dx_index[0] = ix;
 
 		for (ito = 0; ito < nto; ito++) {
 			if (msg->to[ito] == msg->from
@@ -81,7 +79,8 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 			assert(isend != krecv);
 			assert(jrecv != krecv);
 
-			frame_recv_update(f, isend, jrecv, &delta);
+			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
+					  dx_nnz);
 		}
 	}
 
@@ -100,7 +99,7 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 			size_t intvl1 = fmsg->interval;
 			size_t coix = dyn_index + intvl1;
 
-			dx_index = coix;	// affects delta
+			dx_index[0] = coix;	// affects delta
 
 			size_t ito1, nto1 = msg1->nto;
 			for (ito1 = 0; ito1 < nto1; ito1++) {
@@ -114,7 +113,8 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 				assert(coisend != coksend);
 				assert(cojrecv != coksend);
 
-				frame_recv_update(f, coisend, cojrecv, &delta);
+				frame_recv_update(f, coisend, cojrecv, dx_data,
+						  dx_index, dx_nnz);
 			}
 		}
 	}
@@ -139,10 +139,8 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[2] = { -1.0, +1.0 };
-	ssize_t dx_index[2] = { 0, 1 };
+	size_t dx_index[2] = { 0, 1 };
 	size_t dx_nnz = 2;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t krecv = msg->from;
 	size_t cojrecv = krecv;
@@ -175,7 +173,8 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 			assert(isend != krecv);
 			assert(jrecv != krecv);
 
-			frame_recv_update(f, isend, jrecv, &delta);
+			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
+					  dx_nnz);
 		}
 	}
 
@@ -211,7 +210,8 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 				assert(coisend != coksend);
 				assert(cojrecv != coksend);
 
-				frame_recv_update(f, coisend, cojrecv, &delta);
+				frame_recv_update(f, coisend, cojrecv, dx_data,
+						  dx_index, dx_nnz);
 			}
 		}
 	}
@@ -226,7 +226,6 @@ static struct var_type RECV_VAR_NRECV2_REP = {
 	 nrecv2_message_add,
 	 nrecv2_message_advance,
 	 NULL,			// recv_update
-	 NULL,			// send_update
 	 NULL,			// clear
 	 }
 };

@@ -363,7 +363,8 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, size_t isend)
 }
 
 static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
-				   size_t jrecv, const struct svector *delta)
+				   size_t jrecv, const double *delta,
+				   const size_t *ind, size_t nz)
 {
 	struct recv_model *m = udata;
 	const struct design *d = frame_recv_design(f);
@@ -395,7 +396,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 	size_t dyn_dim = design_dvars_dim(d);
 	struct vector dyn_coefs = vector_slice(&coefs, dyn_off, dyn_dim);
 
-	double deta = svector_dot(delta, &dyn_coefs);
+	double deta = sblas_ddoti(nz, delta, ind, vector_to_ptr(&dyn_coefs));
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
@@ -508,7 +509,6 @@ void recv_model_init(struct recv_model *model,
 		NULL,		// msg_add
 		NULL,		// msg_advance
 		recv_model_recv_update,
-		NULL,		// send_update
 		recv_model_clear
 	};
 

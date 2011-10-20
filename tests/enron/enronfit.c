@@ -44,7 +44,7 @@ static void setup(void) {
 			     &traits, &ntrait, &trait_names);
 	nrecv = nsend;
 	has_loops = 0;
-	
+
 	double intvls[] = {
 		// 450.00,
 		//900.00,    // 15 min
@@ -78,14 +78,14 @@ static void setup(void) {
 	design_add_dvar(d, RECV_VAR_NRECV, NULL);
 	design_add_dvar(d, RECV_VAR_ISEND, NULL);
 	design_add_dvar(d, RECV_VAR_NSEND, NULL);
-	design_add_dvar(d, RECV_VAR_IRECV2, NULL);
+	/*design_add_dvar(d, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(d, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(d, RECV_VAR_ISEND2, NULL);
 	design_add_dvar(d, RECV_VAR_NSEND2, NULL);
-	design_add_dvar(d, RECV_VAR_ISIB, NULL);		
+	design_add_dvar(d, RECV_VAR_ISIB, NULL);
 	design_add_dvar(d, RECV_VAR_NSIB, NULL);
-	design_add_dvar(d, RECV_VAR_ICOSIB, NULL);		
-	design_add_dvar(d, RECV_VAR_NCOSIB, NULL);
+	design_add_dvar(d, RECV_VAR_ICOSIB, NULL);
+	design_add_dvar(d, RECV_VAR_NCOSIB, NULL);*/
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -99,55 +99,55 @@ static void add_constraints(struct recv_fit *fit)
 	svector_init(&ce, dim * nc);
 	int i;
 	char buf[1024];
-	
-	
+
+
 	for (i = 0; i < dim; i++) {
-		
+
 		// intercept
 		if (!((0 <= i && i < 9) // 2nd-order interactions
 		      || (11 <= i) // dynamic effects
-		      )) {		
+		      )) {
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
-		
+
 		if (!((0 <= i && i < 9) // 2nd-order interactions
-		      )) {		
+		      )) {
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "L*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "T*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "J*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 			snprintf(buf, sizeof(buf), "F*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			// 2-way interactions
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LJM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
-			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);		
+			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "LJ*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TJM, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
@@ -155,7 +155,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "TJ*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSF, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, -1.0);
@@ -163,7 +163,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "LF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSF, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, -1.0);
@@ -171,7 +171,7 @@ static void add_constraints(struct recv_fit *fit)
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, +1.0);
 			snprintf(buf, sizeof(buf), "TF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
-			
+
 			svector_clear(&ce);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, +1.0);
 			svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, -1.0);
@@ -180,25 +180,25 @@ static void add_constraints(struct recv_fit *fit)
 			snprintf(buf, sizeof(buf), "JF*Var%d", i + 1);
 			recv_fit_add_constr(fit, &ce, 0.0, buf);
 		}
-		
+
 		// 3-way interactions
 		svector_clear(&ce);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_LJF, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_LJM, -1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_LSF, -1.0);
-		svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);		
+		svector_set_item(&ce, i + dim * ENRON_COHORT_LSM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSM, -1.0);
 		snprintf(buf, sizeof(buf), "LJF*Var%d", i + 1);
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
-		
+
 		svector_clear(&ce);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_TJF, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_TJM, -1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_TSF, -1.0);
-		svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);		
+		svector_set_item(&ce, i + dim * ENRON_COHORT_TSM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJF, -1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OJM, +1.0);
 		svector_set_item(&ce, i + dim * ENRON_COHORT_OSF, +1.0);
@@ -207,7 +207,7 @@ static void add_constraints(struct recv_fit *fit)
 		recv_fit_add_constr(fit, &ce, 0.0, buf);
 	}
 	svector_deinit(&ce);
-	
+
 	/* add constraints to make the model identifiable (TODO/not implemented) */
 	//size_t nadd = recv_fit_add_constr_identify(fit);
 	//if (nadd > 0)
@@ -216,7 +216,7 @@ static void add_constraints(struct recv_fit *fit)
 
 static void teardown(void)
 {
-	vector_deinit(&intervals);	
+	vector_deinit(&intervals);
 	frame_deinit(&frame);
 	free(traits);
 	free(cohorts);
@@ -228,7 +228,8 @@ static void teardown(void)
 		if ((err = gen) != yajl_gen_status_ok) \
 			return err; \
 	} while (0)
-#define YSTR(str) ((const unsigned char *)(str))
+
+#define YSTR(str) ((const unsigned char *)(str)), (strlen(str))
 
 #define INTERVALS		"intervals"
 #define VARIATE_NAMES		"variate_names"
@@ -266,7 +267,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	YG(yajl_gen_map_open(hand));
 	{
 		/* intervals */
-		YG(yajl_gen_string(hand, YSTR(INTERVALS), strlen(INTERVALS)));
+		YG(yajl_gen_string(hand, YSTR(INTERVALS)));
 		const double *intvls = frame_intervals(f);
 		n = frame_interval_count(f);
 		YG(yajl_gen_array_open(hand));
@@ -274,17 +275,17 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			YG(yajl_gen_ieee754(hand, intvls[i]));
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* variate_names */
-		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES), strlen(VARIATE_NAMES)));
+		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		const char * const *trait_names = design_trait_names(d);
 		n = design_traits_dim(d);
 		assert(design_traits_index(d) == 0);
 		for (i = 0; i < n; i++) {
-			YG(yajl_gen_string(hand, YSTR(trait_names[i]), strlen(trait_names[i])));
+			YG(yajl_gen_string(hand, YSTR(trait_names[i])));
 		}
-		
+
 		assert(design_dvars_index(d) == design_traits_dim(d));
 		const struct design_var *rvs;
 		size_t irv, nrv;
@@ -293,47 +294,47 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			n = rvs[irv].dim;
 			for (i = 0; i < n; i++) {
 				const char *name = rvs[irv].names[i];
-				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
+				YG(yajl_gen_string(hand, YSTR(name)));
 			}
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* cohort names */
-		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES), strlen(COHORT_NAMES)));
+		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
 			for (ic = 0; ic < nc; ic++) {
 				const char *name = cohort_names[ic];
-				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
+				YG(yajl_gen_string(hand, YSTR(name)));
 			}
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* coefficients */
-		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS), strlen(COEFFICIENTS)));
-		const struct matrix *coefs = recv_fit_coefs(fit);		
+		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS)));
+		const struct matrix *coefs = recv_fit_coefs(fit);
 		YG(yajl_gen_matrix(hand, coefs));
 
 		/* constraint names */
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES), strlen(CONSTRAINT_NAMES)));
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
 			n = recv_fit_constr_count(fit);
-			
+
 			for (i = 0; i < n; i++) {
 				const char *name;
 				recv_fit_get_constr(fit, i, NULL, NULL, &name);
-				YG(yajl_gen_string(hand, YSTR(name), strlen(name)));
+				YG(yajl_gen_string(hand, YSTR(name)));
 			}
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* constraints */
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS), strlen(CONSTRAINTS)));
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS)));
 		YG(yajl_gen_array_open(hand));
 		{
 			n = recv_fit_constr_count(fit);
-			
+
 			for (i = 0; i < n; i++) {
 				const struct svector *weights;
 				recv_fit_get_constr(fit, i, &weights, NULL, NULL);
@@ -341,13 +342,13 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			}
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* constraint values */
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES), strlen(CONSTRAINT_VALUES)));
+		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES)));
 		YG(yajl_gen_array_open(hand));
 		{
 			n = recv_fit_constr_count(fit);
-			
+
 			for (i = 0; i < n; i++) {
 				double value;
 				recv_fit_get_constr(fit, i, NULL, &value, NULL);
@@ -355,23 +356,23 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			}
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* duals */
-		YG(yajl_gen_string(hand, YSTR(DUALS), strlen(DUALS)));
+		YG(yajl_gen_string(hand, YSTR(DUALS)));
 		const struct vector *duals = recv_fit_duals(fit);
 		YG(yajl_gen_vector(hand, duals));
-		
+
 		/* count */
-		YG(yajl_gen_string(hand, YSTR(COUNT), strlen(COUNT)));
+		YG(yajl_gen_string(hand, YSTR(COUNT)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
 			size_t count = recv_loglik_count(ll, ic);
 			YG(yajl_gen_integer(hand, count));
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* score */
-		YG(yajl_gen_string(hand, YSTR(SCORE), strlen(SCORE)));
+		YG(yajl_gen_string(hand, YSTR(SCORE)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
 			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
@@ -379,9 +380,9 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			YG(yajl_gen_vector(hand, score));
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* information */
-		YG(yajl_gen_string(hand, YSTR(INFORMATION), strlen(INFORMATION)));
+		YG(yajl_gen_string(hand, YSTR(INFORMATION)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
 			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
@@ -389,51 +390,51 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 			YG(yajl_gen_matrix(hand, imat));
 		}
 		YG(yajl_gen_array_close(hand));
-		
+
 		/* rank */
-		YG(yajl_gen_string(hand, YSTR(RANK), strlen(RANK)));
+		YG(yajl_gen_string(hand, YSTR(RANK)));
 		size_t rank = dim * nc - ne;
 		YG(yajl_gen_integer(hand, rank));
-		
+
 		/* deviance */
-		YG(yajl_gen_string(hand, YSTR(DEVIANCE), strlen(DEVIANCE)));
+		YG(yajl_gen_string(hand, YSTR(DEVIANCE)));
 		double dev = recv_fit_dev(fit);
 		YG(yajl_gen_ieee754(hand, dev));
-		
+
 		/* df.residual */
-		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL), strlen(DF_RESIDUAL)));
+		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL)));
 		size_t ntot = recv_loglik_count_sum(ll);
 		YG(yajl_gen_integer(hand, ntot - rank));
-		
+
 		/* null.deviance */
-		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE), strlen(NULL_DEVIANCE)));
+		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE)));
 		YG(yajl_gen_ieee754(hand, recv_fit_dev0(fit)));
-		
+
 		/* df.null */
-		YG(yajl_gen_string(hand, YSTR(DF_NULL), strlen(DF_NULL)));
+		YG(yajl_gen_string(hand, YSTR(DF_NULL)));
 		YG(yajl_gen_integer(hand, ntot));
-		
+
 		/* residuals */
 		/* fitted.values */
-		/* y = y */		
+		/* y = y */
 		struct recv_resid resid;
-		
+
 		frame_clear(f);
 		recv_resid_init(&resid, f, fit->ymsgs,
 				fit->model.ncohort, fit->model.cohorts,
 				coefs);
-		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS), strlen(OBSERVED_COUNTS)));
+		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
-		
-		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS), strlen(EXPECTED_COUNTS)));
+
+		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
 		YG(yajl_gen_matrix(hand, &resid.exp.dyad));
-		
+
 		recv_resid_deinit(&resid);
 	}
 	YG(yajl_gen_map_close(hand));
-		
+
 	/* effects */
-	/* qr */	
+	/* qr */
 	/* linear.predictors (eta) */
 	/* aic */
 	/* iter */
@@ -450,8 +451,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	/* method */
 	/* contrasts */
 	/* xlevels */
-	
-	
+
+
 	return err;
 }
 
@@ -462,8 +463,8 @@ static void output(const struct recv_fit *fit)
 	yajl_gen g = yajl_gen_alloc(NULL);
 	yajl_gen_config(g, yajl_gen_beautify, 1);
 	yajl_gen_recv_fit(g, fit);
-	
-	
+
+
 	/* output */
 	const unsigned char * buf;
 	size_t len;
@@ -479,20 +480,20 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	size_t maxit = 100;
 	size_t report = 1;
 	bool trace = true;
-	
+
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
 	ctrl.gtol = 1e-7;
 	recv_fit_init(&fit, &frame, xmsgs, ymsgs, ncohort, cohorts, &ctrl);
 	add_constraints(&fit);
-	
+
 	enum recv_fit_task task;
 	size_t it = 0;
-	
+
 	//struct matrix coefs0;
 	//matrix_init(&coefs0, dim, nc);
 	//matrix_fill(&coefs0, 0.0001);
-	
+
 	for (it = 0, task = recv_fit_start(&fit, coefs0);
 	     it < maxit && task == RECV_FIT_STEP;
 	     it++, task = recv_fit_advance(&fit)) {
@@ -507,24 +508,24 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 			double ngrad = recv_fit_grad_norm2(&fit);
 			fprintf(stderr, "iter %"SSIZE_FMT"; |grad| = %.16f; step = %.16f\n",
 				it, ngrad, step);
-			
+
 			// fprintf(stderr, "iter %"SSIZE_FMT" deviance = %.2f; |grad| = %.16f; step = %.16f\n",
 			//	it, dev, ngrad, step);
 		}
 	}
-	
+
 	//matrix_deinit(&coefs0);
-	
+
 	int err = 0;
-	
+
 	if (task != RECV_FIT_CONV) {
 		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(&fit));
 		err = -1;
 	}
-	
+
 	output(&fit);
 	recv_fit_deinit(&fit);
-	
+
 	return err;
 }
 
@@ -534,14 +535,14 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	FILE *fp = fopen(filename, "rb");
 	if (!fp)
 		goto out;
-	
+
 	fseek(fp, 0L, SEEK_END);
 	size_t sz = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	
+
 	char *filebuf = xmalloc(sz + 1);
 	size_t rd = fread(filebuf, 1, sz, fp);
-	
+
 	/* file read error handling */
 	if (rd == 0 && !feof(fp)) {
 		fprintf(stderr, "error encountered on file read\n");
@@ -549,10 +550,10 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	}
 	assert(rd == sz);
 	filebuf[sz] = '\0';
-	
+
 	char errbuf[1024];
 	errbuf[0] = '\0';
-	
+
 	yajl_val node = yajl_tree_parse(filebuf, errbuf, sizeof(errbuf));
 
 	/* parse error handling */
@@ -563,12 +564,12 @@ static void init_coefs(struct matrix *coefs, char *filename)
 		fprintf(stderr, "\n");
 		goto cleanup_yajl;
 	}
-	
+
 	/* ... and extract a nested value from the config file */
 	const char * coefs_path[] = { COEFFICIENTS, NULL };
 	const char * nrow_path[] = { "nrow", NULL};
-	const char * ncol_path[] = { "ncol", NULL};		
-	const char * data_path[] = { "data", NULL};				
+	const char * ncol_path[] = { "ncol", NULL};
+	const char * data_path[] = { "data", NULL};
 
 	yajl_val vcoefs = yajl_tree_get(node, coefs_path, yajl_t_any);
 
@@ -578,20 +579,20 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	yajl_val vnrow = yajl_tree_get(vcoefs, nrow_path, yajl_t_number);
 	yajl_val vncol = yajl_tree_get(vcoefs, ncol_path, yajl_t_number);
 	yajl_val vdata = yajl_tree_get(vcoefs, data_path, yajl_t_array);
-	
+
 	if (!vnrow || !vncol || !vdata)
 		goto cleanup_yajl;
-	
+
 	long long nrow = YAJL_GET_INTEGER(vnrow);
 	long long ncol = YAJL_GET_INTEGER(vncol);
 	size_t i, n = nrow * ncol;
-	
+
 	if (nrow < 0 || ncol < 0)
 		goto cleanup_yajl;
-	
+
 	if (YAJL_GET_ARRAY(vdata)->len != n)
 		goto cleanup_yajl;
-		
+
 	matrix_init(coefs, nrow, ncol);
 	yajl_val *item = YAJL_GET_ARRAY(vdata)->values;
 	double *ptr = matrix_to_ptr(coefs);
@@ -607,7 +608,7 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	err = 0;
 	goto cleanup_yajl;
 
-	
+
 cleanup_coefs:
 	matrix_deinit(coefs);
 cleanup_yajl:
@@ -635,13 +636,13 @@ static struct options parse_options(int argc, char **argv)
 		{ NULL, 0, NULL, 0 }
 	};
 	int option_index = 0;
-	
+
 	struct options opts;
 	opts.startfile = NULL;
 	opts.boot = false;
 	opts.seed = 0;
 
-	
+
 	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
 		 switch (c) {
 		 case 's':
@@ -661,37 +662,37 @@ static struct options parse_options(int argc, char **argv)
 			exit(1);
 		 }
 	 }
-	
+
 	if (opts.boot && !opts.startfile) {
 		fprintf(stderr, "Must specify start file for bootstrap\n");
 		exit(1);
 	}
-	
+
 	return opts;
 }
 
 int main(int argc, char **argv)
 {
 	int err = 0;
-	
+
 	struct options opts = parse_options(argc, argv);
 	struct matrix coefs0;
 	bool has_coefs0 = 0;
-		
+
 	if (opts.startfile) {
 		has_coefs0 = true;
 		init_coefs(&coefs0, opts.startfile);
 	}
-	
+
 	struct recv_boot boot;
 	struct messages enron_messages;
 	struct messages *xmsgs, *ymsgs;
 	xmsgs = ymsgs = &enron_messages;
-	
-	setup();	
+
+	setup();
 	enron_messages_init(&enron_messages, 5);
 	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
-	
+
 	if (opts.boot) {
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
@@ -700,20 +701,20 @@ int main(int argc, char **argv)
 			       cohorts, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}
-	
+
 	err = do_fit(xmsgs, ymsgs, pcoefs0);
-	
+
 	messages_deinit(&enron_messages);
-	
+
 	if (opts.boot) {
 		recv_boot_deinit(&boot);
 	}
-	
+
 	teardown();
-	
+
 	if (has_coefs0) {
 		matrix_deinit(&coefs0);
 	}
-	
+
 	return err;
 }

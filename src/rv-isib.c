@@ -41,10 +41,8 @@ static void isib_message_add(void *udata, struct frame *f,
 	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
-	ssize_t dx_index[1] = { dyn_index };
+	size_t dx_index[1] = { dyn_index };
 	size_t dx_nnz = 1;
-	size_t dx_n = design_dvars_dim(frame_recv_design(f));
-	struct svector delta = svector_make(dx_index, dx_data, dx_nnz, dx_n);
 
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -77,7 +75,8 @@ static void isib_message_add(void *udata, struct frame *f,
 				    frame_recv_dx(f, isend, jrecv);
 				if (vector_item(dx, dyn_index) == 0.0) {
 					frame_recv_update(f, isend, jrecv,
-							  &delta);
+							  dx_data, dx_index,
+							  dx_nnz);
 				}
 			}
 
@@ -96,7 +95,8 @@ static void isib_message_add(void *udata, struct frame *f,
 				    frame_recv_dx(f, coisend, cojrecv);
 				if (vector_item(dx, dyn_index) == 0.0) {
 					frame_recv_update(f, coisend, cojrecv,
-							  &delta);
+							  dx_data, dx_index,
+							  dx_nnz);
 				}
 			}
 		}
@@ -111,7 +111,6 @@ static struct var_type RECV_VAR_ISIB_REP = {
 	 isib_message_add,
 	 NULL,			// message_advance,
 	 NULL,			// recv_update
-	 NULL,			// send_update
 	 NULL,			// clear
 	 }
 };
