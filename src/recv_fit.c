@@ -5,82 +5,172 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "sblas.h"
 #include "xalloc.h"
 #include "linesearch.h"
 #include "recv_fit.h"
 
-static void constrs_init(struct array *constrs)
+static void constr_init(struct recv_fit_constr *c)
 {
-	array_init(constrs, sizeof(struct recv_fit_constr));
+	c->wts = NULL;
+	c->wt_inds = NULL;
+	c->wt_cols = NULL;
+	c->vals = NULL;
+	c->names = NULL;
+	c->n = 0;
+	c->nmax = 0;
+	c->wt_nzmax = 0;
 }
 
-static void constrs_deinit(struct array *constrs)
+static void constr_deinit(struct recv_fit_constr *c)
 {
-	struct recv_fit_constr *c;
-	ARRAY_FOREACH(c, constrs) {
-		svector_deinit(&c->weights);
-		free(c->name);
+	size_t i, n = c->n;
+
+	for (i = 0; i < n; i++) {
+		free(c->names[i]);
 	}
-	array_deinit(constrs);
+	free(c->names);
+	free(c->vals);
+	free(c->wt_cols);
+	free(c->wt_inds);
+	free(c->wts);
 }
 
-static void constrs_add(struct array *constrs, const struct svector *weights,
-			double value, const char *name)
+static void constr_grow(struct recv_fit_constr *c)
 {
-	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	svector_init_copy(&constr->weights, weights);
-	constr->value = value;
-	constr->name = xstrdup(name);
+	if (c->n == c->nmax) {
+		size_t nmax = ARRAY_GROW(c->nmax, SIZE_MAX);
+		c->wt_cols = xrealloc(c->wt_cols,
+				      (nmax + 1) * sizeof(c->wt_cols[0]));
+		c->vals = xrealloc(c->vals, nmax * sizeof(c->vals[0]));
+		c->names = xrealloc(c->names, nmax * sizeof(c->names[0]));
+		c->nmax = nmax;
+
+		if (!c->n)
+			c->wt_cols[0] = 0;
+	}
 }
 
-static void constrs_add_set(struct array *constrs, ssize_t dim, ssize_t nc,
-			    ssize_t i, ssize_t c, double val)
+static void constr_grow_nz(struct recv_fit_constr *c, size_t delta)
 {
-	assert(constrs);
-	assert(0 <= i && i < dim);
-	assert(0 <= c && c < nc);
+	size_t nz0 = c->n ? c->wt_cols[c->n] : 0;
+	assert(delta <= SIZE_MAX - nz0);
+
+	size_t nz = nz0 + delta;
+	size_t nzmax = c->wt_nzmax;
+
+	if (nz <= nzmax)
+		return;
+
+	while (nz > nzmax) {
+		nzmax = ARRAY_GROW(nzmax, SIZE_MAX);
+	}
+
+	c->wts = xrealloc(c->wts, nzmax * sizeof(c->wts[0]));
+	c->wt_inds = xrealloc(c->wt_inds, nzmax * sizeof(c->wt_inds[0]));
+	c->wt_nzmax = nzmax;
+}
+
+static size_t constr_count(const struct recv_fit_constr *c)
+{
+	return c->n;
+}
+
+static void constr_add(struct recv_fit_constr *c, const double *wts,
+		       const size_t *ind, size_t nz,
+		       double val, const char *name)
+{
+	constr_grow(c);
+	constr_grow_nz(c, nz);
+
+	size_t n = c->n;
+	memcpy(c->wts + c->wt_cols[n], wts, nz * sizeof(wts[0]));
+	memcpy(c->wt_inds + c->wt_cols[n], ind, nz * sizeof(ind[0]));
+	c->wt_cols[n+1] = c->wt_cols[n] + nz;
+	c->vals[n] = val;
+	c->names[n] = xstrdup(name);
+	c->n = n + 1;
+}
+
+static void constr_add_set(struct recv_fit_constr *c, size_t dim, size_t nc,
+			   size_t i, size_t ic, double val)
+{
+	assert(c);
+	assert(i < dim);
+	assert(ic < nc);
 	assert(isfinite(val));
 
-	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	svector_init(&constr->weights, dim * nc);
-
-	svector_set_item(&constr->weights, i + c * dim, 1.0);
-	constr->value = val;
-
-	const char *fmt = "Set(%" SSIZE_FMT ",%" SSIZE_FMT ",%g)";
+	const char *fmt = "Set(%zd,%zd,%g)";
 	char buf;
-	size_t len = snprintf(&buf, 1, fmt, i + 1, c + 1, val) + 1;
-	char *name = xcalloc(len, sizeof(char));
-	snprintf(name, len, fmt, i + 1, c + 1, val);
+	size_t len = snprintf(&buf, 1, fmt, i + 1, ic + 1, val);
+	char *name = xmalloc((len + 1) * sizeof(char));
+	snprintf(name, len + 1, fmt, i + 1, ic + 1, val);
 
-	constr->name = name;
+	constr_grow(c);
+	constr_grow_nz(c, 1);
+
+	size_t n = c->n;
+	c->wts[c->wt_cols[n]] = 1.0;
+	c->wt_inds[c->wt_cols[n]] = i + ic * dim;
+	c->wt_cols[n+1] = c->wt_cols[n] + 1;
+	c->vals[n] = val;
+	c->names[n] = name;
+	c->n = n + 1;
 }
 
-static void constrs_add_eq(struct array *constrs, ssize_t dim, ssize_t nc,
-			   ssize_t i1, ssize_t c1, ssize_t i2, ssize_t c2)
+static void constr_add_eq(struct recv_fit_constr *c, size_t dim, size_t nc,
+			  size_t i1, size_t ic1, size_t i2, size_t ic2)
 {
-	assert(constrs);
-	assert(0 <= i1 && i1 < dim);
-	assert(0 <= i2 && i2 < dim);
-	assert(0 <= c1 && c1 < nc);
-	assert(0 <= c2 && c2 < nc);
-	assert(!(i1 == i2 && c1 == c2));
+	assert(c);
+	assert(i1 < dim);
+	assert(i2 < dim);
+	assert(ic1 < nc);
+	assert(ic2 < nc);
+	assert(i1 != i2 || ic1 != ic2);
 
-	struct recv_fit_constr *constr = array_add(constrs, NULL);
-	svector_init(&constr->weights, dim * nc);
-
-	svector_set_item(&constr->weights, i1 + c1 * dim, +1.0);
-	svector_set_item(&constr->weights, i2 + c2 * dim, -1.0);
-	constr->value = 0.0;
-
-	const char *fmt =
-	    "Eq((%" SSIZE_FMT ",%" SSIZE_FMT "),(%" SSIZE_FMT "),(%" SSIZE_FMT
-	    "))";
+	const char *fmt = "Eq((%zd,%zd),(%zd,%zd))";
 	char buf;
-	size_t len = snprintf(&buf, 1, fmt, i1 + 1, c1 + 1, i2 + 1, c2 + 1) + 1;
-	char *name = xcalloc(len, sizeof(char));
-	snprintf(name, len, fmt, i1 + 1, c1 + 1, i2 + 1, c2 + 1);
-	constr->name = name;
+	size_t len = snprintf(&buf, 1, fmt, i1 + 1, ic1 + 1, i2 + 1, ic2 + 1);
+	char *name = xmalloc((len + 1) * sizeof(char));
+	snprintf(name, len + 1, fmt, i1 + 1, ic1 + 1, i2 + 1, ic2 + 1);
+
+	constr_grow(c);
+	constr_grow_nz(c, 2);
+
+	size_t n = c->n;
+	c->wts[c->wt_cols[n]] = +1.0;
+	c->wt_inds[c->wt_cols[n]] = i1 + ic1 * dim;
+	c->wts[c->wt_cols[n] + 1] = -1.0;
+	c->wt_inds[c->wt_cols[n]] = i2 + ic2 * dim;
+	c->wt_cols[n+1] = c->wt_cols[n] + 2;
+	c->vals[n] = 0.0;
+	c->names[n] = name;
+	c->n = n + 1;
+}
+
+static void constr_get(const struct recv_fit_constr *c, size_t i,
+		       const double **weightsp, const size_t **indp,
+		       size_t *nzp, double *valp, const char **namep)
+{
+	assert(i < constr_count(c));
+
+	const double *wts = c->wts + c->wt_cols[i];
+	const size_t *ind = c->wt_inds + c->wt_cols[i];
+	size_t nz = c->wt_cols[i+1] - c->wt_cols[i];
+	double val = c->vals[i];
+	const char *name = c->names[i];
+
+	if (weightsp)
+		*weightsp = wts;
+	if (indp)
+		*indp = ind;
+	if (nzp)
+		*nzp = nz;
+	if (valp)
+		*valp = val;
+	if (namep)
+		*namep = name;
+
 }
 
 static void resid_init(struct recv_fit_resid *resid, ssize_t nc, ssize_t dim,
@@ -106,45 +196,44 @@ static void resid_add_constrs(struct recv_fit_resid *resid, ssize_t n)
 static void resid_set(struct recv_fit_resid *resid,
 		      const struct recv_loglik *ll,
 		      const struct recv_fit_constr *ce,
-		      ssize_t nce, const struct vector *params)
+		      const struct vector *params)
 {
 	struct vector *r = &resid->vector;
 	const struct recv_model *m = recv_loglik_model(ll);
-	ssize_t ntot = recv_loglik_count_sum(ll);
-	ssize_t dim = recv_model_dim(m);
-	ssize_t ic, nc = recv_model_cohort_count(m);
-	ssize_t ice;
+	size_t ntot = recv_loglik_count_sum(ll);
+	size_t dim = recv_model_dim(m);
+	size_t ic, nc = recv_model_cohort_count(m);
+	size_t nce = constr_count(ce);
 
 	/* r1 is the dual residual: grad(f) + ce * nu,
 	 *   where grad(f) = grad(nll)
 	 *                 = -(score)
 	 */
-	struct vector r1 = vector_slice(r, 0, nc * dim);
-	struct vector duals = vector_slice(params, nc * dim, nce);
+	struct vector r1 = vector_slice(r, 0, dim * nc);
+	struct vector duals = vector_slice(params, dim * nc, nce);
 
 	vector_fill(&r1, 0.0);
-	for (ice = 0; ice < nce; ice++) {
-		svector_axpy(vector_item(&duals, ice), &ce[ice].weights, &r1);
-	}
-
 	for (ic = 0; ic < nc; ic++) {
 		const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
 		const struct vector *score = &info->score;
-		ssize_t n = recv_loglik_count(ll, ic);
+		size_t n = recv_loglik_count(ll, ic);
 
 		struct vector r1c = vector_slice(&r1, ic * dim, dim);
 		vector_axpy(-((double)n) / ntot, score, &r1c);
 	}
 
-	// r2 is the primal residual: ce' * x - be
-	struct vector r2 = vector_slice(r, nc * dim, nce);
-	struct vector primals = vector_slice(params, 0, nc * dim);
+	sblas_dcscmv(BLAS_NOTRANS, dim * nc, nce, 1.0, ce->wts, ce->wt_inds,
+		     ce->wt_cols, vector_to_ptr(&duals), 1.0,
+		     vector_to_ptr(&r1));
 
-	for (ice = 0; ice < nce; ice++) {
-		double val = (svector_dot(&ce[ice].weights, &primals)
-			      - ce[ice].value);
-		vector_set_item(&r2, ice, val);
-	}
+	// r2 is the primal residual: ce' * x - be
+	struct vector r2 = vector_slice(r, dim * nc, nce);
+	struct vector primals = vector_slice(params, 0, dim * nc);
+
+	blas_dcopy(nce, ce->vals, 1, vector_to_ptr(&r2), 1);
+	sblas_dcscmv(BLAS_TRANS, dim * nc, nce, 1.0, ce->wts, ce->wt_inds,
+		     ce->wt_cols, vector_to_ptr(&primals), -1.0,
+		     vector_to_ptr(&r2));
 
 	// compute ||r||^2
 	resid->norm2 = vector_norm2(r);
@@ -194,7 +283,6 @@ static void eval_add_constrs(struct recv_fit_eval *eval, ssize_t n)
 
 static void _eval_update(struct recv_fit_eval *eval,
 			 const struct recv_fit_constr *ce,
-			 ssize_t nce,
 			 const struct messages *xmsgs,
 			 const struct messages *ymsgs,
 			 struct frame *frame, struct recv_model *model)
@@ -246,7 +334,7 @@ static void _eval_update(struct recv_fit_eval *eval,
 	}
 
 	// set resid
-	resid_set(&eval->resid, &eval->loglik, ce, nce, &eval->params);
+	resid_set(&eval->resid, &eval->loglik, ce, &eval->params);
 
 	// set in_domain
 	eval->in_domain = isfinite(eval->resid.norm2);
@@ -254,14 +342,15 @@ static void _eval_update(struct recv_fit_eval *eval,
 }
 
 static void eval_set(struct recv_fit_eval *eval,
-		     const struct recv_fit_constr *ce, ssize_t nce,
+		     const struct recv_fit_constr *ce,
 		     const struct matrix *coefs, const struct vector *duals,
 		     const struct messages *xmsgs,
 		     const struct messages *ymsgs,
 		     struct frame *frame, struct recv_model *model)
 {
-	ssize_t dim = recv_model_dim(model);
-	ssize_t nc = recv_model_cohort_count(model);
+	size_t dim = recv_model_dim(model);
+	size_t nc = recv_model_cohort_count(model);
+	size_t nce = constr_count(ce);
 
 	struct vector pcoefs_data = vector_slice(&eval->params, 0, dim * nc);
 	struct matrix pcoefs = matrix_make(&pcoefs_data, dim, nc);
@@ -280,11 +369,11 @@ static void eval_set(struct recv_fit_eval *eval,
 		vector_fill(&pduals, 0.0);
 	}
 
-	_eval_update(eval, ce, nce, xmsgs, ymsgs, frame, model);
+	_eval_update(eval, ce, xmsgs, ymsgs, frame, model);
 }
 
 static void eval_step(struct recv_fit_eval *eval,
-		      const struct recv_fit_constr *ce, ssize_t nce,
+		      const struct recv_fit_constr *ce,
 		      const struct vector *params0, double scale,
 		      const struct vector *dir, const struct messages *xmsgs,
 		      const struct messages *ymsgs,
@@ -292,7 +381,7 @@ static void eval_step(struct recv_fit_eval *eval,
 {
 	vector_assign_copy(&eval->params, params0);
 	vector_axpy(scale, dir, &eval->params);
-	_eval_update(eval, ce, nce, xmsgs, ymsgs, frame, model);
+	_eval_update(eval, ce, xmsgs, ymsgs, frame, model);
 }
 
 static void kkt_init(struct recv_fit_kkt *kkt, ssize_t nc, ssize_t dim,
@@ -323,13 +412,14 @@ static void kkt_deinit(struct recv_fit_kkt *kkt)
 }
 
 static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
-		    const struct recv_fit_constr *ce, ssize_t nce)
+		    const struct recv_fit_constr *ce)
 {
 	struct matrix *k = &kkt->matrix;
 	const struct recv_model *m = recv_loglik_model(ll);
-	ssize_t dim = recv_model_dim(m);
-	ssize_t ic, nc = recv_model_cohort_count(m);
-	ssize_t ntot = recv_loglik_count_sum(ll);
+	size_t dim = recv_model_dim(m);
+	size_t ic, nc = recv_model_cohort_count(m);
+	size_t ntot = recv_loglik_count_sum(ll);
+	size_t nce = constr_count(ce);
 
 	matrix_fill(k, 0.0);
 
@@ -342,18 +432,17 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		matrix_scale(&h, ((double)n) / ntot);
 	}
 
-	// k12
+	// k12, k21
 	struct matrix k12 = matrix_slice(k, 0, nc * dim, nc * dim, nce);
-	ssize_t ice;
-	matrix_fill(&k12, 0.0);
-	for (ice = 0; ice < nce; ice++) {
-		struct vector dst = matrix_col(&k12, ice);
-		svector_scatter(&ce[ice].weights, &dst);
-	}
-
-	// k21
 	struct matrix k21 = matrix_slice(k, nc * dim, 0, nce, nc * dim);
-	matrix_assign_copy(&k21, BLAS_TRANS, &k12);
+
+	matrix_fill(&k12, 0.0);
+	sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols,
+		       matrix_to_ptr(&k12), matrix_lda(&k12));
+
+	matrix_fill(&k21, 0.0);
+	sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols,
+		       matrix_to_ptr(&k21), matrix_lda(&k21));
 
 	kkt->factored = false;
 }
@@ -471,9 +560,6 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 	//fprintf(stderr, ">                   f0: %.8f  g0: %.8f\n", f0, g0);
 
 	do {
-		const struct recv_fit_constr *ce = array_to_ptr(&fit->constrs);
-		ssize_t nce = array_count(&fit->constrs);
-
 		// compute the new trial step length
 		it++;
 		fit->step = stp;
@@ -481,7 +567,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		stp = stp0 * 0.5;
 
 		// evaluate the function at the new point
-		eval_step(fit->cur, ce, nce,
+		eval_step(fit->cur, &fit->constr,
 			  &fit->prev->params, fit->step, &fit->search.vector,
 			  fit->xmsgs, fit->ymsgs, fit->frame, &fit->model);
 
@@ -489,7 +575,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 			goto domain_error_f;
 		}
 		// compute the kkt matrix and residual gradient at the new point
-		kkt_set(&fit->kkt, &fit->cur->loglik, ce, nce);
+		kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
 		rgrad_set(&fit->rgrad, &fit->kkt, &fit->cur->resid);
 
 		double f = fit->cur->resid.norm2;
@@ -559,7 +645,7 @@ void recv_fit_init(struct recv_fit *fit,
 	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
 
 	recv_model_init(&fit->model, f, ncohort, cohorts, NULL);
-	constrs_init(&fit->constrs);
+	constr_init(&fit->constr);
 	eval_init(&fit->eval[0], &fit->model, ne);
 	eval_init(&fit->eval[1], &fit->model, ne);
 	fit->prev = &fit->eval[0];
@@ -569,7 +655,7 @@ void recv_fit_init(struct recv_fit *fit,
 	rgrad_init(&fit->rgrad, nc, dim, ne);
 
 	// evaluate the model at zero
-	eval_set(fit->cur, NULL, 0, NULL, NULL, fit->xmsgs, fit->ymsgs,
+	eval_set(fit->cur, &fit->constr, NULL, NULL, fit->xmsgs, fit->ymsgs,
 		 fit->frame, &fit->model);
 
 	fit->dev0 = recv_fit_dev(fit);
@@ -752,15 +838,12 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 				  const struct matrix *coefs0)
 {
-	const struct recv_fit_constr *ce = array_to_ptr(&fit->constrs);
-	ssize_t nce = array_count(&fit->constrs);
-
 	if (coefs0 != NULL) {
-		eval_set(fit->cur, ce, nce,
+		eval_set(fit->cur, &fit->constr,
 			 coefs0, NULL, fit->xmsgs, fit->ymsgs, fit->frame,
 			 &fit->model);
 	}
-	kkt_set(&fit->kkt, &fit->cur->loglik, ce, nce);
+	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
 	fit->step = NAN;
 
 	// determine initial value and gradient
@@ -786,27 +869,20 @@ void recv_fit_deinit(struct recv_fit *fit)
 	kkt_deinit(&fit->kkt);
 	eval_deinit(&fit->eval[1]);
 	eval_deinit(&fit->eval[0]);
-	constrs_deinit(&fit->constrs);
+	constr_deinit(&fit->constr);
 	recv_model_deinit(&fit->model);
 }
 
-ssize_t recv_fit_constr_count(const struct recv_fit *fit)
+size_t recv_fit_constr_count(const struct recv_fit *fit)
 {
-	return array_count(&fit->constrs);
+	return constr_count(&fit->constr);
 }
 
-void recv_fit_get_constr(const struct recv_fit *fit, ssize_t i,
-			 const struct svector **pweights, double *pvalue,
-			 const char **pname)
+void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
+			 const double **weightsp, const size_t **indp,
+			 size_t *nzp, double *valp, const char **namep)
 {
-	const struct recv_fit_constr *c = array_item(&fit->constrs, i);
-
-	if (pweights)
-		*pweights = &c->weights;
-	if (pvalue)
-		*pvalue = c->value;
-	if (pname)
-		*pname = c->name;
+	constr_get(&fit->constr, i, weightsp, indp, nzp, valp, namep);
 }
 
 static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
@@ -819,32 +895,33 @@ static void _recv_fit_add_constrs(struct recv_fit *fit, ssize_t n)
 
 }
 
-void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
-			 double be, const char *name)
+void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
+			 const size_t *ind, size_t nz, double val,
+			 const char *name)
 {
-	constrs_add(&fit->constrs, ce, be, name);
+	constr_add(&fit->constr, weights, ind, nz, val, name);
 	_recv_fit_add_constrs(fit, 1);
 }
 
-void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
+void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, size_t c,
 			     double val)
 {
 	const struct design *d = frame_recv_design(fit->frame);
 	size_t dim = design_dim(d);
 	size_t nc = recv_model_cohort_count(&fit->model);
 
-	constrs_add_set(&fit->constrs, dim, nc, i, c, val);
+	constr_add_set(&fit->constr, dim, nc, i, c, val);
 	_recv_fit_add_constrs(fit, 1);
 }
 
-void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
-			    ssize_t i2, ssize_t c2)
+void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
+			    size_t i2, size_t c2)
 {
 	const struct design *d = frame_recv_design(fit->frame);
 	size_t dim = design_dim(d);
 	size_t nc = recv_model_cohort_count(&fit->model);
 
-	constrs_add_eq(&fit->constrs, dim, nc, i1, c1, i2, c2);
+	constr_add_eq(&fit->constr, dim, nc, i1, c1, i2, c2);
 	_recv_fit_add_constrs(fit, 1);
 }
 

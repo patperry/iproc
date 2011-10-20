@@ -47,15 +47,18 @@ enum recv_fit_task {
 	RECV_FIT_ERR_XTOL = -2,	// step size is smaller than tolerance
 };
 
-struct recv_fit_constr {
-	struct svector weights;
-	double value;
-	char *name;
-};
-
 struct recv_fit_resid {
 	struct vector vector;
 	double norm2;
+};
+
+struct recv_fit_constr {
+	double *wts;
+	size_t *wt_inds;
+	size_t *wt_cols;
+	double *vals;
+	char **names;
+	size_t n, nmax, wt_nzmax;
 };
 
 struct recv_fit_eval {
@@ -94,7 +97,7 @@ struct recv_fit {
 	double dev0;
 
 	/* optimization constraints */
-	struct array constrs;
+	struct recv_fit_constr constr;
 
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
@@ -117,16 +120,17 @@ void recv_fit_init(struct recv_fit *fit,
 void recv_fit_deinit(struct recv_fit *fit);
 
 /* constraints */
-ssize_t recv_fit_constr_count(const struct recv_fit *fit);
-void recv_fit_get_constr(const struct recv_fit *fit, ssize_t i,
-			 const struct svector **pweights, double *pvalue,
-			 const char **pname);
-void recv_fit_add_constr(struct recv_fit *fit, const struct svector *ce,
-			 double be, const char *name);
-void recv_fit_add_constr_set(struct recv_fit *fit, ssize_t i, ssize_t c,
+size_t recv_fit_constr_count(const struct recv_fit *fit);
+void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
+			 const double **weightsp, const size_t **indp,
+			 size_t *nzp, double *valp, const char **namep);
+void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
+			 const size_t *ind, size_t nz, double val,
+			 const char *name);
+void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, size_t c,
 			     double val);
-void recv_fit_add_constr_eq(struct recv_fit *fit, ssize_t i1, ssize_t c1,
-			    ssize_t i2, ssize_t c2);
+void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
+			    size_t i2, size_t c2);
 //ssize_t recv_fit_add_constr_identify(struct recv_fit *fit);
 
 /* fitting */
