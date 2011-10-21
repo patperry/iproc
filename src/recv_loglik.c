@@ -256,8 +256,7 @@ static void score_set(struct recv_loglik_sender_score *score,
 static void imat_set(struct recv_loglik_sender_imat *imat,
 		     const struct frame *f,
 		     const struct recv_model *model,
-		     size_t isend,
-		     const struct recv_loglik_sender_score *score)
+		     size_t isend, const struct recv_loglik_sender_score *score)
 {
 	assert(imat);
 	assert(model);
@@ -357,7 +356,8 @@ static void nrecv_grow(struct recv_loglik_sender_score *score)
 		score->nrecv = xrealloc(score->nrecv,
 					nzmax * sizeof(score->nrecv[0]));
 		score->nrecv_ind = xrealloc(score->nrecv_ind,
-					    nzmax * sizeof(score->nrecv_ind[0]));
+					    nzmax *
+					    sizeof(score->nrecv_ind[0]));
 		score->nrecv_nzmax = nzmax;
 	}
 }
@@ -376,9 +376,12 @@ static void nrecv_add(const struct recv_loglik_sender_score *score0,
 			ix = ~ix;
 			nrecv_grow(score1);
 			memmove(score1->nrecv + ix + 1, score1->nrecv + ix,
-				(score1->nrecv_nz - ix) * sizeof(score1->nrecv[0]));
-			memmove(score1->nrecv_ind + ix + 1, score1->nrecv_ind + ix,
-				(score1->nrecv_nz - ix) * sizeof(score1->nrecv_ind[0]));
+				(score1->nrecv_nz -
+				 ix) * sizeof(score1->nrecv[0]));
+			memmove(score1->nrecv_ind + ix + 1,
+				score1->nrecv_ind + ix,
+				(score1->nrecv_nz -
+				 ix) * sizeof(score1->nrecv_ind[0]));
 			score1->nrecv[ix] = 0.0;
 			score1->nrecv_ind[ix] = ind;
 			score1->nrecv_nz++;
@@ -536,7 +539,8 @@ static void imat_axpy(double alpha,
 	matrix_init(&x0_dp2, dim, n);
 	for (j = 0; j < n; j++) {
 		struct svector dp2_j = svector_make((ssize_t *)active,
-						    matrix_item_ptr(&imat->dp2, 0, j),
+						    matrix_item_ptr(&imat->dp2,
+								    0, j),
 						    nactive, nrecv);
 		struct vector dst = matrix_col(&x0_dp2, j);
 		design_muls0(1.0, BLAS_TRANS, design, &dp2_j, 0.0, &dst);
