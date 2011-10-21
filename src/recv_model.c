@@ -710,15 +710,6 @@ double recv_model_logprob(const struct recv_model *m, size_t isend,
 	size_t c = recv_model_cohort(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
 	const struct recv_model_sender *send = recv_model_send(m, isend);
-	/*
-	   double gamma = ctx->gamma;
-	   double p0 = vector_item(ctx->group->p0, jrecv);
-	   double dp = svector_item(ctx->dp, jrecv);
-	   double p = gamma * p0 + dp;
-	   p = MAX(0.0, MIN(1.0, p));
-	   return log(p);
-	 */
-
 	double deta = 0.0;
 	ptrdiff_t iactive = sblas_find(send->nactive, send->active, jrecv);
 
