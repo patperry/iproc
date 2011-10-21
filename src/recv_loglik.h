@@ -48,7 +48,9 @@
  */
 struct recv_loglik_sender_score {
 	const struct vector *mean0;
-	struct svector nrecv;
+	double *nrecv;
+	size_t *nrecv_ind;
+	size_t nrecv_nz, nrecv_nzmax;
 	struct vector mean_obs_dx;
 	double gamma;
 	struct vector dp;	// p - gamma * p0

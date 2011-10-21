@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include "sblas.h"
 #include "xalloc.h"
 #include "recv_loglik.h"
 
@@ -51,11 +52,13 @@ static void score_init(struct recv_loglik_sender_score *score,
 	size_t ic = recv_model_cohort(model, isend);
 	const struct vector *mean0 = recv_model_mean0(model, ic);
 	const struct design *design = recv_model_design(model);
-	size_t nrecv = design_count(design);
 	size_t dyn_dim = design_dvars_dim(design);
 
 	score->mean0 = mean0;
-	svector_init(&score->nrecv, nrecv);
+	score->nrecv = NULL;
+	score->nrecv_ind = NULL;
+	score->nrecv_nz = 0;
+	score->nrecv_nzmax = 0;
 	vector_init(&score->mean_obs_dx, dyn_dim);
 	score->gamma = 1.0;
 	vector_init(&score->dp, 0);
@@ -89,7 +92,8 @@ static void score_deinit(struct recv_loglik_sender_score *score)
 	vector_deinit(&score->mean_dx);
 	vector_deinit(&score->dp);
 	vector_deinit(&score->mean_obs_dx);
-	svector_deinit(&score->nrecv);
+	free(score->nrecv_ind);
+	free(score->nrecv);
 }
 
 static void imat_deinit(struct recv_loglik_sender_imat *imat)
@@ -107,7 +111,7 @@ static void imat_deinit(struct recv_loglik_sender_imat *imat)
 static void score_clear(struct recv_loglik_sender_score *score)
 {
 	assert(score);
-	svector_clear(&score->nrecv);
+	score->nrecv_nz = 0;
 	vector_fill(&score->mean_obs_dx, 0.0);
 	score->gamma = 1.0;
 	vector_reinit(&score->dp, 0);
@@ -162,19 +166,46 @@ static void imat_insert_active(struct recv_loglik_sender_imat *imat, size_t i)
 	matrix_insert_row_col(&imat->dp2, i, i);
 }
 
+static int size_compar(const void *x1, const void *x2)
+{
+	size_t y1 = *(size_t *)x1;
+	size_t y2 = *(size_t *)x2;
+
+	if (y1 < y2) {
+		return -1;
+	} else if (y1 > y2) {
+		return +1;
+	} else {
+		return 0;
+	}
+}
+
 static void score_set_obs(struct recv_loglik_sender_score *score,
 			  const struct frame *f,
 			  size_t isend, const size_t *jrecv, const size_t n)
 {
 	size_t i;
-	svector_clear(&score->nrecv);
 
-	for (i = 0; i < n; i++) {
-		*svector_item_ptr(&score->nrecv, jrecv[i]) += 1.0;
+	if (score->nrecv_nzmax < n) {
+		score->nrecv = xrealloc(score->nrecv,
+					n * sizeof(score->nrecv[0]));
+		score->nrecv_ind = xrealloc(score->nrecv_ind,
+					    n * sizeof(score->nrecv_ind[0]));
+		score->nrecv_nzmax = n;
 	}
 
+	for (i = 0; i < n; i++) {
+		score->nrecv[i] = 1.0;
+	}
+	memcpy(score->nrecv_ind, jrecv, n * sizeof(jrecv[0]));
+	qsort(score->nrecv_ind, n, sizeof(jrecv[0]), size_compar);
+	score->nrecv_nz = n;
+
+	struct svector wt = svector_make((ssize_t *)score->nrecv_ind,
+					 score->nrecv, score->nrecv_nz,
+					 frame_recv_count(f));
 	frame_recv_dmuls(1.0 / n, BLAS_TRANS, f, isend,
-			 &score->nrecv, 0.0, &score->mean_obs_dx);
+			 &wt, 0.0, &score->mean_obs_dx);
 }
 
 static void score_set_mean(struct recv_loglik_sender_score *score,
@@ -319,6 +350,43 @@ static void matrix_mean_update(double scale, const struct matrix *val,
 	matrix_axpy(scale, &diff, mean);
 }
 
+static void nrecv_grow(struct recv_loglik_sender_score *score)
+{
+	if (score->nrecv_nz == score->nrecv_nzmax) {
+		size_t nzmax = ARRAY_GROW(score->nrecv_nzmax, SIZE_MAX);
+		score->nrecv = xrealloc(score->nrecv,
+					nzmax * sizeof(score->nrecv[0]));
+		score->nrecv_ind = xrealloc(score->nrecv_ind,
+					    nzmax * sizeof(score->nrecv_ind[0]));
+		score->nrecv_nzmax = nzmax;
+	}
+}
+
+static void nrecv_add(const struct recv_loglik_sender_score *score0,
+		      struct recv_loglik_sender_score *score1)
+{
+	size_t i, n = score0->nrecv_nz;
+	size_t ind;
+	ptrdiff_t ix;
+
+	for (i = 0; i < n; i++) {
+		ind = score0->nrecv_ind[i];
+		ix = sblas_find(score1->nrecv_nz, score1->nrecv_ind, ind);
+		if (ix < 0) {
+			ix = ~ix;
+			nrecv_grow(score1);
+			memmove(score1->nrecv + ix + 1, score1->nrecv + ix,
+				(score1->nrecv_nz - ix) * sizeof(score1->nrecv[0]));
+			memmove(score1->nrecv_ind + ix + 1, score1->nrecv_ind + ix,
+				(score1->nrecv_nz - ix) * sizeof(score1->nrecv_ind[0]));
+			score1->nrecv[ix] = 0.0;
+			score1->nrecv_ind[ix] = ind;
+			score1->nrecv_nz++;
+		}
+		score1->nrecv[ix] += score0->nrecv[i];
+	}
+}
+
 static void score_update(size_t n0,
 			 const struct recv_loglik_sender_score *score0,
 			 size_t n1, struct recv_loglik_sender_score *score1)
@@ -334,7 +402,7 @@ static void score_update(size_t n0,
 	vector_init(&work,
 		    MAX(vector_dim(&score0->dp), vector_dim(&score0->mean_dx)));
 
-	svector_axpys(1.0, &score0->nrecv, &score1->nrecv);
+	nrecv_add(score0, score1);
 	vector_mean_update(scale, &score0->mean_obs_dx, &score1->mean_obs_dx,
 			   &work);
 
@@ -392,7 +460,10 @@ static void score_axpy_obs(double alpha,
 	struct vector ysub = vector_slice(y, off, dim);
 
 	// (X[0,i])^T n[i]
-	design_muls0(alpha / nsend, BLAS_TRANS, d, &score->nrecv, 1.0, y);
+	struct svector wt = svector_make((ssize_t *)score->nrecv_ind,
+					 score->nrecv, score->nrecv_nz,
+					 design_count(d));
+	design_muls0(alpha / nsend, BLAS_TRANS, d, &wt, 1.0, y);
 
 	// sum{dx[t,i,j]}
 	vector_axpy(alpha, &score->mean_obs_dx, &ysub);
@@ -410,17 +481,11 @@ static void score_axpy_mean(double alpha,
 	double gamma = score->gamma;
 	vector_axpy(alpha * gamma, mean0, y);
 
-	size_t i, n = nactive;
-	struct svector dp;
-	svector_init(&dp, design_count(design));
-	for (i = 0; i < n; i++) {
-		size_t jrecv = active[i];
-		double val = vector_item(&score->dp, i);
-		svector_set_item(&dp, jrecv, val);
-	}
-
+	struct svector dp = svector_make((ssize_t *)active,
+					 vector_to_ptr(&score->dp),
+					 nactive,
+					 design_count(design));
 	design_muls0(alpha, BLAS_TRANS, design, &dp, 1.0, y);
-	svector_deinit(&dp);
 
 	const struct vector *mean_dx = &score->mean_dx;
 	size_t off = design_dvars_index(design);
@@ -458,30 +523,21 @@ static void imat_axpy(double alpha,
 
 	const size_t n = nactive;
 	size_t i, j, k;
-	struct svector gamma_dp;
-	svector_init(&gamma_dp, nrecv);
-	for (i = 0; i < n; i++) {
-		size_t jrecv = active[i];
-		double val = vector_item(&imat->gamma_dp, i);
-		svector_set_item(&gamma_dp, jrecv, val);
-	}
+	struct svector gamma_dp = svector_make((ssize_t *)active,
+					       vector_to_ptr(&imat->gamma_dp),
+					       nactive, nrecv);
 
 	struct vector gamma_x0_dp;
 	vector_init(&gamma_x0_dp, dim);
 	design_muls0(1.0, BLAS_TRANS, design, &gamma_dp, 0.0, &gamma_x0_dp);
 
 	struct matrix x0_dp2;
-	struct svector dp2_j;
 
 	matrix_init(&x0_dp2, dim, n);
-	svector_init(&dp2_j, nrecv);
 	for (j = 0; j < n; j++) {
-		svector_clear(&dp2_j);
-		for (i = 0; i < n; i++) {
-			size_t jrecv = active[i];
-			double val = matrix_item(&imat->dp2, i, j);
-			svector_set_item(&dp2_j, jrecv, val);
-		}
+		struct svector dp2_j = svector_make((ssize_t *)active,
+						    matrix_item_ptr(&imat->dp2, 0, j),
+						    nactive, nrecv);
 		struct vector dst = matrix_col(&x0_dp2, j);
 		design_muls0(1.0, BLAS_TRANS, design, &dp2_j, 0.0, &dst);
 	}
@@ -494,18 +550,14 @@ static void imat_axpy(double alpha,
 	matrix_update1(y, -alpha, mean0, &gamma_x0_dp);
 	matrix_update1(y, -alpha, &gamma_x0_dp, mean0);
 
-	struct svector x0_dp2_k;
-	svector_init(&x0_dp2_k, nrecv);
+	double *x0_dp2_k_vals = xmalloc(nactive * sizeof(x0_dp2_k_vals));
+	struct svector x0_dp2_k = svector_make((ssize_t *)active, x0_dp2_k_vals,
+					       nactive, nrecv);
 	for (k = 0; k < dim; k++) {
-		svector_clear(&x0_dp2_k);
-		for (j = 0; j < n; j++) {
-			size_t jrecv = active[j];
-			double val = matrix_item(&x0_dp2, k, j);
-			svector_set_item(&x0_dp2_k, jrecv, val);
-		}
+		blas_dcopy(nactive, matrix_item_ptr(&x0_dp2, k, 0),
+			   matrix_lda(&x0_dp2), x0_dp2_k_vals, 1);
 		struct vector dst = matrix_col(y, k);
-		design_muls0(alpha, BLAS_TRANS, design, &x0_dp2_k,
-				  1.0, &dst);
+		design_muls0(alpha, BLAS_TRANS, design, &x0_dp2_k, 1.0, &dst);
 	}
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
@@ -527,15 +579,13 @@ static void imat_axpy(double alpha,
 	 */
 
 	struct vector x0_j;
-	struct svector e_j;
-
+	double one = 1.0;
 	vector_init(&x0_j, dim);
-	svector_init(&e_j, design_count(design));
 
 	for (i = 0; i < n; i++) {
 		size_t jrecv = active[i];
-
-		svector_set_basis(&e_j, jrecv);
+		struct svector e_j = svector_make((ssize_t *)&jrecv, &one, 1,
+						  design_count(design));
 		design_muls0(1.0, BLAS_TRANS, design, &e_j, 0.0, &x0_j);
 
 		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
@@ -552,12 +602,9 @@ static void imat_axpy(double alpha,
 	matrix_update1(&y1_, -alpha, &imat->gamma_mean_dx, mean0);
 
 	vector_deinit(&x0_j);
-	svector_deinit(&e_j);
-	svector_deinit(&x0_dp2_k);
-	svector_deinit(&dp2_j);
+	free(x0_dp2_k_vals);
 	matrix_deinit(&x0_dp2);
 	vector_deinit(&gamma_x0_dp);
-	svector_deinit(&gamma_dp);
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
