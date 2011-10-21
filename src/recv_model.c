@@ -164,23 +164,21 @@ static void cohort_set(struct recv_model_cohort *cm,
 
 	/* imat0 */
 	struct vector y;
-	struct svector ej;
+	double one = 1.0;
 	double pj;
 	size_t jrecv;
+	struct svector ej = svector_make((ssize_t *)&jrecv, &one, 1, nreceiver);
 
 	vector_init(&y, dim);
-	svector_init(&ej, nreceiver);
 	matrix_fill(&cm->imat0, 0.0);
 
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
-		svector_set_basis(&ej, jrecv);
 		design_muls0(1.0, BLAS_TRANS, design, &ej, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 
 		matrix_update1(&cm->imat0, pj, &y, &y);
 	}
-	svector_deinit(&ej);
 	vector_deinit(&y);
 
 #ifndef NDEBUG
