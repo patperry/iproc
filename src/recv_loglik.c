@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "sblas.h"
 #include "xalloc.h"
@@ -279,7 +280,7 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	}
 	matrix_fill(&imat->dp2, 0.0);
 	matrix_fill(&imat->var_dx, 0.0);
-	struct vector y;
+	struct matrix y;
 	double ptot = 0.0;
 
 	/* gamma2 */
@@ -292,7 +293,9 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	/* dp2 */
 	matrix_update1(&imat->dp2, -1.0, &score->dp, &score->dp);
 
-	vector_init(&y, vector_dim(&score->mean_dx));
+	//vector_init(&y, vector_dim(&score->mean_dx));
+	matrix_init(&y, vector_dim(&score->mean_dx), n);
+	
 	for (i = 0; i < n; i++) {
 		size_t jrecv = active[i];
 		double dp = vector_item(&score->dp, i);
@@ -316,15 +319,21 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 		vector_scale(&dx_p_j, p);
 
 		/* var_dx */
-		vector_assign_copy(&y, dx);
-		vector_sub(&y, &score->mean_dx);
-		matrix_update1(&imat->var_dx, p, &y, &y);
+		struct vector y_i = matrix_col(&y, i);
+		vector_assign_copy(&y_i, dx);
+		vector_sub(&y_i, &score->mean_dx);
+		vector_scale(&y_i, sqrt(p));
+		
 		ptot += p;
 	}
+	blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, vector_dim(&score->mean_dx),
+		   vector_dim(&score->mean_dx), n, 1.0, matrix_to_ptr(&y),
+		   matrix_lda(&y), matrix_to_ptr(&y), matrix_lda(&y), 1.0,
+		   matrix_to_ptr(&imat->var_dx), matrix_lda(&imat->var_dx));
 	/* var_dx */
 	matrix_update1(&imat->var_dx, 1 - ptot, &score->mean_dx,
 		       &score->mean_dx);
-	vector_deinit(&y);
+	matrix_deinit(&y);
 }
 
 static void vector_mean_update(double scale, const struct vector *val,
