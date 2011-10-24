@@ -20,6 +20,8 @@ struct frame_event {
 
 struct frame_actor {
 	struct array message_ixs;
+	size_t *nmsg;
+	struct vpattern active;
 };
 
 /* dX[t,i] */

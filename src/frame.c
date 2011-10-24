@@ -13,18 +13,41 @@ static void frame_actor_init(struct frame_actor *fa)
 {
 	assert(fa);
 	array_init(&fa->message_ixs, sizeof(size_t));
+	fa->nmsg = NULL;
+	vpattern_init(&fa->active);
 }
 
 static void frame_actor_clear(struct frame_actor *fa)
 {
 	assert(fa);
 	array_clear(&fa->message_ixs);
+	vpattern_clear(&fa->active);
 }
 
 static void frame_actor_deinit(struct frame_actor *fa)
 {
 	assert(fa);
+	free(fa->nmsg);
+	vpattern_deinit(&fa->active);
 	array_deinit(&fa->message_ixs);
+}
+static size_t frame_actor_search(struct frame_actor *fa, size_t nintvl1, size_t i)
+{
+	int ins;
+	size_t nzmax = fa->active.nzmax;
+	size_t ix = vpattern_search(&fa->active, i, &ins);
+
+	if (ins) {
+		if (nzmax != fa->active.nzmax) {
+			nzmax = fa->active.nzmax;
+			fa->nmsg = xrealloc(fa->nmsg, nzmax * nintvl1 * sizeof(fa->nmsg[0]));
+		}
+		memmove(fa->nmsg + (ix + 1) * nintvl1, fa->nmsg + ix * nintvl1,
+			(fa->active.nz - 1 - ix) * nintvl1 * sizeof(fa->nmsg[0]));
+		memset(fa->nmsg + ix * nintvl1, 0, nintvl1 * sizeof(fa->nmsg[0]));
+	}
+
+	return ix;
 }
 
 static void frame_actors_init(struct frame_actor **pfas, size_t n)
@@ -224,7 +247,7 @@ static int frame_event_rcompare(const struct pqueue *q, const void *x1,
 }
 
 void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
-		const double *intvls, size_t nintvl)				
+		const double *intvls, size_t nintvl)
 {
 	assert(f);
 	assert(intvls || !nintvl);
@@ -348,8 +371,9 @@ static void process_current_messages(struct frame *f)
 		return;
 
 	const double *intvls = frame_intervals(f);
-	size_t nintvls = frame_interval_count(f);
-	double delta = nintvls ? intvls[0] : INFINITY;
+	size_t nintvl = frame_interval_count(f);
+	size_t nintvl1 = nintvl + 1;
+	double delta = nintvl ? intvls[0] : INFINITY;
 	double tnext = frame_time(f) + delta;
 
 	const struct frame_message *fmsgs = array_to_ptr(&f->frame_messages);
@@ -361,14 +385,23 @@ static void process_current_messages(struct frame *f)
 
 		// add the message to the sender history
 		struct frame_actor *fa;
+		size_t ito, nto = msg->nto;
 		fa = frame_senders_item(f, msg->from);
 		array_add(&fa->message_ixs, &imsg);
 
+		for (ito = 0; ito < nto; ito++) {
+			size_t ix = frame_actor_search(fa, nintvl1, msg->to[ito]);
+			size_t *ptr = fa->nmsg + ix * nintvl1;
+			ptr[0]++;
+		}
+
 		// add the message to the receiver histories
-		size_t ito, nto = msg->nto;
 		for (ito = 0; ito < nto; ito++) {
 			fa = frame_receivers_item(f, msg->to[ito]);
 			array_add(&fa->message_ixs, &imsg);
+			size_t ix = frame_actor_search(fa, nintvl1, msg->from);
+			size_t *ptr = fa->nmsg + ix * nintvl1;
+			ptr[0]++;
 		}
 
 		// create an advance event (if necessary)
@@ -428,6 +461,7 @@ static void process_event(struct frame *f)
 	// update the event queue
 	const double *intvls = frame_intervals(f);
 	size_t nintvl = frame_interval_count(f);
+	size_t nintvl1 = nintvl + 1;
 
 	if (intvl < nintvl) {
 		double delta = intvls[intvl];
@@ -436,6 +470,29 @@ static void process_event(struct frame *f)
 		pqueue_update_top(&f->events);
 	} else {
 		pqueue_pop(&f->events);
+	}
+
+
+	// update the actors;
+	struct frame_actor *fa;
+	size_t ito, nto = msg->nto;
+
+	fa = frame_senders_item(f, msg->from);
+	for (ito = 0; ito < nto; ito++) {
+		size_t ix = frame_actor_search(fa, nintvl1, msg->to[ito]);
+		size_t *ptr = fa->nmsg + intvl0 + ix * nintvl1;
+		assert(ptr[0]);
+		ptr[0]--;
+		ptr[1]++;
+	}
+
+	for (ito = 0; ito < nto; ito++) {
+		fa = frame_receivers_item(f, msg->to[ito]);
+		size_t ix = frame_actor_search(fa, nintvl1, msg->from);
+		size_t *ptr = fa->nmsg + intvl0 + ix * nintvl1;
+		assert(ptr[0]);
+		ptr[0]--;
+		ptr[1]++;
 	}
 
 #ifndef NDEBUG
