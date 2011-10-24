@@ -35,7 +35,7 @@ static void isend_message_add(void *udata, struct frame *f,
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { dyn_index };
-	size_t dx_nnz = 1;
+	struct vpattern pat = vpattern_make(dx_index, 1);
 
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -45,8 +45,7 @@ static void isend_message_add(void *udata, struct frame *f,
 		size_t jrecv = msg->to[ito];
 		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 		if (vector_item(dx, dyn_index) == 0.0) {
-			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
-					  dx_nnz);
+			frame_recv_update(f, isend, jrecv, dx_data, &pat);
 		}
 	}
 }

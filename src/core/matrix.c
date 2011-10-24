@@ -500,9 +500,9 @@ void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
 	assert(a);
 	assert(x);
 	assert(y);
-	assert(trans != BLAS_NOTRANS || svector_dim(x) == matrix_ncol(a));
+	assert(trans != BLAS_NOTRANS || svector_dim(x) == (size_t)matrix_ncol(a));
 	assert(trans != BLAS_NOTRANS || vector_dim(y) == matrix_nrow(a));
-	assert(trans == BLAS_NOTRANS || svector_dim(x) == matrix_nrow(a));
+	assert(trans == BLAS_NOTRANS || svector_dim(x) == (size_t)matrix_nrow(a));
 	assert(trans == BLAS_NOTRANS || vector_dim(y) == matrix_ncol(a));
 
 	if (svector_count(x) == 0) {

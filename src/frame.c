@@ -118,34 +118,19 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 	(void)f;		// unused;
 	assert(rf);
 
-	rf->active = NULL;
+	vpattern_init(&rf->active);
 	rf->dx = NULL;
-	rf->nactive = 0;
-	rf->nactive_max = 0;
-}
-
-static void recv_frame_grow_active(struct recv_frame *rf)
-{
-	size_t nactive_max = rf->nactive_max;
-
-	if (rf->nactive == nactive_max) {
-		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
-		rf->dx = xrealloc(rf->dx, nactive_max * sizeof(rf->dx[0]));
-		rf->active =
-		    xrealloc(rf->active, nactive_max * sizeof(rf->active[0]));
-		rf->nactive_max = nactive_max;
-	}
 }
 
 static void recv_frame_clear(struct recv_frame *rf)
 {
 	assert(rf);
 
-	size_t i, n = rf->nactive;
+	size_t i, n = rf->active.nz;
 	for (i = 0; i < n; i++) {
 		vector_deinit(&rf->dx[i]);
 	}
-	rf->nactive = 0;
+	vpattern_clear(&rf->active);
 }
 
 static void recv_frame_deinit(struct recv_frame *rf)
@@ -154,7 +139,7 @@ static void recv_frame_deinit(struct recv_frame *rf)
 
 	recv_frame_clear(rf);
 	free(rf->dx);
-	free(rf->active);
+	vpattern_deinit(&rf->active);
 }
 
 static struct vector *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
@@ -162,17 +147,19 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
 {
 	assert(rf);
 
-	ptrdiff_t ix = sblas_find(rf->nactive, rf->active, jrecv);
-	if (ix < 0) {
-		recv_frame_grow_active(rf);
-		ix = ~ix;
-		memmove(rf->active + ix + 1, rf->active + ix,
-			(rf->nactive - ix) * sizeof(rf->active[0]));
+	int ins;
+	size_t nzmax = rf->active.nzmax;
+	size_t ix = vpattern_search(&rf->active, jrecv, &ins);
+
+	if (ins) {
+		if (nzmax != rf->active.nzmax) {
+			nzmax = rf->active.nzmax;
+			rf->dx = xrealloc(rf->dx, nzmax * sizeof(rf->dx[0]));
+		}
+
 		memmove(rf->dx + ix + 1, rf->dx + ix,
-			(rf->nactive - ix) * sizeof(rf->dx[0]));
-		rf->active[ix] = jrecv;
+			(rf->active.nz - 1 - ix) * sizeof(rf->dx[0]));
 		vector_init(&rf->dx[ix], dyn_dim);
-		rf->nactive++;
 	}
 
 	struct vector *dx = &rf->dx[ix];
@@ -503,13 +490,13 @@ void frame_advance(struct frame *f, double time)
 }
 
 void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const double *delta, const size_t *ind, size_t nz)
+		       const double *delta, const struct vpattern *pat)
 {
 	assert(isend < frame_send_count(f));
 	assert(jrecv < frame_recv_count(f));
 
 	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
-	sblas_daxpyi(nz, 1.0, delta, ind, vector_to_ptr(dx));
+	sblas_daxpyi(1.0, delta, pat, vector_to_ptr(dx));
 
 	//fprintf(stderr, "-> recv_update %" SSIZE_FMT ", %" SSIZE_FMT "\n", isend, jrecv);
 
@@ -517,7 +504,7 @@ void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
 	ARRAY_FOREACH(obs, &f->observers) {
 		if (obs->callbacks.recv_update) {
 			obs->callbacks.recv_update(obs->udata, f, isend,
-						   jrecv, delta, ind, nz);
+						   jrecv, delta, pat);
 		}
 	}
 }
@@ -551,8 +538,8 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 	assert(isend < frame_send_count(f));
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 	*dxp = rf->dx;
-	*activep = rf->active;
-	*nactivep = rf->nactive;
+	*activep = rf->active.indx;
+	*nactivep = rf->active.nz;
 }
 
 /*
@@ -723,9 +710,9 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {
-		size_t iz, nz = rf->nactive;
+		size_t iz, nz = rf->active.nz;
 		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active[iz];
+			jrecv = rf->active.indx[iz];
 			dx = &rf->dx[iz];
 
 			double dot = vector_dot(dx, x);
@@ -733,9 +720,9 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 			*yjrecv += alpha * dot;
 		}
 	} else {
-		size_t iz, nz = rf->nactive;
+		size_t iz, nz = rf->active.nz;
 		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active[iz];
+			jrecv = rf->active.indx[iz];
 			dx = &rf->dx[iz];
 
 			double xjrecv = *vector_item_ptr(x, jrecv);
@@ -791,9 +778,9 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 	const struct vector *dx;
 
 	if (trans == BLAS_NOTRANS) {
-		size_t iz, nz = rf->nactive;
+		size_t iz, nz = rf->active.nz;
 		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active[iz];
+			jrecv = rf->active.indx[iz];
 			dx = &rf->dx[iz];
 
 			double dot = svector_dot(x, dx);
@@ -801,9 +788,9 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 			*yjrecv += alpha * dot;
 		}
 	} else {
-		size_t iz, nz = rf->nactive;
+		size_t iz, nz = rf->active.nz;
 		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active[iz];
+			jrecv = rf->active.indx[iz];
 			dx = &rf->dx[iz];
 
 			double xjrecv = svector_item(x, jrecv);

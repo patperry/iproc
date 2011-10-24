@@ -178,10 +178,11 @@ design_muls0_traits(double alpha,
 	size_t lda = MAX(1, count);
 	size_t nz = svector_count(x);
 	const double *dx = svector_data_ptr(x);
-	const size_t *indx = (size_t *)svector_index_ptr(x);
+	const struct vpattern *pat = &x->pattern;
+	const size_t *indx = pat->indx;
 
 	if (trans == BLAS_NOTRANS) {
-		ptrdiff_t ix = sblas_find(nz, indx, off);
+		ptrdiff_t ix = vpattern_find(pat, off);
 		size_t i = (ix < 0) ? ~ix : ix;
 
 		for (; i < nz && indx[i] < off + dim; i++) {
@@ -192,8 +193,8 @@ design_muls0_traits(double alpha,
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
 
-		sblas_dgemvi(trans, count, dim, nz, alpha, a, lda,
-			     dx, indx, 1.0, vector_to_ptr(&ysub));
+		sblas_dgemvi(trans, count, dim, alpha, a, lda,
+			     dx, pat, 1.0, vector_to_ptr(&ysub));
 	}
 }
 

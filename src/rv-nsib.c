@@ -50,7 +50,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
-	size_t dx_nnz = 1;
+	struct vpattern pat = vpattern_make(dx_index, 1);
 
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -86,7 +86,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 				assert(jrecv != ksend);
 
 				frame_recv_update(f, isend, jrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 
 			dx_index[0] = coix;
@@ -103,7 +103,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 				assert(cojrecv != ksend);
 
 				frame_recv_update(f, coisend, cojrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 		}
 	}
@@ -129,7 +129,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
-	size_t dx_nnz = 2;
+	struct vpattern pat = vpattern_make(dx_index, 2);
 
 	for (ito = 0; ito < nto; ito++) {
 		if (msg->from == msg->to[ito])
@@ -169,7 +169,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 				assert(jrecv != ksend);
 
 				frame_recv_update(f, isend, jrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 
 			dx_index[0] = coix0;
@@ -187,7 +187,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 				assert(cojrecv != ksend);
 
 				frame_recv_update(f, coisend, cojrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 		}
 	}

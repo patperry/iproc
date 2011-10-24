@@ -20,13 +20,13 @@ compute_weight_changes(struct recv_model_sender *sm,
 	double log_W0 = cm->log_W0;
 	size_t jrecv, nrecv = vector_dim(eta0);
 	bool shrink = false;
-	size_t ia, na = sm->nactive;
+	size_t ia, na = sm->active.nz;
 
 	/* compute the maximum eta value */
 	sm->scale = max_eta0;
 
 	for (ia = 0; ia < na; ia++) {
-		size_t jrecv = sm->active[ia];
+		size_t jrecv = sm->active.indx[ia];
 		double eta0_j = vector_item(eta0, jrecv);
 		double deta_j = sm->deta[ia];
 		double eta_j = eta0_j + deta_j;
@@ -43,7 +43,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 		bool found_max = false;
 
 		for (ia = 0; ia < na; ia++) {
-			size_t jrecv = sm->active[ia];
+			size_t jrecv = sm->active.indx[ia];
 			double eta0_j = vector_item(eta0, jrecv);
 			double deta_j = sm->deta[ia];
 			double eta_j = eta0_j + deta_j;
@@ -80,7 +80,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 				double eta0_j = vector_item(eta0, jrecv);
 				double deta_j = 0.0;
 
-				if (ia < na && sm->active[ia] == jrecv) {
+				if (ia < na && sm->active.indx[ia] == jrecv) {
 					deta_j = sm->deta[ia];
 					ia++;
 				}
@@ -101,7 +101,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 			double eta0_j = vector_item(eta0, jrecv);
 			double deta_j = 0.0;
 
-			if (ia < na && sm->active[ia] == jrecv) {
+			if (ia < na && sm->active.indx[ia] == jrecv) {
 				deta_j = sm->deta[ia];
 				ia++;
 			}
@@ -167,7 +167,11 @@ static void cohort_set(struct recv_model_cohort *cm,
 	double one = 1.0;
 	double pj;
 	size_t jrecv;
-	struct svector ej = svector_make((ssize_t *)&jrecv, &one, 1, nreceiver);
+	struct vpattern pat_j;
+	pat_j.nz = 1;
+	pat_j.indx = &jrecv;
+
+	struct svector ej = svector_make(&one, &pat_j, nreceiver);
 
 	vector_init(&y, dim);
 	matrix_fill(&cm->imat0, 0.0);
@@ -231,20 +235,6 @@ size_t recv_model_cohort(const struct recv_model *m, size_t isend)
 	return m->cohorts[isend];
 }
 
-static void sender_grow_active(struct recv_model_sender *send)
-{
-	size_t nactive_max = send->nactive_max;
-
-	if (send->nactive == nactive_max) {
-		nactive_max = ARRAY_GROW(nactive_max, SIZE_MAX);
-		send->deta = xrealloc(send->deta, nactive_max *
-				      sizeof(send->deta[0]));
-		send->active = xrealloc(send->active, nactive_max *
-					sizeof(send->active[0]));
-		send->nactive_max = nactive_max;
-	}
-}
-
 static void sender_clear(const struct recv_model *m,
 			 struct recv_model_sender *send, size_t isend)
 {
@@ -259,7 +249,7 @@ static void sender_clear(const struct recv_model *m,
 	double log_W0 = cm->log_W0;
 	double W0 = cm->W0;
 
-	send->nactive = 0;
+	vpattern_clear(&send->active);
 
 	/* take the initial values if there are self-loops */
 	if (frame_has_loops(f)) {
@@ -268,12 +258,16 @@ static void sender_clear(const struct recv_model *m,
 		send->log_W = log_W0;
 		send->W = W0;
 	} else {
-		sender_grow_active(send);
+		size_t nzmax1;
+		if ((nzmax1 = vpattern_grow(&send->active, 1))) {
+			send->deta = xrealloc(send->deta,
+					      nzmax1 * sizeof(send->deta[0]));
+		}
 
 		/* add the loop to the active set */
-		send->active[0] = isend;
+		send->active.indx[0] = isend;
+		send->active.nz = 1;
 		send->deta[0] = -INFINITY;
-		send->nactive = 1;
 
 		/* compute the changes in weights */
 		compute_weight_changes(send, cm);
@@ -299,25 +293,31 @@ static void sender_set(const struct recv_model *m,
 	size_t iz, nz;
 	frame_recv_get_dx(f, isend, &dx, &active, &nz);
 
-	send->nactive = 0;
+	vpattern_clear(&send->active);
+	size_t nzmax1;
+	if ((nzmax1 = vpattern_grow(&send->active, nz))) {
+		send->deta = xrealloc(send->deta,
+				      nzmax1 * sizeof(send->deta[0]));
+	}
+
+	memcpy(send->active.indx, active, nz * sizeof(active[0]));
+	send->active.nz = nz;
 	for (iz = 0; iz < nz; iz++) {
-		sender_grow_active(send);
-		send->active[iz] = active[iz];
 		send->deta[iz] = vector_dot(&beta, &dx[iz]);
-		send->nactive++;
 	}
 
 	if (!has_loops) {
-		ptrdiff_t ix = sblas_find(send->nactive, send->active, isend);
-		if (ix < 0) {
-			sender_grow_active(send);
-			ix = ~ix;
-			memmove(send->active + ix + 1, send->active + ix,
-				(send->nactive - ix) * sizeof(send->active[0]));
+		size_t nzmax = send->active.nzmax;
+		int ins;
+		size_t ix = vpattern_search(&send->active, isend, &ins);
+
+		if (ins) {
+			if (nzmax != send->active.nzmax) {
+				nzmax = send->active.nzmax;
+				send->deta = xrealloc(send->deta, nzmax * sizeof(send->deta[0]));
+			}
 			memmove(send->deta + ix + 1, send->deta + ix,
-				(send->nactive - ix) * sizeof(send->deta[0]));
-			send->active[ix] = isend;
-			send->nactive++;
+				(send->active.nz - 1 - ix) * sizeof(send->deta[0]));
 		}
 		send->deta[ix] = -INFINITY;
 	}
@@ -339,16 +339,14 @@ static void sender_init(const struct recv_model *m,
 	assert(isend < recv_model_send_count(m));
 
 	send->deta = NULL;
-	send->active = NULL;
-	send->nactive = 0;
-	send->nactive_max = 0;
+	vpattern_init(&send->active);
 	sender_clear(m, send, isend);
 }
 
 static void sender_deinit(struct recv_model_sender *send)
 {
 	assert(send);
-	free(send->active);
+	vpattern_deinit(&send->active);
 	free(send->deta);
 }
 
@@ -362,7 +360,7 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, size_t isend)
 
 static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 				   size_t jrecv, const double *delta,
-				   const size_t *ind, size_t nz)
+				   const struct vpattern *pat)
 {
 	struct recv_model *m = udata;
 	const struct design *d = frame_recv_design(f);
@@ -376,17 +374,20 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
 	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
 
-	ptrdiff_t ix = sblas_find(send->nactive, send->active, jrecv);
-	if (ix < 0) {
-		sender_grow_active(send);
-		ix = ~ix;
-		memmove(send->active + ix + 1, send->active + ix,
-			(send->nactive - ix) * sizeof(send->active[0]));
+	size_t nzmax = send->active.nzmax;
+	int ins;
+
+	size_t ix = vpattern_search(&send->active, jrecv, &ins);
+	if (ins) {
+		if (nzmax != send->active.nzmax) {
+			nzmax = send->active.nzmax;
+			send->deta = xrealloc(send->deta, nzmax *
+					      sizeof(send->deta[0]));
+		}
+
 		memmove(send->deta + ix + 1, send->deta + ix,
-			(send->nactive - ix) * sizeof(send->deta[0]));
-		send->active[ix] = jrecv;
+			(send->active.nz - 1 - ix) * sizeof(send->deta[0]));
 		send->deta[ix] = 0.0;
-		send->nactive++;
 	}
 	double *pdeta = &send->deta[ix];
 
@@ -394,7 +395,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 	size_t dyn_dim = design_dvars_dim(d);
 	struct vector dyn_coefs = vector_slice(&coefs, dyn_off, dyn_dim);
 
-	double deta = sblas_ddoti(nz, delta, ind, vector_to_ptr(&dyn_coefs));
+	double deta = sblas_ddoti(delta, pat, vector_to_ptr(&dyn_coefs));
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
@@ -675,8 +676,8 @@ void recv_model_get_active(const struct recv_model *m, size_t isend,
 	assert(n);
 
 	const struct recv_model_sender *sm = recv_model_send(m, isend);
-	*jrecv = sm->active;
-	*n = sm->nactive;
+	*jrecv = sm->active.indx;
+	*n = sm->active.nz;
 }
 
 double recv_model_logsumwt(const struct recv_model *m, size_t isend)
@@ -711,7 +712,7 @@ double recv_model_logprob(const struct recv_model *m, size_t isend,
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
 	const struct recv_model_sender *send = recv_model_send(m, isend);
 	double deta = 0.0;
-	ptrdiff_t iactive = sblas_find(send->nactive, send->active, jrecv);
+	ptrdiff_t iactive = vpattern_find(&send->active, jrecv);
 
 	if (iactive >= 0) {
 		deta = send->deta[iactive];

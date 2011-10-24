@@ -48,7 +48,7 @@ static void nsend2_message_add(void *udata, struct frame *f,
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
-	size_t dx_nnz = 1;
+	struct vpattern pat = vpattern_make(dx_index, 1);
 
 	size_t isend = msg->from;
 	size_t cokrecv = isend;
@@ -84,7 +84,7 @@ static void nsend2_message_add(void *udata, struct frame *f,
 				assert(jrecv != ksend);
 
 				frame_recv_update(f, isend, jrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 		}
 	}
@@ -115,8 +115,7 @@ static void nsend2_message_add(void *udata, struct frame *f,
 			assert(coisend != cokrecv);
 			assert(cojrecv != cokrecv);
 
-			frame_recv_update(f, coisend, cojrecv, dx_data,
-					  dx_index, dx_nnz);
+			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 		}
 	}
 }
@@ -140,7 +139,7 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
-	size_t dx_nnz = 2;
+	struct vpattern pat = vpattern_make(dx_index, 2);
 
 	size_t isend = msg->from;
 	size_t cokrecv = isend;
@@ -178,7 +177,7 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 				assert(jrecv != ksend);
 
 				frame_recv_update(f, isend, jrecv, dx_data,
-						  dx_index, dx_nnz);
+						  &pat);
 			}
 		}
 	}
@@ -211,8 +210,7 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 			assert(coisend != cokrecv);
 			assert(cojrecv != cokrecv);
 
-			frame_recv_update(f, coisend, cojrecv, dx_data,
-					  dx_index, dx_nnz);
+			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 		}
 	}
 }

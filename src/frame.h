@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include "sblas.h"
 #include "messages.h"
 #include "pqueue.h"
 #include "design.h"
@@ -23,10 +24,8 @@ struct frame_actor {
 
 /* dX[t,i] */
 struct recv_frame {
-	size_t *active;	// active jrecv
+	struct vpattern active;
 	struct vector *dx;
-	size_t nactive;
-	size_t nactive_max;
 };
 
 struct frame {
@@ -56,7 +55,7 @@ struct frame_callbacks {
 				 const struct message * msg, size_t intvl);
 	void (*recv_update) (void *udata, struct frame * f, size_t isend,
 			     size_t jrecv, const double *delta,
-			     const size_t *ind, size_t nz);
+			     const struct vpattern *pat);
 	void (*clear) (void *udata, struct frame * f);
 };
 
@@ -104,7 +103,7 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
 				   size_t jrecv);
 void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const double *delta, const size_t *ind, size_t nz);
+		       const double *delta, const struct vpattern *pat);
 
 // struct vector frame_send_x(struct frame *f, size_t isend);
 // void frame_send_update(const struct frame *f, size_t isend,

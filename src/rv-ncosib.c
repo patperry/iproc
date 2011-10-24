@@ -50,7 +50,7 @@ static void ncosib_message_add(void *udata, struct frame *f,
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
-	size_t dx_nnz = 1;
+	struct vpattern pat = vpattern_make(dx_index, 1);
 
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
@@ -84,16 +84,14 @@ static void ncosib_message_add(void *udata, struct frame *f,
 			assert(jrecv != krecv);
 
 			dx_index[0] = ix;
-			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
-					  dx_nnz);
+			frame_recv_update(f, isend, jrecv, dx_data, &pat);
 
 			assert(coisend != cojrecv);
 			assert(coisend != krecv);
 			assert(cojrecv != krecv);
 
 			dx_index[0] = coix;
-			frame_recv_update(f, coisend, cojrecv, dx_data,
-					  dx_index, dx_nnz);
+			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 		}
 	}
 }
@@ -116,7 +114,7 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
-	size_t dx_nnz = 2;
+	struct vpattern pat = vpattern_make(dx_index, 2);
 
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
@@ -155,8 +153,7 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 
 			dx_index[0] = ix0;
 			dx_index[1] = ix1;
-			frame_recv_update(f, isend, jrecv, dx_data, dx_index,
-					  dx_nnz);
+			frame_recv_update(f, isend, jrecv, dx_data, &pat);
 
 			assert(coisend != cojrecv);
 			assert(coisend != krecv);
@@ -164,8 +161,7 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 
 			dx_index[0] = coix0;
 			dx_index[1] = coix1;
-			frame_recv_update(f, coisend, cojrecv, dx_data,
-					  dx_index, dx_nnz);
+			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 		}
 	}
 }

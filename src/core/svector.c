@@ -26,10 +26,8 @@ void svector_init(struct svector *v, ssize_t n)
 	assert(n <= SSIZE_MAX);
 
 	v->data = NULL;
-	v->index = NULL;
+	vpattern_init(&v->pattern);
 	v->dim = n;
-	v->nnz = 0;
-	v->nnzmax = 0;
 	v->is_view = false;
 }
 
@@ -57,15 +55,15 @@ void svector_assign_copy(struct svector *dst, const struct svector *src)
 	assert(src);
 	assert(svector_dim(dst) == svector_dim(src));
 
-	ssize_t nnz = src->nnz;
-	if (dst->nnz < nnz) {
+	size_t nnz = src->pattern.nz;
+	if (dst->pattern.nz < nnz) {
 		dst->data = xrealloc(dst->data, nnz * sizeof(dst->data[0]));
-		dst->index = xrealloc(dst->index, nnz * sizeof(dst->index[0]));
-		dst->nnzmax = nnz;
+		dst->pattern.indx = xrealloc(dst->pattern.indx, nnz * sizeof(dst->pattern.indx[0]));
+		dst->pattern.nzmax = nnz;
 	}
 	memcpy(dst->data, src->data, nnz * sizeof(dst->data[0]));
-	memcpy(dst->index, src->index, nnz * sizeof(dst->index[0]));
-	dst->nnz = nnz;
+	memcpy(dst->pattern.indx, src->pattern.indx, nnz * sizeof(dst->pattern.indx[0]));
+	dst->pattern.nz = nnz;
 }
 
 void svector_free(struct svector *v)
@@ -79,7 +77,7 @@ void svector_free(struct svector *v)
 void svector_deinit(struct svector *v)
 {
 	if (svector_owner(v)) {
-		free(v->index);
+		vpattern_deinit(&v->pattern);
 		free(v->data);
 	}
 }
@@ -88,29 +86,28 @@ void svector_clear(struct svector *v)
 {
 	assert(v);
 	assert(svector_owner(v));
-	v->nnz = 0;
+	vpattern_clear(&v->pattern);
 }
 
-void svector_set_basis(struct svector *v, ssize_t i)
+void svector_set_basis(struct svector *v, size_t i)
 {
 	assert(v);
-	assert(0 <= i && i < svector_dim(v));
+	assert(i < svector_dim(v));
 	assert(svector_owner(v));
 
-	if (!v->nnzmax) {
+	if (!v->pattern.nzmax) {
 		v->data = xrealloc(v->data, sizeof(v->data[0]));
-		v->index = xrealloc(v->index, sizeof(v->index[0]));
-		v->nnzmax = 1;
+		v->pattern.indx = xrealloc(v->pattern.indx, sizeof(v->pattern.indx[0]));
+		v->pattern.nzmax = 1;
 	}
 	v->data[0] = 1.0;
-	v->index[0] = i;
-	v->nnz = 1;
+	v->pattern.indx[0] = i;
+	v->pattern.nz = 1;
 }
 
-double svector_item(const struct svector *v, ssize_t i)
+double svector_item(const struct svector *v, size_t i)
 {
 	assert(v);
-	assert(0 <= i);
 	assert(i < svector_dim(v));
 
 	struct svector_pos pos;
@@ -123,10 +120,10 @@ double svector_item(const struct svector *v, ssize_t i)
 	}
 }
 
-double *svector_item_ptr(struct svector *v, ssize_t i)
+double *svector_item_ptr(struct svector *v, size_t i)
 {
 	assert(v);
-	assert(0 <= i && i < svector_dim(v));
+	assert(i < svector_dim(v));
 
 	struct svector_pos pos;
 	double *ptr;
@@ -137,10 +134,9 @@ double *svector_item_ptr(struct svector *v, ssize_t i)
 	return ptr;
 }
 
-void svector_set_item(struct svector *v, ssize_t i, double val)
+void svector_set_item(struct svector *v, size_t i, double val)
 {
 	assert(v);
-	assert(0 <= i);
 	assert(i < svector_dim(v));
 
 	struct svector_pos pos;
@@ -153,10 +149,10 @@ void svector_set_item(struct svector *v, ssize_t i, double val)
 	}
 }
 
-void svector_remove(struct svector *v, ssize_t i)
+void svector_remove(struct svector *v, size_t i)
 {
 	assert(v);
-	assert(0 <= i && i < svector_dim(v));
+	assert(i < svector_dim(v));
 
 	struct svector_pos pos;
 
@@ -202,7 +198,7 @@ double svector_dot(const struct svector *x, const struct vector *y)
 {
 	assert(x);
 	assert(y);
-	assert(vector_dim(y) == svector_dim(x));
+	assert((size_t)vector_dim(y) == svector_dim(x));
 
 	ssize_t i;
 	double dot = 0.0, valx, valy;
@@ -222,7 +218,7 @@ void svector_axpy(double scale, const struct svector *x, struct vector *y)
 {
 	assert(y);
 	assert(x);
-	assert(vector_dim(y) == svector_dim(x));
+	assert((size_t)vector_dim(y) == svector_dim(x));
 
 	struct svector_iter itx;
 	ssize_t i;
@@ -293,8 +289,8 @@ void svector_scatter(const struct svector *src, struct vector *dst)
 {
 	assert(src);
 	assert(dst);
-	assert(svector_dim(src) == vector_dim(dst));
-	
+	assert(svector_dim(src) == (size_t)vector_dim(dst));
+
 	struct svector_iter it;
 	ssize_t i;
 	double val;
@@ -309,14 +305,14 @@ void svector_gather(struct svector *dst, const struct vector *src)
 {
 	assert(src);
 	assert(dst);
-	assert(svector_dim(dst) == vector_dim(src));
-	
-	ssize_t inz, nnz = svector_count(dst);
-	const ssize_t *index = svector_index_ptr(dst);
+	assert(svector_dim(dst) == (size_t)vector_dim(src));
+
+	size_t inz, nnz = svector_count(dst);
+	const size_t *indx = svector_index_ptr(dst);
 	double *value = svector_data_ptr(dst);
-	
+
 	for (inz = 0; inz < nnz; inz++) {
-		ssize_t i = index[inz];
+		ssize_t i = indx[inz];
 		value[i] = vector_item(src, i);
 	}
 }
@@ -342,32 +338,32 @@ void svector_printf(const struct svector *v)
 }
 
 
-double *svector_find(const struct svector *v, ssize_t i,
+double *svector_find(const struct svector *v, size_t i,
 		     struct svector_pos *pos)
 {
 	assert(v);
-	assert(0 <= i && i < svector_dim(v));
+	assert(i < svector_dim(v));
 	assert(pos);
-	
-	const ssize_t *base = v->index;
-	ssize_t len = v->nnz;
-	const ssize_t *begin = base, *end = base + len, *ptr;
-	
+
+	const size_t *base = v->pattern.indx;
+	ssize_t len = v->pattern.nz;
+	const size_t *begin = base, *end = base + len, *ptr;
+
 	while (begin < end) {
 		ptr = begin + ((end - begin) >> 1);
 		if (*ptr < i) {
-			begin = ptr + 1;			
+			begin = ptr + 1;
 		} else if (*ptr > i) {
 			end = ptr;
 		} else {
-			pos->inz = ptr - v->index;
+			pos->inz = ptr - v->pattern.indx;
 			pos->i = i;
 			return &v->data[pos->inz];
 		}
 	}
 	assert(begin == end);
-	
-	pos->inz = begin - v->index;
+
+	pos->inz = begin - v->pattern.indx;
 	pos->i = i;
 	return NULL;
 }
@@ -377,39 +373,39 @@ double *svector_insert(struct svector *v, struct svector_pos *pos, double val)
 	assert(v);
 	assert(svector_owner(v));
 	assert(pos);
-	assert(pos->inz == v->nnz || v->index[pos->inz] > pos->i);
+	assert(pos->inz == (ptrdiff_t)v->pattern.nz || v->pattern.indx[pos->inz] > pos->i);
 
-	if (v->nnz == v->nnzmax) {
-		ssize_t nnzmax1 = (v->nnzmax + 1) * 2;
-		v->data = xrealloc(v->data, nnzmax1 * sizeof(v->data[0]));
-		v->index = xrealloc(v->index, nnzmax1 * sizeof(v->index[0]));
-		v->nnzmax = nnzmax1;
+	if (v->pattern.nz == v->pattern.nzmax) {
+		size_t nzmax1 = (v->pattern.nzmax + 1) * 2;
+		v->data = xrealloc(v->data, nzmax1 * sizeof(v->data[0]));
+		v->pattern.indx = xrealloc(v->pattern.indx, nzmax1 * sizeof(v->pattern.indx[0]));
+		v->pattern.nzmax = nzmax1;
 	}
-	assert(v->nnz < v->nnzmax);
+	assert(v->pattern.nz < v->pattern.nzmax);
 	
 	double *data = v->data;
-	ssize_t *index = v->index;
+	size_t *indx = v->pattern.indx;
 	ssize_t inz = pos->inz;
-	ssize_t nnz = v->nnz;
+	ssize_t nnz = v->pattern.nz;
 	ssize_t ntail = nnz - inz;
 
 	// Switch is just an optimization for memmove in default case
 	switch (ntail) {
 	case 2:
 		data[inz + 2] = data[inz + 1];
-		index[inz + 2] = index[inz + 1];
+		indx[inz + 2] = indx[inz + 1];
 	case 1:
 		data[inz + 1] = data[inz];
-		index[inz + 1] = index[inz];
+		indx[inz + 1] = indx[inz];
 		break;
 	default:
 		memmove(data + inz + 1, data + inz, ntail * sizeof(data[0]));
-		memmove(index + inz + 1, index + inz, ntail * sizeof(index[0]));
+		memmove(indx + inz + 1, indx + inz, ntail * sizeof(indx[0]));
 	}
 	
 	data[inz] = val;		
-	index[inz] = pos->i;
-	v->nnz = nnz + 1;	
+	indx[inz] = pos->i;
+	v->pattern.nz = nnz + 1;	
 
 	return &data[inz];
 }
@@ -419,16 +415,16 @@ void svector_remove_at(struct svector *v, struct svector_pos *pos)
 	assert(v);
 	assert(svector_owner(v));
 	assert(pos);
-	assert(0 <= pos->inz && pos->inz < v->nnz);
-	
+	assert(0 <= pos->inz && (size_t)pos->inz < v->pattern.nz);
+
 	double *data = v->data;
-	ssize_t *index = v->index;
-	ssize_t inz = pos->inz;
-	ssize_t nnz = v->nnz;
-	ssize_t ntail = nnz - inz - 1;
-	
+	size_t *indx = v->pattern.indx;
+	size_t inz = pos->inz;
+	size_t nnz = v->pattern.nz;
+	size_t ntail = nnz - inz - 1;
+
 	memmove(data + inz, data + inz + 1, ntail * sizeof(data[0]));
-	memmove(index + inz, index + inz + 1, ntail * sizeof(index[0]));
-	v->nnz = nnz - 1;
+	memmove(indx + inz, indx + inz + 1, ntail * sizeof(indx[0]));
+	v->pattern.nz = nnz - 1;
 }
 

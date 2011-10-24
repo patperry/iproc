@@ -49,8 +49,7 @@
 struct recv_loglik_sender_score {
 	const struct vector *mean0;
 	double *nrecv;
-	size_t *nrecv_ind;
-	size_t nrecv_nz, nrecv_nzmax;
+	struct vpattern nrecv_pat;
 	struct vector mean_obs_dx;
 	double gamma;
 	struct vector dp;	// p - gamma * p0
@@ -74,8 +73,7 @@ struct recv_loglik_sender {
 
 	size_t n_last, n;
 	double dev_last, dev_avg;
-	size_t *active;
-	size_t nactive, nactive_max;
+	struct vpattern active;
 	struct recv_loglik_sender_score score_last, score_avg;
 	struct recv_loglik_sender_imat imat_last, imat_avg;
 };

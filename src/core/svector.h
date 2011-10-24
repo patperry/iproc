@@ -1,18 +1,19 @@
 #ifndef _SVECTOR_H
 #define _SVECTOR_H
 
+#include "sblas.h"
 #include "vector.h"
 
 struct svector {
 	double *data;
-	ssize_t *index;
-	ssize_t nnz, nnzmax;
-	ssize_t dim;
+	struct vpattern pattern;
+	size_t dim;
 	bool is_view;
 };
 
 struct svector_pos {
-	ssize_t i, inz;
+	size_t i;
+	ssize_t inz;
 };
 
 struct svector_iter {
@@ -20,7 +21,7 @@ struct svector_iter {
 	ssize_t inz;
 };
 
-#define SVECTOR_IDX(it) ((it).x->index[(it).inz])
+#define SVECTOR_IDX(it) ((it).x->pattern.indx[(it).inz])
 #define SVECTOR_PTR(it) (&(it).x->data[(it).inz])
 #define SVECTOR_VAL(it) (*(const double *)SVECTOR_PTR(it))
 
@@ -34,7 +35,7 @@ void svector_assign_copy(struct svector *v, const struct svector *src);
 void svector_deinit(struct svector *v);
 
 /* views */
-static inline struct svector svector_make(const ssize_t *index, const double *data, ssize_t nnz, ssize_t n);
+static inline struct svector svector_make(const double *data, const struct vpattern *pat, size_t n);
 
 
 /* alloc/dealloc */
@@ -43,20 +44,20 @@ struct svector *svector_alloc_copy(const struct svector *v);
 void svector_free(struct svector *v);
 
 /* properties */
-static inline ssize_t svector_dim(const struct svector *v);
-static inline ssize_t svector_count(const struct svector *v);
+static inline size_t svector_dim(const struct svector *v);
+static inline size_t svector_count(const struct svector *v);
 static inline bool svector_owner(const struct svector *v);
 
-double svector_item(const struct svector *v, ssize_t i);
-double *svector_item_ptr(struct svector *v, ssize_t i);
-void svector_set_item(struct svector *v, ssize_t i, double val);
+double svector_item(const struct svector *v, size_t i);
+double *svector_item_ptr(struct svector *v, size_t i);
+void svector_set_item(struct svector *v, size_t i, double val);
 
 double svector_max(const struct svector *v);
 
 /* methods */
 void svector_clear(struct svector *v);
-void svector_remove(struct svector *v, ssize_t i);
-void svector_set_basis(struct svector *v, ssize_t i);
+void svector_remove(struct svector *v, size_t i);
+void svector_set_basis(struct svector *v, size_t i);
 
 /* linear algebra */
 void svector_scale(struct svector *v, double scale);
@@ -70,7 +71,7 @@ void svector_scatter(const struct svector *src, struct vector *dst);
 void svector_gather(struct svector *dst, const struct vector *src);
 
 /* position-based operations */
-double *svector_find(const struct svector *v, ssize_t i,
+double *svector_find(const struct svector *v, size_t i,
 		     struct svector_pos *pos);
 double *svector_insert(struct svector *v, struct svector_pos *pos, double val);
 void svector_remove_at(struct svector *v, struct svector_pos *pos);
@@ -82,39 +83,33 @@ static inline void svector_iter_reset(struct svector_iter *it);
 
 /* low-level access */
 static inline double *svector_data_ptr(const struct svector *v);
-static inline ssize_t *svector_index_ptr(const struct svector *v);
+static inline size_t *svector_index_ptr(const struct svector *v);
 
 /* debug */
 void svector_printf(const struct svector *v);
 
 /* inline function definitions */
-struct svector svector_make(const ssize_t *index, const double *data, ssize_t nnz, ssize_t n)
+struct svector svector_make(const double *data, const struct vpattern *pat,
+			    size_t n)
 {
-	assert(index || !nnz);
-	assert(data || !nnz);
-	assert(0 <= nnz && nnz <= n);
-	assert(0 <= n);
-	
 	struct svector v;
-	v.data = (double *)data;	
-	v.index = (ssize_t *)index;
-	v.nnz = nnz;
-	v.nnzmax = nnz;
+	v.data = (double *)data;
+	v.pattern = *pat;
 	v.dim = n;
 	v.is_view = true;
 	return v;
 }
 
-ssize_t svector_dim(const struct svector *v)
+size_t svector_dim(const struct svector *v)
 {
 	assert(v);
 	return v->dim;
 }
 
-ssize_t svector_count(const struct svector *v)
+size_t svector_count(const struct svector *v)
 {
 	assert(v);
-	return v->nnz;
+	return v->pattern.nz;
 }
 
 bool svector_owner(const struct svector *v)
@@ -129,10 +124,10 @@ double *svector_data_ptr(const struct svector *v)
 	return v->data;
 }
 
-ssize_t *svector_index_ptr(const struct svector *v)
+size_t *svector_index_ptr(const struct svector *v)
 {
 	assert(v);
-	return v->index;
+	return (size_t *)v->pattern.indx;
 }
 
 struct svector_iter svector_iter_make(const struct svector *v)
@@ -148,7 +143,7 @@ bool svector_iter_advance(struct svector_iter *it)
 {
 	assert(it);
 	it->inz++;
-	return it->inz < it->x->nnz;
+	return (size_t)it->inz < it->x->pattern.nz;
 }
 
 void svector_iter_reset(struct svector_iter *it)

@@ -2,6 +2,7 @@
 #define _IPROC_MODEL_H
 
 #include <stddef.h>
+#include "sblas.h"
 #include "design.h"
 #include "frame.h"
 #include "vector.h"
@@ -131,8 +132,7 @@ struct recv_model_sender {
 	double log_W;		// (log_W)_true - scale
 	double W;		// (W)_true / exp(scale)
 	double *deta;
-	size_t *active;
-	size_t nactive, nactive_max;
+	struct vpattern active;
 };
 
 struct recv_model {

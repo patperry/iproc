@@ -41,7 +41,7 @@ static void icosib_message_add(void *udata, struct frame *f,
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { dyn_index };
-	size_t dx_nnz = 1;
+	struct vpattern pat = vpattern_make(dx_index, 1);
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
 
@@ -73,8 +73,7 @@ static void icosib_message_add(void *udata, struct frame *f,
 			const struct vector *dx =
 			    frame_recv_dx(f, isend, jrecv);
 			if (vector_item(dx, dyn_index) == 0.0) {
-				frame_recv_update(f, isend, jrecv, dx_data,
-						  dx_index, dx_nnz);
+				frame_recv_update(f, isend, jrecv, dx_data, &pat);
 			}
 
 			assert(coisend != cojrecv);
@@ -84,8 +83,7 @@ static void icosib_message_add(void *udata, struct frame *f,
 			const struct vector *codx =
 			    frame_recv_dx(f, coisend, cojrecv);
 			if (vector_item(codx, dyn_index) == 0.0) {
-				frame_recv_update(f, coisend, cojrecv, dx_data,
-						  dx_index, dx_nnz);
+				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 			}
 		}
 	}
