@@ -8,7 +8,7 @@
 /*
  *     I1
  *   /----> i
- *  k
+ *  h
  *   \----> j
  *     I2
  */
@@ -48,7 +48,6 @@ static void nsib_message_add(void *udata, struct frame *f,
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
 	size_t dyn_index = v->dyn_index;
-
 	size_t ito, nto = msg->nto;
 
 	double dx_data[1] = { +1.0 };
@@ -124,7 +123,6 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
 	size_t dyn_index = v->dyn_index;
-
 	size_t ito, nto = msg->nto;
 
 	double dx_data[2] = { -1.0, +1.0 };
