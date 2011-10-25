@@ -95,6 +95,7 @@ static void constr_add(struct recv_fit_constr *c, const double *wts,
 static void constr_add_set(struct recv_fit_constr *c, size_t dim, size_t nc,
 			   size_t i, size_t ic, double val)
 {
+	(void)nc; // unused
 	assert(c);
 	assert(i < dim);
 	assert(ic < nc);
@@ -121,6 +122,7 @@ static void constr_add_set(struct recv_fit_constr *c, size_t dim, size_t nc,
 static void constr_add_eq(struct recv_fit_constr *c, size_t dim, size_t nc,
 			  size_t i1, size_t ic1, size_t i2, size_t ic2)
 {
+	(void)nc; // unused
 	assert(c);
 	assert(i1 < dim);
 	assert(i2 < dim);
