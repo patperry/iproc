@@ -6,7 +6,7 @@
 
 /*
  *  v---- i
- *  k
+ *  h
  *  ^---- j
  */
 
@@ -37,53 +37,42 @@ static void icosib_message_add(void *udata, struct frame *f,
 			design_dvars_dim(frame_recv_design(f)));
 
 	size_t dyn_index = v->dyn_index;
-	size_t *imsg, i, n;
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { dyn_index };
 	struct vpattern pat = vpattern_make(dx_index, 1);
+	size_t ito, nto = msg->nto;
+
+	const struct frame_actor *fa;
+	size_t iz, nz;
+	const size_t *nmsg;
+	
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
-
-	size_t ito, nto = msg->nto;
+	
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->to[ito] == msg->from)
-			continue;
-
-		size_t krecv = msg->to[ito];
-
-		frame_get_recv_messages(f, krecv, &imsg, &n);
-		for (i = 0; i < n; i++) {
-			const struct frame_message *fmsg =
-			    frame_messages_item(f, imsg[i]);
-			const struct message *msg1 = fmsg->message;
-
-			assert(msg1->to[ito] == msg1->to[ito]);
-			if (msg1->from == msg->from
-			    || msg1->from == msg->to[ito])
-				continue;
-
-			size_t jrecv = msg1->from;
-			size_t coisend = msg1->from;
-
-			assert(isend != jrecv);
-			assert(isend != krecv);
-			assert(jrecv != krecv);
-
-			const struct vector *dx =
-			    frame_recv_dx(f, isend, jrecv);
-			if (vector_item(dx, dyn_index) == 0.0) {
-				frame_recv_update(f, isend, jrecv, dx_data, &pat);
+		size_t hrecv = msg->to[ito];
+		fa = &f->receivers[hrecv];
+		nz = fa->active.nz;
+		
+		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+			size_t jrecv = fa->active.indx[iz];
+			size_t coisend = jrecv;
+			
+			if (hrecv != isend && hrecv != jrecv && isend != jrecv) {
+				const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+				
+				if (vector_item(dx, dyn_index) == 0.0) {
+					frame_recv_update(f, isend, jrecv, dx_data, &pat);
+				}
 			}
-
-			assert(coisend != cojrecv);
-			assert(coisend != krecv);
-			assert(cojrecv != krecv);
-
-			const struct vector *codx =
-			    frame_recv_dx(f, coisend, cojrecv);
-			if (vector_item(codx, dyn_index) == 0.0) {
-				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				
+			if (!hrecv != coisend && hrecv != cojrecv && coisend != cojrecv) {
+				const struct vector *dx = frame_recv_dx(f, coisend, cojrecv);
+				
+				if (vector_item(dx, dyn_index) == 0.0) {
+					frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				}
 			}
 		}
 	}
