@@ -154,7 +154,7 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 			dx_data[0] = -(double)(*nmsg);
 			dx_data[1] = +(double)(*nmsg);
 			dx_index[0] = ix0;
-			dx_index[0] = ix1;
+			dx_index[1] = ix1;
 
 
 			for (ito = 0; ito < nto; ito++) {
