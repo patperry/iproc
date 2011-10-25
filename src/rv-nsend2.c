@@ -6,7 +6,7 @@
 
 /*
  *     I1      I2
- *  i ----> k ----> j
+ *  i ----> h ----> j
  *
  */
 
@@ -42,83 +42,71 @@ static void nsend2_message_add(void *udata, struct frame *f,
 	       <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t nintvl = frame_interval_count(f);
-
+	size_t nintvl1 = nintvl + 1;
 	size_t dyn_index = v->dyn_index;
-	size_t *imsg, i, n;
+	size_t ito, nto = msg->nto;
+	const size_t *nmsg;
+	size_t intvl1;
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
 	struct vpattern pat = vpattern_make(dx_index, 1);
 
+	const struct frame_actor *fa;
+	size_t iz, nz;
 	size_t isend = msg->from;
-	size_t cokrecv = isend;
 
-	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->from == msg->to[ito])
-			continue;
+		size_t hsend = msg->to[ito];
+		fa = &f->senders[hsend];
+		nz = fa->active.nz;
 
-		size_t ksend = msg->to[ito];
-
-		frame_get_send_messages(f, ksend, &imsg, &n);
-		for (i = 0; i < n; i++) {
-			const struct frame_message *fmsg =
-			    frame_messages_item(f, imsg[i]);
-			const struct message *msg1 = fmsg->message;
-
-			size_t intvl1 = fmsg->interval;
-			ssize_t ix = dyn_index + intvl1 * (nintvl + 1);
-
-			dx_index[0] = ix;
-
-			size_t ito1, nto1 = msg1->nto;
-			for (ito1 = 0; ito1 < nto1; ito1++) {
-				if (msg1->to[ito1] == msg1->from
-				    || msg1->to[ito1] == msg->from)
+		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+			size_t jrecv = fa->active.indx[iz];
+			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+				if (*nmsg == 0)
 					continue;
 
-				size_t jrecv = msg1->to[ito1];
+				size_t ix = dyn_index + intvl1 * nintvl1;
 
-				assert(isend != jrecv);
-				assert(isend != ksend);
-				assert(jrecv != ksend);
+				dx_data[0] = (double)(*nmsg);
+				dx_index[0] = ix;
 
-				frame_recv_update(f, isend, jrecv, dx_data,
-						  &pat);
+				if (hsend == isend || hsend == jrecv || isend == jrecv)
+					continue;
+
+				frame_recv_update(f, isend, jrecv, dx_data, &pat);
 			}
 		}
 	}
 
-	frame_get_recv_messages(f, cokrecv, &imsg, &n);
-	for (i = 0; i < n; i++) {
-		const struct frame_message *fmsg =
-		    frame_messages_item(f, imsg[i]);
-		const struct message *msg1 = fmsg->message;
+	size_t cohrecv = isend;
+	fa = &f->receivers[cohrecv];
+	nz = fa->active.nz;
 
-		if (msg1->from == msg->from)
-			continue;
+	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+		size_t coisend = fa->active.indx[iz];
 
-		size_t intvl1 = fmsg->interval;
-		ssize_t ix = dyn_index + intvl1;
-		size_t coisend = msg1->from;
-
-		dx_index[0] = ix;
-
-		for (ito = 0; ito < nto; ito++) {
-			if (msg->from == msg->to[ito]
-			    || msg1->from == msg->to[ito])
+		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+			if (*nmsg == 0)
 				continue;
+			size_t coix = dyn_index + intvl1;
 
-			size_t cojrecv = msg->to[ito];
+			dx_data[0] = +(double)(*nmsg);
+			dx_index[0] = coix;
 
-			assert(coisend != cojrecv);
-			assert(coisend != cokrecv);
-			assert(cojrecv != cokrecv);
+			for (ito = 0; ito < nto; ito++) {
+				size_t cojrecv = msg->to[ito];
 
-			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				if (cohrecv == coisend || cohrecv == cojrecv || coisend == cojrecv)
+					continue;
+
+				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+			}
 		}
 	}
 }
+
 
 static void nsend2_message_advance(void *udata, struct frame *f,
 				   const struct message *msg, size_t intvl)
@@ -132,85 +120,73 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 	       <= design_dvars_dim(frame_recv_design(f)));
 
 	size_t nintvl = frame_interval_count(f);
+	size_t nintvl1 = nintvl + 1;
 	size_t dyn_index = v->dyn_index;
-
 	size_t ito, nto = msg->nto;
-	size_t *imsg, i, n;
+	const size_t *nmsg;
+	size_t intvl1;
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
 	struct vpattern pat = vpattern_make(dx_index, 2);
 
+	const struct frame_actor *fa;
+	size_t iz, nz;
 	size_t isend = msg->from;
-	size_t cokrecv = isend;
 
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->from == msg->to[ito])
-			continue;
+		size_t hsend = msg->to[ito];
+		fa = &f->senders[hsend];
+		nz = fa->active.nz;
 
-		size_t ksend = msg->to[ito];
-
-		frame_get_send_messages(f, ksend, &imsg, &n);
-		for (i = 0; i < n; i++) {
-			const struct frame_message *fmsg =
-			    frame_messages_item(f, imsg[i]);
-			const struct message *msg1 = fmsg->message;
-
-			size_t intvl1 = fmsg->interval;
-			ssize_t ix0 =
-			    dyn_index + (intvl - 1) + intvl1 * (nintvl + 1);
-			ssize_t ix1 = ix0 + 1;
-
-			dx_index[0] = ix0;
-			dx_index[1] = ix1;
-
-			size_t ito1, nto1 = msg1->nto;
-			for (ito1 = 0; ito1 < nto1; ito1++) {
-				if (msg1->to[ito1] == msg1->from
-				    || msg1->to[ito1] == msg->from)
+		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+			size_t jrecv = fa->active.indx[iz];
+			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+				if (*nmsg == 0)
 					continue;
 
-				size_t jrecv = msg1->to[ito1];
+				size_t ix0 = dyn_index + (intvl - 1) + intvl1 * nintvl1;
+				size_t ix1 = ix0 + 1;
 
-				assert(isend != jrecv);
-				assert(isend != ksend);
-				assert(jrecv != ksend);
+				dx_data[0] = -(double)(*nmsg);
+				dx_data[1] = +(double)(*nmsg);
+				dx_index[0] = ix0;
+				dx_index[1] = ix1;
 
-				frame_recv_update(f, isend, jrecv, dx_data,
-						  &pat);
+				if (hsend == isend || hsend == jrecv || isend == jrecv)
+					continue;
+
+				frame_recv_update(f, isend, jrecv, dx_data, &pat);
 			}
 		}
 	}
 
-	frame_get_recv_messages(f, cokrecv, &imsg, &n);
-	for (i = 0; i < n; i++) {
-		const struct frame_message *fmsg =
-		    frame_messages_item(f, imsg[i]);
-		const struct message *msg1 = fmsg->message;
+	size_t cohrecv = isend;
+	fa = &f->receivers[cohrecv];
+	nz = fa->active.nz;
 
-		if (msg1->from == msg->from)
-			continue;
+	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+		size_t coisend = fa->active.indx[iz];
 
-		size_t intvl1 = fmsg->interval;
-		ssize_t ix0 = dyn_index + intvl1 + (intvl - 1) * (nintvl + 1);
-		ssize_t ix1 = ix0 + (nintvl + 1);
-		size_t coisend = msg1->from;
-
-		dx_index[0] = ix0;
-		dx_index[1] = ix1;
-
-		for (ito = 0; ito < nto; ito++) {
-			if (msg->from == msg->to[ito]
-			    || msg1->from == msg->to[ito])
+		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+			if (*nmsg == 0)
 				continue;
+			size_t coix0 = dyn_index + intvl1 + (intvl - 1) * nintvl1;
+			size_t coix1 = coix0 + nintvl1;
 
-			size_t cojrecv = msg->to[ito];
+			dx_data[0] = -(double)(*nmsg);
+			dx_data[1] = +(double)(*nmsg);
+			dx_index[0] = coix0;
+			dx_index[1] = coix1;
 
-			assert(coisend != cojrecv);
-			assert(coisend != cokrecv);
-			assert(cojrecv != cokrecv);
+			for (ito = 0; ito < nto; ito++) {
+				size_t cojrecv = msg->to[ito];
 
-			frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				if (cohrecv == coisend || cohrecv == cojrecv || coisend == cojrecv)
+					continue;
+
+				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+			}
 		}
 	}
 }
