@@ -168,6 +168,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	double pj;
 	size_t jrecv;
 	struct vpattern pat_j;
+	pat_j.nzmax = 1;
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
 

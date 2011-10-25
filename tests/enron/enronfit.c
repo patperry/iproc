@@ -501,7 +501,7 @@ static void output(const struct recv_fit *fit)
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 		  const struct matrix *coefs0)
 {
-	size_t maxit = 1;
+	size_t maxit = 100;
 	size_t report = 1;
 	bool trace = true;
 

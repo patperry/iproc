@@ -58,8 +58,8 @@ yajl_gen_status yajl_gen_svector(yajl_gen hand, const struct svector *x)
 	assert(x);
 	yajl_gen_status err = yajl_gen_status_ok;
 	
-	ssize_t inz, nnz = svector_count(x);
-	const ssize_t *index = svector_index_ptr(x);
+	size_t inz, nnz = svector_count(x);
+	const size_t *index = svector_index_ptr(x);
 	const double *data = svector_data_ptr(x);
 	
 	YG(yajl_gen_map_open(hand));

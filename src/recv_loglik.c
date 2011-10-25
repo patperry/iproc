@@ -524,6 +524,7 @@ static void imat_axpy(double alpha,
 
 	vector_init(&x0_j, dim);
 
+	pat_j.nzmax = 1;
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
 	struct svector e_j = svector_make(&one, &pat_j, design_count(design));
