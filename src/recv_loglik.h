@@ -50,7 +50,7 @@ struct recv_loglik_sender_score {
 	const struct vector *mean0;
 	double *nrecv;
 	struct vpattern nrecv_pat;
-	struct vector mean_obs_dx;
+	struct vector obs_dx;
 	double gamma;
 	struct vector dp;	// p - gamma * p0
 	struct vector mean_dx;	// dx' * p
@@ -72,10 +72,10 @@ struct recv_loglik_sender {
 	size_t isend;
 
 	size_t n_last, n;
-	double dev_last, dev_avg;
+	double dev_last, dev;
 	struct vpattern active;
-	struct recv_loglik_sender_score score_last, score_avg;
-	struct recv_loglik_sender_imat imat_last, imat_avg;
+	struct recv_loglik_sender_score score_last, score;
+	struct recv_loglik_sender_imat imat_last, imat;
 };
 
 struct recv_loglik_info {
