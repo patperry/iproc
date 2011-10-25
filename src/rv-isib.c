@@ -36,66 +36,44 @@ static void isib_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
-	size_t ksend = msg->from;
+	size_t hsend = msg->from;
 	size_t dyn_index = v->dyn_index;
-	size_t *imsg, i, n;
-
+	size_t ito, nto = msg->nto;
+	
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { dyn_index };
 	struct vpattern pat = vpattern_make(dx_index, 1);
 
-	size_t ito, nto = msg->nto;
-	for (ito = 0; ito < nto; ito++) {
-		if (msg->from == msg->to[ito])
-			continue;
-
-		size_t isend = msg->to[ito];
-		size_t cojrecv = msg->to[ito];
-
-		frame_get_send_messages(f, ksend, &imsg, &n);
-		for (i = 0; i < n; i++) {
-			const struct frame_message *fmsg =
-			    frame_messages_item(f, imsg[i]);
-			const struct message *msg1 = fmsg->message;
-			assert(msg1->from == ksend);
-
-			size_t ito1, nto1 = msg1->nto;
-			for (ito1 = 0; ito1 < nto1; ito1++) {
-				if (msg1->to[ito1] == msg1->from
-				    || msg1->to[ito1] == msg->to[ito])
-					continue;
-
-				size_t jrecv = msg1->to[ito1];
-
-				assert(isend != jrecv);
-				assert(isend != ksend);
-				assert(jrecv != ksend);
-
-				const struct vector *dx =
-				    frame_recv_dx(f, isend, jrecv);
-				if (vector_item(dx, dyn_index) == 0.0) {
-					frame_recv_update(f, isend, jrecv,
-							  dx_data, &pat);
-				}
+	
+	const struct frame_actor *fa = &f->senders[hsend];
+	size_t iz, nz = fa->active.nz;
+	const size_t *nmsg;
+	
+	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
+		size_t jrecv = fa->active.indx[iz];
+		size_t coisend = jrecv;
+		
+		for (ito = 0; ito < nto; ito++) {
+			size_t isend = msg->to[ito];
+				
+			if (hsend == isend || hsend == jrecv || isend == jrecv)
+				continue;
+				
+			const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+			if (vector_item(dx, dyn_index) == 0.0) {
+				frame_recv_update(f, isend, jrecv, dx_data, &pat);
 			}
-
-			for (ito1 = 0; ito1 < nto1; ito1++) {
-				if (msg1->to[ito1] == msg1->from
-				    || msg1->to[ito1] == msg->to[ito])
-					continue;
-
-				size_t coisend = msg1->to[ito1];
-
-				assert(coisend != cojrecv);
-				assert(coisend != ksend);
-				assert(cojrecv != ksend);
-
-				const struct vector *dx =
-				    frame_recv_dx(f, coisend, cojrecv);
-				if (vector_item(dx, dyn_index) == 0.0) {
-					frame_recv_update(f, coisend, cojrecv,
-							  dx_data, &pat);
-				}
+		}
+			
+		for (ito = 0; ito < nto; ito++) {
+			size_t cojrecv = msg->to[ito];
+				
+			if (hsend == coisend || hsend == cojrecv || coisend == cojrecv)
+				continue;
+			
+			const struct vector *dx = frame_recv_dx(f, coisend, cojrecv);
+			if (vector_item(dx, dyn_index) == 0.0) {
+				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 			}
 		}
 	}
