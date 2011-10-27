@@ -125,7 +125,7 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 
 void frame_recv_dmul(double alpha, enum blas_trans trans,
 		     const struct frame *f, size_t isend,
-		     const struct vector *x, double beta, struct svector *y);
+		     const struct vector *x, double beta, struct vector *y);
 void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		      const struct frame *f, size_t isend,
 		      const struct svector *x, double beta, struct vector *y);
