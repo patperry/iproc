@@ -114,22 +114,23 @@ design_muls0_effects(double alpha,
 	size_t off = design_effects_index(d);
 	size_t dim = design_count(d);
 	size_t end = off + dim;
+	const struct vpattern *pat = &x->pattern;
+	const double *vals = x->data;
 
 	if (trans == BLAS_NOTRANS) {
-		struct svector_iter itx;
-		size_t i;
-		double x_i;
+		ptrdiff_t i0 = vpattern_find(pat, off);
+		size_t iz = i0 < 0 ? ~i0 : i0;
+		size_t nz = pat->nz;
 
-		SVECTOR_FOREACH(itx, x) {
-			i = SVECTOR_IDX(itx);
-			if (off <= i && i < end) {
-				x_i = SVECTOR_VAL(itx);
-				*vector_item_ptr(y, i) += alpha * x_i;
-			}
+		for (; iz < nz && pat->indx[iz] < end; iz++) {
+			size_t i = pat->indx[iz];
+			double x_i = vals[iz];
+
+			*vector_item_ptr(y, i) += alpha * x_i;
 		}
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		svector_axpy(alpha, x, &ysub);
+		sblas_daxpyi(alpha, vals, pat, vector_to_ptr(&ysub));
 	}
 }
 
@@ -138,7 +139,7 @@ static void
 design_mul0_traits(double alpha,
 		   enum blas_trans trans,
 		   const struct design *d,
-	 	   const struct vector *x, struct vector *y)
+		   const struct vector *x, struct vector *y)
 {
 	if (!design_traits_dim(d))
 		return;
@@ -176,9 +177,9 @@ design_muls0_traits(double alpha,
 	size_t count = design_count(d);
 	const double *a = design_traits(d);
 	size_t lda = MAX(1, count);
-	size_t nz = svector_count(x);
-	const double *dx = svector_data_ptr(x);
+	const double *dx = x->data;
 	const struct vpattern *pat = &x->pattern;
+	size_t nz = pat->nz;
 	const size_t *indx = pat->indx;
 
 	if (trans == BLAS_NOTRANS) {
