@@ -494,48 +494,6 @@ void matrix_matmul(double alpha, enum blas_trans trans, const struct matrix *a,
 		   pc, ldc);
 }
 
-void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
-		 const struct svector *x, double beta, struct vector *y)
-{
-	assert(a);
-	assert(x);
-	assert(y);
-	assert(trans != BLAS_NOTRANS || svector_dim(x) == (size_t)matrix_ncol(a));
-	assert(trans != BLAS_NOTRANS || vector_dim(y) == matrix_nrow(a));
-	assert(trans == BLAS_NOTRANS || svector_dim(x) == (size_t)matrix_nrow(a));
-	assert(trans == BLAS_NOTRANS || vector_dim(y) == matrix_ncol(a));
-
-	if (svector_count(x) == 0) {
-		vector_scale(y, beta);
-		return;
-	} else if (!vector_dim(y)) {
-		return;
-	}
-
-
-	if (beta == 0) {
-		vector_fill(y, 0.0);
-	} else if (beta != 1) {
-		vector_scale(y, beta);
-	}
-
-	if (trans == BLAS_NOTRANS) {
-		struct svector_iter itx;
-		SVECTOR_FOREACH(itx, x) {
-			size_t j = SVECTOR_IDX(itx);
-			double x_j = SVECTOR_VAL(itx);
-			matrix_axpy_col(alpha * x_j, a, j, y);
-		}
-	} else {
-		size_t j, n = matrix_ncol(a);
-		for (j = 0; j < n; j++) {
-			struct vector a_j = matrix_col(a, j);
-			double dot = svector_dot(x, &a_j);
-			*vector_item_ptr(y, j) += alpha * dot;
-		}
-	}
-}
-
 void
 matrix_update1(struct matrix *a,
 	       double alpha, const struct vector *x, const struct vector *y)

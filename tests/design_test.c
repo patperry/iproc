@@ -5,6 +5,8 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include "cmockery.h"
+#include "sblas.h"
+#include "xalloc.h"
 
 #include "enron.h"
 #include "design.h"
@@ -264,89 +266,102 @@ static void test_tmul0()
 
 static void test_tmuls0()
 {
-	
 	struct matrix matrix;
-	struct svector x;
-	struct vector y, y1;	
+	double *x;
+	struct vpattern pat;
+	struct vector y, y1;
 	size_t i, n, p;
-	
+
 	n = design_count(design);
 	p = design_dim(design);
-	
-	svector_init(&x, n);
+	x = xmalloc(n * sizeof(x[0]));
+	pat.indx = xmalloc(n * sizeof(pat.indx[0]));
+
 	vector_init(&y, p);
 	vector_init(&y1, p);
 	matrix_init_design0(&matrix, design);
-		
+
+	pat.nz = 0;
 	for (i = 0; i < n; i++) {
-		if (i % 3 == 0)
-			svector_set_item(&x, i, (3 * i + 1) % 5 - 2);
+		if (i % 3 == 0) {
+			x[pat.nz] = (3 * i + 1) % 5 - 2.0;
+			pat.indx[pat.nz] = i;
+			pat.nz++;
+		}
 	}
-		
-	design_muls0(1.0, BLAS_TRANS, design, &x, 0.0, &y);
-	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_dist(&y, &y1) == 0.0);		
-		
-	design_muls0(1.0, BLAS_TRANS, design, &x, 1.0, &y);
-	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
+
+	design_muls0(1.0, BLAS_TRANS, design, x, &pat, 0.0, &y);
+	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 0.0, vector_to_ptr(&y1));
 	assert_true(vector_dist(&y, &y1) == 0.0);
-		
-	design_muls0(1.0, BLAS_TRANS, design, &x, -1.0, &y);
-	matrix_muls(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
+
+	design_muls0(1.0, BLAS_TRANS, design, x, &pat, 1.0, &y);
+	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 1.0, vector_to_ptr(&y1));
 	assert_true(vector_dist(&y, &y1) == 0.0);
-		
-	design_muls0(2.0, BLAS_TRANS, design, &x, 2.0, &y);
-	matrix_muls(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
+
+	design_muls0(1.0, BLAS_TRANS, design, x, &pat, -1.0, &y);
+	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, -1.0, vector_to_ptr(&y1));
 	assert_true(vector_dist(&y, &y1) == 0.0);
-		
+
+	design_muls0(2.0, BLAS_TRANS, design, x, &pat, 2.0, &y);
+	sblas_dgemvi(BLAS_TRANS, n, p, 2.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 2.0, vector_to_ptr(&y1));
+	assert_true(vector_dist(&y, &y1) == 0.0);
+
 	matrix_deinit(&matrix);
 	vector_deinit(&y1);
 	vector_deinit(&y);
-	svector_deinit(&x);
+	free(pat.indx);
+	free(x);
 }
 
 
 static void test_muls0()
 {
-	
+
 	struct matrix matrix;
-	struct svector x;
-	struct vector y, y1;	
+	double *x;
+	struct vpattern pat;
+	struct vector y, y1;
 	size_t i, n, p;
-	
+
 	n = design_count(design);
 	p = design_dim(design);
-	
-	svector_init(&x, p);
+	x = xmalloc(n * sizeof(x[0]));
+	pat.indx = xmalloc(n * sizeof(pat.indx[0]));
+
 	vector_init(&y, n);
 	vector_init(&y1, n);
 	matrix_init_design0(&matrix, design);
 
+	pat.nz = 0;
 	for (i = 0; i < p; i++) {
-		if (i % 2 == 0)
-			svector_set_item(&x, i, (7 * i) % 5 - 2);
+		if (i % 2 == 0) {
+			x[pat.nz] = (7 * i) % 5 - 2.0;
+			pat.indx[pat.nz] = i;
+			pat.nz++;
+		}
 	}
-		
-	design_muls0(1.0, BLAS_NOTRANS, design, &x, 0.0, &y);
-	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
-	assert_true(vector_dist(&y, &y1) == 0.0);		
-		
-	design_muls0(1.0, BLAS_NOTRANS, design, &x, 1.0, &y);
-	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
+
+	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, 0.0, &y);
+	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 0.0, vector_to_ptr(&y1));
 	assert_true(vector_dist(&y, &y1) == 0.0);
-		
-	design_muls0(1.0, BLAS_NOTRANS, design, &x, -1.0, &y);
-	matrix_muls(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
-	assert_true(vector_dist(&y, &y1) == 0.0);		
-		
-	design_muls0(2.0, BLAS_NOTRANS, design, &x, 2.0, &y);
-	matrix_muls(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
-	assert_true(vector_dist(&y, &y1) == 0.0);		
-		
+
+	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, 1.0, &y);
+	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 1.0, vector_to_ptr(&y1));
+	assert_true(vector_dist(&y, &y1) == 0.0);
+
+	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, -1.0, &y);
+	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, -1.0, vector_to_ptr(&y1));
+	assert_true(vector_dist(&y, &y1) == 0.0);
+
+	design_muls0(2.0, BLAS_NOTRANS, design, x, &pat, 2.0, &y);
+	sblas_dgemvi(BLAS_NOTRANS, n, p, 2.0, matrix_to_ptr(&matrix), matrix_lda(&matrix), x, &pat, 2.0, vector_to_ptr(&y1));
+	assert_true(vector_dist(&y, &y1) == 0.0);
+
 	matrix_deinit(&matrix);
 	vector_deinit(&y1);
 	vector_deinit(&y);
-	svector_deinit(&x);
+	free(pat.indx);
+	free(x);
 }
 
 

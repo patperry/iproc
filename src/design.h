@@ -2,8 +2,8 @@
 #define DESIGN_H
 
 #include "blas.h"
+#include "sblas.h"
 #include "messages.h"
-#include "svector.h"
 #include "vector.h"
 
 
@@ -65,7 +65,8 @@ void design_mul0(double alpha,
 void design_muls0(double alpha,
 		       enum blas_trans trans,
 		       const struct design *d,
-		       const struct svector *x, double beta, struct vector *y);
+		       const double *x, const struct vpattern *pat,
+		       double beta, struct vector *y);
 
 /* inline funciton definitions */
 struct frame *design_frame(const struct design *d)

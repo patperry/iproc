@@ -168,18 +168,16 @@ static void cohort_set(struct recv_model_cohort *cm,
 	double pj;
 	size_t jrecv;
 	struct vpattern pat_j;
-	pat_j.nzmax = 1;
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
 
-	struct svector ej = svector_make(&one, &pat_j, nreceiver);
 
 	vector_init(&y, dim);
 	matrix_fill(&cm->imat0, 0.0);
 
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
-		design_muls0(1.0, BLAS_TRANS, design, &ej, -1.0, &y);
+		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 
 		matrix_update1(&cm->imat0, pj, &y, &y);

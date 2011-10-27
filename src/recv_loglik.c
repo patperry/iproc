@@ -199,10 +199,8 @@ static void score_set_obs(struct recv_loglik_sender_score *score,
 	qsort(score->nrecv_pat.indx, n, sizeof(jrecv[0]), size_compar);
 	score->nrecv_pat.nz = n;
 
-	struct svector wt = svector_make(score->nrecv, &score->nrecv_pat,
-					 frame_recv_count(f));
 	frame_recv_dmuls(1.0, BLAS_TRANS, f, isend,
-			 &wt, 0.0, &score->obs_dx);
+			 score->nrecv, &score->nrecv_pat, 0.0, &score->obs_dx);
 }
 
 static void score_set_mean(struct recv_loglik_sender_score *score,
@@ -406,9 +404,7 @@ static void score_axpy_obs(double alpha,
 	struct vector ysub = vector_slice(y, off, dim);
 
 	// (X[0,i])^T n[i]
-	struct svector wt = svector_make(score->nrecv, &score->nrecv_pat,
-					 design_count(d));
-	design_muls0(alpha, BLAS_TRANS, d, &wt, 1.0, y);
+	design_muls0(alpha, BLAS_TRANS, d, score->nrecv, &score->nrecv_pat, 1.0, y);
 
 	// sum{dx[t,i,j]}
 	vector_axpy(alpha, &score->obs_dx, &ysub);
@@ -426,9 +422,7 @@ static void score_axpy_mean(double alpha,
 	double gamma = score->gamma;
 	vector_axpy(alpha * gamma, mean0, y);
 
-	struct svector dp = svector_make(vector_to_ptr(&score->dp), active,
-					 design_count(design));
-	design_muls0(alpha, BLAS_TRANS, design, &dp, 1.0, y);
+	design_muls0(alpha, BLAS_TRANS, design, vector_to_ptr(&score->dp), active, 1.0, y);
 
 	const struct vector *mean_dx = &score->mean_dx;
 	size_t off = design_dvars_index(design);
@@ -457,7 +451,6 @@ static void imat_axpy(double alpha,
 	(void)isend;		// unused
 
 	const size_t dim = design_dim(design);
-	const size_t nrecv = design_count(design);
 	const struct vector *mean0 = score->mean0;
 	const struct matrix *var0 = imat->imat0;
 	const double gamma = score->gamma;
@@ -465,21 +458,19 @@ static void imat_axpy(double alpha,
 
 	const size_t n = active->nz;
 	size_t i, j, k;
-	struct svector gamma_dp = svector_make(vector_to_ptr(&imat->gamma_dp),
-					       active, nrecv);
 
 	struct vector gamma_x0_dp;
 	vector_init(&gamma_x0_dp, dim);
-	design_muls0(1.0, BLAS_TRANS, design, &gamma_dp, 0.0, &gamma_x0_dp);
+	design_muls0(1.0, BLAS_TRANS, design, vector_to_ptr(&imat->gamma_dp),
+		     active, 0.0, &gamma_x0_dp);
 
 	struct matrix x0_dp2;
 
 	matrix_init(&x0_dp2, dim, n);
 	for (j = 0; j < n; j++) {
-		struct svector dp2_j = svector_make(matrix_item_ptr(&imat->dp2, 0, j),
-						    active, nrecv);
+		const double *dp2_j = matrix_item_ptr(&imat->dp2, 0, j);
 		struct vector dst = matrix_col(&x0_dp2, j);
-		design_muls0(1.0, BLAS_TRANS, design, &dp2_j, 0.0, &dst);
+		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, &dst);
 	}
 
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
@@ -490,13 +481,12 @@ static void imat_axpy(double alpha,
 	matrix_update1(y, -alpha, mean0, &gamma_x0_dp);
 	matrix_update1(y, -alpha, &gamma_x0_dp, mean0);
 
-	double *x0_dp2_k_vals = xmalloc(n * sizeof(x0_dp2_k_vals));
-	struct svector x0_dp2_k = svector_make(x0_dp2_k_vals, active, nrecv);
+	double *x0_dp2_k = xmalloc(n * sizeof(x0_dp2_k));
 	for (k = 0; k < dim; k++) {
 		blas_dcopy(n, matrix_item_ptr(&x0_dp2, k, 0),
-			   matrix_lda(&x0_dp2), x0_dp2_k_vals, 1);
+			   matrix_lda(&x0_dp2), x0_dp2_k, 1);
 		struct vector dst = matrix_col(y, k);
-		design_muls0(alpha, BLAS_TRANS, design, &x0_dp2_k, 1.0, &dst);
+		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, &dst);
 	}
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
@@ -524,14 +514,12 @@ static void imat_axpy(double alpha,
 
 	vector_init(&x0_j, dim);
 
-	pat_j.nzmax = 1;
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
-	struct svector e_j = svector_make(&one, &pat_j, design_count(design));
 
 	for (i = 0; i < n; i++) {
 		jrecv = active->indx[i];
-		design_muls0(1.0, BLAS_TRANS, design, &e_j, 0.0, &x0_j);
+		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, &x0_j);
 
 		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
 		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
@@ -546,7 +534,7 @@ static void imat_axpy(double alpha,
 	matrix_update1(&y1_, -alpha, &imat->gamma_mean_dx, mean0);
 
 	vector_deinit(&x0_j);
-	free(x0_dp2_k_vals);
+	free(x0_dp2_k);
 	matrix_deinit(&x0_dp2);
 	vector_deinit(&gamma_x0_dp);
 

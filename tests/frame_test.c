@@ -225,14 +225,17 @@ static void test_rv_irecv()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
-	struct svector x;
+	double x = 1.0;
+	size_t k = 0;
+	struct vpattern pat_k;
+	pat_k.indx = &k;
+	pat_k.nz = 1;
 	struct vector y;
 	double tmsg;
 	
 	matrix_init(&tlast, nsend, design_count(design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	svector_init(&x, design_dvars_dim(design));
 	vector_init(&y, design_count(design));
 	
 	MESSAGES_FOREACH(it, &messages) {
@@ -242,8 +245,8 @@ static void test_rv_irecv()
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
 		
-		svector_set_basis(&x, 0);
-		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		k = 0;
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, &y);
 
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
@@ -267,7 +270,6 @@ static void test_rv_irecv()
 	}
 
 	vector_deinit(&y);	
-	svector_deinit(&x);
 	matrix_deinit(&tlast);
 }
 
@@ -307,26 +309,28 @@ static void test_rv_isend()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix tlast;
-	struct svector x;
+	double x = 1.0;
+	size_t k = 0;
+	struct vpattern pat_k;
+	pat_k.indx = &k;
+	pat_k.nz = 1;
 	struct vector y;
 	double tmsg;
-	
+
 	matrix_init(&tlast, nsend, design_count(design));
 	matrix_fill(&tlast, -INFINITY);
-	
-	svector_init(&x, design_dvars_dim(design));
+
 	vector_init(&y, design_count(design));
-	
+
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
 		frame_advance(&frame, t);
-		
+
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
-		
-		svector_set_basis(&x, 0);
-		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
-		
+		k = 0;
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, &y);
+
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
 			tmsg = matrix_item(&tlast, isend, ix);
@@ -341,7 +345,7 @@ static void test_rv_isend()
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
 			frame_add(&frame, msg);
-			
+
 			for (ito = 0; ito < msg->nto; ito++) {
 				matrix_set_item(&tlast, msg->from, msg->to[ito], msg->time);
 			}
@@ -349,7 +353,6 @@ static void test_rv_isend()
 	}
 
 	vector_deinit(&y);
-	svector_deinit(&x);	
 	matrix_deinit(&tlast);
 }
 

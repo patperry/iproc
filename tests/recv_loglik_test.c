@@ -283,9 +283,8 @@ out:
 
 static void test_score()
 {
-	struct vector score0, score1, avg_score1, diff;
+	struct vector nrecv, score0, score1, avg_score1, diff;
 	struct matrix avg_score0;
-	struct svector nrecv;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -293,47 +292,47 @@ static void test_score()
 	size_t itie, ntie;
 	size_t index, dim = design_dim(design);
 	size_t n, nmsg;
-	
-	svector_init(&nrecv, design_count(design));
+
+
+	vector_init(&nrecv, design_count(design));
 	vector_init(&score0, design_dim(design));
 	vector_init(&score1, design_dim(design));
 	matrix_init(&avg_score0, design_dim(design), recv_model_cohort_count(&model));
 	vector_init(&avg_score1, design_dim(design));
 	vector_init(&diff, design_dim(design));
-	
+
 	nmsg = 0;
-	
+
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		
-		frame_advance(&frame, t);			
-		
+
+		frame_advance(&frame, t);
+
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);			
+			frame_add(&frame, msg);
 			recv_loglik_add(&recv_loglik, &frame, msg);
 			nmsg++;
 
 			if (nmsg > 1000)
 				goto out;
-			
+
 			isend = msg->from;
 			c = recv_model_cohort(&model, isend);
 			n = recv_loglik_count(&recv_loglik, c);			
-			
-			svector_clear(&nrecv);
+
+			vector_fill(&nrecv, 0.0);
 			for (ito = 0; ito < msg->nto; ito++) {
-				*svector_item_ptr(&nrecv, msg->to[ito]) += 1.0;
+				*vector_item_ptr(&nrecv, msg->to[ito]) += 1.0;
 			}
 
-			frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &nrecv,
-					0.0, &score0);
+			frame_recv_mul(1.0, BLAS_TRANS, &frame, isend, &nrecv, 0.0, &score0);
 			recv_loglik_axpy_last_mean(-1.0, &recv_loglik, &score0);
-			
+
 			vector_fill(&score1, 0.0);
 			recv_loglik_axpy_last_score(1.0, &recv_loglik, &score1);
-			
+
 			for (index = 0; index < dim; index++) {
 				double x0 = vector_item(&score0, index);
 				double x1 = vector_item(&score1, index);				
@@ -367,14 +366,14 @@ out:
 	matrix_deinit(&avg_score0);
 	vector_deinit(&score0);
 	vector_deinit(&score1);	
-	svector_deinit(&nrecv);	
+	vector_deinit(&nrecv);	
 }
 
 
 static void test_imat()
 {
 	struct vector mean, y;
-	struct svector e_j;
+
 	struct matrix imat0, imat1, diff, *avg_imat0, avg_imat1;
 	struct messages_iter it;
 	const struct message *msg = NULL;
@@ -382,19 +381,22 @@ static void test_imat()
 	size_t isend, jrecv, nrecv = design_count(design);
 	size_t itie, ntie, c, n, nmsg;
 	size_t index1, index2, dim = design_dim(design);
-	
+	double one = 1.0;
+	struct vpattern pat_j;
+	pat_j.indx = &jrecv;
+	pat_j.nz = 1;
+
 	vector_init(&mean, dim);
-	vector_init(&y, dim);	
-	matrix_init(&imat0, dim, dim);	
+	vector_init(&y, dim);
+	matrix_init(&imat0, dim, dim);
 	matrix_init(&imat1, dim, dim);
 	matrix_init(&diff, dim, dim);
-	
+
 	avg_imat0 = xcalloc(recv_model_cohort_count(&model), sizeof(*avg_imat0));
 	for (c = 0; c < recv_model_cohort_count(&model); c++) {
 		matrix_init(&avg_imat0[c], dim, dim);
 	}
 	matrix_init(&avg_imat1, dim, dim);
-	svector_init(&e_j, nrecv);
 	
 	nmsg = 0;
 	
@@ -427,9 +429,8 @@ static void test_imat()
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double p = recv_model_prob(&model, isend, jrecv);
 				vector_assign_copy(&y, &mean);				
-				svector_set_basis(&e_j, jrecv);
 				
-				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &e_j, -1.0, &y);
+				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, &y);
 				matrix_update1(&imat0, p, &y, &y);
 			}
 			matrix_scale(&imat0, msg->nto);
@@ -475,7 +476,6 @@ static void test_imat()
 	}
 	
 out:
-	svector_deinit(&e_j);
 	vector_deinit(&mean);
 	vector_deinit(&y);
 	matrix_deinit(&imat0);

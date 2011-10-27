@@ -9,7 +9,6 @@
 #include "messages.h"
 #include "recv_loglik.h"
 #include "recv_model.h"
-#include "svector.h"
 #include "vector.h"
 
 #define RECV_FIT_GTOL0		(1e-8)

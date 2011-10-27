@@ -106,7 +106,8 @@ static void
 design_muls0_effects(double alpha,
 		     enum blas_trans trans,
 		     const struct design *d,
-		     const struct svector *x, struct vector *y)
+		     const double *x, const struct vpattern *pat,
+		     struct vector *y)
 {
 	if (!design_has_effects(d))
 		return;
@@ -114,8 +115,6 @@ design_muls0_effects(double alpha,
 	size_t off = design_effects_index(d);
 	size_t dim = design_count(d);
 	size_t end = off + dim;
-	const struct vpattern *pat = &x->pattern;
-	const double *vals = x->data;
 
 	if (trans == BLAS_NOTRANS) {
 		ptrdiff_t i0 = vpattern_find(pat, off);
@@ -124,13 +123,13 @@ design_muls0_effects(double alpha,
 
 		for (; iz < nz && pat->indx[iz] < end; iz++) {
 			size_t i = pat->indx[iz];
-			double x_i = vals[iz];
+			double x_i = x[iz];
 
 			*vector_item_ptr(y, i) += alpha * x_i;
 		}
 	} else {
 		struct vector ysub = vector_slice(y, off, dim);
-		sblas_daxpyi(alpha, vals, pat, vector_to_ptr(&ysub));
+		sblas_daxpyi(alpha, x, pat, vector_to_ptr(&ysub));
 	}
 }
 
@@ -167,7 +166,8 @@ static void
 design_muls0_traits(double alpha,
 		    enum blas_trans trans,
 		    const struct design *d,
-		    const struct svector *x, struct vector *y)
+		    const double *x, const struct vpattern *pat,
+		    struct vector *y)
 {
 	if (!design_traits_dim(d))
 		return;
@@ -177,8 +177,6 @@ design_muls0_traits(double alpha,
 	size_t count = design_count(d);
 	const double *a = design_traits(d);
 	size_t lda = MAX(1, count);
-	const double *dx = x->data;
-	const struct vpattern *pat = &x->pattern;
 	size_t nz = pat->nz;
 	const size_t *indx = pat->indx;
 
@@ -187,7 +185,7 @@ design_muls0_traits(double alpha,
 		size_t i = (ix < 0) ? ~ix : ix;
 
 		for (; i < nz && indx[i] < off + dim; i++) {
-                        blas_daxpy(count, alpha * dx[i],
+                        blas_daxpy(count, alpha * x[i],
 				   a + (indx[i] - off) * lda, 1,
 				   vector_to_ptr(y), 1);
                 }
@@ -195,7 +193,7 @@ design_muls0_traits(double alpha,
 		struct vector ysub = vector_slice(y, off, dim);
 
 		sblas_dgemvi(trans, count, dim, alpha, a, lda,
-			     dx, pat, 1.0, vector_to_ptr(&ysub));
+			     x, pat, 1.0, vector_to_ptr(&ysub));
 	}
 }
 
@@ -232,17 +230,13 @@ void
 design_muls0(double alpha,
 	     enum blas_trans trans,
 	     const struct design *design,
-	     const struct svector *x, double beta, struct vector *y)
+	     const double *x, const struct vpattern *pat,
+	     double beta, struct vector *y)
 {
 	assert(design);
-	assert(x);
 	assert(y);
 	assert(trans != BLAS_NOTRANS
-	       || (size_t)svector_dim(x) == design_dim(design));
-	assert(trans != BLAS_NOTRANS
 	       || (size_t)vector_dim(y) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)svector_dim(x) == design_count(design));
 	assert(trans == BLAS_NOTRANS
 	       || (size_t)vector_dim(y) == design_dim(design));
 
@@ -253,8 +247,8 @@ design_muls0(double alpha,
 		vector_scale(y, beta);
 	}
 
-	design_muls0_effects(alpha, trans, design, x, y);
-	design_muls0_traits(alpha, trans, design, x, y);
+	design_muls0_effects(alpha, trans, design, x, pat, y);
+	design_muls0_traits(alpha, trans, design, x, pat, y);
 }
 
 void design_set_has_effects(struct design *d, int has_effects)

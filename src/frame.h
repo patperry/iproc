@@ -121,21 +121,24 @@ void frame_recv_mul(double alpha, enum blas_trans trans,
 		    const struct vector *x, double beta, struct vector *y);
 void frame_recv_muls(double alpha, enum blas_trans trans,
 		     const struct frame *f, size_t isend,
-		     const struct svector *x, double beta, struct vector *y);
+		     const double *x, const struct vpattern *pat,
+		     double beta, struct vector *y);
 
 void frame_recv_dmul(double alpha, enum blas_trans trans,
 		     const struct frame *f, size_t isend,
 		     const struct vector *x, double beta, struct vector *y);
 void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		      const struct frame *f, size_t isend,
-		      const struct svector *x, double beta, struct vector *y);
+		      const double *x, const struct vpattern *pat, double beta,
+		      struct vector *y);
 
 // void frame_send_mul(double alpha, enum blas_trans trans,
 //                  const struct frame *f,
 //                  const struct vector *x, double beta, struct vector *y);
 //void frame_send_muls(double alpha, enum blas_trans trans,
 //                   const struct frame *f,
-//                   const struct svector *x, double beta, struct vector *y);
+//                   const double *x, const struct vpattern *pat,
+//                   double beta, struct vector *y);
 
 /* inline function definitions */
 const double *frame_intervals(const struct frame *f)

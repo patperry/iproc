@@ -3,7 +3,6 @@
 
 #include "blas.h"
 #include "coreutil.h"
-#include "svector.h"
 #include "vector.h"
 
 struct matrix {
@@ -95,8 +94,6 @@ void matrix_mul(double alpha, enum blas_trans trans, const struct matrix *a,
 		const struct vector *x, double beta, struct vector *y);
 void matrix_matmul(double alpha, enum blas_trans trans, const struct matrix *a,
 		   const struct matrix *x, double beta, struct matrix *y);
-void matrix_muls(double alpha, enum blas_trans trans, const struct matrix *a,
-		 const struct svector *x, double beta, struct vector *y);
 void matrix_update1(struct matrix *a,
 		    double alpha, const struct vector *x,
 		    const struct vector *y);
