@@ -530,7 +530,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 	// determine the search direction
 	search_set(&fit->search, &fit->prev->resid, &fit->kkt, n);
-	size_t ismax = blas_idamax(dim * nc, fit->search.vector, 1);
+	size_t ismax = blas_idamax(dim * nc, fit->search.vector, 1) - 1;
 	double smax = fabs(fit->search.vector[ismax]);
 
 	// set up the linesearch control parameters
