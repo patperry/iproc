@@ -11,7 +11,7 @@
 static void cohort_init(struct recv_loglik_cohort *cll,
 			const struct recv_model *m, size_t c);
 static void cohort_deinit(struct recv_loglik_cohort *cll);
-static void cohort_clear(struct recv_loglik_cohort *cll);
+static void cohort_clear(struct recv_loglik_cohort *cll, size_t dim);
 
 static void sender_init(struct recv_loglik_sender *ll,
 			const struct recv_model *model, size_t isend);
@@ -19,16 +19,16 @@ static void sender_deinit(struct recv_loglik_sender *ll);
 
 static void sender_add(struct recv_loglik_sender *ll,
 		       const struct frame *f, const size_t *jrecv, size_t n);
-static void sender_clear(struct recv_loglik_sender *ll);
+static void sender_clear(struct recv_loglik_sender *ll, size_t dim);
 
 static size_t sender_count(const struct recv_loglik_sender *sll);
 static double sender_dev(const struct recv_loglik_sender *sll);
 static void sender_axpy_mean(double alpha,
 			     const struct recv_loglik_sender *sll,
-			     struct vector *y);
+			     double *y);
 static void sender_axpy_score(double alpha,
 			      const struct recv_loglik_sender *sll,
-			      struct vector *y);
+			      double *y);
 static void sender_axpy_imat(double alpha,
 			     const struct recv_loglik_sender *sll,
 			     struct matrix *y);
@@ -37,10 +37,10 @@ static size_t sender_last_count(const struct recv_loglik_sender *sll);
 static double sender_last_dev(const struct recv_loglik_sender *sll);
 static void sender_axpy_last_mean(double alpha,
 				  const struct recv_loglik_sender *sll,
-				  struct vector *y);
+				  double *y);
 static void sender_axpy_last_score(double alpha,
 				   const struct recv_loglik_sender *sll,
-				   struct vector *y);
+				   double *y);
 static void sender_axpy_last_imat(double alpha,
 				  const struct recv_loglik_sender *sll,
 				  struct matrix *y);
@@ -51,17 +51,17 @@ static void score_init(struct recv_loglik_sender_score *score,
 	assert(score);
 
 	size_t ic = recv_model_cohort(model, isend);
-	const struct vector *mean0 = recv_model_mean0(model, ic);
+	const double *mean0 = recv_model_mean0(model, ic);
 	const struct design *design = recv_model_design(model);
 	size_t dyn_dim = design_dvars_dim(design);
 
 	score->mean0 = mean0;
 	score->nrecv = NULL;
 	vpattern_init(&score->nrecv_pat);
-	vector_init(&score->obs_dx, dyn_dim);
+	score->obs_dx = xcalloc(dyn_dim, sizeof(score->obs_dx[0]));
 	score->gamma = 0.0;
-	vector_init(&score->dp, 0);
-	vector_init(&score->mean_dx, dyn_dim);
+	score->dp = NULL;
+	score->mean_dx = xcalloc(dyn_dim, sizeof(score->mean_dx[0]));
 }
 
 static void imat_init(struct recv_loglik_sender_imat *imat,
@@ -76,8 +76,8 @@ static void imat_init(struct recv_loglik_sender_imat *imat,
 
 	imat->imat0 = imat0;
 	imat->gamma2 = 0.0;
-	vector_init(&imat->gamma_dp, 0);
-	vector_init(&imat->gamma_mean_dx, dyn_dim);
+	imat->gamma_dp = NULL;
+	imat->gamma_mean_dx = xcalloc(dyn_dim, sizeof(&imat->gamma_mean_dx[0]));
 	matrix_init(&imat->dx_p, dyn_dim, 0);
 	matrix_init(&imat->mean_dx_dp, dyn_dim, 0);
 	matrix_init(&imat->dp2, 0, 0);
@@ -88,9 +88,9 @@ static void score_deinit(struct recv_loglik_sender_score *score)
 {
 	assert(score);
 
-	vector_deinit(&score->mean_dx);
-	vector_deinit(&score->dp);
-	vector_deinit(&score->obs_dx);
+	free(score->mean_dx);
+	free(score->dp);
+	free(score->obs_dx);
 	vpattern_deinit(&score->nrecv_pat);
 	free(score->nrecv);
 }
@@ -103,63 +103,48 @@ static void imat_deinit(struct recv_loglik_sender_imat *imat)
 	matrix_deinit(&imat->dp2);
 	matrix_deinit(&imat->mean_dx_dp);
 	matrix_deinit(&imat->dx_p);
-	vector_deinit(&imat->gamma_mean_dx);
-	vector_deinit(&imat->gamma_dp);
+	free(imat->gamma_mean_dx);
+	free(imat->gamma_dp);
 }
 
-static void score_clear(struct recv_loglik_sender_score *score)
+static void score_clear(struct recv_loglik_sender_score *score, size_t dyn_dim)
 {
 	assert(score);
 	vpattern_clear(&score->nrecv_pat);
-	vector_fill(&score->obs_dx, 0.0);
+	memset(score->obs_dx, 0, dyn_dim * sizeof(score->obs_dx[0]));
 	score->gamma = 0.0;
-	vector_reinit(&score->dp, 0);
-	vector_fill(&score->mean_dx, 0.0);
+	score->dp = xrealloc(score->dp, 0);
+	memset(score->mean_dx, 0, dyn_dim * sizeof(score->mean_dx[0]));
 }
 
-static void imat_clear(struct recv_loglik_sender_imat *imat)
+static void imat_clear(struct recv_loglik_sender_imat *imat, size_t dyn_dim)
 {
 	assert(imat);
 	imat->gamma2 = 0.0;
-	vector_reinit(&imat->gamma_dp, 0);
-	vector_fill(&imat->gamma_mean_dx, 0.0);
+	imat->gamma_dp = xrealloc(imat->gamma_dp, 0);
+	memset(imat->gamma_mean_dx, 0, dyn_dim * sizeof(imat->gamma_mean_dx[0]));
 	matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), 0);
 	matrix_reinit(&imat->mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), 0);
 	matrix_reinit(&imat->dp2, 0, 0);
 	matrix_fill(&imat->var_dx, 0.0);
 }
 
-#ifndef NDEBUG
-static size_t score_active_count(const struct recv_loglik_sender_score *score)
-{
-	assert(score);
-	return vector_dim(&score->dp);
-}
-#endif
-
-#ifndef NDEBUG
-static size_t imat_active_count(const struct recv_loglik_sender_imat *imat)
-{
-	assert(imat);
-	return vector_dim(&imat->gamma_dp);
-}
-#endif
-
 static void score_insert_active(struct recv_loglik_sender_score *score,
-				size_t i)
+				size_t i, size_t nz0)
 {
-	assert(score);
-	assert(i <= score_active_count(score));
-
-	vector_insert(&score->dp, i);
+	score->dp = xrealloc(score->dp, (nz0 + 1) * sizeof(score->dp[0]));
+	memmove(score->dp + i + 1, score->dp + i, (nz0 - i) *
+			sizeof(score->dp[0]));
+	score->dp[i] = 0.0;
 }
 
-static void imat_insert_active(struct recv_loglik_sender_imat *imat, size_t i)
+static void imat_insert_active(struct recv_loglik_sender_imat *imat, size_t i,
+		size_t nz0)
 {
-	assert(imat);
-	assert(i <= imat_active_count(imat));
-
-	vector_insert(&imat->gamma_dp, i);
+	imat->gamma_dp = xrealloc(imat->gamma_dp, (nz0 + 1) * sizeof(imat->gamma_dp[0]));
+	memmove(imat->gamma_dp + i + 1, imat->gamma_dp + i,
+		(nz0 - i) * sizeof(imat->gamma_dp[0]));
+	imat->gamma_dp[i] = 0.0;
 	matrix_insert_col(&imat->dx_p, i);
 	matrix_insert_col(&imat->mean_dx_dp, i);
 	matrix_insert_row_col(&imat->dp2, i, i);
@@ -200,7 +185,7 @@ static void score_set_obs(struct recv_loglik_sender_score *score,
 	score->nrecv_pat.nz = n;
 
 	frame_recv_dmuls(1.0, BLAS_TRANS, f, isend,
-			 score->nrecv, &score->nrecv_pat, 0.0, &score->obs_dx);
+			 score->nrecv, &score->nrecv_pat, 0.0, score->obs_dx);
 }
 
 static void score_set_mean(struct recv_loglik_sender_score *score,
@@ -211,6 +196,8 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 	assert(model);
 	assert(f);
 
+	const struct design *d = recv_model_design(model);
+	size_t dyn_dim = design_dvars_dim(d);
 	size_t *active, iz, nz;
 	size_t ic = recv_model_cohort(model, isend);
 	recv_model_get_active(model, isend, &active, &nz);
@@ -220,10 +207,7 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 	const double gamma = recv_model_invgrow(model, isend);
 	score->gamma = n * gamma;
 
-	if ((size_t)vector_dim(&score->dp) != nz) {
-		vector_reinit(&score->dp, nz);
-	}
-	vector_fill(&score->mean_dx, 0.0);
+	memset(score->mean_dx, 0, dyn_dim * sizeof(score->mean_dx[0]));
 
 	for (iz = 0; iz < nz; iz++) {
 		size_t jrecv = active[iz];
@@ -232,13 +216,13 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 		double p = recv_model_prob(model, isend, jrecv);
 		double p0 = recv_model_prob0(model, ic, jrecv);
 		double dp = p - gamma * p0;
-		vector_set_item(&score->dp, iz, dp);
+		score->dp[iz] = dp;
 
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-		vector_axpy(p, dx, &score->mean_dx);
+		const double *dx = frame_recv_dx(f, isend, jrecv);
+		blas_daxpy(dyn_dim, p, dx, 1, score->mean_dx, 1);
 	}
-	vector_scale(&score->dp, n);
-	vector_scale(&score->mean_dx, n);
+	blas_dscal(nz, n, score->dp, 1);
+	blas_dscal(dyn_dim, n, score->mean_dx, 1);
 }
 
 static void score_set(struct recv_loglik_sender_score *score,
@@ -260,6 +244,8 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	assert(model);
 	assert(f);
 
+	const struct design *d = recv_model_design(model);
+	size_t dyn_dim = design_dvars_dim(d);
 	size_t ic = recv_model_cohort(model, isend);
 	size_t *active, iz, nz;
 	recv_model_get_active(model, isend, &active, &nz);
@@ -268,13 +254,6 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 
 	const double gamma = recv_model_invgrow(model, isend);
 
-	if ((size_t)vector_dim(&imat->gamma_dp) != nz) {
-		vector_reinit(&imat->gamma_dp, nz);
-		matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), nz);
-		matrix_reinit(&imat->mean_dx_dp, matrix_nrow(&imat->mean_dx_dp),
-			      nz);
-		matrix_reinit(&imat->dp2, nz, nz);
-	}
 	matrix_fill(&imat->dp2, 0.0);
 	struct matrix y;
 	double ptot = 0.0;
@@ -283,52 +262,51 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	imat->gamma2 = n * gamma * (1 - gamma);
 
 	/* gamma_mean_dx */
-	vector_assign_copy(&imat->gamma_mean_dx, &score->mean_dx);
-	vector_scale(&imat->gamma_mean_dx, gamma);
+	blas_dcopy(dyn_dim, score->mean_dx, 1, imat->gamma_mean_dx, 1);
+	blas_dscal(dyn_dim, gamma, imat->gamma_mean_dx, 1);
 
 	/* dp2 */
-	matrix_update1(&imat->dp2, -1.0 / n, &score->dp, &score->dp);
+	matrix_update1(&imat->dp2, -1.0 / n, score->dp, score->dp);
 
-	//vector_init(&y, vector_dim(&score->mean_dx));
-	matrix_init(&y, vector_dim(&score->mean_dx), nz);
+	matrix_init(&y, dyn_dim, nz);
 
 	for (iz = 0; iz < nz; iz++) {
 		size_t jrecv = active[iz];
-		double dp = vector_item(&score->dp, iz);
+		double dp = score->dp[iz];
 		double p = recv_model_prob(model, isend, jrecv);
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+		const double *dx = frame_recv_dx(f, isend, jrecv);
 
 		/* gamma_dp */
-		vector_set_item(&imat->gamma_dp, iz, gamma * dp);
+		imat->gamma_dp[iz] = gamma * dp;
 
 		/* mean_dx_dp */
-		struct vector mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, iz);
-		vector_assign_copy(&mean_dx_dp_j, &score->mean_dx);
-		vector_scale(&mean_dx_dp_j, dp / n);
+		double *mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, iz);
+		blas_dcopy(dyn_dim, score->mean_dx, 1, mean_dx_dp_j, 1);
+		blas_dscal(dyn_dim, dp / n, mean_dx_dp_j, 1);
 
 		/* dp2 */
 		*matrix_item_ptr(&imat->dp2, iz, iz) += dp;
 
 		/* dx_p */
-		struct vector dx_p_j = matrix_col(&imat->dx_p, iz);
-		vector_assign_copy(&dx_p_j, dx);
-		vector_scale(&dx_p_j, n * p);
+		double *dx_p_j = matrix_col(&imat->dx_p, iz);
+		blas_dcopy(dyn_dim, dx, 1, dx_p_j, 1);
+		blas_dscal(dyn_dim, n * p, dx_p_j, 1);
 
 		/* var_dx */
-		struct vector y_i = matrix_col(&y, iz);
-		vector_assign_copy(&y_i, dx);
-		vector_axpy(-1.0 / n, &score->mean_dx, &y_i);
-		vector_scale(&y_i, sqrt(p));
+		double *y_i = matrix_col(&y, iz);
+		blas_dcopy(dyn_dim, dx, 1, y_i, 1);
+		blas_daxpy(dyn_dim, -1.0 / n, score->mean_dx, 1, y_i, 1);
+		blas_dscal(dyn_dim, sqrt(p), y_i, 1);
 
 		ptot += p;
 	}
-	blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, vector_dim(&score->mean_dx),
-		   vector_dim(&score->mean_dx), nz, n, matrix_to_ptr(&y),
+	blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, dyn_dim, dyn_dim, nz, n,
+		   matrix_to_ptr(&y),
 		   matrix_lda(&y), matrix_to_ptr(&y), matrix_lda(&y), 0.0,
 		   matrix_to_ptr(&imat->var_dx), matrix_lda(&imat->var_dx));
 	/* var_dx */
-	matrix_update1(&imat->var_dx, (1.0 - ptot) / n, &score->mean_dx,
-		       &score->mean_dx);
+	matrix_update1(&imat->var_dx, (1.0 - ptot) / n, score->mean_dx,
+		       score->mean_dx);
 
 	matrix_deinit(&y);
 }
@@ -358,33 +336,31 @@ static void nrecv_add(const struct recv_loglik_sender_score *score0,
 }
 
 static void score_update(const struct recv_loglik_sender_score *score0,
-			 struct recv_loglik_sender_score *score1)
+			 struct recv_loglik_sender_score *score1,
+			 size_t dyn_dim, size_t nz)
 {
-	assert(score0);
-	assert(score1);
-	assert(score_active_count(score0) == score_active_count(score1));
 	assert(score0->mean0 == score1->mean0);
 
 	nrecv_add(score0, score1);
-	vector_axpy(1.0, &score0->obs_dx, &score1->obs_dx);
+	blas_daxpy(dyn_dim, 1.0, score0->obs_dx, 1, score1->obs_dx, 1);
 
 	score1->gamma += score0->gamma;
-	vector_axpy(1.0, &score0->dp, &score1->dp);
-	vector_axpy(1.0, &score0->mean_dx, &score1->mean_dx);
+	blas_daxpy(nz, 1.0, score0->dp, 1, score1->dp, 1);
+	blas_daxpy(dyn_dim, 1.0, score0->mean_dx, 1, score1->mean_dx, 1);
 }
 
 static void imat_update(const struct recv_loglik_sender_imat *imat0,
-			struct recv_loglik_sender_imat *imat1)
+			struct recv_loglik_sender_imat *imat1,
+			size_t dyn_dim, size_t nz)
 {
 	assert(imat0);
 	assert(imat1);
-	assert(imat_active_count(imat0) == imat_active_count(imat1));
 	assert(imat0->imat0 == imat1->imat0);
 
 	imat1->gamma2 += imat0->gamma2;
 
-	vector_axpy(1.0, &imat0->gamma_dp, &imat1->gamma_dp);
-	vector_axpy(1.0, &imat0->gamma_mean_dx, &imat1->gamma_mean_dx);
+	blas_daxpy(nz, 1.0, imat0->gamma_dp, 1, imat1->gamma_dp, 1);
+	blas_daxpy(dyn_dim, 1.0, imat0->gamma_mean_dx, 1, imat1->gamma_mean_dx, 1);
 
 	matrix_axpy(1.0, &imat0->dx_p, &imat1->dx_p);
 	matrix_axpy(1.0, &imat0->mean_dx_dp, &imat1->mean_dx_dp);
@@ -395,47 +371,47 @@ static void imat_update(const struct recv_loglik_sender_imat *imat0,
 static void score_axpy_obs(double alpha,
 			   const struct recv_loglik_sender_score *score,
 			   const struct design *d,
-			   size_t isend, struct vector *y)
+			   size_t isend, double *y)
 {
 	(void)isend;		// unused
-
-	size_t off = design_dvars_index(d);
-	size_t dim = design_dvars_dim(d);
-	struct vector ysub = vector_slice(y, off, dim);
 
 	// (X[0,i])^T n[i]
 	design_muls0(alpha, BLAS_TRANS, d, score->nrecv, &score->nrecv_pat, 1.0, y);
 
+	size_t off = design_dvars_index(d);
+	size_t dim = design_dvars_dim(d);
+
 	// sum{dx[t,i,j]}
-	vector_axpy(alpha, &score->obs_dx, &ysub);
+	blas_daxpy(dim, alpha, score->obs_dx, 1, y + off, 1);
 }
 
 static void score_axpy_mean(double alpha,
 			    const struct recv_loglik_sender_score *score,
 			    const struct vpattern *active,
-			    const struct design *design,
-			    size_t isend, struct vector *y)
+			    const struct design *d,
+			    size_t isend, double *y)
 {
 	(void)isend;		// unused
 
-	const struct vector *mean0 = score->mean0;
+	size_t dim = design_dim(d);
+	const double *mean0 = score->mean0;
 	double gamma = score->gamma;
-	vector_axpy(alpha * gamma, mean0, y);
+	blas_daxpy(dim, alpha * gamma, mean0, 1, y, 1);
 
-	design_muls0(alpha, BLAS_TRANS, design, vector_to_ptr(&score->dp), active, 1.0, y);
+	design_muls0(alpha, BLAS_TRANS, d, score->dp, active, 1.0, y);
 
-	const struct vector *mean_dx = &score->mean_dx;
-	size_t off = design_dvars_index(design);
-	size_t dim = design_dvars_dim(design);
-	struct vector ysub = vector_slice(y, off, dim);
-	vector_axpy(alpha, mean_dx, &ysub);
+	const double *mean_dx = score->mean_dx;
+	size_t dyn_off = design_dvars_index(d);
+	size_t dyn_dim = design_dvars_dim(d);
+	blas_daxpy(dyn_dim, alpha, mean_dx, 1, y + dyn_off, 1);
+
 }
 
 static void score_axpy(double alpha,
 		       const struct recv_loglik_sender_score *score,
 		       const struct vpattern *active,
 		       const struct design *design,
-		       size_t isend, struct vector *y)
+		       size_t isend, double *y)
 {
 	score_axpy_obs(alpha, score, design, isend, y);
 	score_axpy_mean(-alpha, score, active, design, isend, y);
@@ -451,7 +427,9 @@ static void imat_axpy(double alpha,
 	(void)isend;		// unused
 
 	const size_t dim = design_dim(design);
-	const struct vector *mean0 = score->mean0;
+	size_t dyn_off = design_dvars_index(design);
+	size_t dyn_dim = design_dvars_dim(design);
+	const double *mean0 = score->mean0;
 	const struct matrix *var0 = imat->imat0;
 	const double gamma = score->gamma;
 	const double gamma2 = imat->gamma2;
@@ -459,18 +437,17 @@ static void imat_axpy(double alpha,
 	const size_t n = active->nz;
 	size_t i, j, k;
 
-	struct vector gamma_x0_dp;
-	vector_init(&gamma_x0_dp, dim);
-	design_muls0(1.0, BLAS_TRANS, design, vector_to_ptr(&imat->gamma_dp),
-		     active, 0.0, &gamma_x0_dp);
+	double *gamma_x0_dp = xmalloc(dim * sizeof(gamma_x0_dp[0]));
+	design_muls0(1.0, BLAS_TRANS, design, imat->gamma_dp,
+		     active, 0.0, gamma_x0_dp);
 
 	struct matrix x0_dp2;
 
 	matrix_init(&x0_dp2, dim, n);
 	for (j = 0; j < n; j++) {
 		const double *dp2_j = matrix_item_ptr(&imat->dp2, 0, j);
-		struct vector dst = matrix_col(&x0_dp2, j);
-		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, &dst);
+		double *dst = matrix_col(&x0_dp2, j);
+		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, dst);
 	}
 
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
@@ -478,21 +455,19 @@ static void imat_axpy(double alpha,
 
 	matrix_axpy(alpha * gamma, var0, y);
 	matrix_update1(y, alpha * gamma2, mean0, mean0);
-	matrix_update1(y, -alpha, mean0, &gamma_x0_dp);
-	matrix_update1(y, -alpha, &gamma_x0_dp, mean0);
+	matrix_update1(y, -alpha, mean0, gamma_x0_dp);
+	matrix_update1(y, -alpha, gamma_x0_dp, mean0);
 
 	double *x0_dp2_k = xmalloc(n * sizeof(x0_dp2_k));
 	for (k = 0; k < dim; k++) {
 		blas_dcopy(n, matrix_item_ptr(&x0_dp2, k, 0),
 			   matrix_lda(&x0_dp2), x0_dp2_k, 1);
-		struct vector dst = matrix_col(y, k);
-		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, &dst);
+		double *dst = matrix_col(y, k);
+		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, dst);
 	}
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
-	size_t dyn_off = design_dvars_index(design);
-	size_t dyn_dim = design_dvars_dim(design);
 	struct matrix y_1 = matrix_slice(y, 0, dyn_off, dim, dyn_dim);
 	struct matrix y1_ = matrix_slice(y, dyn_off, 0, dyn_dim, dim);
 	struct matrix y11 = matrix_slice(y, dyn_off, dyn_off, dyn_dim, dyn_dim);
@@ -507,39 +482,35 @@ static void imat_axpy(double alpha,
 	 *             + dX' * [ Diag(p0 - p p' ] * X0
 	 */
 
-	struct vector x0_j;
 	double one = 1.0;
 	struct vpattern pat_j;
 	size_t jrecv = 0;
 
-	vector_init(&x0_j, dim);
+	double *x0_j = xmalloc(dim * sizeof(x0_j[0]));
 
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
 
 	for (i = 0; i < n; i++) {
 		jrecv = active->indx[i];
-		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, &x0_j);
+		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, x0_j);
 
-		const struct vector dx_p_j = matrix_col(&imat->dx_p, i);
-		matrix_update1(&y_1, alpha, &x0_j, &dx_p_j);
-		matrix_update1(&y1_, alpha, &dx_p_j, &x0_j);
+		const double *dx_p_j = matrix_col(&imat->dx_p, i);
+		matrix_update1(&y_1, alpha, x0_j, dx_p_j);
+		matrix_update1(&y1_, alpha, dx_p_j, x0_j);
 
-		struct vector mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, i);
-		matrix_update1(&y_1, -alpha, &x0_j, &mean_dx_dp_j);
-		matrix_update1(&y1_, -alpha, &mean_dx_dp_j, &x0_j);
+		const double *mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, i);
+		matrix_update1(&y_1, -alpha, x0_j, mean_dx_dp_j);
+		matrix_update1(&y1_, -alpha, mean_dx_dp_j, x0_j);
 	}
 
-	matrix_update1(&y_1, -alpha, mean0, &imat->gamma_mean_dx);
-	matrix_update1(&y1_, -alpha, &imat->gamma_mean_dx, mean0);
+	matrix_update1(&y_1, -alpha, mean0, imat->gamma_mean_dx);
+	matrix_update1(&y1_, -alpha, imat->gamma_mean_dx, mean0);
 
-	vector_deinit(&x0_j);
+	free(x0_j);
 	free(x0_dp2_k);
 	matrix_deinit(&x0_dp2);
-	vector_deinit(&gamma_x0_dp);
-
-	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
-
+	free(gamma_x0_dp);
 }
 
 static void info_init(struct recv_loglik_info *info, const struct recv_model *m)
@@ -550,8 +521,8 @@ static void info_init(struct recv_loglik_info *info, const struct recv_model *m)
 	size_t dim = recv_model_dim(m);
 
 	matrix_init(&info->imat, dim, dim);
-	vector_init(&info->score, dim);
-	vector_init(&info->mean, dim);
+	info->score = xcalloc(dim, sizeof(info->score[0]));
+	info->mean = xcalloc(dim, sizeof(info->mean[0]));
 	info->dev = 0;
 	info->nsend = 0;
 	info->nrecv = 0;
@@ -559,16 +530,16 @@ static void info_init(struct recv_loglik_info *info, const struct recv_model *m)
 
 static void info_deinit(struct recv_loglik_info *info)
 {
-	vector_deinit(&info->mean);
-	vector_deinit(&info->score);
+	free(info->mean);
+	free(info->score);
 	matrix_deinit(&info->imat);
 }
 
-static void info_clear(struct recv_loglik_info *info)
+static void info_clear(struct recv_loglik_info *info, size_t dim)
 {
 	matrix_fill(&info->imat, 0);
-	vector_fill(&info->score, 0);
-	vector_fill(&info->mean, 0);
+	memset(info->score, 0, dim * sizeof(info->score[0]));
+	memset(info->mean, 0, dim * sizeof(info->mean[0]));
 	info->dev = 0;
 }
 
@@ -603,7 +574,7 @@ void sender_deinit(struct recv_loglik_sender *ll)
 	vpattern_deinit(&ll->active);
 }
 
-void sender_clear(struct recv_loglik_sender *ll)
+void sender_clear(struct recv_loglik_sender *ll, size_t dim)
 {
 	assert(ll);
 
@@ -612,10 +583,10 @@ void sender_clear(struct recv_loglik_sender *ll)
 	ll->dev_last = 0.0;
 	ll->dev = 0.0;
 	vpattern_clear(&ll->active);
-	score_clear(&ll->score_last);
-	score_clear(&ll->score);
-	imat_clear(&ll->imat_last);
-	imat_clear(&ll->imat);
+	score_clear(&ll->score_last, dim);
+	score_clear(&ll->score, dim);
+	imat_clear(&ll->imat_last, dim);
+	imat_clear(&ll->imat, dim);
 }
 
 static void sender_update_active(struct recv_loglik_sender *ll,
@@ -640,13 +611,15 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 				i0++;
 			} else {
 				assert(i0 == end0 || *i1 < *i0);
-				score_insert_active(&ll->score, i1 - begin1);
-				imat_insert_active(&ll->imat, i1 - begin1);
+				score_insert_active(&ll->score, i1 - begin1, n0);
+				score_insert_active(&ll->score_last, i1 - begin1, n0);
+				imat_insert_active(&ll->imat, i1 - begin1, n0);
+				imat_insert_active(&ll->imat_last, i1 - begin1, n0);
+				n0++;
 			}
 		}
 		assert(i0 == end0);
-		assert(score_active_count(&ll->score) == n);
-		assert(imat_active_count(&ll->imat) == n);
+		assert(n0 == n);
 
 		memcpy(ll->active.indx, active, n * sizeof(active[0]));
 		ll->active.nz = n;
@@ -658,6 +631,8 @@ void sender_add(struct recv_loglik_sender *ll,
 {
 	size_t isend = ll->isend;
 	const struct recv_model *model = ll->model;
+	const struct design *d = recv_model_design(model);
+	size_t dyn_dim = design_dvars_dim(d);
 	size_t i;
 
 	size_t *active, nactive;
@@ -672,10 +647,10 @@ void sender_add(struct recv_loglik_sender *ll,
 	ll->dev += ll->dev_last;
 
 	score_set(&ll->score_last, f, isend, jrecv, n, model);
-	score_update(&ll->score_last, &ll->score);
+	score_update(&ll->score_last, &ll->score, dyn_dim, nactive);
 
 	imat_set(&ll->imat_last, f, model, isend, n, &ll->score_last);
-	imat_update(&ll->imat_last, &ll->imat);
+	imat_update(&ll->imat_last, &ll->imat, dyn_dim, nactive);
 
 	ll->n_last = n;
 	ll->n += n;
@@ -706,10 +681,9 @@ double sender_last_dev(const struct recv_loglik_sender *sll)
 }
 
 void sender_axpy_mean(double alpha, const struct recv_loglik_sender *sll,
-		      struct vector *y)
+		      double *y)
 {
 	assert(sll);
-	assert(y);
 
 	const struct recv_model *model = sll->model;
 	const struct design *design = recv_model_design(model);
@@ -719,10 +693,9 @@ void sender_axpy_mean(double alpha, const struct recv_loglik_sender *sll,
 }
 
 void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
-			   struct vector *y)
+			   double *y)
 {
 	assert(sll);
-	assert(y);
 
 	const struct recv_model *model = sll->model;
 	const struct design *design = recv_model_design(model);
@@ -732,10 +705,9 @@ void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
 }
 
 void sender_axpy_score(double alpha, const struct recv_loglik_sender *sll,
-		       struct vector *y)
+		       double *y)
 {
 	assert(sll);
-	assert(y);
 
 	const struct recv_model *model = sll->model;
 	const struct design *design = recv_model_design(model);
@@ -745,10 +717,9 @@ void sender_axpy_score(double alpha, const struct recv_loglik_sender *sll,
 }
 
 void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
-			    struct vector *y)
+			    double *y)
 {
 	assert(sll);
-	assert(y);
 
 	const struct recv_model *model = sll->model;
 	const struct design *design = recv_model_design(model);
@@ -846,10 +817,10 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 	free(cohorts);
 }
 
-void cohort_clear(struct recv_loglik_cohort *cll)
+void cohort_clear(struct recv_loglik_cohort *cll, size_t dim)
 {
 	assert(cll);
-	info_clear(&cll->info);
+	info_clear(&cll->info, dim);
 	cll->info.dev = 0.0;
 	cll->info.nsend = 0;
 	cll->info.nrecv = 0;
@@ -860,16 +831,18 @@ void recv_loglik_clear(struct recv_loglik *ll)
 {
 	assert(ll);
 
+	const struct recv_model *m = ll->model;
+	size_t dim = recv_model_dim(m);
 	struct recv_loglik_cohort *cohorts = ll->cohorts;
-	size_t ic, nc = recv_model_cohort_count(ll->model);
+	size_t ic, nc = recv_model_cohort_count(m);
 	for (ic = 0; ic < nc; ic++) {
-		cohort_clear(&cohorts[ic]);
+		cohort_clear(&cohorts[ic], dim);
 	}
 
 	struct recv_loglik_sender *senders = ll->senders;
-	size_t isend, nsend = recv_model_send_count(ll->model);
+	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
-		sender_clear(&senders[isend]);
+		sender_clear(&senders[isend], dim);
 	}
 
 	ll->last = NULL;
@@ -976,19 +949,16 @@ static double recv_loglik_avg_dev_nocache(const struct recv_loglik *ll,
 
 static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 					      const struct recv_loglik *ll,
-					      size_t c, struct vector *y)
+					      size_t c, double *y)
 {
 	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
-	assert(y);
-	assert((size_t)vector_dim(y) == recv_model_dim(ll->model));
 
 	const size_t *cohorts = recv_model_cohorts(ll->model);
 	size_t isend, nsend = recv_model_count(ll->model);
-
-	struct vector avg_mean, diff;
-	vector_init(&avg_mean, recv_model_dim(ll->model));
-	vector_init(&diff, recv_model_dim(ll->model));
+	size_t dim = recv_model_dim(ll->model);
+	double *avg_mean = xcalloc(dim, sizeof(avg_mean[0]));
+	double *diff = xmalloc(dim * sizeof(diff[0]));
 	size_t ntot, n;
 
 	ntot = 0;
@@ -1002,33 +972,31 @@ static void recv_loglik_axpy_avg_mean_nocache(double alpha,
 		n = sender_count(sll);
 		if (n > 0) {
 			ntot += n;
-			vector_assign_copy(&diff, &avg_mean);
-			sender_axpy_mean(-1.0 / n, sll, &diff);
-			vector_axpy(-((double)n) / ntot, &diff, &avg_mean);
+			blas_dcopy(dim, avg_mean, 1, diff, 1);
+			sender_axpy_mean(-1.0 / n, sll, diff);
+			blas_daxpy(dim, -((double)n) / ntot, diff, 1, avg_mean, 1);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll, c));
 
-	vector_axpy(alpha, &avg_mean, y);
-	vector_deinit(&diff);
-	vector_deinit(&avg_mean);
+	blas_daxpy(dim, alpha, avg_mean, 1, y, 1);
+	free(diff);
+	free(avg_mean);
 }
 
 static void recv_loglik_axpy_avg_score_nocache(double alpha,
 					       const struct recv_loglik *ll,
-					       size_t c, struct vector *y)
+					       size_t c, double *y)
 {
 	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
-	assert(y);
-	assert((size_t)vector_dim(y) == recv_model_dim(ll->model));
 
 	const size_t *cohorts = recv_model_cohorts(ll->model);
 	size_t isend, nsend = recv_model_count(ll->model);
 
-	struct vector avg_score, diff;
-	vector_init(&avg_score, recv_model_dim(ll->model));
-	vector_init(&diff, recv_model_dim(ll->model));
+	size_t dim = recv_model_dim(ll->model);
+	double *avg_score = xcalloc(dim, sizeof(avg_score[0]));
+	double *diff = xmalloc(dim * sizeof(diff[0]));
 	size_t ntot, n;
 
 	ntot = 0;
@@ -1042,16 +1010,17 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha,
 		n = sender_count(sll);
 		if (n > 0) {
 			ntot += n;
-			vector_assign_copy(&diff, &avg_score);
-			sender_axpy_score(-1.0 / (double)n, sll, &diff);
-			vector_axpy(-((double)n) / ntot, &diff, &avg_score);
+			blas_dcopy(dim, avg_score, 1, diff, 1);
+			sender_axpy_score(-1.0 / (double)n, sll, diff);
+			blas_daxpy(dim, -((double)n) / ntot, diff, 1,
+				avg_score, 1);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll, c));
 
-	vector_axpy(alpha, &avg_score, y);
-	vector_deinit(&diff);
-	vector_deinit(&avg_score);
+	blas_daxpy(dim, alpha, avg_score, 1, y, 1);
+	free(diff);
+	free(avg_score);
 }
 
 static void recv_loglik_axpy_avg_imat_nocache(double alpha,
@@ -1107,11 +1076,13 @@ static void cache_info(struct recv_loglik *ll, size_t c)
 	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
 
-	info_clear(&ll->cohorts[c].info);
+	size_t dim = recv_model_dim(ll->model);
+
+	info_clear(&ll->cohorts[c].info, dim);
 	ll->cohorts[c].info.dev += recv_loglik_avg_dev_nocache(ll, c);
-	recv_loglik_axpy_avg_mean_nocache(1, ll, c, &ll->cohorts[c].info.mean);
+	recv_loglik_axpy_avg_mean_nocache(1, ll, c, ll->cohorts[c].info.mean);
 	recv_loglik_axpy_avg_score_nocache(1, ll, c,
-					   &ll->cohorts[c].info.score);
+					   ll->cohorts[c].info.score);
 	recv_loglik_axpy_avg_imat_nocache(1, ll, c, &ll->cohorts[c].info.imat);
 }
 
@@ -1141,33 +1112,28 @@ double recv_loglik_avg_dev(const struct recv_loglik *ll, size_t c)
 }
 
 void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
-			       size_t c, struct vector *y)
+			       size_t c, double *y)
 {
-	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
-	assert(y);
-	assert((size_t)vector_dim(y) == recv_model_dim(ll->model));
 
+	size_t n = recv_model_dim(ll->model);
 	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
-	vector_axpy(alpha, &info->mean, y);
+	blas_daxpy(n, alpha, info->mean, 1, y, 1);
 }
 
 void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
-				size_t c, struct vector *y)
+				size_t c, double *y)
 {
-	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
-	assert(y);
-	assert((size_t)vector_dim(y) == recv_model_dim(ll->model));
 
+	size_t n = recv_model_dim(ll->model);
 	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
-	vector_axpy(alpha, &info->score, y);
+	blas_daxpy(n, alpha, info->score, 1, y, 1);
 }
 
 void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
 			       size_t c, struct matrix *y)
 {
-	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
 	assert(y);
 	assert((size_t)matrix_nrow(y) == recv_model_dim(ll->model));
@@ -1179,24 +1145,21 @@ void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
 
 double recv_loglik_last_dev(const struct recv_loglik *ll)
 {
-	assert(ll);
 	assert(ll->last);
 
 	return sender_last_dev(ll->last);
 }
 
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
-				struct vector *y)
+				double *y)
 {
-	assert(ll);
 	assert(ll->last);
 	sender_axpy_last_mean(alpha, ll->last, y);
 }
 
 void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
-				 struct vector *y)
+				 double *y)
 {
-	assert(ll);
 	assert(ll->last);
 	sender_axpy_last_score(alpha, ll->last, y);
 }
@@ -1204,7 +1167,6 @@ void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
 				struct matrix *y)
 {
-	assert(ll);
 	assert(ll->last);
 	sender_axpy_last_imat(alpha, ll->last, y);
 }

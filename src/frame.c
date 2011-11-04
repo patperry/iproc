@@ -148,11 +148,6 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 static void recv_frame_clear(struct recv_frame *rf)
 {
 	assert(rf);
-
-	size_t i, n = rf->active.nz;
-	for (i = 0; i < n; i++) {
-		vector_deinit(&rf->dx[i]);
-	}
 	vpattern_clear(&rf->active);
 }
 
@@ -165,8 +160,8 @@ static void recv_frame_deinit(struct recv_frame *rf)
 	vpattern_deinit(&rf->active);
 }
 
-static struct vector *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
-				    size_t dyn_dim)
+static double *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
+			     size_t dyn_dim)
 {
 	assert(rf);
 
@@ -177,17 +172,16 @@ static struct vector *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
 	if (ins) {
 		if (nzmax != rf->active.nzmax) {
 			nzmax = rf->active.nzmax;
-			rf->dx = xrealloc(rf->dx, nzmax * sizeof(rf->dx[0]));
+			rf->dx = xrealloc(rf->dx, nzmax * dyn_dim * sizeof(rf->dx[0]));
 		}
 
-		memmove(rf->dx + ix + 1, rf->dx + ix,
-			(rf->active.nz - 1 - ix) * sizeof(rf->dx[0]));
-		vector_init(&rf->dx[ix], dyn_dim);
+		memmove(rf->dx + (ix + 1) * dyn_dim,
+			rf->dx + ix * dyn_dim,
+			(rf->active.nz - 1 - ix) * dyn_dim * sizeof(rf->dx[0]));
+		memset(rf->dx + ix * dyn_dim, 0, dyn_dim * sizeof(rf->dx[0]));
 	}
 
-	struct vector *dx = &rf->dx[ix];
-	assert((size_t)vector_dim(dx) == dyn_dim);
-	return dx;
+	return rf->dx + ix * dyn_dim;
 }
 
 static void recv_frames_init(struct frame *f)
@@ -530,8 +524,6 @@ void frame_advance(struct frame *f, double time)
 	assert(f);
 	assert(time >= frame_time(f));
 
-	//fprintf(stderr, "=============== Advance (%"SSIZE_FMT") ===============\n", (size_t)time);
-
 	if (frame_time(f) < time)
 		process_current_messages(f);
 
@@ -552,10 +544,8 @@ void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
 	assert(isend < frame_send_count(f));
 	assert(jrecv < frame_recv_count(f));
 
-	struct vector *dx = (struct vector *)frame_recv_dx(f, isend, jrecv);
-	sblas_daxpyi(1.0, delta, pat, vector_to_ptr(dx));
-
-	//fprintf(stderr, "-> recv_update %" SSIZE_FMT ", %" SSIZE_FMT "\n", isend, jrecv);
+	double *dx = (double *)frame_recv_dx(f, isend, jrecv);
+	sblas_daxpyi(1.0, delta, pat, dx);
 
 	const struct frame_observer *obs;
 	ARRAY_FOREACH(obs, &f->observers) {
@@ -566,16 +556,7 @@ void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
 	}
 }
 
-//struct vector frame_send_x(struct frame *f, size_t isend)
-//{
-//      assert(f);
-//      assert(0 <= isend && isend < design_send_count(f->design));
-//
-//      return matrix_col(&f->send_xt, isend);
-//}
-
-const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
-				   size_t jrecv)
+const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv)
 {
 	assert(f);
 	assert(isend < frame_send_count(f));
@@ -588,12 +569,13 @@ const struct vector *frame_recv_dx(const struct frame *f, size_t isend,
 }
 
 void frame_recv_get_dx(const struct frame *f, size_t isend,
-		       struct vector **dxp, size_t **activep,
+		       double **dxp, size_t **activep,
 		       size_t *nactivep)
 {
-	assert(f);
 	assert(isend < frame_send_count(f));
+
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
+
 	*dxp = rf->dx;
 	*activep = rf->active.indx;
 	*nactivep = rf->active.nz;
@@ -601,56 +583,34 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 
 void frame_recv_mul(double alpha, enum blas_trans trans,
 		    const struct frame *f, size_t isend,
-		    const struct vector *x, double beta, struct vector *y)
+		    const double *x, double beta, double *y)
 {
-	const struct design *design = frame_recv_design(f);
-
-	assert(f);
 	assert(isend < frame_send_count(f));
-	assert(x);
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(x) == design_dim(design));
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(x) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_dim(design));
 
-	size_t off = design_dvars_index(design);
-	size_t dim = design_dvars_dim(design);
+	const struct design *d = frame_recv_design(f);
+	size_t off = design_dvars_index(d);
 
-	design_mul0(alpha, trans, design, x, beta, y);
+	design_mul0(alpha, trans, d, x, beta, y);
 
 	if (trans == BLAS_NOTRANS) {
-		struct vector xsub = vector_slice(x, off, dim);
-		frame_recv_dmul(alpha, trans, f, isend, &xsub, 1.0, y);
+		frame_recv_dmul(alpha, trans, f, isend, x + off, 1.0, y);
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
-		frame_recv_dmul(alpha, trans, f, isend, x, 1.0, &ysub);
+		frame_recv_dmul(alpha, trans, f, isend, x, 1.0, y + off);
 	}
 }
 
 void frame_recv_muls(double alpha, enum blas_trans trans,
 		     const struct frame *f, size_t isend,
 		     const double *x, const struct vpattern *pat,
-		     double beta, struct vector *y)
+		     double beta, double *y)
 {
-	const struct design *design = frame_recv_design(f);
-
-	assert(f);
 	assert(isend < frame_send_count(f));
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_dim(design));
 
-	size_t off = design_dvars_index(design);
-	size_t dim = design_dvars_dim(design);
+	const struct design *d = frame_recv_design(f);
+	size_t off = design_dvars_index(d);
+	size_t dim = design_dvars_dim(d);
 
-	design_muls0(alpha, trans, design, x, pat, beta, y);
+	design_muls0(alpha, trans, d, x, pat, beta, y);
 
 	if (trans == BLAS_NOTRANS) {
 		ptrdiff_t jx0 = vpattern_find(pat, off);
@@ -664,53 +624,38 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 
 		for (iz = 0; iz < nz; iz++) {
 			size_t jrecv = rf->active.indx[iz];
-			const struct vector *dx = &rf->dx[iz];
+			const double *dx = rf->dx + iz * dim;
 
 			double dot = 0;
 			for (jz = jz0; jz < jz1; jz++) {
 				size_t i = pat->indx[jz] - off;
-				double x_i = x[jz];
-				double dx_i = vector_item(dx, i);
-
-				dot += x_i * dx_i;
+				dot += x[jz] * dx[i];
 			}
 
-			double *yjrecv = vector_item_ptr(y, jrecv);
-			*yjrecv += alpha * dot;
+			y[jrecv] += alpha * dot;
 		}
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
-		frame_recv_dmuls(alpha, trans, f, isend, x, pat, 1.0, &ysub);
+		frame_recv_dmuls(alpha, trans, f, isend, x, pat, 1.0, y + off);
 	}
 }
 
 void frame_recv_dmul(double alpha, enum blas_trans trans,
 		     const struct frame *f, size_t isend,
-		     const struct vector *x, double beta, struct vector *y)
+		     const double *x, double beta, double *y)
 {
-	const struct design *d = frame_recv_design(f);
-
-	assert(f);
 	assert(isend < frame_send_count(f));
-	assert(x);
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-		|| (size_t)vector_dim(x) == design_dvars_dim(d));
-	assert(trans != BLAS_NOTRANS
-		|| (size_t)vector_dim(y) == design_count(d));
-	assert(trans == BLAS_NOTRANS
-		|| (size_t)vector_dim(x) == design_count(d));
-	assert(trans == BLAS_NOTRANS
-		|| (size_t)vector_dim(y) == design_dvars_dim(d));
+
+	const struct design *d = frame_recv_design(f);
+	size_t n = design_count(d);
+	size_t dim = design_dvars_dim(d);
+	size_t ny = (trans == BLAS_NOTRANS ? n : dim);
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		vector_fill(y, 0.0);
+		memset(y, 0, ny * sizeof(y[0]));
 	} else if (beta != 1.0) {
-		vector_scale(y, beta);
+		blas_dscal(ny, beta, y, 1);
 	}
-
-	size_t dim = design_dvars_dim(d);
 
 	if (dim == 0)
 		return;
@@ -718,28 +663,25 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 	const struct recv_frame *rf = recv_frames_item(f, isend);
 	size_t iz, nz = rf->active.nz;
 	size_t jrecv;
-	const struct vector *dx;
+	const double *dx;
 
 	if (trans == BLAS_NOTRANS) {
 		for (iz = 0; iz < nz; iz++) {
 			jrecv = rf->active.indx[iz];
-			dx = &rf->dx[iz];
+			dx = rf->dx + iz * dim;
 
-			double dot = vector_dot(dx, x);
-			double *yjrecv = vector_item_ptr(y, jrecv);
-			*yjrecv += alpha * dot;
+			double dot = blas_ddot(dim, dx, 1, x, 1);
+			y[jrecv] += alpha * dot;
 		}
 	} else {
 		for (iz = 0; iz < nz; iz++) {
 			jrecv = rf->active.indx[iz];
-			dx = &rf->dx[iz];
+			dx = rf->dx + iz * dim;
 
-			double xjrecv = *vector_item_ptr(x, jrecv);
-
-			if (xjrecv == 0.0)
+			if (x[jrecv] == 0.0)
 				continue;
 
-			vector_axpy(alpha * xjrecv, dx, y);
+			blas_daxpy(dim, alpha * x[jrecv], dx, 1, y, 1);
 		}
 	}
 }
@@ -747,26 +689,21 @@ void frame_recv_dmul(double alpha, enum blas_trans trans,
 void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		      const struct frame *f, size_t isend,
 		      const double *x, const struct vpattern *pat,
-		      double beta, struct vector *y)
+		      double beta, double *y)
 {
-	const struct design *design = frame_recv_design(f);
-
-	assert(f);
 	assert(isend < frame_send_count(f));
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_dvars_dim(design));
+
+	const struct design *d = frame_recv_design(f);
+	size_t n = design_count(d);
+	size_t dim = design_dvars_dim(d);
+	size_t ny = (trans == BLAS_NOTRANS ? n : dim);
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		vector_fill(y, 0.0);
+		memset(y, 0, ny * sizeof(y[0]));
 	} else if (beta != 1.0) {
-		vector_scale(y, beta);
+		blas_dscal(ny, beta, y, 1);
 	}
-
-	size_t dim = design_dvars_dim(design);
 
 	if (dim == 0)
 		return;
@@ -774,17 +711,16 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 	const struct recv_frame *rf = recv_frames_item(f, isend);
 	size_t iz, nz = rf->active.nz;
 	size_t jrecv;
-	const struct vector *dx;
+	const double *dx;
 
 	if (trans == BLAS_NOTRANS) {
 
 		for (iz = 0; iz < nz; iz++) {
 			jrecv = rf->active.indx[iz];
-			dx = &rf->dx[iz];
+			dx = rf->dx + iz * dim;
 
-			double dot = sblas_ddoti(x, pat, vector_to_ptr(dx));
-			double *yjrecv = vector_item_ptr(y, jrecv);
-			*yjrecv += alpha * dot;
+			double dot = sblas_ddoti(x, pat, dx);
+			y[jrecv] += alpha * dot;
 		}
 	} else {
 		size_t jz, mz = pat->nz;
@@ -794,10 +730,10 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 			if (ix < 0)
 				continue;
 
-			dx = &rf->dx[ix];
+			dx = rf->dx + ix * dim;
 			/* y := y + alpha * x[j] * dx[j] */
 			double jscale = alpha * x[jz];
-			vector_axpy(jscale, dx, y);
+			blas_daxpy(dim, jscale, dx, 1, y, 1);
 		}
 	}
 }

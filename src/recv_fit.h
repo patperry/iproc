@@ -1,7 +1,6 @@
 #ifndef _RECV_FIT_H
 #define _RECV_FIT_H
 
-#include "bfgs.h"
 #include "design.h"
 #include "linalg.h"
 #include "linesearch.h"
@@ -9,7 +8,6 @@
 #include "messages.h"
 #include "recv_loglik.h"
 #include "recv_model.h"
-#include "vector.h"
 
 #define RECV_FIT_GTOL0		(1e-8)
 #define RECV_FIT_XTOL0		(1e-8)
@@ -47,7 +45,7 @@ enum recv_fit_task {
 };
 
 struct recv_fit_resid {
-	struct vector vector;
+	double *vector;
 	double norm2;
 };
 
@@ -61,12 +59,11 @@ struct recv_fit_constr {
 };
 
 struct recv_fit_eval {
-	struct vector params;
+	double *params;
 	struct matrix coefs;
-	struct vector duals;
+	double *duals;
 	struct recv_loglik loglik;
 	struct recv_fit_resid resid;
-	bool in_domain;
 };
 
 struct recv_fit_kkt {
@@ -77,11 +74,11 @@ struct recv_fit_kkt {
 };
 
 struct recv_fit_search {
-	struct vector vector;
+	double *vector;
 };
 
 struct recv_fit_rgrad {
-	struct vector vector;
+	double *vector;
 };
 
 struct recv_fit {
@@ -143,7 +140,7 @@ const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
 double recv_fit_dev(const struct recv_fit *fit);
 double recv_fit_dev0(const struct recv_fit *fit);
 const struct matrix *recv_fit_coefs(const struct recv_fit *fit);
-const struct vector *recv_fit_duals(const struct recv_fit *fit);
+const double *recv_fit_duals(const struct recv_fit *fit);
 double recv_fit_step(const struct recv_fit *fit);
 double recv_fit_grad_norm2(const struct recv_fit *fit);
 

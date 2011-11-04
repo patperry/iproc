@@ -8,8 +8,8 @@
 
 struct recv_resid_count {
 	struct matrix dyad;
-	struct vector send;
-	struct vector recv;
+	double *send;
+	double *recv;
 	ssize_t tot;
 
 	// internal

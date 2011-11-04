@@ -5,7 +5,6 @@
 #include "sblas.h"
 #include "design.h"
 #include "frame.h"
-#include "vector.h"
 #include "matrix.h"
 
 /* I. Model
@@ -114,15 +113,14 @@ struct recv_model_cohort {
 	double max_eta0;
 	double log_W0;		// (log_W0)_true - max_eta0
 	double W0;		// (W0)_true / exp(max_eta0)
-	struct vector eta0;
-	struct vector p0;
-	struct vector mean0;
+	double *eta0;
+	double *p0;
+	double *mean0;
 	struct matrix imat0;
 
 	/* debug */
 #ifndef NDEBUG
-
-	struct vector w0;
+	double *w0;
 #endif
 };
 
@@ -164,11 +162,11 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
 double recv_model_logsumwt0(const struct recv_model *m, size_t c);
-struct vector *recv_model_logwts0(const struct recv_model *m, size_t c);
-struct vector *recv_model_probs0(const struct recv_model *m, size_t c);
+double *recv_model_logwts0(const struct recv_model *m, size_t c);
+double *recv_model_probs0(const struct recv_model *m, size_t c);
 
 double recv_model_prob0(const struct recv_model *m, size_t c, size_t jrecv);
-struct vector *recv_model_mean0(const struct recv_model *m, size_t c);
+double *recv_model_mean0(const struct recv_model *m, size_t c);
 struct matrix *recv_model_imat0(const struct recv_model *m, size_t c);
 
 /* updated values */
@@ -178,7 +176,7 @@ double recv_model_logprob(const struct recv_model *m, size_t isend,
 double recv_model_prob(const struct recv_model *m, size_t isend,
 		       size_t jrecv);
 void recv_model_axpy_probs(double alpha, const struct recv_model *m,
-			   size_t isend, struct vector *y);
+			   size_t isend, double *y);
 
 void recv_model_get_active(const struct recv_model *m, size_t isend,
 			   size_t **jrecv, size_t *n);

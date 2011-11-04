@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "xalloc.h"
-#include "vector.h"
 #include "recv_boot.h"
 
 static size_t sample1(const double *probs, size_t n, dsfmt_t * dsfmt)
@@ -70,19 +69,14 @@ void recv_boot_init(struct recv_boot *boot,
 	size_t nrecv = frame_recv_count(f);
 	size_t max_nto = messages_max_nto(msgs);
 	size_t *to = xcalloc(max_nto, sizeof(to[0]));
-
-	struct vector probs;
+	double *p = xmalloc(nrecv * sizeof(p[0]));
+	size_t maxntry = 100000000;
 
 	struct messages_iter it;
 	const struct message *msg;
 	double t;
 	size_t i, n;
 	size_t from, nto;
-
-	vector_init(&probs, nrecv);
-	double *p = vector_to_ptr(&probs);
-
-	size_t maxntry = 100000000;
 
 	MESSAGES_FOREACH(it, msgs) {
 		t = MESSAGES_TIME(it);
@@ -95,8 +89,8 @@ void recv_boot_init(struct recv_boot *boot,
 			from = msg->from;
 			nto = msg->nto;
 
-			vector_fill(&probs, 0.0);
-			recv_model_axpy_probs(1.0, &boot->model, from, &probs);
+			memset(p, 0, nrecv * sizeof(p[0]));
+			recv_model_axpy_probs(1.0, &boot->model, from, p);
 
 			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
 				fprintf(stdout,
@@ -107,9 +101,8 @@ void recv_boot_init(struct recv_boot *boot,
 					SSIZE_FMT "\n", nto);
 
 				printf("probs:\n");
-				for (i = 0; i < (size_t)vector_dim(&probs); i++) {
-					printf("%.10e, ",
-					       vector_item(&probs, i));
+				for (i = 0; i < nrecv; i++) {
+					printf("%.10e, ", p[i]);
 				}
 				exit(1);
 			}
@@ -124,7 +117,7 @@ void recv_boot_init(struct recv_boot *boot,
 		}
 	}
 
-	vector_deinit(&probs);
+	free(p);
 	free(to);
 }
 

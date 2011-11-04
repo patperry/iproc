@@ -91,8 +91,6 @@ libcore_la_SOURCES = \
 	lib/linalg/src/sblas.h \
 	src/core/array.c \
 	src/core/array.h \
-	src/core/bfgs.c \
-	src/core/bfgs.h \
 	src/core/compare.h \
 	src/core/delegate.h \
 	src/core/ieee754.c \
@@ -112,9 +110,7 @@ libcore_la_SOURCES = \
 	src/core/slice.c \
 	src/core/slice.h \
 	src/core/util.h \
-	src/core/util.c \
-	src/core/vector.c \
-	src/core/vector.h
+	src/core/util.c
 
 libcore_la_LIBADD = \
 	libminpack.la \
