@@ -107,8 +107,6 @@ libcore_la_SOURCES = \
 	src/core/port.h \
 	src/core/refcount.c \
 	src/core/refcount.h \
-	src/core/slice.c \
-	src/core/slice.h \
 	src/core/util.h \
 	src/core/util.c
 

@@ -30,8 +30,6 @@
 		22234187144F364D00D99D8E /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FDA134DB9BC0008B25B /* port.h */; };
 		22234188144F364D00D99D8E /* refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE87132EC8710000097B /* refcount.c */; };
 		22234189144F364D00D99D8E /* refcount.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE88132EC8710000097B /* refcount.h */; };
-		2223418A144F364D00D99D8E /* slice.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* slice.c */; };
-		2223418B144F364D00D99D8E /* slice.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FEC134E230D0008B25B /* slice.h */; };
 		2223418E144F364D00D99D8E /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FF0134EB7E50008B25B /* util.c */; };
 		2223418F144F364D00D99D8E /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8D132EC8710000097B /* util.h */; };
 		2223419E144F368800D99D8E /* coreutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234192144F368800D99D8E /* coreutil.h */; };
@@ -437,8 +435,6 @@
 
 /* Begin PBXFileReference section */
 		221C5FDA134DB9BC0008B25B /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = src/core/port.h; sourceTree = "<group>"; };
-		221C5FEB134E230D0008B25B /* slice.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = slice.c; path = src/core/slice.c; sourceTree = "<group>"; };
-		221C5FEC134E230D0008B25B /* slice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = slice.h; path = src/core/slice.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221C5FF0134EB7E50008B25B /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = src/core/util.c; sourceTree = "<group>"; };
 		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
 		221FEE78132EC8710000097B /* ieee754.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ieee754.c; path = src/core/ieee754.c; sourceTree = "<group>"; };
@@ -722,8 +718,6 @@
 				221C5FDA134DB9BC0008B25B /* port.h */,
 				221FEE87132EC8710000097B /* refcount.c */,
 				221FEE88132EC8710000097B /* refcount.h */,
-				221C5FEB134E230D0008B25B /* slice.c */,
-				221C5FEC134E230D0008B25B /* slice.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
 			);
@@ -997,7 +991,6 @@
 				22234186144F364D00D99D8E /* matrix.h in Headers */,
 				22234187144F364D00D99D8E /* port.h in Headers */,
 				22234189144F364D00D99D8E /* refcount.h in Headers */,
-				2223418B144F364D00D99D8E /* slice.h in Headers */,
 				2223418F144F364D00D99D8E /* util.h in Headers */,
 				2223419E144F368800D99D8E /* coreutil.h in Headers */,
 				2223419F144F368800D99D8E /* hash.h in Headers */,
@@ -1383,7 +1376,6 @@
 				22234182144F364D00D99D8E /* logsumexp.c in Sources */,
 				22234185144F364D00D99D8E /* matrix.c in Sources */,
 				22234188144F364D00D99D8E /* refcount.c in Sources */,
-				2223418A144F364D00D99D8E /* slice.c in Sources */,
 				2223418E144F364D00D99D8E /* util.c in Sources */,
 				222341A0144F368800D99D8E /* hashset.c in Sources */,
 				222341A2144F368800D99D8E /* pqueue.c in Sources */,
