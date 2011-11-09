@@ -19,8 +19,6 @@
 		22234181144F364D00D99D8E /* linesearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 226E3CBD13AFEE610083E9E0 /* linesearch.h */; };
 		22234182144F364D00D99D8E /* logsumexp.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE7C132EC8710000097B /* logsumexp.c */; };
 		22234183144F364D00D99D8E /* logsumexp.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE7D132EC8710000097B /* logsumexp.h */; };
-		22234184144F364D00D99D8E /* macconfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601413511AD80008B25B /* macconfig.h */; };
-		22234187144F364D00D99D8E /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FDA134DB9BC0008B25B /* port.h */; };
 		2223419E144F368800D99D8E /* coreutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234192144F368800D99D8E /* coreutil.h */; };
 		2223419F144F368800D99D8E /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234193144F368800D99D8E /* hash.h */; };
 		222341A0144F368800D99D8E /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22234194144F368800D99D8E /* hashset.c */; };
@@ -91,6 +89,7 @@
 		2235DC0A13C7BBA500053BAA /* libjson.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2235DBFC13C7ACE100053BAA /* libjson.dylib */; };
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223BFE4813AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
+		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
 		2267890E134CD5B3001309F5 /* cmockery.h in Headers */ = {isa = PBXBuildFile; fileRef = 2267890C134CD5B3001309F5 /* cmockery.h */; };
 		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
@@ -424,8 +423,6 @@
 
 /* Begin PBXFileReference section */
 		2210A3FC146ADE9F00C42B90 /* coreutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coreutil.c; path = lib/core/src/coreutil.c; sourceTree = "<group>"; };
-		221C5FDA134DB9BC0008B25B /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = src/core/port.h; sourceTree = "<group>"; };
-		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
 		221FEE78132EC8710000097B /* ieee754.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ieee754.c; path = src/core/ieee754.c; sourceTree = "<group>"; };
 		221FEE79132EC8710000097B /* ieee754.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ieee754.h; path = src/core/ieee754.h; sourceTree = "<group>"; };
 		221FEE7C132EC8710000097B /* logsumexp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = logsumexp.c; path = src/core/logsumexp.c; sourceTree = "<group>"; };
@@ -498,6 +495,7 @@
 		225ECDAF13B00E4100E20D8F /* f2c.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = f2c.h; path = lib/libf2c/f2c.h; sourceTree = "<group>"; };
 		225ECDB013B00E4100E20D8F /* s_cmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_cmp.c; path = lib/libf2c/s_cmp.c; sourceTree = "<group>"; };
 		225ECDB113B00E4100E20D8F /* s_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_copy.c; path = lib/libf2c/s_copy.c; sourceTree = "<group>"; };
+		22602687146B38EE00BA6347 /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = lib/port.h; sourceTree = "<group>"; };
 		22678906134CD584001309F5 /* libcmockery.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcmockery.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267890B134CD5B3001309F5 /* cmockery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmockery.c; path = tests/cmockery/cmockery.c; sourceTree = "<group>"; };
 		2267890C134CD5B3001309F5 /* cmockery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmockery.h; path = tests/cmockery/cmockery.h; sourceTree = "<group>"; };
@@ -684,8 +682,6 @@
 				226E3CBD13AFEE610083E9E0 /* linesearch.h */,
 				221FEE7C132EC8710000097B /* logsumexp.c */,
 				221FEE7D132EC8710000097B /* logsumexp.h */,
-				221C601413511AD80008B25B /* macconfig.h */,
-				221C5FDA134DB9BC0008B25B /* port.h */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -930,6 +926,7 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
+				22602687146B38EE00BA6347 /* port.h */,
 				22234160144F351300D99D8E /* Core */,
 				22749E381402A8F700C5A955 /* DSFMT */,
 				22867A14132FDA8E0090D617 /* Libf2c */,
@@ -950,8 +947,6 @@
 				2223417D144F364D00D99D8E /* ieee754.h in Headers */,
 				22234181144F364D00D99D8E /* linesearch.h in Headers */,
 				22234183144F364D00D99D8E /* logsumexp.h in Headers */,
-				22234184144F364D00D99D8E /* macconfig.h in Headers */,
-				22234187144F364D00D99D8E /* port.h in Headers */,
 				2223419E144F368800D99D8E /* coreutil.h in Headers */,
 				2223419F144F368800D99D8E /* hash.h in Headers */,
 				222341A1144F368800D99D8E /* hashset.h in Headers */,
@@ -979,6 +974,7 @@
 				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
 				22E9213D1406DB1E008115DE /* recv_resid.h in Headers */,
 				22E9214414082779008115DE /* recv_boot.h in Headers */,
+				22602688146B38EE00BA6347 /* port.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

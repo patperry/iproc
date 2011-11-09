@@ -1,6 +1,8 @@
 #ifndef _LINESEARCH_H
 #define _LINESEARCH_H
 
+#include <stddef.h>
+
 #define LINESEARCH_FTOL0	(1e-4)
 #define LINESEARCH_GTOL0	(0.9)
 #define LINESEARCH_XTOL0	(1e-15)
@@ -37,7 +39,7 @@ struct linesearch {
 	double stp, f, f0, g, g0;
 	enum linesearch_task task;
 	char taskbuf[61];
-	f77int isave[2];
+	ptrdiff_t isave[2];
 	double dsave[13];
 };
 

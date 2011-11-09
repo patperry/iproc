@@ -2,10 +2,14 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
+
 #include "coreutil.h"
 #include "xalloc.h"
+
 #include "messages.h"
+
 
 static void messages_grow_reps(struct messages *msgs, size_t delta)
 {

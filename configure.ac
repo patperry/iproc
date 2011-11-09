@@ -10,7 +10,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for programs
-AC_PROG_CC_C99
+AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for libraries
@@ -21,37 +21,14 @@ AX_CHECK_LAPACK
 
 # Checks for header files
 AC_HEADER_ASSERT
-AC_HEADER_STDBOOL
 
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
 AC_C_INLINE
-AX_C___ALIGNOF__
-
-AC_TYPE_INT8_T
-AC_TYPE_INT16_T
-AC_TYPE_INT32_T
-AC_TYPE_INT64_T
-AC_TYPE_INTMAX_T
 AC_TYPE_INTPTR_T
-AC_TYPE_SSIZE_T
-AC_TYPE_UINT8_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINTMAX_T
-AC_TYPE_UINTPTR_T
-
-AC_CHECK_SIZEOF([int])
-AC_CHECK_SIZEOF([intmax_t])
-AC_CHECK_SIZEOF([long])
-AC_CHECK_SIZEOF([long long])
-AC_CHECK_SIZEOF([size_t])
-AC_CHECK_SIZEOF([void *])
 
 # Checks for library functions
 AC_CONFIG_LIBOBJ_DIR([lib])
-AC_FUNC_ALLOCA
 
 # Checks for system services
 

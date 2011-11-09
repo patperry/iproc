@@ -1,9 +1,12 @@
 #include "port.h"
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "util.h"
+
+#include "f77.h"
+
 #include "linesearch.h"
 
 #define TASK_START		"START"
@@ -43,7 +46,7 @@ static void linesearch_dcsrch(struct linesearch *ls)
 	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,
 		&ls->ctrl.gtol, &ls->ctrl.xtol,
 		ls->taskbuf, &ls->ctrl.stpmin, &ls->ctrl.stpmax,
-		ls->isave, ls->dsave, task_len);
+		(f77int *)ls->isave, ls->dsave, task_len);
 
 	if (!strncmp(ls->taskbuf, TASK_CONV, strlen(TASK_CONV))) {
 		ls->task = LINESEARCH_CONV;

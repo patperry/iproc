@@ -64,6 +64,7 @@ libiproc_la_LIBADD = \
 	libdSFMT.la
 
 libcore_la_SOURCES = \
+	lib/port.h \
 	lib/core/src/coreutil.c \
 	lib/core/src/coreutil.h \
 	lib/core/src/hash.h \
@@ -95,9 +96,7 @@ libcore_la_SOURCES = \
 	src/core/linesearch.c \
 	src/core/linesearch.h \
 	src/core/logsumexp.c \
-	src/core/logsumexp.h \
-	src/core/macconfig.h \
-	src/core/port.h
+	src/core/logsumexp.h
 
 libcore_la_LIBADD = \
 	libminpack.la \

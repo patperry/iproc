@@ -1,8 +1,9 @@
 #include "port.h"
 #include <assert.h>
+#include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include "sblas.h"
 #include "coreutil.h"
 #include "xalloc.h"

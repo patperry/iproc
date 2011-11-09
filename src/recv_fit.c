@@ -2,16 +2,21 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lapack.h"
-#include "sblas.h"
-#include "matrixutil.h"
+
 #include "coreutil.h"
 #include "xalloc.h"
+
+#include "lapack.h"
+#include "matrixutil.h"
+#include "sblas.h"
+
 #include "linesearch.h"
 #include "recv_fit.h"
+
 
 static void constr_init(struct recv_fit_constr *c)
 {

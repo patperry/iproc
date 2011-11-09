@@ -2,6 +2,7 @@
 #define _MESSAGES_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct message {
 	double time;

@@ -2,6 +2,8 @@
 #ifndef _IEEE754_H
 #define _IEEE754_H
 
+#include <stdint.h>
+
 #define  MAX_NAN_PAYLOAD  UINT64_C(0x0007FFFFFFFFFFFF)
 
 int double_identical(double x, double y);
