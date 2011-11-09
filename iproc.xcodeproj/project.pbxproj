@@ -7,13 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2210A3FD146ADE9F00C42B90 /* coreutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 2210A3FC146ADE9F00C42B90 /* coreutil.c */; };
 		2222181D136F1AAA00F0C7D2 /* frame_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2222181C136F1AAA00F0C7D2 /* frame_test.c */; };
 		22221824136F1AD400F0C7D2 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22221825136F1AD400F0C7D2 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22221826136F1AD400F0C7D2 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22221827136F1AEC00F0C7D2 /* messages.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAE136A58230048244C /* messages.json */; };
-		22234176144F364D00D99D8E /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
-		22234177144F364D00D99D8E /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* array.h */; };
 		2223417A144F364D00D99D8E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		2223417B144F364D00D99D8E /* delegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 228C2FFE137A380400B5A3B9 /* delegate.h */; };
 		2223417C144F364D00D99D8E /* ieee754.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE78132EC8710000097B /* ieee754.c */; };
@@ -430,6 +429,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2210A3FC146ADE9F00C42B90 /* coreutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = coreutil.c; path = lib/core/src/coreutil.c; sourceTree = "<group>"; };
 		221C5FDA134DB9BC0008B25B /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = src/core/port.h; sourceTree = "<group>"; };
 		221C5FF0134EB7E50008B25B /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = src/core/util.c; sourceTree = "<group>"; };
 		221C601413511AD80008B25B /* macconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = macconfig.h; path = src/core/macconfig.h; sourceTree = "<group>"; };
@@ -489,8 +489,6 @@
 		222341EE144F3BDA00D99D8E /* yajl_gen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_gen.h; path = lib/yajl/src/api/yajl_gen.h; sourceTree = "<group>"; };
 		222341EF144F3BDA00D99D8E /* yajl_parse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_parse.h; path = lib/yajl/src/api/yajl_parse.h; sourceTree = "<group>"; };
 		222341F0144F3BDA00D99D8E /* yajl_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_tree.h; path = lib/yajl/src/api/yajl_tree.h; sourceTree = "<group>"; };
-		2223CD0E134D76F8004FA7F9 /* array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = array.c; path = src/core/array.c; sourceTree = "<group>"; };
-		2223CD0F134D76F8004FA7F9 /* array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array.h; path = src/core/array.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22286F0D136F36340015CC42 /* rv-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-nrecv.c"; path = "src/rv-nrecv.c"; sourceTree = "<group>"; };
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2235DBFC13C7ACE100053BAA /* libjson.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libjson.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -692,8 +690,6 @@
 		221FEE68132EC83F0000097B /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				2223CD0E134D76F8004FA7F9 /* array.c */,
-				2223CD0F134D76F8004FA7F9 /* array.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
 				228C2FFE137A380400B5A3B9 /* delegate.h */,
 				221FEE78132EC8710000097B /* ieee754.c */,
@@ -715,6 +711,7 @@
 		22234160144F351300D99D8E /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				2210A3FC146ADE9F00C42B90 /* coreutil.c */,
 				22234192144F368800D99D8E /* coreutil.h */,
 				22234193144F368800D99D8E /* hash.h */,
 				22234194144F368800D99D8E /* hashset.c */,
@@ -968,7 +965,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				22234177144F364D00D99D8E /* array.h in Headers */,
 				2223417A144F364D00D99D8E /* compare.h in Headers */,
 				2223417B144F364D00D99D8E /* delegate.h in Headers */,
 				2223417D144F364D00D99D8E /* ieee754.h in Headers */,
@@ -1355,7 +1351,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				22234176144F364D00D99D8E /* array.c in Sources */,
 				2223417C144F364D00D99D8E /* ieee754.c in Sources */,
 				22234180144F364D00D99D8E /* linesearch.c in Sources */,
 				22234182144F364D00D99D8E /* logsumexp.c in Sources */,
@@ -1405,6 +1400,7 @@
 				22749E5E1402E2EC00C5A955 /* vars.c in Sources */,
 				22E9213B1406DB1E008115DE /* recv_resid.c in Sources */,
 				22E9214214082779008115DE /* recv_boot.c in Sources */,
+				2210A3FD146ADE9F00C42B90 /* coreutil.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

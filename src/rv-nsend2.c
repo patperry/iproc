@@ -1,6 +1,6 @@
 #include "port.h"
 #include <assert.h>
-
+#include <string.h>
 #include "frame.h"
 #include "vars.h"
 

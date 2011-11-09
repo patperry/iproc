@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#include <string.h>
 #include "cmockery.h"
 #include "blas.h"
 #include "matrixutil.h"
@@ -75,7 +76,7 @@ static void basic_setup()
         design_add_dvar(design, RECV_VAR_NRECV, NULL);
 	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
 	coefs.lda = MAX(1, design_dim(design));
-	
+
 	for (c = 0; c < ncohort; c++) {	
 		for (i = 0; i < design_dim(design); i++) {
 			double val = (i + (c + 1) % 5 == 0 ? -2.0 :
@@ -85,7 +86,7 @@ static void basic_setup()
 			MATRIX_ITEM(&coefs, i, c) =  val;
 		}
 	}
-	
+
 	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
 	recv_loglik_init(&recv_loglik, &model);
 }

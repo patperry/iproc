@@ -5,6 +5,7 @@
 #include <search.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include "coreutil.h"
 #include "sblas.h"
 #include "xalloc.h"
@@ -293,7 +294,7 @@ static void design_grow_dvars(struct design *d)
 			frame_remove_observer(f, &d->dvars[i-1]);
 		}
 
-		size_t nmax = ARRAY_GROW(d->ndvar_max, SIZE_MAX);
+		size_t nmax = ARRAY_GROW1(d->ndvar_max, SIZE_MAX);
 		d->dvars = xrealloc(d->dvars, nmax * sizeof(d->dvars[0]));
 
 		for (i = 0; i < d->ndvar; i++) {

@@ -42,7 +42,7 @@ static void constr_deinit(struct recv_fit_constr *c)
 static void constr_grow(struct recv_fit_constr *c)
 {
 	if (c->n == c->nmax) {
-		size_t nmax = ARRAY_GROW(c->nmax, SIZE_MAX);
+		size_t nmax = ARRAY_GROW1(c->nmax, SIZE_MAX);
 		c->wt_cols = xrealloc(c->wt_cols,
 				      (nmax + 1) * sizeof(c->wt_cols[0]));
 		c->vals = xrealloc(c->vals, nmax * sizeof(c->vals[0]));
@@ -66,7 +66,7 @@ static void constr_grow_nz(struct recv_fit_constr *c, size_t delta)
 		return;
 
 	while (nz > nzmax) {
-		nzmax = ARRAY_GROW(nzmax, SIZE_MAX);
+		nzmax = ARRAY_GROW1(nzmax, SIZE_MAX);
 	}
 
 	c->wts = xrealloc(c->wts, nzmax * sizeof(c->wts[0]));

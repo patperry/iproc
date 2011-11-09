@@ -3,23 +3,44 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include "coreutil.h"
 #include "xalloc.h"
 #include "messages.h"
+
+static void messages_grow_reps(struct messages *msgs, size_t delta)
+{
+	size_t nmax = array_grow(msgs->nsend, msgs->nsend_max, delta, SIZE_MAX);
+	if (nmax > msgs->nsend_max) {
+		msgs->reps = xrealloc(msgs->reps, nmax * sizeof(msgs->reps[0]));
+		msgs->nsend_max = nmax;
+	}
+}
+
+static void messages_grow_recv(struct messages *msgs, size_t delta)
+{
+	size_t nmax = array_grow(msgs->nrecv, msgs->nrecv_max, delta, SIZE_MAX);
+	if (nmax > msgs->nrecv_max) {
+		msgs->recv = xrealloc(msgs->recv, nmax * sizeof(msgs->recv[0]));
+		msgs->nrecv_max = nmax;
+	}
+}
 
 void messages_init(struct messages *msgs)
 {
 	assert(msgs);
 
-	array_init(&msgs->message_reps, sizeof(struct message_rep));
-	array_init(&msgs->recipients, sizeof(size_t));
-	refcount_init(&msgs->refcount);
-
+	msgs->reps = NULL;
+	msgs->nsend = 0;
+	msgs->nsend_max = 0;
+	msgs->recv = NULL;
 	msgs->nrecv = 0;
+	msgs->nrecv_max = 0;
 	msgs->tlast = -INFINITY;
 	msgs->max_to = 0;
 	msgs->max_from = 0;
 	msgs->max_nto = 0;
 	msgs->to_cached = false;
+	refcount_init(&msgs->refcount);	
 }
 
 struct messages *messages_alloc()
@@ -40,8 +61,8 @@ void messages_deinit(struct messages *msgs)
 {
 	assert(msgs);
 	refcount_deinit(&msgs->refcount);
-	array_deinit(&msgs->message_reps);
-	array_deinit(&msgs->recipients);
+	free(msgs->reps);
+	free(msgs->recv);
 }
 
 void messages_free(struct messages *msgs)
@@ -59,7 +80,7 @@ void messages_free(struct messages *msgs)
 size_t messages_count(const struct messages *msgs)
 {
 	assert(msgs);
-	return array_count(&msgs->message_reps);
+	return msgs->nsend;
 }
 
 size_t messages_recv_count(const struct messages *msgs)
@@ -79,11 +100,11 @@ struct message *messages_at(const struct messages *msgs, size_t i)
 	assert(msgs);
 	assert(i < messages_count(msgs));
 
-	struct message_rep *rep = array_item(&msgs->message_reps, i);
+	struct message_rep *rep = &msgs->reps[i];
 
 	if (!msgs->to_cached) {
 		size_t msg_ito = rep->ito;
-		size_t *msg_to = array_item(&msgs->recipients, msg_ito);
+		size_t *msg_to = &msgs->recv[msg_ito];
 		rep->message.to = msg_to;
 	}
 
@@ -97,28 +118,28 @@ void messages_add(struct messages *msgs, double time,
 	assert(time >= messages_tlast(msgs));
 	assert(to || nto == 0);
 
-	struct array *message_reps = &msgs->message_reps;
-	struct array *recipients = &msgs->recipients;
-
-	size_t ito = array_count(recipients);
+	size_t ito = msgs->nrecv;
 	struct message_rep m = { {time, from, NULL, nto, attr}, ito };
 	size_t i;
 
-	for (i = 0; i < nto; i++) {
-		array_add(recipients, to + i);	// always succeeds
-		if (to[i] > msgs->max_to)
-			msgs->max_to = to[i];
-	}
-
+	msgs->tlast = time;
+	
 	if (from > msgs->max_from)
 		msgs->max_from = from;
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	array_add(message_reps, &m);	// always succeeds
+	messages_grow_recv(msgs, nto);	
+	for (i = 0; i < nto; i++, ito++) {
+		if (to[i] > msgs->max_to)
+			msgs->max_to = to[i];
+		msgs->recv[ito] = to[i];
+	}
+	msgs->nrecv = ito;
+
+	messages_grow_reps(msgs, 1);	
+	msgs->reps[msgs->nsend++] = m;
 	msgs->to_cached = false;
-	msgs->tlast = time;
-	msgs->nrecv += nto;
 }
 
 size_t messages_max_from(const struct messages *msgs)
@@ -167,14 +188,12 @@ bool messages_iter_advance(struct messages_iter *it)
 
 	size_t offset = it->offset + it->ntie;
 
-	struct array *message_reps = &it->messages->message_reps;
-	struct array *recipients = &it->messages->recipients;
-	size_t n = array_count(message_reps);
+	struct messages *msgs = it->messages;
+	size_t n = msgs->nsend;
 	bool has_next = offset < n;
 
 	if (has_next) {
-		struct message_rep *message_rep =
-		    array_item(message_reps, offset);
+		struct message_rep *message_rep = &msgs->reps[offset];
 		double time = message_rep[0].message.time;
 		size_t ntie_max = n - offset;
 		size_t ntie = 0;
@@ -182,8 +201,7 @@ bool messages_iter_advance(struct messages_iter *it)
 		do {
 			if (!it->messages->to_cached) {
 				size_t msg_ito = message_rep[ntie].ito;
-				size_t *msg_to =
-				    array_item(recipients, msg_ito);
+				size_t *msg_to = &msgs->recv[msg_ito];
 				message_rep[ntie].message.to = msg_to;
 			}
 

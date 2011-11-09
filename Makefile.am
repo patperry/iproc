@@ -64,6 +64,7 @@ libiproc_la_LIBADD = \
 	libdSFMT.la
 
 libcore_la_SOURCES = \
+	lib/core/src/coreutil.c \
 	lib/core/src/coreutil.h \
 	lib/core/src/hash.h \
 	lib/core/src/hashset.c \
@@ -89,8 +90,6 @@ libcore_la_SOURCES = \
 	lib/linalg/src/matrixutil.h \
 	lib/linalg/src/sblas.c \
 	lib/linalg/src/sblas.h \
-	src/core/array.c \
-	src/core/array.h \
 	src/core/compare.h \
 	src/core/delegate.h \
 	src/core/ieee754.c \
@@ -284,10 +283,6 @@ cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
 cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
-
-check_PROGRAMS += tests/array_test
-tests_array_test_CPPFLAGS = -Isrc/core $(cmockery_cppflags)
-tests_array_test_LDADD    = libcore.la $(cmockery_ldadd)
 
 check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)

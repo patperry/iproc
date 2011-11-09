@@ -1,7 +1,6 @@
 #ifndef _MESSAGES_H
 #define _MESSAGES_H
 
-#include "array.h"
 #include "refcount.h"
 
 struct message {
@@ -18,15 +17,16 @@ struct message_rep {
 };
 
 struct messages {
-	struct array message_reps;
-	struct array recipients;
-	struct refcount refcount;
-	size_t nrecv;
+	struct message_rep *reps;
+	size_t nsend, nsend_max;	
+	size_t *recv;
+	size_t nrecv, nrecv_max;
 	double tlast;
 	size_t max_from;
 	size_t max_to;
 	size_t max_nto;
 	bool to_cached;
+	struct refcount refcount;	
 };
 
 struct messages_iter {

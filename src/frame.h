@@ -19,7 +19,8 @@ struct frame_event {
 };
 
 struct frame_actor {
-	struct array message_ixs;
+	size_t *message_ixs;
+	size_t nix, nix_max;
 	size_t *nmsg;
 	struct vpattern active;
 };
@@ -40,8 +41,10 @@ struct frame {
 	struct design recv_design;
 	double time;
 
-	struct array observers;
-	struct array frame_messages;
+	struct frame_observer *observers;
+	size_t nobs, nobs_max;
+	struct frame_message *frame_messages;
+	size_t nfmsg, nfmsg_max;
 	struct frame_actor *senders;
 	struct frame_actor *receivers;
 	size_t cur_fmsg;
@@ -177,15 +180,14 @@ double frame_next_time(const struct frame *f)
 size_t frame_messages_count(const struct frame *f)
 {
 	assert(f);
-	return array_count(&f->frame_messages);
+	return f->nfmsg;
 }
 
 struct frame_message *frame_messages_item(const struct frame *f, size_t imsg)
 {
 	assert(f);
 	assert(imsg < frame_messages_count(f));
-	struct frame_message *base = array_to_ptr(&f->frame_messages);
-	return &base[imsg];
+	return &f->frame_messages[imsg];
 }
 
 size_t frame_send_count(const struct frame *f)
@@ -214,8 +216,8 @@ void frame_get_send_messages(const struct frame *f, size_t isend,
 	assert(nmsg);
 
 	const struct frame_actor *a = &f->senders[isend];
-	*imsg = array_to_ptr(&a->message_ixs);
-	*nmsg = array_count(&a->message_ixs);
+	*imsg = a->message_ixs;
+	*nmsg = a->nix;
 }
 
 void frame_get_recv_messages(const struct frame *f, size_t irecv,
@@ -227,8 +229,8 @@ void frame_get_recv_messages(const struct frame *f, size_t irecv,
 	assert(nmsg);
 
 	const struct frame_actor *a = &f->receivers[irecv];
-	*imsg = array_to_ptr(&a->message_ixs);
-	*nmsg = array_count(&a->message_ixs);
+	*imsg = a->message_ixs;
+	*nmsg = a->nix;
 }
 
 #endif /* _FRAME_H */

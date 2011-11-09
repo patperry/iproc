@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <yajl/yajl_parse.h>
 #include "coreutil.h"
 #include "matrixutil.h"
@@ -222,7 +223,7 @@ static int parse_end_map(void *ctx)
 	struct employee_parse *parse = ctx;
 
 	if (parse->nactor == parse->nactor_max) {
-		size_t nactor_max = ARRAY_GROW(parse->nactor_max, SIZE_MAX); 
+		size_t nactor_max = ARRAY_GROW1(parse->nactor_max, SIZE_MAX); 
 		parse->traits_t = xrealloc(parse->traits_t,
 					  nactor_max
 					  * parse->dim
