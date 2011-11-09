@@ -8,6 +8,9 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include "cmockery.h"
+#include "blas.h"
+#include "matrixutil.h"
+#include "lapack.h"
 #include "xalloc.h"
 
 #include "ieee754.h"
@@ -27,13 +30,13 @@ static size_t nrecv;
 static size_t ncohort;
 static size_t ntrait;
 static size_t *cohorts;
-static double *traits;
+static struct dmatrix traits;
 static const char * const *trait_names;
 static const char * const *cohort_names;
 static struct messages messages;
 static struct design *design;
 static struct frame frame;
-static struct matrix coefs;
+static struct dmatrix coefs;
 static struct recv_model model;
 static struct recv_loglik recv_loglik;
 
@@ -43,7 +46,8 @@ static void enron_setup_fixture()
 	print_message("Enron\n");
 	print_message("-----\n");
 	enron_employees_init(&nsend, &cohorts, &ncohort, &cohort_names,
-			     &traits, &ntrait, &trait_names);
+			     &traits.data, &ntrait, &trait_names);
+	traits.lda = MAX(1, nsend);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 }
@@ -51,7 +55,7 @@ static void enron_setup_fixture()
 static void enron_teardown_fixture()
 {
 	free(cohorts);
-	free(traits);
+	free(traits.data);
 	messages_deinit(&messages);
 	print_message("\n\n");
 }
@@ -67,17 +71,18 @@ static void basic_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
         design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
         design_add_dvar(design, RECV_VAR_NRECV, NULL);
-	matrix_init(&coefs, design_dim(design), ncohort);
+	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
+	coefs.lda = MAX(1, design_dim(design));
 	
-	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
-		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
+	for (c = 0; c < ncohort; c++) {	
+		for (i = 0; i < design_dim(design); i++) {
 			double val = (i + (c + 1) % 5 == 0 ? -2.0 :
 				      i + 2 * (c + 1) % 5 == 1 ?  1.0 :
 				      i + 3 * (c + 1) % 5 == 2 ? -1.0 :
 				      i + 7 * (c + 1) % 5 == 3 ?  2.0 : 0.0);
-			matrix_set_item(&coefs, i, c, val);
+			MATRIX_ITEM(&coefs, i, c) =  val;
 		}
 	}
 	
@@ -96,18 +101,19 @@ static void hard_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
         design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
         design_add_dvar(design, RECV_VAR_NRECV, NULL);
-	matrix_init(&coefs, design_dim(design), ncohort);
+	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
+	coefs.lda = MAX(1, design_dim(design));
 
-	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {	
-		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
+	for (c = 0; c < ncohort; c++) {	
+		for (i = 0; i < design_dim(design); i++) {
 			double val = (i + (c + 1) % 7 == 0 ?  0.1 :
 				      i + 2 * (c + 1) % 7 == 1 ?  0.3 :
 				      i + 3 * (c + 1) % 7 == 2 ? -0.2 :
 				      i + 5 * (c + 1) % 7 == 4 ? -10 :
 				      i + 11 * (c + 1) % 7 == 6 ? +10 : 0.0);
-			matrix_set_item(&coefs, i, c, val);
+			MATRIX_ITEM(&coefs, i, c) = val;
 		}
 	}
 
@@ -119,7 +125,7 @@ static void teardown()
 {
 	recv_loglik_deinit(&recv_loglik);
 	recv_model_deinit(&model);
-	matrix_deinit(&coefs);
+	free(coefs.data);
 	frame_deinit(&frame);
 }
 
@@ -181,7 +187,6 @@ out:
 static void test_mean()
 {
 	double *probs, *mean0, *mean1, *avg_mean1, *diff;
-	struct matrix avg_mean0;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -193,7 +198,8 @@ static void test_mean()
 	probs = xmalloc(design_count(design) * sizeof(double));
 	mean0 = xmalloc(dim * sizeof(double));
 	mean1 = xmalloc(dim * sizeof(double));
-	matrix_init(&avg_mean0, design_dim(design), ncohort);
+	struct dmatrix avg_mean0 = { xcalloc(design_dim(design) * ncohort, sizeof(double)),
+				     MAX(1, design_dim(design)) };
 	avg_mean1 = xmalloc(dim * sizeof(double));
 	diff = xmalloc(dim * sizeof(double));
 	
@@ -235,7 +241,7 @@ static void test_mean()
 				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
 			}
 			
-			double *avg_mean0_c = matrix_col(&avg_mean0, c);
+			double *avg_mean0_c = MATRIX_COL(&avg_mean0, c);
 			blas_dcopy(dim, avg_mean0_c, 1, diff, 1);
 			blas_daxpy(dim, -1.0/msg->nto, mean0, 1, diff, 1);
 			blas_daxpy(dim, -((double)msg->nto) / n, diff, 1, avg_mean0_c, 1);
@@ -263,7 +269,7 @@ static void test_mean()
 out:
 	free(diff);
 	free(avg_mean1);	
-	matrix_deinit(&avg_mean0);
+	free(avg_mean0.data);
 	free(mean0);
 	free(mean1);	
 	free(probs);	
@@ -273,7 +279,6 @@ out:
 static void test_score()
 {
 	double *nrecv, *score0, *score1, *avg_score1, *diff;
-	struct matrix avg_score0;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -286,7 +291,8 @@ static void test_score()
 	nrecv = xcalloc(design_count(design), sizeof(double));
 	score0 = xmalloc(dim * sizeof(double));
 	score1 = xmalloc(dim * sizeof(double));
-	matrix_init(&avg_score0, design_dim(design), recv_model_cohort_count(&model));
+	struct dmatrix avg_score0 = { xcalloc(design_dim(design) * recv_model_cohort_count(&model), sizeof(double)),
+		MAX(1, design_dim(design)) };
 	avg_score1 = xmalloc(dim * sizeof(double));
 	diff = xmalloc(dim * sizeof(double));
 
@@ -329,7 +335,7 @@ static void test_score()
 				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
 			}
 			
-			double *avg_score0_c = matrix_col(&avg_score0, c);
+			double *avg_score0_c = MATRIX_COL(&avg_score0, c);
 			blas_dcopy(dim, avg_score0_c, 1, diff, 1);
 			blas_daxpy(dim, -1.0/msg->nto, score0, 1, diff, 1);
 			blas_daxpy(dim, -((double)msg->nto) / n, diff, 1, avg_score0_c, 1);
@@ -353,7 +359,7 @@ static void test_score()
 out:
 	free(diff);
 	free(avg_score1);	
-	matrix_deinit(&avg_score0);
+	free(avg_score0.data);
 	free(score0);
 	free(score1);	
 	free(nrecv);	
@@ -364,13 +370,14 @@ static void test_imat()
 {
 	double *mean, *y;
 
-	struct matrix imat0, imat1, diff, *avg_imat0, avg_imat1;
+	struct dmatrix *avg_imat0;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
 	size_t isend, jrecv, nrecv = design_count(design);
 	size_t itie, ntie, c, n, nmsg;
 	size_t index1, index2, dim = design_dim(design);
+	size_t dim2 = dim * dim;
 	double one = 1.0;
 	struct vpattern pat_j;
 	pat_j.indx = &jrecv;
@@ -378,15 +385,15 @@ static void test_imat()
 
 	mean = xmalloc(dim * sizeof(double));
 	y = xmalloc(dim * sizeof(double));
-	matrix_init(&imat0, dim, dim);
-	matrix_init(&imat1, dim, dim);
-	matrix_init(&diff, dim, dim);
+	struct dmatrix imat0 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
+	struct dmatrix imat1 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
+	struct dmatrix diff = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
+	struct dmatrix avg_imat1 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };	
 
 	avg_imat0 = xcalloc(recv_model_cohort_count(&model), sizeof(*avg_imat0));
 	for (c = 0; c < recv_model_cohort_count(&model); c++) {
-		matrix_init(&avg_imat0[c], dim, dim);
+		avg_imat0[c] = (struct dmatrix) { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
 	}
-	matrix_init(&avg_imat1, dim, dim);
 	
 	nmsg = 0;
 	
@@ -412,24 +419,24 @@ static void test_imat()
 			
 			memset(mean, 0, dim * sizeof(double));
 			recv_loglik_axpy_last_mean(1.0 / msg->nto, &recv_loglik, mean);
-			matrix_fill(&imat1, 0.0);
+			matrix_dzero(dim, dim, &imat1);
 			recv_loglik_axpy_last_imat(1.0, &recv_loglik, &imat1);
 			
-			matrix_fill(&imat0, 0.0);
+			matrix_dzero(dim, dim, &imat0);
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double p = recv_model_prob(&model, isend, jrecv);
 				blas_dcopy(dim, mean, 1, y, 1);
 			
 				
 				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, y);
-				matrix_update1(&imat0, p, y, y);
+				blas_dger(dim, dim, p, y, 1, y, 1, &imat0);
 			}
-			matrix_scale(&imat0, msg->nto);
+			matrix_dscal(dim, dim, msg->nto, &imat0);
 			
 			for (index2 = 0; index2 < dim; index2++) {
 				for (index1 = 0; index1 < dim; index1++) {				
-					double v0 = matrix_item(&imat0, index1, index2);
-					double v1 = matrix_item(&imat1, index1, index2);
+					double v0 = MATRIX_ITEM(&imat0, index1, index2);
+					double v1 = MATRIX_ITEM(&imat1, index1, index2);
 					//printf("v0: %.4f  v1: %.4f (%d)\n", v0, v1, double_eqrel(v0, v1));
 					assert(double_eqrel(v0, v1) >= DBL_MANT_DIG / 2
 					       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
@@ -439,17 +446,17 @@ static void test_imat()
 				}
 			}
 			
-			matrix_assign_copy(&diff, BLAS_NOTRANS, &avg_imat0[c]);
-			matrix_axpy(-1.0/msg->nto, &imat0, &diff);
-			matrix_axpy(-((double)msg->nto) / n, &diff, &avg_imat0[c]);
+			lapack_dlacpy(LA_COPY_ALL, dim, dim, &avg_imat0[c], &diff);
+			matrix_daxpy(dim, dim, -1.0/msg->nto, &imat0, &diff);
+			matrix_daxpy(dim, dim, -((double)msg->nto) / n, &diff, &avg_imat0[c]);
 			
-			matrix_fill(&avg_imat1, 0.0);
+			matrix_dzero(dim, dim, &avg_imat1);
 			recv_loglik_axpy_avg_imat(1.0, &recv_loglik, c, &avg_imat1);
 			
 			for (index2 = 0; index2 < dim; index2++) {
 				for (index1 = 0; index1 < dim; index1++) {				
-					double v0 = matrix_item(&avg_imat0[c], index1, index2);
-					double v1 = matrix_item(&avg_imat1, index1, index2);
+					double v0 = MATRIX_ITEM(&avg_imat0[c], index1, index2);
+					double v1 = MATRIX_ITEM(&avg_imat1, index1, index2);
 					//assert(double_eqrel(v0, v1) >= 37
 					//       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
 					if (fabs(v0) >= 5e-4) {
@@ -460,7 +467,7 @@ static void test_imat()
 				}
 			}
 			
-			matrix_assign_copy(&avg_imat0[c], BLAS_NOTRANS, &avg_imat1);
+			lapack_dlacpy(LA_COPY_ALL, dim, dim, &avg_imat1, &avg_imat0[c]);
 
 		}
 		
@@ -469,14 +476,14 @@ static void test_imat()
 out:
 	free(mean);
 	free(y);
-	matrix_deinit(&imat0);
-	matrix_deinit(&imat1);
-	matrix_deinit(&diff);
+	free(imat0.data);
+	free(imat1.data);
+	free(diff.data);
+	free(avg_imat1.data);	
 	for (c = 0; c < recv_model_cohort_count(&model); c++) {
-		matrix_deinit(&avg_imat0[c]);
+		free(avg_imat0[c].data);
 	}
 	free(avg_imat0);
-	matrix_deinit(&avg_imat1);
 }
 
 

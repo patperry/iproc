@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "lapack.h"
 #include "sblas.h"
+#include "matrixutil.h"
+#include "coreutil.h"
 #include "xalloc.h"
 #include "linesearch.h"
 #include "recv_fit.h"
@@ -238,18 +241,19 @@ static void resid_set(struct recv_fit_resid *resid,
 	resid->norm2 = norm * norm;
 }
 
-static void _eval_setup(struct recv_fit_eval *eval, ssize_t dim, ssize_t nc,
-			ssize_t ne)
+static void _eval_setup(struct recv_fit_eval *eval, size_t dim, size_t nc, size_t ne)
 {
-	eval->coefs = matrix_make(eval->params, dim, nc);
+	(void)ne;
+	eval->coefs.data = eval->params;
+	eval->coefs.lda = MAX(1, dim);
 	eval->duals = eval->params + dim * nc;
 }
 
 static void eval_init(struct recv_fit_eval *eval, struct recv_model *m,
 		      ssize_t ne)
 {
-	ssize_t dim = recv_model_dim(m);
-	ssize_t nc = recv_model_cohort_count(m);
+	size_t dim = recv_model_dim(m);
+	size_t nc = recv_model_cohort_count(m);
 
 	eval->params = xmalloc((nc * dim + ne) * sizeof(double));
 	memset(eval->params + dim * nc, 0, ne * sizeof(double));
@@ -277,7 +281,6 @@ static void eval_reinit(struct recv_fit_eval *eval, size_t dim, size_t nc,
 }
 
 static void _eval_update(struct recv_fit_eval *eval,
-			 const struct recv_fit_constr *ce,
 			 const struct messages *xmsgs,
 			 const struct messages *ymsgs,
 			 struct frame *frame, struct recv_model *model)
@@ -331,7 +334,7 @@ static void _eval_update(struct recv_fit_eval *eval,
 
 static void eval_set(struct recv_fit_eval *eval,
 		     const struct recv_fit_constr *ce,
-		     const struct matrix *coefs, const double *duals,
+		     const struct dmatrix *coefs, const double *duals,
 		     const struct messages *xmsgs,
 		     const struct messages *ymsgs,
 		     struct frame *frame, struct recv_model *model)
@@ -339,24 +342,23 @@ static void eval_set(struct recv_fit_eval *eval,
 	size_t dim = recv_model_dim(model);
 	size_t nc = recv_model_cohort_count(model);
 	size_t nce = constr_count(ce);
-
-	struct matrix pcoefs = matrix_make(eval->params, dim, nc);
+	double *my_primals = eval->params;
+	double *my_duals = eval->params + dim * nc;
 
 	if (coefs) {
-		matrix_assign_copy(&pcoefs, BLAS_NOTRANS, coefs);
+		struct dmatrix my_coefs = { my_primals, MAX(1, dim) };
+		lapack_dlacpy(LA_COPY_ALL, dim, nc, coefs, &my_coefs);
 	} else {
-		matrix_fill(&pcoefs, 0.0);
+		memset(my_primals, 0, dim * nc * sizeof(double));
 	}
-
-	double *my_duals = eval->params + dim * nc;
 
 	if (duals) {
 		blas_dcopy(nce, duals, 1, my_duals, 1);
 	} else {
-		memset(my_duals, 0, nce * sizeof(my_duals[0]));
+		memset(my_duals, 0, nce * sizeof(double));
 	}
 
-	_eval_update(eval, ce, xmsgs, ymsgs, frame, model);
+	_eval_update(eval, xmsgs, ymsgs, frame, model);
 }
 
 static void eval_step(struct recv_fit_eval *eval,
@@ -373,68 +375,71 @@ static void eval_step(struct recv_fit_eval *eval,
 
 	blas_dcopy(n, params0, 1, eval->params, 1);
 	blas_daxpy(n, scale, dir, 1, eval->params, 1);
-	_eval_update(eval, ce, xmsgs, ymsgs, frame, model);
-}
-
-static void kkt_init(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
-		     size_t nce)
-{
-	size_t n = nc * dim + nce;
-
-	kkt->factored = false;
-	kkt->uplo = BLAS_LOWER;
-	matrix_init(&kkt->matrix, n, n);
-	ldlfac_init(&kkt->ldl, n);
+	_eval_update(eval, xmsgs, ymsgs, frame, model);
 }
 
 static void kkt_reinit(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
 		       size_t nce)
 {
 	size_t n = nc * dim + nce;
+	size_t lwork = lapack_dsysv_lwork(n);
 
 	kkt->factored = false;
-	matrix_reinit(&kkt->matrix, n, n);
-	ldlfac_reinit(&kkt->ldl, n);
+	kkt->matrix.data = xrealloc(kkt->matrix.data, n * n * sizeof(double));
+	kkt->matrix.lda = MAX(1, n);
+
+	kkt->ldl_ipiv = xrealloc(kkt->ldl_ipiv, n * sizeof(ptrdiff_t));
+
+	kkt->ldl_work = xrealloc(kkt->ldl_work, lwork * sizeof(ptrdiff_t));
+	kkt->ldl_lwork = lwork;
+}
+
+static void kkt_init(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
+		     size_t nce)
+{
+	kkt->factored = false;
+	kkt->uplo = BLAS_LOWER;
+	kkt->matrix.data = NULL;
+	kkt->ldl_ipiv = NULL;
+	kkt->ldl_work = NULL;
+	kkt->ldl_lwork = 0;
+	kkt_reinit(kkt, dim, nc, nce);
 }
 
 static void kkt_deinit(struct recv_fit_kkt *kkt)
 {
-	ldlfac_deinit(&kkt->ldl);
-	matrix_deinit(&kkt->matrix);
+	free(kkt->ldl_work);
+	free(kkt->ldl_ipiv);
+	free(kkt->matrix.data);
 }
 
 static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		    const struct recv_fit_constr *ce)
 {
-	struct matrix *k = &kkt->matrix;
+	struct dmatrix *k = &kkt->matrix;
 	const struct recv_model *m = recv_loglik_model(ll);
 	size_t dim = recv_model_dim(m);
 	size_t ic, nc = recv_model_cohort_count(m);
 	size_t ntot = recv_loglik_count_sum(ll);
-	size_t nce = constr_count(ce);
+	size_t ne = constr_count(ce);
 
-	matrix_fill(k, 0.0);
+	matrix_dzero(dim * nc + ne, dim * nc + ne, k);
 
 	// k11
 	for (ic = 0; ic < nc; ic++) {
 		struct recv_loglik_info *info = recv_loglik_info(ll, ic);
 		ssize_t n = recv_loglik_count(ll, ic);
-		struct matrix h = matrix_slice(k, ic * dim, ic * dim, dim, dim);
-		matrix_assign_copy(&h, BLAS_NOTRANS, &info->imat);
-		matrix_scale(&h, ((double)n) / ntot);
+		struct dmatrix h = { MATRIX_PTR(k, ic * dim, ic * dim), k->lda }; //, dim, dim);
+		lapack_dlacpy(LA_COPY_ALL, dim, dim, &info->imat, &h);
+		matrix_dscal(dim, dim, ((double)n) / ntot, &h);
 	}
 
 	// k12, k21
-	struct matrix k12 = matrix_slice(k, 0, nc * dim, nc * dim, nce);
-	struct matrix k21 = matrix_slice(k, nc * dim, 0, nce, nc * dim);
+	struct dmatrix k12 = { MATRIX_PTR(k, 0, nc * dim), k->lda };
+	struct dmatrix k21 = { MATRIX_PTR(k, nc * dim, 0), k->lda };
 
-	matrix_fill(&k12, 0.0);
-	sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols,
-		       matrix_to_ptr(&k12), matrix_lda(&k12));
-
-	matrix_fill(&k21, 0.0);
-	sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols,
-		       matrix_to_ptr(&k21), matrix_lda(&k21));
+	sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols, &k12);
+	sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols, &k21);
 
 	kkt->factored = false;
 }
@@ -469,9 +474,10 @@ static void search_set(struct recv_fit_search *search,
 	blas_dcopy(n, resid->vector, 1, s, 1);
 	blas_dscal(n, -1.0, s, 1);
 
-	struct matrix smat = matrix_make(s, n, 1);
-	ssize_t info = ldlfac_solve(&kkt->ldl, kkt->uplo,
-				    &kkt->matrix, &smat);
+	struct dmatrix smat = {s, MAX(1, n) };
+	ptrdiff_t info = lapack_dsysv(kkt->uplo, n, 1, &kkt->matrix,
+				      kkt->ldl_ipiv, &smat, kkt->ldl_work,
+				      kkt->ldl_lwork);
 	kkt->factored = true;
 
 	assert(info == 0);
@@ -496,22 +502,23 @@ static void rgrad_deinit(struct recv_fit_rgrad *rgrad)
 	free(rgrad->vector);
 }
 
-static void rgrad_set(struct recv_fit_rgrad *rgrad,
+static void rgrad_set(struct recv_fit_rgrad *rgrad, size_t dim, size_t nc, size_t ne,
 		      const struct recv_fit_kkt *kkt,
 		      const struct recv_fit_resid *resid)
 {
 	assert(!kkt->factored);
 
+	size_t n = dim * nc + ne;
 	double *g = rgrad->vector;
-	matrix_mul(2.0, BLAS_NOTRANS, &kkt->matrix, resid->vector, 0.0, g);
+	blas_dgemv(BLAS_NOTRANS, n, n, 2.0, &kkt->matrix, resid->vector, 1, 0.0, g, 1);
 }
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 {
 	size_t dim = recv_model_dim(&fit->model);
 	size_t nc = recv_model_cohort_count(&fit->model);
-	size_t nce = recv_fit_constr_count(fit);
-	size_t n = dim * nc + nce;
+	size_t ne = recv_fit_constr_count(fit);
+	size_t n = dim * nc + ne;
 
 	assert(dim * nc > 0);
 
@@ -570,7 +577,7 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 		}
 		// compute the kkt matrix and residual gradient at the new point
 		kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
-		rgrad_set(&fit->rgrad, &fit->kkt, &fit->cur->resid);
+		rgrad_set(&fit->rgrad, dim, nc, ne, &fit->kkt, &fit->cur->resid);
 
 		double f = fit->cur->resid.norm2;
 		//double g = vector_dot(&fit->search.vector, &fit->rgrad.vector);
@@ -663,13 +670,13 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 	ssize_t ne = recv_fit_constr_count(fit);
 	const struct recv_loglik *ll = &fit->cur->loglik;
 	// ssize_t nmsg = recv_loglik_count_sum(ll);
-	//const struct matrix *ce = &fit->constr.ce;
+	//const struct dmatrix *ce = &fit->constr.ce;
 	struct vector scale;
-	struct matrix imatc;
+	struct dmatrix imatc;
 	struct symeig eig;
 	struct vector evals;
-	struct matrix *nullspaces;
-	struct matrix proj;
+	struct dmatrix *nullspaces;
+	struct dmatrix proj;
 	ssize_t nulldim;
 
 	vector_init(&scale, dim * nc);
@@ -720,7 +727,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		nulldim += nulldimc;
 
 		// copy the nullspace
-		struct matrix nullc = matrix_slice_cols(&imatc, 0, nulldimc);
+		struct dmatrix nullc = matrix_slice_cols(&imatc, 0, nulldimc);
 		matrix_init_copy(&nullspaces[ic], BLAS_NOTRANS, &nullc);
 
 		// change back to the original scale
@@ -731,12 +738,12 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 	matrix_init(&proj, ne, nulldim);
 	ssize_t off = 0;
 	for (ic = 0; ic < nc; ic++) {
-		struct matrix cec = matrix_slice_rows(ce, ic * dim, dim);
+		struct dmatrix cec = matrix_slice_rows(ce, ic * dim, dim);
 
-		struct matrix *nullc = &nullspaces[ic];
+		struct dmatrix *nullc = &nullspaces[ic];
 		ssize_t nulldimc = matrix_ncol(nullc);
 
-		struct matrix projc = matrix_slice_cols(&proj, off, nulldimc);
+		struct dmatrix projc = matrix_slice_cols(&proj, off, nulldimc);
 		matrix_matmul(1.0, BLAS_TRANS, &cec, nullc, 0.0, &projc);
 
 		off += nulldimc;
@@ -744,11 +751,11 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 	assert(off == nulldim);
 
 	// compute the nullspace of the coefficient matrix
-	struct matrix ncoefs;
+	struct dmatrix ncoefs;
 
 	if (ne > 0) {
 		struct vector s;
-		struct matrix u, vt;
+		struct dmatrix u, vt;
 		struct svdfac svd;
 		bool ok;
 
@@ -765,7 +772,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 				break;
 		}
 
-		struct matrix vt0 =
+		struct dmatrix vt0 =
 		    matrix_slice_rows(&vt, rank, nulldim - rank);
 		matrix_init_copy(&ncoefs, BLAS_TRANS, &vt0);
 
@@ -792,7 +799,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		vector_fill(&ce1, 0.0);
 		off = 0;
 		for (ic = 0; ic < nc; ic++) {
-			struct matrix *nullc = &nullspaces[ic];
+			struct dmatrix *nullc = &nullspaces[ic];
 			ssize_t nulldimc = matrix_ncol(nullc);
 
 			struct vector ce1c = vector_slice(&ce1, ic * dim, dim);
@@ -830,7 +837,7 @@ ssize_t recv_fit_add_constr_identify(struct recv_fit *fit)
 #endif
 
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
-				  const struct matrix *coefs0)
+				  const struct dmatrix *coefs0)
 {
 
 	if (coefs0 != NULL) {
@@ -885,7 +892,7 @@ void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
 	constr_get(&fit->constr, i, weightsp, indp, nzp, valp, namep);
 }
 
-static void _recv_fit_add_constrs(struct recv_fit *fit, size_t n)
+static void _recv_fit_add_constrs(struct recv_fit *fit)
 {
 	const struct design *d = frame_recv_design(fit->frame);
 	size_t dim = design_dim(d);
@@ -904,7 +911,7 @@ void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
 			 const char *name)
 {
 	constr_add(&fit->constr, weights, ind, nz, val, name);
-	_recv_fit_add_constrs(fit, 1);
+	_recv_fit_add_constrs(fit);
 }
 
 void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, size_t c,
@@ -915,7 +922,7 @@ void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, size_t c,
 	size_t nc = recv_model_cohort_count(&fit->model);
 
 	constr_add_set(&fit->constr, dim, nc, i, c, val);
-	_recv_fit_add_constrs(fit, 1);
+	_recv_fit_add_constrs(fit);
 }
 
 void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
@@ -926,7 +933,7 @@ void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
 	size_t nc = recv_model_cohort_count(&fit->model);
 
 	constr_add_eq(&fit->constr, dim, nc, i1, c1, i2, c2);
-	_recv_fit_add_constrs(fit, 1);
+	_recv_fit_add_constrs(fit);
 }
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
@@ -980,7 +987,7 @@ double recv_fit_dev(const struct recv_fit *fit)
 	return dev;
 }
 
-const struct matrix *recv_fit_coefs(const struct recv_fit *fit)
+const struct dmatrix *recv_fit_coefs(const struct recv_fit *fit)
 {
 	assert(fit);
 	return &fit->cur->coefs;

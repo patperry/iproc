@@ -53,13 +53,12 @@ yajl_gen_status yajl_gen_vector(yajl_gen hand, size_t n, const double *x)
 	return err;
 }
 
-yajl_gen_status yajl_gen_matrix(yajl_gen hand, const struct matrix * a)
+yajl_gen_status yajl_gen_matrix(yajl_gen hand, size_t m, size_t n, const struct dmatrix *a)
 {
 	assert(a);
 
 	yajl_gen_status err = yajl_gen_status_ok;
-	ssize_t i, m = matrix_nrow(a);
-	ssize_t j, n = matrix_ncol(a);
+	size_t i, j;
 
 	YG(yajl_gen_map_open(hand));
 
@@ -73,7 +72,7 @@ yajl_gen_status yajl_gen_matrix(yajl_gen hand, const struct matrix * a)
 	YG(yajl_gen_array_open(hand));
 	for (j = 0; j < n; j++) {
 		for (i = 0; i < m; i++) {
-			double val = matrix_item(a, i, j);
+			double val = MATRIX_ITEM(a, i, j);
 			YG(yajl_gen_ieee754(hand, val));
 		}
 	}

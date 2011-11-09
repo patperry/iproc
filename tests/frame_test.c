@@ -10,7 +10,6 @@
 #include "xalloc.h"
 
 #include "enron.h"
-#include "matrix.h"
 #include "messages.h"
 #include "design.h"
 #include "vars.h"
@@ -22,7 +21,7 @@ static size_t nrecv;
 static size_t ncohort;
 static size_t ntrait;
 static size_t *cohorts;
-static double *traits;
+static struct dmatrix traits;
 static const char * const * cohort_names;
 static const char * const * trait_names;
 static int has_effects;
@@ -42,7 +41,8 @@ static void enron_setup_fixture()
 	print_message("-----\n");
 	enron_employees_init(&nsend,
 			     &cohorts, &ncohort, &cohort_names,
-			     &traits, &ntrait, &trait_names);
+			     &traits.data, &ntrait, &trait_names);
+	traits.lda = MAX(1, nsend);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 }
@@ -51,7 +51,7 @@ static void enron_teardown_fixture()
 {
 	free(cohorts);
 	messages_deinit(&messages);
-	free(traits);
+	free(traits.data);
 	print_message("\n\n");
 }
 
@@ -62,7 +62,7 @@ static void rv_nsend_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_NSEND, NULL);
 	rv_nsend_index = design_dvar_index(design, RECV_VAR_NSEND);
 }
@@ -79,11 +79,9 @@ static void test_rv_nsend()
 	size_t isend, jrecv;
 	const struct message *msg = NULL;
 	struct messages_iter it;
-	struct matrix xnsend;
 	double *x, *y;
 	
-	matrix_init(&xnsend, nsend, nrecv);
-	matrix_fill(&xnsend, 0.0);
+	struct dmatrix xnsend = { xcalloc(nsend * nrecv, sizeof(double)), MAX(1, nsend) };
 	
 	x = xcalloc(design_dim(design), sizeof(double));
 	x[rv_nsend_index] = 1.0;
@@ -98,8 +96,8 @@ static void test_rv_nsend()
 		isend = msg ? msg->from : 0;
 		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, x, 0.0, y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert(y[jrecv] == matrix_item(&xnsend, isend, jrecv));
-			assert_true(y[jrecv] == matrix_item(&xnsend, isend, jrecv));
+			assert(y[jrecv] == MATRIX_ITEM(&xnsend, isend, jrecv));
+			assert_true(y[jrecv] == MATRIX_ITEM(&xnsend, isend, jrecv));
 		}
 		
 		ntie = MESSAGES_COUNT(it);
@@ -108,14 +106,14 @@ static void test_rv_nsend()
 			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				*matrix_item_ptr(&xnsend, msg->from, msg->to[ito]) += 1.0;
+				MATRIX_ITEM(&xnsend, msg->from, msg->to[ito]) += 1.0;
 			}
 		}
 	}
 	
 	free(y);
 	free(x);	
-	matrix_deinit(&xnsend);
+	free(xnsend.data);
 }
 
 static void rv_nrecv_setup()
@@ -125,7 +123,7 @@ static void rv_nrecv_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_NRECV, NULL);
 	rv_nrecv_index = design_dvar_index(design, RECV_VAR_NRECV);
 }
@@ -143,11 +141,11 @@ static void test_rv_nrecv()
 	size_t jrecv, nrecv = design_count(design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
-	struct matrix xnrecv;
+
 	double *x, *y;
 	
-	matrix_init(&xnrecv, nsend, design_count(design));
-	matrix_fill(&xnrecv, 0.0);
+	struct dmatrix xnrecv = { xcalloc(nsend * design_count(design), sizeof(double)),
+				  MAX(1, nsend) };
 
 	x = xcalloc(design_dim(design), sizeof(double));
 	x[rv_nrecv_index] = 1.0;
@@ -162,8 +160,8 @@ static void test_rv_nrecv()
 		isend = msg ? msg->from : 0;
 		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, x, 0.0, y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert(y[jrecv] == matrix_item(&xnrecv, jrecv, isend));
-			assert_true(y[jrecv] == matrix_item(&xnrecv, jrecv, isend));
+			assert(y[jrecv] == MATRIX_ITEM(&xnrecv, jrecv, isend));
+			assert_true(y[jrecv] == MATRIX_ITEM(&xnrecv, jrecv, isend));
 		}
 		
 		ntie = MESSAGES_COUNT(it);
@@ -172,14 +170,14 @@ static void test_rv_nrecv()
 			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				*matrix_item_ptr(&xnrecv, msg->from, msg->to[ito]) += 1.0;
+				MATRIX_ITEM(&xnrecv, msg->from, msg->to[ito]) += 1.0;
 			}
 		}
 	}
 	
 	free(y);
 	free(x);	
-	matrix_deinit(&xnrecv);
+	free(xnrecv.data);
 }
 
 static void rv_irecv_setup()
@@ -192,7 +190,7 @@ static void rv_irecv_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_IRECV, NULL);
 	rv_irecv_index = design_dvar_index(design, RECV_VAR_IRECV);
 }
@@ -211,7 +209,7 @@ static void test_rv_irecv()
 	size_t jrecv, j, nrecv = design_count(design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
-	struct matrix tlast;
+
 	double x = 1.0;
 	size_t k = 0;
 	struct vpattern pat_k;
@@ -220,8 +218,11 @@ static void test_rv_irecv()
 	double *y;
 	double tmsg;
 	
-	matrix_init(&tlast, nsend, design_count(design));
-	matrix_fill(&tlast, -INFINITY);
+	struct dmatrix tlast = { xmalloc(nsend * design_count(design) * sizeof(double)),
+		MAX(1, nsend) };
+	for (j = 0; j < nsend * design_count(design); j++) {
+		tlast.data[j] = -INFINITY;
+	}
 	
 	y = xmalloc(design_count(design) * sizeof(double));
 	
@@ -237,7 +238,7 @@ static void test_rv_irecv()
 
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
-			tmsg = matrix_item(&tlast, ix, isend);
+			tmsg = MATRIX_ITEM(&tlast, ix, isend);
 			if (isfinite(tmsg)) {
 				assert(y[ix] == 1.0);
 				assert_true(y[ix] == 1.0);
@@ -251,13 +252,13 @@ static void test_rv_irecv()
 			frame_add(&frame, msg);
 			
 			for (ito = 0; ito < msg->nto; ito++) {
-				matrix_set_item(&tlast, msg->from, msg->to[ito], msg->time);
+				MATRIX_ITEM(&tlast, msg->from, msg->to[ito]) = msg->time;
 			}
 		}
 	}
 
 	free(y);	
-	matrix_deinit(&tlast);
+	free(tlast.data);
 }
 
 
@@ -271,7 +272,7 @@ static void rv_isend_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_ISEND, NULL);
 	rv_isend_index = design_dvar_index(design, RECV_VAR_ISEND);
 }
@@ -290,7 +291,7 @@ static void test_rv_isend()
 	size_t jrecv, j, nrecv = design_count(design);
 	const struct message *msg = NULL;
 	struct messages_iter it;
-	struct matrix tlast;
+
 	double x = 1.0;
 	size_t k = 0;
 	struct vpattern pat_k;
@@ -299,8 +300,10 @@ static void test_rv_isend()
 	double *y;
 	double tmsg;
 
-	matrix_init(&tlast, nsend, design_count(design));
-	matrix_fill(&tlast, -INFINITY);
+	struct dmatrix tlast = { xmalloc(nsend * design_count(design) * sizeof(double)), MAX(1, nsend) };
+	for (j = 0; j < nsend * design_count(design); j++) {
+		tlast.data[j] = -INFINITY;
+	}
 
 	y = xmalloc(design_count(design) * sizeof(double));
 
@@ -315,7 +318,7 @@ static void test_rv_isend()
 
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
-			tmsg = matrix_item(&tlast, isend, ix);
+			tmsg = MATRIX_ITEM(&tlast, isend, ix);
 			if (isfinite(tmsg)) {
 				assert(y[ix] == 1.0);
 				assert_true(y[ix] == 1.0);
@@ -329,13 +332,13 @@ static void test_rv_isend()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				matrix_set_item(&tlast, msg->from, msg->to[ito], msg->time);
+				MATRIX_ITEM(&tlast, msg->from, msg->to[ito]) = msg->time;
 			}
 		}
 	}
 
 	free(y);
-	matrix_deinit(&tlast);
+	free(tlast.data);
 }
 
 

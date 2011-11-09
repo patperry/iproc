@@ -19,7 +19,7 @@ struct design {
 
 	size_t trait_off;
 	size_t trait_dim;
-	double *traits;
+	struct dmatrix traits;
 	char **trait_names;
 
 	size_t dvar_off;
@@ -39,10 +39,11 @@ static inline int design_has_effects(const struct design *d);
 void design_set_has_effects(struct design *d, int has_effects);
 static inline size_t design_effects_index(const struct design *d);
 
-static inline const double *design_traits(const struct design *d);
+static inline const struct dmatrix *design_traits(const struct design *d);
 static inline size_t design_traits_dim(const struct design *d);
 static inline const char *const *design_trait_names(const struct design *d);
-void design_set_traits(struct design *d, const double *traits, size_t dim,
+void design_set_traits(struct design *d, size_t dim,
+		       const struct dmatrix *traits,
 		       const char *const *names);
 static inline size_t design_traits_index(const struct design *d);
 
@@ -106,9 +107,9 @@ size_t design_traits_dim(const struct design *d)
 	return d->trait_dim;
 }
 
-const double *design_traits(const struct design *d)
+const struct dmatrix *design_traits(const struct design *d)
 {
-	return d->traits;
+	return &d->traits;
 }
 
 const char * const *design_trait_names(const struct design *d)

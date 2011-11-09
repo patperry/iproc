@@ -35,7 +35,8 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->has_effects = 0;
 	d->trait_off = 0;
 	d->trait_dim = 0;
-	d->traits = NULL;
+	d->traits.data = NULL;
+	d->traits.lda = MAX(1, count);
 	d->trait_names = NULL;
 	d->dvar_off = 0;
 	d->dvar_dim = 0;
@@ -78,7 +79,7 @@ void design_deinit(struct design *d)
 
 	free_dvars(d->dvars, d->ndvar, d->frame);
 	free2((void **)d->trait_names, d->trait_dim);
-	free(d->traits);
+	free(d->traits.data);
 }
 
 static void
@@ -140,18 +141,16 @@ design_mul0_traits(double alpha,
 	if (!design_traits_dim(d))
 		return;
 
-	const double *traits = design_traits(d);
+	const struct dmatrix *a = design_traits(d);
 	size_t off = design_traits_index(d);
 	size_t dim = design_traits_dim(d);
 	size_t count = design_count(d);
 
 	if (trans == BLAS_NOTRANS) {
-		blas_dgemv(trans, count, dim, alpha, traits, MAX(1, count),
-			   x + off, 1, 1.0, y, 1);
+		blas_dgemv(trans, count, dim, alpha, a, x + off, 1, 1.0, y, 1);
 
 	} else {
-		blas_dgemv(trans, count, dim, alpha, traits, MAX(1, count),
-			   x, 1, 1.0, y + off, 1);
+		blas_dgemv(trans, count, dim, alpha, a, x, 1, 1.0, y + off, 1);
 	}
 }
 
@@ -168,21 +167,22 @@ design_muls0_traits(double alpha,
 	size_t off = design_traits_index(d);
 	size_t dim = design_traits_dim(d);
 	size_t count = design_count(d);
-	const double *a = design_traits(d);
-	size_t lda = MAX(1, count);
+	const struct dmatrix *a = design_traits(d);
 	size_t nz = pat->nz;
 	const size_t *indx = pat->indx;
 
 	if (trans == BLAS_NOTRANS) {
+		const double *pa = a->data;
+		size_t lda = a->lda;
 		ptrdiff_t ix = vpattern_find(pat, off);
 		size_t i = (ix < 0) ? ~ix : ix;
 
 		for (; i < nz && indx[i] < off + dim; i++) {
                         blas_daxpy(count, alpha * x[i],
-				   a + (indx[i] - off) * lda, 1, y, 1);
+				   pa + (indx[i] - off) * lda, 1, y, 1);
                 }
 	} else {
-		sblas_dgemvi(trans, count, dim, alpha, a, lda,
+		sblas_dgemvi(trans, count, dim, alpha, a,
 			     x, pat, 1.0, y + off);
 	}
 }
@@ -252,11 +252,14 @@ void design_set_has_effects(struct design *d, int has_effects)
 	d->has_effects = has_effects;
 }
 
-void design_set_traits(struct design *d, const double *traits,
-		       size_t dim, const char *const *names)
+void design_set_traits(struct design *d, size_t dim,
+		       const struct dmatrix *traits,
+		       const char *const *names)
 {
+	size_t count = d->count;
+
 	free2((void **)d->trait_names, d->trait_dim);
-	free(d->traits);
+	free(d->traits.data);
 
 	if (dim >= d->trait_dim) {
 		d->dim += (dim - d->trait_dim);
@@ -267,7 +270,13 @@ void design_set_traits(struct design *d, const double *traits,
 	}
 
 	d->trait_dim = dim;
-	d->traits = xmemdup(traits, d->count * dim * sizeof(traits[0]));
+	if (traits) {
+		d->traits.data = xmemdup(traits->data,
+					 count * dim * sizeof(double));
+	} else {
+		d->traits.data = NULL;
+	}
+	d->traits.lda = MAX(1, count);
 	d->trait_names = xstrdup2(names, dim);
 }
 

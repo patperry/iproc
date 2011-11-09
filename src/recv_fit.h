@@ -2,9 +2,7 @@
 #define _RECV_FIT_H
 
 #include "design.h"
-#include "linalg.h"
 #include "linesearch.h"
-#include "matrix.h"
 #include "messages.h"
 #include "recv_loglik.h"
 #include "recv_model.h"
@@ -60,15 +58,17 @@ struct recv_fit_constr {
 
 struct recv_fit_eval {
 	double *params;
-	struct matrix coefs;
+	struct dmatrix coefs;
 	double *duals;
 	struct recv_loglik loglik;
 	struct recv_fit_resid resid;
 };
 
 struct recv_fit_kkt {
-	struct matrix matrix;
-	struct ldlfac ldl;
+	struct dmatrix matrix;
+	ptrdiff_t *ldl_ipiv;
+	double *ldl_work;
+	size_t ldl_lwork;
 	enum blas_uplo uplo;
 	bool factored;
 };
@@ -131,7 +131,7 @@ void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
 
 /* fitting */
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
-				  const struct matrix *coefs0);
+				  const struct dmatrix *coefs0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 
@@ -139,7 +139,7 @@ const char *recv_fit_errmsg(const struct recv_fit *fit);
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
 double recv_fit_dev(const struct recv_fit *fit);
 double recv_fit_dev0(const struct recv_fit *fit);
-const struct matrix *recv_fit_coefs(const struct recv_fit *fit);
+const struct dmatrix *recv_fit_coefs(const struct recv_fit *fit);
 const double *recv_fit_duals(const struct recv_fit *fit);
 double recv_fit_step(const struct recv_fit *fit);
 double recv_fit_grad_norm2(const struct recv_fit *fit);

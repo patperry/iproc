@@ -9,7 +9,6 @@
 
 #include "messages.h"
 #include "design.h"
-#include "matrix.h"
 #include "recv_model.h"
 
 struct recv_boot {
@@ -23,7 +22,7 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct messages *msgs,
 		    size_t ncohort,
 		    const size_t *cohorts,
-		    const struct matrix *coefs, dsfmt_t * dsfmt);
+		    const struct dmatrix *coefs, dsfmt_t * dsfmt);
 void recv_boot_deinit(struct recv_boot *boot);
 
 #endif /* _RECV_BOOT_H */

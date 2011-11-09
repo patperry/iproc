@@ -4,6 +4,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "lapack.h"
+#include "matrixutil.h"
 #include "sblas.h"
 #include "xalloc.h"
 #include "recv_loglik.h"
@@ -31,7 +33,7 @@ static void sender_axpy_score(double alpha,
 			      double *y);
 static void sender_axpy_imat(double alpha,
 			     const struct recv_loglik_sender *sll,
-			     struct matrix *y);
+			     struct dmatrix *y);
 
 static size_t sender_last_count(const struct recv_loglik_sender *sll);
 static double sender_last_dev(const struct recv_loglik_sender *sll);
@@ -43,7 +45,7 @@ static void sender_axpy_last_score(double alpha,
 				   double *y);
 static void sender_axpy_last_imat(double alpha,
 				  const struct recv_loglik_sender *sll,
-				  struct matrix *y);
+				  struct dmatrix *y);
 
 static void score_init(struct recv_loglik_sender_score *score,
 		       const struct recv_model *model, size_t isend)
@@ -70,18 +72,18 @@ static void imat_init(struct recv_loglik_sender_imat *imat,
 	assert(imat);
 
 	size_t ic = recv_model_cohort(model, isend);
-	const struct matrix *imat0 = recv_model_imat0(model, ic);
+	const struct dmatrix *imat0 = recv_model_imat0(model, ic);
 	const struct design *design = recv_model_design(model);
 	size_t dyn_dim = design_dvars_dim(design);
 
 	imat->imat0 = imat0;
 	imat->gamma2 = 0.0;
 	imat->gamma_dp = NULL;
-	imat->gamma_mean_dx = xcalloc(dyn_dim, sizeof(&imat->gamma_mean_dx[0]));
-	matrix_init(&imat->dx_p, dyn_dim, 0);
-	matrix_init(&imat->mean_dx_dp, dyn_dim, 0);
-	matrix_init(&imat->dp2, 0, 0);
-	matrix_init(&imat->var_dx, dyn_dim, dyn_dim);
+	imat->gamma_mean_dx = xcalloc(dyn_dim, sizeof(double));
+	imat->dx_p       = (struct dmatrix) { NULL, MAX(1, dyn_dim) }; // dyn_dim, 0
+	imat->mean_dx_dp = (struct dmatrix) { NULL, MAX(1, dyn_dim) }; // dyn_dim, 0
+	imat->dp2        = (struct dmatrix) { NULL, 1 }; // 0, 0
+	imat->var_dx = (struct dmatrix) { xcalloc(dyn_dim * dyn_dim, sizeof(double)), MAX(1, dyn_dim) }; // dyn_dim, dyn_dim
 }
 
 static void score_deinit(struct recv_loglik_sender_score *score)
@@ -99,10 +101,10 @@ static void imat_deinit(struct recv_loglik_sender_imat *imat)
 {
 	assert(imat);
 
-	matrix_deinit(&imat->var_dx);
-	matrix_deinit(&imat->dp2);
-	matrix_deinit(&imat->mean_dx_dp);
-	matrix_deinit(&imat->dx_p);
+	free(imat->var_dx.data);
+	free(imat->dp2.data);
+	free(imat->mean_dx_dp.data);
+	free(imat->dx_p.data);
 	free(imat->gamma_mean_dx);
 	free(imat->gamma_dp);
 }
@@ -123,31 +125,78 @@ static void imat_clear(struct recv_loglik_sender_imat *imat, size_t dyn_dim)
 	imat->gamma2 = 0.0;
 	imat->gamma_dp = xrealloc(imat->gamma_dp, 0);
 	memset(imat->gamma_mean_dx, 0, dyn_dim * sizeof(imat->gamma_mean_dx[0]));
-	matrix_reinit(&imat->dx_p, matrix_nrow(&imat->dx_p), 0);
-	matrix_reinit(&imat->mean_dx_dp, matrix_nrow(&imat->mean_dx_dp), 0);
-	matrix_reinit(&imat->dp2, 0, 0);
-	matrix_fill(&imat->var_dx, 0.0);
+	imat->dx_p.data = xrealloc(imat->dx_p.data, 0);
+	imat->mean_dx_dp.data = xrealloc(imat->mean_dx_dp.data, 0);
+	imat->dp2.data = xrealloc(imat->dp2.data, 0);
+	imat->dp2.lda = 1;
+	matrix_dzero(dyn_dim, dyn_dim, &imat->var_dx);
+}
+
+static void vector_insert(size_t n, double **xp, size_t i)
+{
+	size_t n1 = n + 1;
+	double *x = xrealloc(*xp, n1 * sizeof(double));
+	memmove(x + i + 1, x + i, (n - i) * sizeof(double));
+	x[i] = 0.0;
+	*xp = x;
+}
+
+static void matrix_insert_col(size_t m, size_t n, struct dmatrix *a, size_t j)
+{
+	assert(a->lda == MAX(1, m));
+	size_t n1 = n + 1;
+
+	a->data = xrealloc(a->data, m * n1 * sizeof(double));
+	memmove(MATRIX_COL(a, j + 1), MATRIX_COL(a, j), (n - j) * m * sizeof(double));
+	memset(MATRIX_COL(a, j), 0, m * sizeof(double));
+}
+
+static void matrix_insert_rowcol(size_t m, size_t n, struct dmatrix *a, size_t i, size_t j)
+{
+	assert(i <= m);
+	assert(j <= n);
+	assert(a->lda == MAX(1, m));
+
+	size_t m1 = m + 1;
+	size_t n1 = n + 1;
+
+	a->data = xrealloc(a->data, m1 * n1 * sizeof(double));
+	a->lda = MAX(1, m1);
+
+	double *src = a->data + m * n;
+	double *dst = a->data + m1 * n1;
+	size_t k, l;
+
+	for (l = 0; l < n1; l++) {
+		if (l == n - j) {
+			for (k = 0; k < m1; k++) {
+				*(--dst) = 0.0;
+			}
+		} else {
+			for (k = 0; k < m - i; k++) {
+				*(--dst) = *(--src);
+			}
+			*(--dst) = 0.0;
+			for (k = 0; k < i; k++) {
+				*(--dst) = *(--src);
+			}
+		}
+	}
 }
 
 static void score_insert_active(struct recv_loglik_sender_score *score,
 				size_t i, size_t nz0)
 {
-	score->dp = xrealloc(score->dp, (nz0 + 1) * sizeof(score->dp[0]));
-	memmove(score->dp + i + 1, score->dp + i, (nz0 - i) *
-			sizeof(score->dp[0]));
-	score->dp[i] = 0.0;
+	vector_insert(nz0, &score->dp, i);
 }
 
 static void imat_insert_active(struct recv_loglik_sender_imat *imat, size_t i,
-		size_t nz0)
+			       size_t nz0, size_t dyn_dim)
 {
-	imat->gamma_dp = xrealloc(imat->gamma_dp, (nz0 + 1) * sizeof(imat->gamma_dp[0]));
-	memmove(imat->gamma_dp + i + 1, imat->gamma_dp + i,
-		(nz0 - i) * sizeof(imat->gamma_dp[0]));
-	imat->gamma_dp[i] = 0.0;
-	matrix_insert_col(&imat->dx_p, i);
-	matrix_insert_col(&imat->mean_dx_dp, i);
-	matrix_insert_row_col(&imat->dp2, i, i);
+	vector_insert(nz0, &imat->gamma_dp, i);
+	matrix_insert_col(dyn_dim, nz0, &imat->dx_p, i);
+	matrix_insert_col(dyn_dim, nz0, &imat->mean_dx_dp, i);
+	matrix_insert_rowcol(nz0, nz0, &imat->dp2, i, i);
 }
 
 static int size_compar(const void *x1, const void *x2)
@@ -253,9 +302,6 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	imat->imat0 = recv_model_imat0(model, ic);
 
 	const double gamma = recv_model_invgrow(model, isend);
-
-	matrix_fill(&imat->dp2, 0.0);
-	struct matrix y;
 	double ptot = 0.0;
 
 	/* gamma2 */
@@ -266,9 +312,10 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	blas_dscal(dyn_dim, gamma, imat->gamma_mean_dx, 1);
 
 	/* dp2 */
-	matrix_update1(&imat->dp2, -1.0 / n, score->dp, score->dp);
+	matrix_dzero(nz, nz, &imat->dp2);
+	blas_dger(nz, nz, -1.0 / n, score->dp, 1, score->dp, 1, &imat->dp2);
 
-	matrix_init(&y, dyn_dim, nz);
+	struct dmatrix y = { xmalloc(dyn_dim * nz * sizeof(double)), MAX(1, dyn_dim) };
 
 	for (iz = 0; iz < nz; iz++) {
 		size_t jrecv = active[iz];
@@ -280,20 +327,20 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 		imat->gamma_dp[iz] = gamma * dp;
 
 		/* mean_dx_dp */
-		double *mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, iz);
+		double *mean_dx_dp_j = MATRIX_COL(&imat->mean_dx_dp, iz);
 		blas_dcopy(dyn_dim, score->mean_dx, 1, mean_dx_dp_j, 1);
 		blas_dscal(dyn_dim, dp / n, mean_dx_dp_j, 1);
 
 		/* dp2 */
-		*matrix_item_ptr(&imat->dp2, iz, iz) += dp;
+		MATRIX_ITEM(&imat->dp2, iz, iz) += dp;
 
 		/* dx_p */
-		double *dx_p_j = matrix_col(&imat->dx_p, iz);
+		double *dx_p_j = MATRIX_COL(&imat->dx_p, iz);
 		blas_dcopy(dyn_dim, dx, 1, dx_p_j, 1);
 		blas_dscal(dyn_dim, n * p, dx_p_j, 1);
 
 		/* var_dx */
-		double *y_i = matrix_col(&y, iz);
+		double *y_i = MATRIX_COL(&y, iz);
 		blas_dcopy(dyn_dim, dx, 1, y_i, 1);
 		blas_daxpy(dyn_dim, -1.0 / n, score->mean_dx, 1, y_i, 1);
 		blas_dscal(dyn_dim, sqrt(p), y_i, 1);
@@ -301,14 +348,13 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 		ptot += p;
 	}
 	blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, dyn_dim, dyn_dim, nz, n,
-		   matrix_to_ptr(&y),
-		   matrix_lda(&y), matrix_to_ptr(&y), matrix_lda(&y), 0.0,
-		   matrix_to_ptr(&imat->var_dx), matrix_lda(&imat->var_dx));
+		   &y, &y, 0.0, &imat->var_dx);
 	/* var_dx */
-	matrix_update1(&imat->var_dx, (1.0 - ptot) / n, score->mean_dx,
-		       score->mean_dx);
+	blas_dger(dyn_dim, dyn_dim, (1.0 - ptot) / n, score->mean_dx, 1,
+		  score->mean_dx, 1, &imat->var_dx);
 
-	matrix_deinit(&y);
+
+	free(y.data);
 }
 
 static void nrecv_add(const struct recv_loglik_sender_score *score0,
@@ -362,10 +408,10 @@ static void imat_update(const struct recv_loglik_sender_imat *imat0,
 	blas_daxpy(nz, 1.0, imat0->gamma_dp, 1, imat1->gamma_dp, 1);
 	blas_daxpy(dyn_dim, 1.0, imat0->gamma_mean_dx, 1, imat1->gamma_mean_dx, 1);
 
-	matrix_axpy(1.0, &imat0->dx_p, &imat1->dx_p);
-	matrix_axpy(1.0, &imat0->mean_dx_dp, &imat1->mean_dx_dp);
-	matrix_axpy(1.0, &imat0->dp2, &imat1->dp2);
-	matrix_axpy(1.0, &imat0->var_dx, &imat1->var_dx);
+	matrix_daxpy(dyn_dim, nz, 1.0, &imat0->dx_p, &imat1->dx_p);
+	matrix_daxpy(dyn_dim, nz, 1.0, &imat0->mean_dx_dp, &imat1->mean_dx_dp);
+	matrix_daxpy(nz, nz, 1.0, &imat0->dp2, &imat1->dp2);
+	matrix_daxpy(dyn_dim, dyn_dim, 1.0, &imat0->var_dx, &imat1->var_dx);
 }
 
 static void score_axpy_obs(double alpha,
@@ -422,7 +468,7 @@ static void imat_axpy(double alpha,
 		      const struct recv_loglik_sender_score *score,
 		      const struct vpattern *active,
 		      const struct design *design,
-		      size_t isend, struct matrix *y)
+		      size_t isend, struct dmatrix *y)
 {
 	(void)isend;		// unused
 
@@ -430,7 +476,7 @@ static void imat_axpy(double alpha,
 	size_t dyn_off = design_dvars_index(design);
 	size_t dyn_dim = design_dvars_dim(design);
 	const double *mean0 = score->mean0;
-	const struct matrix *var0 = imat->imat0;
+	const struct dmatrix *var0 = imat->imat0;
 	const double gamma = score->gamma;
 	const double gamma2 = imat->gamma2;
 
@@ -441,41 +487,40 @@ static void imat_axpy(double alpha,
 	design_muls0(1.0, BLAS_TRANS, design, imat->gamma_dp,
 		     active, 0.0, gamma_x0_dp);
 
-	struct matrix x0_dp2;
+	struct dmatrix x0_dp2 = { xmalloc(dim * n * sizeof(double)), MAX(1, dim) };
 
-	matrix_init(&x0_dp2, dim, n);
 	for (j = 0; j < n; j++) {
-		const double *dp2_j = matrix_item_ptr(&imat->dp2, 0, j);
-		double *dst = matrix_col(&x0_dp2, j);
+		const double *dp2_j = MATRIX_COL(&imat->dp2, j);
+		double *dst = MATRIX_COL(&x0_dp2, j);
 		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, dst);
 	}
 
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
 	 */
 
-	matrix_axpy(alpha * gamma, var0, y);
-	matrix_update1(y, alpha * gamma2, mean0, mean0);
-	matrix_update1(y, -alpha, mean0, gamma_x0_dp);
-	matrix_update1(y, -alpha, gamma_x0_dp, mean0);
+	matrix_daxpy(dim, dim, alpha * gamma, var0, y);
+	blas_dger(dim, dim, alpha * gamma2, mean0, 1, mean0, 1, y);
+	blas_dger(dim, dim, -alpha, mean0, 1, gamma_x0_dp, 1, y);
+	blas_dger(dim, dim, -alpha, gamma_x0_dp, 1, mean0, 1, y);
+
 
 	double *x0_dp2_k = xmalloc(n * sizeof(x0_dp2_k));
 	for (k = 0; k < dim; k++) {
-		blas_dcopy(n, matrix_item_ptr(&x0_dp2, k, 0),
-			   matrix_lda(&x0_dp2), x0_dp2_k, 1);
-		double *dst = matrix_col(y, k);
+		blas_dcopy(n, MATRIX_PTR(&x0_dp2, k, 0), x0_dp2.lda, x0_dp2_k, 1);
+		double *dst = MATRIX_COL(y, k);
 		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, dst);
 	}
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
-	struct matrix y_1 = matrix_slice(y, 0, dyn_off, dim, dyn_dim);
-	struct matrix y1_ = matrix_slice(y, dyn_off, 0, dyn_dim, dim);
-	struct matrix y11 = matrix_slice(y, dyn_off, dyn_off, dyn_dim, dyn_dim);
+	struct dmatrix y_1 = { MATRIX_PTR(y, 0, dyn_off), y->lda }; // dim, dyn_dim
+	struct dmatrix y1_ = { MATRIX_PTR(y, dyn_off, 0), y->lda }; // dyn_dim, dim
+	struct dmatrix y11 = { MATRIX_PTR(y, dyn_off, dyn_off), y->lda}; // dyn_dim, dyn_dim
 
 	/*   Part II: dX' * [ Diag(p) - p p' ] * dX
 	 */
 
-	matrix_axpy(alpha, &imat->var_dx, &y11);
+	matrix_daxpy(dyn_dim, dyn_dim, alpha, &imat->var_dx, &y11);
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
 
 	/*   Part III:   X0' * [ Diag(p) - p p' ] * dX
@@ -486,7 +531,7 @@ static void imat_axpy(double alpha,
 	struct vpattern pat_j;
 	size_t jrecv = 0;
 
-	double *x0_j = xmalloc(dim * sizeof(x0_j[0]));
+	double *x0_j = xmalloc(dim * sizeof(double));
 
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
@@ -495,21 +540,21 @@ static void imat_axpy(double alpha,
 		jrecv = active->indx[i];
 		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, x0_j);
 
-		const double *dx_p_j = matrix_col(&imat->dx_p, i);
-		matrix_update1(&y_1, alpha, x0_j, dx_p_j);
-		matrix_update1(&y1_, alpha, dx_p_j, x0_j);
+		const double *dx_p_j = MATRIX_COL(&imat->dx_p, i);
+		blas_dger(dim, dyn_dim, alpha, x0_j, 1, dx_p_j, 1, &y_1);
+		blas_dger(dyn_dim, dim, alpha, dx_p_j, 1, x0_j, 1, &y1_);
 
-		const double *mean_dx_dp_j = matrix_col(&imat->mean_dx_dp, i);
-		matrix_update1(&y_1, -alpha, x0_j, mean_dx_dp_j);
-		matrix_update1(&y1_, -alpha, mean_dx_dp_j, x0_j);
+		const double *mean_dx_dp_j = MATRIX_COL(&imat->mean_dx_dp, i);
+		blas_dger(dim, dyn_dim, -alpha, x0_j, 1, mean_dx_dp_j, 1, &y_1);
+		blas_dger(dyn_dim, dim, -alpha, mean_dx_dp_j, 1, x0_j, 1, &y1_);
 	}
 
-	matrix_update1(&y_1, -alpha, mean0, imat->gamma_mean_dx);
-	matrix_update1(&y1_, -alpha, imat->gamma_mean_dx, mean0);
+	blas_dger(dim, dyn_dim, -alpha, mean0, 1, imat->gamma_mean_dx, 1, &y_1);
+	blas_dger(dyn_dim, dim, -alpha, imat->gamma_mean_dx, 1, mean0, 1, &y1_);
 
 	free(x0_j);
 	free(x0_dp2_k);
-	matrix_deinit(&x0_dp2);
+	free(x0_dp2.data);
 	free(gamma_x0_dp);
 }
 
@@ -519,10 +564,11 @@ static void info_init(struct recv_loglik_info *info, const struct recv_model *m)
 	assert(m);
 
 	size_t dim = recv_model_dim(m);
+	size_t dim2 = dim * dim;
 
-	matrix_init(&info->imat, dim, dim);
-	info->score = xcalloc(dim, sizeof(info->score[0]));
-	info->mean = xcalloc(dim, sizeof(info->mean[0]));
+	info->imat = (struct dmatrix) { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
+	info->score = xcalloc(dim, sizeof(double));
+	info->mean = xcalloc(dim, sizeof(double));
 	info->dev = 0;
 	info->nsend = 0;
 	info->nrecv = 0;
@@ -532,12 +578,12 @@ static void info_deinit(struct recv_loglik_info *info)
 {
 	free(info->mean);
 	free(info->score);
-	matrix_deinit(&info->imat);
+	free(info->imat.data);
 }
 
 static void info_clear(struct recv_loglik_info *info, size_t dim)
 {
-	matrix_fill(&info->imat, 0);
+	matrix_dzero(dim, dim, &info->imat);
 	memset(info->score, 0, dim * sizeof(info->score[0]));
 	memset(info->mean, 0, dim * sizeof(info->mean[0]));
 	info->dev = 0;
@@ -595,6 +641,9 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 	assert(ll);
 	assert(active);
 
+	const struct recv_model *model = ll->model;
+	const struct design *d = recv_model_design(model);
+	size_t dyn_dim = design_dvars_dim(d);
 	size_t n0 = ll->active.nz;
 
 	if (n > n0) {
@@ -613,8 +662,8 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 				assert(i0 == end0 || *i1 < *i0);
 				score_insert_active(&ll->score, i1 - begin1, n0);
 				score_insert_active(&ll->score_last, i1 - begin1, n0);
-				imat_insert_active(&ll->imat, i1 - begin1, n0);
-				imat_insert_active(&ll->imat_last, i1 - begin1, n0);
+				imat_insert_active(&ll->imat, i1 - begin1, n0, dyn_dim);
+				imat_insert_active(&ll->imat_last, i1 - begin1, n0, dyn_dim);
 				n0++;
 			}
 		}
@@ -729,7 +778,7 @@ void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
 }
 
 void sender_axpy_imat(double alpha, const struct recv_loglik_sender *sll,
-			  struct matrix *y)
+			  struct dmatrix *y)
 {
 	assert(sll);
 	assert(y);
@@ -742,7 +791,7 @@ void sender_axpy_imat(double alpha, const struct recv_loglik_sender *sll,
 }
 
 void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
-			   struct matrix *y)
+			   struct dmatrix *y)
 {
 	assert(sll);
 	assert(y);
@@ -1025,22 +1074,20 @@ static void recv_loglik_axpy_avg_score_nocache(double alpha,
 
 static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 					      const struct recv_loglik *ll,
-					      size_t c, struct matrix *y)
+					      size_t c, struct dmatrix *y)
 {
 	assert(ll);
 	assert(c < recv_model_cohort_count(ll->model));
 	assert(y);
-	assert((size_t)matrix_nrow(y) == recv_model_dim(ll->model));
-	assert((size_t)matrix_ncol(y) == recv_model_dim(ll->model));
 
 	const size_t *cohorts = recv_model_cohorts(ll->model);
 	size_t isend, nsend = recv_model_count(ll->model);
 
-	struct matrix avg_imat, new_imat, diff;
 	size_t dim = recv_model_dim(ll->model);
-	matrix_init(&avg_imat, dim, dim);
-	matrix_init(&new_imat, dim, dim);
-	matrix_init(&diff, dim, dim);
+	size_t dim2 = dim * dim;
+	struct dmatrix avg_imat = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
+	struct dmatrix new_imat = { xmalloc(dim2 * sizeof(double)), MAX(1, dim) };
+	struct dmatrix diff     = { xmalloc(dim2 * sizeof(double)), MAX(1, dim) };
 	size_t ntot, n;
 
 	ntot = 0;
@@ -1055,20 +1102,19 @@ static void recv_loglik_axpy_avg_imat_nocache(double alpha,
 		if (n > 0) {
 			ntot += n;
 
-			matrix_fill(&new_imat, 0.0);
+			matrix_dzero(dim, dim, &new_imat);
 			sender_axpy_imat(1.0 / (double)n, sll, &new_imat);
-			matrix_assign_copy(&diff, BLAS_NOTRANS, &avg_imat);
-			matrix_axpy(-1.0, &new_imat, &diff);
-			//sender_axpy_avg_imat(-1.0, sll, &diff);
-			matrix_axpy(-((double)n) / ntot, &diff, &avg_imat);
+			lapack_dlacpy(LA_COPY_ALL, dim, dim, &avg_imat, &diff);
+			matrix_daxpy(dim, dim, -1.0, &new_imat, &diff);
+			matrix_daxpy(dim, dim, -((double)n) / ntot, &diff, &avg_imat);
 		}
 	}
 	assert(ntot == recv_loglik_count(ll, c));
 
-	matrix_axpy(alpha, &avg_imat, y);
-	matrix_deinit(&diff);
-	matrix_deinit(&new_imat);
-	matrix_deinit(&avg_imat);
+	matrix_daxpy(dim, dim, alpha, &avg_imat, y);
+	free(diff.data);
+	free(new_imat.data);
+	free(avg_imat.data);
 }
 
 static void cache_info(struct recv_loglik *ll, size_t c)
@@ -1132,15 +1178,13 @@ void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
 }
 
 void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
-			       size_t c, struct matrix *y)
+			       size_t c, struct dmatrix *y)
 {
 	assert(c < recv_model_cohort_count(ll->model));
-	assert(y);
-	assert((size_t)matrix_nrow(y) == recv_model_dim(ll->model));
-	assert((size_t)matrix_ncol(y) == recv_model_dim(ll->model));
 
+	size_t n = recv_model_dim(ll->model);
 	const struct recv_loglik_info *info = recv_loglik_info(ll, c);
-	matrix_axpy(alpha, &info->imat, y);
+	matrix_daxpy(n, n, alpha, &info->imat, y);
 }
 
 double recv_loglik_last_dev(const struct recv_loglik *ll)
@@ -1165,7 +1209,7 @@ void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
 }
 
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
-				struct matrix *y)
+				struct dmatrix *y)
 {
 	assert(ll->last);
 	sender_axpy_last_imat(alpha, ll->last, y);

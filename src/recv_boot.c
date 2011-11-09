@@ -61,7 +61,7 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct messages *msgs,
 		    size_t ncohort,
 		    const size_t *cohorts,
-		    const struct matrix *coefs, dsfmt_t * dsfmt)
+		    const struct dmatrix *coefs, dsfmt_t * dsfmt)
 {
 	messages_init(&boot->messages);
 	recv_model_init(&boot->model, f, ncohort, cohorts, coefs);

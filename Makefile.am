@@ -95,15 +95,11 @@ libcore_la_SOURCES = \
 	src/core/delegate.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
-	src/core/linalg.c \
-	src/core/linalg.h \
 	src/core/linesearch.c \
 	src/core/linesearch.h \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/macconfig.h \
-	src/core/matrix.c \
-	src/core/matrix.h \
 	src/core/port.h \
 	src/core/refcount.c \
 	src/core/refcount.h \

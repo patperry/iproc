@@ -56,14 +56,14 @@ struct recv_loglik_sender_score {
 };
 
 struct recv_loglik_sender_imat {
-	const struct matrix *imat0;
+	const struct dmatrix *imat0;
 	double gamma2;		// gamma * (1 - gamma)
 	double *gamma_dp;	// gamma * dp
 	double *gamma_mean_dx;	// gamma * dx' * p
-	struct matrix dx_p;	// dx' * diag(p)
-	struct matrix mean_dx_dp;	// (dx' * p) * dp'
-	struct matrix dp2;	// diag(dp) - dp * dp'
-	struct matrix var_dx;	// dx' * [diag(p) - p p'] * dx
+	struct dmatrix dx_p;	// dx' * diag(p)
+	struct dmatrix mean_dx_dp;	// (dx' * p) * dp'
+	struct dmatrix dp2;	// diag(dp) - dp * dp'
+	struct dmatrix var_dx;	// dx' * [diag(p) - p p'] * dx
 };
 
 struct recv_loglik_sender {
@@ -78,7 +78,7 @@ struct recv_loglik_sender {
 };
 
 struct recv_loglik_info {
-	struct matrix imat;
+	struct dmatrix imat;
 	double *score;
 	double *mean;
 	double dev;
@@ -120,7 +120,7 @@ void recv_loglik_axpy_avg_mean(double alpha, const struct recv_loglik *ll,
 void recv_loglik_axpy_avg_score(double alpha, const struct recv_loglik *ll,
 				size_t c, double *y);
 void recv_loglik_axpy_avg_imat(double alpha, const struct recv_loglik *ll,
-			       size_t c, struct matrix *y);
+			       size_t c, struct dmatrix *y);
 
 size_t recv_loglik_last_count(const struct recv_loglik *ll);
 double recv_loglik_last_dev(const struct recv_loglik *ll);
@@ -129,7 +129,7 @@ void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll,
 void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll,
 				 double *y);
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
-				struct matrix *y);
+				struct dmatrix *y);
 
 /* inline funciton definitions */
 struct recv_model *recv_loglik_model(const struct recv_loglik *ll)

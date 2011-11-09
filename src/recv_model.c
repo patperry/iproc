@@ -8,7 +8,8 @@
 #include "xalloc.h"
 #include "ieee754.h"
 #include "logsumexp.h"
-#include "matrix.h"
+#include "lapack.h"
+#include "matrixutil.h"
 #include "sblas.h"
 #include "recv_model.h"
 
@@ -212,15 +213,15 @@ static void cohort_set(struct recv_model_cohort *cm,
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
 
-	double *y = xmalloc(dim * sizeof(y[0]));
-	matrix_fill(&cm->imat0, 0.0);
+	double *y = xmalloc(dim * sizeof(double));
+	matrix_dzero(dim, dim, &cm->imat0);
 
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		blas_dcopy(dim, cm->mean0, 1, y, 1);
 		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, -1.0, y);
 		pj = cm->p0[jrecv];
 
-		matrix_update1(&cm->imat0, pj, y, y);
+		blas_dger(dim, dim, pj, y, 1, y, 1, &cm->imat0);
 	}
 	free(y);
 
@@ -244,11 +245,13 @@ static void cohort_init(struct recv_model_cohort *cm,
 
 	size_t nreceiver = design_count(design);
 	size_t dim = design_dim(design);
+	size_t dim2 = dim * dim;
 
 	cm->eta0 = xmalloc(nreceiver * sizeof(double));
 	cm->p0 = xmalloc(nreceiver * sizeof(double));
 	cm->mean0 = xmalloc(dim * sizeof(double));
-	matrix_init(&cm->imat0, dim, dim);
+	cm->imat0.data = xmalloc(dim2 * sizeof(double));
+	cm->imat0.lda = MAX(1, dim);
 #ifndef NDEBUG
 	cm->w0 = xmalloc(nreceiver * sizeof(double));
 #endif
@@ -261,7 +264,7 @@ static void cohort_deinit(struct recv_model_cohort *cm)
 #ifndef NDEBUG
 	free(cm->w0);
 #endif
-	matrix_deinit(&cm->imat0);
+	free(cm->imat0.data);
 	free(cm->mean0);
 	free(cm->p0);
 	free(cm->eta0);
@@ -413,7 +416,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 	size_t icohort = recv_model_cohort(m, isend);
 	struct recv_model_sender *send = sender_raw(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
-	const double *coefs = matrix_col(recv_model_coefs(m), icohort);
+	const double *coefs = MATRIX_COL(recv_model_coefs(m), icohort);
 
 	size_t nzmax = send->active.nzmax;
 	int ins;
@@ -502,19 +505,17 @@ static void recv_model_clear(void *udata, struct frame *f)
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
 		     size_t ncohort,
-		     const size_t *cohorts, const struct matrix *coefs)
+		     const size_t *cohorts, const struct dmatrix *coefs)
 {
 	assert(model);
 	assert(f);
 	assert(ncohort > 0);
 	assert(cohorts);
-	assert(!coefs
-	       || design_dim(frame_recv_design(f)) == (size_t)matrix_nrow(coefs));
-	assert(!coefs || ncohort);
 	assert(frame_recv_count(f) > 0);
 	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
 	const struct design *d = frame_recv_design(f);
+	size_t dim = design_dim(d);
 	const size_t nsend = frame_send_count(f);
 
 	model->frame = f;
@@ -522,16 +523,19 @@ void recv_model_init(struct recv_model *model,
 	model->cohorts = xmalloc(nsend * sizeof(cohorts[0]));
 	memcpy(model->cohorts, cohorts, sizeof(cohorts[0]) * nsend);
 
+	model->coefs.data = xmalloc(dim * ncohort * sizeof(double));
+	model->coefs.lda = MAX(1, dim);
+
 	if (coefs) {
-		matrix_init_copy(&model->coefs, BLAS_NOTRANS, coefs);
+		lapack_dlacpy(LA_COPY_ALL, dim, ncohort, coefs, &model->coefs);
 	} else {
-		matrix_init(&model->coefs, design_dim(d), ncohort);
+		matrix_dzero(dim, ncohort, &model->coefs);
 	}
 
 	struct recv_model_cohort *cms = xcalloc(ncohort, sizeof(*cms));
 	size_t ic;
 	for (ic = 0; ic < ncohort; ic++) {
-		const double *col = matrix_col(&model->coefs, ic);
+		const double *col = MATRIX_COL(&model->coefs, ic);
 		cohort_init(&cms[ic], d, col);
 	}
 	model->cohort_models = cms;
@@ -574,7 +578,7 @@ void recv_model_deinit(struct recv_model *model)
 	}
 	free(cms);
 
-	matrix_deinit(&model->coefs);
+	free(model->coefs.data);
 	free(model->cohorts);
 }
 
@@ -589,7 +593,7 @@ const struct design *recv_model_design(const struct recv_model *model)
 	return frame_recv_design(recv_model_frame(model));
 }
 
-const struct matrix *recv_model_coefs(const struct recv_model *model)
+const struct dmatrix *recv_model_coefs(const struct recv_model *model)
 {
 	assert(model);
 	return &((struct recv_model *)model)->coefs;
@@ -659,40 +663,38 @@ double *recv_model_mean0(const struct recv_model *m, size_t c)
 	return ((struct recv_model *)m)->cohort_models[c].mean0;
 }
 
-struct matrix *recv_model_imat0(const struct recv_model *m, size_t c)
+struct dmatrix *recv_model_imat0(const struct recv_model *m, size_t c)
 {
 	assert(m);
 	assert(c < recv_model_cohort_count(m));
 	return &((struct recv_model *)m)->cohort_models[c].imat0;
 }
 
-void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
+void recv_model_set_coefs(struct recv_model *m, const struct dmatrix *coefs)
 {
-	assert(m);
-	assert(!coefs
-	       || design_dim(recv_model_design(m)) == (size_t)matrix_nrow(coefs));
-
-	if (coefs) {
-		matrix_assign_copy(&m->coefs, BLAS_NOTRANS, coefs);
-	} else {
-		matrix_fill(&m->coefs, 0.0);
-	}
-
 	const struct frame *f = recv_model_frame(m);
 	const struct design *d = frame_recv_design(f);
-	struct recv_model_sender *senders = m->sender_models;
+	size_t dim = design_dim(d);
+	size_t nc = recv_model_cohort_count(m);
 
-	size_t ic, nc = recv_model_cohort_count(m);
+	if (coefs) {
+		lapack_dlacpy(LA_COPY_ALL, dim, nc, coefs, &m->coefs);
+	} else {
+		matrix_dzero(dim, nc, &m->coefs);
+	}
+
+	size_t ic;
 	for (ic = 0; ic < nc; ic++) {
-		double *col = matrix_col(&m->coefs, ic);
+		double *col = MATRIX_COL(&m->coefs, ic);
 		cohort_set(&m->cohort_models[ic], d, col);
 	}
 
 	const size_t *cohorts = recv_model_cohorts(m);
+	struct recv_model_sender *senders = m->sender_models;
 	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
 		size_t ic = cohorts[isend];
-		double *col = matrix_col(&m->coefs, ic);
+		double *col = MATRIX_COL(&m->coefs, ic);
 		sender_set(m, &senders[isend], isend, f, col);
 	}
 }

@@ -29,7 +29,7 @@ static size_t nrecv;
 static size_t ncohort;
 static size_t ntrait;
 static size_t *cohorts;
-static double *traits;
+static struct dmatrix traits;
 static const char * const *cohort_names;
 static const char * const *trait_names;
 static int has_loops;
@@ -39,7 +39,8 @@ static struct frame frame;
 
 static void setup(void) {
 	enron_employees_init(&nsend, &cohorts, &ncohort, &cohort_names,
-			     &traits, &ntrait, &trait_names);
+			     &traits.data, &ntrait, &trait_names);
+	traits.lda = MAX(1, nsend);
 	nrecv = nsend;
 	has_loops = 0;
 
@@ -68,7 +69,7 @@ static void setup(void) {
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvls);
 	struct design *d = frame_recv_design(&frame);
         design_set_has_effects(d, has_effects);
-	design_set_traits(d, traits, ntrait, trait_names);
+	design_set_traits(d, ntrait, &traits, trait_names);
 	design_add_dvar(d, RECV_VAR_IRECV, NULL);
 	design_add_dvar(d, RECV_VAR_NRECV, NULL);
 	design_add_dvar(d, RECV_VAR_ISEND, NULL);
@@ -213,7 +214,7 @@ static void add_constraints(struct recv_fit *fit)
 static void teardown(void)
 {
 	frame_deinit(&frame);
-	free(traits);
+	free(traits.data);
 	free(cohorts);
 }
 
@@ -307,8 +308,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 		/* coefficients */
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS)));
-		const struct matrix *coefs = recv_fit_coefs(fit);
-		YG(yajl_gen_matrix(hand, coefs));
+		const struct dmatrix *coefs = recv_fit_coefs(fit);
+		YG(yajl_gen_matrix(hand, dim, nc, coefs));
 
 		/* constraint names */
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES)));
@@ -404,8 +405,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
 			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-			const struct matrix *imat = &info->imat;
-			YG(yajl_gen_matrix(hand, imat));
+			const struct dmatrix *imat = &info->imat;
+			YG(yajl_gen_matrix(hand, dim, dim, imat));
 		}
 		YG(yajl_gen_array_close(hand));
 
@@ -442,10 +443,10 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 				fit->model.ncohort, fit->model.cohorts,
 				coefs);
 		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
-		YG(yajl_gen_matrix(hand, &resid.obs.dyad));
+		YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.obs.dyad));
 
 		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
-		YG(yajl_gen_matrix(hand, &resid.exp.dyad));
+		YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.exp.dyad));
 
 		recv_resid_deinit(&resid);
 	}
@@ -493,7 +494,7 @@ static void output(const struct recv_fit *fit)
 }
 
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
-		  const struct matrix *coefs0)
+		  const struct dmatrix *coefs0)
 {
 	size_t maxit = 100;
 	size_t report = 1;
@@ -547,7 +548,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	return err;
 }
 
-static void init_coefs(struct matrix *coefs, char *filename)
+static void init_coefs(struct dmatrix *coefs, char *filename)
 {
 	int err = 1;
 	FILE *fp = fopen(filename, "rb");
@@ -611,13 +612,12 @@ static void init_coefs(struct matrix *coefs, char *filename)
 	if (YAJL_GET_ARRAY(vdata)->len != n)
 		goto cleanup_yajl;
 
-	matrix_init(coefs, nrow, ncol);
+	*coefs = (struct dmatrix) { xcalloc(nrow * ncol, sizeof(double)), MAX(1, nrow) };
 	yajl_val *item = YAJL_GET_ARRAY(vdata)->values;
-	double *ptr = matrix_to_ptr(coefs);
+	double *ptr = coefs->data;
 
 	for (i = 0; i < n; i++) {
 		if (!YAJL_IS_NUMBER(item[i])) {
-			matrix_deinit(coefs);
 			err = 1;
 			goto cleanup_coefs;
 		}
@@ -628,7 +628,7 @@ static void init_coefs(struct matrix *coefs, char *filename)
 
 
 cleanup_coefs:
-	matrix_deinit(coefs);
+	free(coefs->data);
 cleanup_yajl:
 	yajl_tree_free(node);
 	free(filebuf);
@@ -694,7 +694,7 @@ int main(int argc, char **argv)
 	int err = 0;
 
 	struct options opts = parse_options(argc, argv);
-	struct matrix coefs0;
+	struct dmatrix coefs0;
 	bool has_coefs0 = 0;
 
 	if (opts.startfile) {
@@ -709,7 +709,7 @@ int main(int argc, char **argv)
 
 	setup();
 	enron_messages_init(&enron_messages, 5);
-	struct matrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
+	struct dmatrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
 
 	if (opts.boot) {
 		dsfmt_t dsfmt;
@@ -731,7 +731,7 @@ int main(int argc, char **argv)
 	teardown();
 
 	if (has_coefs0) {
-		matrix_deinit(&coefs0);
+		free(coefs0.data);
 	}
 
 	return err;

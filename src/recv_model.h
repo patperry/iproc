@@ -2,10 +2,10 @@
 #define _IPROC_MODEL_H
 
 #include <stddef.h>
+#include "blas.h"
 #include "sblas.h"
 #include "design.h"
 #include "frame.h"
-#include "matrix.h"
 
 /* I. Model
  * --------
@@ -116,7 +116,7 @@ struct recv_model_cohort {
 	double *eta0;
 	double *p0;
 	double *mean0;
-	struct matrix imat0;
+	struct dmatrix imat0;
 
 	/* debug */
 #ifndef NDEBUG
@@ -137,7 +137,7 @@ struct recv_model {
 	struct frame *frame;
 	size_t ncohort;
 	size_t *cohorts;
-	struct matrix coefs;
+	struct dmatrix coefs;
 	struct recv_model_cohort *cohort_models;
 	struct recv_model_sender *sender_models;
 };
@@ -145,20 +145,20 @@ struct recv_model {
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
 		     size_t ncohort,
-		     const size_t *cohorts, const struct matrix *coefs);
+		     const size_t *cohorts, const struct dmatrix *coefs);
 void recv_model_deinit(struct recv_model *model);
 
 struct frame *recv_model_frame(const struct recv_model *model);
 const struct design *recv_model_design(const struct recv_model *model);
 const size_t *recv_model_cohorts(const struct recv_model *model);
-const struct matrix *recv_model_coefs(const struct recv_model *model);
+const struct dmatrix *recv_model_coefs(const struct recv_model *model);
 size_t recv_model_send_count(const struct recv_model *model);
 size_t recv_model_cohort_count(const struct recv_model *model);
 size_t recv_model_cohort(const struct recv_model *model, size_t isend);
 size_t recv_model_count(const struct recv_model *model);
 size_t recv_model_dim(const struct recv_model *model);
 
-void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs);
+void recv_model_set_coefs(struct recv_model *m, const struct dmatrix *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
 double recv_model_logsumwt0(const struct recv_model *m, size_t c);
@@ -167,7 +167,7 @@ double *recv_model_probs0(const struct recv_model *m, size_t c);
 
 double recv_model_prob0(const struct recv_model *m, size_t c, size_t jrecv);
 double *recv_model_mean0(const struct recv_model *m, size_t c);
-struct matrix *recv_model_imat0(const struct recv_model *m, size_t c);
+struct dmatrix *recv_model_imat0(const struct recv_model *m, size_t c);
 
 /* updated values */
 double recv_model_logsumwt(const struct recv_model *m, size_t isend);

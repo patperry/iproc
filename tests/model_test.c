@@ -25,13 +25,13 @@ static size_t nrecv;
 static size_t ncohort;
 static size_t ntrait;
 static size_t *cohorts;
-static double *traits;
+static struct dmatrix traits;
 static const char * const *cohort_names;
 static const char * const *trait_names;
 static struct messages messages;
 static struct design *design;
 static struct frame frame;
-static struct matrix coefs;
+static struct dmatrix coefs;
 static struct recv_model model;
 
 
@@ -41,7 +41,8 @@ static void enron_setup_fixture()
 	print_message("-----\n");
 	enron_employees_init(&nsend, &cohorts, &ncohort, 
 			     &cohort_names,
-			     &traits, &ntrait, &trait_names);
+			     &traits.data, &ntrait, &trait_names);
+	traits.lda = MAX(1, nsend);
 	enron_messages_init(&messages, -1);
 	nrecv = nsend;
 }
@@ -49,7 +50,7 @@ static void enron_setup_fixture()
 static void enron_teardown_fixture()
 {
 	free(cohorts);
-	free(traits);
+	free(traits.data);
 	messages_deinit(&messages);
 	print_message("\n\n");
 }
@@ -65,17 +66,18 @@ static void basic_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_NRECV, NULL);
-	matrix_init(&coefs, design_dim(design), ncohort);
+	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
+	coefs.lda = MAX(1, design_dim(design));
 	
-	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
-		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
+	for (c = 0; c < ncohort; c++) {
+		for (i = 0; i < design_dim(design); i++) {
 			double val = (i + 2 * c % 5 == 0 ? -2.0 :
 				      i + 3 * c % 5 == 1 ?  1.0 :
 				      i + 7 * c % 5 == 2 ? -1.0 :
 				      i + 11 * c % 5 == 3 ?  2.0 : 0.0);
-			matrix_set_item(&coefs, i, c, val);
+			MATRIX_ITEM(&coefs, i, c) = val;
 		}
 	}
 	
@@ -85,7 +87,7 @@ static void basic_setup()
 static void teardown()
 {
 	recv_model_deinit(&model);
-	matrix_deinit(&coefs);
+	free(coefs.data);
 	frame_deinit(&frame);
 }
 
@@ -101,18 +103,19 @@ static void hard_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
-	design_set_traits(design, traits, ntrait, trait_names);
+	design_set_traits(design, ntrait, &traits, trait_names);
 	design_add_dvar(design, RECV_VAR_NRECV, NULL);
-	matrix_init(&coefs, design_dim(design), ncohort);
+	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
+	coefs.lda = MAX(1, design_dim(design));	
 	
-	for (c = 0; c < (size_t)matrix_ncol(&coefs); c++) {
-		for (i = 0; i < (size_t)matrix_nrow(&coefs); i++) {
+	for (c = 0; c < ncohort; c++) {
+		for (i = 0; i < design_dim(design); i++) {
 			double val = (i + 2 * c % 7 == 0 ?  0.1 :
 				      i + 3 * c % 7 == 1 ?  0.3 :
 				      i + 5 * c % 7 == 2 ? -0.2 :
 				      i + 11 * c % 7 == 4 ? -10 :
 				      i % 7 == 6 ? +10 : 0.0);
-			matrix_set_item(&coefs, i, c, val);
+			MATRIX_ITEM(&coefs, i, c) = val;
 		}
 	}
 	
@@ -199,7 +202,7 @@ static void test_probs()
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
 			size_t c = cohorts[isend];
-			const double *col = matrix_col(&coefs, c);
+			const double *col = MATRIX_COL(&coefs, c);
 			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, col, 0.0, eta);
 			
 			if (!frame_has_loops(&frame))

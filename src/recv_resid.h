@@ -3,17 +3,17 @@
 
 #include "messages.h"
 #include "design.h"
-#include "matrix.h"
 #include "recv_model.h"
+#include "blas.h"
 
 struct recv_resid_count {
-	struct matrix dyad;
+	struct dmatrix dyad;
 	double *send;
 	double *recv;
 	ssize_t tot;
 
 	// internal
-	struct matrix dyad_trans;
+	struct dmatrix dyad_trans;
 	bool dyad_cached;
 };
 
@@ -27,7 +27,7 @@ void recv_resid_init(struct recv_resid *resid,
 		     struct frame *f,
 		     const struct messages *msgs,
 		     size_t ncohort,
-		     const size_t *cohorts, const struct matrix *coefs);
+		     const size_t *cohorts, const struct dmatrix *coefs);
 void recv_resid_deinit(struct recv_resid *resid);
 
 #endif /* _RECV_RESID_H */
