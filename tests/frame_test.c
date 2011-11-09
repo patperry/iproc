@@ -6,6 +6,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "coreutil.h"
 #include "cmockery.h"
 #include "xalloc.h"
 

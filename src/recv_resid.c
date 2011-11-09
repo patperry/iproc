@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "coreutil.h"
 #include "matrixutil.h"
 #include "xalloc.h"
 #include "recv_resid.h"

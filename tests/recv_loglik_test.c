@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "cmockery.h"
+#include "coreutil.h"
 #include "blas.h"
 #include "matrixutil.h"
 #include "lapack.h"

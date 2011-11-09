@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdlib.h>
+#include "coreutil.h"
 #include "cmockery.h"
 #include "lapack.h"
 #include "matrixutil.h"

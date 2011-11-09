@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include "coreutil.h"
 #include "xalloc.h"
 #include "yajl/yajl_tree.h"
 #define DSFMT_MEXP 19937

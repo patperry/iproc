@@ -90,8 +90,6 @@ libcore_la_SOURCES = \
 	lib/linalg/src/matrixutil.h \
 	lib/linalg/src/sblas.c \
 	lib/linalg/src/sblas.h \
-	src/core/compare.h \
-	src/core/delegate.h \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
 	src/core/linesearch.c \
@@ -101,9 +99,7 @@ libcore_la_SOURCES = \
 	src/core/macconfig.h \
 	src/core/port.h \
 	src/core/refcount.c \
-	src/core/refcount.h \
-	src/core/util.h \
-	src/core/util.c
+	src/core/refcount.h
 
 libcore_la_LIBADD = \
 	libminpack.la \

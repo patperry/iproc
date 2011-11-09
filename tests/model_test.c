@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "cmockery.h"
 
+#include "coreutil.h"
 #include "xalloc.h"
 #include "ieee754.h"
 #include "logsumexp.h"

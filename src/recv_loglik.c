@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "coreutil.h"
 #include "lapack.h"
 #include "matrixutil.h"
 #include "sblas.h"

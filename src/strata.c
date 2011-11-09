@@ -2,8 +2,8 @@
 #include <stdint.h>		// uint64_t
 #include <stdlib.h>		// free
 #include <string.h>		// memcpy
+#include "coreutil.h"		// container_of
 #include "hash.h"		// double_hash, hash_combine
-#include "util.h"		// container_of
 #include "xalloc.h"		// xmalloc, xrealloc
 #include "strata.h"
 

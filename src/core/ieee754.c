@@ -2,7 +2,6 @@
 
 #include <float.h>
 #include <math.h>
-#include "compare.h"
 #include "ieee754.h"
 
 #define DBL_EXPMASK            ((uint16_t) 0x7FF0)
@@ -162,14 +161,23 @@ int double_eqrel(double x, double y)
 	    1 : 0;
 }
 
-DEFINE_COMPARE_AND_EQUALS_FN(uint64_compare, uint64_equals, uint64_t)
-
 /* compare using uint64_t instead of double to avoid dealing with NaN
  * comparisons; this relies on IEEE doubles being 8 bytes and lexicographically
  * ordered, and uint64_t having the same endianness and alignment as double */
 bool double_equals(const void *x, const void *y)
 {
-	return uint64_equals(x, y);
+	return *(uint64_t *)x == *(uint64_t *)y;
+}
+
+static int uint64_compare(uint64_t x, uint64_t y)
+{
+	if (x < y) {
+		return -1;
+	} else if (x > y) {
+		return +1;
+	} else {
+		return 0;
+	}
 }
 
 int double_compare(const void *x, const void *y)
@@ -178,11 +186,11 @@ int double_compare(const void *x, const void *y)
 	union double_uint64 yrep = { *(double *)y };
 
 	if (xrep.w & UINT64_C(0x8000000000000000)) {	// x < 0
-		return uint64_compare(y, x);	// if y >= 0, returns -1, else returns cmp(|y|, |x|)
+		return uint64_compare(yrep.w, xrep.w);	// if y >= 0, returns -1, else returns cmp(|y|, |x|)
 	} else if (yrep.w & UINT64_C(0x8000000000000000)) {	// x >= 0, y < 0
 		return 1;
 	} else {		// x >= 0, y >= 0
-		return uint64_compare(x, y);
+		return uint64_compare(xrep.w, yrep.w);
 	}
 }
 
