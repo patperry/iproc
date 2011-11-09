@@ -97,9 +97,7 @@ libcore_la_SOURCES = \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h \
 	src/core/macconfig.h \
-	src/core/port.h \
-	src/core/refcount.c \
-	src/core/refcount.h
+	src/core/port.h
 
 libcore_la_LIBADD = \
 	libminpack.la \

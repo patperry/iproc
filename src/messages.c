@@ -40,41 +40,13 @@ void messages_init(struct messages *msgs)
 	msgs->max_from = 0;
 	msgs->max_nto = 0;
 	msgs->to_cached = false;
-	refcount_init(&msgs->refcount);	
-}
-
-struct messages *messages_alloc()
-{
-	struct messages *msgs = xcalloc(1, sizeof(*msgs));
-	messages_init(msgs);
-	return msgs;
-}
-
-struct messages *messages_ref(struct messages *msgs)
-{
-	assert(msgs);
-	refcount_get(&msgs->refcount);
-	return msgs;
 }
 
 void messages_deinit(struct messages *msgs)
 {
 	assert(msgs);
-	refcount_deinit(&msgs->refcount);
 	free(msgs->reps);
 	free(msgs->recv);
-}
-
-void messages_free(struct messages *msgs)
-{
-	if (!msgs)
-		return;
-
-	if (refcount_put(&msgs->refcount, NULL)) {
-		refcount_get(&msgs->refcount);
-		messages_deinit(msgs);
-		free(msgs);
-	}
 }
 
 size_t messages_count(const struct messages *msgs)

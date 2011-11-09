@@ -1,7 +1,7 @@
 #ifndef _MESSAGES_H
 #define _MESSAGES_H
 
-#include "refcount.h"
+#include <stddef.h>
 
 struct message {
 	double time;
@@ -18,7 +18,7 @@ struct message_rep {
 
 struct messages {
 	struct message_rep *reps;
-	size_t nsend, nsend_max;	
+	size_t nsend, nsend_max;
 	size_t *recv;
 	size_t nrecv, nrecv_max;
 	double tlast;
@@ -26,7 +26,6 @@ struct messages {
 	size_t max_to;
 	size_t max_nto;
 	bool to_cached;
-	struct refcount refcount;	
 };
 
 struct messages_iter {
@@ -44,10 +43,6 @@ struct messages_iter {
 
 void messages_init(struct messages *msgs);
 void messages_deinit(struct messages *msgs);
-
-struct messages *messages_alloc();
-struct messages *messages_ref(struct messages *msgs);
-void messages_free(struct messages *msgs);
 
 size_t messages_count(const struct messages *msgs);
 size_t messages_recv_count(const struct messages *msgs);

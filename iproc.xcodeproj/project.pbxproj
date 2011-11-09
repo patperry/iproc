@@ -21,8 +21,6 @@
 		22234183144F364D00D99D8E /* logsumexp.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE7D132EC8710000097B /* logsumexp.h */; };
 		22234184144F364D00D99D8E /* macconfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C601413511AD80008B25B /* macconfig.h */; };
 		22234187144F364D00D99D8E /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FDA134DB9BC0008B25B /* port.h */; };
-		22234188144F364D00D99D8E /* refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE87132EC8710000097B /* refcount.c */; };
-		22234189144F364D00D99D8E /* refcount.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE88132EC8710000097B /* refcount.h */; };
 		2223419E144F368800D99D8E /* coreutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234192144F368800D99D8E /* coreutil.h */; };
 		2223419F144F368800D99D8E /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234193144F368800D99D8E /* hash.h */; };
 		222341A0144F368800D99D8E /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22234194144F368800D99D8E /* hashset.c */; };
@@ -432,8 +430,6 @@
 		221FEE79132EC8710000097B /* ieee754.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ieee754.h; path = src/core/ieee754.h; sourceTree = "<group>"; };
 		221FEE7C132EC8710000097B /* logsumexp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = logsumexp.c; path = src/core/logsumexp.c; sourceTree = "<group>"; };
 		221FEE7D132EC8710000097B /* logsumexp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logsumexp.h; path = src/core/logsumexp.h; sourceTree = "<group>"; };
-		221FEE87132EC8710000097B /* refcount.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = refcount.c; path = src/core/refcount.c; sourceTree = "<group>"; };
-		221FEE88132EC8710000097B /* refcount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = refcount.h; path = src/core/refcount.h; sourceTree = "<group>"; };
 		221FEEDC132EC91A0000097B /* R.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = R.framework; path = Library/Frameworks/R.framework; sourceTree = SDKROOT; };
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		22221812136F1A8C00F0C7D2 /* frame_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = frame_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -690,8 +686,6 @@
 				221FEE7D132EC8710000097B /* logsumexp.h */,
 				221C601413511AD80008B25B /* macconfig.h */,
 				221C5FDA134DB9BC0008B25B /* port.h */,
-				221FEE87132EC8710000097B /* refcount.c */,
-				221FEE88132EC8710000097B /* refcount.h */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -958,7 +952,6 @@
 				22234183144F364D00D99D8E /* logsumexp.h in Headers */,
 				22234184144F364D00D99D8E /* macconfig.h in Headers */,
 				22234187144F364D00D99D8E /* port.h in Headers */,
-				22234189144F364D00D99D8E /* refcount.h in Headers */,
 				2223419E144F368800D99D8E /* coreutil.h in Headers */,
 				2223419F144F368800D99D8E /* hash.h in Headers */,
 				222341A1144F368800D99D8E /* hashset.h in Headers */,
@@ -1339,7 +1332,6 @@
 				2223417C144F364D00D99D8E /* ieee754.c in Sources */,
 				22234180144F364D00D99D8E /* linesearch.c in Sources */,
 				22234182144F364D00D99D8E /* logsumexp.c in Sources */,
-				22234188144F364D00D99D8E /* refcount.c in Sources */,
 				222341A0144F368800D99D8E /* hashset.c in Sources */,
 				222341A2144F368800D99D8E /* pqueue.c in Sources */,
 				222341A5144F368800D99D8E /* timsort.c in Sources */,
