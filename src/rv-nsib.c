@@ -57,9 +57,9 @@ static void nsib_message_add(void *udata, struct frame *f,
 	size_t iz, nz = fa->active.nz;
 	const size_t *nmsg;
 
-	//printf("add { %zd -> [", msg->from);
+	//printf("add { %zu -> [", msg->from);
 	//for (ito = 0; ito < nto; ito++) {
-	//	printf(" %zd", msg->to[ito]);
+	//	printf(" %zu", msg->to[ito]);
 	//}
 	//printf(" ] }\n");
 
@@ -85,7 +85,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 					continue;
 
 				frame_recv_update(f, isend, jrecv, dx_data, &pat);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       isend, jrecv, 0, intvl1, dx_data[0]);
 			}
 
@@ -98,7 +98,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 					continue;
 
 				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       coisend, cojrecv, intvl1, 0, dx_data[0]);
 			}
 
@@ -132,11 +132,11 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	size_t iz, nz = fa->active.nz;
 	const size_t *nmsg;
 
-	//printf("advance { %zd -> [", msg->from);
+	//printf("advance { %zu -> [", msg->from);
 	//for (ito = 0; ito < nto; ito++) {
-	//	printf(" %zd", msg->to[ito]);
+	//	printf(" %zu", msg->to[ito]);
 	//}
-	//printf(" ] } to %zd\n", intvl);
+	//printf(" ] } to %zu\n", intvl);
 
 
 	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
@@ -165,9 +165,9 @@ static void nsib_message_advance(void *udata, struct frame *f,
 					continue;
 
 				frame_recv_update(f, isend, jrecv, dx_data, &pat);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       isend, jrecv, intvl - 1, intvl1, dx_data[0]);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       isend, jrecv, intvl, intvl1, dx_data[1]);
 			}
 
@@ -181,9 +181,9 @@ static void nsib_message_advance(void *udata, struct frame *f,
 					continue;
 
 				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       coisend, cojrecv, intvl1, intvl - 1, dx_data[0]);
-				//printf("    dx[%zd, %zd](%zd, %zd) += %g\n",
+				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       coisend, cojrecv, intvl1, intvl, dx_data[1]);
 			}
 

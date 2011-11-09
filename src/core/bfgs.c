@@ -40,7 +40,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 		double y_y = vector_dot(y, y);
 		assert(y_y > 0);
 		double scale = s_y / y_y;
-		ssize_t i, n = vector_dim(y);
+		size_t i, n = vector_dim(y);
 
 		matrix_fill(H, 0.0);
 		for (i = 0; i < n; i++) {
@@ -73,7 +73,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 	vector_assign_copy(&opt->grad0, grad);
 }
 
-void bfgs_init(struct bfgs *opt, ssize_t n, const struct bfgs_ctrl *ctrl)
+void bfgs_init(struct bfgs *opt, size_t n, const struct bfgs_ctrl *ctrl)
 {
 	assert(opt);
 	assert(n >= 0);
@@ -156,7 +156,7 @@ static bool converged(const struct bfgs *opt)
 	//      fabs(opt->df /MAX(1, opt->f0)),
 	//      vector_max_abs(&opt->grad0), vector_max_abs(&opt->step));
 
-	ssize_t i, n = bfgs_dim(opt);
+	size_t i, n = bfgs_dim(opt);
 	for (i = 0; i < n; i++) {
 		double x = vector_item(&opt->x0, i);
 		double g = vector_item(&opt->grad0, i);

@@ -28,7 +28,7 @@
 struct recv_fit_ctrl {
 	double gtol;
 	double xtol;
-	ssize_t ls_maxit;
+	size_t ls_maxit;
 	struct linesearch_ctrl ls;
 	double vartol;
 	double eigtol;
@@ -127,7 +127,7 @@ void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, size_t c,
 			     double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t c1,
 			    size_t i2, size_t c2);
-//ssize_t recv_fit_add_constr_identify(struct recv_fit *fit);
+//size_t recv_fit_add_constr_identify(struct recv_fit *fit);
 
 /* fitting */
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,

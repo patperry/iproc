@@ -19,7 +19,7 @@
 extern int dcsrch_(double *stp, double *f, double *g,
 		   double *ftol, double *gtol, double *xtol, char *task,
 		   double *stpmin, double *stpmax, f77int *isave,
-		   double *dsave, ssize_t task_len);
+		   double *dsave, size_t task_len);
 
 static void linesearch_dcsrch(struct linesearch *ls)
 {
@@ -37,7 +37,7 @@ static void linesearch_dcsrch(struct linesearch *ls)
 	//      fprintf(stderr, "LNSRCH: stp = %.22e, f = %.22e, g = %.22e\n", ls->stp, ls->f, ls->g);
 	//}
 
-	ssize_t task_len = sizeof(ls->taskbuf) - 1;
+	size_t task_len = sizeof(ls->taskbuf) - 1;
 
 	assert(task_len == 60);
 	dcsrch_(&ls->stp, &ls->f, &ls->g, &ls->ctrl.ftol,

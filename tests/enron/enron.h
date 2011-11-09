@@ -64,7 +64,7 @@ int enron_employees_init_fread(size_t *nactorp,
 			       const char * const **trait_namesp,
 			       FILE *stream);
 
-bool enron_messages_init(struct messages *messages, ssize_t maxrecip);
-bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE *stream);
+bool enron_messages_init(struct messages *messages, size_t maxrecip);
+bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream);
 
 #endif /* _ENRON_H */

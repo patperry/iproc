@@ -77,8 +77,8 @@ static void nsend_message_advance(void *udata, struct frame *f,
 
 		size_t jrecv = msg->to[ito];
 
-		ssize_t ix1 = dyn_index + intvl;
-		ssize_t ix0 = ix1 - 1;
+		size_t ix1 = dyn_index + intvl;
+		size_t ix0 = ix1 - 1;
 
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;

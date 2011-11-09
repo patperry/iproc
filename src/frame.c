@@ -448,12 +448,12 @@ static void process_current_messages(struct frame *f)
 		double time = frame_time(f);
 #endif
 
-		//fprintf(stderr, "-> message_add %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
+		//fprintf(stderr, "-> message_add %p, { %zu -> [ ", msg, msg->from);
 
 		//if (msg->nto > 0)
-		//      fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+		//      fprintf(stderr, "%zu", msg->to[0]);
 		//for (ito = 1; ito < msg->nto; ito++) {
-		//      fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+		//      fprintf(stderr, ", %zu", msg->to[ito]);
 		//}
 		//fprintf(stderr, " ] }\n");
 
@@ -533,13 +533,13 @@ static void process_event(struct frame *f)
 	double time = frame_time(f);
 #endif
 
-	//fprintf(stderr, "-> message_advance %p, { %" SSIZE_FMT " -> [ ", msg, msg->from);
+	//fprintf(stderr, "-> message_advance %p, { %zu" -> [ ", msg, msg->from);
 	//size_t ito;
 
 	//if (msg->nto > 0)
-	//      fprintf(stderr, "%" SSIZE_FMT, msg->to[0]);
+	//      fprintf(stderr, "%zu", msg->to[0]);
 	//for (ito = 1; ito < msg->nto; ito++) {
-	//      fprintf(stderr, ", %" SSIZE_FMT, msg->to[ito]);
+	//      fprintf(stderr, ", %zu", msg->to[ito]);
 	//}
 	//fprintf(stderr, " ] }\n");
 

@@ -17,7 +17,7 @@
 
 struct bfgs_ctrl {
 	double gtol;
-	ssize_t ls_maxit;
+	size_t ls_maxit;
 	struct linesearch_ctrl ls;
 };
 
@@ -46,7 +46,7 @@ struct bfgs {
 
 	/* linsearch workspace */
 	struct linesearch ls;
-	ssize_t ls_it;
+	size_t ls_it;
 
 	/* inverse hessian estimate */
 	struct matrix inv_hess;
@@ -57,10 +57,10 @@ struct bfgs {
 	struct vector H_dg;
 };
 
-void bfgs_init(struct bfgs *opt, ssize_t n, const struct bfgs_ctrl *ctrl);
+void bfgs_init(struct bfgs *opt, size_t n, const struct bfgs_ctrl *ctrl);
 void bfgs_deinit(struct bfgs *opt);
 
-static inline ssize_t bfgs_dim(const struct bfgs *opt);
+static inline size_t bfgs_dim(const struct bfgs *opt);
 
 enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
 			  double f0, const struct vector *grad0);
@@ -92,7 +92,7 @@ bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl)
 	}
 }
 
-ssize_t bfgs_dim(const struct bfgs *opt)
+size_t bfgs_dim(const struct bfgs *opt)
 {
 	assert(opt);
 	return vector_dim(&opt->x0);

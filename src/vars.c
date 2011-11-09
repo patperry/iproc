@@ -15,7 +15,7 @@ char **var_names_alloc(char *name, size_t len, size_t n)
 		size_t len1 = len + 2 + digits + 1;
 		res[i] = xcalloc(len1, sizeof(res[i][0]));
 		size_t nout =
-		    snprintf(res[i], len1, "%s(%" SSIZE_FMT ")", name, i + 1);
+		    snprintf(res[i], len1, "%s(%zu)", name, i + 1);
 		assert(nout + 1 == len1);
 		(void)nout;
 	}
@@ -38,8 +38,7 @@ char **var_names_alloc2(char *name, size_t len, size_t m, size_t n)
 			ix = i + j * m;
 			res[ix] = xcalloc(len1, sizeof(res[ix][0]));
 			size_t nout =
-			    snprintf(res[ix], len1,
-				     "%s(%" SSIZE_FMT ",%" SSIZE_FMT ")", name,
+			    snprintf(res[ix], len1, "%s(%zu,%zu)", name,
 				     i + 1, j + 1);
 			assert(nout + 1 == len1);
 			(void)nout;

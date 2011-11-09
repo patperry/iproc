@@ -203,22 +203,22 @@ static int parse_end_map(void *ctx)
 	}
 
 	if (isnan(parse->time)) {
-		fprintf(stderr, "missing time for message '%zd'\n", parse->id);
+		fprintf(stderr, "missing time for message '%zu'\n", parse->id);
 		return 0;
 	}
 
 	if (parse->sender == SIZE_MAX) {
-		fprintf(stderr, "missing sender for message '%zd'\n", parse->id);
+		fprintf(stderr, "missing sender for message '%zu'\n", parse->id);
 		return 0;
 	}
 
 	if (!parse->nrecv) {
-		fprintf(stderr, "missing receiver for message '%zd'\n", parse->id);
+		fprintf(stderr, "missing receiver for message '%zu'\n", parse->id);
 		return 0;
 	}
 
 	if (!(parse->time >= messages_tlast(parse->messages))) {
-		fprintf(stderr, "message '%zd' time not in sorted order\n", parse->id);
+		fprintf(stderr, "message '%zu' time not in sorted order\n", parse->id);
 		return 0;
 	}
 
@@ -282,7 +282,7 @@ static yajl_callbacks parse_callbacks = {
 	parse_end_array
 };
 
-bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE *stream)
+bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -333,7 +333,7 @@ bool enron_messages_init_fread(struct messages *messages, ssize_t maxrecip, FILE
 	return parse_ok;
 }
 
-bool enron_messages_init(struct messages *messages, ssize_t maxrecip)
+bool enron_messages_init(struct messages *messages, size_t maxrecip)
 {
 	FILE *f = fopen(ENRON_MESSAGES_FILE, "r");
 

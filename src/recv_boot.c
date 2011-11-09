@@ -95,11 +95,11 @@ void recv_boot_init(struct recv_boot *boot,
 
 			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
 				fprintf(stdout,
-					"Failed to sample subset of size %"
-					SSIZE_FMT "\n", nto);
+					"Failed to sample subset of size %zu\n",
+					nto);
 				fprintf(stderr,
-					"Failed to sample subset of size %"
-					SSIZE_FMT "\n", nto);
+					"Failed to sample subset of size %zu\n",
+					nto);
 
 				printf("probs:\n");
 				for (i = 0; i < nrecv; i++) {

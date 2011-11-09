@@ -10,7 +10,7 @@ struct recv_resid_count {
 	struct dmatrix dyad;
 	double *send;
 	double *recv;
-	ssize_t tot;
+	size_t tot;
 
 	// internal
 	struct dmatrix dyad_trans;

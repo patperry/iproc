@@ -526,10 +526,10 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 			// double ngrad = vector_max_abs(score);
 			double step = recv_fit_step(&fit);
 			double ngrad = recv_fit_grad_norm2(&fit);
-			fprintf(stderr, "iter %"SSIZE_FMT"; |grad| = %.16f; step = %.16f\n",
+			fprintf(stderr, "iter %zu; |grad| = %.16f; step = %.16f\n",
 				it, ngrad, step);
 
-			// fprintf(stderr, "iter %"SSIZE_FMT" deviance = %.2f; |grad| = %.16f; step = %.16f\n",
+			// fprintf(stderr, "iter %zu deviance = %.2f; |grad| = %.16f; step = %.16f\n",
 			//	it, dev, ngrad, step);
 		}
 	}
@@ -674,7 +674,7 @@ static struct options parse_options(int argc, char **argv)
 			if (optarg) {
 				opts.seed = (int32_t)strtol(optarg, NULL, 10);
 			}
-			fprintf(stderr, "bootstrap seed: '%" SSIZE_FMT"'\n", (size_t)opts.seed);
+			fprintf(stderr, "bootstrap seed: '%zu'\n", (size_t)opts.seed);
 			fflush(stderr);
 			break;
 		 default:
