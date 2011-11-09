@@ -97,29 +97,29 @@ struct employee_parse {
 	enum employee_map_key map_key;
 };
 
-bool enron_legal[ENRON_NCOHORT] =
-    { true, true, true, true, false, false, false, false, false, false, false,
-false };
-bool enron_trading[ENRON_NCOHORT] =
-    { false, false, false, false, true, true, true, true, false, false, false,
-false };
-bool enron_other[ENRON_NCOHORT] =
-    { false, false, false, false, false, false, false, false, true, true, true,
-true };
+int enron_legal[ENRON_NCOHORT] =
+    { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+0 };
+int enron_trading[ENRON_NCOHORT] =
+    { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+0 };
+int enron_other[ENRON_NCOHORT] =
+    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+1 };
 
-bool enron_junior[ENRON_NCOHORT] =
-    { true, true, false, false, true, true, false, false, true, true, false,
-false };
-bool enron_senior[ENRON_NCOHORT] =
-    { false, false, true, true, false, false, true, true, false, false, true,
-true };
+int enron_junior[ENRON_NCOHORT] =
+    { 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0,
+0 };
+int enron_senior[ENRON_NCOHORT] =
+    { 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
+1 };
 
-bool enron_female[ENRON_NCOHORT] =
-    { true, false, true, false, true, false, true, false, true, false, true,
-false };
-bool enron_male[ENRON_NCOHORT] =
-    { false, true, false, true, false, true, false, true, false, true, false,
-true };
+int enron_female[ENRON_NCOHORT] =
+    { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+0 };
+int enron_male[ENRON_NCOHORT] =
+    { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+1 };
 
 static int parse_integer(void *ctx, long long integerVal)
 {
@@ -321,7 +321,7 @@ int enron_employees_init_fread(size_t *nactorp,
 	unsigned char fileData[65536];
 	size_t rd;
 	yajl_status stat;
-	bool parse_ok = true;
+	int parse_ok = 1;
 
 	struct employee_parse parse;
 
@@ -342,7 +342,7 @@ int enron_employees_init_fread(size_t *nactorp,
 		if (rd == 0) {
 			if (!feof(stream)) {
 				fprintf(stderr, "error on file read.\n");
-				parse_ok = false;
+				parse_ok = 0;
 			}
 			break;
 		}
@@ -359,7 +359,7 @@ int enron_employees_init_fread(size_t *nactorp,
 		unsigned char *str = yajl_get_error(hand, 1, fileData, rd);
 		fprintf(stderr, "%s", (const char *)str);
 		yajl_free_error(hand, str);
-		parse_ok = false;
+		parse_ok = 0;
 	}
 
 	yajl_free(hand);

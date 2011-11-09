@@ -21,12 +21,12 @@ static size_t sample1(const double *probs, size_t n, dsfmt_t * dsfmt)
 	return i;
 }
 
-static bool unique(size_t *vals, size_t len)
+static int unique(size_t *vals, size_t len)
 {
 	size_t i, j;
 
 	if (len == 1)
-		return true;
+		return 1;
 	if (len == 2)
 		return vals[0] != vals[1];
 
@@ -35,13 +35,13 @@ static bool unique(size_t *vals, size_t len)
 
 		for (j = i + 1; j < len; j++) {
 			if (val == vals[j])
-				return false;
+				return 0;
 		}
 	}
-	return true;
+	return 1;
 }
 
-static bool sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
+static int sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
 			  size_t maxntry, size_t *out, size_t nout)
 {
 	size_t itry;
@@ -52,9 +52,9 @@ static bool sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
 			out[i] = sample1(probs, n, dsfmt);
 		}
 		if (unique(out, nout))
-			return true;
+			return 1;
 	}
-	return false;
+	return 0;
 }
 
 void recv_boot_init(struct recv_boot *boot,

@@ -147,7 +147,7 @@ static void test_size()
 
 static void matrix_assign_reffects(struct dmatrix *x,
 				   size_t nrecv,
-				   bool has_reffects)
+				   int has_reffects)
 {
 	if (!has_reffects)
 		return;

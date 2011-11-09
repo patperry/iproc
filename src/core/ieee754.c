@@ -22,7 +22,7 @@ union double_uint64 {
 	uint64_t w;
 };
 
-bool double_identical(double x, double y)
+int double_identical(double x, double y)
 {
 	union double_uint64 ux = { x };
 	union double_uint64 uy = { y };
@@ -164,7 +164,7 @@ int double_eqrel(double x, double y)
 /* compare using uint64_t instead of double to avoid dealing with NaN
  * comparisons; this relies on IEEE doubles being 8 bytes and lexicographically
  * ordered, and uint64_t having the same endianness and alignment as double */
-bool double_equals(const void *x, const void *y)
+int double_equals(const void *x, const void *y)
 {
 	return *(uint64_t *)x == *(uint64_t *)y;
 }

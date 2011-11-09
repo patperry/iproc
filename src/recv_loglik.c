@@ -816,7 +816,7 @@ void cohort_init(struct recv_loglik_cohort *cll, const struct recv_model *m,
 	assert(c < recv_model_cohort_count(m));
 
 	info_init(&cll->info, m);
-	cll->info_cached = true;
+	cll->info_cached = 1;
 }
 
 void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
@@ -875,7 +875,7 @@ void cohort_clear(struct recv_loglik_cohort *cll, size_t dim)
 	cll->info.dev = 0.0;
 	cll->info.nsend = 0;
 	cll->info.nrecv = 0;
-	cll->info_cached = true;
+	cll->info_cached = 1;
 }
 
 void recv_loglik_clear(struct recv_loglik *ll)
@@ -903,7 +903,7 @@ void cohort_add(struct recv_loglik_cohort *ll, size_t nto)
 {
 	ll->info.nsend += 1;
 	ll->info.nrecv += nto;
-	ll->info_cached = false;
+	ll->info_cached = 0;
 }
 
 void recv_loglik_add(struct recv_loglik *ll,
@@ -1144,7 +1144,7 @@ struct recv_loglik_info *recv_loglik_info(const struct recv_loglik *ll,
 
 	if (!mll->cohorts[c].info_cached) {
 		cache_info(mll, c);
-		mll->cohorts[c].info_cached = true;
+		mll->cohorts[c].info_cached = 1;
 	}
 
 	return &mll->cohorts[c].info;

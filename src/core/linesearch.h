@@ -48,8 +48,8 @@ enum linesearch_task linesearch_advance(struct linesearch *ls, double f,
 					double g);
 
 /* weak Wolfe conditions */
-static inline bool linesearch_sdec(const struct linesearch *ls);	// sufficient decrease (Armijo)
-static inline bool linesearch_curv(const struct linesearch *ls);	// curvature
+static inline int linesearch_sdec(const struct linesearch *ls);	// sufficient decrease (Armijo)
+static inline int linesearch_curv(const struct linesearch *ls);	// curvature
 
 /* convergence/error */
 const char *linesearch_warnmsg(enum linesearch_task task);
@@ -64,25 +64,25 @@ static inline double linesearch_value0(const struct linesearch *ls);
 static inline double linesearch_grad0(const struct linesearch *ls);
 
 /* control parameters */
-static inline bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl);
+static inline int linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl);
 
 /* inline function definitions */
-bool linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl)
+int linesearch_ctrl_valid(const struct linesearch_ctrl *ctrl)
 {
 	assert(ctrl);
 
 	if (!(ctrl->ftol >= 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->gtol >= 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->xtol >= 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->stpmin >= 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->stpmax >= ctrl->stpmin)) {
-		return false;
+		return 0;
 	} else {
-		return true;
+		return 1;
 	}
 }
 
@@ -110,7 +110,7 @@ double linesearch_value(const struct linesearch *ls)
 	return ls->f;
 }
 
-bool linesearch_sdec(const struct linesearch *ls)
+int linesearch_sdec(const struct linesearch *ls)
 {
 	assert(ls);
 	double stp = linesearch_step(ls);
@@ -122,7 +122,7 @@ bool linesearch_sdec(const struct linesearch *ls)
 	return f <= f0 + c1 * stp * g0;
 }
 
-bool linesearch_curv(const struct linesearch *ls)
+int linesearch_curv(const struct linesearch *ls)
 {
 	assert(ls);
 	double g0 = linesearch_grad0(ls);

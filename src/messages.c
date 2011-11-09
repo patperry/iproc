@@ -39,7 +39,7 @@ void messages_init(struct messages *msgs)
 	msgs->max_to = 0;
 	msgs->max_from = 0;
 	msgs->max_nto = 0;
-	msgs->to_cached = false;
+	msgs->to_cached = 0;
 }
 
 void messages_deinit(struct messages *msgs)
@@ -95,13 +95,13 @@ void messages_add(struct messages *msgs, double time,
 	size_t i;
 
 	msgs->tlast = time;
-	
+
 	if (from > msgs->max_from)
 		msgs->max_from = from;
 	if (nto > msgs->max_nto)
 		msgs->max_nto = nto;
 
-	messages_grow_recv(msgs, nto);	
+	messages_grow_recv(msgs, nto);
 	for (i = 0; i < nto; i++, ito++) {
 		if (to[i] > msgs->max_to)
 			msgs->max_to = to[i];
@@ -109,9 +109,9 @@ void messages_add(struct messages *msgs, double time,
 	}
 	msgs->nrecv = ito;
 
-	messages_grow_reps(msgs, 1);	
+	messages_grow_reps(msgs, 1);
 	msgs->reps[msgs->nsend++] = m;
-	msgs->to_cached = false;
+	msgs->to_cached = 0;
 }
 
 size_t messages_max_from(const struct messages *msgs)
@@ -153,7 +153,7 @@ void messages_iter_reset(struct messages_iter *it)
 	it->ntie = 1;
 }
 
-bool messages_iter_advance(struct messages_iter *it)
+int messages_iter_advance(struct messages_iter *it)
 {
 	assert(it);
 	assert(it->offset < (ptrdiff_t)messages_count(it->messages));
@@ -162,7 +162,7 @@ bool messages_iter_advance(struct messages_iter *it)
 
 	struct messages *msgs = it->messages;
 	size_t n = msgs->nsend;
-	bool has_next = offset < n;
+	int has_next = offset < n;
 
 	if (has_next) {
 		struct message_rep *message_rep = &msgs->reps[offset];
@@ -184,7 +184,7 @@ bool messages_iter_advance(struct messages_iter *it)
 		it->ntie = ntie;
 		it->message_rep = message_rep;
 	} else {
-		it->messages->to_cached = true;
+		it->messages->to_cached = 1;
 	}
 	it->offset = offset;
 

@@ -65,7 +65,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 	double max_eta0 = cm->max_eta0;
 	double log_W0 = cm->log_W0;
 	size_t jrecv;
-	bool shrink = false;
+	int shrink = 0;
 	size_t ia, na = sm->active.nz;
 
 	/* compute the maximum eta value */
@@ -78,7 +78,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 		double eta_j = eta0_j + deta_j;
 
 		if (eta0_j == max_eta0 && deta_j < 0)
-			shrink = true;
+			shrink = 1;
 
 		sm->scale = MAX(sm->scale, eta_j);
 	}
@@ -86,7 +86,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 	// fast:
 	{
 		double W = exp(log_W0 + (max_eta0 - sm->scale));
-		bool found_max = false;
+		int found_max = 0;
 
 		for (ia = 0; ia < na; ia++) {
 			size_t jrecv = sm->active.indx[ia];
@@ -95,7 +95,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 			double eta_j = eta0_j + deta_j;
 
 			if (!found_max && eta_j == sm->scale) {
-				found_max = true;
+				found_max = 1;
 				W += -exp(eta0_j - sm->scale);
 			} else {
 				W += (exp(eta_j - sm->scale)

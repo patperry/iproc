@@ -32,7 +32,7 @@ struct bfgs {
 	/* control/status */
 	struct bfgs_ctrl ctrl;
 	enum bfgs_task task;
-	bool first_step;
+	int first_step;
 
 	/* current values */
 	double f0;
@@ -76,17 +76,17 @@ static inline const struct vector *bfgs_grad(const struct bfgs *opt);
 static inline const struct matrix *bfgs_inv_hess(const struct bfgs *opt);
 
 /* control parameters */
-static inline bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl);
+static inline int bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl);
 
 /* inline function definitions */
-bool bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl)
+int bfgs_ctrl_valid(const struct bfgs_ctrl *ctrl)
 {
 	assert(ctrl);
 
 	if (!(ctrl->gtol > 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->ls_maxit > 0)) {
-		return false;
+		return 0;
 	} else {
 		return linesearch_ctrl_valid(&ctrl->ls);
 	}

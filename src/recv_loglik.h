@@ -88,7 +88,7 @@ struct recv_loglik_info {
 
 struct recv_loglik_cohort {
 	struct recv_loglik_info info;
-	bool info_cached;
+	int info_cached;
 };
 
 struct recv_loglik {

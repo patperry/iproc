@@ -70,7 +70,7 @@ struct recv_fit_kkt {
 	double *ldl_work;
 	size_t ldl_lwork;
 	enum blas_uplo uplo;
-	bool factored;
+	int factored;
 };
 
 struct recv_fit_search {
@@ -145,17 +145,17 @@ double recv_fit_step(const struct recv_fit *fit);
 double recv_fit_grad_norm2(const struct recv_fit *fit);
 
 /* control parameters */
-static inline bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl);
+static inline int recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl);
 
 /* inline function definitions */
-bool recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl)
+int recv_fit_ctrl_valid(const struct recv_fit_ctrl *ctrl)
 {
 	assert(ctrl);
 
 	if (!(ctrl->gtol > 0)) {
-		return false;
+		return 0;
 	} else if (!(ctrl->ls_maxit > 0)) {
-		return false;
+		return 0;
 	} else {
 		return linesearch_ctrl_valid(&ctrl->ls);
 	}

@@ -25,7 +25,7 @@ struct messages {
 	size_t max_from;
 	size_t max_to;
 	size_t max_nto;
-	bool to_cached;
+	int to_cached;
 };
 
 struct messages_iter {
@@ -58,6 +58,6 @@ size_t messages_max_nto(const struct messages *msgs);
 
 struct messages_iter messages_iter_make(const struct messages *msgs);
 void messages_iter_reset(struct messages_iter *it);
-bool messages_iter_advance(struct messages_iter *it);
+int messages_iter_advance(struct messages_iter *it);
 
 #endif /* _MESSAGES_H */

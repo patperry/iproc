@@ -499,7 +499,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 {
 	size_t maxit = 100;
 	size_t report = 1;
-	bool trace = true;
+	int trace = 1;
 
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
@@ -642,7 +642,7 @@ out:
 
 struct options {
 	char *startfile;
-	bool boot;
+	int boot;
 	int32_t seed;
 };
 
@@ -658,7 +658,7 @@ static struct options parse_options(int argc, char **argv)
 
 	struct options opts;
 	opts.startfile = NULL;
-	opts.boot = false;
+	opts.boot = 0;
 	opts.seed = 0;
 
 
@@ -670,7 +670,7 @@ static struct options parse_options(int argc, char **argv)
 			fflush(stderr);
 			break;
 		 case 'b':
-			opts.boot = true;
+			opts.boot = 1;
 			if (optarg) {
 				opts.seed = (int32_t)strtol(optarg, NULL, 10);
 			}
@@ -696,10 +696,10 @@ int main(int argc, char **argv)
 
 	struct options opts = parse_options(argc, argv);
 	struct dmatrix coefs0;
-	bool has_coefs0 = 0;
+	int has_coefs0 = 0;
 
 	if (opts.startfile) {
-		has_coefs0 = true;
+		has_coefs0 = 1;
 		init_coefs(&coefs0, opts.startfile);
 	}
 

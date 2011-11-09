@@ -46,7 +46,7 @@ static void update(struct bfgs *opt, double f, const struct vector *grad)
 		for (i = 0; i < n; i++) {
 			matrix_set_item(H, i, i, scale);
 		}
-		opt->first_step = false;
+		opt->first_step = 0;
 	}
 
 	/* compute H_y */
@@ -115,7 +115,7 @@ enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
 
 	double step0 = 1.0;
 
-	opt->first_step = true;
+	opt->first_step = 1;
 	vector_assign_copy(&opt->x0, x0);
 	opt->f0 = f0;
 	vector_assign_copy(&opt->grad0, grad0);
@@ -148,7 +148,7 @@ enum bfgs_task bfgs_start(struct bfgs *opt, const struct vector *x0,
 	return opt->task;
 }
 
-static bool converged(const struct bfgs *opt)
+static int converged(const struct bfgs *opt)
 {
 	double gtol = opt->ctrl.gtol;
 
@@ -162,9 +162,9 @@ static bool converged(const struct bfgs *opt)
 		double g = vector_item(&opt->grad0, i);
 
 		if (!(fabs(g) < gtol * MAX(1.0, fabs(x))))
-			return false;
+			return 0;
 	}
-	return true;
+	return 1;
 }
 
 enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
@@ -176,7 +176,7 @@ enum bfgs_task bfgs_advance(struct bfgs *opt, double f,
 
 	double g = vector_dot(grad, &opt->search);
 	enum linesearch_task lstask = linesearch_advance(&opt->ls, f, g);
-	bool ok = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
+	int ok = linesearch_sdec(&opt->ls) && linesearch_curv(&opt->ls);
 
 	switch (lstask) {
 	case LINESEARCH_CONV:

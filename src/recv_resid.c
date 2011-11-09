@@ -16,7 +16,7 @@ static void recv_resid_count_init(struct recv_resid_count *c,
 	c->send = xcalloc(nsend, sizeof(double));
 	c->recv = xcalloc(nrecv, sizeof(double));
 	c->tot = 0.0;
-	c->dyad_cached = true;
+	c->dyad_cached = 1;
 }
 
 static void recv_resid_count_deinit(struct recv_resid_count *c)
@@ -35,7 +35,7 @@ static void recv_resid_clear(struct recv_resid_count *c, size_t nsend,
 	memset(c->send, 0, nsend * sizeof(double));
 	memset(c->recv, 0, nrecv * sizeof(double));
 	c->tot = 0;
-	c->dyad_cached = true;
+	c->dyad_cached = 1;
 }
 
 static void recv_resid_count_compute_dyad(struct recv_resid_count *c,
@@ -43,7 +43,7 @@ static void recv_resid_count_compute_dyad(struct recv_resid_count *c,
 {
 	if (!c->dyad_cached) {
 		matrix_dtrans(nrecv, nsend, &c->dyad_trans, &c->dyad);
-		c->dyad_cached = true;
+		c->dyad_cached = 1;
 	}
 }
 
@@ -62,7 +62,7 @@ static void update_obs(struct recv_resid_count *obs, const struct message *msg)
 	}
 
 	obs->tot += nto;
-	obs->dyad_cached = false;
+	obs->dyad_cached = 0;
 }
 
 static void update_exp(struct recv_resid_count *exp, const struct message *msg,
@@ -80,7 +80,7 @@ static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 	double *col = MATRIX_COL(&exp->dyad_trans, isend);
 	recv_model_axpy_probs(nto, model, isend, col);
 
-	exp->dyad_cached = false;
+	exp->dyad_cached = 0;
 }
 
 static void recv_resid_set(struct recv_resid *resid,

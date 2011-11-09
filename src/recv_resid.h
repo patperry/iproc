@@ -14,7 +14,7 @@ struct recv_resid_count {
 
 	// internal
 	struct dmatrix dyad_trans;
-	bool dyad_cached;
+	int dyad_cached;
 };
 
 struct recv_resid {

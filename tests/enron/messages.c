@@ -282,12 +282,12 @@ static yajl_callbacks parse_callbacks = {
 	parse_end_array
 };
 
-bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream)
+int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
 	yajl_status stat;
-	bool parse_ok = true;
+	int parse_ok = 1;
 
 	struct message_parse parse;
 
@@ -304,7 +304,7 @@ bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE 
 		if (rd == 0) {
 			if (!feof(stream)) {
 				fprintf(stderr, "error on file read.\n");
-				parse_ok = false;
+				parse_ok = 0;
 			}
 			break;
 		}
@@ -320,7 +320,7 @@ bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE 
 		unsigned char * str = yajl_get_error(hand, 1, fileData, rd);
 		fprintf(stderr, "%s", (const char *) str);
 		yajl_free_error(hand, str);
-		parse_ok = false;
+		parse_ok = 0;
 	}
 
 	yajl_free(hand);
@@ -333,25 +333,25 @@ bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE 
 	return parse_ok;
 }
 
-bool enron_messages_init(struct messages *messages, size_t maxrecip)
+int enron_messages_init(struct messages *messages, size_t maxrecip)
 {
 	FILE *f = fopen(ENRON_MESSAGES_FILE, "r");
 
 	if (!f) {
 		fprintf(stderr, "Couldn't open messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
-		return false;
+		return 0;
 	}
 
 	if (!enron_messages_init_fread(messages, maxrecip, f)) {
 		fprintf(stderr, "Couldn't parse messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
 		fclose(f);
-		return false;
+		return 0;
 	}
 
 	fclose(f);
-	return true;
+	return 1;
 }
 
 

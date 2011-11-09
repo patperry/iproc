@@ -387,7 +387,7 @@ void frame_add(struct frame *f, const struct message *msg)
 	fmsg->interval = 0;
 }
 
-static bool has_pending_messages(const struct frame *f)
+static int has_pending_messages(const struct frame *f)
 {
 	assert(f->cur_fmsg <= f->nfmsg);
 	return f->cur_fmsg < f->nfmsg;

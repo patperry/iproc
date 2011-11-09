@@ -34,37 +34,37 @@ enum enron_trait {
 	ENRON_TRAIT_TJ,
 	ENRON_TRAIT_LF,
 	ENRON_TRAIT_TF,
-	ENRON_TRAIT_JF,	
+	ENRON_TRAIT_JF,
 	ENRON_TRAIT_LJF,
-	ENRON_TRAIT_TJF,	
+	ENRON_TRAIT_TJF
 };
 
 #define ENRON_NTRAIT (ENRON_TRAIT_TJF + 1)
 
-extern bool enron_legal[ENRON_NCOHORT];
-extern bool enron_trading[ENRON_NCOHORT];
-extern bool enron_other[ENRON_NCOHORT];
+extern int enron_legal[ENRON_NCOHORT];
+extern int enron_trading[ENRON_NCOHORT];
+extern int enron_other[ENRON_NCOHORT];
 
-extern bool enron_junior[ENRON_NCOHORT];
-extern bool enron_senior[ENRON_NCOHORT];
+extern int enron_junior[ENRON_NCOHORT];
+extern int enron_senior[ENRON_NCOHORT];
 
-extern bool enron_female[ENRON_NCOHORT];
-extern bool enron_male[ENRON_NCOHORT];
+extern int enron_female[ENRON_NCOHORT];
+extern int enron_male[ENRON_NCOHORT];
 
 
 int enron_employees_init(size_t *nactorp,
-		         size_t **cohortsp, size_t *ncohortp, 
+		         size_t **cohortsp, size_t *ncohortp,
 			 const char * const **cohort_namesp,
 			 double **traitsp, size_t *ntraitp,
 			 const char * const **trait_namesp);
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t **cohortsp, size_t *ncohortp, 
+			       size_t **cohortsp, size_t *ncohortp,
 			       const char * const **cohort_namesp,
 			       double **traitsp, size_t *ntraitp,
 			       const char * const **trait_namesp,
 			       FILE *stream);
 
-bool enron_messages_init(struct messages *messages, size_t maxrecip);
-bool enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream);
+int enron_messages_init(struct messages *messages, size_t maxrecip);
+int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream);
 
 #endif /* _ENRON_H */

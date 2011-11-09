@@ -384,7 +384,7 @@ static void kkt_reinit(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
 	size_t n = nc * dim + nce;
 	size_t lwork = lapack_dsysv_lwork(n);
 
-	kkt->factored = false;
+	kkt->factored = 0;
 	kkt->matrix.data = xrealloc(kkt->matrix.data, n * n * sizeof(double));
 	kkt->matrix.lda = MAX(1, n);
 
@@ -397,7 +397,7 @@ static void kkt_reinit(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
 static void kkt_init(struct recv_fit_kkt *kkt, size_t dim, size_t nc,
 		     size_t nce)
 {
-	kkt->factored = false;
+	kkt->factored = 0;
 	kkt->uplo = BLAS_LOWER;
 	kkt->matrix.data = NULL;
 	kkt->ldl_ipiv = NULL;
@@ -441,7 +441,7 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols, &k12);
 	sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols, &k21);
 
-	kkt->factored = false;
+	kkt->factored = 0;
 }
 
 static void search_init(struct recv_fit_search *search, size_t dim, size_t nc,
@@ -478,7 +478,7 @@ static void search_set(struct recv_fit_search *search,
 	ptrdiff_t info = lapack_dsysv(kkt->uplo, n, 1, &kkt->matrix,
 				      kkt->ldl_ipiv, &smat, kkt->ldl_work,
 				      kkt->ldl_lwork);
-	kkt->factored = true;
+	kkt->factored = 1;
 
 	assert(info == 0);
 	(void)info;		// compile warning;
@@ -757,7 +757,7 @@ size_t recv_fit_add_constr_identify(struct recv_fit *fit)
 		struct vector s;
 		struct dmatrix u, vt;
 		struct svdfac svd;
-		bool ok;
+		int ok;
 
 		vector_init(&s, MIN(ne, nulldim));
 		matrix_init(&u, ne, ne);
