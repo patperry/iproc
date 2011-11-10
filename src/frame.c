@@ -63,9 +63,9 @@ static size_t frame_actor_search(struct frame_actor *fa, size_t nintvl1, size_t 
 	return ix;
 }
 
-static void frame_actors_init(struct frame_actor **pfas, size_t n)
+static void frame_actors_init(struct frame_actor **fasp, size_t n)
 {
-	assert(pfas);
+	assert(fasp);
 
 	struct frame_actor *fas = xcalloc(n, sizeof(fas[0]));
 	size_t i;
@@ -73,13 +73,11 @@ static void frame_actors_init(struct frame_actor **pfas, size_t n)
 		frame_actor_init(&fas[i]);
 	}
 
-	*pfas = fas;
+	*fasp = fas;
 }
 
 static void frame_actors_clear(struct frame_actor *fas, size_t n)
 {
-	assert(fas);
-
 	size_t i;
 	for (i = 0; i < n; i++) {
 		frame_actor_clear(&fas[i]);
@@ -88,65 +86,12 @@ static void frame_actors_clear(struct frame_actor *fas, size_t n)
 
 static void frame_actors_deinit(struct frame_actor *fas, size_t n)
 {
-	assert(fas);
-
 	size_t i;
 	for (i = 0; i < n; i++) {
 		frame_actor_deinit(&fas[i]);
 	}
 
 	free(fas);
-}
-
-static void frame_senders_init(struct frame *f)
-{
-	size_t n = frame_send_count(f);
-	frame_actors_init(&f->senders, n);
-}
-
-static void frame_senders_clear(struct frame *f)
-{
-	size_t n = frame_send_count(f);
-	frame_actors_clear(f->senders, n);
-}
-
-static void frame_senders_deinit(struct frame *f)
-{
-	size_t n = frame_send_count(f);
-	frame_actors_deinit(f->senders, n);
-}
-
-static struct frame_actor *frame_senders_item(const struct frame *f, size_t i)
-{
-	assert(f);
-	assert(i < frame_send_count(f));
-	return &f->senders[i];
-}
-
-static void frame_receivers_init(struct frame *f)
-{
-	size_t n = frame_recv_count(f);
-	frame_actors_init(&f->receivers, n);
-}
-
-static void frame_receivers_clear(struct frame *f)
-{
-	size_t n = frame_recv_count(f);
-	frame_actors_clear(f->receivers, n);
-}
-
-static void frame_receivers_deinit(struct frame *f)
-{
-	size_t n = frame_recv_count(f);
-	frame_actors_deinit(f->receivers, n);
-}
-
-static struct frame_actor *frame_receivers_item(const struct frame *f,
-						size_t i)
-{
-	assert(f);
-	assert(i < frame_recv_count(f));
-	return &f->receivers[i];
 }
 
 static void recv_frame_init(struct recv_frame *rf, struct frame *f)
@@ -267,12 +212,11 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	}
 #endif
 
+	design_init(&f->send_design, f, nsend);
+	design_init(&f->recv_design, f, nrecv);
+	f->has_loops = has_loops;
 	f->intvls = xmemdup(intvls, nintvl * sizeof(intvls[0]));
 	f->nintvl = nintvl;
-	f->nsend = nsend;
-	f->nrecv = nrecv;
-	f->has_loops = has_loops;
-	f->time = -INFINITY;
 
 	f->observers = NULL;
 	f->nobs = 0;
@@ -280,39 +224,44 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	f->frame_messages = NULL;
 	f->nfmsg = 0;
 	f->nfmsg_max = 0;
-	frame_senders_init(f);
-	frame_receivers_init(f);
+	frame_actors_init(&f->senders, nsend);
+	frame_actors_init(&f->receivers, nrecv);
 	f->cur_fmsg = 0;
 	pqueue_init(&f->events, sizeof(struct frame_event),
 		    frame_event_rcompare);
-
 	recv_frames_init(f);
 	frame_clear(f);
-	design_init(&f->recv_design, f, nrecv);
 }
 
 void frame_deinit(struct frame *f)
 {
 	assert(f);
 
-	design_deinit(&f->recv_design);
+	size_t nsend = frame_send_count(f);
+	size_t nrecv = frame_recv_count(f);
+
 	recv_frames_deinit(f);
 	pqueue_deinit(&f->events);
-	frame_receivers_deinit(f);
-	frame_senders_deinit(f);
+	frame_actors_deinit(f->receivers, nrecv);
+	frame_actors_deinit(f->senders, nsend);
 	free(f->frame_messages);
 	free(f->observers);
 	free(f->intvls);
+	design_deinit(&f->recv_design);
+	design_deinit(&f->send_design);
 }
 
 void frame_clear(struct frame *f)
 {
 	assert(f);
 
+	size_t nsend = frame_send_count(f);
+	size_t nrecv = frame_recv_count(f);
+
 	f->time = -INFINITY;
 	f->nfmsg = 0;
-	frame_senders_clear(f);
-	frame_receivers_clear(f);
+	frame_actors_clear(f->senders, nsend);
+	frame_actors_clear(f->receivers, nrecv);
 	f->cur_fmsg = 0;
 	pqueue_clear(&f->events);
 	recv_frames_clear(f);
@@ -417,7 +366,8 @@ static void process_current_messages(struct frame *f)
 		// add the message to the sender history
 		struct frame_actor *fa;
 		size_t ito, nto = msg->nto;
-		fa = frame_senders_item(f, msg->from);
+
+		fa = = &f->senders[msg->from];
 		frame_actor_grow_ixs(fa, 1);
 		fa->message_ixs[fa->nix++] = imsg;
 
@@ -429,7 +379,7 @@ static void process_current_messages(struct frame *f)
 
 		// add the message to the receiver histories
 		for (ito = 0; ito < nto; ito++) {
-			fa = frame_receivers_item(f, msg->to[ito]);
+			fa = &f->receivers[msg->to[ito]];
 			frame_actor_grow_ixs(fa, 1);
 			fa->message_ixs[fa->nix++] = imsg;
 			size_t ix = frame_actor_search(fa, nintvl1, msg->from);
@@ -512,7 +462,7 @@ static void process_event(struct frame *f)
 	struct frame_actor *fa;
 	size_t ito, nto = msg->nto;
 
-	fa = frame_senders_item(f, msg->from);
+	fa = &f->senders[msg->from];
 	for (ito = 0; ito < nto; ito++) {
 		size_t ix = frame_actor_search(fa, nintvl1, msg->to[ito]);
 		size_t *ptr = fa->nmsg + intvl0 + ix * nintvl1;
@@ -522,7 +472,7 @@ static void process_event(struct frame *f)
 	}
 
 	for (ito = 0; ito < nto; ito++) {
-		fa = frame_receivers_item(f, msg->to[ito]);
+		fa = &f->receivers[msg->to[ito]];
 		size_t ix = frame_actor_search(fa, nintvl1, msg->from);
 		size_t *ptr = fa->nmsg + intvl0 + ix * nintvl1;
 		assert(ptr[0]);

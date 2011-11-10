@@ -32,13 +32,14 @@ struct recv_frame {
 };
 
 struct frame {
-	size_t nsend, nrecv;
+	struct design send_design;
+	struct design recv_design;
+
 	int has_loops;
 
 	double *intvls;
 	size_t nintvl;
 
-	struct design recv_design;
 	double time;
 
 	struct frame_observer *observers;
@@ -49,7 +50,6 @@ struct frame {
 	struct frame_actor *receivers;
 	size_t cur_fmsg;
 	struct pqueue events;
-
 	struct recv_frame *recv_frames;
 };
 
@@ -79,6 +79,7 @@ void frame_clear(struct frame *f);
 static inline const double *frame_intervals(const struct frame *f);
 static inline size_t frame_interval_count(const struct frame *f);
 
+static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
 
 /* time */
@@ -153,6 +154,12 @@ size_t frame_interval_count(const struct frame *f)
 	return f->nintvl;
 }
 
+struct design *frame_send_design(const struct frame *f)
+{
+	assert(f);
+	return &((struct frame *)f)->send_design;
+}
+
 struct design *frame_recv_design(const struct frame *f)
 {
 	assert(f);
@@ -193,13 +200,13 @@ struct frame_message *frame_messages_item(const struct frame *f, size_t imsg)
 size_t frame_send_count(const struct frame *f)
 {
 	assert(f);
-	return f->nsend;
+	return design_count(frame_send_design(f));
 }
 
 size_t frame_recv_count(const struct frame *f)
 {
 	assert(f);
-	return f->nrecv;
+	return design_count(frame_recv_design(f));
 }
 
 int frame_has_loops(const struct frame *f)
