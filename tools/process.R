@@ -87,6 +87,81 @@ get.imat <- function(fit, duals = FALSE) {
     imat
 }
 
+subspaces <- function(a, etol = 1e-8, vartol = 1e-8) {
+    n <- nrow(a)
+    s2 <- diag(a)
+    s2[s2 < vartol] <- 1
+    s <- sqrt(s2)
+    as <- diag(1/s) %*% a %*% diag(1/s)
+    e <- eigen(as, symmetric = TRUE)
+    rank <- sum(e$values > etol)
+    range <- e$vectors[,seq_len(rank), drop = FALSE]
+    null <- e$vectors[,rank + seq_len(n - rank), drop = FALSE]
+    list(scale = s, rank = rank, range = range, null = null)
+}
+
+get.kkt.inv <- function(fit, z) {
+    dim <- fit$coefficients$nrow
+    nc <- fit$coefficients$ncol
+    nce <- length(fit$constraints)
+
+    imatc <- lapply(fit$information, jmat)
+    subsp <- lapply(imatc, subspaces)
+    ce <- get.constraints(fit)$matrix
+
+    xc <- lapply(seq_len(nc), function(i) z[(i-1)*dim + seq_len(dim)])
+    y <- z[dim*nc + seq_len(nce)]
+
+
+    imatc1 <- lapply(seq_len(nc), function(i) {
+        s <- subsp[[i]]$scale
+        u <- subsp[[i]]$range
+        t(u) %*% diag(1/s) %*% imatc[[i]] %*% diag(1/s) %*% u
+    })
+
+    ce1 <- lapply(seq_len(nc), function(i) {
+        s <- subsp[[i]]$scale
+        u <- subsp[[i]]$range
+        ce[,(i-1)*dim + seq_len(dim)] %*% diag(1/s) %*% u
+    })
+    ce1 <- do.call(cbind, lapply(ce1, as.matrix))
+
+    ce2 <- lapply(seq_len(nc), function(i) {
+        s <- subsp[[i]]$scale
+        u <- subsp[[i]]$null
+        ce[,(i-1)*dim + seq_len(dim)] %*% diag(1/s) %*% u
+    })
+    ce2 <- do.call(cbind, lapply(ce2, as.matrix))
+
+    xc1 <- lapply(seq_len(nc), function(i) {
+        s <- subsp[[i]]$scale
+        u <- subsp[[i]]$range
+        t(u) %*% diag(1/s) %*% xc[[i]]
+    })
+
+    xc2 <- lapply(seq_len(nc), function(i) {
+        s <- subsp[[i]]$scale
+        u <- subsp[[i]]$null
+        t(u) %*% diag(1/s) %*% xc[[i]]
+    })
+
+    rank <- sapply(subsp, function(x) x$rank)
+    cumrank <- c(0, cumsum(rank))
+
+    ce1_vi <- lapply(seq_len(nc), function(i) {
+        a <- ce1[,cumrank[i] + seq_len(rank[i]), drop = FALSE]
+        t(solve(imatc1[[i]], t(a)))
+    })
+    ce1_vi <- do.call(cbind, lapply(ce1_vi, as.matrix))
+    ce1_vi_ce1 <- ce1_vi %*% t(ce1)    
+
+    v2 <- ce1_vi_ce1 + ce2 %*% t(ce2)
+    s2 <- diag(v2)
+    s2[s2 < 1e-8] <- 1
+    s2 <- sqrt(s2)
+
+}
+
 get.kkt <- function(fit) {
     dim <- fit$coefficients$nrow
     nc <- fit$coefficients$ncol
