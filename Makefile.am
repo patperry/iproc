@@ -7,20 +7,30 @@ AM_CPPFLAGS = \
 	-Ilib/include \
 	-Ilib \
 	-Isrc/core \
+	-Isrc/json \
 	-Isrc
 
-lib_LTLIBRARIES = \
-	libiproc.la
+LIBADD = \
+	$(LIBOBJS) \
+	$(ALLOCA)
 
-noinst_LTLIBRARIES = \
-	libcore.la \
-	libdSFMT.la \
-	libf2c.la \
-	libjson.la \
-	libminpack.la \
-	libyajl.la
+LDADD = \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) \
+	$(LIBADD)
 
-libiproc_la_SOURCES = \
+
+noinst_LIBRARIES = \
+	libcore.a \
+	libdSFMT.a \
+	libf2c.a \
+	libiproc.a \
+	libjson.a \
+	libminpack.a \
+	libyajl.a
+
+
+libiproc_a_SOURCES = \
 	src/design.c \
 	src/design.h \
 	src/frame.c \
@@ -54,16 +64,13 @@ libiproc_la_SOURCES = \
 	src/vars.c \
 	src/vars.h
 
-libiproc_la_CPPFLAGS = \
-	-I./src/core \
-	-I./lib \
-	$(AM_CPPFLAGS)
+libiproc_a_LIBADD = \
+	libcore.a \
+	libdSFMT.a
+	$(LIBADD)
 
-libiproc_la_LIBADD = \
-	libcore.la \
-	libdSFMT.la
 
-libcore_la_SOURCES = \
+libcore_a_SOURCES = \
 	lib/port.h \
 	lib/core/src/coreutil.c \
 	lib/core/src/coreutil.h \
@@ -98,31 +105,21 @@ libcore_la_SOURCES = \
 	src/core/logsumexp.c \
 	src/core/logsumexp.h
 
-libcore_la_LIBADD = \
-	libminpack.la \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) \
-	$(LIBS) \
-	$(FLIBS) \
-	$(LTLIBOBJS)
+libcore_a_LIBADD = \
+	libminpack.a \
+	$(LIBADD)
 
-libjson_la_SOURCES = \
+
+libjson_a_SOURCES = \
 	src/json/json.c \
 	src/json/json.h
 
-libjson_la_LIBADD = \
-	libcore.la \
-	libyajl.la \
-	$(LIBS) \
-	$(FLIBS) \
-	$(LTLIBOBJS)
+libjson_a_LIBADD = \
+	libcore.a \
+	$(LIBADD)
 
-libjson_la_CPPFLAGS = \
-	$(libcore_la_CPPFLAGS) \
-	$(libyajl_la_CPPFLAGS) \
-	$(AM_CPPFLAGS)
 
-libdSFMT_la_SOURCES = \
+libdSFMT_a_SOURCES = \
 	lib/dSFMT/dSFMT-params.h \
 	lib/dSFMT/dSFMT-params11213.h \
 	lib/dSFMT/dSFMT-params1279.h \
@@ -137,7 +134,7 @@ libdSFMT_la_SOURCES = \
 	lib/dSFMT/dSFMT.c \
 	lib/dSFMT/dSFMT.h
 
-libdSFMT_la_CPPFLAGS = \
+libdSFMT_a_CPPFLAGS = \
 	-Wmissing-prototypes -Wall \
 	-O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
 	-fno-strict-aliasing --param max-inline-insns-single=1800 \
@@ -145,30 +142,21 @@ libdSFMT_la_CPPFLAGS = \
 	-DDSFMT_MEXP=19937 \
 	$(AM_CPPFLAGS)
 
-libdSFMT_la_LIBADD = \
-	$(LIBS) \
-	$(LTLIBOBJS)
 
-libf2c_la_SOURCES = \
+libf2c_a_SOURCES = \
 	lib/libf2c/f2c.h \
 	lib/libf2c/s_cmp.c \
 	lib/libf2c/s_copy.c
 
-libminpack_la_SOURCES = \
+libminpack_a_SOURCES = \
 	lib/minpack/dcsrch.c \
 	lib/minpack/dcstep.c
 
-libminpack_la_CPPFLAGS = \
+libminpack_a_CPPFLAGS = \
 	-I./lib/libf2c \
 	$(AM_CPPFLAGS)
 
-libminpack_la_LIBADD = \
-	libf2c.la \
-	$(BLAS_LIBS) \
-	$(LIBS) \
-	$(FLIBS)
-
-libyajl_la_SOURCES = \
+libyajl_a_SOURCES = \
 	lib/yajl/src/api/yajl_common.h \
 	lib/yajl/src/api/yajl_gen.h \
 	lib/yajl/src/api/yajl_parse.h \
@@ -188,7 +176,7 @@ libyajl_la_SOURCES = \
 	lib/yajl/src/yajl_parser.h \
 	lib/yajl/src/yajl_tree.c
 
-libyajl_la_CPPFLAGS = \
+libyajl_a_CPPFLAGS = \
 	-I./lib/yajl/src \
 	-I./lib/yajl/src/api \
 	$(AM_CPPFLAGS)
@@ -234,69 +222,68 @@ libyajl_la_CPPFLAGS = \
 ##	interfaces/R/tests/doRUnit.R
 
 ##rpkg_extra_sources = \
-##	$(libiproc_la_SOURCES) \
-##	$(libcore_la_SOURCES) \
-##	$(libf2c_la_SOURCES) \
-##	$(libminpack_la_SOURCES)
+##	$(libiproc_a_SOURCES) \
+##	$(libcore_a_SOURCES) \
+##	$(libf2c_a_SOURCES) \
+##	$(libminpack_a_SOURCES)
 
 ##@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
 ##	$(AM_V_GEN)cp $(rpkg_extra_sources)  interfaces/R/src
 ##	R CMD build interfaces/R
 
-check_LTLIBRARIES = \
-	tests/libcmockery.la \
-	tests/libenron.la
+check_LIBRARIES = \
+	tests/libcmockery.a \
+	tests/libenron.a
 
-tests_libcmockery_la_SOURCES = \
+tests_libcmockery_a_SOURCES = \
 	tests/cmockery/cmockery.c \
 	tests/cmockery/cmockery.h
 
-tests_libcmockery_la_CPPFLAGS = \
+tests_libcmockery_a_CPPFLAGS = \
 	-I./tests/cmockery \
 	$(AM_CPPFLAGS)
 
-tests_libenron_la_SOURCES = \
+tests_libenron_a_SOURCES = \
 	tests/enron/employees.c \
 	tests/enron/enron.h \
 	tests/enron/messages.c
 
-tests_libenron_la_CPPFLAGS = \
-	-I./lib \
-	-I./src \
-	-I./src/core \
+tests_libenron_a_LIBADD = \
+	libiproc.a
+
+
+check_LDADD = \
+	$(noinst_LIBRARIES) \
+	$(check_LIBRARIES) \
+	$(LDADD)
+
+check_CPPFLAGS = \
+	-Itests/enron \
+	-Itests/cmockery \
 	$(AM_CPPFLAGS)
-
-tests_libenron_la_LIBADD = \
-	libiproc.la \
-	libjson.la \
-	libyajl.la
-
-
-cmockery_cppflags = -Itests/cmockery $(AM_CPPFLAGS)
-cmockery_ldadd    = tests/libcmockery.la
 
 check_PROGRAMS = # empty
 
 check_PROGRAMS += tests/design_test
-tests_design_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-tests_design_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_design_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/frame_test
-tests_frame_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-tests_frame_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_frame_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/model_test
-tests_model_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-tests_model_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_model_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/recv_loglik_test
-tests_recv_loglik_test_CPPFLAGS = -Isrc -Isrc/core -Itests/enron $(cmockery_cppflags)
-tests_recv_loglik_test_LDADD    = libiproc.la tests/libenron.la $(cmockery_ldadd)
+tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_recv_loglik_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/enronfit
 tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = -Isrc/core -Isrc/json -Itests/enron $(AM_CPPFLAGS)
-tests_enronfit_LDADD    = libiproc.la tests/libenron.la
+tests_enronfit_CPPFLAGS = $(check_CPPFLAGS)
+tests_enronfit_LDADD    = $(check_LDADD)
 
 TESTS = \
 	$(check_PROGRAMS)
