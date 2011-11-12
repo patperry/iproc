@@ -68,21 +68,31 @@ static void setup(void) {
 	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
 	int has_effects = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvls);
-	struct design *d = frame_recv_design(&frame);
-        design_set_has_effects(d, has_effects);
-	design_set_traits(d, ntrait, &traits, trait_names);
-	design_add_dvar(d, RECV_VAR_IRECV, NULL);
-	design_add_dvar(d, RECV_VAR_NRECV, NULL);
-	design_add_dvar(d, RECV_VAR_ISEND, NULL);
-	design_add_dvar(d, RECV_VAR_NSEND, NULL);
-	design_add_dvar(d, RECV_VAR_IRECV2, NULL);
-	design_add_dvar(d, RECV_VAR_NRECV2, NULL);
-	design_add_dvar(d, RECV_VAR_ISEND2, NULL);
-	design_add_dvar(d, RECV_VAR_NSEND2, NULL);
-	design_add_dvar(d, RECV_VAR_ISIB, NULL);
-	design_add_dvar(d, RECV_VAR_NSIB, NULL);
-	design_add_dvar(d, RECV_VAR_ICOSIB, NULL);
-	design_add_dvar(d, RECV_VAR_NCOSIB, NULL);
+
+	/* send design */
+	struct design *s = frame_send_design(&frame);
+	design_set_traits(s, ntrait, &traits, trait_names);
+       
+	/* recv design */
+	struct design *r = frame_recv_design(&frame);
+        design_set_has_effects(r, has_effects);
+	design_set_traits(r, ntrait, &traits, trait_names);
+	design_add_dvar(r, RECV_VAR_IRECV, NULL);
+	design_add_dvar(r, RECV_VAR_NRECV, NULL);
+	design_add_dvar(r, RECV_VAR_ISEND, NULL);
+	design_add_dvar(r, RECV_VAR_NSEND, NULL);
+	design_add_dvar(r, RECV_VAR_IRECV2, NULL);
+	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
+	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
+	design_add_dvar(r, RECV_VAR_NSEND2, NULL);
+	design_add_dvar(r, RECV_VAR_ISIB, NULL);
+	design_add_dvar(r, RECV_VAR_NSIB, NULL);
+	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
+	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);
+
+	/* dyad design */
+	//struct dyad_design *d = frame_dyad_design(&frame);
+	//dyad_design_add_interact(&frame, design_ix(s, "Legal"), design_ix(r, "Legal"));
 }
 
 static void add_constraints(struct recv_fit *fit)

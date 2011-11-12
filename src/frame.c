@@ -367,7 +367,7 @@ static void process_current_messages(struct frame *f)
 		struct frame_actor *fa;
 		size_t ito, nto = msg->nto;
 
-		fa = = &f->senders[msg->from];
+		fa = &f->senders[msg->from];
 		frame_actor_grow_ixs(fa, 1);
 		fa->message_ixs[fa->nix++] = imsg;
 
