@@ -83,6 +83,65 @@ void design_deinit(struct design *d)
 	free(d->traits.data);
 }
 
+const char *design_name(const struct design *d, size_t i)
+{
+	size_t x0_off = design_traits_index(d);
+	size_t x0_dim = design_traits_dim(d);
+	size_t dx_off = design_dvars_index(d);
+	size_t dx_dim = design_dvars_dim(d);
+
+	if (x0_off <= i && i < x0_off + x0_dim) {
+		return d->trait_names[i];
+	} else if (dx_off <= i && i < dx_off + dx_dim) {
+		size_t iv, nv = d->ndvar;
+		size_t dx_i = i - dx_off;
+
+		for (iv = 0; iv < nv; iv++) {
+			const struct design_var *dv = &d->dvars[iv];
+
+			if (dv->dyn_index <= dx_i
+			    && dx_i < dv->dyn_index + dv->dim) {
+				return dv->names[dx_i - dv->dyn_index];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+ptrdiff_t design_ix(const struct design *d, const char *name)
+{
+	if (d->trait_names) {
+		size_t i, n = design_traits_dim(d);
+		size_t off = design_traits_index(d);
+
+		for (i = 0; i < n; i++) {
+			if (strcmp(d->trait_names[i], name) == 0) {
+				return (ptrdiff_t)(i + off);
+			}
+		}
+	}
+
+	size_t i, m = d->ndvar;
+	size_t off = design_dvars_index(d);
+
+	for (i = 0; i < m; i++) {
+		const struct design_var *dv = &d->dvars[i];
+		size_t j, n = dv->dim;
+
+		if (!dv->names)
+			continue;
+
+		for (j = 0; j < n; j++) {
+			if (strcmp(dv->names[j], name) == 0) {
+				return (ptrdiff_t)(j + dv->dyn_index + off);
+			}
+		}
+	}
+
+	return -1;
+}
+
 static void
 design_mul0_effects(double alpha,
 		    enum blas_trans trans,

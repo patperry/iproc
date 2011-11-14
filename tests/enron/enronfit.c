@@ -92,7 +92,7 @@ static void setup(void) {
 
 	/* dyad design */
 	//struct dyad_design *d = frame_dyad_design(&frame);
-	//dyad_design_add_interact(&frame, design_ix(s, "Legal"), design_ix(r, "Legal"));
+	//dyad_design_add_interact(d, design_ix(s, "Legal"), design_ix(r, "Legal"));
 }
 
 static void add_constraints(struct recv_fit *fit)
@@ -286,23 +286,9 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* variate_names */
 		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
 		YG(yajl_gen_array_open(hand));
-		const char * const *trait_names = design_trait_names(d);
-		n = design_traits_dim(d);
-		assert(design_traits_index(d) == 0);
+		n = design_dim(d);
 		for (i = 0; i < n; i++) {
-			YG(yajl_gen_string(hand, YSTR(trait_names[i])));
-		}
-
-		assert(design_dvars_index(d) == design_traits_dim(d));
-		const struct design_var *rvs;
-		size_t irv, nrv;
-		design_get_dvars(d, &rvs, &nrv);
-		for (irv = 0; irv < nrv; irv++) {
-			n = rvs[irv].dim;
-			for (i = 0; i < n; i++) {
-				const char *name = rvs[irv].names[i];
-				YG(yajl_gen_string(hand, YSTR(name)));
-			}
+			YG(yajl_gen_string(hand, YSTR(design_name(d, i))));
 		}
 		YG(yajl_gen_array_close(hand));
 
@@ -507,7 +493,7 @@ static void output(const struct recv_fit *fit)
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 		  const struct dmatrix *coefs0)
 {
-	size_t maxit = 100;
+	size_t maxit = 1;
 	size_t report = 1;
 	int trace = 1;
 
