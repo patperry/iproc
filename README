@@ -1,20 +1,20 @@
 
 To clone and initialize the project:
 
-git clone git@github.com:patperry/iproc.git
-cd iproc
-git submodule init
-git submodule update
-autoreconf --install
+    git clone git@github.com:patperry/iproc.git
+    cd iproc
+    git submodule init
+    git submodule update
+    autoreconf --install
 
 
 To configure and compile the project:
 
-./configure
-make
+    ./configure
+    make
 
 
 To run the tests:
 
-make check
+    make check
 
