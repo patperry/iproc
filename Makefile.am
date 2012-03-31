@@ -91,8 +91,6 @@ libcore_la_SOURCES = \
 	lib/linalg/src/sblas.h \
 	src/core/array.c \
 	src/core/array.h \
-	src/core/bfgs.c \
-	src/core/bfgs.h \
 	src/core/compare.h \
 	src/core/delegate.h \
 	src/core/ieee754.c \

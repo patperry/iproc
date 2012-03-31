@@ -245,7 +245,7 @@ static void _eval_setup(struct recv_fit_eval *eval, ssize_t dim, ssize_t nc,
 			ssize_t ne)
 {
 	struct vector coefs_data = vector_slice(&eval->params, 0, dim * nc);
-	eval->coefs = matrix_make(&coefs_data, dim, nc);
+	eval->coefs = matrix_make(coefs_data.data, dim, nc);
 	eval->duals = vector_slice(&eval->params, dim * nc, ne);
 }
 
@@ -355,7 +355,7 @@ static void eval_set(struct recv_fit_eval *eval,
 	size_t nce = constr_count(ce);
 
 	struct vector pcoefs_data = vector_slice(&eval->params, 0, dim * nc);
-	struct matrix pcoefs = matrix_make(&pcoefs_data, dim, nc);
+	struct matrix pcoefs = matrix_make(pcoefs_data.data, dim, nc);
 
 	if (coefs) {
 		matrix_assign_copy(&pcoefs, BLAS_NOTRANS, coefs);
@@ -480,7 +480,7 @@ static void search_set(struct recv_fit_search *search,
 	vector_assign_copy(s, &resid->vector);
 	vector_scale(s, -1.0);
 
-	struct matrix smat = matrix_make(s, vector_dim(s), 1);
+	struct matrix smat = matrix_make(s->data, vector_dim(s), 1);
 	ssize_t info = ldlfac_solve(&kkt->ldl, kkt->uplo,
 				    &kkt->matrix, &smat);
 	kkt->factored = true;
@@ -516,7 +516,7 @@ static void rgrad_set(struct recv_fit_rgrad *rgrad,
 	assert(!kkt->factored);
 
 	struct vector *g = &rgrad->vector;
-	matrix_mul(2.0, BLAS_NOTRANS, &kkt->matrix, &resid->vector, 0.0, g);
+	matrix_mul(2.0, BLAS_NOTRANS, &kkt->matrix, resid->vector.data, 0.0, g->data);
 }
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)

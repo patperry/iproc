@@ -246,7 +246,7 @@ static void test_mean()
 				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
 			}
 			
-			struct vector avg_mean0_c = matrix_col(&avg_mean0, c);
+			struct vector avg_mean0_c = vector_make(matrix_col(&avg_mean0, c), matrix_nrow(&avg_mean0));
 			vector_assign_copy(&diff, &avg_mean0_c);
 			vector_axpy(-1.0/msg->nto, &mean0, &diff);
 			vector_axpy(-((double)msg->nto) / n, &diff, &avg_mean0_c);
@@ -339,7 +339,7 @@ static void test_score()
 				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
 			}
 			
-			struct vector avg_score0_c = matrix_col(&avg_score0, c);
+			struct vector avg_score0_c = vector_make(matrix_col(&avg_score0, c), matrix_nrow(&avg_score0));
 			vector_assign_copy(&diff, &avg_score0_c);
 			vector_axpy(-1.0/msg->nto, &score0, &diff);
 			vector_axpy(-((double)msg->nto) / n, &diff, &avg_score0_c);
@@ -431,7 +431,7 @@ static void test_imat()
 				vector_assign_copy(&y, &mean);				
 				
 				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, &y);
-				matrix_update1(&imat0, p, &y, &y);
+				matrix_update1(&imat0, p, y.data, y.data);
 			}
 			matrix_scale(&imat0, msg->nto);
 			

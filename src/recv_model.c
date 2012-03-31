@@ -180,7 +180,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, -1.0, &y);
 		pj = vector_item(&cm->p0, jrecv);
 
-		matrix_update1(&cm->imat0, pj, &y, &y);
+		matrix_update1(&cm->imat0, pj, y.data, y.data);
 	}
 	vector_deinit(&y);
 
@@ -371,7 +371,7 @@ static void recv_model_recv_update(void *udata, struct frame *f, size_t isend,
 	size_t icohort = recv_model_cohort(m, isend);
 	struct recv_model_sender *send = sender_raw(m, isend);
 	const struct recv_model_cohort *cm = &m->cohort_models[icohort];
-	const struct vector coefs = matrix_col(recv_model_coefs(m), icohort);
+	const struct vector coefs = vector_make(matrix_col(recv_model_coefs(m), icohort), matrix_nrow(recv_model_coefs(m)));
 
 	size_t nzmax = send->active.nzmax;
 	int ins;
@@ -490,7 +490,7 @@ void recv_model_init(struct recv_model *model,
 	struct recv_model_cohort *cms = xcalloc(ncohort, sizeof(*cms));
 	size_t ic;
 	for (ic = 0; ic < ncohort; ic++) {
-		struct vector col = matrix_col(&model->coefs, ic);
+		struct vector col = vector_make(matrix_col(&model->coefs, ic), matrix_nrow(&model->coefs));
 		cohort_init(&cms[ic], d, &col);
 	}
 	model->cohort_models = cms;
@@ -643,7 +643,7 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
 
 	size_t ic, nc = recv_model_cohort_count(m);
 	for (ic = 0; ic < nc; ic++) {
-		struct vector col = matrix_col(&m->coefs, ic);
+		struct vector col = vector_make(matrix_col(&m->coefs, ic), matrix_nrow(&m->coefs));
 		cohort_set(&m->cohort_models[ic], d, &col);
 	}
 
@@ -651,7 +651,7 @@ void recv_model_set_coefs(struct recv_model *m, const struct matrix *coefs)
 	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
 		size_t ic = cohorts[isend];
-		struct vector col = matrix_col(&m->coefs, ic);
+		struct vector col = vector_make(matrix_col(&m->coefs, ic), matrix_nrow(&m->coefs));
 		sender_set(m, &senders[isend], isend, f, &col);
 	}
 }

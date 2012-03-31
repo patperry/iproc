@@ -199,19 +199,19 @@ static void test_mul0()
 	}
 		
 	design_mul0(1.0, BLAS_NOTRANS, design, &x, 0.0, &y);
-	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 0.0, &y1);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, x.data, 0.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
 	design_mul0(1.0, BLAS_NOTRANS, design, &x, 1.0, &y);
-	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, 1.0, &y1);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, x.data, 1.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
 	design_mul0(1.0, BLAS_NOTRANS, design, &x, -1.0, &y);
-	matrix_mul(1.0, BLAS_NOTRANS, &matrix, &x, -1.0, &y1);
+	matrix_mul(1.0, BLAS_NOTRANS, &matrix, x.data, -1.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
 	design_mul0(2.0, BLAS_NOTRANS, design, &x, 2.0, &y);
-	matrix_mul(2.0, BLAS_NOTRANS, &matrix, &x, 2.0, &y1);
+	matrix_mul(2.0, BLAS_NOTRANS, &matrix, x.data, 2.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
 	matrix_deinit(&matrix);
@@ -242,19 +242,19 @@ static void test_tmul0()
 	}
 		
 	design_mul0(1.0, BLAS_TRANS, design, &x, 0.0, &y);
-	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 0.0, &y1);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, x.data, 0.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);		
 		
 	design_mul0(1.0, BLAS_TRANS, design, &x, 1.0, &y);
-	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, 1.0, &y1);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, x.data, 1.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
 	design_mul0(1.0, BLAS_TRANS, design, &x, -1.0, &y);
-	matrix_mul(1.0, BLAS_TRANS, &matrix, &x, -1.0, &y1);
+	matrix_mul(1.0, BLAS_TRANS, &matrix, x.data, -1.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
 	design_mul0(2.0, BLAS_TRANS, design, &x, 2.0, &y);
-	matrix_mul(2.0, BLAS_TRANS, &matrix, &x, 2.0, &y1);
+	matrix_mul(2.0, BLAS_TRANS, &matrix, x.data, 2.0, y1.data);
 	assert_true(vector_dist(&y, &y1) == 0.0);
 		
 	matrix_deinit(&matrix);

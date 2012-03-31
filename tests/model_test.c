@@ -159,7 +159,7 @@ static void test_probs()
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
 			size_t c = cohorts[isend];
-			const struct vector col = matrix_col(&coefs, c);
+			const struct vector col = vector_make(matrix_col(&coefs, c), matrix_nrow(&coefs));
 			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &col, 0.0, &eta);
 			
 			if (!frame_has_loops(&frame))
