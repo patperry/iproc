@@ -404,7 +404,7 @@ static void score_axpy_obs(double alpha,
 	struct vector ysub = vector_slice(y, off, dim);
 
 	// (X[0,i])^T n[i]
-	design_muls0(alpha, BLAS_TRANS, d, score->nrecv, &score->nrecv_pat, 1.0, y);
+	design_muls0(alpha, BLAS_TRANS, d, score->nrecv, &score->nrecv_pat, 1.0, y->data);
 
 	// sum{dx[t,i,j]}
 	vector_axpy(alpha, &score->obs_dx, &ysub);
@@ -422,7 +422,7 @@ static void score_axpy_mean(double alpha,
 	double gamma = score->gamma;
 	vector_axpy(alpha * gamma, mean0, y);
 
-	design_muls0(alpha, BLAS_TRANS, design, vector_to_ptr(&score->dp), active, 1.0, y);
+	design_muls0(alpha, BLAS_TRANS, design, vector_to_ptr(&score->dp), active, 1.0, y->data);
 
 	const struct vector *mean_dx = &score->mean_dx;
 	size_t off = design_dvars_index(design);
@@ -462,15 +462,15 @@ static void imat_axpy(double alpha,
 	struct vector gamma_x0_dp;
 	vector_init(&gamma_x0_dp, dim);
 	design_muls0(1.0, BLAS_TRANS, design, vector_to_ptr(&imat->gamma_dp),
-		     active, 0.0, &gamma_x0_dp);
+		     active, 0.0, gamma_x0_dp.data);
 
 	struct matrix x0_dp2;
 
 	matrix_init(&x0_dp2, dim, n);
 	for (j = 0; j < n; j++) {
 		const double *dp2_j = matrix_item_ptr(&imat->dp2, 0, j);
-		struct vector dst = vector_make(matrix_col(&x0_dp2, j), matrix_nrow(&x0_dp2));
-		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, &dst);
+		double *dst = matrix_col(&x0_dp2, j);
+		design_muls0(1.0, BLAS_TRANS, design, dp2_j, active, 0.0, dst);
 	}
 
 	/* Part I: X0' * [ Diag(p) - p p' ] * X0
@@ -485,8 +485,8 @@ static void imat_axpy(double alpha,
 	for (k = 0; k < dim; k++) {
 		blas_dcopy(n, matrix_item_ptr(&x0_dp2, k, 0),
 			   matrix_lda(&x0_dp2), x0_dp2_k, 1);
-		struct vector dst = vector_make(matrix_col(y, k), matrix_nrow(y));
-		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, &dst);
+		double *dst = matrix_col(y, k);
+		design_muls0(alpha, BLAS_TRANS, design, x0_dp2_k, active, 1.0, dst);
 	}
 
 	/* for (i = 0; i < dim; i++) { assert(matrix_item(y, i, i) * alpha > -1e-5); } */
@@ -519,7 +519,7 @@ static void imat_axpy(double alpha,
 
 	for (i = 0; i < n; i++) {
 		jrecv = active->indx[i];
-		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, &x0_j);
+		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, 0.0, x0_j.data);
 
 		const double *dx_p_j = matrix_col(&imat->dx_p, i);
 		matrix_update1(&y_1, alpha, x0_j.data, dx_p_j);

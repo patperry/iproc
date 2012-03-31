@@ -144,7 +144,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	 */
 
 	/* eta0 */
-	design_mul0(1.0, BLAS_NOTRANS, design, recv_coefs, 0.0, &cm->eta0);
+	design_mul0(1.0, BLAS_NOTRANS, design, recv_coefs->data, 0.0, cm->eta0.data);
 	assert(isfinite(vector_max_abs(&cm->eta0)));
 
 	/* max_eta0 */
@@ -160,7 +160,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 	vector_exp(&cm->p0);
 
 	/* mean0 */
-	design_mul0(1.0, BLAS_TRANS, design, &cm->p0, 0.0, &cm->mean0);
+	design_mul0(1.0, BLAS_TRANS, design, cm->p0.data, 0.0, cm->mean0.data);
 
 	/* imat0 */
 	struct vector y;
@@ -177,7 +177,7 @@ static void cohort_set(struct recv_model_cohort *cm,
 
 	for (jrecv = 0; jrecv < nreceiver; jrecv++) {
 		vector_assign_copy(&y, &cm->mean0);
-		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, -1.0, &y);
+		design_muls0(1.0, BLAS_TRANS, design, &one, &pat_j, -1.0, y.data);
 		pj = vector_item(&cm->p0, jrecv);
 
 		matrix_update1(&cm->imat0, pj, y.data, y.data);

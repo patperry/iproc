@@ -66,7 +66,6 @@ double vector_norm(const struct vector *v);	// Eucludean norm
 double vector_norm2(const struct vector *v);	// Square of Euclidean
 double vector_sum_abs(const struct vector *v);
 void vector_axpy(double alpha, const struct vector *x, struct vector *y);
-double vector_dist(const struct vector *v1, const struct vector *v2);
 
 /* min and max */
 double vector_max(const struct vector *vector);

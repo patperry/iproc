@@ -621,7 +621,7 @@ void frame_recv_mul(double alpha, enum blas_trans trans,
 	size_t off = design_dvars_index(design);
 	size_t dim = design_dvars_dim(design);
 
-	design_mul0(alpha, trans, design, x, beta, y);
+	design_mul0(alpha, trans, design, x->data, beta, y->data);
 
 	if (trans == BLAS_NOTRANS) {
 		struct vector xsub = vector_slice(x, off, dim);
@@ -650,7 +650,7 @@ void frame_recv_muls(double alpha, enum blas_trans trans,
 	size_t off = design_dvars_index(design);
 	size_t dim = design_dvars_dim(design);
 
-	design_muls0(alpha, trans, design, x, pat, beta, y);
+	design_muls0(alpha, trans, design, x, pat, beta, y->data);
 
 	if (trans == BLAS_NOTRANS) {
 		ptrdiff_t jx0 = vpattern_find(pat, off);

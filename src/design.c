@@ -85,7 +85,7 @@ static void
 design_mul0_effects(double alpha,
 		    enum blas_trans trans,
 		    const struct design *d,
-		    const struct vector *x, struct vector *y)
+		    const double *x, double *y)
 {
 	if (!design_has_effects(d))
 		return;
@@ -94,11 +94,9 @@ design_mul0_effects(double alpha,
 	size_t dim = design_count(d);
 
 	if (trans == BLAS_NOTRANS) {
-		struct vector xsub = vector_slice(x, off, dim);
-		vector_axpy(alpha, &xsub, y);
+		blas_daxpy(dim, alpha, x + off, 1, y, 1);
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
-		vector_axpy(alpha, x, &ysub);
+		blas_daxpy(dim, alpha, x, 1, y + off, 1);
 	}
 }
 
@@ -107,7 +105,7 @@ design_muls0_effects(double alpha,
 		     enum blas_trans trans,
 		     const struct design *d,
 		     const double *x, const struct vpattern *pat,
-		     struct vector *y)
+		     double *y)
 {
 	if (!design_has_effects(d))
 		return;
@@ -125,11 +123,10 @@ design_muls0_effects(double alpha,
 			size_t i = pat->indx[iz];
 			double x_i = x[iz];
 
-			*vector_item_ptr(y, i) += alpha * x_i;
+			y[i] += alpha * x_i;
 		}
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
-		sblas_daxpyi(alpha, x, pat, vector_to_ptr(&ysub));
+		sblas_daxpyi(alpha, x, pat, y + off);
 	}
 }
 
@@ -138,7 +135,7 @@ static void
 design_mul0_traits(double alpha,
 		   enum blas_trans trans,
 		   const struct design *d,
-		   const struct vector *x, struct vector *y)
+		   const double *x, double *y)
 {
 	if (!design_traits_dim(d))
 		return;
@@ -149,16 +146,12 @@ design_mul0_traits(double alpha,
 	size_t count = design_count(d);
 
 	if (trans == BLAS_NOTRANS) {
-		struct vector xsub = vector_slice(x, off, dim);
 		blas_dgemv(trans, count, dim, alpha, traits, MAX(1, count),
-			   vector_to_ptr(&xsub), 1, 1.0,
-			   vector_to_ptr(y), 1);
+			   x + off, 1, 1.0, y, 1);
 
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
 		blas_dgemv(trans, count, dim, alpha, traits, MAX(1, count),
-			   vector_to_ptr(x), 1, 1.0,
-			   vector_to_ptr(&ysub), 1);
+			   x, 1, 1.0, y + off, 1);
 	}
 }
 
@@ -167,7 +160,7 @@ design_muls0_traits(double alpha,
 		    enum blas_trans trans,
 		    const struct design *d,
 		    const double *x, const struct vpattern *pat,
-		    struct vector *y)
+		    double *y)
 {
 	if (!design_traits_dim(d))
 		return;
@@ -186,39 +179,28 @@ design_muls0_traits(double alpha,
 
 		for (; i < nz && indx[i] < off + dim; i++) {
                         blas_daxpy(count, alpha * x[i],
-				   a + (indx[i] - off) * lda, 1,
-				   vector_to_ptr(y), 1);
+				   a + (indx[i] - off) * lda, 1, y, 1);
                 }
 	} else {
-		struct vector ysub = vector_slice(y, off, dim);
-
 		sblas_dgemvi(trans, count, dim, alpha, a, lda,
-			     x, pat, 1.0, vector_to_ptr(&ysub));
+			     x, pat, 1.0, y + off);
 	}
 }
 
 
 void
 design_mul0(double alpha, enum blas_trans trans, const struct design *d,
-	    const struct vector *x, double beta, struct vector *y)
+	    const double *x, double beta, double *y)
 {
-	assert(d);
-	assert(x);
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(x) == design_dim(d));
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_count(d));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(x) == design_count(d));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_dim(d));
+	size_t n = design_count(d);
+	size_t p = design_dim(d);
+	size_t ny = (trans == BLAS_NOTRANS ? n : p);
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		vector_fill(y, 0.0);
+		memset(y, 0, ny * sizeof(y[0]));
 	} else if (beta != 1.0) {
-		vector_scale(y, beta);
+		blas_dscal(ny, beta, y, 1);
 	}
 
 	design_mul0_effects(alpha, trans, d, x, y);
@@ -229,26 +211,23 @@ design_mul0(double alpha, enum blas_trans trans, const struct design *d,
 void
 design_muls0(double alpha,
 	     enum blas_trans trans,
-	     const struct design *design,
+	     const struct design *d,
 	     const double *x, const struct vpattern *pat,
-	     double beta, struct vector *y)
+	     double beta, double *y)
 {
-	assert(design);
-	assert(y);
-	assert(trans != BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_count(design));
-	assert(trans == BLAS_NOTRANS
-	       || (size_t)vector_dim(y) == design_dim(design));
+	size_t n = design_count(d);
+	size_t p = design_dim(d);
+	size_t ny = (trans == BLAS_NOTRANS ? n : p);
 
 	/* y := beta y */
 	if (beta == 0.0) {
-		vector_fill(y, 0.0);
+		memset(y, 0, ny * sizeof(y[0]));
 	} else if (beta != 1.0) {
-		vector_scale(y, beta);
+		blas_dscal(ny, beta, y, 1);
 	}
 
-	design_muls0_effects(alpha, trans, design, x, pat, y);
-	design_muls0_traits(alpha, trans, design, x, pat, y);
+	design_muls0_effects(alpha, trans, d, x, pat, y);
+	design_muls0_traits(alpha, trans, d, x, pat, y);
 }
 
 void design_set_has_effects(struct design *d, int has_effects)

@@ -4,7 +4,6 @@
 #include "blas.h"
 #include "sblas.h"
 #include "messages.h"
-#include "vector.h"
 
 
 struct var_type;		// forward declaration
@@ -61,12 +60,12 @@ static inline size_t design_dvars_dim(const struct design *d);
 void design_mul0(double alpha,
 		      enum blas_trans trans,
 		      const struct design *d,
-		      const struct vector *x, double beta, struct vector *y);
+		      const double *x, double beta, double *y);
 void design_muls0(double alpha,
 		       enum blas_trans trans,
 		       const struct design *d,
 		       const double *x, const struct vpattern *pat,
-		       double beta, struct vector *y);
+		       double beta, double *y);
 
 /* inline funciton definitions */
 struct frame *design_frame(const struct design *d)

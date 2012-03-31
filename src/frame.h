@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include "vector.h"
 #include "sblas.h"
 #include "messages.h"
 #include "pqueue.h"
