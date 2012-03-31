@@ -144,17 +144,15 @@ void symeig_deinit(struct symeig *eig)
 }
 
 bool symeig_factor(struct symeig *eig, enum blas_uplo uplo,
-		   struct matrix *a, struct vector *w)
+		   struct matrix *a, double *w)
 {
 	assert(eig);
 	assert(matrix_nrow(a) == symeig_dim(eig));
 	assert(matrix_ncol(a) == symeig_dim(eig));
-	assert(vector_dim(w) == symeig_dim(eig));
 
 	size_t n = symeig_dim(eig);
 	double *pa = matrix_to_ptr(a);
 	size_t lda = (size_t)matrix_lda(a);
-	double *pw = vector_to_ptr(w);
 	double *work = eig->work;
 	size_t lwork = eig->lwork;
 	ptrdiff_t *iwork = eig->iwork;
@@ -171,7 +169,7 @@ bool symeig_factor(struct symeig *eig, enum blas_uplo uplo,
 		assert(liwork >= 3 + 5 * n);
 	}
 	
-	eig->info = lapack_dsyevd(eig->job, uplo, n, pa, lda, pw, work, lwork,
+	eig->info = lapack_dsyevd(eig->job, uplo, n, pa, lda, w, work, lwork,
 				  iwork, liwork);
 	assert(eig->info >= 0);
 	return (eig->info == 0);
@@ -226,7 +224,7 @@ void svdfac_deinit(struct svdfac *svd)
 	free(svd->iwork);
 }
 
-bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt)
+bool svdfac_factor(struct svdfac *svd, struct matrix *a, double *s, struct matrix *u, struct matrix *vt)
 {
 	enum lapack_svdjob job = svdfac_job(svd);	
 	size_t m = svdfac_row_dim(svd);
@@ -240,7 +238,6 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 	assert((size_t)matrix_nrow(a) == m);
 	assert((size_t)matrix_ncol(a) == n);
 	assert(s);
-	assert((size_t)vector_dim(s) == mn);
 	switch(job) {
 	case LA_SVD_ALL:
 		assert(u);
@@ -279,7 +276,6 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 
 	double *pa = matrix_to_ptr(a);
 	size_t lda = (size_t)matrix_lda(a);
-	double *ps = vector_to_ptr(s);
 	double *pu = u ? matrix_to_ptr(u) : NULL;
 	size_t ldu = u ? (size_t)matrix_lda(u) : 1;
 	double *pvt = vt ? matrix_to_ptr(vt) : NULL;
@@ -288,7 +284,7 @@ bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struc
 	size_t lwork = svd->lwork;
 	ptrdiff_t *iwork = svd->iwork;
 	
-	svd->info = lapack_dgesdd(job, m, n, pa, lda, ps, pu, ldu, pvt, ldvt,
+	svd->info = lapack_dgesdd(job, m, n, pa, lda, s, pu, ldu, pvt, ldvt,
 				  work, lwork, iwork);
 	return (svd->info == 0);
 }

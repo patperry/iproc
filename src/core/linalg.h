@@ -1,7 +1,6 @@
 #ifndef _LINALG_H
 #define _LINALG_H
 
-#include "vector.h"
 #include "matrix.h"
 #include "lapack.h"
 
@@ -53,7 +52,7 @@ void symeig_init(struct symeig *eig, ssize_t n, enum lapack_eigjob job);
 void symeig_reinit(struct symeig *eig, ssize_t n, enum lapack_eigjob job);
 void symeig_deinit(struct symeig *eig);
 
-bool symeig_factor(struct symeig *eig, enum blas_uplo uplo, struct matrix *a, struct vector *w);	// destroys a
+bool symeig_factor(struct symeig *eig, enum blas_uplo uplo, struct matrix *a, double *w);	// destroys a
 
 static inline ssize_t symeig_dim(const struct symeig *eig)
 {
@@ -71,7 +70,7 @@ void svdfac_init(struct svdfac *svd, ssize_t m, ssize_t n, enum lapack_svdjob jo
 void svdfac_reinit(struct svdfac *svd, ssize_t m, ssize_t n, enum lapack_svdjob job);
 void svdfac_deinit(struct svdfac *svd);
 
-bool svdfac_factor(struct svdfac *svd, struct matrix *a, struct vector *s, struct matrix *u, struct matrix *vt); // destroys a
+bool svdfac_factor(struct svdfac *svd, struct matrix *a, double *s, struct matrix *u, struct matrix *vt); // destroys a
 
 static inline ssize_t svdfac_row_dim(const struct svdfac *svd)
 {
