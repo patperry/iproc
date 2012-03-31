@@ -384,7 +384,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		/* duals */
 		YG(yajl_gen_string(hand, YSTR(DUALS)));
 		const struct vector *duals = recv_fit_duals(fit);
-		YG(yajl_gen_vector(hand, duals));
+		YG(yajl_gen_vector(hand, duals->dim, duals->data));
 
 		/* count */
 		YG(yajl_gen_string(hand, YSTR(COUNT)));
@@ -401,7 +401,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		for (ic = 0; ic < nc; ic++) {
 			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
 			const struct vector *score = &info->score;
-			YG(yajl_gen_vector(hand, score));
+			YG(yajl_gen_vector(hand, score->dim, score->data));
 		}
 		YG(yajl_gen_array_close(hand));
 
