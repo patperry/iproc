@@ -200,7 +200,7 @@ static void score_set_obs(struct recv_loglik_sender_score *score,
 	score->nrecv_pat.nz = n;
 
 	frame_recv_dmuls(1.0, BLAS_TRANS, f, isend,
-			 score->nrecv, &score->nrecv_pat, 0.0, &score->obs_dx);
+			 score->nrecv, &score->nrecv_pat, 0.0, score->obs_dx.data);
 }
 
 static void score_set_mean(struct recv_loglik_sender_score *score,
@@ -234,8 +234,8 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 		double dp = p - gamma * p0;
 		vector_set_item(&score->dp, iz, dp);
 
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-		vector_axpy(p, dx, &score->mean_dx);
+		const struct vector dx = vector_make(frame_recv_dx(f, isend, jrecv), vector_dim(&score->mean_dx));
+		vector_axpy(p, &dx, &score->mean_dx);
 	}
 	vector_scale(&score->dp, n);
 	vector_scale(&score->mean_dx, n);
@@ -296,7 +296,6 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 		size_t jrecv = active[iz];
 		double dp = vector_item(&score->dp, iz);
 		double p = recv_model_prob(model, isend, jrecv);
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
 
 		/* gamma_dp */
 		vector_set_item(&imat->gamma_dp, iz, gamma * dp);
@@ -311,12 +310,13 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 
 		/* dx_p */
 		struct vector dx_p_j = vector_make(matrix_col(&imat->dx_p, iz), matrix_nrow(&imat->dx_p));
-		vector_assign_copy(&dx_p_j, dx);
+		const struct vector dx = vector_make(frame_recv_dx(f, isend, jrecv), vector_dim(&dx_p_j));
+		vector_assign_copy(&dx_p_j, &dx);
 		vector_scale(&dx_p_j, n * p);
 
 		/* var_dx */
 		struct vector y_i = vector_make(matrix_col(&y, iz), matrix_nrow(&y));
-		vector_assign_copy(&y_i, dx);
+		vector_assign_copy(&y_i, &dx);
 		vector_axpy(-1.0 / n, &score->mean_dx, &y_i);
 		vector_scale(&y_i, sqrt(p));
 

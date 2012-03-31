@@ -56,9 +56,9 @@ static void isend2_message_add(void *udata, struct frame *f,
 			if (hsend == isend || hsend == jrecv || isend == jrecv)
 				continue;
 			
-			const struct vector *dx = frame_recv_dx(f, isend, jrecv);
+			const double *dx = frame_recv_dx(f, isend, jrecv);
 			
-			if (vector_item(dx, dyn_index) == 0.0) {
+			if (dx[dyn_index] == 0.0) {
 				frame_recv_update(f, isend, jrecv, dx_data, &pat);
 			}
 		}
@@ -77,9 +77,9 @@ static void isend2_message_add(void *udata, struct frame *f,
 			if (cohrecv == coisend || cohrecv == cojrecv || coisend == cojrecv)
 				continue;
 			
-			const struct vector *dx = frame_recv_dx(f, coisend, cojrecv);
+			const double *dx = frame_recv_dx(f, coisend, cojrecv);
 			
-			if (vector_item(dx, dyn_index) == 0.0) {
+			if (dx[dyn_index] == 0.0) {
 				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 			}
 		}

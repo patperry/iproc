@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cmockery.h"
+#include "xalloc.h"
 
 #include "enron.h"
 #include "matrix.h"
@@ -26,7 +27,6 @@ static const char * const * cohort_names;
 static const char * const * trait_names;
 static int has_effects;
 static int has_loops;
-static struct vector intervals;
 static struct messages messages;
 static struct design *design;
 static size_t rv_irecv_index;
@@ -59,9 +59,7 @@ static void rv_nsend_setup()
 {
 	has_effects = 0;
 	has_loops = 0;
-	vector_init(&intervals, 0);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-		    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -72,7 +70,6 @@ static void rv_nsend_setup()
 static void rv_nsend_teardown()
 {
 	frame_deinit(&frame);
-	vector_deinit(&intervals);	
 }
 
 static void test_rv_nsend()
@@ -83,14 +80,14 @@ static void test_rv_nsend()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnsend;
-	struct vector x, y;
+	double *x, *y;
 	
 	matrix_init(&xnsend, nsend, nrecv);
 	matrix_fill(&xnsend, 0.0);
 	
-	vector_init(&x, design_dim(design));
-	vector_set_basis(&x, rv_nsend_index);
-	vector_init(&y, design_count(design));
+	x = xcalloc(design_dim(design), sizeof(double));
+	x[rv_nsend_index] = 1.0;
+	y = xmalloc(design_count(design) * sizeof(double));
 	
 	isend = 0;
 	
@@ -99,10 +96,10 @@ static void test_rv_nsend()
 		frame_advance(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, x, 0.0, y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
-			assert_true(vector_item(&y, jrecv) == matrix_item(&xnsend, isend, jrecv));
+			assert(y[jrecv] == matrix_item(&xnsend, isend, jrecv));
+			assert_true(y[jrecv] == matrix_item(&xnsend, isend, jrecv));
 		}
 		
 		ntie = MESSAGES_COUNT(it);
@@ -116,8 +113,8 @@ static void test_rv_nsend()
 		}
 	}
 	
-	vector_deinit(&y);
-	vector_deinit(&x);	
+	free(y);
+	free(x);	
 	matrix_deinit(&xnsend);
 }
 
@@ -125,9 +122,7 @@ static void rv_nrecv_setup()
 {
 	has_effects = 0;
 	has_loops = 0;
-	vector_init(&intervals, 0);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-		    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -138,7 +133,6 @@ static void rv_nrecv_setup()
 static void rv_nrecv_teardown()
 {
 	frame_deinit(&frame);
-	vector_deinit(&intervals);	
 }
 
 static void test_rv_nrecv()
@@ -150,16 +144,14 @@ static void test_rv_nrecv()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	struct matrix xnrecv;
-	struct vector x, y;
-	
-	
+	double *x, *y;
 	
 	matrix_init(&xnrecv, nsend, design_count(design));
 	matrix_fill(&xnrecv, 0.0);
 
-	vector_init(&x, design_dim(design));
-	vector_set_basis(&x, rv_nrecv_index);
-	vector_init(&y, design_count(design));
+	x = xcalloc(design_dim(design), sizeof(double));
+	x[rv_nrecv_index] = 1.0;
+	y = xmalloc(design_count(design) * sizeof(double));
 	
 	isend = 0;
 	
@@ -168,10 +160,10 @@ static void test_rv_nrecv()
 		frame_advance(&frame, t);
 		
 		isend = msg ? msg->from : 0;
-		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, &x, 0.0, &y);
+		frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, x, 0.0, y);
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			assert(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
-			assert_true(vector_item(&y, jrecv) == matrix_item(&xnrecv, jrecv, isend));
+			assert(y[jrecv] == matrix_item(&xnrecv, jrecv, isend));
+			assert_true(y[jrecv] == matrix_item(&xnrecv, jrecv, isend));
 		}
 		
 		ntie = MESSAGES_COUNT(it);
@@ -185,8 +177,8 @@ static void test_rv_nrecv()
 		}
 	}
 	
-	vector_deinit(&y);
-	vector_deinit(&x);	
+	free(y);
+	free(x);	
 	matrix_deinit(&xnrecv);
 }
 
@@ -195,13 +187,9 @@ static void rv_irecv_setup()
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	struct vector vintvls = vector_make(intvls, 3);
 	has_effects = 0;
 	has_loops = 0;
-	vector_init(&intervals, 3);
-	vector_assign_copy(&intervals, &vintvls);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-		    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -212,7 +200,6 @@ static void rv_irecv_setup()
 static void rv_irecv_teardown()
 {
 	frame_deinit(&frame);
-	vector_deinit(&intervals);	
 }
 
 
@@ -230,13 +217,13 @@ static void test_rv_irecv()
 	struct vpattern pat_k;
 	pat_k.indx = &k;
 	pat_k.nz = 1;
-	struct vector y;
+	double *y;
 	double tmsg;
 	
 	matrix_init(&tlast, nsend, design_count(design));
 	matrix_fill(&tlast, -INFINITY);
 	
-	vector_init(&y, design_count(design));
+	y = xmalloc(design_count(design) * sizeof(double));
 	
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -246,16 +233,16 @@ static void test_rv_irecv()
 		jrecv = msg ? msg->to[0] : 0;
 		
 		k = 0;
-		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, &y);
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, y);
 
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
 			tmsg = matrix_item(&tlast, ix, isend);
 			if (isfinite(tmsg)) {
-				assert(vector_item(&y, ix) == 1.0);
-				assert_true(vector_item(&y, ix) == 1.0);
+				assert(y[ix] == 1.0);
+				assert_true(y[ix] == 1.0);
 			} else {
-				assert_true(vector_item(&y, ix) == 0.0);
+				assert_true(y[ix] == 0.0);
 			}
 		}
 		ntie = MESSAGES_COUNT(it);
@@ -269,7 +256,7 @@ static void test_rv_irecv()
 		}
 	}
 
-	vector_deinit(&y);	
+	free(y);	
 	matrix_deinit(&tlast);
 }
 
@@ -279,13 +266,9 @@ static void rv_isend_setup()
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	struct vector vintvls = vector_make(intvls, 3);
 	has_effects = 0;
 	has_loops = 0;
-	vector_init(&intervals, 3);
-	vector_assign_copy(&intervals, &vintvls);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-		    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -296,7 +279,6 @@ static void rv_isend_setup()
 static void rv_isend_teardown()
 {
 	frame_deinit(&frame);
-	vector_deinit(&intervals);	
 }
 
 
@@ -314,13 +296,13 @@ static void test_rv_isend()
 	struct vpattern pat_k;
 	pat_k.indx = &k;
 	pat_k.nz = 1;
-	struct vector y;
+	double *y;
 	double tmsg;
 
 	matrix_init(&tlast, nsend, design_count(design));
 	matrix_fill(&tlast, -INFINITY);
 
-	vector_init(&y, design_count(design));
+	y = xmalloc(design_count(design) * sizeof(double));
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -329,16 +311,16 @@ static void test_rv_isend()
 		isend = msg ? msg->from : 0;
 		jrecv = msg ? msg->to[0] : 0;
 		k = 0;
-		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, &y);
+		frame_recv_dmuls(1.0, BLAS_NOTRANS, &frame, isend, &x, &pat_k, 0.0, y);
 
 		for (j = 0; j < 5; j++) {
 			size_t ix = (jrecv + j) % nrecv;
 			tmsg = matrix_item(&tlast, isend, ix);
 			if (isfinite(tmsg)) {
-				assert(vector_item(&y, ix) == 1.0);
-				assert_true(vector_item(&y, ix) == 1.0);
+				assert(y[ix] == 1.0);
+				assert_true(y[ix] == 1.0);
 			} else {
-				assert_true(vector_item(&y, ix) == 0.0);
+				assert_true(y[ix] == 0.0);
 			}
 		}
 		ntie = MESSAGES_COUNT(it);
@@ -352,7 +334,7 @@ static void test_rv_isend()
 		}
 	}
 
-	vector_deinit(&y);
+	free(y);
 	matrix_deinit(&tlast);
 }
 

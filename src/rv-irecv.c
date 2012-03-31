@@ -42,8 +42,8 @@ static void irecv_message_add(void *udata, struct frame *f,
 			continue;
 
 		size_t isend = msg->to[ito];
-		const struct vector *dx = frame_recv_dx(f, isend, jrecv);
-		if (vector_item(dx, dyn_index) == 0.0) {
+		const double *dx = frame_recv_dx(f, isend, jrecv);
+		if (dx[dyn_index] == 0.0) {
 			frame_recv_update(f, isend, jrecv, dx_data, &pat);
 		}
 	}

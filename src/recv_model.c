@@ -287,10 +287,10 @@ static void sender_set(const struct recv_model *m,
 	const struct vector beta = vector_slice(recv_coefs, dyn_off, dyn_dim);
 
 	/* compute the eta values */
-	struct vector *dx;
+	double *dx_mat;
 	size_t *active;
 	size_t iz, nz;
-	frame_recv_get_dx(f, isend, &dx, &active, &nz);
+	frame_recv_get_dx(f, isend, &dx_mat, &active, &nz);
 
 	vpattern_clear(&send->active);
 	size_t nzmax1;
@@ -302,7 +302,8 @@ static void sender_set(const struct recv_model *m,
 	memcpy(send->active.indx, active, nz * sizeof(active[0]));
 	send->active.nz = nz;
 	for (iz = 0; iz < nz; iz++) {
-		send->deta[iz] = vector_dot(&beta, &dx[iz]);
+		struct vector dx = vector_make(dx_mat + iz * dyn_dim, dyn_dim);
+		send->deta[iz] = vector_dot(&beta, &dx);
 	}
 
 	if (!has_loops) {

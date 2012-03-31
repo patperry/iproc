@@ -233,8 +233,8 @@ static void test_mean()
 			vector_fill(&probs, 0.0);
 			recv_model_axpy_probs(1.0, &model, isend, &probs);
 			
-			frame_recv_mul(msg->nto, BLAS_TRANS, &frame, isend, &probs,
-				       0.0, &mean0);
+			frame_recv_mul(msg->nto, BLAS_TRANS, &frame, isend, probs.data,
+				       0.0, mean0.data);
 			
 			vector_fill(&mean1, 0.0);
 			recv_loglik_axpy_last_mean(1.0, &recv_loglik, &mean1);
@@ -327,7 +327,7 @@ static void test_score()
 				*vector_item_ptr(&nrecv, msg->to[ito]) += 1.0;
 			}
 
-			frame_recv_mul(1.0, BLAS_TRANS, &frame, isend, &nrecv, 0.0, &score0);
+			frame_recv_mul(1.0, BLAS_TRANS, &frame, isend, nrecv.data, 0.0, score0.data);
 			recv_loglik_axpy_last_mean(-1.0, &recv_loglik, &score0);
 
 			vector_fill(&score1, 0.0);
@@ -430,7 +430,7 @@ static void test_imat()
 				double p = recv_model_prob(&model, isend, jrecv);
 				vector_assign_copy(&y, &mean);				
 				
-				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, &y);
+				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, y.data);
 				matrix_update1(&imat0, p, y.data, y.data);
 			}
 			matrix_scale(&imat0, msg->nto);
