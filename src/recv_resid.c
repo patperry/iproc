@@ -74,10 +74,10 @@ static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 	double *ps = vector_item_ptr(&exp->send, isend);
 	*ps += nto;
 
-	recv_model_axpy_probs(nto, model, isend, &exp->recv);
+	recv_model_axpy_probs(nto, model, isend, exp->recv.data);
 
-	struct vector col = vector_make(matrix_col(&exp->dyad_trans, isend), matrix_nrow(&exp->dyad_trans));
-	recv_model_axpy_probs(nto, model, isend, &col);
+	double *col = matrix_col(&exp->dyad_trans, isend);
+	recv_model_axpy_probs(nto, model, isend, col);
 
 	exp->dyad_cached = false;
 }

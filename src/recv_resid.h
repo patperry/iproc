@@ -4,6 +4,7 @@
 #include "messages.h"
 #include "design.h"
 #include "matrix.h"
+#include "vector.h"
 #include "recv_model.h"
 
 struct recv_resid_count {

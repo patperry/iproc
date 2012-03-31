@@ -231,7 +231,7 @@ static void test_mean()
 			size_t n = recv_loglik_count(&recv_loglik, c);			
 			
 			vector_fill(&probs, 0.0);
-			recv_model_axpy_probs(1.0, &model, isend, &probs);
+			recv_model_axpy_probs(1.0, &model, isend, probs.data);
 			
 			frame_recv_mul(msg->nto, BLAS_TRANS, &frame, isend, probs.data,
 				       0.0, mean0.data);

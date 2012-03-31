@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include "cmockery.h"
 
+#include "xalloc.h"
 #include "ieee754.h"
+#include "logsumexp.h"
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
@@ -26,7 +28,6 @@ static size_t *cohorts;
 static double *traits;
 static const char * const *cohort_names;
 static const char * const *trait_names;
-static struct vector intervals;
 static struct messages messages;
 static struct design *design;
 static struct frame frame;
@@ -59,13 +60,9 @@ static void basic_setup()
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	struct vector vintvls = vector_make(intvls, 3);
 	int has_effects = 0;
 	int has_loops = 0;
-	vector_init(&intervals, 3);
-	vector_assign_copy(&intervals, &vintvls);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-                    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -90,7 +87,6 @@ static void teardown()
 	recv_model_deinit(&model);
 	matrix_deinit(&coefs);
 	frame_deinit(&frame);
-	vector_deinit(&intervals);	
 }
 
 
@@ -100,13 +96,9 @@ static void hard_setup()
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	struct vector vintvls = vector_make(intvls, 3);
 	int has_effects = 0;
 	int has_loops = 0;
-	vector_init(&intervals, 3);
-	vector_assign_copy(&intervals, &vintvls);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-                    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, traits, ntrait, trait_names);
@@ -128,9 +120,57 @@ static void hard_setup()
 }
 
 
+static void vector_shift(size_t n, double val, double *x)
+{
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		x[i] += val;
+	}
+}
+
+static void vector_exp(size_t n, double *x)
+{
+	size_t i;
+	for (i = 0; i < n; i++) {
+		x[i] = exp(x[i]);
+	}
+}
+
+static void vector_fill(size_t n, double val, double *x)
+{
+	size_t i;
+	for (i = 0; i < n; i++) {
+		x[i] = val;
+	}
+}
+
+static double vector_max(size_t n, double *x)
+{
+	double max = -INFINITY;
+	size_t i;
+	for (i = 0; i < n; i++) {
+		if (x[i] > max)
+			max = x[i];
+	}
+	return max;
+}
+
+static double vector_logsumexp(size_t n, double *x)
+{
+	struct logsumexp lse;
+	size_t i;
+
+	logsumexp_init(&lse);
+	for (i = 0; i < n; i++) {
+		logsumexp_insert(&lse, x[i]);
+	}
+	return logsumexp_value(&lse);
+}
+
 static void test_probs()
 {
-	struct vector eta, probs, logprobs, y;
+	double *eta, *probs, *logprobs, *y;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -138,10 +178,10 @@ static void test_probs()
 	size_t i, n;
 	
 	nrecv = design_count(design);
-	vector_init(&eta, nrecv);	
-	vector_init(&probs, nrecv);
-	vector_init(&logprobs, nrecv);
-	vector_init(&y, nrecv);
+	eta = xmalloc(nrecv * sizeof(double));
+	probs = xmalloc(nrecv * sizeof(double));
+	logprobs = xmalloc(nrecv * sizeof(double));
+	y = xmalloc(nrecv * sizeof(double));
 
 	double alpha = 2.0;
 	double y0 = 3.14;
@@ -160,28 +200,28 @@ static void test_probs()
 			isend = msg->from;
 			size_t c = cohorts[isend];
 			const double *col = matrix_col(&coefs, c);
-			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, col, 0.0, eta.data);
+			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, col, 0.0, eta);
 			
 			if (!frame_has_loops(&frame))
-				vector_set_item(&eta, isend, -INFINITY);
+				eta[isend] = -INFINITY;
 			
-			vector_assign_copy(&logprobs, &eta);
-			double max_eta = vector_max(&eta);
-			vector_shift(&logprobs, -max_eta);
-			double log_W = vector_log_sum_exp(&logprobs);
-			vector_shift(&logprobs, -log_W);
+			blas_dcopy(nrecv, eta, 1, logprobs, 1);
+			double max_eta = vector_max(nrecv, eta);
+			vector_shift(nrecv, -max_eta, logprobs);
+			double log_W = vector_logsumexp(nrecv, logprobs);
+			vector_shift(nrecv, -log_W, logprobs);
 			
-			vector_assign_copy(&probs, &logprobs);
-			vector_exp(&probs);
+			blas_dcopy(nrecv, logprobs, 1, probs, 1);
+			vector_exp(nrecv, probs);
 			
-			vector_fill(&y, y0);
-			recv_model_axpy_probs(alpha, &model, isend, &y);
+			vector_fill(nrecv, y0, y);
+			recv_model_axpy_probs(alpha, &model, isend, y);
 			
 			assert(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)) >= 36);
 			assert_in_range(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
-				double lp0 = vector_item(&logprobs, jrecv);				
+				double lp0 = logprobs[jrecv];
 				double lp1 = recv_model_logprob(&model, isend, jrecv);
 
 				if (fabs(lp0) >= 5e-4) {
@@ -194,7 +234,7 @@ static void test_probs()
 					assert_true(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
 				}
 
-				double p0 = vector_item(&probs, jrecv);				
+				double p0 = probs[jrecv];
 				double p1 = recv_model_prob(&model, isend, jrecv);
 
 				if (fabs(p0) >= 5e-4) {
@@ -205,8 +245,7 @@ static void test_probs()
 					assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
 				}
 				
-				assert_in_range(double_eqrel(alpha * p0 + y0,
-							     vector_item(&y, jrecv)),
+				assert_in_range(double_eqrel(alpha * p0 + y0, y[jrecv]),
 						45,
 						DBL_MANT_DIG);
 			}
@@ -219,10 +258,10 @@ static void test_probs()
 		}
 	}
 	
-	vector_deinit(&probs);
-	vector_deinit(&logprobs);
-	vector_deinit(&eta);
-	vector_deinit(&y);	
+	free(probs);
+	free(logprobs);
+	free(eta);
+	free(y);	
 }
 
 int main()

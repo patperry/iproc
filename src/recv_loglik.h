@@ -47,7 +47,7 @@
  *
  */
 struct recv_loglik_sender_score {
-	const struct vector *mean0;
+	const double *mean0;
 	double *nrecv;
 	struct vpattern nrecv_pat;
 	struct vector obs_dx;

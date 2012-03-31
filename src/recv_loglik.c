@@ -51,7 +51,7 @@ static void score_init(struct recv_loglik_sender_score *score,
 	assert(score);
 
 	size_t ic = recv_model_cohort(model, isend);
-	const struct vector *mean0 = recv_model_mean0(model, ic);
+	const double *mean0 = recv_model_mean0(model, ic);
 	const struct design *design = recv_model_design(model);
 	size_t dyn_dim = design_dvars_dim(design);
 
@@ -418,9 +418,9 @@ static void score_axpy_mean(double alpha,
 {
 	(void)isend;		// unused
 
-	const struct vector *mean0 = score->mean0;
+	const struct vector mean0 = vector_make(score->mean0, vector_dim(y));
 	double gamma = score->gamma;
-	vector_axpy(alpha * gamma, mean0, y);
+	vector_axpy(alpha * gamma, &mean0, y);
 
 	design_muls0(alpha, BLAS_TRANS, design, vector_to_ptr(&score->dp), active, 1.0, y->data);
 
@@ -451,7 +451,7 @@ static void imat_axpy(double alpha,
 	(void)isend;		// unused
 
 	const size_t dim = design_dim(design);
-	const struct vector *mean0 = score->mean0;
+	const double *mean0 = score->mean0;
 	const struct matrix *var0 = imat->imat0;
 	const double gamma = score->gamma;
 	const double gamma2 = imat->gamma2;
@@ -477,9 +477,9 @@ static void imat_axpy(double alpha,
 	 */
 
 	matrix_axpy(alpha * gamma, var0, y);
-	matrix_update1(y, alpha * gamma2, mean0->data, mean0->data);
-	matrix_update1(y, -alpha, mean0->data, gamma_x0_dp.data);
-	matrix_update1(y, -alpha, gamma_x0_dp.data, mean0->data);
+	matrix_update1(y, alpha * gamma2, mean0, mean0);
+	matrix_update1(y, -alpha, mean0, gamma_x0_dp.data);
+	matrix_update1(y, -alpha, gamma_x0_dp.data, mean0);
 
 	double *x0_dp2_k = xmalloc(n * sizeof(x0_dp2_k));
 	for (k = 0; k < dim; k++) {
@@ -530,8 +530,8 @@ static void imat_axpy(double alpha,
 		matrix_update1(&y1_, -alpha, mean_dx_dp_j, x0_j.data);
 	}
 
-	matrix_update1(&y_1, -alpha, mean0->data, imat->gamma_mean_dx.data);
-	matrix_update1(&y1_, -alpha, imat->gamma_mean_dx.data, mean0->data);
+	matrix_update1(&y_1, -alpha, mean0, imat->gamma_mean_dx.data);
+	matrix_update1(&y1_, -alpha, imat->gamma_mean_dx.data, mean0);
 
 	vector_deinit(&x0_j);
 	free(x0_dp2_k);

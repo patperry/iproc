@@ -96,7 +96,7 @@ void recv_boot_init(struct recv_boot *boot,
 			nto = msg->nto;
 
 			vector_fill(&probs, 0.0);
-			recv_model_axpy_probs(1.0, &boot->model, from, &probs);
+			recv_model_axpy_probs(1.0, &boot->model, from, probs.data);
 
 			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
 				fprintf(stdout,
