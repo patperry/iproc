@@ -44,34 +44,32 @@ static void icosib_message_add(void *udata, struct frame *f,
 	struct vpattern pat = vpattern_make(dx_index, 1);
 	size_t ito, nto = msg->nto;
 
-	const struct frame_actor *fa;
+	const size_t *indx;
 	size_t iz, nz;
-	
+
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
-	
+
 	for (ito = 0; ito < nto; ito++) {
 		size_t hrecv = msg->to[ito];
-		const size_t *indx;
-	       	size_t nz;	
 
 		history_get_recv_active(h, hrecv, &indx, &nz);
-		
+
 		for (iz = 0; iz < nz; iz++) {
 			size_t jrecv = indx[iz];
 			size_t coisend = jrecv;
-			
+
 			if (hrecv != isend && hrecv != jrecv && isend != jrecv) {
 				const double *dx = frame_recv_dx(f, isend, jrecv);
-				
+
 				if (dx[dyn_index] == 0.0) {
 					frame_recv_update(f, isend, jrecv, dx_data, &pat);
 				}
 			}
-				
+
 			if (!hrecv != coisend && hrecv != cojrecv && coisend != cojrecv) {
 				const double *dx = frame_recv_dx(f, coisend, cojrecv);
-				
+
 				if (dx[dyn_index] == 0.0) {
 					frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
 				}

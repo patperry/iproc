@@ -174,9 +174,6 @@ void frame_deinit(struct frame *f)
 {
 	assert(f);
 
-	size_t nsend = frame_send_count(f);
-	size_t nrecv = frame_recv_count(f);
-
 	recv_frames_deinit(f);
 	free(f->observers);
 	design_deinit(&f->recv_design);
@@ -188,9 +185,6 @@ void frame_deinit(struct frame *f)
 void frame_clear(struct frame *f)
 {
 	assert(f);
-
-	size_t nsend = frame_send_count(f);
-	size_t nrecv = frame_recv_count(f);
 
 	recv_frames_clear(f);
 	history_clear(&f->history);

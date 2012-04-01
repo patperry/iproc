@@ -78,7 +78,6 @@ void history_add(struct history *h, const struct message *msg);
 /* actors */
 static inline size_t history_send_count(const struct history *h);
 static inline size_t history_recv_count(const struct history *h);
-static inline int history_has_loops(const struct history *h);
 
 static inline void history_get_send_messages(const struct history *h, size_t isend,
 					     const size_t **imsg, size_t *nmsg);

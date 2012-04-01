@@ -112,7 +112,6 @@ static void ncosib_message_advance(void *udata, struct frame *f,
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
 	struct vpattern pat = vpattern_make(dx_index, 2);
-	const struct frame_actor *fa;
 	size_t iz, nz;
 	const size_t *indx;
 	size_t intvl1;

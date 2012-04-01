@@ -37,12 +37,11 @@ static void isend2_message_add(void *udata, struct frame *f,
 	const struct history *h = frame_history(f);
 	size_t dyn_index = v->dyn_index;
 	size_t ito, nto = msg->nto;
-	
+
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { dyn_index };
 	struct vpattern pat = vpattern_make(dx_index, 1);
-	
-	const struct frame_actor *fa;
+
 	const size_t *indx;
 	size_t iz, nz;
 	size_t isend = msg->from;
