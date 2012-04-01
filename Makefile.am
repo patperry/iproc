@@ -110,9 +110,7 @@ libcore_la_SOURCES = \
 	src/core/slice.c \
 	src/core/slice.h \
 	src/core/util.h \
-	src/core/util.c \
-	src/core/vector.c \
-	src/core/vector.h
+	src/core/util.c
 
 libcore_la_LIBADD = \
 	libminpack.la \

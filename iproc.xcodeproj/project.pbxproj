@@ -14,8 +14,6 @@
 		22221827136F1AEC00F0C7D2 /* messages.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAE136A58230048244C /* messages.json */; };
 		22234176144F364D00D99D8E /* array.c in Sources */ = {isa = PBXBuildFile; fileRef = 2223CD0E134D76F8004FA7F9 /* array.c */; };
 		22234177144F364D00D99D8E /* array.h in Headers */ = {isa = PBXBuildFile; fileRef = 2223CD0F134D76F8004FA7F9 /* array.h */; };
-		22234178144F364D00D99D8E /* bfgs.c in Sources */ = {isa = PBXBuildFile; fileRef = 228160F613B0F60C00B38330 /* bfgs.c */; };
-		22234179144F364D00D99D8E /* bfgs.h in Headers */ = {isa = PBXBuildFile; fileRef = 228160F713B0F60C00B38330 /* bfgs.h */; };
 		2223417A144F364D00D99D8E /* compare.h in Headers */ = {isa = PBXBuildFile; fileRef = 225973FD133CE9AD0022B52E /* compare.h */; };
 		2223417B144F364D00D99D8E /* delegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 228C2FFE137A380400B5A3B9 /* delegate.h */; };
 		2223417C144F364D00D99D8E /* ieee754.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE78132EC8710000097B /* ieee754.c */; };
@@ -34,12 +32,8 @@
 		22234189144F364D00D99D8E /* refcount.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE88132EC8710000097B /* refcount.h */; };
 		2223418A144F364D00D99D8E /* slice.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FEB134E230D0008B25B /* slice.c */; };
 		2223418B144F364D00D99D8E /* slice.h in Headers */ = {isa = PBXBuildFile; fileRef = 221C5FEC134E230D0008B25B /* slice.h */; };
-		2223418C144F364D00D99D8E /* svector.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE8B132EC8710000097B /* svector.c */; };
-		2223418D144F364D00D99D8E /* svector.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8C132EC8710000097B /* svector.h */; };
 		2223418E144F364D00D99D8E /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 221C5FF0134EB7E50008B25B /* util.c */; };
 		2223418F144F364D00D99D8E /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8D132EC8710000097B /* util.h */; };
-		22234190144F364D00D99D8E /* vector.c in Sources */ = {isa = PBXBuildFile; fileRef = 221FEE8E132EC8710000097B /* vector.c */; };
-		22234191144F364D00D99D8E /* vector.h in Headers */ = {isa = PBXBuildFile; fileRef = 221FEE8F132EC8710000097B /* vector.h */; };
 		2223419E144F368800D99D8E /* coreutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234192144F368800D99D8E /* coreutil.h */; };
 		2223419F144F368800D99D8E /* hash.h in Headers */ = {isa = PBXBuildFile; fileRef = 22234193144F368800D99D8E /* hash.h */; };
 		222341A0144F368800D99D8E /* hashset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22234194144F368800D99D8E /* hashset.c */; };
@@ -453,11 +447,7 @@
 		221FEE7D132EC8710000097B /* logsumexp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logsumexp.h; path = src/core/logsumexp.h; sourceTree = "<group>"; };
 		221FEE87132EC8710000097B /* refcount.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = refcount.c; path = src/core/refcount.c; sourceTree = "<group>"; };
 		221FEE88132EC8710000097B /* refcount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = refcount.h; path = src/core/refcount.h; sourceTree = "<group>"; };
-		221FEE8B132EC8710000097B /* svector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = svector.c; path = src/core/svector.c; sourceTree = "<group>"; };
-		221FEE8C132EC8710000097B /* svector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = svector.h; path = src/core/svector.h; sourceTree = "<group>"; };
 		221FEE8D132EC8710000097B /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = util.h; path = src/core/util.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		221FEE8E132EC8710000097B /* vector.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vector.c; path = src/core/vector.c; sourceTree = "<group>"; };
-		221FEE8F132EC8710000097B /* vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vector.h; path = src/core/vector.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		221FEEDC132EC91A0000097B /* R.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = R.framework; path = Library/Frameworks/R.framework; sourceTree = SDKROOT; };
 		221FEEE8132ED2B40000097B /* vecLib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = vecLib.framework; path = System/Library/Frameworks/vecLib.framework; sourceTree = SDKROOT; };
 		22221812136F1A8C00F0C7D2 /* frame_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = frame_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -564,8 +554,6 @@
 		227E0AB313F57DD4003EC4BA /* rv-isend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "rv-isend2.c"; path = "src/rv-isend2.c"; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
-		228160F613B0F60C00B38330 /* bfgs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bfgs.c; path = src/core/bfgs.c; sourceTree = "<group>"; };
-		228160F713B0F60C00B38330 /* bfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bfgs.h; path = src/core/bfgs.h; sourceTree = "<group>"; };
 		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
 		2285AD1913B147E900C46E8B /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enron/enronfit.c; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -718,8 +706,6 @@
 			children = (
 				2223CD0E134D76F8004FA7F9 /* array.c */,
 				2223CD0F134D76F8004FA7F9 /* array.h */,
-				228160F613B0F60C00B38330 /* bfgs.c */,
-				228160F713B0F60C00B38330 /* bfgs.h */,
 				225973FD133CE9AD0022B52E /* compare.h */,
 				228C2FFE137A380400B5A3B9 /* delegate.h */,
 				221FEE78132EC8710000097B /* ieee754.c */,
@@ -738,12 +724,8 @@
 				221FEE88132EC8710000097B /* refcount.h */,
 				221C5FEB134E230D0008B25B /* slice.c */,
 				221C5FEC134E230D0008B25B /* slice.h */,
-				221FEE8B132EC8710000097B /* svector.c */,
-				221FEE8C132EC8710000097B /* svector.h */,
 				221C5FF0134EB7E50008B25B /* util.c */,
 				221FEE8D132EC8710000097B /* util.h */,
-				221FEE8E132EC8710000097B /* vector.c */,
-				221FEE8F132EC8710000097B /* vector.h */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -1005,7 +987,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				22234177144F364D00D99D8E /* array.h in Headers */,
-				22234179144F364D00D99D8E /* bfgs.h in Headers */,
 				2223417A144F364D00D99D8E /* compare.h in Headers */,
 				2223417B144F364D00D99D8E /* delegate.h in Headers */,
 				2223417D144F364D00D99D8E /* ieee754.h in Headers */,
@@ -1017,9 +998,7 @@
 				22234187144F364D00D99D8E /* port.h in Headers */,
 				22234189144F364D00D99D8E /* refcount.h in Headers */,
 				2223418B144F364D00D99D8E /* slice.h in Headers */,
-				2223418D144F364D00D99D8E /* svector.h in Headers */,
 				2223418F144F364D00D99D8E /* util.h in Headers */,
-				22234191144F364D00D99D8E /* vector.h in Headers */,
 				2223419E144F368800D99D8E /* coreutil.h in Headers */,
 				2223419F144F368800D99D8E /* hash.h in Headers */,
 				222341A1144F368800D99D8E /* hashset.h in Headers */,
@@ -1398,7 +1377,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				22234176144F364D00D99D8E /* array.c in Sources */,
-				22234178144F364D00D99D8E /* bfgs.c in Sources */,
 				2223417C144F364D00D99D8E /* ieee754.c in Sources */,
 				2223417E144F364D00D99D8E /* linalg.c in Sources */,
 				22234180144F364D00D99D8E /* linesearch.c in Sources */,
@@ -1406,9 +1384,7 @@
 				22234185144F364D00D99D8E /* matrix.c in Sources */,
 				22234188144F364D00D99D8E /* refcount.c in Sources */,
 				2223418A144F364D00D99D8E /* slice.c in Sources */,
-				2223418C144F364D00D99D8E /* svector.c in Sources */,
 				2223418E144F364D00D99D8E /* util.c in Sources */,
-				22234190144F364D00D99D8E /* vector.c in Sources */,
 				222341A0144F368800D99D8E /* hashset.c in Sources */,
 				222341A2144F368800D99D8E /* pqueue.c in Sources */,
 				222341A5144F368800D99D8E /* timsort.c in Sources */,
