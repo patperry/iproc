@@ -23,7 +23,7 @@ static void sender_deinit(struct recv_loglik_sender *ll);
 
 static void sender_add(struct recv_loglik_sender *ll,
 		       const struct frame *f, const size_t *jrecv, size_t n);
-static void sender_clear(struct recv_loglik_sender *ll, size_t dim);
+static void sender_clear(struct recv_loglik_sender *ll, size_t dyn_dim);
 
 static size_t sender_count(const struct recv_loglik_sender *sll);
 static double sender_dev(const struct recv_loglik_sender *sll);
@@ -66,6 +66,9 @@ static void score_init(struct recv_loglik_sender_score *score,
 	score->gamma = 0.0;
 	score->dp = NULL;
 	score->mean_dx = xcalloc(dyn_dim, sizeof(score->mean_dx[0]));
+#ifndef NDEBUG
+	score->nz = 0;
+#endif
 }
 
 static void imat_init(struct recv_loglik_sender_imat *imat,
@@ -86,6 +89,9 @@ static void imat_init(struct recv_loglik_sender_imat *imat,
 	imat->mean_dx_dp = (struct dmatrix) { NULL, MAX(1, dyn_dim) }; // dyn_dim, 0
 	imat->dp2        = (struct dmatrix) { NULL, 1 }; // 0, 0
 	imat->var_dx = (struct dmatrix) { xcalloc(dyn_dim * dyn_dim, sizeof(double)), MAX(1, dyn_dim) }; // dyn_dim, dyn_dim
+#ifndef NDEBUG
+	imat->nz = 0;
+#endif
 }
 
 static void score_deinit(struct recv_loglik_sender_score *score)
@@ -119,6 +125,9 @@ static void score_clear(struct recv_loglik_sender_score *score, size_t dyn_dim)
 	score->gamma = 0.0;
 	score->dp = xrealloc(score->dp, 0);
 	memset(score->mean_dx, 0, dyn_dim * sizeof(score->mean_dx[0]));
+#ifndef NDEBUG
+	score->nz = 0;
+#endif
 }
 
 static void imat_clear(struct recv_loglik_sender_imat *imat, size_t dyn_dim)
@@ -132,6 +141,9 @@ static void imat_clear(struct recv_loglik_sender_imat *imat, size_t dyn_dim)
 	imat->dp2.data = xrealloc(imat->dp2.data, 0);
 	imat->dp2.lda = 1;
 	matrix_dzero(dyn_dim, dyn_dim, &imat->var_dx);
+#ifndef NDEBUG
+	imat->nz = 0;
+#endif
 }
 
 static void vector_insert(size_t n, double **xp, size_t i)
@@ -189,16 +201,26 @@ static void matrix_insert_rowcol(size_t m, size_t n, struct dmatrix *a, size_t i
 static void score_insert_active(struct recv_loglik_sender_score *score,
 				size_t i, size_t nz0)
 {
+	assert(score->nz == nz0);
 	vector_insert(nz0, &score->dp, i);
+#ifndef NDEBUG
+	score->nz = nz0 + 1;
+#endif
 }
 
 static void imat_insert_active(struct recv_loglik_sender_imat *imat, size_t i,
 			       size_t nz0, size_t dyn_dim)
 {
+	assert(imat->nz == nz0);
+
 	vector_insert(nz0, &imat->gamma_dp, i);
 	matrix_insert_col(dyn_dim, nz0, &imat->dx_p, i);
 	matrix_insert_col(dyn_dim, nz0, &imat->mean_dx_dp, i);
 	matrix_insert_rowcol(nz0, nz0, &imat->dp2, i, i);
+
+#ifndef NDEBUG
+	imat->nz = nz0 + 1;
+#endif
 }
 
 static int size_compar(const void *x1, const void *x2)
@@ -258,6 +280,7 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 	const double gamma = recv_model_invgrow(model, isend);
 	score->gamma = n * gamma;
 
+	assert(score->nz == nz);
 	memset(score->mean_dx, 0, dyn_dim * sizeof(score->mean_dx[0]));
 
 	for (iz = 0; iz < nz; iz++) {
@@ -300,6 +323,9 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	size_t ic = recv_model_cohort(model, isend);
 	size_t *active, iz, nz;
 	recv_model_get_active(model, isend, &active, &nz);
+
+	assert(score->nz == nz);
+	assert(imat->nz == nz);
 
 	imat->imat0 = recv_model_imat0(model, ic);
 
@@ -355,7 +381,6 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	blas_dger(dyn_dim, dyn_dim, (1.0 - ptot) / n, score->mean_dx, 1,
 		  score->mean_dx, 1, &imat->var_dx);
 
-
 	free(y.data);
 }
 
@@ -388,6 +413,8 @@ static void score_update(const struct recv_loglik_sender_score *score0,
 			 size_t dyn_dim, size_t nz)
 {
 	assert(score0->mean0 == score1->mean0);
+	assert(score0->nz == nz);
+	assert(score1->nz == nz);
 
 	nrecv_add(score0, score1);
 	blas_daxpy(dyn_dim, 1.0, score0->obs_dx, 1, score1->obs_dx, 1);
@@ -404,6 +431,8 @@ static void imat_update(const struct recv_loglik_sender_imat *imat0,
 	assert(imat0);
 	assert(imat1);
 	assert(imat0->imat0 == imat1->imat0);
+	assert(imat0->nz == nz);
+	assert(imat1->nz == nz);
 
 	imat1->gamma2 += imat0->gamma2;
 
@@ -533,7 +562,7 @@ static void imat_axpy(double alpha,
 	struct vpattern pat_j;
 	size_t jrecv = 0;
 
-	double *x0_j = xmalloc(dim * sizeof(double));
+	double *x0_j = xmalloc(dim * sizeof(x0_j[0]));
 
 	pat_j.nz = 1;
 	pat_j.indx = &jrecv;
@@ -622,7 +651,7 @@ void sender_deinit(struct recv_loglik_sender *ll)
 	vpattern_deinit(&ll->active);
 }
 
-void sender_clear(struct recv_loglik_sender *ll, size_t dim)
+void sender_clear(struct recv_loglik_sender *ll, size_t dyn_dim)
 {
 	assert(ll);
 
@@ -631,10 +660,10 @@ void sender_clear(struct recv_loglik_sender *ll, size_t dim)
 	ll->dev_last = 0.0;
 	ll->dev = 0.0;
 	vpattern_clear(&ll->active);
-	score_clear(&ll->score_last, dim);
-	score_clear(&ll->score, dim);
-	imat_clear(&ll->imat_last, dim);
-	imat_clear(&ll->imat, dim);
+	score_clear(&ll->score_last, dyn_dim);
+	score_clear(&ll->score, dyn_dim);
+	imat_clear(&ll->imat_last, dyn_dim);
+	imat_clear(&ll->imat, dyn_dim);
 }
 
 static void sender_update_active(struct recv_loglik_sender *ll,
@@ -883,9 +912,12 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	assert(ll);
 
 	const struct recv_model *m = ll->model;
+	const struct design *design = recv_model_design(m);
+	size_t dyn_dim = design_dvars_dim(design);
 	size_t dim = recv_model_dim(m);
 	struct recv_loglik_cohort *cohorts = ll->cohorts;
 	size_t ic, nc = recv_model_cohort_count(m);
+
 	for (ic = 0; ic < nc; ic++) {
 		cohort_clear(&cohorts[ic], dim);
 	}
@@ -893,7 +925,7 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	struct recv_loglik_sender *senders = ll->senders;
 	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
-		sender_clear(&senders[isend], dim);
+		sender_clear(&senders[isend], dyn_dim);
 	}
 
 	ll->last = NULL;

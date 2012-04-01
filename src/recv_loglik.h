@@ -53,6 +53,9 @@ struct recv_loglik_sender_score {
 	double gamma;
 	double *dp;	// p - gamma * p0
 	double *mean_dx;	// dx' * p
+#ifndef NDEBUG
+	size_t nz;
+#endif
 };
 
 struct recv_loglik_sender_imat {
@@ -64,6 +67,9 @@ struct recv_loglik_sender_imat {
 	struct dmatrix mean_dx_dp;	// (dx' * p) * dp'
 	struct dmatrix dp2;	// diag(dp) - dp * dp'
 	struct dmatrix var_dx;	// dx' * [diag(p) - p p'] * dx
+#ifndef NDEBUG
+	size_t nz;
+#endif
 };
 
 struct recv_loglik_sender {

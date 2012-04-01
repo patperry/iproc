@@ -81,14 +81,14 @@ static void setup(void) {
 	design_add_dvar(r, RECV_VAR_NRECV, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND, NULL);
 	design_add_dvar(r, RECV_VAR_NSEND, NULL);
-	design_add_dvar(r, RECV_VAR_IRECV2, NULL);
+	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
 	design_add_dvar(r, RECV_VAR_NSEND2, NULL);
 	design_add_dvar(r, RECV_VAR_ISIB, NULL);
 	design_add_dvar(r, RECV_VAR_NSIB, NULL);
 	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
-	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);
+	design_add_dvar(r, RECV_VAR_NCOSIB, NULL); */
 
 	/* dyad design */
 	//struct dyad_design *d = frame_dyad_design(&frame);
@@ -493,7 +493,7 @@ static void output(const struct recv_fit *fit)
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 		  const struct dmatrix *coefs0)
 {
-	size_t maxit = 1;
+	size_t maxit = 30;
 	size_t report = 1;
 	int trace = 1;
 
