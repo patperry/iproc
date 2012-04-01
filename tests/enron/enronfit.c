@@ -383,8 +383,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 		/* duals */
 		YG(yajl_gen_string(hand, YSTR(DUALS)));
-		const struct vector *duals = recv_fit_duals(fit);
-		YG(yajl_gen_vector(hand, duals->dim, duals->data));
+		const double *duals = recv_fit_duals(fit);
+		YG(yajl_gen_vector(hand, ne, duals));
 
 		/* count */
 		YG(yajl_gen_string(hand, YSTR(COUNT)));
