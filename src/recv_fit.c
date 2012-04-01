@@ -217,11 +217,11 @@ static void resid_set(struct recv_fit_resid *resid,
 	vector_fill(&r1, 0.0);
 	for (ic = 0; ic < nc; ic++) {
 		const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-		const struct vector *score = &info->score;
+		const struct vector score = vector_make(info->score, dim);
 		size_t n = recv_loglik_count(ll, ic);
 
 		struct vector r1c = vector_slice(&r1, ic * dim, dim);
-		vector_axpy(-((double)n) / ntot, score, &r1c);
+		vector_axpy(-((double)n) / ntot, &score, &r1c);
 	}
 
 	sblas_dcscmv(BLAS_NOTRANS, dim * nc, nce, 1.0, ce->wts, ce->wt_inds,
