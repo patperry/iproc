@@ -44,6 +44,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
@@ -53,9 +54,12 @@ static void nsib_message_add(void *udata, struct frame *f,
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0, };
 	struct vpattern pat = vpattern_make(dx_index, 1);
-	const struct frame_actor *fa = &f->senders[hsend];
-	size_t iz, nz = fa->active.nz;
+	size_t iz, nz;
+	const size_t *indx;
 	const size_t *nmsg;
+
+	history_get_send_active(h, hsend, &indx, &nz);
+	nmsg = history_send_counts(h, hsend);
 
 	//printf("add { %zu -> [", msg->from);
 	//for (ito = 0; ito < nto; ito++) {
@@ -63,8 +67,8 @@ static void nsib_message_add(void *udata, struct frame *f,
 	//}
 	//printf(" ] }\n");
 
-	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+	for (iz = 0; iz < nz; iz++) {
+		size_t jrecv = indx[iz];
 		size_t coisend = jrecv;
 		size_t intvl1;
 
@@ -119,6 +123,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
@@ -128,9 +133,12 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2] = { 0, 1 };
 	struct vpattern pat = vpattern_make(dx_index, 2);
-	const struct frame_actor *fa = &f->senders[hsend];
-	size_t iz, nz = fa->active.nz;
+	size_t iz, nz;
+	const size_t *indx;
 	const size_t *nmsg;
+
+	history_get_send_active(h, hsend, &indx, &nz);
+	nmsg = history_send_counts(h, hsend);
 
 	//printf("advance { %zu -> [", msg->from);
 	//for (ito = 0; ito < nto; ito++) {
@@ -139,8 +147,8 @@ static void nsib_message_advance(void *udata, struct frame *f,
 	//printf(" ] } to %zu\n", intvl);
 
 
-	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+	for (iz = 0; iz < nz; iz++) {
+		size_t jrecv = indx[iz];
 		size_t coisend = jrecv;
 		size_t intvl1;
 

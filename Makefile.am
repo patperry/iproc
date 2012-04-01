@@ -35,6 +35,8 @@ libiproc_a_SOURCES = \
 	src/design.h \
 	src/frame.c \
 	src/frame.h \
+	src/history.c \
+	src/history.h \
 	src/messages.c \
 	src/messages.h \
 	src/recv_boot.c \
@@ -63,6 +65,7 @@ libiproc_a_SOURCES = \
 	src/strata.h \
 	src/vars.c \
 	src/vars.h
+
 
 libiproc_a_LIBADD = \
 	libcore.a \

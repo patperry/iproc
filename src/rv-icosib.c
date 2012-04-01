@@ -36,6 +36,7 @@ static void icosib_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim <=
 			design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t dyn_index = v->dyn_index;
 
 	double dx_data[1] = { +1.0 };
@@ -45,18 +46,19 @@ static void icosib_message_add(void *udata, struct frame *f,
 
 	const struct frame_actor *fa;
 	size_t iz, nz;
-	const size_t *nmsg;
 	
 	size_t isend = msg->from;
 	size_t cojrecv = msg->from;
 	
 	for (ito = 0; ito < nto; ito++) {
 		size_t hrecv = msg->to[ito];
-		fa = &f->receivers[hrecv];
-		nz = fa->active.nz;
+		const size_t *indx;
+	       	size_t nz;	
+
+		history_get_recv_active(h, hrecv, &indx, &nz);
 		
-		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-			size_t jrecv = fa->active.indx[iz];
+		for (iz = 0; iz < nz; iz++) {
+			size_t jrecv = indx[iz];
 			size_t coisend = jrecv;
 			
 			if (hrecv != isend && hrecv != jrecv && isend != jrecv) {

@@ -34,6 +34,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t dyn_index = v->dyn_index;
 	size_t ito, nto = msg->nto;
 	
@@ -42,16 +43,16 @@ static void isend2_message_add(void *udata, struct frame *f,
 	struct vpattern pat = vpattern_make(dx_index, 1);
 	
 	const struct frame_actor *fa;
+	const size_t *indx;
 	size_t iz, nz;
 	size_t isend = msg->from;
 	
 	for (ito = 0; ito < nto; ito++) {
 		size_t hsend = msg->to[ito];
-		fa = &f->senders[hsend];
-		nz = fa->active.nz;
+		history_get_send_active(h, hsend, &indx, &nz);
 		
 		for (iz = 0; iz < nz; iz++) {
-			size_t jrecv = fa->active.indx[iz];
+			size_t jrecv = indx[iz];
 				
 			if (hsend == isend || hsend == jrecv || isend == jrecv)
 				continue;
@@ -65,11 +66,10 @@ static void isend2_message_add(void *udata, struct frame *f,
 	}
 	
 	size_t cohrecv = isend;
-	fa = &f->receivers[cohrecv];
-	nz = fa->active.nz;
+	history_get_recv_active(h, cohrecv, &indx, &nz);
 	
 	for (iz = 0; iz < nz; iz++) {
-		size_t coisend = fa->active.indx[iz];
+		size_t coisend = indx[iz];
 		
 		for (ito = 0; ito < nto; ito++) {
 			size_t cojrecv = msg->to[ito];

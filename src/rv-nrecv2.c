@@ -41,6 +41,7 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t dyn_index = v->dyn_index;
@@ -51,17 +52,17 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 	struct vpattern pat = vpattern_make(dx_index, 1);
 
 
-	const struct frame_actor *fa;
+	const size_t *indx;
 	size_t iz, nz;
 	const size_t *nmsg;
 	size_t intvl1;
 
 	size_t hrecv = msg->from;
-	fa = &f->receivers[hrecv];
-	nz = fa->active.nz;
+	history_get_recv_active(h, hrecv, &indx, &nz);
+	nmsg = history_recv_counts(h, hrecv);
 
-	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+	for (iz = 0; iz < nz; iz++) {
+		size_t jrecv = indx[iz];
 
 		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
 			if (*nmsg == 0)
@@ -87,11 +88,11 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 
 	for (ito = 0; ito < nto; ito++) {
 		size_t cohsend = msg->to[ito];
-		fa = &f->senders[cohsend];
-		nz = fa->active.nz;
+		history_get_send_active(h, cohsend, &indx, &nz);
+		nmsg = history_send_counts(h, cohsend);
 
-		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-			size_t coisend = fa->active.indx[iz];
+		for (iz = 0; iz < nz; iz++) {
+			size_t coisend = indx[iz];
 
 			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
 				if (*nmsg == 0)
@@ -122,6 +123,7 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t dyn_index = v->dyn_index;
@@ -132,17 +134,17 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 	size_t dx_index[2] = { 0, 1 };
 	struct vpattern pat = vpattern_make(dx_index, 2);
 
-	const struct frame_actor *fa;
 	size_t iz, nz;
+	const size_t *indx;
 	const size_t *nmsg;
 	size_t intvl1;
 
 	size_t hrecv = msg->from;
-	fa = &f->receivers[hrecv];
-	nz = fa->active.nz;
+	history_get_recv_active(h, hrecv, &indx, &nz);
+	nmsg = history_recv_counts(h, hrecv);
 
-	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+	for (iz = 0; iz < nz; iz++) {
+		size_t jrecv = indx[iz];
 
 		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
 			if (*nmsg == 0)
@@ -172,11 +174,11 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 
 	for (ito = 0; ito < nto; ito++) {
 		size_t cohsend = msg->to[ito];
-		fa = &f->senders[cohsend];
-		nz = fa->active.nz;
+		history_get_send_active(h, cohsend, &indx, &nz);
+		nmsg = history_send_counts(h, cohsend);
 
-		for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-			size_t coisend = fa->active.indx[iz];
+		for (iz = 0; iz < nz; iz++) {
+			size_t coisend = indx[iz];
 
 			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
 				if (*nmsg == 0)

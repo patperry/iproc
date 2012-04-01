@@ -88,7 +88,7 @@ static void setup(void) {
 	design_add_dvar(r, RECV_VAR_ISIB, NULL);
 	design_add_dvar(r, RECV_VAR_NSIB, NULL);
 	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
-	design_add_dvar(r, RECV_VAR_NCOSIB, NULL); */
+	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);  */
 
 	/* dyad design */
 	//struct dyad_design *d = frame_dyad_design(&frame);

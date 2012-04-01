@@ -6,24 +6,8 @@
 #include "sblas.h"
 #include "messages.h"
 #include "pqueue.h"
+#include "history.h"
 #include "design.h"
-
-struct frame_message {
-	const struct message *message;
-	size_t interval;
-};
-
-struct frame_event {
-	double time;
-	size_t imsg;
-};
-
-struct frame_actor {
-	size_t *message_ixs;
-	size_t nix, nix_max;
-	size_t *nmsg;
-	struct vpattern active;
-};
 
 /* dX[t,i] */
 struct recv_frame {
@@ -32,6 +16,7 @@ struct recv_frame {
 };
 
 struct frame {
+	struct history history;
 	struct design send_design;
 	struct design recv_design;
 
@@ -44,12 +29,6 @@ struct frame {
 
 	struct frame_observer *observers;
 	size_t nobs, nobs_max;
-	struct frame_message *frame_messages;
-	size_t nfmsg, nfmsg_max;
-	struct frame_actor *senders;
-	struct frame_actor *receivers;
-	size_t cur_fmsg;
-	struct pqueue events;
 	struct recv_frame *recv_frames;
 };
 
@@ -79,6 +58,7 @@ void frame_clear(struct frame *f);
 static inline const double *frame_intervals(const struct frame *f);
 static inline size_t frame_interval_count(const struct frame *f);
 
+static inline struct history *frame_history(const struct frame *f);
 static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
 
@@ -88,19 +68,12 @@ static inline double frame_next_time(const struct frame *f);	// next change
 void frame_advance(struct frame *f, double time);	// advance time
 
 /* messages */
-static inline size_t frame_messages_count(const struct frame *f);
-static inline struct frame_message *frame_messages_item(const struct frame *f,
-							size_t i);
 void frame_add(struct frame *f, const struct message *msg);
 
 /* actors */
 static inline size_t frame_send_count(const struct frame *f);
 static inline size_t frame_recv_count(const struct frame *f);
 static inline int frame_has_loops(const struct frame *f);
-static inline void frame_get_send_messages(const struct frame *f, size_t isend,
-					   size_t **imsg, size_t *nmsg);
-static inline void frame_get_recv_messages(const struct frame *f, size_t irecv,
-					   size_t **imsg, size_t *nmsg);
 
 /* current covariates */
 void frame_recv_get_dx(const struct frame *f, size_t isend,
@@ -146,12 +119,17 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 /* inline function definitions */
 const double *frame_intervals(const struct frame *f)
 {
-	return f->intvls;
+	return history_intervals(&f->history);
 }
 
 size_t frame_interval_count(const struct frame *f)
 {
-	return f->nintvl;
+	return history_interval_count(&f->history);
+}
+
+struct history *frame_history(const struct frame *f)
+{
+	return &((struct frame *)f)->history;
 }
 
 struct design *frame_send_design(const struct frame *f)
@@ -169,32 +147,13 @@ struct design *frame_recv_design(const struct frame *f)
 double frame_time(const struct frame *f)
 {
 	assert(f);
-	return f->time;
+	return history_time(&f->history);
 }
 
 double frame_next_time(const struct frame *f)
 {
 	assert(f);
-
-	if (pqueue_count(&f->events)) {
-		const struct frame_event *e = pqueue_top(&f->events);
-		return e->time;
-	} else {
-		return INFINITY;
-	}
-}
-
-size_t frame_messages_count(const struct frame *f)
-{
-	assert(f);
-	return f->nfmsg;
-}
-
-struct frame_message *frame_messages_item(const struct frame *f, size_t imsg)
-{
-	assert(f);
-	assert(imsg < frame_messages_count(f));
-	return &f->frame_messages[imsg];
+	return history_next_time(&f->history);
 }
 
 size_t frame_send_count(const struct frame *f)
@@ -212,32 +171,6 @@ size_t frame_recv_count(const struct frame *f)
 int frame_has_loops(const struct frame *f)
 {
 	return f->has_loops;
-}
-
-void frame_get_send_messages(const struct frame *f, size_t isend,
-			     size_t **imsg, size_t *nmsg)
-{
-	assert(f);
-	assert(isend < frame_send_count(f));
-	assert(imsg);
-	assert(nmsg);
-
-	const struct frame_actor *a = &f->senders[isend];
-	*imsg = a->message_ixs;
-	*nmsg = a->nix;
-}
-
-void frame_get_recv_messages(const struct frame *f, size_t irecv,
-			     size_t **imsg, size_t *nmsg)
-{
-	assert(f);
-	assert(irecv < frame_recv_count(f));
-	assert(imsg);
-	assert(nmsg);
-
-	const struct frame_actor *a = &f->receivers[irecv];
-	*imsg = a->message_ixs;
-	*nmsg = a->nix;
 }
 
 #endif /* _FRAME_H */

@@ -36,6 +36,7 @@ static void isib_message_add(void *udata, struct frame *f,
 	assert(v->dyn_index + v->dim
 	       <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t hsend = msg->from;
 	size_t dyn_index = v->dyn_index;
 	size_t ito, nto = msg->nto;
@@ -45,12 +46,13 @@ static void isib_message_add(void *udata, struct frame *f,
 	struct vpattern pat = vpattern_make(dx_index, 1);
 
 	
-	const struct frame_actor *fa = &f->senders[hsend];
-	size_t iz, nz = fa->active.nz;
-	const size_t *nmsg;
+	const size_t *indx;
+	size_t iz, nz;
+
+	history_get_send_active(h, hsend, &indx, &nz);
 	
-	for (iz = 0, nmsg = fa->nmsg; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+	for (iz = 0; iz < nz; iz++) {
+		size_t jrecv = indx[iz];
 		size_t coisend = jrecv;
 		
 		for (ito = 0; ito < nto; ito++) {

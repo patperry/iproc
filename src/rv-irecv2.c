@@ -33,21 +33,21 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	assert(msg);
 	assert(v->dyn_index + v->dim <= design_dvars_dim(frame_recv_design(f)));
 
+	const struct history *h = frame_history(f);
 	size_t ito, nto = msg->nto;
 	size_t dyn_index = v->dyn_index;
 	double dx_data[1] = { 1.0 };
 	size_t dx_index[1] = { dyn_index };
 	struct vpattern pat = vpattern_make(dx_index, 1);
 	
-	const struct frame_actor *fa;
-	size_t iz, nz;
-	
 	size_t hrecv = msg->from;
-	fa = &f->receivers[hrecv];
-	nz = fa->active.nz;
+	size_t iz, nz;
+	const size_t *indx;
+
+	history_get_recv_active(h, hrecv, &indx, &nz);
 	
 	for (iz = 0; iz < nz; iz++) {
-		size_t jrecv = fa->active.indx[iz];
+		size_t jrecv = indx[iz];
 		
 		for (ito = 0; ito < nto; ito++) {
 			size_t isend = msg->to[ito];
@@ -67,11 +67,10 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	
 	for (ito = 0; ito < nto; ito++) {
 		size_t cohsend = msg->to[ito];
-		fa = &f->senders[cohsend];
-		nz = fa->active.nz;
+		history_get_send_active(h, cohsend, &indx, &nz);
 		
 		for (iz = 0; iz < nz; iz++) {
-			size_t coisend = fa->active.indx[iz];
+			size_t coisend = indx[iz];
 				
 			if (cohsend == coisend || cohsend == cojrecv || coisend == cojrecv)
 				continue;
