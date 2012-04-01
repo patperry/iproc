@@ -10,7 +10,6 @@
 #define DSFMT_DO_NOT_USE_OLD_NAMES
 #include "dSFMT/dSFMT.h"
 
-#include "vector.h"
 #include "ieee754.h"
 #include "json.h"
 #include "enron.h"
@@ -34,8 +33,6 @@ static double *traits;
 static const char * const *cohort_names;
 static const char * const *trait_names;
 static int has_loops;
-
-static struct vector intervals;
 
 static struct frame frame;
 
@@ -67,11 +64,8 @@ static void setup(void) {
 		// 58982400.00
 	};
 	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
-	struct vector vintvls = vector_make(intvls, nintvls);
 	int has_effects = 0;
-	vector_init_copy(&intervals, &vintvls);
-	frame_init(&frame, nsend, nrecv, has_loops, vector_to_ptr(&intervals),
-                    vector_dim(&intervals));
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvls);
 	struct design *d = frame_recv_design(&frame);
         design_set_has_effects(d, has_effects);
 	design_set_traits(d, traits, ntrait, trait_names);
@@ -218,7 +212,6 @@ static void add_constraints(struct recv_fit *fit)
 
 static void teardown(void)
 {
-	vector_deinit(&intervals);
 	frame_deinit(&frame);
 	free(traits);
 	free(cohorts);
@@ -401,7 +394,8 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
 			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-			YG(yajl_gen_vector(hand, dim, info->score));
+			const double *score = info->score;
+			YG(yajl_gen_vector(hand, dim, score));
 		}
 		YG(yajl_gen_array_close(hand));
 
