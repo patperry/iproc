@@ -4,13 +4,12 @@
 #include "messages.h"
 #include "design.h"
 #include "matrix.h"
-#include "vector.h"
 #include "recv_model.h"
 
 struct recv_resid_count {
 	struct matrix dyad;
-	struct vector send;
-	struct vector recv;
+	double *send;
+	double *recv;
 	ssize_t tot;
 
 	// internal

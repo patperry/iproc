@@ -10,6 +10,7 @@
 #define DSFMT_DO_NOT_USE_OLD_NAMES
 #include "dSFMT/dSFMT.h"
 
+#include "vector.h"
 #include "ieee754.h"
 #include "json.h"
 #include "enron.h"
