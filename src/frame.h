@@ -73,7 +73,9 @@ void frame_add(struct frame *f, const struct message *msg);
 /* actors */
 static inline size_t frame_send_count(const struct frame *f);
 static inline size_t frame_recv_count(const struct frame *f);
+static inline size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv);
 static inline int frame_has_loops(const struct frame *f);
+
 
 /* current covariates */
 void frame_recv_get_dx(const struct frame *f, size_t isend,
@@ -166,6 +168,16 @@ size_t frame_recv_count(const struct frame *f)
 {
 	assert(f);
 	return design_count(frame_recv_design(f));
+}
+
+size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv)
+{
+	assert(0 <= isend && isend < frame_send_count(f));
+	assert(0 <= jrecv && jrecv < frame_recv_count(f));
+
+	size_t nrecv = frame_recv_count(f);
+	size_t ix = jrecv + isend * nrecv;
+	return ix;
 }
 
 int frame_has_loops(const struct frame *f)
