@@ -17,6 +17,7 @@ struct recv_frame {
 
 struct frame {
 	struct history history;
+	size_t nsend, nrecv;
 	struct design send_design;
 	struct design recv_design;
 
@@ -161,13 +162,13 @@ double frame_next_time(const struct frame *f)
 size_t frame_send_count(const struct frame *f)
 {
 	assert(f);
-	return design_count(frame_send_design(f));
+	return f->nsend;
 }
 
 size_t frame_recv_count(const struct frame *f)
 {
 	assert(f);
-	return design_count(frame_recv_design(f));
+	return f->nrecv;
 }
 
 size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv)

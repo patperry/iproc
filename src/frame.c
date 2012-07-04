@@ -157,11 +157,13 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	assert(f);
 	assert(intvls || !nintvl);
 
+	f->nsend = nsend;
+	f->nrecv = nrecv;
+	f->has_loops = has_loops;
 	history_init(&f->history, nsend, nrecv, intvls, nintvl);
 	history_add_observer(&f->history, f, &frame_history_callbacks);
 	design_init(&f->send_design, f, nsend);
 	design_init(&f->recv_design, f, nrecv);
-	f->has_loops = has_loops;
 
 	f->observers = NULL;
 	f->nobs = 0;
