@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "vars.h"
 
-static void nsend_init(struct design_var *v, const struct design *d,
+static void nrecv_init(struct design_var *v, const struct design *d,
 		       void *params)
 {
 	(void)d;		// unused
@@ -15,15 +15,15 @@ static void nsend_init(struct design_var *v, const struct design *d,
 
 	size_t n = frame_interval_count(design_frame(d));
 	v->dim = n + 1;
-	v->names = var_names_alloc("NSend", strlen("NSend"), n + 1);
+	v->names = var_names_alloc("NRecv", strlen("NRecv"), n + 1);
 }
 
-static void nsend_deinit(struct design_var *v)
+static void nrecv_deinit(struct design_var *v)
 {
 	var_names_free(v->names);
 }
 
-static void nsend_message_add(void *udata, struct frame *f,
+static void nrecv_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
 	struct design_var *v = udata;
@@ -32,9 +32,10 @@ static void nsend_message_add(void *udata, struct frame *f,
 	assert(f);
 	assert(msg);
 	assert(v->dyn_index + v->dim
-	       <= design_dvars_dim(frame_recv_design(f)));
+	       <= design_dvars_dim(frame_dyad_design(f)));
 
-	size_t isend = msg->from;
+	struct design *d = frame_dyad_design(f);
+	size_t jrecv = msg->from;
 	size_t dyn_index = v->dyn_index;
 
 	double dx_data[1] = { +1.0 };
@@ -43,16 +44,16 @@ static void nsend_message_add(void *udata, struct frame *f,
 
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->to[ito] == msg->from)
+		if (msg->from == msg->to[ito])
 			continue;
 
-		size_t jrecv = msg->to[ito];
-
-		frame_recv_update(f, isend, jrecv, dx_data, &pat);
+		size_t isend = msg->to[ito];
+		size_t ix = frame_dyad_ix(f, isend, jrecv);
+		design_update(d, ix, dx_data, &pat);
 	}
 }
 
-static void nsend_message_advance(void *udata, struct frame *f,
+static void nrecv_message_advance(void *udata, struct frame *f,
 				  const struct message *msg, size_t intvl)
 {
 	struct design_var *v = udata;
@@ -61,42 +62,43 @@ static void nsend_message_advance(void *udata, struct frame *f,
 	assert(f);
 	assert(msg);
 	assert(v->dyn_index + v->dim
-	       <= design_dvars_dim(frame_recv_design(f)));
+	       <= design_dvars_dim(frame_dyad_design(f)));
 
-	size_t isend = msg->from;
+	struct design *d = frame_dyad_design(f);
+	size_t jrecv = msg->from;
 	size_t dyn_index = v->dyn_index;
 
 	double dx_data[2] = { -1.0, +1.0 };
-	size_t dx_index[2] = { 0, 1 }; // values are unused
+	size_t dx_index[2] = { 0, 1 };
 	struct vpattern pat = vpattern_make(dx_index, 2);
 
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->to[ito] == msg->from)
+		if (msg->from == msg->to[ito])
 			continue;
 
-		size_t jrecv = msg->to[ito];
-
+		size_t isend = msg->to[ito];
 		size_t ix1 = dyn_index + intvl;
 		size_t ix0 = ix1 - 1;
 
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;
 
-		frame_recv_update(f, isend, jrecv, dx_data, &pat);
+		size_t ix = frame_dyad_ix(f, isend, jrecv);
+		design_update(d, ix, dx_data, &pat);
 	}
 }
 
-static struct var_type RECV_VAR_NSEND_REP = {
-	VAR_RECV_VAR,
-	nsend_init,
-	nsend_deinit,
+static struct var_type DYAD_VAR_NRECV_REP = {
+	VAR_DYAD_VAR,
+	nrecv_init,
+	nrecv_deinit,
 	{
-	 nsend_message_add,
-	 nsend_message_advance,
+	 nrecv_message_add,
+	 nrecv_message_advance,
 	 NULL,			// recv_update
 	 NULL,			// clear
 	 }
 };
 
-const struct var_type *RECV_VAR_NSEND = &RECV_VAR_NSEND_REP;
+const struct var_type *DYAD_VAR_NRECV = &DYAD_VAR_NRECV_REP;

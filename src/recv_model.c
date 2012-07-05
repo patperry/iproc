@@ -332,8 +332,8 @@ static void sender_set(const struct recv_model *m,
 	const double *beta = recv_coefs + dyn_off;
 
 	/* compute the eta values */
-	double *dx;
-	size_t *active;
+	const double *dx;
+	const size_t *active;
 	size_t iz, nz;
 	frame_recv_get_dx(f, isend, &dx, &active, &nz);
 

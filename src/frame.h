@@ -1,6 +1,7 @@
 #ifndef _FRAME_H
 #define _FRAME_H
 
+#include <inttypes.h> // imaxdiv, imaxdiv_t
 #include <math.h>
 #include <stdio.h>
 #include "sblas.h"
@@ -12,7 +13,6 @@
 /* dX[t,i] */
 struct recv_frame {
 	struct vpattern active;
-	double *dx; // transpose of dX[t,i]
 };
 
 struct frame {
@@ -20,6 +20,7 @@ struct frame {
 	size_t nsend, nrecv;
 	struct design send_design;
 	struct design recv_design;
+	struct design dyad_design;
 
 	int has_loops;
 
@@ -62,6 +63,7 @@ static inline size_t frame_interval_count(const struct frame *f);
 static inline struct history *frame_history(const struct frame *f);
 static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
+static inline struct design *frame_dyad_design(const struct frame *f);
 
 /* time */
 static inline double frame_time(const struct frame *f);	// current time
@@ -75,16 +77,17 @@ void frame_add(struct frame *f, const struct message *msg);
 static inline size_t frame_send_count(const struct frame *f);
 static inline size_t frame_recv_count(const struct frame *f);
 static inline size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv);
+static inline void frame_get_dyad(const struct frame *f, size_t ix, size_t *pisend, size_t *pjrecv);
 static inline int frame_has_loops(const struct frame *f);
 
 
 /* current covariates */
 void frame_recv_get_dx(const struct frame *f, size_t isend,
-		       double **dxp, size_t **activep,
+		       const double **dxp, const size_t **activep,
 		       size_t *nactivep);
 const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv);
-void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const double *delta, const struct vpattern *pat);
+//void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
+//		       const double *delta, const struct vpattern *pat);
 
 // const double *frame_send_x(struct frame *f, size_t isend);
 // void frame_send_update(const struct frame *f, size_t isend,
@@ -95,6 +98,7 @@ void frame_add_observer(struct frame *f, void *udata,
 			const struct frame_callbacks *callbacks);
 void frame_remove_observer(struct frame *f, void *udata);
 
+/*
 void frame_recv_mul(double alpha, enum blas_trans trans,
 		    const struct frame *f, size_t isend,
 		    const double *x, double beta, double *y);
@@ -110,6 +114,7 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		      const struct frame *f, size_t isend,
 		      const double *x, const struct vpattern *pat, double beta,
 		      double *y);
+*/
 
 // void frame_send_mul(double alpha, enum blas_trans trans,
 //                  const struct frame *f,
@@ -147,6 +152,12 @@ struct design *frame_recv_design(const struct frame *f)
 	return &((struct frame *)f)->recv_design;
 }
 
+struct design *frame_dyad_design(const struct frame *f)
+{
+	assert(f);
+	return &((struct frame *)f)->dyad_design;
+}
+
 double frame_time(const struct frame *f)
 {
 	assert(f);
@@ -180,6 +191,18 @@ size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv)
 	size_t ix = jrecv + isend * nrecv;
 	return ix;
 }
+
+void frame_get_dyad(const struct frame *f, size_t ix, size_t *pisend, size_t *pjrecv)
+{
+	size_t nrecv = frame_recv_count(f);
+	imaxdiv_t res = imaxdiv(ix, nrecv);
+	size_t isend = res.quot;
+	size_t jrecv = res.rem;
+	
+	*pisend = isend;
+	*pjrecv = jrecv;
+}
+
 
 int frame_has_loops(const struct frame *f)
 {

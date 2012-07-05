@@ -11,50 +11,6 @@
 #include "vars.h"
 #include "frame.h"
 
-static void frame_history_message_add (void *udata, struct history * h, const struct message * msg)
-{
-	struct frame *f = udata;
-	size_t i, n = f->nobs;
-	const struct frame_observer *obs;
-	for (i = 0; i < n; i++) {
-		obs = &f->observers[i];
-		if (obs->callbacks.message_add) {
-			obs->callbacks.message_add(obs->udata, f, msg);
-		}
-	}
-}
-
-static void frame_history_message_advance (void *udata, struct history * h, const struct message * msg, size_t intvl)
-{
-	struct frame *f = udata;
-	size_t i, n = f->nobs;
-	const struct frame_observer *obs;
-	for (i = 0; i < n; i++) {
-		obs = &f->observers[i];
-		if (obs->callbacks.message_advance) {
-			obs->callbacks.message_advance(obs->udata, f, msg, intvl);
-		}
-	}
-}
-
-static void frame_history_clear(void *udata, struct history * h)
-{
-	struct frame *f = udata;
-	size_t i, n = f->nobs;
-	const struct frame_observer *obs;
-	for (i = 0; i < n; i++) {
-		obs = &f->observers[i];
-		if (obs->callbacks.clear) {
-			obs->callbacks.clear(obs->udata, f);
-		}
-	}
-}
-
-static struct history_callbacks frame_history_callbacks = {
-	frame_history_message_add,
-	frame_history_message_advance,
-	frame_history_clear
-};
 
 static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 {
@@ -62,7 +18,6 @@ static void recv_frame_init(struct recv_frame *rf, struct frame *f)
 	assert(rf);
 
 	vpattern_init(&rf->active);
-	rf->dx = NULL;
 }
 
 static void recv_frame_clear(struct recv_frame *rf)
@@ -76,32 +31,7 @@ static void recv_frame_deinit(struct recv_frame *rf)
 	assert(rf);
 
 	recv_frame_clear(rf);
-	free(rf->dx);
 	vpattern_deinit(&rf->active);
-}
-
-static double *recv_frame_dx(struct recv_frame *rf, size_t jrecv,
-			     size_t dyn_dim)
-{
-	assert(rf);
-
-	int ins;
-	size_t nzmax = rf->active.nzmax;
-	size_t ix = vpattern_search(&rf->active, jrecv, &ins);
-
-	if (ins) {
-		if (nzmax != rf->active.nzmax) {
-			nzmax = rf->active.nzmax;
-			rf->dx = xrealloc(rf->dx, nzmax * dyn_dim * sizeof(rf->dx[0]));
-		}
-
-		memmove(rf->dx + (ix + 1) * dyn_dim,
-			rf->dx + ix * dyn_dim,
-			(rf->active.nz - 1 - ix) * dyn_dim * sizeof(rf->dx[0]));
-		memset(rf->dx + ix * dyn_dim, 0, dyn_dim * sizeof(rf->dx[0]));
-	}
-
-	return rf->dx + ix * dyn_dim;
 }
 
 static void recv_frames_init(struct frame *f)
@@ -151,6 +81,76 @@ static struct recv_frame *recv_frames_item(const struct frame *f, size_t isend)
 	return rf;
 }
 
+static void frame_history_message_add (void *udata, struct history * h, const struct message * msg)
+{
+	struct frame *f = udata;
+	size_t i, n = f->nobs;
+	const struct frame_observer *obs;
+	for (i = 0; i < n; i++) {
+		obs = &f->observers[i];
+		if (obs->callbacks.message_add) {
+			obs->callbacks.message_add(obs->udata, f, msg);
+		}
+	}
+}
+
+static void frame_history_message_advance (void *udata, struct history * h, const struct message * msg, size_t intvl)
+{
+	struct frame *f = udata;
+	size_t i, n = f->nobs;
+	const struct frame_observer *obs;
+	for (i = 0; i < n; i++) {
+		obs = &f->observers[i];
+		if (obs->callbacks.message_advance) {
+			obs->callbacks.message_advance(obs->udata, f, msg, intvl);
+		}
+	}
+}
+
+static void frame_history_clear(void *udata, struct history * h)
+{
+	
+}
+
+static struct history_callbacks frame_history_callbacks = {
+	frame_history_message_add,
+	frame_history_message_advance,
+	frame_history_clear
+};
+
+
+static void frame_dyad_design_update (void *udata, struct design * d, size_t i, const double *delta, const struct vpattern *pat)
+{
+	struct frame *f = udata;
+	
+	size_t isend, jrecv;
+	frame_get_dyad(f, i, &isend, &jrecv);
+	
+	int ins;
+	vpattern_search(&f->recv_frames[isend].active, jrecv, &ins); // add jrecv to active set
+	
+	size_t io, no = f->nobs;
+	const struct frame_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &f->observers[io];
+		if (obs->callbacks.recv_update) {
+			obs->callbacks.recv_update(obs->udata, f, isend, jrecv, delta, pat);
+		}
+	}
+}
+
+static void frame_dyad_design_clear (void *udata, struct design *d)
+{
+	struct frame *f = udata;	
+	recv_frames_clear(f);
+}
+
+static struct design_callbacks frame_dyad_design_callbacks = {
+	frame_dyad_design_update,
+	frame_dyad_design_clear
+};
+
+
 void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 		const double *intvls, size_t nintvl)
 {
@@ -164,7 +164,9 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	history_add_observer(&f->history, f, &frame_history_callbacks);
 	design_init(&f->send_design, f, nsend);
 	design_init(&f->recv_design, f, nrecv);
-
+	design_init(&f->dyad_design, f, nsend * nrecv);
+	design_add_observer(&f->dyad_design, f, &frame_dyad_design_callbacks);
+	
 	f->observers = NULL;
 	f->nobs = 0;
 	f->nobs_max = 0;
@@ -178,8 +180,13 @@ void frame_deinit(struct frame *f)
 
 	recv_frames_deinit(f);
 	free(f->observers);
+
+	design_remove_observer(&f->dyad_design, f);
+	design_deinit(&f->dyad_design);
+	
 	design_deinit(&f->recv_design);
 	design_deinit(&f->send_design);
+
 	history_remove_observer(&f->history, f);
 	history_deinit(&f->history);
 }
@@ -188,9 +195,20 @@ void frame_clear(struct frame *f)
 {
 	assert(f);
 
-	recv_frames_clear(f);
-	history_clear(&f->history);
 
+	history_clear(&f->history);
+	design_clear(&f->send_design);
+	design_clear(&f->recv_design);
+	design_clear(&f->dyad_design);
+	
+	size_t i, n = f->nobs;
+	const struct frame_observer *obs;
+	for (i = 0; i < n; i++) {
+		obs = &f->observers[i];
+		if (obs->callbacks.clear) {
+			obs->callbacks.clear(obs->udata, f);
+		}
+	}
 }
 
 static void frame_observers_grow(struct frame *f, size_t delta)
@@ -247,50 +265,30 @@ void frame_advance(struct frame *f, double time)
 	history_advance(&f->history, time);
 }
 
-void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-		       const double *delta, const struct vpattern *pat)
-{
-	assert(isend < frame_send_count(f));
-	assert(jrecv < frame_recv_count(f));
-
-	double *dx = (double *)frame_recv_dx(f, isend, jrecv);
-	sblas_daxpyi(1.0, delta, pat, dx);
-
-	size_t i, n = f->nobs;
-	const struct frame_observer *obs;
-	for (i = 0; i < n; i++) {
-		obs = &f->observers[i];
-		if (obs->callbacks.recv_update) {
-			obs->callbacks.recv_update(obs->udata, f, isend,
-						   jrecv, delta, pat);
-		}
-	}
-}
-
 const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv)
 {
 	assert(f);
 	assert(isend < frame_send_count(f));
 	assert(jrecv < frame_recv_count(f));
 
-	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
-	const struct design *d = frame_recv_design(f);
-	size_t dyn_dim = design_dvars_dim(d);
-	return recv_frame_dx(rf, jrecv, dyn_dim);
+	size_t ix = frame_dyad_ix(f, isend, jrecv);
+	return design_dx(&f->dyad_design, ix);
 }
 
 void frame_recv_get_dx(const struct frame *f, size_t isend,
-		       double **dxp, size_t **activep,
+		       const double **dxp, const size_t **activep,
 		       size_t *nactivep)
 {
 	assert(isend < frame_send_count(f));
 
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 
-	*dxp = rf->dx;
+	*dxp = frame_recv_dx(f, isend, 0);
 	*activep = rf->active.indx;
 	*nactivep = rf->active.nz;
 }
+
+#if 0
 
 void frame_recv_mul(double alpha, enum blas_trans trans,
 		    const struct frame *f, size_t isend,
@@ -448,3 +446,5 @@ void frame_recv_dmuls(double alpha, enum blas_trans trans,
 		}
 	}
 }
+
+#endif

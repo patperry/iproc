@@ -77,10 +77,12 @@ static void setup(void) {
 	struct design *r = frame_recv_design(&frame);
         design_set_has_effects(r, has_effects);
 	design_set_traits(r, ntrait, &traits, trait_names);
-	design_add_dvar(r, RECV_VAR_IRECV, NULL);
-	design_add_dvar(r, RECV_VAR_NRECV, NULL);
-	design_add_dvar(r, RECV_VAR_ISEND, NULL);
-	design_add_dvar(r, RECV_VAR_NSEND, NULL);
+	
+	struct design *d = frame_dyad_design(&frame);
+	design_add_dvar(d, DYAD_VAR_IRECV, NULL);
+	design_add_dvar(d, DYAD_VAR_NRECV, NULL);
+	design_add_dvar(d, DYAD_VAR_ISEND, NULL);
+	design_add_dvar(d, DYAD_VAR_NSEND, NULL);
 	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND2, NULL);

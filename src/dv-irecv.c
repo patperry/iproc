@@ -28,8 +28,9 @@ static void irecv_message_add(void *udata, struct frame *f,
 	assert(f);
 	assert(msg);
 	assert(v->dyn_index + v->dim
-	       <= design_dvars_dim(frame_recv_design(f)));
+	       <= design_dvars_dim(frame_dyad_design(f)));
 
+	struct design *d = frame_dyad_design(f);
 	size_t jrecv = msg->from;
 	size_t dyn_index = v->dyn_index;
 	double dx_data[1] = { 1.0 };
@@ -42,15 +43,16 @@ static void irecv_message_add(void *udata, struct frame *f,
 			continue;
 
 		size_t isend = msg->to[ito];
-		const double *dx = frame_recv_dx(f, isend, jrecv);
-		if (dx[dyn_index] == 0.0) {
-			frame_recv_update(f, isend, jrecv, dx_data, &pat);
+		size_t ix = frame_dyad_ix(f, isend, jrecv);
+		const double *dx = design_dx(d, ix);
+		if (!dx || dx[dyn_index] == 0.0) {
+			design_update(d, ix, dx_data, &pat);
 		}
 	}
 }
 
-static struct var_type RECV_VAR_IRECV_REP = {
-	VAR_RECV_VAR,
+static struct var_type DYAD_VAR_IRECV_REP = {
+	VAR_DYAD_VAR,
 	irecv_init,
 	NULL,			// deinit
 	{
@@ -61,4 +63,4 @@ static struct var_type RECV_VAR_IRECV_REP = {
 	 }
 };
 
-const struct var_type *RECV_VAR_IRECV = &RECV_VAR_IRECV_REP;
+const struct var_type *DYAD_VAR_IRECV = &DYAD_VAR_IRECV_REP;

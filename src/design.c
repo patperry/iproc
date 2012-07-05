@@ -44,6 +44,13 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->dvars = NULL;
 	d->ndvar = 0;
 	d->ndvar_max = 0;
+	
+	vpattern_init(&d->active);
+	d->dx = NULL;
+	
+	d->observers = NULL;
+	d->nobs = 0;
+	d->nobs_max = 0;
 }
 
 static void free2(void **ptrs, size_t len)
@@ -78,9 +85,46 @@ void design_deinit(struct design *d)
 {
 	assert(d);
 
+	free(d->observers);
+	
+	free(d->dx);
+	vpattern_deinit(&d->active);
+	
 	free_dvars(d->dvars, d->ndvar, d->frame);
 	free2((void **)d->trait_names, d->trait_dim);
 	free(d->traits.data);
+}
+
+static double *design_dx1(struct design *d, size_t i)
+{
+	int ins;
+	size_t dyn_dim = d->dvar_dim;
+	size_t nzmax = d->active.nzmax;
+	size_t ix = vpattern_search(&d->active, i, &ins);
+	
+	if (ins) {
+		if (nzmax != d->active.nzmax) {
+			nzmax = d->active.nzmax;
+			d->dx = xrealloc(d->dx, nzmax * dyn_dim * sizeof(d->dx[0]));
+		}
+		
+		memmove(d->dx + (ix + 1) * dyn_dim,
+			d->dx + ix * dyn_dim,
+			(d->active.nz - 1 - ix) * dyn_dim * sizeof(d->dx[0]));
+		memset(d->dx + ix * dyn_dim, 0, dyn_dim * sizeof(d->dx[0]));
+	}
+	
+	return d->dx + ix * dyn_dim;
+}
+
+const double *design_dx(const struct design *d, size_t i)
+{
+	ptrdiff_t ix = vpattern_find(&d->active, i);
+	
+	if (ix < 0)
+		return NULL;
+	
+	return d->dx + ix * d->dvar_dim;
 }
 
 const char *design_name(const struct design *d, size_t i)
@@ -140,6 +184,75 @@ ptrdiff_t design_ix(const struct design *d, const char *name)
 	}
 
 	return -1;
+}
+
+static void design_observers_grow(struct design *d, size_t delta)
+{
+	size_t nmax = array_grow(d->nobs, d->nobs_max, delta, SIZE_MAX);
+	if (nmax > d->nobs_max) {
+		d->observers = xrealloc(d->observers, nmax * sizeof(d->observers[0]));
+		d->nobs_max = nmax;
+	}
+}
+
+void design_add_observer(struct design *d, void *udata,
+			const struct design_callbacks *callbacks)
+{
+	assert(d);
+	assert(udata);
+	assert(callbacks);
+	
+	design_observers_grow(d, 1);
+	struct design_observer *obs = &d->observers[d->nobs++];
+	obs->udata = udata;
+	obs->callbacks = *callbacks;
+}
+
+void design_remove_observer(struct design *d, void *udata)
+{
+	assert(d);
+	assert(udata);
+	
+	size_t i, n = d->nobs;
+	for (i = n; i > 0; i--) {
+		if (d->observers[i-1].udata == udata) {
+			memmove(d->observers + i - 1, d->observers + i,
+				(n - i) * sizeof(d->observers[0]));
+			d->nobs = n - 1;
+			break;
+		}
+	}
+}
+
+void design_clear(struct design *d)
+{
+	vpattern_clear(&d->active);
+	
+	size_t io, no = d->nobs;
+	const struct design_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &d->observers[io];
+		if (obs->callbacks.clear) {
+			obs->callbacks.clear(obs->udata, d);
+		}
+	}	
+}
+
+void design_update(struct design *d, size_t i, const double *delta, const struct vpattern *pat)
+{
+	assert(0 <= i && i < design_count(d));
+	
+	double *dx = design_dx1(d, i);
+	sblas_daxpyi(1.0, delta, pat, dx);
+	
+	size_t io, no = d->nobs;
+	const struct design_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &d->observers[io];
+		if (obs->callbacks.update) {
+			obs->callbacks.update(obs->udata, d, i, delta, pat);
+		}
+	}
 }
 
 static void
@@ -401,4 +514,3 @@ ptrdiff_t design_dvar_index(const struct design *d, const struct var_type *type)
 
 	return -1;
 }
-

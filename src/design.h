@@ -26,7 +26,24 @@ struct design {
 	size_t dvar_dim;
 	struct design_var *dvars;
 	size_t ndvar, ndvar_max;
+	
+	struct vpattern active;
+	double *dx;	// transpose of dX[t]
+	
+	struct design_observer *observers;
+	size_t nobs, nobs_max;
 };
+
+struct design_callbacks {
+	void (*update) (void *udata, struct design * d, size_t i, const double *delta, const struct vpattern *pat);
+	void (*clear) (void *udata, struct design *d);
+};
+
+struct design_observer {
+	void *udata;
+	struct design_callbacks callbacks;
+};
+
 
 void design_init(struct design *d, struct frame *f, size_t count);
 void design_deinit(struct design *d);
@@ -61,6 +78,12 @@ static inline void design_get_dvars(const struct design *d,
 static inline size_t design_dvars_index(const struct design *d);
 static inline size_t design_dvars_dim(const struct design *d);
 
+
+/* observers */
+void design_add_observer(struct design *d, void *udata,
+			const struct design_callbacks *callbacks);
+void design_remove_observer(struct design *d, void *udata);
+
 void design_mul0(double alpha,
 		      enum blas_trans trans,
 		      const struct design *d,
@@ -70,6 +93,11 @@ void design_muls0(double alpha,
 		       const struct design *d,
 		       const double *x, const struct vpattern *pat,
 		       double beta, double *y);
+
+const double *design_dx(const struct design *d, size_t i);
+
+void design_clear(struct design *d);
+void design_update(struct design *d, size_t i, const double *delta, const struct vpattern *pat);
 
 /* inline funciton definitions */
 struct frame *design_frame(const struct design *d)

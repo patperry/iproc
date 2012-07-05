@@ -56,7 +56,8 @@ static void score_init(struct recv_loglik_sender_score *score,
 
 	size_t ic = recv_model_cohort(model, isend);
 	const double *mean0 = recv_model_mean0(model, ic);
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t dyn_dim = design_dvars_dim(design);
 
 	score->mean0 = mean0;
@@ -78,7 +79,8 @@ static void imat_init(struct recv_loglik_sender_imat *imat,
 
 	size_t ic = recv_model_cohort(model, isend);
 	const struct dmatrix *imat0 = recv_model_imat0(model, ic);
-	const struct design *design = recv_model_design(model);
+	const struct frame *f = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(f);
 	size_t dyn_dim = design_dvars_dim(design);
 
 	imat->imat0 = imat0;
@@ -257,8 +259,32 @@ static void score_set_obs(struct recv_loglik_sender_score *score,
 	qsort(score->nrecv_pat.indx, n, sizeof(jrecv[0]), size_compar);
 	score->nrecv_pat.nz = n;
 
-	frame_recv_dmuls(1.0, BLAS_TRANS, f, isend,
-			 score->nrecv, &score->nrecv_pat, 0.0, score->obs_dx);
+	const struct design *d = frame_dyad_design(f);
+	size_t dyn_dim = design_dvars_dim(d);
+
+	size_t ix;
+	const double *dx = NULL;
+	
+	if (n > 0) {
+		ix = frame_dyad_ix(f, isend, jrecv[0]);
+		dx = design_dx(d, ix);
+	}
+	
+	// initialize to head dx vector (zero if no head)
+	if (dx) {
+		memcpy(score->obs_dx, dx, dyn_dim * sizeof(dx[0]));
+	} else {
+		memset(score->obs_dx, 0, sizeof(score->obs_dx[0]) * dyn_dim);
+	}
+
+	// add tail dx vectors
+	for (i = 1; i < n; i++) {
+		ix = frame_dyad_ix(f, isend, jrecv[i]);
+		dx = design_dx(d, ix);
+		
+		if (dx)
+			blas_daxpy(dyn_dim, 1.0, dx, 1, score->obs_dx, 1);
+	}
 }
 
 static void score_set_mean(struct recv_loglik_sender_score *score,
@@ -269,7 +295,7 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 	assert(model);
 	assert(f);
 
-	const struct design *d = recv_model_design(model);
+	const struct design *d = frame_dyad_design(f);
 	size_t dyn_dim = design_dvars_dim(d);
 	size_t *active, iz, nz;
 	size_t ic = recv_model_cohort(model, isend);
@@ -293,7 +319,8 @@ static void score_set_mean(struct recv_loglik_sender_score *score,
 		score->dp[iz] = dp;
 
 		const double *dx = frame_recv_dx(f, isend, jrecv);
-		blas_daxpy(dyn_dim, p, dx, 1, score->mean_dx, 1);
+		if (dx)
+			blas_daxpy(dyn_dim, p, dx, 1, score->mean_dx, 1);
 	}
 	blas_dscal(nz, n, score->dp, 1);
 	blas_dscal(dyn_dim, n, score->mean_dx, 1);
@@ -318,7 +345,7 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 	assert(model);
 	assert(f);
 
-	const struct design *d = recv_model_design(model);
+	const struct design *d = frame_dyad_design(f);
 	size_t dyn_dim = design_dvars_dim(d);
 	size_t ic = recv_model_cohort(model, isend);
 	size_t *active, iz, nz;
@@ -364,12 +391,20 @@ static void imat_set(struct recv_loglik_sender_imat *imat,
 
 		/* dx_p */
 		double *dx_p_j = MATRIX_COL(&imat->dx_p, iz);
-		blas_dcopy(dyn_dim, dx, 1, dx_p_j, 1);
-		blas_dscal(dyn_dim, n * p, dx_p_j, 1);
+		if (dx) {
+			blas_dcopy(dyn_dim, dx, 1, dx_p_j, 1);
+			blas_dscal(dyn_dim, n * p, dx_p_j, 1);
+		} else {
+			memset(dx_p_j, 0, dyn_dim * sizeof(double));
+		}
 
 		/* var_dx */
 		double *y_i = MATRIX_COL(&y, iz);
-		blas_dcopy(dyn_dim, dx, 1, y_i, 1);
+		if (dx) {
+			blas_dcopy(dyn_dim, dx, 1, y_i, 1);
+		} else {
+			memset(y_i, 0, dyn_dim * sizeof(double));
+		}
 		blas_daxpy(dyn_dim, -1.0 / n, score->mean_dx, 1, y_i, 1);
 		blas_dscal(dyn_dim, sqrt(p), y_i, 1);
 
@@ -673,7 +708,8 @@ static void sender_update_active(struct recv_loglik_sender *ll,
 	assert(active);
 
 	const struct recv_model *model = ll->model;
-	const struct design *d = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *d = frame_dyad_design(frame);
 	size_t dyn_dim = design_dvars_dim(d);
 	size_t n0 = ll->active.nz;
 
@@ -711,7 +747,7 @@ void sender_add(struct recv_loglik_sender *ll,
 {
 	size_t isend = ll->isend;
 	const struct recv_model *model = ll->model;
-	const struct design *d = recv_model_design(model);
+	const struct design *d = frame_dyad_design(f);
 	size_t dyn_dim = design_dvars_dim(d);
 	size_t i;
 
@@ -766,7 +802,8 @@ void sender_axpy_mean(double alpha, const struct recv_loglik_sender *sll,
 	assert(sll);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	score_axpy_mean(alpha, &sll->score, &sll->active, design, isend, y);
@@ -778,7 +815,8 @@ void sender_axpy_last_mean(double alpha, const struct recv_loglik_sender *sll,
 	assert(sll);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	score_axpy_mean(alpha, &sll->score_last, &sll->active, design, isend, y);
@@ -790,7 +828,8 @@ void sender_axpy_score(double alpha, const struct recv_loglik_sender *sll,
 	assert(sll);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	score_axpy(alpha, &sll->score, &sll->active, design, isend, y);
@@ -802,7 +841,8 @@ void sender_axpy_last_score(double alpha, const struct recv_loglik_sender *sll,
 	assert(sll);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	score_axpy(alpha, &sll->score_last, &sll->active, design, isend, y);
@@ -815,7 +855,8 @@ void sender_axpy_imat(double alpha, const struct recv_loglik_sender *sll,
 	assert(y);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	imat_axpy(alpha, &sll->imat, &sll->score, &sll->active, design, isend, y);
@@ -828,7 +869,8 @@ void sender_axpy_last_imat(double alpha, const struct recv_loglik_sender *sll,
 	assert(y);
 
 	const struct recv_model *model = sll->model;
-	const struct design *design = recv_model_design(model);
+	const struct frame *frame = recv_model_frame(model);
+	const struct design *design = frame_dyad_design(frame);
 	size_t isend = sll->isend;
 
 	imat_axpy(alpha, &sll->imat_last, &sll->score_last, &sll->active, design, isend, y);
@@ -912,7 +954,8 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	assert(ll);
 
 	const struct recv_model *m = ll->model;
-	const struct design *design = recv_model_design(m);
+	const struct frame *frame = recv_model_frame(m);
+	const struct design *design = frame_dyad_design(frame);
 	size_t dyn_dim = design_dvars_dim(design);
 	size_t dim = recv_model_dim(m);
 	struct recv_loglik_cohort *cohorts = ll->cohorts;
