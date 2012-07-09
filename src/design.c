@@ -6,44 +6,30 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "coreutil.h"
-#include "sblas.h"
+#include "util.h"
 #include "xalloc.h"
+
 #include "vars.h"
 #include "design.h"
 
-static char **xstrdup2(const char *const *strs, size_t len)
-{
-	if (!strs)
-		return NULL;
-
-	char **res = xmalloc(len * sizeof(res[0]));
-	size_t i;
-
-	for (i = 0; i < len; i++) {
-		res[i] = xstrdup(strs[i]);
-	}
-	return res;
-}
 
 void design_init(struct design *d, struct frame *f, size_t count)
 {
-	assert(d);
-
 	d->frame = f;
 	d->count= count;
-	d->dim = 0;
-	d->has_effects = 0;
-	d->trait_off = 0;
-	d->trait_dim = 0;
+
 	d->traits.data = NULL;
 	d->traits.lda = MAX(1, count);
-	d->trait_names = NULL;
-	d->dvar_off = 0;
-	d->dvar_dim = 0;
-	d->dvars = NULL;
-	d->ndvar = 0;
-	d->ndvar_max = 0;
+	d->trait_vars = NULL;
+	d->ntrait = 0;
+	d->ntrait_max = 0;
+
+	d->tvar_dim = 0;
+	d->tvars = NULL;
+	d->ntvar = 0;
+	d->ntvar_max = 0;
 	
 	vpattern_init(&d->active);
 	d->dx = NULL;
@@ -53,138 +39,32 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->nobs_max = 0;
 }
 
-static void free2(void **ptrs, size_t len)
+
+static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 {
-	size_t i;
-
-	if (!ptrs)
-		return;
-
-	for (i = len; i > 0; i--) {
-		free(ptrs[i-1]);
-	}
-	free(ptrs);
-}
-
-static void free_dvars(struct design_var *dvars, size_t len, struct frame *f)
-{
-	struct design_var *v;
+	struct tvar *v;
 	size_t i;
 
 	for (i = len; i > 0; i--) {
-		v = &dvars[i - 1];
-		frame_remove_observer(f, v);
+		v = tvars[i - 1];
 		if (v->type->deinit) {
-			v->type->deinit(v);
+			v->type->deinit(v, d);
 		}
 	}
-	free(dvars);
 }
+
 
 void design_deinit(struct design *d)
 {
-	assert(d);
-
 	free(d->observers);
-	
 	free(d->dx);
 	vpattern_deinit(&d->active);
-	
-	free_dvars(d->dvars, d->ndvar, d->frame);
-	free2((void **)d->trait_names, d->trait_dim);
+	tvars_deinit(d->tvars, d->ntvar, d);
+	free2((void **)d->tvars, d->ntvar);
+	free2((void **)d->trait_vars, d->ntrait);
 	free(d->traits.data);
 }
 
-static double *design_dx1(struct design *d, size_t i)
-{
-	int ins;
-	size_t dyn_dim = d->dvar_dim;
-	size_t nzmax = d->active.nzmax;
-	size_t ix = vpattern_search(&d->active, i, &ins);
-	
-	if (ins) {
-		if (nzmax != d->active.nzmax) {
-			nzmax = d->active.nzmax;
-			d->dx = xrealloc(d->dx, nzmax * dyn_dim * sizeof(d->dx[0]));
-		}
-		
-		memmove(d->dx + (ix + 1) * dyn_dim,
-			d->dx + ix * dyn_dim,
-			(d->active.nz - 1 - ix) * dyn_dim * sizeof(d->dx[0]));
-		memset(d->dx + ix * dyn_dim, 0, dyn_dim * sizeof(d->dx[0]));
-	}
-	
-	return d->dx + ix * dyn_dim;
-}
-
-const double *design_dx(const struct design *d, size_t i)
-{
-	ptrdiff_t ix = vpattern_find(&d->active, i);
-	
-	if (ix < 0)
-		return NULL;
-	
-	return d->dx + ix * d->dvar_dim;
-}
-
-const char *design_name(const struct design *d, size_t i)
-{
-	size_t x0_off = design_traits_index(d);
-	size_t x0_dim = design_traits_dim(d);
-	size_t dx_off = design_dvars_index(d);
-	size_t dx_dim = design_dvars_dim(d);
-
-	if (x0_off <= i && i < x0_off + x0_dim) {
-		return d->trait_names[i];
-	} else if (dx_off <= i && i < dx_off + dx_dim) {
-		size_t iv, nv = d->ndvar;
-		size_t dx_i = i - dx_off;
-
-		for (iv = 0; iv < nv; iv++) {
-			const struct design_var *dv = &d->dvars[iv];
-
-			if (dv->dyn_index <= dx_i
-			    && dx_i < dv->dyn_index + dv->dim) {
-				return dv->names[dx_i - dv->dyn_index];
-			}
-		}
-	}
-
-	return NULL;
-}
-
-ptrdiff_t design_ix(const struct design *d, const char *name)
-{
-	if (d->trait_names) {
-		size_t i, n = design_traits_dim(d);
-		size_t off = design_traits_index(d);
-
-		for (i = 0; i < n; i++) {
-			if (strcmp(d->trait_names[i], name) == 0) {
-				return (ptrdiff_t)(i + off);
-			}
-		}
-	}
-
-	size_t i, m = d->ndvar;
-	size_t off = design_dvars_index(d);
-
-	for (i = 0; i < m; i++) {
-		const struct design_var *dv = &d->dvars[i];
-		size_t j, n = dv->dim;
-
-		if (!dv->names)
-			continue;
-
-		for (j = 0; j < n; j++) {
-			if (strcmp(dv->names[j], name) == 0) {
-				return (ptrdiff_t)(j + dv->dyn_index + off);
-			}
-		}
-	}
-
-	return -1;
-}
 
 static void design_observers_grow(struct design *d, size_t delta)
 {
@@ -194,6 +74,7 @@ static void design_observers_grow(struct design *d, size_t delta)
 		d->nobs_max = nmax;
 	}
 }
+
 
 void design_add_observer(struct design *d, void *udata,
 			const struct design_callbacks *callbacks)
@@ -207,6 +88,7 @@ void design_add_observer(struct design *d, void *udata,
 	obs->udata = udata;
 	obs->callbacks = *callbacks;
 }
+
 
 void design_remove_observer(struct design *d, void *udata)
 {
@@ -224,293 +106,222 @@ void design_remove_observer(struct design *d, void *udata)
 	}
 }
 
-void design_clear(struct design *d)
+
+static void design_traits_grow(struct design *d, size_t delta)
 {
-	vpattern_clear(&d->active);
+	size_t nmax = array_grow(d->ntrait, d->ntrait_max, delta, SIZE_MAX);
+	if (nmax > d->ntrait_max) {
+		size_t count = design_count(d);
+		d->traits.data = xrealloc(d->traits.data, nmax * count * sizeof(*d->traits.data));
+		d->trait_vars = xrealloc(d->trait_vars, nmax * sizeof(*d->trait_vars));
+		d->ntrait_max = nmax;
+	}
+}
+
+
+const char *design_trait_name(const struct design *d, size_t j)
+{
+	assert(j < design_trait_dim(d));
+	return d->trait_vars[j]->name;
+}
+
+
+const struct var *design_add_trait(struct design *d, const char *name, const double *x)
+{
+	size_t ntrait = d->ntrait;
+	struct var *v = xmalloc(sizeof(*v));
+	
+	v->type = VAR_TYPE_TRAIT;
+	v->name = xstrdup(name);
+	v->dim = 1;
+	v->index = ntrait;
+	
+	design_traits_grow(d, 1);
+	d->trait_vars[ntrait] = v;
+		
+	memcpy(MATRIX_COL(&d->traits, ntrait), x, design_count(d) * sizeof(*x));
+	
+	d->ntrait = ntrait + 1;
+
+	return v;
+}
+
+void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x)
+{
+	design_traits_grow(d, ntrait);
+	
+	size_t i;
+	for (i = 0; i < ntrait; i++) {
+		design_add_trait(d, names[i], MATRIX_COL(x, i));
+	}
+}
+
+
+const char *design_tvar_name(const struct design *d, size_t j)
+{
+	assert(j < design_tvar_dim(d));
+	
+	size_t i, n = d->ntvar;
+	
+	for (i = 0; i < n; i++) {
+		const struct tvar *tv = d->tvars[i];
+		const struct var *v = &tv->var;
+		
+		if (j < v->dim)
+			return v->name;
+		
+		j -= v->dim;
+	}
+	
+	assert(0);
+	return NULL;
+}
+
+
+static void design_grow_tvars(struct design *d, size_t delta)
+{
+	size_t nmax = array_grow(d->ntvar, d->ntrait_max, delta, SIZE_MAX);
+	if (nmax > d->ntvar_max) {
+		d->tvars = xrealloc(d->tvars, nmax * sizeof(*d->tvars));
+		d->ntvar_max = nmax;
+	}
+}
+
+
+const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...)
+{
+	assert(name);
+	assert(type);
+
+	struct tvar *tv = xmalloc(sizeof(*tv));
+	struct var *v = &tv->var;
+	va_list ap;
+
+	v->type = VAR_TYPE_TVAR;
+	v->name = xstrdup(name);
+	v->index = d->tvar_dim;
+	v->dim = 0;
+	tv->type = type;
+	tv->udata = NULL;
+
+	va_start(ap, type);
+	type->init(tv, d, ap);
+	va_end(ap);
+	
+	assert(tv->type == type);
+	assert(v->index == d->tvar_dim);
+	
+	size_t index = d->ntvar;
+	design_grow_tvars(d, 1);
+	d->tvars[index] = tv;
+	d->tvar_dim += v->dim;
+		
+	return v;
+}
+
+
+const struct var *design_var(const struct design *d, const char *name)
+{
+	assert(name);
+
+	size_t i, n;
+	const struct var *v;
+
+	n = d->ntrait;
+	for (i = 0; i < n; i++) {
+		v = d->trait_vars[i];
+		if (strcmp(v->name, name) == 0) {
+			return v;
+		}
+	}
+
+	n = d->ntvar;
+	for (i = 0; i < n; i++) {
+		v = &(d->tvars[i]->var);
+		if (strcmp(v->name, name) == 0) {
+			return v;
+		}
+	}
+
+	return NULL;
+}
+
+
+static void design_clear_range(struct design *d, size_t joff, size_t len)
+{
+	assert(joff + len < design_tvar_dim(d));
+
+	size_t i, n = d->active.nz;
+	size_t dim = design_tvar_dim(d);
+	double *ptr = d->dx + joff;
+
+	for (i = 0; i < n; i++) {
+		memset(ptr, 0, len * sizeof(*ptr));
+		ptr += dim;
+	}
+}
+
+
+void design_clear(struct design *d, const struct var *v)
+{
+	assert(v->type == VAR_TYPE_TVAR);
+	design_clear_range(d, v->index, v->dim);
 	
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.clear) {
-			obs->callbacks.clear(obs->udata, d);
+			obs->callbacks.clear(obs->udata, d, v);
 		}
-	}	
+	}
 }
 
-void design_update(struct design *d, size_t i, const double *delta, const struct vpattern *pat)
+
+static double *design_dx(struct design *d, size_t i)
 {
-	assert(0 <= i && i < design_count(d));
+	int ins;
+	size_t dim = d->tvar_dim;
+	size_t nzmax = d->active.nzmax;
+	size_t ix = vpattern_search(&d->active, i, &ins);
 	
-	double *dx = design_dx1(d, i);
-	sblas_daxpyi(1.0, delta, pat, dx);
+	if (ins) {
+		if (nzmax != d->active.nzmax) {
+			nzmax = d->active.nzmax;
+			d->dx = xrealloc(d->dx, nzmax * dim * sizeof(*d->dx));
+		}
+		
+		memmove(d->dx + (ix + 1) * dim,
+			d->dx + ix * dim,
+			(d->active.nz - 1 - ix) * dim * sizeof(*d->dx));
+		memset(d->dx + ix * dim, 0, dim * sizeof(*d->dx));
+	}
+	
+	return d->dx + ix * dim;
+}
+
+
+void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
+		   const struct vpattern *pat)
+{
+	assert(v->type == VAR_TYPE_TVAR);
+	assert(i < design_count(d));
+	
+	size_t index = v->index;
+	double *dx = design_dx(d, i) + index;
+	
+	if (pat) {
+		sblas_daxpyi(1.0, delta, pat, dx);
+	} else {
+		blas_daxpy(v->dim, 1.0, delta, 1, dx, 1);
+	}
 	
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, i, delta, pat);
+			obs->callbacks.update(obs->udata, d, v, i, delta, pat);
 		}
 	}
-}
-
-static void
-design_mul0_effects(double alpha,
-		    enum blas_trans trans,
-		    const struct design *d,
-		    const double *x, double *y)
-{
-	if (!design_has_effects(d))
-		return;
-
-	size_t off = design_effects_index(d);
-	size_t dim = design_count(d);
-
-	if (trans == BLAS_NOTRANS) {
-		blas_daxpy(dim, alpha, x + off, 1, y, 1);
-	} else {
-		blas_daxpy(dim, alpha, x, 1, y + off, 1);
-	}
-}
-
-static void
-design_muls0_effects(double alpha,
-		     enum blas_trans trans,
-		     const struct design *d,
-		     const double *x, const struct vpattern *pat,
-		     double *y)
-{
-	if (!design_has_effects(d))
-		return;
-
-	size_t off = design_effects_index(d);
-	size_t dim = design_count(d);
-	size_t end = off + dim;
-
-	if (trans == BLAS_NOTRANS) {
-		ptrdiff_t i0 = vpattern_find(pat, off);
-		size_t iz = i0 < 0 ? ~i0 : i0;
-		size_t nz = pat->nz;
-
-		for (; iz < nz && pat->indx[iz] < end; iz++) {
-			size_t i = pat->indx[iz];
-			double x_i = x[iz];
-
-			y[i] += alpha * x_i;
-		}
-	} else {
-		sblas_daxpyi(alpha, x, pat, y + off);
-	}
-}
-
-
-static void
-design_mul0_traits(double alpha,
-		   enum blas_trans trans,
-		   const struct design *d,
-		   const double *x, double *y)
-{
-	if (!design_traits_dim(d))
-		return;
-
-	const struct dmatrix *a = design_traits(d);
-	size_t off = design_traits_index(d);
-	size_t dim = design_traits_dim(d);
-	size_t count = design_count(d);
-
-	if (trans == BLAS_NOTRANS) {
-		blas_dgemv(trans, count, dim, alpha, a, x + off, 1, 1.0, y, 1);
-
-	} else {
-		blas_dgemv(trans, count, dim, alpha, a, x, 1, 1.0, y + off, 1);
-	}
-}
-
-static void
-design_muls0_traits(double alpha,
-		    enum blas_trans trans,
-		    const struct design *d,
-		    const double *x, const struct vpattern *pat,
-		    double *y)
-{
-	if (!design_traits_dim(d))
-		return;
-
-	size_t off = design_traits_index(d);
-	size_t dim = design_traits_dim(d);
-	size_t count = design_count(d);
-	const struct dmatrix *a = design_traits(d);
-	size_t nz = pat->nz;
-	const size_t *indx = pat->indx;
-
-	if (trans == BLAS_NOTRANS) {
-		const double *pa = a->data;
-		size_t lda = a->lda;
-		ptrdiff_t ix = vpattern_find(pat, off);
-		size_t i = (ix < 0) ? ~ix : ix;
-
-		for (; i < nz && indx[i] < off + dim; i++) {
-                        blas_daxpy(count, alpha * x[i],
-				   pa + (indx[i] - off) * lda, 1, y, 1);
-                }
-	} else {
-		sblas_dgemvi(trans, count, dim, alpha, a,
-			     x, pat, 1.0, y + off);
-	}
-}
-
-
-void
-design_mul0(double alpha, enum blas_trans trans, const struct design *d,
-	    const double *x, double beta, double *y)
-{
-	size_t n = design_count(d);
-	size_t p = design_dim(d);
-	size_t ny = (trans == BLAS_NOTRANS ? n : p);
-
-	/* y := beta y */
-	if (beta == 0.0) {
-		memset(y, 0, ny * sizeof(y[0]));
-	} else if (beta != 1.0) {
-		blas_dscal(ny, beta, y, 1);
-	}
-
-	design_mul0_effects(alpha, trans, d, x, y);
-	design_mul0_traits(alpha, trans, d, x, y);
-}
-
-
-void
-design_muls0(double alpha,
-	     enum blas_trans trans,
-	     const struct design *d,
-	     const double *x, const struct vpattern *pat,
-	     double beta, double *y)
-{
-	size_t n = design_count(d);
-	size_t p = design_dim(d);
-	size_t ny = (trans == BLAS_NOTRANS ? n : p);
-
-	/* y := beta y */
-	if (beta == 0.0) {
-		memset(y, 0, ny * sizeof(y[0]));
-	} else if (beta != 1.0) {
-		blas_dscal(ny, beta, y, 1);
-	}
-
-	design_muls0_effects(alpha, trans, d, x, pat, y);
-	design_muls0_traits(alpha, trans, d, x, pat, y);
-}
-
-void design_set_has_effects(struct design *d, int has_effects)
-{
-	assert(d);
-	if (has_effects) {
-		if (d->has_effects)
-			return;
-
-		d->dim += d->count;
-		d->trait_off += d->count;
-		d->dvar_off += d->count;
-	} else {
-		if (!d->has_effects )
-			return;
-
-		d->dim -= d->count;
-		d->trait_off -= d->count;
-		d->dvar_off -= d->count;
-	}
-
-	d->has_effects = has_effects;
-}
-
-void design_set_traits(struct design *d, size_t dim,
-		       const struct dmatrix *traits,
-		       const char *const *names)
-{
-	size_t count = d->count;
-
-	free2((void **)d->trait_names, d->trait_dim);
-	free(d->traits.data);
-
-	if (dim >= d->trait_dim) {
-		d->dim += (dim - d->trait_dim);
-		d->dvar_off += (dim - d->trait_dim);
-	} else {
-		d->dim -= (d->trait_dim - dim);
-		d->dvar_off -= (d->trait_dim - dim);
-	}
-
-	d->trait_dim = dim;
-	if (traits) {
-		d->traits.data = xmemdup(traits->data,
-					 count * dim * sizeof(double));
-	} else {
-		d->traits.data = NULL;
-	}
-	d->traits.lda = MAX(1, count);
-	d->trait_names = xstrdup2(names, dim);
-}
-
-static void design_grow_dvars(struct design *d)
-{
-	if (d->ndvar == d->ndvar_max) {
-		struct frame *f = d->frame;
-		size_t i;
-
-		/* we need to update the frame observers since the call
-		 * to realloc might relocate the dvars array
-		 */
-		for (i = d->ndvar; i > 0; i--) {
-			frame_remove_observer(f, &d->dvars[i-1]);
-		}
-
-		size_t nmax = ARRAY_GROW1(d->ndvar_max, SIZE_MAX);
-		d->dvars = xrealloc(d->dvars, nmax * sizeof(d->dvars[0]));
-
-		for (i = 0; i < d->ndvar; i++) {
-			struct design_var *v = &d->dvars[i];
-			frame_add_observer(f, v, &v->type->callbacks);
-		}
-
-		d->ndvar_max = nmax;
-	}
-}
-
-void design_add_dvar(struct design *d, const struct var_type *type,
-			 void *params)
-{
-	assert(d);
-	assert(type);
-	assert(type->init);
-
-	design_grow_dvars(d);
-	struct design_var *v = &d->dvars[d->ndvar];
-
-	type->init(v, d, params);
-	v->dyn_index = d->dvar_dim;
-	v->type = type;
-	frame_add_observer(d->frame, v, &v->type->callbacks);
-
-	d->ndvar++;
-	d->dvar_dim += v->dim;
-	d->dim += v->dim;
-}
-
-ptrdiff_t design_dvar_index(const struct design *d, const struct var_type *type)
-{
-	assert(d);
-	assert(type);
-
-	size_t i, n = d->ndvar;
-	for (i = 0; i < n; i++) {
-		struct design_var *v = &d->dvars[i];
-
-		if (v->type == type) {
-			return design_dvars_index(d) + v->dyn_index;
-		}
-	}
-
-	return -1;
 }

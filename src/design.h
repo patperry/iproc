@@ -3,29 +3,20 @@
 
 #include "blas.h"
 #include "sblas.h"
-#include "messages.h"
+#include <stdarg.h>
 
-
-struct var_type;		// forward declaration
-struct design_var;
-struct frame;
 
 struct design {
 	struct frame *frame;
 	size_t count;
 
-	size_t dim;
-	int has_effects;
-
-	size_t trait_off;
-	size_t trait_dim;
 	struct dmatrix traits;
-	char **trait_names;
+	struct var **trait_vars;
+	size_t ntrait, ntrait_max;
 
-	size_t dvar_off;
-	size_t dvar_dim;
-	struct design_var *dvars;
-	size_t ndvar, ndvar_max;
+	size_t tvar_dim;
+	struct tvar **tvars;
+	size_t ntvar, ntvar_max;
 	
 	struct vpattern active;
 	double *dx;	// transpose of dX[t]
@@ -34,9 +25,33 @@ struct design {
 	size_t nobs, nobs_max;
 };
 
+enum var_type {
+	VAR_TYPE_TRAIT,
+	VAR_TYPE_TVAR
+};
+
+struct var {
+	enum var_type type;
+	const char *name;
+	size_t dim;
+	size_t index;
+};
+
+struct tvar {
+	struct var var;
+	const struct tvar_type *type;
+	void *udata;
+};
+
+struct tvar_type {
+	void (*init) (struct tvar *tv, const struct design *d, va_list ap);
+	void (*deinit) (struct tvar * tv, const struct design *d);
+};
+
 struct design_callbacks {
-	void (*update) (void *udata, struct design * d, size_t i, const double *delta, const struct vpattern *pat);
-	void (*clear) (void *udata, struct design *d);
+	void (*update) (void *udata, struct design *d, const struct var *v, size_t i,
+			const double *delta, const struct vpattern *pat);
+	void (*clear) (void *udata, struct design *d, const struct var *v);	
 };
 
 struct design_observer {
@@ -45,125 +60,82 @@ struct design_observer {
 };
 
 
+
+
 void design_init(struct design *d, struct frame *f, size_t count);
 void design_deinit(struct design *d);
-
-static inline struct frame *design_frame(const struct design *d);
-static inline size_t design_count(const struct design *d);
-static inline size_t design_dim(const struct design *d);
-
-const char *design_name(const struct design *d, size_t i);
-ptrdiff_t design_ix(const struct design *d, const char *name);
-
-static inline int design_has_effects(const struct design *d);
-void design_set_has_effects(struct design *d, int has_effects);
-static inline size_t design_effects_index(const struct design *d);
-
-static inline const struct dmatrix *design_traits(const struct design *d);
-static inline size_t design_traits_dim(const struct design *d);
-static inline const char *const *design_trait_names(const struct design *d);
-void design_set_traits(struct design *d, size_t dim,
-		       const struct dmatrix *traits,
-		       const char *const *names);
-static inline size_t design_traits_index(const struct design *d);
-
-void design_add_dvar(struct design *d, const struct var_type *type,
-		     void *params);
-ptrdiff_t design_dvar_index(const struct design *d,
-			    const struct var_type *type);
-static inline void design_get_dvars(const struct design *d,
-				    const struct design_var **dvarsp,
-				    size_t *np);
-
-static inline size_t design_dvars_index(const struct design *d);
-static inline size_t design_dvars_dim(const struct design *d);
-
 
 /* observers */
 void design_add_observer(struct design *d, void *udata,
 			const struct design_callbacks *callbacks);
 void design_remove_observer(struct design *d, void *udata);
 
-void design_mul0(double alpha,
-		      enum blas_trans trans,
-		      const struct design *d,
-		      const double *x, double beta, double *y);
-void design_muls0(double alpha,
-		       enum blas_trans trans,
-		       const struct design *d,
-		       const double *x, const struct vpattern *pat,
-		       double beta, double *y);
+/* properties */
+static inline struct frame *design_frame(const struct design *d);
+static inline size_t design_count(const struct design *d);
 
-const double *design_dx(const struct design *d, size_t i);
+/* traits */
+static inline size_t design_trait_dim(const struct design *d);
+static inline const struct dmatrix *design_traits(const struct design *d);
+const char *design_trait_name(const struct design *d, size_t j);
+const struct var *design_add_trait(struct design *d, const char *name, const double *x);
+void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
 
-void design_clear(struct design *d);
-void design_update(struct design *d, size_t i, const double *delta, const struct vpattern *pat);
+/* tvars */
+static inline size_t design_tvar_dim(const struct design *d);
+static inline const double *design_tvars(const struct design *d, size_t i);
+const char *design_tvar_name(const struct design *d, size_t j);
+const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
-/* inline funciton definitions */
+const struct var *design_var(const struct design *d, const char *name);
+
+/* internal functions (for use by tvar callbacks) */
+void design_clear(struct design *d, const struct var *v);
+void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
+		   const struct vpattern *pat);
+
+
+
+/* inline function definitions */
 struct frame *design_frame(const struct design *d)
 {
 	return d->frame;
 }
 
+
 size_t design_count(const struct design *d)
 {
-	assert(d);
 	return d->count;
 }
 
-size_t design_dim(const struct design *d)
+
+size_t design_trait_dim(const struct design *d)
 {
-	return d->dim;
+	return d->ntrait;
 }
 
-int design_has_effects(const struct design *d)
-{
-	return d->has_effects;
-}
-
-size_t design_effects_index(const struct design *d)
-{
-	assert(design_has_effects(d));
-	(void)d;
-	return 0;
-}
-
-size_t design_traits_index(const struct design *d)
-{
-	return d->trait_off;
-}
-
-size_t design_traits_dim(const struct design *d)
-{
-	return d->trait_dim;
-}
 
 const struct dmatrix *design_traits(const struct design *d)
 {
 	return &d->traits;
 }
 
-const char * const *design_trait_names(const struct design *d)
+
+size_t design_tvar_dim(const struct design *d)
 {
-	return (const char * const *)d->trait_names;
+	return d->tvar_dim;
 }
 
-void design_get_dvars(const struct design *d,
-				    const struct design_var **dvarsp,
-				    size_t *np)
-{
-	*dvarsp = d->dvars;
-	*np = d->ndvar;
-}
 
-size_t design_dvars_index(const struct design *d)
+const double *design_tvars(const struct design *d, size_t i)
 {
-	return d->dvar_off;
-}
+	assert(i < design_count(d));
+	ptrdiff_t ix = vpattern_find(&d->active, i);
 
-size_t design_dvars_dim(const struct design *d)
-{
-	return d->dvar_dim;
+	if (ix < 0)
+		return NULL;
+
+	return d->dx + ix * d->tvar_dim;
 }
 
 #endif /* DESIGN_H */

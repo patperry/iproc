@@ -43,16 +43,6 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
-	src/recv_boot.c \
-	src/recv_boot.h \
-	src/recv_fit.c \
-	src/recv_fit.h \
-	src/recv_loglik.c \
-	src/recv_loglik.h \
-	src/recv_model.c \
-	src/recv_model.h \
-	src/recv_resid.c \
-	src/recv_resid.h \
 	src/strata.c \
 	src/strata.h \
 	src/vars.c \
@@ -67,6 +57,8 @@ libiproc_a_LIBADD = \
 
 libcore_a_SOURCES = \
 	lib/port.h \
+	lib/util.c \
+	lib/util.h \
 	lib/core/src/coreutil.c \
 	lib/core/src/coreutil.h \
 	lib/core/src/hash.h \
@@ -259,9 +251,9 @@ check_CPPFLAGS = \
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/design_test
-tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_design_test_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/design_test
+#tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_design_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/frame_test
 tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
@@ -275,10 +267,10 @@ tests_frame_test_LDADD    = $(check_LDADD)
 #tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
 #tests_recv_loglik_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/enronfit
-tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = $(check_CPPFLAGS)
-tests_enronfit_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/enronfit
+#tests_enronfit_SOURCES  = tests/enron/enronfit.c
+#tests_enronfit_CPPFLAGS = $(check_CPPFLAGS)
+#tests_enronfit_LDADD    = $(check_LDADD)
 
 TESTS = \
 	$(check_PROGRAMS)

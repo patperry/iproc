@@ -71,18 +71,18 @@ static void setup(void) {
 
 	/* send design */
 	struct design *s = frame_send_design(&frame);
-	design_set_traits(s, ntrait, &traits, trait_names);
+	design_add_traits(s, ntrait, trait_names, &traits);
        
 	/* recv design */
 	struct design *r = frame_recv_design(&frame);
-        design_set_has_effects(r, has_effects);
-	design_set_traits(r, ntrait, &traits, trait_names);
+	design_add_traits(r, ntrait, trait_names, &traits);
 	
+	/* dyad design */
 	struct design *d = frame_dyad_design(&frame);
-	design_add_dvar(d, DYAD_VAR_IRECV, NULL);
-	design_add_dvar(d, DYAD_VAR_NRECV, NULL);
-	design_add_dvar(d, DYAD_VAR_ISEND, NULL);
-	design_add_dvar(d, DYAD_VAR_NSEND, NULL);
+	design_add_dvar(d, "IRecv", DYAD_VAR_IRECV);
+	design_add_dvar(d, "NRecv", DYAD_VAR_NRECV);
+	design_add_dvar(d, "ISend", DYAD_VAR_ISEND);
+	design_add_dvar(d, "NSend", DYAD_VAR_NSEND);
 	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
@@ -92,6 +92,10 @@ static void setup(void) {
 	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
 	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);  */
 
+	recv_model_init(&m, &frame);
+	recv_model_add_kron(&m, design_var(s, "Legal"), design_var(r, "Legal"));
+	recv_model_add_inter(&m, design_var(r, "Female"), design_var(d, "NRecv"));
+	
 	/* dyad design */
 	//struct dyad_design *d = frame_dyad_design(&frame);
 	//dyad_design_add_interact(d, design_ix(s, "Legal"), design_ix(r, "Legal"));

@@ -10,6 +10,11 @@
 #include "history.h"
 #include "design.h"
 
+struct dyad {
+	size_t isend;
+	size_t jrecv;
+};
+
 /* dX[t,i] */
 struct recv_frame {
 	struct vpattern active;
@@ -39,7 +44,7 @@ struct frame_callbacks {
 			     const struct message * msg);
 	void (*message_advance) (void *udata, struct frame * f,
 				 const struct message * msg, size_t intvl);
-	void (*recv_update) (void *udata, struct frame * f, size_t isend,
+	void (*dyad_update) (void *udata, struct frame * f, size_t isend,
 			     size_t jrecv, const double *delta,
 			     const struct vpattern *pat);
 	void (*clear) (void *udata, struct frame * f);
@@ -77,7 +82,7 @@ void frame_add(struct frame *f, const struct message *msg);
 static inline size_t frame_send_count(const struct frame *f);
 static inline size_t frame_recv_count(const struct frame *f);
 static inline size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv);
-static inline void frame_get_dyad(const struct frame *f, size_t ix, size_t *pisend, size_t *pjrecv);
+static inline struct dyad frame_ix_dyad(const struct frame *f, size_t ix);
 static inline int frame_has_loops(const struct frame *f);
 
 
@@ -192,15 +197,16 @@ size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv)
 	return ix;
 }
 
-void frame_get_dyad(const struct frame *f, size_t ix, size_t *pisend, size_t *pjrecv)
+struct dyad frame_ix_dyad(const struct frame *f, size_t ix)
 {
 	size_t nrecv = frame_recv_count(f);
 	imaxdiv_t res = imaxdiv(ix, nrecv);
-	size_t isend = res.quot;
-	size_t jrecv = res.rem;
+
+	struct dyad dyad;
+	dyad.isend = res.quot;
+	dyad.jrecv = res.rem;
 	
-	*pisend = isend;
-	*pjrecv = jrecv;
+	return dyad;
 }
 
 

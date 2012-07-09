@@ -5,6 +5,15 @@
 #include <stdlib.h>
 #include "xalloc.h"
 
+char **var_name_alloc(const char *name, size_t len)
+{
+	char **res = xcalloc(2, sizeof(res[0]));
+	res[0] = xcalloc(len + 1, sizeof(res[0][0]));
+	snprintf(res[0], len + 1, "%s", name);
+	res[1] = NULL;
+	return res;
+}
+
 char **var_names_alloc(char *name, size_t len, size_t n)
 {
 	char **res = xcalloc(n + 1, sizeof(res[0]));

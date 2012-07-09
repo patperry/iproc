@@ -119,35 +119,32 @@ static struct history_callbacks frame_history_callbacks = {
 };
 
 
-static void frame_dyad_design_update (void *udata, struct design * d, size_t i, const double *delta, const struct vpattern *pat)
+static void frame_dyad_design_update (void *udata, struct design * d, const struct var *v, size_t i, const double *delta,
+				      const struct vpattern *pat)
 {
 	struct frame *f = udata;
 	
-	size_t isend, jrecv;
-	frame_get_dyad(f, i, &isend, &jrecv);
+	struct dyad dyad = frame_ix_dyad(f, i);
 	
 	int ins;
-	vpattern_search(&f->recv_frames[isend].active, jrecv, &ins); // add jrecv to active set
+	vpattern_search(&f->recv_frames[dyad.isend].active, dyad.jrecv, &ins); // add jrecv to active set
+	
+	/* TODO: pattern is wrong, since it is relative to var */
 	
 	size_t io, no = f->nobs;
 	const struct frame_observer *obs;
 	for (io = 0; io < no; io++) {
 		obs = &f->observers[io];
-		if (obs->callbacks.recv_update) {
-			obs->callbacks.recv_update(obs->udata, f, isend, jrecv, delta, pat);
+		if (obs->callbacks.dyad_update) {
+			obs->callbacks.dyad_update(obs->udata, f, dyad.isend, dyad.jrecv, delta, pat);
 		}
 	}
 }
 
-static void frame_dyad_design_clear (void *udata, struct design *d)
-{
-	struct frame *f = udata;	
-	recv_frames_clear(f);
-}
 
 static struct design_callbacks frame_dyad_design_callbacks = {
 	frame_dyad_design_update,
-	frame_dyad_design_clear
+	NULL
 };
 
 
@@ -195,11 +192,8 @@ void frame_clear(struct frame *f)
 {
 	assert(f);
 
-
 	history_clear(&f->history);
-	design_clear(&f->send_design);
-	design_clear(&f->recv_design);
-	design_clear(&f->dyad_design);
+	recv_frames_clear(f);
 	
 	size_t i, n = f->nobs;
 	const struct frame_observer *obs;
@@ -272,7 +266,7 @@ const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv)
 	assert(jrecv < frame_recv_count(f));
 
 	size_t ix = frame_dyad_ix(f, isend, jrecv);
-	return design_dx(&f->dyad_design, ix);
+	return design_tvars(&f->dyad_design, ix);
 }
 
 void frame_recv_get_dx(const struct frame *f, size_t isend,

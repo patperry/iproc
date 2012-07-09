@@ -68,7 +68,7 @@ static void basic_setup()
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, ntrait, &traits, trait_names);
-	design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	design_add_dvar(design, DYAD_VAR_NRECV, "NRecv");
 	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
 	coefs.lda = MAX(1, design_dim(design));
 	
@@ -105,7 +105,7 @@ static void hard_setup()
 	design = frame_recv_design(&frame);
 	design_set_has_effects(design, has_effects);
 	design_set_traits(design, ntrait, &traits, trait_names);
-	design_add_dvar(design, RECV_VAR_NRECV, NULL);
+	design_add_dvar(design, DYAD_VAR_NRECV, "NRecv");
 	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
 	coefs.lda = MAX(1, design_dim(design));	
 	
