@@ -277,7 +277,7 @@ void frame_recv_get_dx(const struct frame *f, size_t isend,
 
 	struct recv_frame *rf = recv_frames_item((struct frame *)f, isend);
 
-	*dxp = frame_recv_dx(f, isend, 0);
+	*dxp = frame_recv_dx(f, isend, rf->active.indx[0]);
 	*activep = rf->active.indx;
 	*nactivep = rf->active.nz;
 }

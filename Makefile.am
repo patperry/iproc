@@ -43,6 +43,8 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
+	src/recv_model.c \
+	src/recv_model.h \
 	src/strata.c \
 	src/strata.h \
 	src/vars.c \

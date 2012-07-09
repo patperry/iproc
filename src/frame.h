@@ -15,10 +15,6 @@ struct dyad {
 	size_t jrecv;
 };
 
-/* dX[t,i] */
-struct recv_frame {
-	struct vpattern active;
-};
 
 struct frame {
 	struct history history;
@@ -38,6 +34,7 @@ struct frame {
 	size_t nobs, nobs_max;
 	struct recv_frame *recv_frames;
 };
+
 
 struct frame_callbacks {
 	void (*message_add) (void *udata, struct frame * f,
@@ -189,8 +186,8 @@ size_t frame_recv_count(const struct frame *f)
 
 size_t frame_dyad_ix(const struct frame *f, size_t isend, size_t jrecv)
 {
-	assert(0 <= isend && isend < frame_send_count(f));
-	assert(0 <= jrecv && jrecv < frame_recv_count(f));
+	assert(isend < frame_send_count(f));
+	assert(jrecv < frame_recv_count(f));
 
 	size_t nrecv = frame_recv_count(f);
 	size_t ix = jrecv + isend * nrecv;
