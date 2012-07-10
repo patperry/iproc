@@ -1,22 +1,54 @@
 #include "port.h"
 #include "xalloc.h"
 #include <stdlib.h>
+#include "strata.h"
 #include "recv_fmla.h"
+
+
+static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
+{
+	const struct frame *f = recv_fmla_frame(fmla);
+	const struct design *s = frame_send_design(f);
+	const struct dmatrix *as = design_traits(s);
+	size_t dims = design_trait_dim(s);
+	size_t nsend = frame_send_count(f);
+	size_t i;
+	
+	struct strata strat;
+	double *buf;
+	
+	strata_init(&strat, dims);
+	xmalloc(dims * sizeof(*buf));	
+
+	for (i = 0; i < nsend; i++) {
+		blas_dcopy(dims, MATRIX_PTR(as, i, 0), as->lda, buf, 1);
+		fmla->cohorts[i] = strata_add(&strat, buf);
+	}
+	fmla->ncohort = strata_count(&strat);
+	
+	free(buf);
+	strata_deinit(&strat);
+}
 
 
 void recv_fmla_init(struct recv_fmla *fmla, const struct frame *f)
 {
 	const struct design *r = frame_recv_design(f);
 	const struct design *d = frame_dyad_design(f);
+	size_t nsend = frame_send_count(f);
 	fmla->frame = f;
 	fmla->trait_dim = design_trait_dim(r) + design_trait_dim(d);
 	fmla->tvar_dim = design_tvar_dim(r) + design_tvar_dim(d);
+	fmla->cohorts = xmalloc(nsend * sizeof(*fmla->cohorts));
+	fmla->ncohort = 0;
+	
+	recv_fmla_set_cohorts(fmla);
 }
 
 
 void recv_fmla_deinit(struct recv_fmla *fmla)
 {
-	(void)fmla; // unused
+	free(fmla->cohorts);
 }
 
 
@@ -240,167 +272,3 @@ void recv_frame_axpy1(double alpha, const struct recv_frame *rf, size_t isend,
 	}
 
 }
-
-
-
-
-#if 0
-
-void frame_recv_mul(double alpha, enum blas_trans trans,
-		    const struct frame *f, size_t isend,
-		    const double *x, double beta, double *y)
-{
-	assert(isend < frame_send_count(f));
-	
-	const struct design *d = frame_recv_design(f);
-	size_t off = design_dvars_index(d);
-	
-	design_mul0(alpha, trans, d, x, beta, y);
-	
-	if (trans == BLAS_NOTRANS) {
-		frame_recv_dmul(alpha, trans, f, isend, x + off, 1.0, y);
-	} else {
-		frame_recv_dmul(alpha, trans, f, isend, x, 1.0, y + off);
-	}
-}
-
-void frame_recv_muls(double alpha, enum blas_trans trans,
-		     const struct frame *f, size_t isend,
-		     const double *x, const struct vpattern *pat,
-		     double beta, double *y)
-{
-	assert(isend < frame_send_count(f));
-	
-	const struct design *d = frame_recv_design(f);
-	size_t off = design_dvars_index(d);
-	size_t dim = design_dvars_dim(d);
-	
-	design_muls0(alpha, trans, d, x, pat, beta, y);
-	
-	if (trans == BLAS_NOTRANS) {
-		ptrdiff_t jx0 = vpattern_find(pat, off);
-		ptrdiff_t jx1 = vpattern_find(pat, off + dim);
-		size_t jz0 = (jx0 < 0 ? ~jx0 : jx0);
-		size_t jz1 = (jx1 < 0 ? ~jx1 : jx1);
-		size_t jz;
-		
-		const struct recv_frame *rf = recv_frames_item(f, isend);
-		size_t iz, nz = rf->active.nz;
-		
-		for (iz = 0; iz < nz; iz++) {
-			size_t jrecv = rf->active.indx[iz];
-			const double *dx = rf->dx + iz * dim;
-			
-			double dot = 0;
-			for (jz = jz0; jz < jz1; jz++) {
-				size_t i = pat->indx[jz] - off;
-				dot += x[jz] * dx[i];
-			}
-			
-			y[jrecv] += alpha * dot;
-		}
-	} else {
-		frame_recv_dmuls(alpha, trans, f, isend, x, pat, 1.0, y + off);
-	}
-}
-
-void frame_recv_dmul(double alpha, enum blas_trans trans,
-		     const struct frame *f, size_t isend,
-		     const double *x, double beta, double *y)
-{
-	assert(isend < frame_send_count(f));
-	
-	const struct design *d = frame_recv_design(f);
-	size_t n = design_count(d);
-	size_t dim = design_dvars_dim(d);
-	size_t ny = (trans == BLAS_NOTRANS ? n : dim);
-	
-	/* y := beta y */
-	if (beta == 0.0) {
-		memset(y, 0, ny * sizeof(y[0]));
-	} else if (beta != 1.0) {
-		blas_dscal(ny, beta, y, 1);
-	}
-	
-	if (dim == 0)
-		return;
-	
-	const struct recv_frame *rf = recv_frames_item(f, isend);
-	size_t iz, nz = rf->active.nz;
-	size_t jrecv;
-	const double *dx;
-	
-	if (trans == BLAS_NOTRANS) {
-		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active.indx[iz];
-			dx = rf->dx + iz * dim;
-			
-			double dot = blas_ddot(dim, dx, 1, x, 1);
-			y[jrecv] += alpha * dot;
-		}
-	} else {
-		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active.indx[iz];
-			dx = rf->dx + iz * dim;
-			
-			if (x[jrecv] == 0.0)
-				continue;
-			
-			blas_daxpy(dim, alpha * x[jrecv], dx, 1, y, 1);
-		}
-	}
-}
-
-void frame_recv_dmuls(double alpha, enum blas_trans trans,
-		      const struct frame *f, size_t isend,
-		      const double *x, const struct vpattern *pat,
-		      double beta, double *y)
-{
-	assert(isend < frame_send_count(f));
-	
-	const struct design *d = frame_recv_design(f);
-	size_t n = design_count(d);
-	size_t dim = design_dvars_dim(d);
-	size_t ny = (trans == BLAS_NOTRANS ? n : dim);
-	
-	/* y := beta y */
-	if (beta == 0.0) {
-		memset(y, 0, ny * sizeof(y[0]));
-	} else if (beta != 1.0) {
-		blas_dscal(ny, beta, y, 1);
-	}
-	
-	if (dim == 0)
-		return;
-	
-	const struct recv_frame *rf = recv_frames_item(f, isend);
-	size_t iz, nz = rf->active.nz;
-	size_t jrecv;
-	const double *dx;
-	
-	if (trans == BLAS_NOTRANS) {
-		
-		for (iz = 0; iz < nz; iz++) {
-			jrecv = rf->active.indx[iz];
-			dx = rf->dx + iz * dim;
-			
-			double dot = sblas_ddoti(x, pat, dx);
-			y[jrecv] += alpha * dot;
-		}
-	} else {
-		size_t jz, mz = pat->nz;
-		for (jz = 0; jz < mz; jz++) {
-			size_t jrecv = pat->indx[jz];
-			ptrdiff_t ix = vpattern_find(&rf->active, jrecv);
-			if (ix < 0)
-				continue;
-			
-			dx = rf->dx + ix * dim;
-			/* y := y + alpha * x[j] * dx[j] */
-			double jscale = alpha * x[jz];
-			blas_daxpy(dim, jscale, dx, 1, y, 1);
-		}
-	}
-}
-
-#endif

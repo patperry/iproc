@@ -7,6 +7,8 @@ struct recv_fmla {
 	const struct frame *frame;
 	size_t trait_dim;
 	size_t tvar_dim;
+	size_t ncohort;
+	size_t *cohorts;
 };
 
 struct recv_coefs {
@@ -29,6 +31,7 @@ void recv_fmla_deinit(struct recv_fmla *fmla);
 static inline const struct frame *recv_fmla_frame(const struct recv_fmla *fmla);
 static inline size_t recv_fmla_trait_dim(const struct recv_fmla *fmla);
 static inline size_t recv_fmla_tvar_dim(const struct recv_fmla *fmla);
+static inline void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, size_t *ncohortp);
 
 //void recv_fmla_add_kron(struct recv_fmla *fmla, const struct var *s,
 //			const struct var *r);
@@ -86,10 +89,19 @@ size_t recv_fmla_tvar_dim(const struct recv_fmla *fmla)
 	return fmla->tvar_dim;
 }
 
+
+void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, size_t *ncohortp)
+{
+	*cohortsp = fmla->cohorts;
+	*ncohortp = fmla->ncohort;
+}
+
+
 const struct recv_fmla *recv_frame_fmla(const struct recv_frame *rf)
 {
 	return rf->fmla;
 }
+
 
 
 #endif /* RECV_FMLA_H */

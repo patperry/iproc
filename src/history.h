@@ -1,6 +1,7 @@
 #ifndef _HISTORY_H
 #define _HISTORY_H
 
+#include <assert.h>
 #include <math.h>
 #include "sblas.h"
 #include "messages.h"

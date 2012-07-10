@@ -32,7 +32,6 @@ struct frame {
 
 	struct frame_observer *observers;
 	size_t nobs, nobs_max;
-	struct recv_frame *recv_frames;
 };
 
 
@@ -83,30 +82,12 @@ static inline struct dyad frame_ix_dyad(const struct frame *f, size_t ix);
 static inline int frame_has_loops(const struct frame *f);
 
 
-/* current covariates */
-void frame_recv_get_dx(const struct frame *f, size_t isend,
-		       const double **dxp, const size_t **activep,
-		       size_t *nactivep);
-const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv);
-//void frame_recv_update(struct frame *f, size_t isend, size_t jrecv,
-//		       const double *delta, const struct vpattern *pat);
-
-// const double *frame_send_x(struct frame *f, size_t isend);
-// void frame_send_update(const struct frame *f, size_t isend,
-//                     size_t dyn_index, double delta);
 
 /* observers */
 void frame_add_observer(struct frame *f, void *udata,
 			const struct frame_callbacks *callbacks);
 void frame_remove_observer(struct frame *f, void *udata);
 
-// void frame_send_mul(double alpha, enum blas_trans trans,
-//                  const struct frame *f,
-//                  const double *x, double beta, double *y);
-//void frame_send_muls(double alpha, enum blas_trans trans,
-//                   const struct frame *f,
-//                   const double *x, const struct vpattern *pat,
-//                   double beta, struct double *y);
 
 /* inline function definitions */
 const double *frame_intervals(const struct frame *f)

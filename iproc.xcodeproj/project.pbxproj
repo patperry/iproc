@@ -119,6 +119,8 @@
 		22BECEC015AA05BD00F630C4 /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEBE15AA05BD00F630C4 /* util.h */; };
 		22BECEC815AB5D0F00F630C4 /* recv_fmla.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECEC615AB5D0E00F630C4 /* recv_fmla.c */; };
 		22BECEC915AB5D0F00F630C4 /* recv_fmla.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEC715AB5D0F00F630C4 /* recv_fmla.h */; };
+		22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECECA15AC77AA00F630C4 /* recv_model.c */; };
+		22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECECB15AC77AA00F630C4 /* recv_model.h */; };
 		22D2DDBB136A5E760048244C /* employees.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DDAB136A58010048244C /* employees.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
 		22D2DDBC136A5E810048244C /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
@@ -516,6 +518,8 @@
 		22BECEBE15AA05BD00F630C4 /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = util.h; path = lib/util.h; sourceTree = "<group>"; };
 		22BECEC615AB5D0E00F630C4 /* recv_fmla.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_fmla.c; path = src/recv_fmla.c; sourceTree = "<group>"; };
 		22BECEC715AB5D0F00F630C4 /* recv_fmla.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_fmla.h; path = src/recv_fmla.h; sourceTree = "<group>"; };
+		22BECECA15AC77AA00F630C4 /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = src/recv_model.c; sourceTree = "<group>"; };
+		22BECECB15AC77AA00F630C4 /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = src/recv_model.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D2DDAB136A58010048244C /* employees.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = employees.c; path = tests/enron/employees.c; sourceTree = "<group>"; };
 		22D2DDAC136A58010048244C /* enron.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = enron.h; path = tests/enron/enron.h; sourceTree = "<group>"; };
@@ -717,6 +721,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				22BECECA15AC77AA00F630C4 /* recv_model.c */,
+				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				22BECEC615AB5D0E00F630C4 /* recv_fmla.c */,
 				22BECEC715AB5D0F00F630C4 /* recv_fmla.h */,
 				22597408133D0AFB0022B52E /* design.c */,
@@ -731,10 +737,10 @@
 				22EA3332136B440B00C5627F /* frame.h */,
 				22597411133D0AFB0022B52E /* messages.c */,
 				22597412133D0AFB0022B52E /* messages.h */,
-				223BFE4613AA98F200835B8F /* vars.h */,
-				22749E5C1402E2EB00C5A955 /* vars.c */,
 				22DB0A7F13CB68B5004149CE /* strata.c */,
 				22DB0A8013CB68B5004149CE /* strata.h */,
+				223BFE4613AA98F200835B8F /* vars.h */,
+				22749E5C1402E2EB00C5A955 /* vars.c */,
 			);
 			name = IProc;
 			sourceTree = "<group>";
@@ -943,6 +949,7 @@
 				228D4D5615A4CD5F007DBCCA /* history.h in Headers */,
 				22BECEC015AA05BD00F630C4 /* util.h in Headers */,
 				22BECEC915AB5D0F00F630C4 /* recv_fmla.h in Headers */,
+				22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1331,6 +1338,7 @@
 				228D4D5C15A6362D007DBCCA /* dv-nsend.c in Sources */,
 				22BECEBF15AA05BD00F630C4 /* util.c in Sources */,
 				22BECEC815AB5D0F00F630C4 /* recv_fmla.c in Sources */,
+				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
