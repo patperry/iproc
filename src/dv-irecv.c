@@ -43,7 +43,6 @@ static void irecv_clear(void *udata, struct frame *f)
 static struct frame_callbacks irecv_frame_callbacks = {
 	irecv_message_add,
 	NULL,			// message_advance,
-	NULL,			// dyad_update
 	irecv_clear
 };
 

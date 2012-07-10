@@ -31,6 +31,7 @@ enum var_type {
 };
 
 struct var {
+	const struct design *design;
 	enum var_type type;
 	const char *name;
 	size_t dim;
@@ -87,7 +88,12 @@ static inline const double *design_tvars(const struct design *d, size_t i);
 const char *design_tvar_name(const struct design *d, size_t j);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
+static inline void design_tvars_get(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
+void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip);
+void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip);
+
 const struct var *design_var(const struct design *d, const char *name);
+
 
 /* internal functions (for use by tvar callbacks) */
 void design_clear(struct design *d, const struct var *v);
@@ -137,5 +143,14 @@ const double *design_tvars(const struct design *d, size_t i)
 
 	return d->dx + ix * d->tvar_dim;
 }
+
+
+void design_tvars_get(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp)
+{
+	*dxp = d->dx;
+	*ip = d->active.indx;
+	*nzp = d->active.nz;
+}
+
 
 #endif /* DESIGN_H */

@@ -36,14 +36,14 @@ struct frame {
 };
 
 
+/* NOTE: these are just the history callbacks, re-exported.  Should these
+ * get removed?
+ */
 struct frame_callbacks {
 	void (*message_add) (void *udata, struct frame * f,
 			     const struct message * msg);
 	void (*message_advance) (void *udata, struct frame * f,
 				 const struct message * msg, size_t intvl);
-	void (*dyad_update) (void *udata, struct frame * f, size_t isend,
-			     size_t jrecv, const double *delta,
-			     const struct vpattern *pat);
 	void (*clear) (void *udata, struct frame * f);
 };
 
@@ -99,24 +99,6 @@ const double *frame_recv_dx(const struct frame *f, size_t isend, size_t jrecv);
 void frame_add_observer(struct frame *f, void *udata,
 			const struct frame_callbacks *callbacks);
 void frame_remove_observer(struct frame *f, void *udata);
-
-/*
-void frame_recv_mul(double alpha, enum blas_trans trans,
-		    const struct frame *f, size_t isend,
-		    const double *x, double beta, double *y);
-void frame_recv_muls(double alpha, enum blas_trans trans,
-		     const struct frame *f, size_t isend,
-		     const double *x, const struct vpattern *pat,
-		     double beta, double *y);
-
-void frame_recv_dmul(double alpha, enum blas_trans trans,
-		     const struct frame *f, size_t isend,
-		     const double *x, double beta, double *y);
-void frame_recv_dmuls(double alpha, enum blas_trans trans,
-		      const struct frame *f, size_t isend,
-		      const double *x, const struct vpattern *pat, double beta,
-		      double *y);
-*/
 
 // void frame_send_mul(double alpha, enum blas_trans trans,
 //                  const struct frame *f,

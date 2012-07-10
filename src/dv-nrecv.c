@@ -70,7 +70,6 @@ static void nrecv_clear(void *udata, struct frame *f)
 static struct frame_callbacks nrecv_frame_callbacks = {
 	nrecv_message_add,
 	nrecv_message_advance,
-	NULL,			// dyad_update
 	nrecv_clear
 };
 

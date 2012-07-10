@@ -131,6 +131,7 @@ const struct var *design_add_trait(struct design *d, const char *name, const dou
 	size_t ntrait = d->ntrait;
 	struct var *v = xmalloc(sizeof(*v));
 	
+	v->design = d;
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
 	v->dim = 1;
@@ -197,6 +198,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	struct var *v = &tv->var;
 	va_list ap;
 
+	v->design = d;
 	v->type = VAR_TYPE_TVAR;
 	v->name = xstrdup(name);
 	v->index = d->tvar_dim;
@@ -217,6 +219,22 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	d->tvar_dim += v->dim;
 		
 	return v;
+}
+
+
+void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip)
+{
+	size_t ix = vpattern_lb(&d->active, i);
+	*dxp = d->dx + ix * d->tvar_dim;
+	*ip = d->active.indx + ix;
+}
+
+
+void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip)
+{
+	size_t ix = vpattern_ub(&d->active, i);
+	*dxp = d->dx + ix * d->tvar_dim;
+	*ip = d->active.indx + ix;
 }
 
 
@@ -264,7 +282,9 @@ static void design_clear_range(struct design *d, size_t joff, size_t len)
 
 void design_clear(struct design *d, const struct var *v)
 {
+	assert(v->design == d);
 	assert(v->type == VAR_TYPE_TVAR);
+
 	design_clear_range(d, v->index, v->dim);
 	
 	size_t io, no = d->nobs;
@@ -304,6 +324,7 @@ static double *design_dx(struct design *d, size_t i)
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
 		   const struct vpattern *pat)
 {
+	assert(v->design == d);
 	assert(v->type == VAR_TYPE_TVAR);
 	assert(i < design_count(d));
 	

@@ -43,7 +43,6 @@ static void isend_clear(void *udata, struct frame *f)
 static struct frame_callbacks isend_frame_callbacks = {
 	isend_message_add,
 	NULL,			// message_advance,
-	NULL,			// dyad_update
 	isend_clear
 };
 

@@ -74,7 +74,6 @@ static void nsend_clear(void *udata, struct frame *f)
 struct frame_callbacks nsend_frame_callbacks = {
 	nsend_message_add,
 	nsend_message_advance,
-	NULL,			// dyad_update
 	nsend_clear
 };
 
