@@ -52,7 +52,6 @@ struct tvar_type {
 struct design_callbacks {
 	void (*update) (void *udata, struct design *d, const struct var *v, size_t i,
 			const double *delta, const struct vpattern *pat);
-	void (*clear) (void *udata, struct design *d, const struct var *v);	
 };
 
 struct design_observer {
@@ -96,7 +95,6 @@ const struct var *design_var(const struct design *d, const char *name);
 
 
 /* internal functions (for use by tvar callbacks) */
-void design_clear(struct design *d, const struct var *v);
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
 		   const struct vpattern *pat);
 

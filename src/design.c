@@ -15,6 +15,32 @@
 #include "design.h"
 
 
+static void design_clear_range(struct design *d, size_t joff, size_t len)
+{
+	assert(joff + len < design_tvar_dim(d));
+	
+	size_t i, n = d->active.nz;
+	size_t dim = design_tvar_dim(d);
+	double *ptr = d->dx + joff;
+	
+	for (i = 0; i < n; i++) {
+		memset(ptr, 0, len * sizeof(*ptr));
+		ptr += dim;
+	}
+}
+
+static void design_frame_clear(void *udata, struct frame *f)
+{
+	struct design *d = udata;
+	design_clear_range(d, 0, design_tvar_dim(d));
+}
+
+static struct frame_callbacks design_frame_callbacks = {
+	NULL,
+	NULL,
+	design_frame_clear
+};
+
 void design_init(struct design *d, struct frame *f, size_t count)
 {
 	d->frame = f;
@@ -37,6 +63,8 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->observers = NULL;
 	d->nobs = 0;
 	d->nobs_max = 0;
+	
+	frame_add_observer(f, d, &design_frame_callbacks);
 }
 
 
@@ -56,6 +84,7 @@ static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 
 void design_deinit(struct design *d)
 {
+	frame_remove_observer(d->frame, d);
 	free(d->observers);
 	free(d->dx);
 	vpattern_deinit(&d->active);
@@ -265,37 +294,8 @@ const struct var *design_var(const struct design *d, const char *name)
 }
 
 
-static void design_clear_range(struct design *d, size_t joff, size_t len)
-{
-	assert(joff + len < design_tvar_dim(d));
-
-	size_t i, n = d->active.nz;
-	size_t dim = design_tvar_dim(d);
-	double *ptr = d->dx + joff;
-
-	for (i = 0; i < n; i++) {
-		memset(ptr, 0, len * sizeof(*ptr));
-		ptr += dim;
-	}
-}
 
 
-void design_clear(struct design *d, const struct var *v)
-{
-	assert(v->design == d);
-	assert(v->type == VAR_TYPE_TVAR);
-
-	design_clear_range(d, v->index, v->dim);
-	
-	size_t io, no = d->nobs;
-	const struct design_observer *obs;
-	for (io = 0; io < no; io++) {
-		obs = &d->observers[io];
-		if (obs->callbacks.clear) {
-			obs->callbacks.clear(obs->udata, d, v);
-		}
-	}
-}
 
 
 static double *design_dx(struct design *d, size_t i)

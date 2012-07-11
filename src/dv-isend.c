@@ -31,19 +31,10 @@ static void isend_message_add(void *udata, struct frame *f,
 }
 
 
-static void isend_clear(void *udata, struct frame *f)
-{
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
-	design_clear(d, v);
-}
-
-
 static struct frame_callbacks isend_frame_callbacks = {
 	isend_message_add,
 	NULL,			// message_advance,
-	isend_clear
+	NULL
 };
 
 

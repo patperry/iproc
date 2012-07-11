@@ -62,20 +62,12 @@ static void nsend_message_advance(void *udata, struct frame *f,
 }
 
 
-static void nsend_clear(void *udata, struct frame *f)
-{
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
-	design_clear(d, v);
-}
-
-
 struct frame_callbacks nsend_frame_callbacks = {
 	nsend_message_add,
 	nsend_message_advance,
-	nsend_clear
+	NULL
 };
+
 
 static void nsend_init(struct tvar *tv, const struct design *d, va_list ap)
 {

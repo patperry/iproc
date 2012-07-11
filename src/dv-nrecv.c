@@ -58,19 +58,10 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 }
 
 
-static void nrecv_clear(void *udata, struct frame *f)
-{
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
-	design_clear(d, v);
-}
-
-
 static struct frame_callbacks nrecv_frame_callbacks = {
 	nrecv_message_add,
 	nrecv_message_advance,
-	nrecv_clear
+	NULL
 };
 
 

@@ -31,19 +31,10 @@ static void irecv_message_add(void *udata, struct frame *f,
 }
 
 
-static void irecv_clear(void *udata, struct frame *f)
-{
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
-	design_clear(d, v);
-}
-
-
 static struct frame_callbacks irecv_frame_callbacks = {
 	irecv_message_add,
 	NULL,			// message_advance,
-	irecv_clear
+	NULL
 };
 
 
