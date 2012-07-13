@@ -286,7 +286,112 @@ const struct var2 *design2_var(const struct design2 *d, const char *name)
 
 
 
+void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
+			const double *x, double beta, double *y)
+{
+	assert(i < design2_count1(d));
 
+	const struct dmatrix *a = design2_traits(d);
+	size_t m = design2_count2(d);
+	size_t n = design2_trait_dim(d);
+	struct dmatrix asub;
+	asub.data = MATRIX_PTR(a, i * m, 0);
+	asub.lda = a->lda;
+	
+	blas_dgemv(BLAS_NOTRANS, m, n, alpha, &asub, x, 1, beta, y, 1);
+}
+
+
+void design2_traits_tmul(double alpha, const struct design2 *d, size_t i, const double *x, double beta, double *y)
+{
+	assert(i < design2_count1(d));
+	
+	const struct dmatrix *a = design2_traits(d);
+	size_t m = design2_count2(d);
+	size_t n = design2_trait_dim(d);
+	struct dmatrix asub;
+	asub.data = MATRIX_PTR(a, i * m, 0);
+	asub.lda = a->lda;
+	
+	blas_dgemv(BLAS_TRANS, m, n, alpha, &asub, x, 1, beta, y, 1);
+
+}
+
+
+void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t j, double *y)
+{
+	assert(i < design2_count1(d));
+	assert(j < design2_count2(d));
+	
+	const struct dmatrix *a = design2_traits(d);
+	size_t m = design2_count2(d);
+	size_t dim = design2_trait_dim(d);
+	struct dmatrix asub;
+	asub.data = MATRIX_PTR(a, i * m, 0);
+	asub.lda = a->lda;
+
+	blas_daxpy(dim, alpha, MATRIX_PTR(a, i * m + j, 0), a->lda, y, 1);
+}
+
+
+void design2_tvars_mul(double alpha, const struct design2 *d, size_t i,
+		       const double *x, double beta, double *y)
+{
+	assert(i < design2_count1(d));
+
+	const double *a;
+	const size_t *j;
+	size_t n = design2_count2(d);
+	size_t dim = design2_tvar_dim(d);
+	size_t nz;
+	
+	if (beta == 0.0) {
+		memset(y, 0, n * sizeof(*y));
+	} else if (beta != 1.0) {
+		blas_dscal(n, beta, y, 1);
+	}
+	
+	design2_tvars_get(d, i, &a, &j, &nz);
+	for (; nz != 0; a += dim, j++, nz--) {
+		y[*j] += alpha * blas_ddot(dim, a, 1, x, 1);
+	}
+}
+
+
+void design2_tvars_tmul(double alpha, const struct design2 *d, size_t i, const double *x, double beta, double *y)
+{
+	assert(i < design2_count1(d));
+	
+	size_t dim = design2_tvar_dim(d);
+	const double *a;
+	const size_t *j;
+	size_t nz;
+	
+	if (beta == 0.0) {
+		memset(y, 0, dim * sizeof(*y));
+	} else if (beta != 1.0) {
+		blas_dscal(dim, beta, y, 1);
+	}
+	
+	design2_tvars_get(d, i, &a, &j, &nz);
+	for (; nz != 0; a += dim, j++, nz--) {
+		blas_daxpy(dim, alpha * x[*j], a, 1, y, 1);
+	}
+}
+
+
+void design2_tvars_axpy(double alpha, const struct design2 *d, size_t i, size_t j, double *y)
+{
+	assert(i < design2_count1(d));
+	assert(j < design2_count2(d));
+	
+	const double *dx = design2_tvars(d, i, j);
+	
+	if (dx) {
+		size_t dim = design2_tvar_dim(d);
+		blas_daxpy(dim, alpha, dx, 1, y, 1);
+	}
+}
 
 
 static double *design2_dx(struct design2 *d, size_t i, size_t j)

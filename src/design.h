@@ -94,6 +94,17 @@ void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, co
 const struct var *design_var(const struct design *d, const char *name);
 
 
+void design_traits_mul(double alpha, const struct design *d,
+		     const double *x, double beta, double *y);
+void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
+void design_traits_axpy(double alpha, const struct design *d, size_t i, double *y);
+
+void design_tvars_mul(double alpha, const struct design *d,
+		       const double *x, double beta, double *y);
+void design_tvars_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
+void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y);
+
+
 /* internal functions (for use by tvar callbacks) */
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
 		   const struct vpattern *pat);

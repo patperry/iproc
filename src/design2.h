@@ -79,6 +79,10 @@ const char *design2_trait_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
 void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
 
+//void design2_add_kron(struct design2 *d, const struct var *i,
+//			const struct var *j);
+
+
 /* tvars */
 static inline size_t design2_tvar_dim(const struct design2 *d);
 static inline const double *design2_tvars(const struct design2 *d, size_t i, size_t j);
@@ -89,6 +93,19 @@ static inline void design2_tvars_get(const struct design2 *d, size_t i, const do
 				     size_t *nzp);
 
 const struct var2 *design2_var(const struct design2 *d, const char *name);
+
+
+
+void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
+		       const double *x, double beta, double *y);
+void design2_traits_tmul(double alpha, const struct design2 *d, size_t i, const double *x, double beta, double *y);
+void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t j, double *y);
+
+void design2_tvars_mul(double alpha, const struct design2 *d, size_t i,
+		      const double *x, double beta, double *y);
+void design2_tvars_tmul(double alpha, const struct design2 *d, size_t i, const double *x, double beta, double *y);
+void design2_tvars_axpy(double alpha, const struct design2 *d, size_t i, size_t j, double *y);
+
 
 
 /* internal functions (for use by tvar callbacks) */

@@ -287,39 +287,19 @@ void recv_frame_axpy(double alpha, const struct recv_frame *rf, size_t isend,
 }
 
 
-static void scale_result(size_t n, double beta, double *y)
-{
-	if (beta == 1.0) {
-		return;
-	} else if (beta == 0.0) {
-		memset(y, 0, n * sizeof(*y));
-	} else {
-		blas_dscal(n, beta, y, 1);
-	}
-}
-
 void recv_frame_mul0(double alpha, const struct recv_frame *rf, size_t isend,
 		     const double *x, double beta, double *y)
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
-	
 	const struct design *r = frame_recv_design(f);
-	const struct dmatrix *ar = design_traits(r);
-	size_t dimr = design_trait_dim(r);	
-	const double *xr = x;
-
-	blas_dgemv(BLAS_NOTRANS, nrecv, dimr, alpha, ar, xr, 1, beta, y, 1);
-	
 	const struct design2 *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design2_traits(d);
-	size_t dimd = design2_trait_dim(d);
-	const double *xd = xr + dimr;
-
-	struct dmatrix adsub = *ad;
-	adsub.data = MATRIX_PTR(ad, isend * nrecv, 0);
-	blas_dgemv(BLAS_NOTRANS, nrecv, dimd, alpha, &adsub, xd, 1, 1.0, y, 1);
+	size_t dimr = design_trait_dim(r);
+	const double *xr = x;
+	const double *xd = xr + dimr;	
+	
+	design_traits_mul(alpha, r, xr, beta, y);
+	design2_traits_mul(alpha, d, isend, xd, 1.0, y);
 }
 
 
@@ -328,23 +308,14 @@ void recv_frame_tmul0(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
-	
 	const struct design *r = frame_recv_design(f);
-	const struct dmatrix *ar = design_traits(r);
-	size_t dimr = design_trait_dim(r);	
-	double *yr = y;
-	
-	blas_dgemv(BLAS_TRANS, nrecv, dimr, alpha, ar, x, 1, beta, yr, 1);
-	
 	const struct design2 *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design2_traits(d);
-	size_t dimd = design2_trait_dim(d);
-	double *yd = yr + dimr;
+	size_t dimr = design_trait_dim(r);
+	double *yr = y;
+	double *yd = yr + dimr;	
 	
-	struct dmatrix adsub = *ad;
-	adsub.data = MATRIX_PTR(ad, isend * nrecv, 0);
-	blas_dgemv(BLAS_TRANS, nrecv, dimd, alpha, &adsub, x, 1, beta, yd, 1);
+	design_traits_tmul(alpha, r, x, beta, yr);
+	design2_traits_tmul(alpha, d, isend, x, beta, yd);
 }
 
 
@@ -352,21 +323,14 @@ void recv_frame_axpy0(double alpha, const struct recv_frame *rf, size_t isend, s
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
-	
 	const struct design *r = frame_recv_design(f);
-	const struct dmatrix *ar = design_traits(r);
-	size_t dimr = design_trait_dim(r);	
-	double *yr = y;
-	
-	blas_daxpy(dimr, alpha, MATRIX_PTR(ar, jrecv, 0), ar->lda, yr, 1);
-	
 	const struct design2 *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design2_traits(d);
-	size_t dimd = design2_trait_dim(d);
-	double *yd = yr + dimr;
-
-	blas_daxpy(dimd, alpha, MATRIX_PTR(ad, isend * nrecv + jrecv, 0), ad->lda, yd, 1);
+	size_t dimr = design_trait_dim(r);
+	double *yr = y;
+	double *yd = yr + dimr;	
+	
+	design_traits_axpy(alpha, r, isend, yr);
+	design2_traits_axpy(alpha, d, isend, jrecv, yd);
 }
 
 
@@ -375,33 +339,14 @@ void recv_frame_mul1(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
-	
 	const struct design *r = frame_recv_design(f);
-	const double *ar;
-	const size_t *j;
-	size_t nz;
+	const struct design2 *d = frame_dyad_design(f);
 	size_t dimr = design_tvar_dim(r);
 	const double *xr = x;
+	const double *xd = xr + dimr;	
 	
-	scale_result(nrecv, beta, y);
-	
-	design_tvars_get(r, &ar, &j, &nz);
-	for (; nz != 0; ar += dimr, j++, nz--) {
-		y[*j] += alpha * blas_ddot(dimr, ar, 1, xr, 1);
-	}
-
-	
-	const struct design2 *d = frame_dyad_design(f);
-	const double *ad;
-	size_t dimd = design2_tvar_dim(d);
-	const double *xd = xr + dimr;
-	
-	design2_tvars_get(d, isend, &ad, &j, &nz);
-	
-	for (; nz != 0; ad += dimd, j++, nz--) {
-		y[*j] += alpha * blas_ddot(dimd, ad, 1, xd, 1);
-	}
+	design_tvars_mul(alpha, r, xr, beta, y);
+	design2_tvars_mul(alpha, d, isend, xd, 1.0, y);
 }
 
 
@@ -410,35 +355,14 @@ void recv_frame_tmul1(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	
 	const struct design *r = frame_recv_design(f);
-	const double *ar;
-	const size_t *ix;
-	size_t nz;
+	const struct design2 *d = frame_dyad_design(f);
 	size_t dimr = design_tvar_dim(r);
 	double *yr = y;
+	double *yd = yr + dimr;	
 	
-	scale_result(dimr, beta, yr);
-	
-	design_tvars_get(r, &ar, &ix, &nz);
-	for (; nz != 0; ar += dimr, ix++, nz--) {
-		blas_daxpy(dimr, alpha * x[*ix], ar, 1, yr, 1);
-	}
-	
-	
-	const struct design2 *d = frame_dyad_design(f);
-	const double *ad;
-	const size_t *j;
-	size_t dimd = design2_tvar_dim(d);
-	double *yd = yr + dimr;
-
-	
-	scale_result(dimd, beta, yd);
-
-	design2_tvars_get(d, isend, &ad, &j, &nz);
-	for (; nz != 0; ad += dimd, j++, nz--) {
-		blas_daxpy(dimd, alpha * x[*j], ad, 1, yd, 1);
-	}
+	design_tvars_tmul(alpha, r, x, beta, yr);
+	design2_tvars_tmul(alpha, d, isend, x, beta, yd);
 }
 
 
@@ -447,25 +371,14 @@ void recv_frame_axpy1(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	
 	const struct design *r = frame_recv_design(f);
-	const double *xr = design_tvars(r, jrecv);
-	size_t dimr = design_tvar_dim(r);	
-	double *yr = y;
-	
-	if (xr) {
-		blas_daxpy(dimr, alpha, xr, 1, yr, 1);
-	}
-	
 	const struct design2 *d = frame_dyad_design(f);
-	const double *xd = design2_tvars(d, isend, jrecv);
-	size_t dimd = design2_trait_dim(d);
-	double *yd = yr + dimr;
-
-	if (xd) {
-		blas_daxpy(dimd, alpha, xd, 1, yd, 1);
-	}
-
+	size_t dimr = design_tvar_dim(r);
+	double *yr = y;
+	double *yd = yr + dimr;	
+	
+	design_tvars_axpy(alpha, r, isend, yr);
+	design2_tvars_axpy(alpha, d, isend, jrecv, yd);
 }
 
 

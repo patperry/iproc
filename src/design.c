@@ -176,6 +176,7 @@ const struct var *design_add_trait(struct design *d, const char *name, const dou
 	return v;
 }
 
+
 void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x)
 {
 	design_traits_grow(d, ntrait);
@@ -294,8 +295,91 @@ const struct var *design_var(const struct design *d, const char *name)
 }
 
 
+void design_traits_mul(double alpha, const struct design *d,
+		       const double *x, double beta, double *y)
+{
+	const struct dmatrix *a = design_traits(d);
+	size_t m = design_count(d);
+	size_t n = design_trait_dim(d);
+	
+	blas_dgemv(BLAS_NOTRANS, m, n, alpha, a, x, 1, beta, y, 1);
+}
 
 
+void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y)
+{
+	const struct dmatrix *a = design_traits(d);
+	size_t m = design_count(d);
+	size_t n = design_trait_dim(d);
+	
+	blas_dgemv(BLAS_TRANS, m, n, alpha, a, x, 1, beta, y, 1);
+}
+
+
+void design_traits_axpy(double alpha, const struct design *d, size_t i, double *y)
+{
+	assert(i < design_count(d));
+	
+	const struct dmatrix *a = design_traits(d);
+	size_t dim = design_trait_dim(d);
+	
+	blas_daxpy(dim, alpha, MATRIX_PTR(a, i, 0), a->lda, y, 1);	
+}
+
+
+void design_tvars_mul(double alpha, const struct design *d,
+		      const double *x, double beta, double *y)
+{	
+	size_t n = design_count(d);	
+	size_t dim = design_tvar_dim(d);
+	const double *a;
+	const size_t *k;
+	size_t nz;
+	
+	if (beta == 0.0) {
+		memset(y, 0, n * sizeof(*y));
+	} else if (beta != 1.0) {
+		blas_dscal(n, beta, y, 1);
+	}
+	
+	design_tvars_get(d, &a, &k, &nz);
+	for (; nz != 0; a += dim, k++, nz--) {
+		y[*k] += alpha * blas_ddot(dim, a, 1, x, 1);
+	}
+}
+
+
+void design_tvars_tmul(double alpha, const struct design *d, const double *x, double beta, double *y)
+{
+	size_t dim = design_tvar_dim(d);
+	const double *a;
+	const size_t *k;
+	size_t nz;
+	
+	if (beta == 0.0) {
+		memset(y, 0, dim * sizeof(*y));
+	} else if (beta != 1.0) {
+		blas_dscal(dim, beta, y, 1);
+	}
+
+	design_tvars_get(d, &a, &k, &nz);
+	for (; nz != 0; a += dim, k++, nz--) {
+		blas_daxpy(dim, alpha * x[*k], a, 1, y, 1);
+	}
+}
+
+
+void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y)
+{
+	assert(i < design_count(d));
+
+	const double *dx = design_tvars(d, i);
+	
+	if (dx) {
+		size_t dim = design_tvar_dim(d);
+		blas_daxpy(dim, alpha, dx, 1, y, 1);
+	}
+}
 
 
 static double *design_dx(struct design *d, size_t i)
