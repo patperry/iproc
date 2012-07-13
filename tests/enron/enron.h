@@ -8,23 +8,6 @@
 #define ENRON_EMPLOYEES_FILE PARENT_DIR"tests/enron/employees.json"
 #define ENRON_MESSAGES_FILE  PARENT_DIR"tests/enron/messages.json"
 
-enum enron_cohort {
-	ENRON_COHORT_LJF = 0,
-	ENRON_COHORT_LJM,
-	ENRON_COHORT_LSF,
-	ENRON_COHORT_LSM,
-	ENRON_COHORT_TJF,
-	ENRON_COHORT_TJM,
-	ENRON_COHORT_TSF,
-	ENRON_COHORT_TSM,
-	ENRON_COHORT_OJF,
-	ENRON_COHORT_OJM,
-	ENRON_COHORT_OSF,
-	ENRON_COHORT_OSM
-};
-
-#define ENRON_NCOHORT (ENRON_COHORT_OSM + 1)
-
 enum enron_trait {
 	ENRON_TRAIT_L = 0,
 	ENRON_TRAIT_T,
@@ -41,25 +24,10 @@ enum enron_trait {
 
 #define ENRON_NTRAIT (ENRON_TRAIT_TJF + 1)
 
-extern int enron_legal[ENRON_NCOHORT];
-extern int enron_trading[ENRON_NCOHORT];
-extern int enron_other[ENRON_NCOHORT];
-
-extern int enron_junior[ENRON_NCOHORT];
-extern int enron_senior[ENRON_NCOHORT];
-
-extern int enron_female[ENRON_NCOHORT];
-extern int enron_male[ENRON_NCOHORT];
-
-
 int enron_employees_init(size_t *nactorp,
-		         size_t **cohortsp, size_t *ncohortp,
-			 const char * const **cohort_namesp,
 			 double **traitsp, size_t *ntraitp,
 			 const char * const **trait_namesp);
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t **cohortsp, size_t *ncohortp,
-			       const char * const **cohort_namesp,
 			       double **traitsp, size_t *ntraitp,
 			       const char * const **trait_namesp,
 			       FILE *stream);

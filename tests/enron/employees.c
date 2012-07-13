@@ -29,65 +29,10 @@ static const char *ENRON_TRAIT_NAMES[] = {
 	"Leg:Jun:Fem", "Trad:Jun:Fem"
 };
 
-static const char *ENRON_COHORT_NAMES[] = {
-	"LJF",
-	"LJM",
-	"LSF",
-	"LSM",
-	"TJF",
-	"TJM",
-	"TSF",
-	"TSM",
-	"OJF",
-	"OJM",
-	"OSF",
-	"OSM"
-};
-
-static ptrdiff_t enron_cohort(enum department_code d,
-			      enum seniority_code s,
-			      enum gender_code g)
-{
-	ptrdiff_t c = 0;
-
-	switch(d) {
-	case DEPARTMENT_OTHER:
-		c += 4;
-	case DEPARTMENT_TRADING:
-		c += 4;
-	case DEPARTMENT_LEGAL:
-		break;
-	case DEPARTMENT_NA:
-		return -1;
-	}
-
-	switch(s) {
-	case SENIORITY_SENIOR:
-		c += 2;
-	case SENIORITY_JUNIOR:
-		break;
-	case SENIORITY_NA:
-		return -1;
-	}
-
-	switch(g) {
-	case GENDER_MALE:
-		c += 1;
-	case GENDER_FEMALE:
-		break;
-	case GENDER_NA:
-		return -1;
-	}
-
-	return c;
-}
-
 struct employee_parse {
 	size_t nactor;
-	size_t ncohort;
 	size_t dim;
 	double *traits_t;
-	size_t *cohorts;
 	size_t nactor_max;
 
 	ptrdiff_t id;
@@ -96,30 +41,6 @@ struct employee_parse {
 	enum department_code department;
 	enum employee_map_key map_key;
 };
-
-int enron_legal[ENRON_NCOHORT] =
-    { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-0 };
-int enron_trading[ENRON_NCOHORT] =
-    { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
-0 };
-int enron_other[ENRON_NCOHORT] =
-    { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
-1 };
-
-int enron_junior[ENRON_NCOHORT] =
-    { 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0,
-0 };
-int enron_senior[ENRON_NCOHORT] =
-    { 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1,
-1 };
-
-int enron_female[ENRON_NCOHORT] =
-    { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-0 };
-int enron_male[ENRON_NCOHORT] =
-    { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
-1 };
 
 static int parse_integer(void *ctx, long long integerVal)
 {
@@ -228,9 +149,6 @@ static int parse_end_map(void *ctx)
 					  nactor_max
 					  * parse->dim
 					  * sizeof(parse->traits_t[0]));
-		parse->cohorts = xrealloc(parse->cohorts,
-					  nactor_max *
-					  sizeof(parse->cohorts[0]));
 		parse->nactor_max = nactor_max;
 	}
 
@@ -243,9 +161,6 @@ static int parse_end_map(void *ctx)
 	assert(parse->seniority != SENIORITY_NA);
 
 	parse->nactor++;
-	parse->cohorts[id] = enron_cohort(parse->department, parse->seniority,
-					  parse->gender);
-
 
 	memset(x, 0, parse->dim * sizeof(x[0]));
 	/* department */
@@ -312,8 +227,6 @@ static yajl_callbacks parse_callbacks = {
 };
 
 int enron_employees_init_fread(size_t *nactorp,
-			       size_t **cohortsp, size_t *ncohortp, 
-			       const char * const **cohort_namesp,
 			       double **traitsp, size_t *ntraitp,
 			       const char * const **trait_namesp,
 			       FILE *stream)
@@ -326,10 +239,8 @@ int enron_employees_init_fread(size_t *nactorp,
 	struct employee_parse parse;
 
 	parse.dim = ENRON_NTRAIT;
-	parse.ncohort = ENRON_NCOHORT;
 	parse.nactor = 0;
 	parse.traits_t = NULL;
-	parse.cohorts = NULL;
 	parse.nactor_max = 0;
 
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *)&parse);
@@ -366,20 +277,12 @@ int enron_employees_init_fread(size_t *nactorp,
 
 	if (!parse_ok) {
 		*nactorp = 0;
-		*cohortsp = NULL;
-		*ncohortp = 0;
-		free(parse.cohorts);
-		*cohort_namesp = NULL;
 		*traitsp = NULL;
 		free(parse.traits_t);
 		*ntraitp = 0;
 		*trait_namesp = NULL;
 	} else {
 		*nactorp = parse.nactor;
-		*ncohortp = parse.ncohort;
-		*cohortsp = xrealloc(parse.cohorts,
-				     parse.nactor * sizeof(parse.cohorts[0]));
-		*cohort_namesp = ENRON_COHORT_NAMES;
 
 		size_t n = parse.nactor;
 		size_t p = parse.dim;
@@ -397,8 +300,6 @@ int enron_employees_init_fread(size_t *nactorp,
 }
 
 int enron_employees_init(size_t *nactorp,
-		         size_t **cohortsp, size_t *ncohortp, 
-			 const char * const **cohort_namesp,
 			 double **traitsp, size_t *ntraitsp,
 			 const char * const **trait_namesp)
 {
@@ -410,8 +311,7 @@ int enron_employees_init(size_t *nactorp,
 		return errno;
 	}
 
-	if (!enron_employees_init_fread(nactorp, cohortsp, ncohortp,
-				cohort_namesp, traitsp, ntraitsp,
+	if (!enron_employees_init_fread(nactorp, traitsp, ntraitsp,
 				trait_namesp, f)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_EMPLOYEES_FILE);

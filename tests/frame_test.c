@@ -19,11 +19,8 @@
 
 static size_t nsend;
 static size_t nrecv;
-static size_t ncohort;
 static size_t ntrait;
-static size_t *cohorts;
 static struct dmatrix traits;
-static const char * const * cohort_names;
 static const char * const * trait_names;
 static int has_loops;
 static struct messages messages;
@@ -36,9 +33,7 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nsend,
-			     &cohorts, &ncohort, &cohort_names,
-			     &traits.data, &ntrait, &trait_names);
+	enron_employees_init(&nsend, &traits.data, &ntrait, &trait_names);
 	traits.lda = MAX(1, nsend);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
@@ -47,7 +42,6 @@ static void enron_setup_fixture()
 
 static void enron_teardown_fixture()
 {
-	free(cohorts);
 	messages_deinit(&messages);
 	free(traits.data);
 	print_message("\n\n");
