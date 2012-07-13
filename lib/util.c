@@ -1,6 +1,8 @@
 
+#include "logsumexp.h"
 #include "util.h"
 #include "xalloc.h"
+#include <math.h>
 #include <stdlib.h>
 
 
@@ -31,5 +33,51 @@ char **xstrdup2(const char *const *strs, size_t len)
 		res[i] = xstrdup(strs[i]);
 	}
 	return res;
+}
+
+
+void vector_shift(size_t n, double alpha, double *x)
+{
+	size_t i;
+	for (i = 0; i < n; i++) {
+		x[i] += alpha;
+	}
+}
+
+
+void vector_exp(size_t n, double *x)
+{
+	size_t i;
+	for (i = 0; i < n; i++) {
+		x[i] = exp(x[i]);
+	}
+}
+
+
+double vector_logsumexp(size_t n, double *x)
+{
+	struct logsumexp lse;
+	size_t i;
+
+	logsumexp_init(&lse);
+	for (i = 0; i < n; i++) {
+		logsumexp_insert(&lse, x[i]);
+	}
+
+	return logsumexp_value(&lse);
+}
+
+
+double vector_max(size_t n, double *x)
+{
+	size_t i;
+	double max = -INFINITY;
+
+	for (i = 0; i < n; i++) {
+		if (x[i] > max)
+			max = x[i];
+	}
+
+	return max;
 }
 

@@ -9,9 +9,11 @@ struct recv_fmla {
 	size_t tvar_dim;
 	size_t ncohort;
 	size_t *cohorts;
+	size_t *cohort_reps;
 };
 
 struct recv_coefs {
+	const struct recv_fmla *fmla;
 	double *traits;
 	double *tvars;
 };
@@ -48,7 +50,10 @@ void recv_fmla_deinit(struct recv_fmla *fmla);
 static inline struct frame *recv_fmla_frame(const struct recv_fmla *fmla);
 static inline size_t recv_fmla_trait_dim(const struct recv_fmla *fmla);
 static inline size_t recv_fmla_tvar_dim(const struct recv_fmla *fmla);
-static inline void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, size_t *ncohortp);
+static inline size_t recv_fmla_cohort(const struct recv_fmla *fmla, size_t isend);
+static inline size_t recv_fmla_cohort_rep(const struct recv_fmla *fmla, size_t c);
+static inline size_t recv_fmla_cohort_count(const struct recv_fmla *fmla);
+static inline void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, const size_t **repsp, size_t *ncohortp);
 
 //void recv_fmla_add_kron(struct recv_fmla *fmla, const struct var *s,
 //			const struct var *r);
@@ -56,6 +61,9 @@ static inline void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const siz
 
 void recv_coefs_init(struct recv_coefs *c, const struct recv_fmla *fmla);
 void recv_coefs_deinit(struct recv_coefs *c);
+void recv_coefs_init_copy(struct recv_coefs *c, const struct recv_coefs *c0);
+void recv_coefs_assign_copy(struct recv_coefs *dst, const struct recv_coefs *src);
+void recv_coefs_clear(struct recv_coefs *c);
 
 
 void recv_frame_init(struct recv_frame *rf, const struct recv_fmla *fmla);
@@ -113,9 +121,30 @@ size_t recv_fmla_tvar_dim(const struct recv_fmla *fmla)
 }
 
 
-void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, size_t *ncohortp)
+size_t recv_fmla_cohort(const struct recv_fmla *fmla, size_t isend)
+{
+	assert(isend < frame_recv_count(recv_fmla_frame(fmla)));
+	return fmla->cohorts[isend];
+}
+
+
+size_t recv_fmla_cohort_rep(const struct recv_fmla *fmla, size_t c)
+{
+	assert(c < recv_fmla_cohort_count(fmla));
+	return fmla->cohort_reps[c];
+}
+
+
+size_t recv_fmla_cohort_count(const struct recv_fmla *fmla)
+{
+	return fmla->ncohort;
+}
+
+
+void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, const size_t **repsp, size_t *ncohortp)
 {
 	*cohortsp = fmla->cohorts;
+	*repsp = fmla->cohort_reps;
 	*ncohortp = fmla->ncohort;
 }
 

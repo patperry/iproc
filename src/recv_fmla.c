@@ -30,6 +30,29 @@ static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
 	
 	free(buf);
 	strata_deinit(&strat);
+	
+	size_t ic, nc = fmla->ncohort;
+	
+#ifndef NDEBUG
+	/* initialize all cohort_reps to invalid values */
+	for (ic = 0; ic < nc; ic++) {
+		fmla->cohort_reps[ic] = nsend;
+	}
+#endif
+	
+	fmla->cohort_reps = xmalloc(nc * sizeof(*fmla->cohort_reps));
+	for (i = nsend; i > 0; i--) {
+		size_t isend = i - 1;
+		ic = fmla->cohorts[isend];
+		fmla->cohort_reps[ic] = isend;
+	}
+	
+#ifndef NDEBUG
+	/* ensure all cohorts have reps */
+	for (ic = 0; ic < nc; ic++) {
+		assert(fmla->cohort_reps[ic] != nsend);
+	}
+#endif
 }
 
 
@@ -51,6 +74,7 @@ void recv_fmla_init(struct recv_fmla *fmla, const struct frame *f)
 
 void recv_fmla_deinit(struct recv_fmla *fmla)
 {
+	free(fmla->cohort_reps);
 	free(fmla->cohorts);
 }
 
@@ -66,6 +90,31 @@ void recv_coefs_deinit(struct recv_coefs *c)
 {
 	free(c->tvars);
 	free(c->traits);
+}
+
+
+void recv_coefs_init_copy(struct recv_coefs *c, const struct recv_coefs *c0)
+{
+	recv_coefs_init(c, c0->fmla);
+	recv_coefs_assign_copy(c, c0);
+}
+
+
+void recv_coefs_assign_copy(struct recv_coefs *dst, const struct recv_coefs *src)
+{
+	assert(dst->fmla == src->fmla);
+	
+	const struct recv_fmla *fmla = dst->fmla;
+	memcpy(dst->traits, src->traits, recv_fmla_trait_dim(fmla) * sizeof(*dst->traits));
+	memcpy(dst->tvars, src->tvars, recv_fmla_tvar_dim(fmla) * sizeof(*dst->tvars));
+}
+
+
+void recv_coefs_clear(struct recv_coefs *c)
+{
+	const struct recv_fmla *fmla = c->fmla;
+	memset(c->traits, 0, recv_fmla_trait_dim(fmla) * sizeof(*c->traits));
+	memset(c->tvars, 0, recv_fmla_tvar_dim(fmla) * sizeof(*c->tvars));
 }
 
 
@@ -237,6 +286,17 @@ void recv_frame_axpy(double alpha, const struct recv_frame *rf, size_t isend,
 }
 
 
+static void scale_result(size_t n, double beta, double *y)
+{
+	if (beta == 1.0) {
+		return;
+	} else if (beta == 0.0) {
+		memset(y, 0, n * sizeof(*y));
+	} else {
+		blas_dscal(n, beta, y, 1);
+	}
+}
+
 void recv_frame_mul0(double alpha, const struct recv_frame *rf, size_t isend,
 		     const double *x, double beta, double *y)
 {
@@ -283,7 +343,7 @@ void recv_frame_tmul0(double alpha, const struct recv_frame *rf, size_t isend,
 	
 	struct dmatrix adsub = *ad;
 	adsub.data = MATRIX_PTR(ad, isend * nrecv, 0);
-	blas_dgemv(BLAS_TRANS, nrecv, dimd, alpha, &adsub, x, 1, 1.0, yd, 1);
+	blas_dgemv(BLAS_TRANS, nrecv, dimd, alpha, &adsub, x, 1, beta, yd, 1);
 }
 
 
@@ -323,6 +383,8 @@ void recv_frame_mul1(double alpha, const struct recv_frame *rf, size_t isend,
 	size_t dimr = design_tvar_dim(r);
 	const double *xr = x;
 	
+	scale_result(nrecv, beta, y);
+	
 	design_tvars_get(r, &ar, &ix, &nz);
 	for (; nz != 0; ar += dimr, ix++, nz--) {
 		y[*ix] += alpha * blas_ddot(dimr, ar, 1, xr, 1);
@@ -359,6 +421,8 @@ void recv_frame_tmul1(double alpha, const struct recv_frame *rf, size_t isend,
 	size_t dimr = design_tvar_dim(r);
 	double *yr = y;
 	
+	scale_result(dimr, beta, yr);
+	
 	design_tvars_get(r, &ar, &ix, &nz);
 	for (; nz != 0; ar += dimr, ix++, nz--) {
 		blas_daxpy(dimr, alpha * x[*ix], ar, 1, yr, 1);
@@ -372,6 +436,8 @@ void recv_frame_tmul1(double alpha, const struct recv_frame *rf, size_t isend,
 	double *yd = yr + dimr;
 	size_t off = isend * nrecv;
 	
+	scale_result(dimd, beta, yd);
+
 	design_tvar_get_lb(d, off, &ad0, &ix0);
 	design_tvar_get_lb(d, off + nrecv, &ad1, &ix1);
 	

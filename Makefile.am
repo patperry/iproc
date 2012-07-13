@@ -45,6 +45,8 @@ libiproc_a_SOURCES = \
 	src/messages.h \
 	src/recv_fmla.c \
 	src/recv_fmla.h \
+	src/recv_model.c \
+	src/recv_model.h \
 	src/strata.c \
 	src/strata.h \
 	src/vars.c \

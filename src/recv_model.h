@@ -1,11 +1,12 @@
-#ifndef _IPROC_MODEL_H
-#define _IPROC_MODEL_H
+#ifndef RECV_MODEL_H
+#define RECV_MODEL_H
 
 #include <stddef.h>
 #include "blas.h"
 #include "sblas.h"
 #include "design.h"
 #include "frame.h"
+#include "recv_fmla.h"
 
 /* I. Model
  * --------
@@ -134,31 +135,21 @@ struct recv_model_sender {
 };
 
 struct recv_model {
-	struct frame *frame;
-	size_t ncohort;
-	size_t *cohorts;
-	struct dmatrix coefs;
-	struct recv_model_cohort *cohort_models;
-	struct recv_model_sender *sender_models;
+	struct recv_frame recv_frame;
+	struct recv_coefs coefs;
+	struct recv_model_cohort *cohorts;
+	struct recv_model_sender *senders;
+	double *zbuf;
 };
 
 void recv_model_init(struct recv_model *model,
-		     struct frame *f,
-		     size_t ncohort,
-		     const size_t *cohorts, const struct dmatrix *coefs);
+		     const struct recv_fmla *fmla,
+		     const struct recv_coefs *coefs);
 void recv_model_deinit(struct recv_model *model);
 
-struct frame *recv_model_frame(const struct recv_model *model);
-const struct design *recv_model_design(const struct recv_model *model);
-const size_t *recv_model_cohorts(const struct recv_model *model);
-const struct dmatrix *recv_model_coefs(const struct recv_model *model);
-size_t recv_model_send_count(const struct recv_model *model);
-size_t recv_model_cohort_count(const struct recv_model *model);
-size_t recv_model_cohort(const struct recv_model *model, size_t isend);
-size_t recv_model_count(const struct recv_model *model);
-size_t recv_model_dim(const struct recv_model *model);
+static inline const struct recv_fmla *recv_model_fmla(const struct recv_model *model);
 
-void recv_model_set_coefs(struct recv_model *m, const struct dmatrix *coefs);
+void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs);
 
 /* Initial probability, and expectations, without adjustment for self-loops. */
 double recv_model_logsumwt0(const struct recv_model *m, size_t c);
@@ -182,4 +173,10 @@ void recv_model_get_active(const struct recv_model *m, size_t isend,
 			   size_t **jrecv, size_t *n);
 double recv_model_invgrow(const struct recv_model *m, size_t isend);
 
-#endif /* _IPROC_MODEL_H */
+
+const struct recv_fmla *recv_model_fmla(const struct recv_model *model)
+{
+	return recv_frame_fmla(&model->recv_frame);
+}
+
+#endif /* RECV_MODEL_H */
