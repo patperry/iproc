@@ -35,6 +35,13 @@ char **xstrdup2(const char *const *strs, size_t len)
 	return res;
 }
 
+void vector_fill(size_t n, double val, double *x)
+{
+	size_t i;
+	for (i = 0; i < n; i++) {
+		x[i] = val;
+	}
+}
 
 void vector_shift(size_t n, double alpha, double *x)
 {
@@ -52,7 +59,6 @@ void vector_exp(size_t n, double *x)
 		x[i] = exp(x[i]);
 	}
 }
-
 
 double vector_logsumexp(size_t n, double *x)
 {

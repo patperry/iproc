@@ -12,7 +12,7 @@
 #include "coreutil.h"
 #include "xalloc.h"
 #include "ieee754.h"
-#include "logsumexp.h"
+#include "util.h"
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
@@ -23,16 +23,13 @@
 
 static size_t nsend;
 static size_t nrecv;
-static size_t ncohort;
 static size_t ntrait;
-static size_t *cohorts;
 static struct dmatrix traits;
-static const char * const *cohort_names;
 static const char * const *trait_names;
 static struct messages messages;
-static struct design *design;
 static struct frame frame;
-static struct dmatrix coefs;
+static struct recv_fmla fmla;
+static struct recv_coefs coefs;
 static struct recv_model model;
 
 
@@ -40,9 +37,7 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nsend, &cohorts, &ncohort, 
-			     &cohort_names,
-			     &traits.data, &ntrait, &trait_names);
+	enron_employees_init(&nsend, &traits.data, &ntrait, &trait_names);
 	traits.lda = MAX(1, nsend);
 	enron_messages_init(&messages, -1);
 	nrecv = nsend;
@@ -50,7 +45,6 @@ static void enron_setup_fixture()
 
 static void enron_teardown_fixture()
 {
-	free(cohorts);
 	free(traits.data);
 	messages_deinit(&messages);
 	print_message("\n\n");
@@ -58,119 +52,84 @@ static void enron_teardown_fixture()
 
 static void basic_setup()
 {
-	size_t i, c;
+	size_t i;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	int has_effects = 0;
 	int has_loops = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
-	design = frame_recv_design(&frame);
-	design_set_has_effects(design, has_effects);
-	design_set_traits(design, ntrait, &traits, trait_names);
-	design_add_dvar(design, DYAD_VAR_NRECV, "NRecv");
-	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
-	coefs.lda = MAX(1, design_dim(design));
+	struct design *r = frame_recv_design(&frame);
+	design_add_traits(r, ntrait, trait_names, &traits);
 	
-	for (c = 0; c < ncohort; c++) {
-		for (i = 0; i < design_dim(design); i++) {
-			double val = (i + 2 * c % 5 == 0 ? -2.0 :
-				      i + 3 * c % 5 == 1 ?  1.0 :
-				      i + 7 * c % 5 == 2 ? -1.0 :
-				      i + 11 * c % 5 == 3 ?  2.0 : 0.0);
-			MATRIX_ITEM(&coefs, i, c) = val;
-		}
+	struct design *d = frame_dyad_design(&frame);
+	design_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	
+	recv_fmla_init(&fmla, &frame);
+	recv_coefs_init(&coefs, &fmla);
+	
+	
+	for (i = 0; i < recv_fmla_trait_dim(&fmla); i++) {
+		double val = (i % 5 == 0 ? -2.0 :
+			      i % 5 == 1 ?  1.0 :
+			      i % 5 == 2 ? -1.0 :
+			      i % 5 == 3 ?  2.0 : 0.0);
+		coefs.traits[i] = val;
 	}
-	
-	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
+	for (i = 0; i < recv_fmla_tvar_dim(&fmla); i++) {
+		double val = (i % 5 == 0 ? -2.0 :
+			      i % 5 == 1 ?  1.0 :
+			      i % 5 == 2 ? -1.0 :
+			      i % 5 == 3 ?  2.0 : 0.0);
+		coefs.tvars[i] = val;
+	}
+
+	recv_model_init(&model, &fmla, &coefs);
 }
 
 static void teardown()
 {
 	recv_model_deinit(&model);
-	free(coefs.data);
+	recv_coefs_deinit(&coefs);
+	recv_fmla_deinit(&fmla);
 	frame_deinit(&frame);
 }
 
 
 static void hard_setup()
 {
-	size_t i, c;
+	size_t i;
 	double intvls[3] = {
 		112.50,  450.00, 1800.00,
 	};
-	int has_effects = 0;
 	int has_loops = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
-	design = frame_recv_design(&frame);
-	design_set_has_effects(design, has_effects);
-	design_set_traits(design, ntrait, &traits, trait_names);
-	design_add_dvar(design, DYAD_VAR_NRECV, "NRecv");
-	coefs.data = xcalloc(design_dim(design) * ncohort, sizeof(double));
-	coefs.lda = MAX(1, design_dim(design));	
+	struct design *r = frame_recv_design(&frame);
+	design_add_traits(r, ntrait, trait_names, &traits);
 	
-	for (c = 0; c < ncohort; c++) {
-		for (i = 0; i < design_dim(design); i++) {
-			double val = (i + 2 * c % 7 == 0 ?  0.1 :
-				      i + 3 * c % 7 == 1 ?  0.3 :
-				      i + 5 * c % 7 == 2 ? -0.2 :
-				      i + 11 * c % 7 == 4 ? -10 :
-				      i % 7 == 6 ? +10 : 0.0);
-			MATRIX_ITEM(&coefs, i, c) = val;
-		}
+	struct design *d = frame_dyad_design(&frame);
+	design_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	
+	recv_fmla_init(&fmla, &frame);
+	recv_coefs_init(&coefs, &fmla);
+	
+	for (i = 0; i < recv_fmla_trait_dim(&fmla); i++) {
+		double val = (i % 5 == 0 ? -2.0 :
+			      i % 5 == 1 ?  1.0 :
+			      i % 5 == 2 ? -1.0 :
+			      i % 5 == 3 ?  2.0 : 0.0);
+		coefs.traits[i] = val;
+	}
+	for (i = 0; i < recv_fmla_tvar_dim(&fmla); i++) {
+		double val = (i % 5 == 0 ? -10 :
+			      i % 5 == 1 ? 0.3 :
+			      i % 5 == 2 ? +10 :
+			      i % 5 == 3 ? 0.1 : 0.0);
+		coefs.tvars[i] = val;
 	}
 	
-	recv_model_init(&model, &frame, ncohort, cohorts, &coefs);
+	recv_model_init(&model, &fmla, &coefs);
 }
 
-
-static void vector_shift(size_t n, double val, double *x)
-{
-	size_t i;
-
-	for (i = 0; i < n; i++) {
-		x[i] += val;
-	}
-}
-
-static void vector_exp(size_t n, double *x)
-{
-	size_t i;
-	for (i = 0; i < n; i++) {
-		x[i] = exp(x[i]);
-	}
-}
-
-static void vector_fill(size_t n, double val, double *x)
-{
-	size_t i;
-	for (i = 0; i < n; i++) {
-		x[i] = val;
-	}
-}
-
-static double vector_max(size_t n, double *x)
-{
-	double max = -INFINITY;
-	size_t i;
-	for (i = 0; i < n; i++) {
-		if (x[i] > max)
-			max = x[i];
-	}
-	return max;
-}
-
-static double vector_logsumexp(size_t n, double *x)
-{
-	struct logsumexp lse;
-	size_t i;
-
-	logsumexp_init(&lse);
-	for (i = 0; i < n; i++) {
-		logsumexp_insert(&lse, x[i]);
-	}
-	return logsumexp_value(&lse);
-}
 
 static void test_probs()
 {
@@ -180,8 +139,11 @@ static void test_probs()
 	double t;
 	size_t isend, jrecv, nrecv;
 	size_t i, n;
+	struct recv_frame rf;
 	
-	nrecv = design_count(design);
+	recv_frame_init(&rf, &fmla);
+	
+	nrecv = frame_recv_count(&frame);
 	eta = xmalloc(nrecv * sizeof(double));
 	probs = xmalloc(nrecv * sizeof(double));
 	logprobs = xmalloc(nrecv * sizeof(double));
@@ -193,7 +155,7 @@ static void test_probs()
 	size_t minprec = DBL_MANT_DIG;
 	
 	MESSAGES_FOREACH(it, &messages) {
-		// fprintf(stderr, "."); fflush(stderr);
+		fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
 		frame_advance(&frame, t);			
@@ -202,9 +164,7 @@ static void test_probs()
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			size_t c = cohorts[isend];
-			const double *col = MATRIX_COL(&coefs, c);
-			frame_recv_mul(1.0, BLAS_NOTRANS, &frame, isend, col, 0.0, eta);
+			recv_frame_mul(1.0, &rf, isend, &coefs, 0.0, eta);
 			
 			if (!frame_has_loops(&frame))
 				eta[isend] = -INFINITY;
@@ -221,7 +181,7 @@ static void test_probs()
 			vector_fill(nrecv, y0, y);
 			recv_model_axpy_probs(alpha, &model, isend, y);
 			
-			assert(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)) >= 36);
+			//assert(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)) >= 36);
 			assert_in_range(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {

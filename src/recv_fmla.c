@@ -20,7 +20,7 @@ static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
 	double *buf;
 	
 	strata_init(&strat, dims);
-	xmalloc(dims * sizeof(*buf));	
+	buf = xmalloc(dims * sizeof(*buf));	
 
 	for (i = 0; i < nsend; i++) {
 		blas_dcopy(dims, MATRIX_PTR(as, i, 0), as->lda, buf, 1);
@@ -33,14 +33,15 @@ static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
 	
 	size_t ic, nc = fmla->ncohort;
 	
+	fmla->cohort_reps = xmalloc(nc * sizeof(*fmla->cohort_reps));	
+	
 #ifndef NDEBUG
 	/* initialize all cohort_reps to invalid values */
 	for (ic = 0; ic < nc; ic++) {
 		fmla->cohort_reps[ic] = nsend;
 	}
 #endif
-	
-	fmla->cohort_reps = xmalloc(nc * sizeof(*fmla->cohort_reps));
+
 	for (i = nsend; i > 0; i--) {
 		size_t isend = i - 1;
 		ic = fmla->cohorts[isend];
@@ -81,6 +82,7 @@ void recv_fmla_deinit(struct recv_fmla *fmla)
 
 void recv_coefs_init(struct recv_coefs *c, const struct recv_fmla *fmla)
 {
+	c->fmla = fmla;
 	c->traits = xmalloc(recv_fmla_trait_dim(fmla) * sizeof(*c->traits));
 	c->tvars = xmalloc(recv_fmla_tvar_dim(fmla) * sizeof(*c->tvars));
 }
