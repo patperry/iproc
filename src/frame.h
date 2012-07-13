@@ -9,6 +9,7 @@
 #include "pqueue.h"
 #include "history.h"
 #include "design.h"
+#include "design2.h"
 
 struct dyad {
 	size_t isend;
@@ -21,7 +22,7 @@ struct frame {
 	size_t nsend, nrecv;
 	struct design send_design;
 	struct design recv_design;
-	struct design dyad_design;
+	struct design2 dyad_design;
 
 	int has_loops;
 
@@ -64,7 +65,7 @@ static inline size_t frame_interval_count(const struct frame *f);
 static inline struct history *frame_history(const struct frame *f);
 static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
-static inline struct design *frame_dyad_design(const struct frame *f);
+static inline struct design2 *frame_dyad_design(const struct frame *f);
 
 /* time */
 static inline double frame_time(const struct frame *f);	// current time
@@ -117,7 +118,7 @@ struct design *frame_recv_design(const struct frame *f)
 	return &((struct frame *)f)->recv_design;
 }
 
-struct design *frame_dyad_design(const struct frame *f)
+struct design2 *frame_dyad_design(const struct frame *f)
 {
 	assert(f);
 	return &((struct frame *)f)->dyad_design;

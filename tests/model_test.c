@@ -61,8 +61,8 @@ static void basic_setup()
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, ntrait, trait_names, &traits);
 	
-	struct design *d = frame_dyad_design(&frame);
-	design_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	struct design2 *d = frame_dyad_design(&frame);
+	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	
 	recv_fmla_init(&fmla, &frame);
 	recv_coefs_init(&coefs, &fmla);
@@ -106,8 +106,8 @@ static void hard_setup()
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, ntrait, trait_names, &traits);
 	
-	struct design *d = frame_dyad_design(&frame);
-	design_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	struct design2 *d = frame_dyad_design(&frame);
+	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	
 	recv_fmla_init(&fmla, &frame);
 	recv_coefs_init(&coefs, &fmla);

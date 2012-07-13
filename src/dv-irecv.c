@@ -9,9 +9,9 @@
 static void irecv_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
+	const struct tvar2 *tv = udata;
+	const struct var2 *v = &tv->var;
+	struct design2 *d = frame_dyad_design(f);	
 	size_t index = v->index;
 	double one = 1.0;	
 	size_t jrecv = msg->from;
@@ -22,10 +22,9 @@ static void irecv_message_add(void *udata, struct frame *f,
 			continue;
 		
 		size_t isend = msg->to[ito];
-		size_t ix = frame_dyad_ix(f, isend, jrecv);
-		const double *dx = design_tvars(d, ix);
+		const double *dx = design2_tvars(d, isend, jrecv);
 		if (!dx || dx[index] == 0.0) {
-			design_update(d, v, ix, &one, NULL);
+			design2_update(d, v, isend, jrecv, &one, NULL);
 		}
 	}
 }
@@ -38,11 +37,11 @@ static struct frame_callbacks irecv_frame_callbacks = {
 };
 
 
-static void irecv_init(struct tvar *tv, const struct design *d, va_list ap)
+static void irecv_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
 {
 	(void)ap; // unused
 	
-	struct frame *f = design_frame(d);
+	struct frame *f = design2_frame(d);
 	
 	tv->var.dim = 1;
 	tv->udata = NULL;
@@ -51,17 +50,17 @@ static void irecv_init(struct tvar *tv, const struct design *d, va_list ap)
 }
 
 
-static void irecv_deinit(struct tvar *tv, const struct design *d)
+static void irecv_deinit(struct tvar2 *tv, const struct design2 *d)
 {
-	struct frame *f = design_frame(d);
+	struct frame *f = design2_frame(d);
 	frame_remove_observer(f, tv);
 }
 
 
-static struct tvar_type DYAD_VAR_IRECV_REP = {
+static struct tvar2_type DYAD_VAR_IRECV_REP = {
 	irecv_init,
 	irecv_deinit
 };
 
 
-const struct tvar_type *DYAD_VAR_IRECV = &DYAD_VAR_IRECV_REP;
+const struct tvar2_type *DYAD_VAR_IRECV = &DYAD_VAR_IRECV_REP;

@@ -77,14 +77,14 @@ static inline size_t design_count(const struct design *d);
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
 static inline const struct dmatrix *design_traits(const struct design *d);
-const char *design_trait_name(const struct design *d, size_t j);
+const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x);
 void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
 
 /* tvars */
 static inline size_t design_tvar_dim(const struct design *d);
 static inline const double *design_tvars(const struct design *d, size_t i);
-const char *design_tvar_name(const struct design *d, size_t j);
+const char *design_tvar_name(const struct design *d, size_t k);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
 static inline void design_tvars_get(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);

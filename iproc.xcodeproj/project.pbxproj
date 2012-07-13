@@ -102,6 +102,8 @@
 		22749E5A1402A97000C5A955 /* dSFMT.c in Sources */ = {isa = PBXBuildFile; fileRef = 22749E4D1402A97000C5A955 /* dSFMT.c */; settings = {COMPILER_FLAGS = "-Wmissing-prototypes -Wall -O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -DDSFMT_MEXP=19937"; }; };
 		22749E5B1402A97000C5A955 /* dSFMT.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4E1402A97000C5A955 /* dSFMT.h */; };
 		22749E5E1402E2EC00C5A955 /* vars.c in Sources */ = {isa = PBXBuildFile; fileRef = 22749E5C1402E2EB00C5A955 /* vars.c */; };
+		227870A815B0A68C004B170B /* design2.c in Sources */ = {isa = PBXBuildFile; fileRef = 227870A615B0A68C004B170B /* design2.c */; };
+		227870A915B0A68C004B170B /* design2.h in Headers */ = {isa = PBXBuildFile; fileRef = 227870A715B0A68C004B170B /* design2.h */; };
 		2285AD1A13B147E900C46E8B /* enronfit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2285AD1913B147E900C46E8B /* enronfit.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include"; }; };
 		2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		2285AD1C13B147F300C46E8B /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
@@ -502,6 +504,8 @@
 		22749E4D1402A97000C5A955 /* dSFMT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dSFMT.c; path = lib/dSFMT/dSFMT.c; sourceTree = "<group>"; };
 		22749E4E1402A97000C5A955 /* dSFMT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dSFMT.h; path = lib/dSFMT/dSFMT.h; sourceTree = "<group>"; };
 		22749E5C1402E2EB00C5A955 /* vars.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = vars.c; path = src/vars.c; sourceTree = "<group>"; };
+		227870A615B0A68C004B170B /* design2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design2.c; path = src/design2.c; sourceTree = "<group>"; };
+		227870A715B0A68C004B170B /* design2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design2.h; path = src/design2.h; sourceTree = "<group>"; };
 		228160D913B00EF200B38330 /* dcsrch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcsrch.c; path = lib/minpack/dcsrch.c; sourceTree = "<group>"; };
 		228160DA13B00EF200B38330 /* dcstep.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dcstep.c; path = lib/minpack/dcstep.c; sourceTree = "<group>"; };
 		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -721,6 +725,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				227870A615B0A68C004B170B /* design2.c */,
+				227870A715B0A68C004B170B /* design2.h */,
 				22BECECA15AC77AA00F630C4 /* recv_model.c */,
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				22BECEC615AB5D0E00F630C4 /* recv_fmla.c */,
@@ -950,6 +956,7 @@
 				22BECEC015AA05BD00F630C4 /* util.h in Headers */,
 				22BECEC915AB5D0F00F630C4 /* recv_fmla.h in Headers */,
 				22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */,
+				227870A915B0A68C004B170B /* design2.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1339,6 +1346,7 @@
 				22BECEBF15AA05BD00F630C4 /* util.c in Sources */,
 				22BECEC815AB5D0F00F630C4 /* recv_fmla.c in Sources */,
 				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
+				227870A815B0A68C004B170B /* design2.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

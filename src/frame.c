@@ -64,7 +64,7 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	history_add_observer(&f->history, f, &frame_history_callbacks);
 	design_init(&f->send_design, f, nsend);
 	design_init(&f->recv_design, f, nrecv);
-	design_init(&f->dyad_design, f, nsend * nrecv);
+	design2_init(&f->dyad_design, f, nsend, nrecv);
 	
 	f->observers = NULL;
 	f->nobs = 0;
@@ -78,8 +78,7 @@ void frame_deinit(struct frame *f)
 
 	free(f->observers);
 
-	design_remove_observer(&f->dyad_design, f);
-	design_deinit(&f->dyad_design);
+	design2_deinit(&f->dyad_design);
 	
 	design_deinit(&f->recv_design);
 	design_deinit(&f->send_design);

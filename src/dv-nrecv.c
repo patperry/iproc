@@ -7,9 +7,9 @@
 static void nrecv_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);
+	const struct tvar2 *tv = udata;
+	const struct var2 *v = &tv->var;
+	struct design2 *d = frame_dyad_design(f);
 
 	size_t jrecv = msg->from;
 	double dx_data[1] = { +1.0 };
@@ -22,8 +22,7 @@ static void nrecv_message_add(void *udata, struct frame *f,
 			continue;
 		
 		size_t isend = msg->to[ito];
-		size_t ix = frame_dyad_ix(f, isend, jrecv);
-		design_update(d, v, ix, dx_data, &pat);
+		design2_update(d, v, isend, jrecv, dx_data, &pat);
 	}
 }
 
@@ -31,9 +30,9 @@ static void nrecv_message_add(void *udata, struct frame *f,
 static void nrecv_message_advance(void *udata, struct frame *f,
 				  const struct message *msg, size_t intvl)
 {
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
-	struct design *d = frame_dyad_design(f);	
+	const struct tvar2 *tv = udata;
+	const struct var2 *v = &tv->var;
+	struct design2 *d = frame_dyad_design(f);	
 	size_t jrecv = msg->from;
 
 	double dx_data[2] = { -1.0, +1.0 };
@@ -52,8 +51,7 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;
 		
-		size_t ix = frame_dyad_ix(f, isend, jrecv);
-		design_update(d, v, ix, dx_data, &pat);
+		design2_update(d, v, isend, jrecv, dx_data, &pat);
 	}
 }
 
@@ -65,11 +63,11 @@ static struct frame_callbacks nrecv_frame_callbacks = {
 };
 
 
-static void nrecv_init(struct tvar *tv, const struct design *d, va_list ap)
+static void nrecv_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
 {
 	(void)ap;		// unused;
 
-	struct frame *f = design_frame(d);
+	struct frame *f = design2_frame(d);
 	size_t n = frame_interval_count(f);
 
 	tv->var.dim = n + 1;
@@ -79,18 +77,18 @@ static void nrecv_init(struct tvar *tv, const struct design *d, va_list ap)
 }
 
 
-static void nrecv_deinit(struct tvar *tv, const struct design *d)
+static void nrecv_deinit(struct tvar2 *tv, const struct design2 *d)
 {
-	struct frame *f = design_frame(d);
+	struct frame *f = design2_frame(d);
 	frame_remove_observer(f, tv);
 }
 
 
-static struct tvar_type DYAD_VAR_NRECV_REP = {
+static struct tvar2_type DYAD_VAR_NRECV_REP = {
 	nrecv_init,
 	nrecv_deinit,
 	
 };
 
 
-const struct tvar_type *DYAD_VAR_NRECV = &DYAD_VAR_NRECV_REP;
+const struct tvar2_type *DYAD_VAR_NRECV = &DYAD_VAR_NRECV_REP;

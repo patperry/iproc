@@ -61,11 +61,11 @@ static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
 void recv_fmla_init(struct recv_fmla *fmla, const struct frame *f)
 {
 	const struct design *r = frame_recv_design(f);
-	const struct design *d = frame_dyad_design(f);
+	const struct design2 *d = frame_dyad_design(f);
 	size_t nsend = frame_send_count(f);
 	fmla->frame = (struct frame *)f;
-	fmla->trait_dim = design_trait_dim(r) + design_trait_dim(d);
-	fmla->tvar_dim = design_tvar_dim(r) + design_tvar_dim(d);
+	fmla->trait_dim = design_trait_dim(r) + design2_trait_dim(d);
+	fmla->tvar_dim = design_tvar_dim(r) + design2_tvar_dim(d);
 	fmla->cohorts = xmalloc(nsend * sizeof(*fmla->cohorts));
 	fmla->ncohort = 0;
 	
@@ -187,7 +187,7 @@ static struct design_callbacks recv_frame_recv_design_callbacks = {
 };
 
 
-static void recv_frame_dyad_design_update(void *udata, struct design *d,  const struct var *v, size_t i, const double *delta, const struct vpattern *pat)
+static void recv_frame_dyad_design_update(void *udata, struct design2 *d,  const struct var2 *v, size_t i, size_t j, const double *delta, const struct vpattern *pat)
 {
 	struct recv_frame *rf = udata;
 	
@@ -197,7 +197,6 @@ static void recv_frame_dyad_design_update(void *udata, struct design *d,  const 
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
 	const struct design *r = frame_recv_design(f);
-	struct dyad dyad = frame_ix_dyad(f, i);
 	
 	size_t off = design_tvar_dim(r) + v->index;
 	size_t iz, nz;
@@ -219,13 +218,13 @@ static void recv_frame_dyad_design_update(void *udata, struct design *d,  const 
 	for (iobs = 0; iobs < nobs; iobs++) {
 		struct recv_frame_observer *obs = &rf->obs[iobs];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, rf, dyad.isend, dyad.jrecv, delta, &my_pat);
+			obs->callbacks.update(obs->udata, rf, i, j, delta, &my_pat);
 		}
 	}
 }
 
 
-static struct design_callbacks recv_frame_dyad_design_callbacks = {
+static struct design2_callbacks recv_frame_dyad_design_callbacks = {
 	recv_frame_dyad_design_update
 };
 
@@ -234,7 +233,7 @@ void recv_frame_init(struct recv_frame *rf, const struct recv_fmla *fmla)
 {
 	struct frame *f = recv_fmla_frame(fmla);
 	struct design *r = frame_recv_design(f);
-	struct design *d = frame_dyad_design(f);
+	struct design2 *d = frame_dyad_design(f);
 	
 	rf->fmla = (struct recv_fmla *)fmla;
 	rf->pat_buf = xmalloc(fmla->tvar_dim * sizeof(*rf->pat_buf));
@@ -244,7 +243,7 @@ void recv_frame_init(struct recv_frame *rf, const struct recv_fmla *fmla)
 	
 	frame_add_observer(f, rf, &recv_frame_frame_callbacks);
 	design_add_observer(r, rf, &recv_frame_recv_design_callbacks);
-	design_add_observer(d, rf, &recv_frame_dyad_design_callbacks);	
+	design2_add_observer(d, rf, &recv_frame_dyad_design_callbacks);	
 }
 
 
@@ -253,9 +252,9 @@ void recv_frame_deinit(struct recv_frame *rf)
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	struct frame *f = recv_fmla_frame(fmla);
 	struct design *r = frame_recv_design(f);
-	struct design *d = frame_dyad_design(f);
+	struct design2 *d = frame_dyad_design(f);
 	
-	design_remove_observer(d, rf);	
+	design2_remove_observer(d, rf);	
 	design_remove_observer(r, rf);
 	frame_remove_observer(f, rf);
 	
@@ -313,9 +312,9 @@ void recv_frame_mul0(double alpha, const struct recv_frame *rf, size_t isend,
 
 	blas_dgemv(BLAS_NOTRANS, nrecv, dimr, alpha, ar, xr, 1, beta, y, 1);
 	
-	const struct design *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design_traits(d);
-	size_t dimd = design_trait_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const struct dmatrix *ad = design2_traits(d);
+	size_t dimd = design2_trait_dim(d);
 	const double *xd = xr + dimr;
 
 	struct dmatrix adsub = *ad;
@@ -338,9 +337,9 @@ void recv_frame_tmul0(double alpha, const struct recv_frame *rf, size_t isend,
 	
 	blas_dgemv(BLAS_TRANS, nrecv, dimr, alpha, ar, x, 1, beta, yr, 1);
 	
-	const struct design *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design_traits(d);
-	size_t dimd = design_trait_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const struct dmatrix *ad = design2_traits(d);
+	size_t dimd = design2_trait_dim(d);
 	double *yd = yr + dimr;
 	
 	struct dmatrix adsub = *ad;
@@ -362,9 +361,9 @@ void recv_frame_axpy0(double alpha, const struct recv_frame *rf, size_t isend, s
 	
 	blas_daxpy(dimr, alpha, MATRIX_PTR(ar, jrecv, 0), ar->lda, yr, 1);
 	
-	const struct design *d = frame_dyad_design(f);
-	const struct dmatrix *ad = design_traits(d);
-	size_t dimd = design_trait_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const struct dmatrix *ad = design2_traits(d);
+	size_t dimd = design2_trait_dim(d);
 	double *yd = yr + dimr;
 
 	blas_daxpy(dimd, alpha, MATRIX_PTR(ad, isend * nrecv + jrecv, 0), ad->lda, yd, 1);
@@ -380,31 +379,28 @@ void recv_frame_mul1(double alpha, const struct recv_frame *rf, size_t isend,
 	
 	const struct design *r = frame_recv_design(f);
 	const double *ar;
-	const size_t *ix;
+	const size_t *j;
 	size_t nz;
 	size_t dimr = design_tvar_dim(r);
 	const double *xr = x;
 	
 	scale_result(nrecv, beta, y);
 	
-	design_tvars_get(r, &ar, &ix, &nz);
-	for (; nz != 0; ar += dimr, ix++, nz--) {
-		y[*ix] += alpha * blas_ddot(dimr, ar, 1, xr, 1);
+	design_tvars_get(r, &ar, &j, &nz);
+	for (; nz != 0; ar += dimr, j++, nz--) {
+		y[*j] += alpha * blas_ddot(dimr, ar, 1, xr, 1);
 	}
 
 	
-	const struct design *d = frame_dyad_design(f);
-	const double *ad0, *ad1;
-	const size_t *ix0, *ix1;
-	size_t dimd = design_tvar_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const double *ad;
+	size_t dimd = design2_tvar_dim(d);
 	const double *xd = xr + dimr;
-	size_t off = isend * nrecv;
 	
-	design_tvar_get_lb(d, off, &ad0, &ix0);
-	design_tvar_get_lb(d, off + nrecv, &ad1, &ix1);
+	design2_tvars_get(d, isend, &ad, &j, &nz);
 	
-	for (; ix0 != ix1; ad0 += dimd, ix0++) {
-		y[*ix0 - off] += alpha * blas_ddot(dimd, ad0, 1, xd, 1);
+	for (; nz != 0; ad += dimd, j++, nz--) {
+		y[*j] += alpha * blas_ddot(dimd, ad, 1, xd, 1);
 	}
 }
 
@@ -414,7 +410,6 @@ void recv_frame_tmul1(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
 	
 	const struct design *r = frame_recv_design(f);
 	const double *ar;
@@ -431,20 +426,18 @@ void recv_frame_tmul1(double alpha, const struct recv_frame *rf, size_t isend,
 	}
 	
 	
-	const struct design *d = frame_dyad_design(f);
-	const double *ad0, *ad1;
-	const size_t *ix0, *ix1;
-	size_t dimd = design_tvar_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const double *ad;
+	const size_t *j;
+	size_t dimd = design2_tvar_dim(d);
 	double *yd = yr + dimr;
-	size_t off = isend * nrecv;
+
 	
 	scale_result(dimd, beta, yd);
 
-	design_tvar_get_lb(d, off, &ad0, &ix0);
-	design_tvar_get_lb(d, off + nrecv, &ad1, &ix1);
-	
-	for (; ix0 != ix1; ad0 += dimd, ix0++) {
-		blas_daxpy(dimd, alpha * x[*ix0 - off], ad0, 1, yd, 1);
+	design2_tvars_get(d, isend, &ad, &j, &nz);
+	for (; nz != 0; ad += dimd, j++, nz--) {
+		blas_daxpy(dimd, alpha * x[*j], ad, 1, yd, 1);
 	}
 }
 
@@ -454,7 +447,6 @@ void recv_frame_axpy1(double alpha, const struct recv_frame *rf, size_t isend,
 {
 	const struct recv_fmla *fmla = recv_frame_fmla(rf);
 	const struct frame *f = recv_fmla_frame(fmla);
-	size_t nrecv = frame_recv_count(f);
 	
 	const struct design *r = frame_recv_design(f);
 	const double *xr = design_tvars(r, jrecv);
@@ -465,9 +457,9 @@ void recv_frame_axpy1(double alpha, const struct recv_frame *rf, size_t isend,
 		blas_daxpy(dimr, alpha, xr, 1, yr, 1);
 	}
 	
-	const struct design *d = frame_dyad_design(f);
-	const double *xd = design_tvars(d, isend * nrecv + jrecv);
-	size_t dimd = design_trait_dim(d);
+	const struct design2 *d = frame_dyad_design(f);
+	const double *xd = design2_tvars(d, isend, jrecv);
+	size_t dimd = design2_trait_dim(d);
 	double *yd = yr + dimr;
 
 	if (xd) {

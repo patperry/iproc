@@ -33,6 +33,8 @@ noinst_LIBRARIES = \
 libiproc_a_SOURCES = \
 	src/design.c \
 	src/design.h \
+	src/design2.c \
+	src/design2.h \
 	src/dv-irecv.c \
 	src/dv-isend.c \
 	src/dv-nrecv.c \

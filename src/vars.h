@@ -2,28 +2,29 @@
 #define _VARS_H
 
 #include "design.h"
+#include "design2.h"
 #include "frame.h"
 #include <stdarg.h>
 
 
 
 /* Indicator 1{ j -> i in (-Infty, t) } */
-extern const struct tvar_type *DYAD_VAR_IRECV;
+extern const struct tvar2_type *DYAD_VAR_IRECV;
 
 /* Indicator 1{ i -> j in (-Infty, t) } */
-extern const struct tvar_type *DYAD_VAR_ISEND;
+extern const struct tvar2_type *DYAD_VAR_ISEND;
 
 /* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
  * are x{k}[t,i,j] = #{ j -> i in [t - delta[k], t - delta[k-1]) }
  * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
  */
-extern const struct tvar_type *DYAD_VAR_NRECV;
+extern const struct tvar2_type *DYAD_VAR_NRECV;
 
 /* If intvls = { delta[0], delta[1], ..., delta[K-1] }, then the K + 1 variables
  * are x{k}[t,i,j] = #{ i -> j in [t - delta[k], t - delta[k-1]) }
  * for k in [0 .. K], where delta[-1] = 0 and delta[K] = Infty.
  */
-extern const struct tvar_type *DYAD_VAR_NSEND;
+extern const struct tvar2_type *DYAD_VAR_NSEND;
 
 //extern const struct tvar_type *RECV_VAR_IRECV2;
 //extern const struct tvar_type *RECV_VAR_NRECV2;
