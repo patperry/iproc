@@ -10,6 +10,10 @@ struct design {
 	struct frame *frame;
 	size_t count;
 
+	size_t ncohort;
+	size_t *cohorts;
+	size_t *cohort_reps;
+
 	struct dmatrix traits;
 	struct var **trait_vars;
 	size_t ntrait, ntrait_max;
@@ -74,6 +78,13 @@ void design_remove_observer(struct design *d, void *udata);
 static inline struct frame *design_frame(const struct design *d);
 static inline size_t design_count(const struct design *d);
 
+/* cohorts */
+static inline size_t design_cohort(const struct design *d, size_t i);
+static inline size_t design_cohort_rep(const struct design *d, size_t c);
+static inline size_t design_cohort_count(const struct design *d);
+static inline void design_get_cohorts(const struct design *d, const size_t **cohortsp, const size_t **repsp, size_t *ncohortp);
+
+
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
 static inline const struct dmatrix *design_traits(const struct design *d);
@@ -121,6 +132,35 @@ struct frame *design_frame(const struct design *d)
 size_t design_count(const struct design *d)
 {
 	return d->count;
+}
+
+
+size_t design_cohort(const struct design *d, size_t i)
+{
+	assert(i < design_count(d));
+	return d->cohorts[i];
+}
+
+
+size_t design_cohort_rep(const struct design *d, size_t c)
+{
+	assert(c < design_cohort_count(d));
+	return d->cohort_reps[c];
+}
+
+
+size_t design_cohort_count(const struct design *d)
+{
+	return d->ncohort;
+}
+
+
+void design_get_cohorts(const struct design *d, const size_t **cohortsp,
+			const size_t **repsp, size_t *ncohortp)
+{
+	*cohortsp = d->cohorts;
+	*repsp = d->cohort_reps;
+	*ncohortp = d->ncohort;
 }
 
 

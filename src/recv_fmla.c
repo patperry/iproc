@@ -7,76 +7,19 @@
 #include "recv_fmla.h"
 
 
-static void recv_fmla_set_cohorts(struct recv_fmla *fmla)
-{
-	const struct frame *f = recv_fmla_frame(fmla);
-	const struct design *s = frame_send_design(f);
-	const struct dmatrix *as = design_traits(s);
-	size_t dims = design_trait_dim(s);
-	size_t nsend = frame_send_count(f);
-	size_t i;
-	
-	struct strata strat;
-	double *buf;
-	
-	strata_init(&strat, dims);
-	buf = xmalloc(dims * sizeof(*buf));	
-
-	for (i = 0; i < nsend; i++) {
-		blas_dcopy(dims, MATRIX_PTR(as, i, 0), as->lda, buf, 1);
-		fmla->cohorts[i] = strata_add(&strat, buf);
-	}
-	fmla->ncohort = strata_count(&strat);
-	
-	free(buf);
-	strata_deinit(&strat);
-	
-	size_t ic, nc = fmla->ncohort;
-	
-	fmla->cohort_reps = xmalloc(nc * sizeof(*fmla->cohort_reps));	
-	
-#ifndef NDEBUG
-	/* initialize all cohort_reps to invalid values */
-	for (ic = 0; ic < nc; ic++) {
-		fmla->cohort_reps[ic] = nsend;
-	}
-#endif
-
-	for (i = nsend; i > 0; i--) {
-		size_t isend = i - 1;
-		ic = fmla->cohorts[isend];
-		fmla->cohort_reps[ic] = isend;
-	}
-	
-#ifndef NDEBUG
-	/* ensure all cohorts have reps */
-	for (ic = 0; ic < nc; ic++) {
-		assert(fmla->cohort_reps[ic] != nsend);
-	}
-#endif
-}
-
-
-
 void recv_fmla_init(struct recv_fmla *fmla, const struct frame *f)
 {
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
-	size_t nsend = frame_send_count(f);
 	fmla->frame = (struct frame *)f;
 	fmla->trait_dim = design_trait_dim(r) + design2_trait_dim(d);
 	fmla->tvar_dim = design_tvar_dim(r) + design2_tvar_dim(d);
-	fmla->cohorts = xmalloc(nsend * sizeof(*fmla->cohorts));
-	fmla->ncohort = 0;
-	
-	recv_fmla_set_cohorts(fmla);
 }
 
 
 void recv_fmla_deinit(struct recv_fmla *fmla)
 {
-	free(fmla->cohort_reps);
-	free(fmla->cohorts);
+	(void)fmla;
 }
 
 

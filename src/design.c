@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "coreutil.h"
+#include "strata.h"
 #include "util.h"
 #include "xalloc.h"
 
@@ -46,6 +47,11 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->frame = f;
 	d->count= count;
 
+	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
+	d->cohort_reps = xmalloc(count * sizeof(*d->cohort_reps));
+	d->cohort_reps[0] = 0;
+	d->ncohort = 1;	
+	
 	d->traits.data = NULL;
 	d->traits.lda = MAX(1, count);
 	d->trait_vars = NULL;
@@ -92,6 +98,8 @@ void design_deinit(struct design *d)
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
 	free(d->traits.data);
+	free(d->cohort_reps);	
+	free(d->cohorts);
 }
 
 
@@ -155,7 +163,37 @@ const char *design_trait_name(const struct design *d, size_t j)
 }
 
 
-const struct var *design_add_trait(struct design *d, const char *name, const double *x)
+static void design_recompute_cohorts(struct design *d)
+{
+	const struct dmatrix *a = design_traits(d);
+	size_t dim = design_trait_dim(d);
+	size_t n = design_count(d);
+	size_t i, c;
+	
+	struct strata strat;
+	double *buf;
+	
+	strata_init(&strat, dim);
+	buf = xmalloc(dim * sizeof(*buf));	
+
+	d->ncohort = 0;
+	for (i = 0; i < n; i++) {
+		blas_dcopy(dim, MATRIX_PTR(a, i, 0), a->lda, buf, 1);
+		c = strata_add(&strat, buf);
+
+		d->cohorts[i] = c;
+		
+		if (c == d->ncohort) {
+			d->cohort_reps[c] = i;
+			d->ncohort++;
+		}
+	}
+	
+	free(buf);
+	strata_deinit(&strat);
+}
+
+static const struct var *design_add_trait_unsafe(struct design *d, const char *name, const double *x)
 {
 	size_t ntrait = d->ntrait;
 	struct var *v = xmalloc(sizeof(*v));
@@ -177,14 +215,23 @@ const struct var *design_add_trait(struct design *d, const char *name, const dou
 }
 
 
+const struct var *design_add_trait(struct design *d, const char *name, const double *x)
+{
+	const struct var *v = design_add_trait_unsafe(d, name, x);
+	design_recompute_cohorts(d);
+	return v;
+}
+
+
 void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x)
 {
 	design_traits_grow(d, ntrait);
 	
 	size_t i;
 	for (i = 0; i < ntrait; i++) {
-		design_add_trait(d, names[i], MATRIX_COL(x, i));
+		design_add_trait_unsafe(d, names[i], MATRIX_COL(x, i));
 	}
+	design_recompute_cohorts(d);
 }
 
 

@@ -7,9 +7,6 @@ struct recv_fmla {
 	struct frame *frame;
 	size_t trait_dim;
 	size_t tvar_dim;
-	size_t ncohort;
-	size_t *cohorts;
-	size_t *cohort_reps;
 };
 
 struct recv_coefs {
@@ -123,29 +120,25 @@ size_t recv_fmla_tvar_dim(const struct recv_fmla *fmla)
 
 size_t recv_fmla_cohort(const struct recv_fmla *fmla, size_t isend)
 {
-	assert(isend < frame_recv_count(recv_fmla_frame(fmla)));
-	return fmla->cohorts[isend];
+	return design_cohort(frame_send_design(fmla->frame), isend);
 }
 
 
 size_t recv_fmla_cohort_rep(const struct recv_fmla *fmla, size_t c)
 {
-	assert(c < recv_fmla_cohort_count(fmla));
-	return fmla->cohort_reps[c];
+	return design_cohort_rep(frame_send_design(fmla->frame), c);
 }
 
 
 size_t recv_fmla_cohort_count(const struct recv_fmla *fmla)
 {
-	return fmla->ncohort;
+	return design_cohort_count(frame_send_design(fmla->frame));
 }
 
 
 void recv_fmla_get_cohorts(const struct recv_fmla *fmla, const size_t **cohortsp, const size_t **repsp, size_t *ncohortp)
 {
-	*cohortsp = fmla->cohorts;
-	*repsp = fmla->cohort_reps;
-	*ncohortp = fmla->ncohort;
+	design_get_cohorts(frame_send_design(fmla->frame), cohortsp, repsp, ncohortp);
 }
 
 
