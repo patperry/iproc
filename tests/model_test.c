@@ -28,7 +28,6 @@ static struct dmatrix traits;
 static const char * const *trait_names;
 static struct messages messages;
 static struct frame frame;
-static struct recv_fmla fmla;
 static struct recv_coefs coefs;
 static struct recv_model model;
 
@@ -63,34 +62,24 @@ static void basic_setup()
 	
 	struct design2 *d = frame_dyad_design(&frame);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	
-	recv_fmla_init(&fmla, &frame);
-	recv_coefs_init(&coefs, &fmla);
+	recv_coefs_init(&coefs, &frame);
 	
 	
-	for (i = 0; i < recv_fmla_trait_dim(&fmla); i++) {
+	for (i = 0; i < coefs.dim; i++) {
 		double val = (i % 5 == 0 ? -2.0 :
 			      i % 5 == 1 ?  1.0 :
 			      i % 5 == 2 ? -1.0 :
 			      i % 5 == 3 ?  2.0 : 0.0);
-		coefs.traits[i] = val;
-	}
-	for (i = 0; i < recv_fmla_tvar_dim(&fmla); i++) {
-		double val = (i % 5 == 0 ? -2.0 :
-			      i % 5 == 1 ?  1.0 :
-			      i % 5 == 2 ? -1.0 :
-			      i % 5 == 3 ?  2.0 : 0.0);
-		coefs.tvars[i] = val;
+		coefs.all[i] = val;
 	}
 
-	recv_model_init(&model, &fmla, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 }
 
 static void teardown()
 {
 	recv_model_deinit(&model);
 	recv_coefs_deinit(&coefs);
-	recv_fmla_deinit(&fmla);
 	frame_deinit(&frame);
 }
 
@@ -109,39 +98,31 @@ static void hard_setup()
 	struct design2 *d = frame_dyad_design(&frame);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	
-	recv_fmla_init(&fmla, &frame);
-	recv_coefs_init(&coefs, &fmla);
+	recv_coefs_init(&coefs, &frame);
 	
-	for (i = 0; i < recv_fmla_trait_dim(&fmla); i++) {
+	for (i = 0; i < coefs.dim; i++) {
 		double val = (i % 5 == 0 ? -2.0 :
 			      i % 5 == 1 ?  1.0 :
 			      i % 5 == 2 ? -1.0 :
 			      i % 5 == 3 ?  2.0 : 0.0);
-		coefs.traits[i] = val;
-	}
-	for (i = 0; i < recv_fmla_tvar_dim(&fmla); i++) {
-		double val = (i % 5 == 0 ? -10 :
-			      i % 5 == 1 ? 0.3 :
-			      i % 5 == 2 ? +10 :
-			      i % 5 == 3 ? 0.1 : 0.0);
-		coefs.tvars[i] = val;
+		coefs.all[i] = val;
 	}
 	
-	recv_model_init(&model, &fmla, &coefs);
+	recv_model_init(&model, &frame, &coefs);
 }
 
 
 static void test_probs()
 {
+	struct design *r = frame_recv_design(&frame);
+	struct design2 *d = frame_dyad_design(&frame);
+
 	double *eta, *probs, *logprobs, *y;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
 	size_t isend, jrecv, nrecv;
 	size_t i, n;
-	struct recv_frame rf;
-	
-	recv_frame_init(&rf, &fmla);
 	
 	nrecv = frame_recv_count(&frame);
 	eta = xmalloc(nrecv * sizeof(double));
@@ -155,7 +136,7 @@ static void test_probs()
 	size_t minprec = DBL_MANT_DIG;
 	
 	MESSAGES_FOREACH(it, &messages) {
-		fprintf(stderr, "."); fflush(stderr);
+		//fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
 		frame_advance(&frame, t);			
@@ -164,7 +145,8 @@ static void test_probs()
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
 			isend = msg->from;
-			recv_frame_mul(1.0, &rf, isend, &coefs, 0.0, eta);
+			design_mul(1.0, r, &coefs.recv, 0.0, eta);
+			design2_mul(1.0, d, isend, &coefs.dyad, 1.0, eta);
 			
 			if (!frame_has_loops(&frame))
 				eta[isend] = -INFINITY;
