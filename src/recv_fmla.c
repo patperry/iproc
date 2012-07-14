@@ -115,45 +115,29 @@ static struct design_callbacks recv_frame_recv_design_callbacks = {
 };
 
 
-static void recv_frame_dyad_design_update(void *udata, struct design2 *d,  const struct var2 *v, size_t i, size_t j, const double *delta, const struct vpattern *pat)
+static void recv_frame_dyad_design_update(void *udata, struct design2 *d,
+					  size_t i, size_t j,
+					  const double *delta,
+					  const struct vpattern *pat)
 {
 	struct recv_frame *rf = udata;
 	
 	if (!rf->nobs)
 		return;
-	
-	const struct recv_fmla *fmla = recv_frame_fmla(rf);
-	const struct frame *f = recv_fmla_frame(fmla);
-	const struct design *r = frame_recv_design(f);
-	
-	size_t off = design_tvar_dim(r) + v->index;
-	size_t iz, nz;
-	
-	if (pat) {
-		nz = pat->nz;
-		for (iz = 0; iz < nz; iz++) {
-			rf->pat_buf[iz]  = off + pat->indx[iz];
-		}
-	} else {
-		nz = v->dim;
-		for (iz = 0; iz < nz; iz++) {
-			rf->pat_buf[iz] = off + iz;
-		}
-	}
-	
-	struct vpattern my_pat = vpattern_make(rf->pat_buf, nz);
+		
 	size_t iobs, nobs = rf->nobs;
 	for (iobs = 0; iobs < nobs; iobs++) {
 		struct recv_frame_observer *obs = &rf->obs[iobs];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, rf, i, j, delta, &my_pat);
+			obs->callbacks.update(obs->udata, rf, i, j, delta, pat);
 		}
 	}
 }
 
 
 static struct design2_callbacks recv_frame_dyad_design_callbacks = {
-	recv_frame_dyad_design_update
+	recv_frame_dyad_design_update,
+	NULL
 };
 
 

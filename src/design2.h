@@ -17,6 +17,7 @@ struct design2 {
 	size_t tvar_dim;
 	struct tvar2 **tvars;
 	size_t ntvar, ntvar_max;
+	struct vpattern pat_buf;
 	
 	size_t *ir;
 	size_t *jc;
@@ -47,8 +48,10 @@ struct tvar2_type {
 };
 
 struct design2_callbacks {
-	void (*update) (void *udata, struct design2 *d, const struct var2 *v, size_t i, size_t j,
-			const double *delta, const struct vpattern *pat);
+	void (*update) (void *udata, struct design2 *d, size_t i, size_t j,
+			    const double *delta, const struct vpattern *pat);
+	void (*update_var) (void *udata, struct design2 *d, const struct var2 *v, size_t i, size_t j,
+			    const double *delta, const struct vpattern *pat);
 };
 
 struct design2_observer {

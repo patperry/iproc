@@ -59,6 +59,8 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->tvars = NULL;
 	d->ntvar = 0;
 	d->ntvar_max = 0;
+	d->pat_buf.indx = NULL;
+	d->pat_buf.nzmax = 0;
 	
 	d->ir = xcalloc(count1 + 1, sizeof(*d->ir));
 	d->jc = NULL;
@@ -95,6 +97,7 @@ void design2_deinit(struct design2 *d)
 	free(d->dx);
 	free(d->jc);
 	free(d->ir);
+	free(d->pat_buf.indx);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
@@ -253,7 +256,9 @@ const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const s
 	design2_grow_tvars(d, 1);
 	d->tvars[index] = tv;
 	d->tvar_dim += v->dim;
-		
+	d->pat_buf.indx = xrealloc(d->pat_buf.indx, d->tvar_dim * sizeof(*d->pat_buf.indx));
+	d->pat_buf.nzmax = d->tvar_dim;
+	
 	return v;
 }
 
@@ -439,6 +444,40 @@ static double *design2_dx(struct design2 *d, size_t i, size_t j)
 }
 
 
+static void design2_notify_update(struct design2 *d, const struct var2 *v,
+				  size_t i, size_t j, const double *delta,
+				  const struct vpattern *pat)
+{
+	size_t index = v->index;
+	size_t iz;
+	
+	if (!d->nobs)
+		return;
+	
+	if (pat) {
+		for (iz = 0; iz < pat->nz; iz++) {
+			d->pat_buf.indx[iz] = pat->indx[iz] + index;
+		}
+		d->pat_buf.nz = pat->nz;
+	} else {
+		for (iz = 0; iz < v->dim; iz++) {
+			d->pat_buf.indx[iz] = iz + index;
+		}
+		d->pat_buf.nz = v->dim;
+	}
+	
+	size_t io, no = d->nobs;
+	const struct design2_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &d->observers[io];
+		if (obs->callbacks.update) {
+			obs->callbacks.update(obs->udata, d, i, j, delta, &d->pat_buf);
+		}
+	}
+}
+
+
+
 void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j, const double *delta,
 		   const struct vpattern *pat)
 {
@@ -460,10 +499,12 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 	const struct design2_observer *obs;
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
-		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, v, i, j, delta, pat);
+		if (obs->callbacks.update_var) {
+			obs->callbacks.update_var(obs->udata, d, v, i, j, delta, pat);
 		}
 	}
+	
+	design2_notify_update(d, v, i, j, delta, pat);
 }
 
 

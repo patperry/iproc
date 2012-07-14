@@ -515,7 +515,6 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 		}
 	}
 	
-	
 	design_notify_update(d, v, i, delta, pat);
 }
 
