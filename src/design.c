@@ -62,6 +62,8 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->tvars = NULL;
 	d->ntvar = 0;
 	d->ntvar_max = 0;
+	d->pat_buf.indx = NULL;
+	d->pat_buf.nzmax = 0;
 	
 	vpattern_init(&d->active);
 	d->dx = NULL;
@@ -94,6 +96,7 @@ void design_deinit(struct design *d)
 	free(d->observers);
 	free(d->dx);
 	vpattern_deinit(&d->active);
+	free(d->pat_buf.indx);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
@@ -294,6 +297,8 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	design_grow_tvars(d, 1);
 	d->tvars[index] = tv;
 	d->tvar_dim += v->dim;
+	d->pat_buf.indx = xrealloc(d->pat_buf.indx, d->tvar_dim * sizeof(*d->pat_buf.indx));
+	d->pat_buf.nzmax = d->tvar_dim;
 		
 	return v;
 }
@@ -452,6 +457,39 @@ static double *design_dx(struct design *d, size_t i)
 }
 
 
+static void design_notify_update(struct design *d, const struct var *v,
+				 size_t i, const double *delta,
+				 const struct vpattern *pat)
+{
+	size_t index = v->index;
+	size_t iz;
+	
+	if (!d->nobs)
+		return;
+	
+	if (pat) {
+		for (iz = 0; iz < pat->nz; iz++) {
+			d->pat_buf.indx[iz] = pat->indx[iz] + index;
+		}
+		d->pat_buf.nz = pat->nz;
+	} else {
+		for (iz = 0; iz < v->dim; iz++) {
+			d->pat_buf.indx[iz] = iz + index;
+		}
+		d->pat_buf.nz = v->dim;
+	}
+	
+	size_t io, no = d->nobs;
+	const struct design_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &d->observers[io];
+		if (obs->callbacks.update) {
+			obs->callbacks.update(obs->udata, d, i, delta, &d->pat_buf);
+		}
+	}
+}
+
+
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
 		   const struct vpattern *pat)
 {
@@ -472,10 +510,13 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 	const struct design_observer *obs;
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
-		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, v, i, delta, pat);
+		if (obs->callbacks.update_var) {
+			obs->callbacks.update_var(obs->udata, d, v, i, delta, pat);
 		}
 	}
+	
+	
+	design_notify_update(d, v, i, delta, pat);
 }
 
 

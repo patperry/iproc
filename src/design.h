@@ -21,6 +21,7 @@ struct design {
 	size_t tvar_dim;
 	struct tvar **tvars;
 	size_t ntvar, ntvar_max;
+	struct vpattern pat_buf;
 	
 	struct vpattern active;
 	double *dx;	// transpose of dX[t]
@@ -54,8 +55,10 @@ struct tvar_type {
 };
 
 struct design_callbacks {
-	void (*update) (void *udata, struct design *d, const struct var *v, size_t i,
+	void (*update) (void *udata, struct design *d, size_t i,
 			const double *delta, const struct vpattern *pat);
+	void (*update_var) (void *udata, struct design *d, const struct var *v, size_t i,
+			    const double *delta, const struct vpattern *pat);
 };
 
 struct design_observer {

@@ -83,7 +83,7 @@ static struct frame_callbacks recv_frame_frame_callbacks = {
 };
 
 
-static void recv_frame_recv_design_update(void *udata, struct design *d,  const struct var *v, size_t i, const double *delta, const struct vpattern *pat)
+static void recv_frame_recv_design_update(void *udata, struct design *d,  size_t i, const double *delta, const struct vpattern *pat)
 {
 	struct recv_frame *rf = udata;
 	
@@ -94,31 +94,15 @@ static void recv_frame_recv_design_update(void *udata, struct design *d,  const 
 	const struct frame *f = recv_fmla_frame(fmla);
 	size_t isend, nsend = frame_send_count(f);
 	
-	size_t off = v->index;
-	size_t iz, nz;
-	
-	if (pat) {
-		nz = pat->nz;
-		for (iz = 0; iz < nz; iz++) {
-			rf->pat_buf[iz]  = off + pat->indx[iz];
-		}
-	} else {
-		nz = v->dim;
-		for (iz = 0; iz < nz; iz++) {
-			rf->pat_buf[iz] = off + iz;
-		}
-	}
-	
-	struct vpattern my_pat = vpattern_make(rf->pat_buf, nz);
 	size_t iobs, nobs = rf->nobs;
 	for (iobs = 0; iobs < nobs; iobs++) {
 		struct recv_frame_observer *obs = &rf->obs[iobs];
 		if (obs->callbacks.update_all) {
-			obs->callbacks.update_all(obs->udata, rf, i, delta, &my_pat);
+			obs->callbacks.update_all(obs->udata, rf, i, delta, pat);
 		} else if (obs->callbacks.update) {
 			for (isend = 0; isend < nsend; isend++) {
 				/* NOTE: this is really inefficient */
-				obs->callbacks.update(obs->udata, rf, isend, i, delta, &my_pat);
+				obs->callbacks.update(obs->udata, rf, isend, i, delta, pat);
 			}
 		}
 	}
@@ -126,7 +110,8 @@ static void recv_frame_recv_design_update(void *udata, struct design *d,  const 
 
 
 static struct design_callbacks recv_frame_recv_design_callbacks = {
-	recv_frame_recv_design_update
+	recv_frame_recv_design_update,
+	NULL
 };
 
 
