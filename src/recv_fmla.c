@@ -111,6 +111,7 @@ static void recv_frame_recv_design_update(void *udata, struct design *d,  size_t
 
 static struct design_callbacks recv_frame_recv_design_callbacks = {
 	recv_frame_recv_design_update,
+	NULL,
 	NULL
 };
 
@@ -137,6 +138,7 @@ static void recv_frame_dyad_design_update(void *udata, struct design2 *d,
 
 static struct design2_callbacks recv_frame_dyad_design_callbacks = {
 	recv_frame_dyad_design_update,
+	NULL,
 	NULL
 };
 

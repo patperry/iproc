@@ -52,6 +52,7 @@ struct design2_callbacks {
 			    const double *delta, const struct vpattern *pat);
 	void (*update_var) (void *udata, struct design2 *d, const struct var2 *v, size_t i, size_t j,
 			    const double *delta, const struct vpattern *pat);
+	void (*clear) (void *udata, struct design2 *d);
 };
 
 struct design2_observer {

@@ -34,6 +34,15 @@ static void design_frame_clear(void *udata, struct frame *f)
 {
 	struct design *d = udata;
 	design_clear_range(d, 0, design_tvar_dim(d));
+	
+	size_t io, no = d->nobs;
+	const struct design_observer *obs;
+	for (io = 0; io < no; io++) {
+		obs = &d->observers[io];
+		if (obs->callbacks.clear) {
+			obs->callbacks.clear(obs->udata, d);
+		}
+	}
 }
 
 static struct frame_callbacks design_frame_callbacks = {

@@ -725,14 +725,14 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				227870A615B0A68C004B170B /* design2.c */,
-				227870A715B0A68C004B170B /* design2.h */,
 				22BECECA15AC77AA00F630C4 /* recv_model.c */,
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				22BECEC615AB5D0E00F630C4 /* recv_fmla.c */,
 				22BECEC715AB5D0F00F630C4 /* recv_fmla.h */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
+				227870A615B0A68C004B170B /* design2.c */,
+				227870A715B0A68C004B170B /* design2.h */,
 				228D4D5015A4CD0E007DBCCA /* dv-irecv.c */,
 				228D4D5715A62E37007DBCCA /* dv-isend.c */,
 				228D4D5915A6334A007DBCCA /* dv-nrecv.c */,
