@@ -80,6 +80,7 @@ void design2_remove_observer(struct design2 *d, void *udata);
 static inline struct frame *design2_frame(const struct design2 *d);
 static inline size_t design2_count1(const struct design2 *d);
 static inline size_t design2_count2(const struct design2 *d);
+static inline size_t design2_dim(const struct design2 *d);
 const struct var2 *design2_var(const struct design2 *d, const char *name);
 
 /* traits */
@@ -145,6 +146,11 @@ size_t design2_count1(const struct design2 *d)
 size_t design2_count2(const struct design2 *d)
 {
 	return d->count2;
+}
+
+size_t design2_dim(const struct design2 *d)
+{
+	return design2_trait_dim(d) + design2_tvar_dim(d);
 }
 
 size_t design2_trait_dim(const struct design2 *d)
