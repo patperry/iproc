@@ -477,3 +477,46 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 		}
 	}
 }
+
+
+void coefs_init(struct coefs *c, const struct design *d)
+{
+	size_t dim0 = design_trait_dim(d);
+	size_t dim1 = design_tvar_dim(d);
+	size_t dim = dim0 + dim1;
+	
+	c->all = xmalloc(dim * sizeof(*c->all));
+	c->traits = c->all;
+	c->tvars = c->all + dim0;
+	c->dim = dim;
+}
+
+
+void coefs_deinit(struct coefs *c)
+{
+	free(c->all);
+}
+
+
+void design_mul(double alpha, const struct design *d,
+		const struct coefs *c, double beta, double *y)
+{
+	design_traits_mul(alpha, d, c->traits, beta, y);
+	design_tvars_mul(alpha, d, c->tvars, 1.0, y);
+}
+
+
+void design_tmul(double alpha, const struct design *d, const double *x,
+		 double beta, struct coefs *c)
+{
+	design_traits_tmul(alpha, d, x, beta, c->traits);
+	design_tvars_tmul(alpha, d, x, beta, c->tvars);
+}
+
+
+void design_axpy(double alpha, const struct design *d, size_t i, struct coefs *c)
+{
+	design_traits_axpy(alpha, d, i, c->traits);
+	design_tvars_axpy(alpha, d, i, c->tvars);
+}
+

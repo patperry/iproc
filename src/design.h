@@ -63,7 +63,12 @@ struct design_observer {
 	struct design_callbacks callbacks;
 };
 
-
+struct coefs {
+	double *all;
+	double *traits; /* points into all */
+	double *tvars;  /* points into all */
+	size_t dim;
+};
 
 
 void design_init(struct design *d, struct frame *f, size_t count);
@@ -77,12 +82,16 @@ void design_remove_observer(struct design *d, void *udata);
 /* properties */
 static inline struct frame *design_frame(const struct design *d);
 static inline size_t design_count(const struct design *d);
+const struct var *design_var(const struct design *d, const char *name);
+
 
 /* cohorts */
 static inline size_t design_cohort(const struct design *d, size_t i);
 static inline size_t design_cohort_rep(const struct design *d, size_t c);
 static inline size_t design_cohort_count(const struct design *d);
-static inline void design_get_cohorts(const struct design *d, const size_t **cohortsp, const size_t **repsp, size_t *ncohortp);
+static inline void design_get_cohorts(const struct design *d,
+				      const size_t **cohortsp,
+				      const size_t **repsp, size_t *ncohortp);
 
 
 /* traits */
@@ -91,6 +100,12 @@ static inline const struct dmatrix *design_traits(const struct design *d);
 const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x);
 void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
+
+void design_traits_mul(double alpha, const struct design *d,
+		       const double *x, double beta, double *y);
+void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
+void design_traits_axpy(double alpha, const struct design *d, size_t i, double *y);
+
 
 /* tvars */
 static inline size_t design_tvar_dim(const struct design *d);
@@ -102,24 +117,25 @@ static inline void design_tvars_get(const struct design *d, const double **dxp, 
 void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip);
 void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip);
 
-const struct var *design_var(const struct design *d, const char *name);
-
-
-void design_traits_mul(double alpha, const struct design *d,
-		     const double *x, double beta, double *y);
-void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
-void design_traits_axpy(double alpha, const struct design *d, size_t i, double *y);
-
 void design_tvars_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y);
 void design_tvars_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
 void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y);
 
 
+/* coefs */
+void coefs_init(struct coefs *c, const struct design *d);
+void coefs_deinit(struct coefs *c);
+
+void design_mul(double alpha, const struct design *d,
+		const struct coefs *c, double beta, double *y);
+void design_tmul(double alpha, const struct design *d, const double *x, double beta, struct coefs *c);
+void design_axpy(double alpha, const struct design *d, size_t i, struct coefs *c);
+
+
 /* internal functions (for use by tvar callbacks) */
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
 		   const struct vpattern *pat);
-
 
 
 /* inline function definitions */
