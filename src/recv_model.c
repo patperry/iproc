@@ -16,6 +16,42 @@
 #include "recv_model.h"
 
 
+void recv_coefs_init(struct recv_coefs *c, const struct frame *f)
+{
+	const struct design *r = frame_recv_design(f);
+	const struct design2 *d = frame_dyad_design(f);
+	size_t dimr0 = design_trait_dim(r);
+	size_t dimr1 = design_tvar_dim(r);
+	size_t dimr = dimr0 + dimr1;	
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dimd1 = design2_tvar_dim(d);
+	size_t dimd = dimd0 + dimd1;
+	size_t dim = dimr + dimd;
+	double *all = xmalloc(dim * sizeof(*all));
+	double *allr = all;
+	double *alld = allr + dimr;
+	
+	c->all = all;
+	c->dim = dim;
+	
+	c->recv.all = allr;
+	c->recv.dim = dimr;
+	c->recv.traits = allr;
+	c->recv.tvars = allr + dimr0;
+	
+	c->dyad.all = alld;
+	c->dyad.dim = dimd;
+	c->dyad.traits = alld;
+	c->dyad.tvars = alld + dimd0;
+}
+
+
+void recv_coefs_deinit(struct recv_coefs *c)
+{
+	free(c->all);
+}
+
+
 static void
 compute_weight_changes(struct recv_model_sender *sm,
 		       const struct recv_model_cohort *cm,
@@ -467,21 +503,17 @@ void recv_model_init(struct recv_model *model,
 	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
 	const struct design *s = frame_send_design(f);
-	const struct design *r = frame_recv_design(f);
 	struct design2 *d = frame_dyad_design(f);
 	const size_t nsend = frame_send_count(f);
 
 	model->frame = f;
 
-	coefs_init(&model->coefs.recv, r);
-	coefs2_init(&model->coefs.dyad, d);
+	recv_coefs_init(&model->coefs, f);
 	
 	if (coefs) {
-		memcpy(model->coefs.recv.all, coefs->recv.all, model->coefs.recv.dim * sizeof(double));
-		memcpy(model->coefs.dyad.all, coefs->dyad.all, model->coefs.dyad.dim * sizeof(double));
+		memcpy(model->coefs.all, coefs->all, model->coefs.dim * sizeof(*model->coefs.all));
 	} else {
-		memset(model->coefs.recv.all, 0, model->coefs.recv.dim * sizeof(double));
-		memset(model->coefs.dyad.all, 0, model->coefs.dyad.dim * sizeof(double));
+		memset(model->coefs.all, 0, model->coefs.dim * sizeof(*model->coefs.all));		
 	}
 
 	size_t nc = design_cohort_count(s);
@@ -530,8 +562,7 @@ void recv_model_deinit(struct recv_model *model)
 	}
 	free(cms);
 
-	coefs2_deinit(&model->coefs.dyad);
-	coefs_deinit(&model->coefs.recv);
+	recv_coefs_deinit(&model->coefs);
 }
 
 struct frame *recv_model_frame(const struct recv_model *model)
@@ -635,11 +666,9 @@ void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs)
 	size_t nc = recv_model_cohort_count(m);
 
 	if (coefs) {
-		memcpy(m->coefs.recv.all, coefs->recv.all, m->coefs.recv.dim * sizeof(double));
-		memcpy(m->coefs.dyad.all, coefs->dyad.all, m->coefs.dyad.dim * sizeof(double));
+		memcpy(m->coefs.all, coefs->all, m->coefs.dim * sizeof(*m->coefs.all));
 	} else {
-		memset(m->coefs.recv.all, 0, m->coefs.recv.dim * sizeof(double));
-		memset(m->coefs.dyad.all, 0, m->coefs.dyad.dim * sizeof(double));
+		memset(m->coefs.all, 0, m->coefs.dim * sizeof(*m->coefs.all));		
 	}
 
 	size_t ic;

@@ -111,6 +111,8 @@
  */
 
 struct recv_coefs {
+	double *all;
+	size_t dim;
 	struct coefs recv;
 	struct coefs2 dyad;
 };
@@ -146,6 +148,9 @@ struct recv_model {
 	struct recv_model_sender *sender_models;
 };
 
+
+void recv_coefs_init(struct recv_coefs *c, const struct frame *f);
+void recv_coefs_deinit(struct recv_coefs *c);
 
 void recv_model_init(struct recv_model *model,
 		     struct frame *f,
