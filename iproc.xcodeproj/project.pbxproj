@@ -119,8 +119,6 @@
 		228D4D5C15A6362D007DBCCA /* dv-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5B15A6362D007DBCCA /* dv-nsend.c */; };
 		22BECEBF15AA05BD00F630C4 /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECEBD15AA05BD00F630C4 /* util.c */; };
 		22BECEC015AA05BD00F630C4 /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEBE15AA05BD00F630C4 /* util.h */; };
-		22BECEC815AB5D0F00F630C4 /* recv_fmla.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECEC615AB5D0E00F630C4 /* recv_fmla.c */; };
-		22BECEC915AB5D0F00F630C4 /* recv_fmla.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEC715AB5D0F00F630C4 /* recv_fmla.h */; };
 		22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECECA15AC77AA00F630C4 /* recv_model.c */; };
 		22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECECB15AC77AA00F630C4 /* recv_model.h */; };
 		22D2DDBB136A5E760048244C /* employees.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DDAB136A58010048244C /* employees.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
@@ -520,8 +518,6 @@
 		228D4D5B15A6362D007DBCCA /* dv-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nsend.c"; path = "src/dv-nsend.c"; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
 		22BECEBE15AA05BD00F630C4 /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = util.h; path = lib/util.h; sourceTree = "<group>"; };
-		22BECEC615AB5D0E00F630C4 /* recv_fmla.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_fmla.c; path = src/recv_fmla.c; sourceTree = "<group>"; };
-		22BECEC715AB5D0F00F630C4 /* recv_fmla.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_fmla.h; path = src/recv_fmla.h; sourceTree = "<group>"; };
 		22BECECA15AC77AA00F630C4 /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = src/recv_model.c; sourceTree = "<group>"; };
 		22BECECB15AC77AA00F630C4 /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = src/recv_model.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -727,8 +723,6 @@
 			children = (
 				22BECECA15AC77AA00F630C4 /* recv_model.c */,
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
-				22BECEC615AB5D0E00F630C4 /* recv_fmla.c */,
-				22BECEC715AB5D0F00F630C4 /* recv_fmla.h */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
 				227870A615B0A68C004B170B /* design2.c */,
@@ -954,7 +948,6 @@
 				22602688146B38EE00BA6347 /* port.h in Headers */,
 				228D4D5615A4CD5F007DBCCA /* history.h in Headers */,
 				22BECEC015AA05BD00F630C4 /* util.h in Headers */,
-				22BECEC915AB5D0F00F630C4 /* recv_fmla.h in Headers */,
 				22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */,
 				227870A915B0A68C004B170B /* design2.h in Headers */,
 			);
@@ -1344,7 +1337,6 @@
 				228D4D5A15A6334B007DBCCA /* dv-nrecv.c in Sources */,
 				228D4D5C15A6362D007DBCCA /* dv-nsend.c in Sources */,
 				22BECEBF15AA05BD00F630C4 /* util.c in Sources */,
-				22BECEC815AB5D0F00F630C4 /* recv_fmla.c in Sources */,
 				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
 				227870A815B0A68C004B170B /* design2.c in Sources */,
 			);
