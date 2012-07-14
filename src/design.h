@@ -86,6 +86,7 @@ void design_remove_observer(struct design *d, void *udata);
 /* properties */
 static inline struct frame *design_frame(const struct design *d);
 static inline size_t design_count(const struct design *d);
+static inline size_t design_dim(const struct design *d);
 const struct var *design_var(const struct design *d, const char *name);
 
 
@@ -152,6 +153,12 @@ struct frame *design_frame(const struct design *d)
 size_t design_count(const struct design *d)
 {
 	return d->count;
+}
+
+
+size_t design_dim(const struct design *d)
+{
+	return design_trait_dim(d) + design_tvar_dim(d);
 }
 
 
