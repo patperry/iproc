@@ -255,9 +255,9 @@ check_CPPFLAGS = \
 
 check_PROGRAMS = # empty
 
-#check_PROGRAMS += tests/design_test
-#tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
-#tests_design_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/design_test
+tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_design_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/frame_test
 tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
