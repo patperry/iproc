@@ -45,6 +45,8 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
+	src/mlogit.c \
+	src/mlogit.h \
 	src/recv_model.c \
 	src/recv_model.h \
 	src/strata.c \
@@ -228,7 +230,12 @@ check_LIBRARIES = \
 
 tests_libcmockery_a_SOURCES = \
 	tests/cmockery/cmockery.c \
-	tests/cmockery/cmockery.h
+	tests/cmockery/cmockery.h \
+	tests/testutil.c \
+	tests/testutil.h
+
+tests_libcmockery_a_LIBADD = \
+	libcore.a
 
 tests_libcmockery_a_CPPFLAGS = \
 	-I./tests/cmockery \
@@ -255,17 +262,21 @@ check_CPPFLAGS = \
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/design_test
-tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_design_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/mlogit_test
+tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_mlogit_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/frame_test
-tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_frame_test_LDADD    = $(check_LDADD)
+## check_PROGRAMS += tests/design_test
+## tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+## tests_design_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/model_test
-tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_model_test_LDADD    = $(check_LDADD)
+## check_PROGRAMS += tests/frame_test
+## tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
+## tests_frame_test_LDADD    = $(check_LDADD)
+
+## check_PROGRAMS += tests/model_test
+## tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
+## tests_model_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/recv_loglik_test
 #tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)

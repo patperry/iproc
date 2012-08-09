@@ -31,5 +31,6 @@
 /tests/design_test
 /tests/enronfit
 /tests/frame_test
+/tests/mlogit_test
 /tests/model_test
 /tests/recv_loglik_test

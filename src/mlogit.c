@@ -8,6 +8,35 @@
 #include "xalloc.h"
 #include "mlogit.h"
 
+
+
+void mlogit_init(struct mlogit *m, size_t ncat)
+{
+	m->ncat = ncat;
+	
+	m->eta = xcalloc(ncat, sizeof(*m->eta));
+	m->eta_order = xmalloc(ncat * sizeof(*m->eta_order));
+	m->eta_rank = xmalloc(ncat * sizeof(*m->eta_rank));
+	
+}
+
+
+void mlogit_deinit(struct mlogit *m)
+{
+	free(m->eta_rank);
+	free(m->eta_order);
+	free(m->eta);
+}
+
+void mlogit_set_all_eta(struct mlogit *m, const double *eta)
+{
+	size_t n = mlogit_ncat(m);
+	memcpy(m->eta, eta, n * sizeof(*m->eta));
+}
+
+
+#if 0
+
 static int pdouble_rcompar(const void *x, const void *y)
 {
 	return double_rcompare(*(const double **)x, *(const double **)y);
@@ -16,7 +45,7 @@ static int pdouble_rcompar(const void *x, const void *y)
 
 static void sort_eta(struct mlogit *m)
 {
-	size_t i, n = m->n;
+	size_t i, n = m->ncat;
 	const double *eta = m->eta;
 	const double **peta = xmalloc(n * sizeof(*peta));
 	size_t *restrict order = m->eta_order;
@@ -47,7 +76,7 @@ static void compute_eta_tail(struct mlogit *m)
 	double eta_max = m->eta[root];
 	double eta_tail1 = 0;
 	
-	size_t i, n = m->n;
+	size_t i, n = m->ncat;
 	
 	assert(n > 0);
 	for (i = n - 1; i > 0; i--) {
@@ -58,34 +87,18 @@ static void compute_eta_tail(struct mlogit *m)
 }
 
 
-void mlogit_init(struct mlogit *m, size_t n, const double *eta0)
+void mlogit_set_all_eta(struct mlogit *m, const double *eta)
 {
-	assert(n > 0);
-
-	m->n = n;
 	
-	m->eta = xmalloc(n * sizeof(*m->eta));
-	m->eta_order = xmalloc(n * sizeof(*m->eta_order));
-	m->eta_rank = xmalloc(n * sizeof(*m->eta_rank));
-	
-	memcpy(m->eta, eta0, n * sizeof(*m->eta));
 	
 	sort_eta(m);
 	m->eta_max = m->eta[m->eta_order[0]];
 	compute_eta_tail(m);
 	m->phi = log1p(m->eta_tail);
-		
+	
 	m->eta0 = 0;
 	m->deta = 0;
 	m->expm1_deta = 0;
-}
-
-
-void mlogit_deinit(struct mlogit *m)
-{
-	free(m->eta_rank);
-	free(m->eta_order);
-	free(m->eta);
 }
 
 
@@ -238,5 +251,7 @@ void mlogit_mean_update(struct mlogit_mean *m, const struct mlogit *mlogit,
 	
 	blas_daxpy(n, exp(eta0 - eta_max - phi), buf, 1, m->mean, 1);
 }
+
+#endif
 
 
