@@ -25,6 +25,7 @@ AC_HEADER_ASSERT
 # Checks for typedefs, structures, and compiler characteristics
 AC_C_BIGENDIAN
 AC_C_INLINE
+AC_C_RESTRICT
 AC_TYPE_INTPTR_T
 
 # Checks for library functions

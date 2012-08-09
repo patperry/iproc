@@ -14,21 +14,19 @@ struct mlogit {
 
 	double eta_max;
 	double eta_tail; // \sum_{ i != i_max } exp{ eta(i) - eta_max }
-	double phi; /* shifted CGF: log[ \sum_i exp{ eta(i) - eta_max } ] */
-
-	// last update
-	double eta0;
-	double deta;
-	double expm1_deta;
+	double phi_shift; /* shifted CGF: log[ \sum_i exp{ eta(i) - eta_max } ] */
 };
 
 
 void mlogit_init(struct mlogit *m, size_t ncat);
 void mlogit_deinit(struct mlogit *m);
+void mlogit_clear(struct mlogit *m);
 
 static inline size_t mlogit_ncat(const struct mlogit *m);
 
 static inline double mlogit_eta(const struct mlogit *m, size_t i);
+static inline double mlogit_phi(const struct mlogit *m);
+
 void mlogit_set_eta(struct mlogit *m);
 void mlogit_set_all_eta(struct mlogit *m, const double *eta);
 
@@ -44,6 +42,10 @@ double mlogit_eta(const struct mlogit *m, size_t i)
 	return m->eta[i];
 }
 
+double mlogit_phi(const struct mlogit *m)
+{
+	return m->eta_max + m->phi_shift;
+}
 
 /*
  

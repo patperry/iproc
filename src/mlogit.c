@@ -8,18 +8,36 @@
 #include "xalloc.h"
 #include "mlogit.h"
 
+static int pdouble_rcompar(const void *x, const void *y);
+static void sort_eta(struct mlogit *m);
+static void set_eta_tail(struct mlogit *m);
 
 
 void mlogit_init(struct mlogit *m, size_t ncat)
 {
 	m->ncat = ncat;
 	
-	m->eta = xcalloc(ncat, sizeof(*m->eta));
+	m->eta = xmalloc(ncat * sizeof(*m->eta));
 	m->eta_order = xmalloc(ncat * sizeof(*m->eta_order));
 	m->eta_rank = xmalloc(ncat * sizeof(*m->eta_rank));
 	
+	mlogit_clear(m);
 }
 
+void mlogit_clear(struct mlogit *m)
+{
+	size_t i, n = m->ncat;
+	memset(m->eta, 0, n * sizeof(*m->eta));
+	
+	for (i = 0; i < n; i++) {
+		m->eta_order[i] = i;
+		m->eta_rank[i] = i;
+	}
+	
+	m->eta_max = 0;
+	m->eta_tail = n == 0 ? NAN : n - 1;
+	m->phi_shift = log(n);
+}
 
 void mlogit_deinit(struct mlogit *m)
 {
@@ -31,20 +49,36 @@ void mlogit_deinit(struct mlogit *m)
 void mlogit_set_all_eta(struct mlogit *m, const double *eta)
 {
 	size_t n = mlogit_ncat(m);
+
+#ifndef NDEBUG
+	size_t i;
+	for (i = 0; i < n; i++) {
+		assert(!isnan(eta[i]));
+	}
+#endif
+
 	memcpy(m->eta, eta, n * sizeof(*m->eta));
+	
+	
+	sort_eta(m);
+	set_eta_tail(m);
+	m->phi_shift = log1p(m->eta_tail);
 }
 
 
-#if 0
 
-static int pdouble_rcompar(const void *x, const void *y)
+
+int pdouble_rcompar(const void *x, const void *y)
 {
 	return double_rcompare(*(const double **)x, *(const double **)y);
 }
 
 
-static void sort_eta(struct mlogit *m)
+void sort_eta(struct mlogit *m)
 {
+	if (m->ncat == 0)
+		return;
+
 	size_t i, n = m->ncat;
 	const double *eta = m->eta;
 	const double **peta = xmalloc(n * sizeof(*peta));
@@ -65,15 +99,19 @@ static void sort_eta(struct mlogit *m)
 		rank[order[i]] = i;
 	}
 	
+	m->eta_max = m->eta[order[0]];
+	
 	free(peta);
 }
 
 
-static void compute_eta_tail(struct mlogit *m)
+void set_eta_tail(struct mlogit *m)
 {
+	if (m->ncat == 0)
+		return;
+
 	size_t *order = m->eta_order;
-	size_t root = order[0];
-	double eta_max = m->eta[root];
+	double eta_max = m->eta_max;
 	double eta_tail1 = 0;
 	
 	size_t i, n = m->ncat;
@@ -86,20 +124,7 @@ static void compute_eta_tail(struct mlogit *m)
 	m->eta_tail = eta_tail1;
 }
 
-
-void mlogit_set_all_eta(struct mlogit *m, const double *eta)
-{
-	
-	
-	sort_eta(m);
-	m->eta_max = m->eta[m->eta_order[0]];
-	compute_eta_tail(m);
-	m->phi = log1p(m->eta_tail);
-	
-	m->eta0 = 0;
-	m->deta = 0;
-	m->expm1_deta = 0;
-}
+#if 0
 
 
 #define IS_ROOT(i) (rank[i] == 0)
