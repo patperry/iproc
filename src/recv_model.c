@@ -452,7 +452,8 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 	double dw = (w1 - w) / W;
 	double gamma1 = gamma / (1.0 + dw);
 	double log_W1 = log_W + log1p(dw);
-	double W1 = W * dw + W;
+	//double W1 = W * dw + W;
+	double W1 = W + (w1 - w);
 
 	//if (isend == 119) {
 	//      printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
@@ -460,10 +461,11 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 
 	/* for dramatic changes in the weight sums, we recompute everything */
 	if (!(fabs(dw) <= 0.5)) {
-		/* Recompute the diffs when there is overflow */
-		//fprintf(stderr, "."); fflush(stderr);
+		// Recompute the diffs when there is overflow
+		//fprintf(stderr, "!"); fflush(stderr);
 		sender_set(m, send, isend, f, &m->coefs);
 	} else {
+		//fprintf(stderr, "."); fflush(stderr);
 		send->gamma = gamma1;
 		send->log_W = log_W1;
 		send->W = W1;
