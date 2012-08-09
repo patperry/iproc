@@ -86,6 +86,8 @@
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223BFE4813AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
 		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
+		226515AF15B200E600F97C65 /* mlogit.c in Sources */ = {isa = PBXBuildFile; fileRef = 226515AD15B200E600F97C65 /* mlogit.c */; };
+		226515B015B200E600F97C65 /* mlogit.h in Headers */ = {isa = PBXBuildFile; fileRef = 226515AE15B200E600F97C65 /* mlogit.h */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
 		2267890E134CD5B3001309F5 /* cmockery.h in Headers */ = {isa = PBXBuildFile; fileRef = 2267890C134CD5B3001309F5 /* cmockery.h */; };
 		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
@@ -482,6 +484,8 @@
 		225ECDB013B00E4100E20D8F /* s_cmp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_cmp.c; path = lib/libf2c/s_cmp.c; sourceTree = "<group>"; };
 		225ECDB113B00E4100E20D8F /* s_copy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = s_copy.c; path = lib/libf2c/s_copy.c; sourceTree = "<group>"; };
 		22602687146B38EE00BA6347 /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = lib/port.h; sourceTree = "<group>"; };
+		226515AD15B200E600F97C65 /* mlogit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit.c; path = src/mlogit.c; sourceTree = "<group>"; };
+		226515AE15B200E600F97C65 /* mlogit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mlogit.h; path = src/mlogit.h; sourceTree = "<group>"; };
 		22678906134CD584001309F5 /* libcmockery.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcmockery.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267890B134CD5B3001309F5 /* cmockery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmockery.c; path = tests/cmockery/cmockery.c; sourceTree = "<group>"; };
 		2267890C134CD5B3001309F5 /* cmockery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmockery.h; path = tests/cmockery/cmockery.h; sourceTree = "<group>"; };
@@ -721,6 +725,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				226515AD15B200E600F97C65 /* mlogit.c */,
+				226515AE15B200E600F97C65 /* mlogit.h */,
 				22BECECA15AC77AA00F630C4 /* recv_model.c */,
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				22597408133D0AFB0022B52E /* design.c */,
@@ -950,6 +956,7 @@
 				22BECEC015AA05BD00F630C4 /* util.h in Headers */,
 				22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */,
 				227870A915B0A68C004B170B /* design2.h in Headers */,
+				226515B015B200E600F97C65 /* mlogit.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1339,6 +1346,7 @@
 				22BECEBF15AA05BD00F630C4 /* util.c in Sources */,
 				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
 				227870A815B0A68C004B170B /* design2.c in Sources */,
+				226515AF15B200E600F97C65 /* mlogit.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

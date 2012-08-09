@@ -100,10 +100,10 @@ compute_weight_changes(struct recv_model_sender *sm,
 		}
 
 		if (found_max) {
-			sm->W = W + 1;
+			//sm->W = W + 1;
 			sm->log_W = log1p(W);
 		} else {
-			sm->W = W;
+			//sm->W = W;
 			sm->log_W = log(W);
 		}
 
@@ -113,7 +113,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 
 	// accurate:
 	{
-		//fprintf(stderr, "!"); fflush(stderr);
+		fprintf(stderr, "!"); fflush(stderr);
 		/* compute the new max_eta */
 		ia = 0;
 		if (shrink && sm->scale == max_eta0) {
@@ -153,7 +153,7 @@ compute_weight_changes(struct recv_model_sender *sm,
 			logsumexp_insert(&lse, eta_j - sm->scale);
 		}
 		sm->log_W = logsumexp_value(&lse);
-		sm->W = exp(sm->log_W);
+		//sm->W = exp(sm->log_W);
 	}
 
 out:
@@ -226,11 +226,11 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
  
 #ifndef NDEBUG
 	/* W0 */
-	cm->W0 = exp(cm->log_W0 + cm->max_eta0);
+	//cm->W0 = exp(cm->log_W0 + cm->max_eta0);
 
 	/* w0 */
 	blas_dcopy(nreceiver, cm->p0, 1, cm->w0, 1);
-	blas_dscal(nreceiver, cm->W0, cm->w0, 1);
+	blas_dscal(nreceiver, exp(cm->log_W0), cm->w0, 1);
 #endif
 }
 
@@ -286,7 +286,7 @@ static void sender_clear(const struct recv_model *m,
 	const struct recv_model_cohort *cm = &m->cohort_models[c];
 	double max_eta0 = cm->max_eta0;
 	double log_W0 = cm->log_W0;
-	double W0 = cm->W0;
+	//double W0 = cm->W0;
 
 	vpattern_clear(&send->active);
 
@@ -295,7 +295,7 @@ static void sender_clear(const struct recv_model *m,
 		send->gamma = 1.0;
 		send->scale = max_eta0;
 		send->log_W = log_W0;
-		send->W = W0;
+		//send->W = W0;
 	} else {
 		size_t nzmax1;
 		if ((nzmax1 = vpattern_grow(&send->active, 1))) {
@@ -434,9 +434,8 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;
-	double W = send->W;
+	//double W = send->W;
 	double eta = cm->eta0[jrecv] + (*pdeta);
-	double eta1 = eta + deta;
 
 	/* W' = W + exp(eta') - exp(eta)
 	 *
@@ -447,28 +446,26 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 	 *        = gamma / { 1 + [exp(eta') - exp(eta)] / W }
 	 *        = gamma / { 1 + [ exp(eta' - log(W)) - exp(eta - log(W)) ] }
 	 */
-	double w = exp(eta - scale);
-	double w1 = exp(eta1 - scale);
-	double dw = (w1 - w) / W;
+	double dw = exp(eta - scale - log_W) * expm1(deta);
 	double gamma1 = gamma / (1.0 + dw);
 	double log_W1 = log_W + log1p(dw);
-	//double W1 = W * dw + W;
-	double W1 = W + (w1 - w);
+	//double W1 = W * (1 + dw);	
+
 
 	//if (isend == 119) {
 	//      printf("dw: %.22f, eta1: %.22f max_eta: %.22f log_W1: %.22f\n", dw, eta1, max_eta, log_W1);
 	//}
 
 	/* for dramatic changes in the weight sums, we recompute everything */
-	if (!(fabs(dw) <= 0.5)) {
-		// Recompute the diffs when there is overflow
-		//fprintf(stderr, "!"); fflush(stderr);
+	if (!(fabs(dw) <= 0.3 * fabs(log_W1))) {
+		/* Recompute the diffs when there is overflow */
+		fprintf(stderr, "."); fflush(stderr);
 		sender_set(m, send, isend, f, &m->coefs);
 	} else {
 		//fprintf(stderr, "."); fflush(stderr);
 		send->gamma = gamma1;
 		send->log_W = log_W1;
-		send->W = W1;
+		//send->W = W1;
 		assert(send->gamma >= 0);
 		assert(isfinite(log_W1));
 		*pdeta += deta;
