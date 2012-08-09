@@ -25,9 +25,11 @@ void mlogit_clear(struct mlogit *m);
 static inline size_t mlogit_ncat(const struct mlogit *m);
 
 static inline double mlogit_eta(const struct mlogit *m, size_t i);
+static inline double mlogit_prob(const struct mlogit *m, size_t i);
+static inline double mlogit_lprob(const struct mlogit *m, size_t i);
 static inline double mlogit_phi(const struct mlogit *m);
 
-void mlogit_set_eta(struct mlogit *m);
+void mlogit_set_eta(struct mlogit *m, size_t i, double eta);
 void mlogit_set_all_eta(struct mlogit *m, const double *eta);
 
 
@@ -40,6 +42,18 @@ double mlogit_eta(const struct mlogit *m, size_t i)
 {
 	assert(i < mlogit_ncat(m));
 	return m->eta[i];
+}
+
+double mlogit_prob(const struct mlogit *m, size_t i)
+{
+	assert(i < mlogit_ncat(m));
+	return exp(mlogit_lprob(m, i));
+}
+
+double mlogit_lprob(const struct mlogit *m, size_t i)
+{
+	assert(i < mlogit_ncat(m));
+	return (m->eta[i] - m->eta_max) - m->phi_shift;
 }
 
 double mlogit_phi(const struct mlogit *m)

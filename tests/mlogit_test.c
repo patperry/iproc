@@ -127,6 +127,25 @@ static void test_phi()
 	assert_real_identical(mlogit_phi(&MLOGIT), PHI);
 }
 
+static void test_lprob()
+{
+	size_t i;
+	
+	for (i = 0; i < N; i++) {
+		assert_real_identical(mlogit_lprob(&MLOGIT, i), ETA[i] - PHI);
+	}
+}
+
+static void test_prob()
+{
+	size_t i;
+	
+	for (i = 0; i < N; i++) {
+		assert_real_identical(mlogit_prob(&MLOGIT, i), exp(ETA[i] - PHI));
+	}
+}
+
+
 
 int main()
 {
@@ -134,19 +153,25 @@ int main()
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
 		unit_test_setup_teardown(test_ncat, zeros_setup, teardown),
 		unit_test_setup_teardown(test_eta, zeros_setup, teardown),
-		unit_test_setup_teardown(test_phi, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_phi, zeros_setup, teardown),
+		unit_test_setup_teardown(test_lprob, zeros_setup, teardown),
+		unit_test_setup_teardown(test_prob, zeros_setup, teardown),
 		unit_test_teardown(zeros_suite, teardown_fixture),
 
 		unit_test_setup(simple_suite, simple_setup_fixture),
 		unit_test_setup_teardown(test_ncat, simple_setup, teardown),
 		unit_test_setup_teardown(test_eta, simple_setup, teardown),
-		unit_test_setup_teardown(test_phi, simple_setup, teardown),		
+		unit_test_setup_teardown(test_phi, simple_setup, teardown),
+		unit_test_setup_teardown(test_lprob, simple_setup, teardown),
+		unit_test_setup_teardown(test_prob, simple_setup, teardown),
 		unit_test_teardown(simple_suite, teardown_fixture),
 		
 		unit_test_setup(empty_suite, empty_setup_fixture),
 		unit_test_setup_teardown(test_ncat, empty_setup, teardown),
 		unit_test_setup_teardown(test_eta, empty_setup, teardown),
-		unit_test_setup_teardown(test_phi, empty_setup, teardown),		
+		unit_test_setup_teardown(test_phi, empty_setup, teardown),
+		unit_test_setup_teardown(test_lprob, empty_setup, teardown),
+		unit_test_setup_teardown(test_prob, empty_setup, teardown),
 		unit_test_teardown(empty_suite, teardown_fixture),
 		
 		
