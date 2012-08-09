@@ -120,7 +120,7 @@ struct recv_coefs {
 struct recv_model_cohort {
 	double max_eta0;
 	double log_W0;		// (log_W0)_true - max_eta0
-	double W0;		// (W0)_true / exp(max_eta0)
+				//double W0;		// (W0)_true / exp(max_eta0)
 	double *eta0;
 	double *p0;
 	double *mean0;
@@ -136,7 +136,7 @@ struct recv_model_sender {
 	double gamma;
 	double scale;
 	double log_W;		// (log_W)_true - scale
-	double W;		// (W)_true / exp(scale)
+				//double W;		// (W)_true / exp(scale)
 	double *deta;
 	struct vpattern active;
 };

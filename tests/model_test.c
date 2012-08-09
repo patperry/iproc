@@ -192,7 +192,7 @@ static void test_probs()
 				}
 				
 				assert_in_range(double_eqrel(alpha * p0 + y0, y[jrecv]),
-						45,
+						44,
 						DBL_MANT_DIG);
 			}
 		}
