@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "coreutil.h" // MAX
 #include "ieee754.h"
 #include "timsort.h"
 #include "xalloc.h"
@@ -39,6 +40,7 @@ void mlogit_clear(struct mlogit *m)
 	
 	m->eta_max = 0;
 	m->eta_tail = n == 0 ? NAN : n - 1;
+	m->eta_tail_err = 0;
 	m->phi_shift = log(n);
 }
 
@@ -215,6 +217,91 @@ void sort_eta(struct mlogit *m)
 }
 
 
+static double twosum(double a, double b, double *err)
+{
+	double a1, b1, da, db;
+	double res = a + b;
+	a1 = res - b;
+	b1 = res - a1;
+	da = a - a1;
+	db = b - b1;
+	*err = da + db;
+	return res;
+}
+
+static double fast_twosum(double a, double b, double *err)
+{
+	double res = a + b;
+	double z = res - a;
+	*err = b - z;
+	return res;
+}
+
+static double exp_e(double x, double *err)
+{
+	double res = exp(x);
+	*err = 2.0 * DBL_EPSILON * fabs(res);
+	return res;
+}
+
+static double exp_err_e(double x, double dx, double *err)
+{
+	double adx = fabs(dx);
+	double ex  = exp(x);
+	double edx = exp(adx);
+	double res  = ex;
+	*err  = ex * MAX(DBL_EPSILON, edx - 1.0/edx);
+	*err += 2.0 * DBL_EPSILON * fabs(res);
+	return res;
+}
+
+struct sum_t {
+	size_t n;
+	double val;
+	double comp;
+	double acomp;
+	double err;
+};
+
+void sum_init(struct sum_t *s)
+{
+	s->n = 0;
+	s->val = 0;
+	s->comp = 0;
+	s->acomp = 0;
+	s->err = 0;
+}
+
+void sum_add(struct sum_t *s, double x)
+{
+	double err;
+	s->n++;
+	s->val = twosum(s->val, x, &err);
+	s->comp += err;
+	s->acomp += fabs(err);
+}
+
+/* Ogita, Rump, & Oishi (2005). "Accurate sum and dot product." SIAM Journal
+ * on Scientific Computing (SISC), 26(6):1955-1988.
+ *
+ * Cor. 4.7.
+ */
+double sum_get(const struct sum_t *s, double *err)
+{
+	assert((s->n) < 1.0 / DBL_EPSILON);
+
+	double eps = DBL_EPSILON / 2;
+	double eta = DBL_MIN * DBL_EPSILON;
+	double res = s->val + s->comp;
+	double ares = fabs(res);
+
+	double eps2 = eps * eps;
+	double two_n_eps = 2 * s->n * eps;
+	double beta = two_n_eps / (1 - two_n_eps) * s->acomp;
+	*err = eps * ares + (beta + (2 * eps2 * ares + 3 * eta));
+	return res;
+}
+
 void set_eta_tail(struct mlogit *m)
 {
 	if (m->ncat == 0)
@@ -222,16 +309,30 @@ void set_eta_tail(struct mlogit *m)
 
 	size_t *order = m->eta_order;
 	double eta_max = m->eta_max;
-	double eta_tail1 = 0;
+	double diff, diff_err;
+	double ediff, ediff_err;
+	struct sum_t eta_tail, eta_tail_err;
+	double extra;
+	
+	sum_init(&eta_tail);
+	sum_init(&eta_tail_err);
 	
 	size_t i, n = m->ncat;
 	
 	assert(n > 0);
 	for (i = n - 1; i > 0; i--) {
-		eta_tail1 += exp(m->eta[order[i]] - eta_max);
+		// eta_tail1 += exp(m->eta[order[i]] - eta_max);
+		diff = twosum(m->eta[order[i]], -eta_max, &diff_err);
+		ediff = exp_err_e(diff, diff_err, &ediff_err);
+		sum_add(&eta_tail, ediff);
+		sum_add(&eta_tail_err, ediff_err);
 	}
 	
-	m->eta_tail = eta_tail1;
+	m->eta_tail = sum_get(&eta_tail, &m->eta_tail_err);
+	m->eta_tail_err += sum_get(&eta_tail_err, &extra);
+	m->eta_tail_err += extra;
+	
+	printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
 }
 
 
