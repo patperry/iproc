@@ -72,10 +72,10 @@ void mlogit_set_all_eta(struct mlogit *m, const double *eta)
 #define HAS_PARENT(i) (rank[i] != 0)
 #define PARENT(i) (order[(rank[i] - 1) / 2])
 
-#define HAS_LEFT(i) (rank[i] < (n - 1) / 2)
+#define HAS_LEFT(i) (rank[i] < n / 2)
 #define LEFT(i) (order[2 * rank[i] + 1])
 
-#define HAS_RIGHT(i) (rank[i] < n / 2 - 1)
+#define HAS_RIGHT(i) (rank[i] < (n - 1) / 2)
 #define RIGHT(i) (order[2 * rank[i] + 2])
 
 #define SWAP(i,j) \
@@ -98,14 +98,16 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 	double deta = eta1 - eta;
 	double eta_max = m->eta_max;
 	double eta_tail = m->eta_tail;
-	double expm1_deta = expm1(deta);
+	// double expm1_deta = expm1(deta);
 	
 	if (IS_ROOT(i)) {
 		replace_eta(m, i, eta1);
 		if (IS_ROOT(i)) {
 			m->eta_max = eta1;
-			assert(!isnan(m->eta_tail));			
 			m->eta_tail = eta_tail * exp(-deta);
+			if (isnan(m->eta_tail) || isinf(m->eta_max)) // overflow
+				set_eta_tail(m);
+			assert(!isnan(m->eta_tail));			
 		} else {
 			size_t root = order[0];
 			m->eta_max = m->eta[root];
@@ -117,7 +119,8 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 			m->eta_max = eta1;
 			set_eta_tail(m);
 		} else {
-			m->eta_tail = eta_tail + exp(eta - eta_max) * expm1_deta;
+			// m->eta_tail = eta_tail + exp(eta - eta_max) * expm1_deta;
+			m->eta_tail = (eta_tail - exp(eta - eta_max)) + exp(eta1 - eta_max);
 			assert(!isnan(m->eta_tail));
 		}
 	}
@@ -245,7 +248,9 @@ void _mlogit_check_invariants(const struct mlogit *m)
 			assert(eta[i] >= eta[LEFT(i)]);
 		if (HAS_RIGHT(i))
 			assert(eta[i] >= eta[RIGHT(i)]);
-		
+	}
+	
+	for (i = 0; i < n; i++) {
 		assert(m->eta_max >= eta[i]);
 	}
 	
