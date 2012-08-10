@@ -60,6 +60,7 @@ double mlogit_lprob(const struct mlogit *m, size_t i)
 
 double mlogit_phi(const struct mlogit *m)
 {
+	assert(!isnan(m->eta_max + m->phi_shift));
 	return m->eta_max + m->phi_shift;
 }
 

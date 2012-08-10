@@ -92,7 +92,7 @@ static void zeros_setup_fixture()
 
 static void zeros_setup()
 {
-	setup(NULL, 7);
+	setup(NULL, 100);
 }
 
 static void simple_setup_fixture()
@@ -202,7 +202,7 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
 		_mlogit_check_invariants(&MLOGIT);
-		assert_real_eqrel(DBL_MANT_DIG - 1, mlogit_phi(&MLOGIT), PHI);
+		assert_real_eqrel(DBL_MANT_DIG - 2, mlogit_phi(&MLOGIT), PHI);
 		print_message(".");
 		fflush(stdout);
 	}

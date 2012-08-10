@@ -1,6 +1,8 @@
 #include "port.h"
 #include <assert.h>
+#include <float.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ieee754.h"
@@ -105,9 +107,9 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 		if (IS_ROOT(i)) {
 			m->eta_max = eta1;
 			m->eta_tail = eta_tail * exp(-deta);
-			if (isnan(m->eta_tail) || isinf(m->eta_max)) // overflow
+			if (isnan(m->eta_tail) || m->eta_max == INFINITY) // overflow
 				set_eta_tail(m);
-			assert(!isnan(m->eta_tail));			
+			assert(m->eta_tail >= 0);
 		} else {
 			size_t root = order[0];
 			m->eta_max = m->eta[root];
@@ -121,7 +123,10 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 		} else {
 			// m->eta_tail = eta_tail + exp(eta - eta_max) * expm1_deta;
 			m->eta_tail = (eta_tail - exp(eta - eta_max)) + exp(eta1 - eta_max);
-			assert(!isnan(m->eta_tail));
+			if (!(m->eta_tail >= 0)) {
+				m->eta_tail = 0;
+			}
+			assert(m->eta_tail >= 0);
 		}
 	}
 	m->phi_shift = log1p(m->eta_tail);
@@ -256,7 +261,8 @@ void _mlogit_check_invariants(const struct mlogit *m)
 	
 	if (m->ncat > 0) {
 		assert(!isnan(m->eta_tail));
-		assert(m->phi_shift == log1p(m->eta_tail));
+		assert(m->eta_tail != INFINITY);
+		// assert(m->phi_shift == log1p(m->eta_tail));
 	}
 }
 
