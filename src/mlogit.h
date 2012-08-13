@@ -16,6 +16,7 @@ struct mlogit {
 	double eta_tail; // \sum_{ i != i_max } exp{ eta(i) - eta_max }
 	double eta_tail_err;
 	double phi_shift; /* shifted CGF: log[ \sum_i exp{ eta(i) - eta_max } ] */
+	double tol;
 };
 
 

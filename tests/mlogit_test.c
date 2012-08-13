@@ -202,25 +202,25 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
 		_mlogit_check_invariants(&MLOGIT);
-		//assert_real_eqrel(DBL_MANT_DIG, mlogit_phi(&MLOGIT), PHI);
-		print_message(".");
+		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_phi(&MLOGIT), PHI);
+		//print_message(".");
 		fflush(stdout);
 	}
 }
 
 static void test_many_set_eta_small()
 {
-	test_many_set_eta(10000, -1, 1);
+	test_many_set_eta(1000, -1, 1);
 }
 
 static void test_many_set_eta_med()
 {
-	test_many_set_eta(10000, -10, 10);
+	test_many_set_eta(1000, -10, 10);
 }
 
 static void test_many_set_eta_big()
 {
-	test_many_set_eta(10000, -1000, 1000);
+	test_many_set_eta(1000, -1000, 1000);
 }
 
 

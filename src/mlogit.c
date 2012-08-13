@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "coreutil.h" // MAX
@@ -54,6 +54,7 @@ void mlogit_init(struct mlogit *m, size_t ncat)
 	m->eta = xmalloc(ncat * sizeof(*m->eta));
 	m->eta_order = xmalloc(ncat * sizeof(*m->eta_order));
 	m->eta_rank = xmalloc(ncat * sizeof(*m->eta_rank));
+	m->tol = sqrt(EPS) * sqrt(sqrt(EPS));
 	
 	mlogit_clear(m);
 }
@@ -222,7 +223,8 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 	
 	
 	
-	if (!isfinite(m->eta_tail_err)) {
+	if (!(m->eta_tail_err < m->tol * (1 + m->eta_tail))) {
+		//assert(isnan(m->eta_tail_err));
 		set_eta_tail(m);
 	} else if (!(m->eta_tail >= 0)) {
 		assert(m->eta_tail >= - m->eta_tail_err);
@@ -461,6 +463,7 @@ void set_eta_tail(struct mlogit *m)
 	m->eta_tail_err = (eta_tail.err + eta_tail_err.val + eta_tail_err.err) / (1 - 3 * EPS);
 	
 	//printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
+	//printf("!"); fflush(stdout);
 }
 
 
