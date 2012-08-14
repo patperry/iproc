@@ -199,6 +199,7 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 			struct valerr_t ediff = exp_err_e(diff);
 			struct valerr_t diff1 = twosum(eta1, -eta_max);
 			struct valerr_t ediff1 = exp_err_e(diff1);
+			
 			struct sum_t eta_tail_sum;
 			struct sum_t eta_tail_err_sum;
 			
@@ -368,7 +369,7 @@ struct valerr_t exp_e(double x)
 {
 	struct valerr_t res;
 	res.val = exp(x);
-	res.err = 2.0 * DBL_EPSILON * res.val;
+	res.err = 2.0 * EPS * res.val + ETA;
 	return res;
 }
 
@@ -380,8 +381,7 @@ struct valerr_t exp_err_e(struct valerr_t x)
 	double ex  = exp(x.val);
 	double edx = exp(adx);
 	res.val = ex;
-	res.err  = ex * MAX(DBL_EPSILON, edx - 1.0/edx);
-	res.err += 2.0 * DBL_EPSILON * res.val;
+	res.err  = 2.0 * ((ex + ETA) * (edx + EPS) + ETA);
 	return res;
 }
 
@@ -390,7 +390,7 @@ static struct valerr_t expm1_e(double x)
 {
 	struct valerr_t res;
 	res.val = expm1(x);
-	res.err = 2.0 * DBL_EPSILON * fabs(res.val);
+	res.err = 2.0 * EPS * fabs(res.val) + ETA;
 	return res;
 }
 
