@@ -128,95 +128,74 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 	size_t *restrict rank = m->eta_rank;
 	const double eta = m->eta[i];
 	const double eta_max = m->eta_max;
-	
-	const double eta_tail = m->eta_tail;
-	const double eta_tail_err = m->eta_tail_err;
-	struct valerr_t eta_tail_val = { eta_tail, eta_tail_err };
+	struct valerr_t eta_tail = { m->eta_tail, m->eta_tail_err };
+	double eta_max1;
+	struct valerr_t eta_tail1;
 	
 	if (IS_ROOT(i)) {
 		replace_eta(m, i, eta1);
 		if (IS_ROOT(i)) {
-			m->eta_max = eta1;
-			// m->eta_tail = m->eta_tail * exp(-(eta1 - eta));
+			eta_max1 = eta1;
+			// eta_tail1 = m->eta_tail * exp(-(eta1 - eta));
 			
 			struct valerr_t endeta = exp_sum_e(eta, -eta1);
-			struct valerr_t eta_tail1 = mult_err_e(eta_tail_val, endeta);
-
-			m->eta_tail = eta_tail1.val;
-			m->eta_tail_err = eta_tail1.err;
-			
+			eta_tail1 = mult_err_e(eta_tail, endeta);
 		} else {
-			size_t root = order[0];
-			double eta_max1 = m->eta[root];
-			// m->eta_tail = eta_tail * exp(eta_max - eta_max1) + exp(eta1 - eta_max1) - 1;
+			eta_max1 = m->eta[order[0]];
+			// eta_tail1 = eta_tail * exp(eta_max - eta_max1) + exp(eta1 - eta_max1) - 1;
 			
 			struct valerr_t endeta_max = exp_sum_e(eta_max, -eta_max1);
-			struct valerr_t eta_tail_scale = mult_err_e(eta_tail_val, endeta_max);
+			struct valerr_t eta_tail_scale = mult_err_e(eta_tail, endeta_max);
 			struct valerr_t ediff = exp_sum_e(eta1, -eta_max1);
 			
-			struct valerr_t eta_tail1;
 			eta_tail1.val = eta_tail_scale.val + ediff.val - 1;
 			eta_tail1.err = 3 * EPS / (1 - 3 * EPS) * eta_tail1.val + ETA;
 			eta_tail1.err += (eta_tail_scale.err + ediff.err) / (1 - 2 * EPS);
 			
-			m->eta_max = eta_max1;
 			m->eta_tail = eta_tail1.val;
 			m->eta_tail_err = eta_tail1.err;
 		}
 	} else {
 		replace_eta(m, i, eta1);
 		if (IS_ROOT(i)) {
-			double eta_max1 = eta1;
-			
-			// m->eta_tail = (eta_tail - exp(eta - eta_max) + 1) * exp(eta_max - eta_max1) 
+			eta_max1 = eta1;
+			// eta_tail1 = (eta_tail - exp(eta - eta_max) + 1) * exp(eta_max - eta_max1) 
 			
 			struct valerr_t ediff = exp_sum_e(eta, -eta_max);
-
+			struct valerr_t endeta_max = exp_sum_e(eta_max, -eta_max1);			
 			struct valerr_t tail_adj;
-			tail_adj.val = (eta_tail - ediff.val);
+			
+			tail_adj.val = (eta_tail.val - ediff.val);
 			tail_adj.err = abs(tail_adj.val);
 			
 			tail_adj.val += 1.0;
 			tail_adj.err += abs(tail_adj.val);
 			
-			tail_adj.err = EPS * tail_adj.err + (eta_tail_err + ediff.err);
+			tail_adj.err = EPS * tail_adj.err + (eta_tail.err + ediff.err);
 			tail_adj.err = tail_adj.err/(1 - 5 * EPS) + 2 * ETA;
 			
-			
-			struct valerr_t endeta_max = exp_sum_e(eta_max, -eta_max1);
-			struct valerr_t eta_tail1 = mult_err_e(tail_adj, endeta_max);
-
-			m->eta_max = eta_max1;
-			m->eta_tail = eta_tail1.val;
-			m->eta_tail_err = eta_tail1.err;
+			eta_tail1 = mult_err_e(tail_adj, endeta_max);
 		} else {
-			//m->eta_tail = (eta_tail - exp(eta - eta_max)) + exp(eta1 - eta_max);
+			eta_max1 = eta_max;
+			//eta_tail1 = (eta_tail - exp(eta - eta_max)) + exp(eta1 - eta_max);
+						
 			struct valerr_t ediff = exp_sum_e(eta, -eta_max);
 			struct valerr_t ediff1 = exp_sum_e(eta1, -eta_max);
 			
-			struct sum_t eta_tail_sum;
-			struct sum_t eta_tail_err_sum;
+			eta_tail1.val = eta_tail.val - ediff.val;
+			eta_tail1.err = fabs(eta_tail1.val);
 			
-			sum_init(&eta_tail_sum);
-			sum_add(&eta_tail_sum, m->eta_tail);
+			eta_tail1.val += ediff1.val;
+			eta_tail1.err += abs(eta_tail1.val);
 			
-			sum_init(&eta_tail_err_sum);
-			sum_add(&eta_tail_err_sum, m->eta_tail_err);
-
-			sum_add(&eta_tail_sum, -(ediff.val));
-			sum_add(&eta_tail_err_sum, ediff.err);
-			sum_add(&eta_tail_sum, ediff1.val);
-			sum_add(&eta_tail_err_sum, ediff1.err);
-			
-			struct valerr_t eta_tail = sum_get(&eta_tail_sum);
-			struct valerr_t eta_tail_err = sum_get(&eta_tail_err_sum);
-			
-			m->eta_tail = eta_tail.val;
-			m->eta_tail_err = (eta_tail.err + eta_tail_err.err + eta_tail_err.val) / (1 - 3 * EPS);
+			eta_tail1.err = EPS * eta_tail1.err + (eta_tail.err + ediff.err + ediff1.err);
+			eta_tail1.err = eta_tail1.err / (1 - 5 * EPS) + 2 * ETA;
 		}
 	}
 	
-	
+	m->eta_max = eta_max1;
+	m->eta_tail = eta_tail1.val;
+	m->eta_tail_err = eta_tail1.err;
 	
 	if (!(m->eta_tail_err < m->tol * (1 + m->eta_tail))) {
 		//assert(isnan(m->eta_tail_err));
