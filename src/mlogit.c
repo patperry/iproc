@@ -25,8 +25,8 @@ struct valerr_t {
 };
 
 static struct valerr_t twosum(double a, double b);
-static struct valerr_t twomult(double a, double b);
-static struct valerr_t twomult_err(double a, struct valerr_t b);
+
+static struct valerr_t mult_err_e(struct valerr_t x, struct valerr_t y);
 static struct valerr_t exp_err_e(struct valerr_t x);
 static struct valerr_t exp_sum_e(double x, double y);
 
@@ -128,8 +128,10 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 	size_t *restrict rank = m->eta_rank;
 	const double eta = m->eta[i];
 	const double eta_max = m->eta_max;
+	
 	const double eta_tail = m->eta_tail;
 	const double eta_tail_err = m->eta_tail_err;
+	struct valerr_t eta_tail_val = { eta_tail, eta_tail_err };
 	
 	if (IS_ROOT(i)) {
 		replace_eta(m, i, eta1);
@@ -138,10 +140,10 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 			// m->eta_tail = m->eta_tail * exp(-(eta1 - eta));
 			
 			struct valerr_t endeta = exp_sum_e(eta, -eta1);
-			struct valerr_t eta_tail1 = twomult_err(eta_tail, endeta);
+			struct valerr_t eta_tail1 = mult_err_e(eta_tail_val, endeta);
 
 			m->eta_tail = eta_tail1.val;
-			m->eta_tail_err = (eta_tail1.err + (m->eta_tail_err * (endeta.val + endeta.err) + ETA)) / (1 - 4 * EPS);
+			m->eta_tail_err = eta_tail1.err;
 			
 		} else {
 			size_t root = order[0];
@@ -149,10 +151,7 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 			// m->eta_tail = eta_tail * exp(eta_max - eta_max1) + exp(eta1 - eta_max1) - 1;
 			
 			struct valerr_t endeta_max = exp_sum_e(eta_max, -eta_max1);
-			struct valerr_t eta_tail_scale = twomult_err(eta_tail, endeta_max);
-			eta_tail_scale.err += eta_tail_err * (endeta_max.val + endeta_max.err) + ETA;
-			eta_tail_scale.err /= (1 - 4 * EPS);
-			
+			struct valerr_t eta_tail_scale = mult_err_e(eta_tail_val, endeta_max);
 			struct valerr_t ediff = exp_sum_e(eta1, -eta_max1);
 			
 			struct valerr_t eta_tail1;
@@ -174,17 +173,22 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 			struct valerr_t ediff = exp_sum_e(eta, -eta_max);
 
 			struct valerr_t tail_adj;
-			tail_adj.val = (eta_tail - ediff.val) + 1;
-			tail_adj.err = 3 * EPS / (1 - 3 * EPS) * tail_adj.val + ETA;
-			tail_adj.err += (eta_tail_err + ediff.err) / (1 + 3 * EPS);
+			tail_adj.val = (eta_tail - ediff.val);
+			tail_adj.err = abs(tail_adj.val);
+			
+			tail_adj.val += 1.0;
+			tail_adj.err += abs(tail_adj.val);
+			
+			tail_adj.err = EPS * tail_adj.err + (eta_tail_err + ediff.err);
+			tail_adj.err = tail_adj.err/(1 - 5 * EPS) + 2 * ETA;
+			
 			
 			struct valerr_t endeta_max = exp_sum_e(eta_max, -eta_max1);
-			struct valerr_t eta_tail1 = twomult_err(tail_adj.val, endeta_max);
+			struct valerr_t eta_tail1 = mult_err_e(tail_adj, endeta_max);
 
 			m->eta_max = eta_max1;
 			m->eta_tail = eta_tail1.val;
-			m->eta_tail_err = (m->eta_tail_err * (endeta_max.val + endeta_max.err) + ETA
-					   + eta_tail1.err) / (1 - 4 * EPS);
+			m->eta_tail_err = eta_tail1.err;
 		} else {
 			//m->eta_tail = (eta_tail - exp(eta - eta_max)) + exp(eta1 - eta_max);
 			struct valerr_t ediff = exp_sum_e(eta, -eta_max);
@@ -327,18 +331,17 @@ struct valerr_t twosum(double a, double b)
 }
 
 
-struct valerr_t twomult(double a, double b)
+struct valerr_t mult_err_e(struct valerr_t x, struct valerr_t y)
 {
 	struct valerr_t res;
-	res.val = a * b;
-	res.err = fma(a, b, -res.val);
-	return res;
-}
-
-static struct valerr_t twomult_err(double a, struct valerr_t b)
-{
-	struct valerr_t res = twomult(a, b.val);
-	res.err = fma(a, b.err, res.err) / (1 - 2 * EPS);
+	double adx = fabs(x.err);
+	double ady = fabs(y.err);
+	
+	res.val = x.val * y.val;
+	res.err = EPS * fabs(res.val);
+	res.err += adx * fabs(y.val) + ady * fabs(x.val) + adx * ady;
+	res.err = res.err / (1 - 6 * EPS) + 4 * ETA;
+	
 	return res;
 }
 
