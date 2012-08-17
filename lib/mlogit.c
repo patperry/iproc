@@ -5,8 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "coreutil.h" // MAX
-#include "ieee754.h"
+#include "ieee754.h" // double_rcompare
 #include "timsort.h"
 #include "xalloc.h"
 #include "mlogit.h"

@@ -45,8 +45,6 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
-	src/mlogit.c \
-	src/mlogit.h \
 	src/recv_model.c \
 	src/recv_model.h \
 	src/strata.c \
@@ -63,6 +61,8 @@ libiproc_a_LIBADD = \
 
 libcore_a_SOURCES = \
 	lib/port.h \
+	lib/mlogit.c \
+	lib/mlogit.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \
