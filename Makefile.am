@@ -63,6 +63,8 @@ libcore_a_SOURCES = \
 	lib/port.h \
 	lib/mlogit.c \
 	lib/mlogit.h \
+	lib/mlogit_glm.c \
+	lib/mlogit_glm.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \

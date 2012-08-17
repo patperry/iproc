@@ -74,7 +74,7 @@ void mlogit_clear(struct mlogit *m)
 	m->eta_max = 0;
 	m->eta_tail = n == 0 ? NAN : n - 1;
 	m->eta_tail_err = 0;
-	m->phi_shift = log(n);
+	m->psi_shift = log(n);
 }
 
 void mlogit_deinit(struct mlogit *m)
@@ -100,7 +100,7 @@ void mlogit_set_all_eta(struct mlogit *m, const double *eta)
 	
 	sort_eta(m);
 	set_eta_tail(m);
-	m->phi_shift = log1p(m->eta_tail);
+	m->psi_shift = log1p(m->eta_tail);
 }
 
 
@@ -213,7 +213,7 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta1)
 	
 	//printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
 	assert(m->eta_tail >= 0);	
-	m->phi_shift = log1p(m->eta_tail);
+	m->psi_shift = log1p(m->eta_tail);
 }
 
 
@@ -453,7 +453,7 @@ void _mlogit_check_invariants(const struct mlogit *m)
 	}
 	
 	if (m->ncat > 0) {
-		// assert(m->phi_shift == log1p(m->eta_tail));
+		// assert(m->psi_shift == log1p(m->eta_tail));
 		
 		struct valerr_t eta_tail = compute_eta_tail(m);
 		
@@ -466,56 +466,3 @@ void _mlogit_check_invariants(const struct mlogit *m)
 		}
 	}
 }
-
-
-	
-
-#if 0
-
-
-void mlogit_mean_init(struct mlogit_mean *m, size_t dim, const double *mean0)
-{
-	m->dim = dim;
-	m->mean = xmalloc(dim * sizeof(*m->mean));
-	m->xbuf = xmalloc(dim * sizeof(*m->xbuf));
-	
-	memcpy(m->mean, mean0, dim * sizeof(*m->mean));
-}
-
-
-void mlogit_mean_deinit(struct mlogit_mean *m)
-{
-	free(m->xbuf);
-	free(m->mean);
-}
-
-
-void mlogit_mean_update(struct mlogit_mean *m, const struct mlogit *mlogit,
-			const double *x1, const double *dx,
-			const struct vpattern *ix)
-{
-	size_t n = m->dim;
-	double *buf = m->xbuf;
-	double eta0 = mlogit->eta0;
-	double eta_max = mlogit->eta_max;
-	double phi = mlogit->phi;
-	double expm1_deta = mlogit->expm1_deta;
-	
-	// buf := expm1(deta) * (x1 - mean0)
-	memcpy(buf, x1, n * sizeof(*buf));
-	blas_daxpy(n, -1.0, m->mean, 1, buf, 1); 
-	blas_dscal(n, expm1_deta, buf, 1);
-	
-	// buf += dx
-	if (ix) {
-		sblas_daxpyi(1.0, dx, ix, buf);
-	} else {
-		blas_daxpy(n, 1.0, dx, 1, buf, 1);
-	}
-	
-	blas_daxpy(n, exp(eta0 - eta_max - phi), buf, 1, m->mean, 1);
-}
-
-#endif
-
-

@@ -126,6 +126,8 @@
 		22B9865515DEAB4B00720AA5 /* mlogit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865315DEAB4A00720AA5 /* mlogit.c */; };
 		22B9865615DEAB4B00720AA5 /* mlogit.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B9865415DEAB4A00720AA5 /* mlogit.h */; };
 		22B9865715DEAB8700720AA5 /* mlogit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865315DEAB4A00720AA5 /* mlogit.c */; };
+		22B9865B15DEACF100720AA5 /* mlogit_glm.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865915DEACF100720AA5 /* mlogit_glm.c */; };
+		22B9865C15DEACF100720AA5 /* mlogit_glm.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B9865A15DEACF100720AA5 /* mlogit_glm.h */; };
 		22BECEBF15AA05BD00F630C4 /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECEBD15AA05BD00F630C4 /* util.c */; };
 		22BECEC015AA05BD00F630C4 /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEBE15AA05BD00F630C4 /* util.h */; };
 		22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECECA15AC77AA00F630C4 /* recv_model.c */; };
@@ -540,6 +542,8 @@
 		22B7E93D15D46B69009978F8 /* mlogit_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit_test.c; path = tests/mlogit_test.c; sourceTree = "<group>"; };
 		22B9865315DEAB4A00720AA5 /* mlogit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit.c; path = lib/mlogit.c; sourceTree = "<group>"; };
 		22B9865415DEAB4A00720AA5 /* mlogit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mlogit.h; path = lib/mlogit.h; sourceTree = "<group>"; };
+		22B9865915DEACF100720AA5 /* mlogit_glm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit_glm.c; path = lib/mlogit_glm.c; sourceTree = "<group>"; };
+		22B9865A15DEACF100720AA5 /* mlogit_glm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mlogit_glm.h; path = lib/mlogit_glm.h; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
 		22BECEBE15AA05BD00F630C4 /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = util.h; path = lib/util.h; sourceTree = "<group>"; };
 		22BECECA15AC77AA00F630C4 /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = src/recv_model.c; sourceTree = "<group>"; };
@@ -935,6 +939,8 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
+				22B9865915DEACF100720AA5 /* mlogit_glm.c */,
+				22B9865A15DEACF100720AA5 /* mlogit_glm.h */,
 				22B9865315DEAB4A00720AA5 /* mlogit.c */,
 				22B9865415DEAB4A00720AA5 /* mlogit.h */,
 				22602687146B38EE00BA6347 /* port.h */,
@@ -991,6 +997,7 @@
 				22BECECD15AC77AB00F630C4 /* recv_model.h in Headers */,
 				227870A915B0A68C004B170B /* design2.h in Headers */,
 				22B9865615DEAB4B00720AA5 /* mlogit.h in Headers */,
+				22B9865C15DEACF100720AA5 /* mlogit_glm.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1400,6 +1407,7 @@
 				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
 				227870A815B0A68C004B170B /* design2.c in Sources */,
 				22B9865515DEAB4B00720AA5 /* mlogit.c in Sources */,
+				22B9865B15DEACF100720AA5 /* mlogit_glm.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

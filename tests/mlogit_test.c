@@ -21,7 +21,7 @@
 
 struct mlogit MLOGIT;
 double *ETA;
-double PHI;
+double PSI;
 size_t N;
 
 static double get_phi(const double *eta, size_t n)
@@ -65,7 +65,7 @@ static void setup(const double *eta, size_t n)
 		memset(ETA, 0, N * sizeof(ETA[0]));
 	}
 	
-	PHI = get_phi(eta, n);
+	PSI = get_phi(eta, n);
 
 	mlogit_init(&MLOGIT, N);
 	_mlogit_check_invariants(&MLOGIT);
@@ -130,9 +130,9 @@ static void test_eta()
 	}
 }
 
-static void test_phi()
+static void test_psi()
 {
-	assert_real_identical(mlogit_phi(&MLOGIT), PHI);	
+	assert_real_identical(mlogit_psi(&MLOGIT), PSI);	
 }
 
 static void test_lprob()
@@ -140,7 +140,7 @@ static void test_lprob()
 	size_t i;
 	
 	for (i = 0; i < N; i++) {
-		assert_real_identical(mlogit_lprob(&MLOGIT, i), ETA[i] - PHI);
+		assert_real_identical(mlogit_lprob(&MLOGIT, i), ETA[i] - PSI);
 	}
 }
 
@@ -149,7 +149,7 @@ static void test_prob()
 	size_t i;
 	
 	for (i = 0; i < N; i++) {
-		assert_real_identical(mlogit_prob(&MLOGIT, i), exp(ETA[i] - PHI));
+		assert_real_identical(mlogit_prob(&MLOGIT, i), exp(ETA[i] - PSI));
 	}
 }
 
@@ -159,13 +159,13 @@ static void test_set_eta(size_t i, double eta)
 	assert(!isnan(eta));
 
 	ETA[i] = eta;
-	PHI = get_phi(ETA, N);
+	PSI = get_phi(ETA, N);
 	
 	mlogit_set_eta(&MLOGIT, i, eta);
 	_mlogit_check_invariants(&MLOGIT);
 	
 	test_eta();
-	test_phi();
+	test_psi();
 }
 
 static void test_set_eta_small()
@@ -198,11 +198,11 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		double eta = runif(min, max);
 		
 		ETA[i] = eta;
-		PHI = get_phi(ETA, N);
+		PSI = get_phi(ETA, N);
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
 		_mlogit_check_invariants(&MLOGIT);
-		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_phi(&MLOGIT), PHI);
+		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_psi(&MLOGIT), PSI);
 		//print_message(".");
 		fflush(stdout);
 	}
@@ -230,7 +230,7 @@ int main()
 		unit_test_setup(empty_suite, empty_setup_fixture),
 		unit_test_setup_teardown(test_ncat, empty_setup, teardown),
 		unit_test_setup_teardown(test_eta, empty_setup, teardown),
-		unit_test_setup_teardown(test_phi, empty_setup, teardown),
+		unit_test_setup_teardown(test_psi, empty_setup, teardown),
 		unit_test_setup_teardown(test_lprob, empty_setup, teardown),
 		unit_test_setup_teardown(test_prob, empty_setup, teardown),
 		unit_test_teardown(empty_suite, teardown_fixture),
@@ -238,7 +238,7 @@ int main()
 		unit_test_setup(simple_suite, simple_setup_fixture),
 		unit_test_setup_teardown(test_ncat, simple_setup, teardown),
 		unit_test_setup_teardown(test_eta, simple_setup, teardown),
-		unit_test_setup_teardown(test_phi, simple_setup, teardown),
+		unit_test_setup_teardown(test_psi, simple_setup, teardown),
 		unit_test_setup_teardown(test_lprob, simple_setup, teardown),
 		unit_test_setup_teardown(test_prob, simple_setup, teardown),
 		unit_test_setup_teardown(test_set_eta_small, simple_setup, teardown),
@@ -252,7 +252,7 @@ int main()
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
 		unit_test_setup_teardown(test_ncat, zeros_setup, teardown),
 		unit_test_setup_teardown(test_eta, zeros_setup, teardown),
-		unit_test_setup_teardown(test_phi, zeros_setup, teardown),
+		unit_test_setup_teardown(test_psi, zeros_setup, teardown),
 		unit_test_setup_teardown(test_lprob, zeros_setup, teardown),
 		unit_test_setup_teardown(test_prob, zeros_setup, teardown),
 		unit_test_setup_teardown(test_set_eta_small, zeros_setup, teardown),
