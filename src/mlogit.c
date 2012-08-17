@@ -14,10 +14,6 @@
 #define ETA (DBL_MIN * DBL_EPSILON)
 #define EPS (DBL_EPSILON / 2)
 
-static int pdouble_rcompar(const void *x, const void *y);
-static void replace_eta(struct mlogit *m, size_t i, double eta1);
-static void sort_eta(struct mlogit *m);
-static void set_eta_tail(struct mlogit *m);
 
 struct valerr_t {
 	double val;
@@ -25,10 +21,10 @@ struct valerr_t {
 };
 
 static struct valerr_t twosum(double a, double b);
-
 static struct valerr_t mult_err_e(struct valerr_t x, struct valerr_t y);
 static struct valerr_t exp_err_e(struct valerr_t x);
 static struct valerr_t exp_sum_e(double x, double y);
+
 
 struct sum_t {
 	size_t n;
@@ -41,6 +37,16 @@ struct sum_t {
 static void sum_init(struct sum_t *s);
 static void sum_add(struct sum_t *s, double x);
 static struct valerr_t sum_get(const struct sum_t *s);
+
+static int pdouble_rcompar(const void *x, const void *y);
+
+static struct valerr_t compute_eta_tail(const struct mlogit *m);
+static void replace_eta(struct mlogit *m, size_t i, double eta1);
+static void sort_eta(struct mlogit *m);
+static void set_eta_tail(struct mlogit *m);
+
+
+
 
 
 
@@ -382,15 +388,29 @@ struct valerr_t sum_get(const struct sum_t *s)
 
 void set_eta_tail(struct mlogit *m)
 {
-	if (m->ncat == 0)
-		return;
+	struct valerr_t eta_tail = compute_eta_tail(m);
+	
+	m->eta_tail = eta_tail.val;
+	m->eta_tail_err = eta_tail.err;
+	
+	printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
+	//printf("!"); fflush(stdout); 
+}
 
+
+struct valerr_t compute_eta_tail(const struct mlogit *m)
+{
+	struct valerr_t eta_tail = { NAN, 0 };
+	
+	if (m->ncat == 0)
+		return eta_tail;
+	
 	size_t *order = m->eta_order;
 	double eta_max = m->eta_max;
-	struct sum_t eta_tail_sum, eta_tail_err_sum;
+	struct sum_t eta_tail_sum;
+	double eta_tail_err = 0.0;
 	
 	sum_init(&eta_tail_sum);
-	sum_init(&eta_tail_err_sum);
 	
 	size_t i, n = m->ncat;
 	
@@ -399,18 +419,15 @@ void set_eta_tail(struct mlogit *m)
 		// m->eta_tail += exp(m->eta[order[i]] - eta_max);
 		struct valerr_t ediff = exp_sum_e(m->eta[order[i]], -eta_max);
 		sum_add(&eta_tail_sum, ediff.val);
-		sum_add(&eta_tail_err_sum, ediff.err);
+		eta_tail_err += ediff.err;
 	}
 	
-	struct valerr_t eta_tail = sum_get(&eta_tail_sum);
-	struct valerr_t eta_tail_err = sum_get(&eta_tail_err_sum);
-	m->eta_tail = eta_tail.val;
-	m->eta_tail_err = (eta_tail.err + eta_tail_err.val + eta_tail_err.err) / (1 - 3 * EPS);
+	eta_tail = sum_get(&eta_tail_sum);
+	eta_tail.err += eta_tail_err;
+	eta_tail.err /= (1 - n * EPS);
 	
-	printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
-	//printf("!"); fflush(stdout); 
+	return eta_tail;
 }
-
 
 
 void _mlogit_check_invariants(const struct mlogit *m)
@@ -437,40 +454,17 @@ void _mlogit_check_invariants(const struct mlogit *m)
 	}
 	
 	if (m->ncat > 0) {
-		assert(!isnan(m->eta_tail));
-		assert(m->eta_tail != INFINITY);
 		// assert(m->phi_shift == log1p(m->eta_tail));
 		
-		struct sum_t eta_tail_sum;
-		struct sum_t eta_tail_err_sum;
+		struct valerr_t eta_tail = compute_eta_tail(m);
 		
-		sum_init(&eta_tail_sum);
-		sum_init(&eta_tail_err_sum);
-		
-		for (i = 0; i < n; i++) {
-			if (IS_ROOT(i))
-				continue;
-			    
-			struct valerr_t ediff = exp_sum_e(eta[i], -(m->eta_max));
-				
-			sum_add(&eta_tail_sum, ediff.val);
-			sum_add(&eta_tail_err_sum, ediff.err);
-		}
-		
-		struct valerr_t eta_tail = sum_get(&eta_tail_sum);
-		struct valerr_t eta_tail_err = sum_get(&eta_tail_err_sum);
-		double val = eta_tail.val;
-		double err = (eta_tail_err.err + eta_tail.err + eta_tail_err.val) / (1 - 3 * EPS);
-		
-		if (m->eta_tail < val) {
+		if (m->eta_tail < eta_tail.val) {
 			// eta_tail + eta_tail_err >= val - err
-			assert(val <= (m->eta_tail + err + m->eta_tail_err) / (1 - 3 * EPS));
+			assert(eta_tail.val <= (m->eta_tail + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
 		} else {
 			// eta_tail - eta_tail_err <= val + err
-			assert(m->eta_tail <= (val + err + m->eta_tail_err) / (1 - 3 * EPS));
+			assert(m->eta_tail <= (eta_tail.val + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
 		}
-
-		
 	}
 }
 
