@@ -8,11 +8,11 @@
 
 
 struct mlogit_glm {
-	struct mlogit mlogit;
-	struct dmatrix x;
+	struct mlogit values;
+	double *x;
 	double *beta;
+	double *cat_buf;
 	double *mean;
-	double *cov;
 	size_t dim;
 };
 
@@ -20,14 +20,51 @@ struct mlogit_glm {
 void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim);
 void mlogit_glm_deinit(struct mlogit_glm *m);
 
+static inline size_t mlogit_glm_ncat(const struct mlogit_glm *m);
+static inline size_t mlogit_glm_dim(const struct mlogit_glm *m);
+static inline double *mlogit_glm_coefs(const struct mlogit_glm *m);
+static inline double *mlogit_glm_x(const struct mlogit_glm *m);
+static inline double *mlogit_glm_mean(const struct mlogit_glm *m);
+// static inline double *mlogit_glm_cov(const struct mlogit_glm *m);
+static inline struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
+
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
 void mlogit_glm_set_x(struct mlogit_glm *m, const double *x);
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *idx, size_t ndx);
 
 
-struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
-double *mlogit_glm_mean(const struct mlogit_glm *m);
-double *mlogit_glm_cov(const struct mlogit_glm *m);
+
+
+size_t mlogit_glm_ncat(const struct mlogit_glm *m)
+{
+	return mlogit_ncat(&m->values);
+}
+
+size_t mlogit_glm_dim(const struct mlogit_glm *m)
+{
+	return m->dim;
+}
+
+double *mlogit_glm_coefs(const struct mlogit_glm *m)
+{
+	return m->beta;
+}
+
+double *mlogit_glm_x(const struct mlogit_glm *m)
+{
+	return m->x;
+}
+
+double *mlogit_glm_mean(const struct mlogit_glm *m)
+{
+	return m->mean;
+}
+
+struct mlogit *mlogit_glm_values(const struct mlogit_glm *m)
+{
+	return &((struct mlogit_glm *)m)->values;
+}
+
 
 
 

@@ -1,17 +1,117 @@
+#include "port.h"
+#include <stdint.h> // SIZE_MAX
+#include <stdlib.h> // free
+#include <string.h> // memcpy, memset
+#include "blas.h"   // struct dmatrix, blas_gemv
+#include "xalloc.h" // xcalloc
+#include "mlogit_glm.h"
 
+static void recompute(struct mlogit_glm *m);
+
+
+void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
+{
+	assert(ncat == 0 || dim <= SIZE_MAX / ncat);
+	
+	mlogit_init(&m->values, ncat);
+	m->x = xcalloc(ncat * dim, sizeof(*m->x));
+	m->beta = xcalloc(dim, sizeof(*m->beta));
+	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
+	m->mean = xcalloc(dim, sizeof(*m->mean));
+	m->dim = dim;
+	
+}
+
+void mlogit_glm_deinit(struct mlogit_glm *m)
+{
+	free(m->mean);
+	free(m->cat_buf);
+	free(m->beta);
+	free(m->x);
+	mlogit_deinit(&m->values);
+}
+
+
+void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
+{
+	size_t len = mlogit_glm_dim(m);
+	if (beta) {
+		memcpy(m->beta, beta, len);
+	} else {
+		memset(m->beta, 0, len);
+	}
+}
+
+void mlogit_glm_set_x(struct mlogit_glm *m, const double *x)
+{
+	size_t len = mlogit_glm_ncat(m) * mlogit_glm_dim(m) * sizeof(*m->x);
+	if (x) {
+		memcpy(m->x, x, len);
+	} else {
+		memset(m->x, 0, len);
+	}
+	
+	recompute(m);
+}
+
+void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *idx, size_t ndx)
+{
+	size_t j;
+	
+	assert(i < mlogit_glm_ncat(m));
+	assert(dx || ndx == 0);
+	assert(ndx < mlogit_glm_dim(m));
+	
+	size_t ncat = mlogit_glm_ncat(m);
+	size_t dim = mlogit_glm_dim(m);
+	struct dmatrix x = { m->x, ncat };
+	
+	if (idx) {
+		for (j = 0; j < ndx; j++) {
+			assert(idx[j] < ncat);
+			MATRIX_ITEM(&x, i, idx[j]) += dx[j];
+		}
+	} else {
+		for (j = 0; j < dim; j++) {
+			MATRIX_ITEM(&x, i, j) = 0;
+		}
+	}
+	
+	recompute(m);
+}
+
+
+void recompute(struct mlogit_glm *m)
+{
+	size_t ncat = mlogit_glm_ncat(m);
+	size_t dim = mlogit_glm_dim(m);
+	
+	if (ncat == 0 || dim == 0)
+		return;
+	
+	const struct dmatrix x = { m->x, ncat };
+	const double *beta = m->beta;
+	double *mean = m->mean;
+	double *tmp = m->cat_buf;
+	size_t i;
+
+	// tmp := x * beta
+	blas_dgemv(BLAS_NOTRANS, ncat, dim, 1.0, &x, beta, 1, 0.0, tmp, 1);
+	mlogit_set_all_eta(&m->values, tmp);
+	
+	// tmp := p
+	for (i = 0; i < ncat; i++) {
+		tmp[i] = mlogit_prob(&m->values, i);
+	}
+	
+	// mean := t(X) * p
+	blas_dgemv(BLAS_TRANS, ncat, dim, 1.0, &x, tmp, 1, 0, mean, 1);
+}
 
 
 #if 0
 
 
-void mlogit_mean_init(struct mlogit_mean *m, size_t dim, const double *mean0)
-{
-	m->dim = dim;
-	m->mean = xmalloc(dim * sizeof(*m->mean));
-	m->xbuf = xmalloc(dim * sizeof(*m->xbuf));
-	
-	memcpy(m->mean, mean0, dim * sizeof(*m->mean));
-}
 
 
 void mlogit_mean_deinit(struct mlogit_mean *m)

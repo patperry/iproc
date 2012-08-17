@@ -1,8 +1,9 @@
 #ifndef MLOGIT_H
 #define MLOGIT_H
 
-#include <assert.h>
-#include <stddef.h>
+#include <assert.h>	// assert
+#include <math.h>	// exp, isnan
+#include <stddef.h>	// size_t
 
 
 struct mlogit {
