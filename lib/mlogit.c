@@ -2,7 +2,6 @@
 #include <assert.h>
 #include <float.h>
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ieee754.h" // double_rcompare
@@ -392,7 +391,7 @@ void set_eta_tail(struct mlogit *m)
 	m->eta_tail = eta_tail.val;
 	m->eta_tail_err = eta_tail.err;
 	
-	printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
+	//printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
 	//printf("!"); fflush(stdout); 
 }
 
