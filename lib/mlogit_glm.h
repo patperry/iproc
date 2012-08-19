@@ -30,7 +30,7 @@ static inline struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
 
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
 void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x);
-void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *idx, size_t ndx);
+void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 
 
 

@@ -56,24 +56,23 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 	recompute(m);
 }
 
-void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *idx, size_t ndx)
+void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
-	size_t j;
+	size_t j, k;
 	
 	assert(i < mlogit_glm_ncat(m));
 	assert(dx || ndx == 0);
-	assert(ndx < mlogit_glm_dim(m));
 	
 	size_t ncat = mlogit_glm_ncat(m);
-	size_t dim = mlogit_glm_dim(m);
 	
-	if (idx) {
-		for (j = 0; j < ndx; j++) {
-			assert(idx[j] < ncat);
-			MATRIX_ITEM(m->x, ncat, i, idx[j]) += dx[j];
+	if (jdx) {
+		for (k = 0; k < ndx; k++) {
+			assert(jdx[k] < ncat);
+			MATRIX_ITEM(m->x, ncat, i, jdx[k]) += dx[k];
 		}
-	} else {
-		for (j = 0; j < dim; j++) {
+	} else if (ndx) {
+		assert(ndx == mlogit_glm_dim(m));
+		for (j = 0; j < ndx; j++) {
 			MATRIX_ITEM(m->x, ncat, i, j) += dx[j];
 		}
 	}

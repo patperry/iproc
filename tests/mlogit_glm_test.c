@@ -62,6 +62,37 @@ cleanup:
 }
 
 
+static void test_coefs()
+{
+	double *beta = mlogit_glm_coefs(&MGLM);
+	size_t p = mlogit_glm_dim(&MGLM);
+	size_t j;
+	
+	assert_int_equal(P, p);
+	
+	for (j = 0; j < p; j++) {
+		assert_real_identical(BETA[j], beta[j]);
+	}
+}
+
+
+static void test_x()
+{
+	double *x = mlogit_glm_x(&MGLM);
+	size_t n = mlogit_glm_ncat(&MGLM);
+	size_t p = mlogit_glm_dim(&MGLM);
+	size_t i, j;
+	
+	assert_int_equal(N, n);
+	assert_int_equal(P, p);
+	
+	for (j = 0; j < P; j++) {
+		for (i = 0; i < N; i++) {
+			assert_real_identical(MATRIX_ITEM(X, N, i, j), MATRIX_ITEM(x, n, i, j));
+		}
+	}
+}
+
 static void test_mean()
 {
 	double *mean = mlogit_glm_mean(&MGLM);
@@ -70,6 +101,63 @@ static void test_mean()
 	for (i = 0; i < P; i++) {
 		assert_real_eqrel(DBL_MANT_DIG / 2, mean[i], MEAN[i]);
 	}
+}
+
+static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx)
+{
+	size_t j, k;
+	
+	if (jdx) {
+		for (k = 0; k < ndx; k++) {
+			MATRIX_ITEM(X, N, i, jdx[k]) += dx[k];
+		}
+	} else if (ndx) {
+		assert(ndx == P);
+
+		for (j = 0; j < P; j++) {
+			MATRIX_ITEM(X, N, i, j) += dx[k];
+		}
+	}
+	recompute();
+	
+	mlogit_glm_inc_x(&MGLM, i, dx, jdx, ndx);
+	
+	test_x();
+	test_mean();
+}
+
+static void test_inc_x_rand(double dxmin, double dxmax, size_t ndx)
+{
+	size_t i = rand() % N;	
+	double *dx = xmalloc(ndx * sizeof(*dx));
+	size_t *jdx = xmalloc(ndx * sizeof(*jdx));
+	size_t k;
+	
+	for (k = 0; k < ndx; k++) {
+		dx[k] = runif(dxmin, dxmax);
+		jdx[k] = rand() % P;
+	}
+	
+	test_inc_x(i, dx, jdx, ndx);
+
+	free(jdx);	
+	free(dx);
+}
+
+
+static void test_inc_x_small()
+{
+	test_inc_x_rand(-1.0, 1.0, 1);
+}
+
+static void test_inc_x_med()
+{
+	test_inc_x_rand(-10.0, 10.0, 1);
+}
+
+static void test_inc_x_big()
+{
+	test_inc_x_rand(-100.0, 100.0, 1);
 }
 
 
@@ -167,15 +255,27 @@ int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),
-		unit_test_setup_teardown(test_mean, empty_setup, teardown),
+		unit_test_setup_teardown(test_x, empty_setup, teardown),	
+		unit_test_setup_teardown(test_coefs, empty_setup, teardown),	
+		unit_test_setup_teardown(test_mean, empty_setup, teardown),		
 		unit_test_teardown(empty_suite, teardown_fixture),
 		
 		unit_test_setup(simple_suite, simple_setup_fixture),
-		unit_test_setup_teardown(test_mean, simple_setup, teardown),
+		unit_test_setup_teardown(test_x, simple_setup, teardown),
+		unit_test_setup_teardown(test_coefs, simple_setup, teardown),
+		unit_test_setup_teardown(test_mean, simple_setup, teardown),		
+		unit_test_setup_teardown(test_inc_x_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_inc_x_med, simple_setup, teardown),
+		unit_test_setup_teardown(test_inc_x_big, simple_setup, teardown),		
 		unit_test_teardown(simple_suite, teardown_fixture),
 		
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
+		unit_test_setup_teardown(test_x, zeros_setup, teardown),
+		unit_test_setup_teardown(test_coefs, zeros_setup, teardown),		
 		unit_test_setup_teardown(test_mean, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_inc_x_small, zeros_setup, teardown),
+		unit_test_setup_teardown(test_inc_x_med, zeros_setup, teardown),
+		unit_test_setup_teardown(test_inc_x_big, zeros_setup, teardown),		
 		unit_test_teardown(zeros_suite, teardown_fixture),
 	};
 	
