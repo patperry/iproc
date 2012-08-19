@@ -399,7 +399,7 @@ static struct recv_model_sender *sender_raw(struct recv_model *m, size_t isend)
 
 static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 				   size_t jrecv, const double *delta,
-				   const struct vpattern *pat)
+				   const size_t *ind, size_t nz)
 {
 	struct recv_model *m = udata;
 	struct frame *f = design2_frame(d);	
@@ -430,7 +430,7 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 
 	const double *dyn_coefs = m->coefs.dyad.tvars;
 
-	double deta = sblas_ddoti(delta, pat, dyn_coefs);
+	double deta = sblas_ddoti(nz, delta, ind, dyn_coefs);
 	double scale = send->scale;
 	double gamma = send->gamma;
 	double log_W = send->log_W;

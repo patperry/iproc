@@ -496,7 +496,7 @@ static double *design_dx(struct design *d, size_t i)
 
 static void design_notify_update(struct design *d, const struct var *v,
 				 size_t i, const double *delta,
-				 const struct vpattern *pat)
+				 const size_t *ind, size_t nz)
 {
 	size_t index = v->index;
 	size_t iz;
@@ -504,12 +504,13 @@ static void design_notify_update(struct design *d, const struct var *v,
 	if (!d->nobs)
 		return;
 	
-	if (pat) {
-		for (iz = 0; iz < pat->nz; iz++) {
-			d->pat_buf.indx[iz] = pat->indx[iz] + index;
+	if (ind) {
+		for (iz = 0; iz < nz; iz++) {
+			d->pat_buf.indx[iz] = ind[iz] + index;
 		}
-		d->pat_buf.nz = pat->nz;
+		d->pat_buf.nz = nz;
 	} else {
+		assert(nz == v->dim);
 		for (iz = 0; iz < v->dim; iz++) {
 			d->pat_buf.indx[iz] = iz + index;
 		}
@@ -521,14 +522,14 @@ static void design_notify_update(struct design *d, const struct var *v,
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, i, delta, &d->pat_buf);
+			obs->callbacks.update(obs->udata, d, i, delta, d->pat_buf.indx, d->pat_buf.nz);
 		}
 	}
 }
 
 
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
-		   const struct vpattern *pat)
+		   const size_t *ind, size_t nz)
 {
 	assert(v->design == d);
 	assert(v->type == VAR_TYPE_TVAR);
@@ -537,9 +538,10 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 	size_t index = v->index;
 	double *dx = design_dx(d, i) + index;
 	
-	if (pat) {
-		sblas_daxpyi(1.0, delta, pat, dx);
+	if (ind) {
+		sblas_daxpyi(nz, 1.0, delta, ind, dx);
 	} else {
+		assert(nz == v->dim);
 		blas_daxpy(v->dim, 1.0, delta, 1, dx, 1);
 	}
 	
@@ -548,11 +550,11 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.update_var) {
-			obs->callbacks.update_var(obs->udata, d, v, i, delta, pat);
+			obs->callbacks.update_var(obs->udata, d, v, i, delta, ind, nz);
 		}
 	}
 	
-	design_notify_update(d, v, i, delta, pat);
+	design_notify_update(d, v, i, delta, ind, nz);
 }
 
 

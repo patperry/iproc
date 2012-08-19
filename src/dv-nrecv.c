@@ -14,7 +14,7 @@ static void nrecv_message_add(void *udata, struct frame *f,
 	size_t jrecv = msg->from;
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
-	struct vpattern pat = vpattern_make(dx_index, 1);
+	size_t nz = 1;
 	
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -22,7 +22,7 @@ static void nrecv_message_add(void *udata, struct frame *f,
 			continue;
 		
 		size_t isend = msg->to[ito];
-		design2_update(d, v, isend, jrecv, dx_data, &pat);
+		design2_update(d, v, isend, jrecv, dx_data, dx_index, nz);
 	}
 }
 
@@ -36,8 +36,8 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 	size_t jrecv = msg->from;
 
 	double dx_data[2] = { -1.0, +1.0 };
-	size_t dx_index[2] = { 0, 1 }; // values are unused
-	struct vpattern pat = vpattern_make(dx_index, 2);
+	size_t dx_index[2];
+	size_t nz = 2;
 	
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
@@ -51,7 +51,7 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 		dx_index[0] = ix0;
 		dx_index[1] = ix1;
 		
-		design2_update(d, v, isend, jrecv, dx_data, &pat);
+		design2_update(d, v, isend, jrecv, dx_data, dx_index, nz);
 	}
 }
 

@@ -24,7 +24,7 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ntrait;
-static struct dmatrix traits;
+static double *traits;
 static const char * const *trait_names;
 static struct messages messages;
 static struct frame frame;
@@ -36,15 +36,14 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nsend, &traits.data, &ntrait, &trait_names);
-	traits.lda = MAX(1, nsend);
+	enron_employees_init(&nsend, &traits, &ntrait, &trait_names);
 	enron_messages_init(&messages, -1);
 	nrecv = nsend;
 }
 
 static void enron_teardown_fixture()
 {
-	free(traits.data);
+	free(traits);
 	messages_deinit(&messages);
 	print_message("\n\n");
 }
@@ -58,7 +57,7 @@ static void basic_setup()
 	int has_loops = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	struct design *r = frame_recv_design(&frame);
-	design_add_traits(r, ntrait, trait_names, &traits);
+	design_add_traits(r, trait_names, traits, ntrait);
 	
 	struct design2 *d = frame_dyad_design(&frame);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
@@ -93,7 +92,7 @@ static void hard_setup()
 	int has_loops = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 	struct design *r = frame_recv_design(&frame);
-	design_add_traits(r, ntrait, trait_names, &traits);
+	design_add_traits(r, trait_names, traits, ntrait);
 	
 	struct design2 *d = frame_dyad_design(&frame);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);

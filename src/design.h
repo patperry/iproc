@@ -56,9 +56,9 @@ struct tvar_type {
 
 struct design_callbacks {
 	void (*update) (void *udata, struct design *d, size_t i,
-			const double *delta, const struct vpattern *pat);
+			const double *delta, const size_t *ind, size_t nz);
 	void (*update_var) (void *udata, struct design *d, const struct var *v, size_t i,
-			    const double *delta, const struct vpattern *pat);
+			    const double *delta, const size_t *ind, size_t nz);
 	void (*clear) (void *udata, struct design *d);
 };
 
@@ -140,7 +140,7 @@ void design_axpy(double alpha, const struct design *d, size_t i, struct coefs *c
 
 /* internal functions (for use by tvar callbacks) */
 void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
-		   const struct vpattern *pat);
+		   const size_t *ind, size_t nz);
 
 
 /* inline function definitions */

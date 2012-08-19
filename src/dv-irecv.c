@@ -13,7 +13,8 @@ static void irecv_message_add(void *udata, struct frame *f,
 	const struct var2 *v = &tv->var;
 	struct design2 *d = frame_dyad_design(f);	
 	size_t index = v->index;
-	double one = 1.0;	
+	const double one = 1.0;	
+	const size_t izero = 0;	
 	size_t jrecv = msg->from;
 	
 	size_t ito, nto = msg->nto;
@@ -24,7 +25,7 @@ static void irecv_message_add(void *udata, struct frame *f,
 		size_t isend = msg->to[ito];
 		const double *dx = design2_tvars(d, isend, jrecv);
 		if (!dx || dx[index] == 0.0) {
-			design2_update(d, v, isend, jrecv, &one, NULL);
+			design2_update(d, v, isend, jrecv, &one, &izero, 1);
 		}
 	}
 }
