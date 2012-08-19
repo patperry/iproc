@@ -16,7 +16,7 @@ struct design {
 
 	double *traits;
 	struct var **trait_vars;
-	size_t ntrait, ntrait_max;
+	size_t ntrait;
 
 	size_t tvar_dim;
 	struct tvar **tvars;
@@ -24,7 +24,7 @@ struct design {
 	struct vpattern pat_buf;
 	
 	struct vpattern active;
-	double *dx;	// transpose of dX[t]
+	double *dx;	// dX[t]
 	
 	struct design_observer *observers;
 	size_t nobs, nobs_max;
@@ -104,7 +104,7 @@ static inline size_t design_trait_dim(const struct design *d);
 static inline const double *design_traits(const struct design *d);
 const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x);
-void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const double *x);
+void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num);
 
 void design_traits_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y);

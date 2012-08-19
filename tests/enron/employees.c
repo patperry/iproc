@@ -32,7 +32,7 @@ static const char *ENRON_TRAIT_NAMES[] = {
 struct employee_parse {
 	size_t nactor;
 	size_t dim;
-	double *traits_t;
+	double *traits;
 	size_t nactor_max;
 
 	ptrdiff_t id;
@@ -145,15 +145,15 @@ static int parse_end_map(void *ctx)
 
 	if (parse->nactor == parse->nactor_max) {
 		size_t nactor_max = ARRAY_GROW1(parse->nactor_max, SIZE_MAX); 
-		parse->traits_t = xrealloc(parse->traits_t,
+		parse->traits = xrealloc(parse->traits,
 					  nactor_max
 					  * parse->dim
-					  * sizeof(parse->traits_t[0]));
+					  * sizeof(*parse->traits));
 		parse->nactor_max = nactor_max;
 	}
 
 	size_t id = parse->nactor;
-	double *x = parse->traits_t + id * parse->dim;
+	double *x = parse->traits + id * parse->dim;
 
 	assert(parse->id == (ptrdiff_t)parse->nactor + 1);
 	assert(parse->department != DEPARTMENT_NA);
@@ -240,7 +240,7 @@ int enron_employees_init_fread(size_t *nactorp,
 
 	parse.dim = ENRON_NTRAIT;
 	parse.nactor = 0;
-	parse.traits_t = NULL;
+	parse.traits = NULL;
 	parse.nactor_max = 0;
 
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *)&parse);
@@ -278,23 +278,13 @@ int enron_employees_init_fread(size_t *nactorp,
 	if (!parse_ok) {
 		*nactorp = 0;
 		*traitsp = NULL;
-		free(parse.traits_t);
+		free(parse.traits);
 		*ntraitp = 0;
 		*trait_namesp = NULL;
 	} else {
 		*nactorp = parse.nactor;
-
-		size_t n = parse.nactor;
-		size_t p = parse.dim;
-		double *traits_t = parse.traits_t;
-		size_t ldtraits_t = MAX(1, p);
-		double *traits = xmalloc(n * p * sizeof(double));
-		size_t ldtraits = MAX(1, n);
-
-		matrix_dtrans(p, n, traits_t, ldtraits_t, traits, ldtraits);
-		free(traits_t);
-		*traitsp = traits;
-		*ntraitp = p;
+		*traitsp = parse.traits;
+		*ntraitp = parse.dim;
 		*trait_namesp = ENRON_TRAIT_NAMES;
 	}
 

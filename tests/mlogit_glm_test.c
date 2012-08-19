@@ -33,19 +33,19 @@ static void recompute()
 	
 	memset(MEAN, 0, P * sizeof(*MEAN));
 	
-	if (N == 0)
+	if (P == 0)
 		goto cleanup;
 
-	blas_dgemv(BLAS_NOTRANS, N, P, 1.0, X, N, BETA, 1, 0.0, eta, 1.0);
+	blas_dgemv(BLAS_TRANS, P, N, 1.0, X, P, BETA, 1, 0.0, eta, 1.0);
 	mlogit_set_all_eta(&m, eta);
 
 	
-	blas_dcopy(P, X, N, MEAN, 1);
+	blas_dcopy(P, X, 1, MEAN, 1);
 	ptot = mlogit_prob(&m, 0);
 	
 	for (i = 1; i < N; i++) {
 		/* diff := x[i,:] - mean */
-		blas_dcopy(P, X + i, N, diff, 1);
+		blas_dcopy(P, X + i * P, 1, diff, 1);
 		blas_daxpy(P, -1.0, MEAN, 1, diff, 1);
 
 		/* ptot += p */
@@ -88,7 +88,7 @@ static void test_x()
 	
 	for (j = 0; j < P; j++) {
 		for (i = 0; i < N; i++) {
-			assert_real_identical(MATRIX_ITEM(X, N, i, j), MATRIX_ITEM(x, n, i, j));
+			assert_real_identical(X[i * P + j], x[i * p + j]);
 		}
 	}
 }
@@ -109,13 +109,13 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	
 	if (jdx) {
 		for (k = 0; k < ndx; k++) {
-			MATRIX_ITEM(X, N, i, jdx[k]) += dx[k];
+			X[i * P + jdx[k]] += dx[k];
 		}
 	} else if (ndx) {
 		assert(ndx == P);
 
 		for (j = 0; j < P; j++) {
-			MATRIX_ITEM(X, N, i, j) += dx[k];
+			X[i * P + j] += dx[k];
 		}
 	}
 	recompute();
@@ -181,10 +181,10 @@ static void setup(const double *beta, size_t n, size_t p)
 	} else {
 		memset(BETA, 0, P * sizeof(*BETA));
 	}
-	
-	for (j = 0; j < P; j++) {
-		for (i = 0; i < N; i++) {
-			MATRIX_ITEM(X, N, i, j) = runif(-5.0, 5.0);
+
+	for (i = 0; i < N; i++) {	
+		for (j = 0; j < P; j++) {
+			X[i * P + j] = runif(-5.0, 5.0);
 		}
 	}
 	

@@ -9,11 +9,11 @@
 struct design2 {
 	struct frame *frame;
 	size_t count1, count2;
+	size_t count; // count1 * count2
 
 	double *traits;
-	size_t ldtraits;
 	struct var2 **trait_vars;
-	size_t ntrait, ntrait_max;
+	size_t ntrait;
 
 	size_t tvar_dim;
 	struct tvar2 **tvars;
@@ -22,7 +22,7 @@ struct design2 {
 	
 	size_t *ir;
 	size_t *jc;
-	double *dx;	// transpose of dX[t]
+	double *dx;	// dX[t]
 	size_t nnz, nnz_max;	
 	
 	struct design2_observer *observers;
@@ -89,7 +89,7 @@ static inline size_t design2_trait_dim(const struct design2 *d);
 static inline const double *design2_traits(const struct design2 *d);
 const char *design2_trait_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
-void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const double *x);
+void design2_add_traits(struct design2 *d, const char * const *names, const double *x, size_t num);
 
 //void design2_add_kron(struct design2 *d, const struct var *i,
 //			const struct var *j);

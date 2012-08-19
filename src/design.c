@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "coreutil.h"
+#include "lapack.h"
 #include "strata.h"
 #include "util.h"
 #include "xalloc.h"
@@ -64,7 +65,6 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->traits = NULL;
 	d->trait_vars = NULL;
 	d->ntrait = 0;
-	d->ntrait_max = 0;
 
 	d->tvar_dim = 0;
 	d->tvars = NULL;
@@ -157,13 +157,19 @@ void design_remove_observer(struct design *d, void *udata)
 
 static void design_traits_grow(struct design *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntrait, d->ntrait_max, delta, SIZE_MAX);
-	if (nmax > d->ntrait_max) {
-		size_t count = design_count(d);
-		d->traits = xrealloc(d->traits, nmax * count * sizeof(*d->traits));
-		d->trait_vars = xrealloc(d->trait_vars, nmax * sizeof(*d->trait_vars));
-		d->ntrait_max = nmax;
+	size_t count = design_count(d);		
+	size_t dim = design_trait_dim(d);
+	size_t dim1 = dim + delta;
+
+	if (count) {
+		double *traits = xmalloc(count * dim1 * sizeof(*traits));		
+		lapack_dlacpy(LA_COPY_ALL, dim, count, d->traits, dim, traits, dim1);
+		free(d->traits);
+		d->traits = traits;
 	}
+	
+	d->trait_vars = xrealloc(d->trait_vars, dim1 * sizeof(*d->trait_vars));
+	d->ntrait = dim1;	
 }
 
 
@@ -177,7 +183,6 @@ const char *design_trait_name(const struct design *d, size_t j)
 static void design_recompute_cohorts(struct design *d)
 {
 	const double *a = design_traits(d);
-	size_t lda = design_count(d);
 	size_t dim = design_trait_dim(d);
 	size_t n = design_count(d);
 	size_t i, c;
@@ -190,7 +195,7 @@ static void design_recompute_cohorts(struct design *d)
 
 	d->ncohort = 0;
 	for (i = 0; i < n; i++) {
-		blas_dcopy(dim, MATRIX_ROW(a, lda, i), lda, buf, 1);
+		blas_dcopy(dim, a + i * dim, 1, buf, 1);
 		c = strata_add(&strat, buf);
 
 		d->cohorts[i] = c;
@@ -205,46 +210,57 @@ static void design_recompute_cohorts(struct design *d)
 	strata_deinit(&strat);
 }
 
-static const struct var *design_add_trait_unsafe(struct design *d, const char *name, const double *x)
+static struct var *design_trait_alloc(const struct design *d, const char *name,
+				      size_t index, size_t dim)
 {
-	size_t n = design_count(d);
-	size_t ntrait = d->ntrait;
 	struct var *v = xmalloc(sizeof(*v));
 	
 	v->design = d;
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
-	v->dim = 1;
-	v->index = ntrait;
+	v->dim = dim;
+	v->index = index;
 	
-	design_traits_grow(d, 1);
-	d->trait_vars[ntrait] = v;
-		
-	memcpy(MATRIX_COL(d->traits, n, ntrait), x, n * sizeof(*x));
-	
-	d->ntrait = ntrait + 1;
-
 	return v;
 }
 
 
 const struct var *design_add_trait(struct design *d, const char *name, const double *x)
 {
-	const struct var *v = design_add_trait_unsafe(d, name, x);
+	size_t n = design_count(d);
+	size_t ntrait = d->ntrait;
+	size_t ntrait1 = ntrait + 1;
+	struct var *v = design_trait_alloc(d, name, ntrait, 1);
+	
+	design_traits_grow(d, 1);
+	d->trait_vars[ntrait] = v;
+	blas_dcopy(n, x, 1, d->traits + ntrait, ntrait1);
 	design_recompute_cohorts(d);
 	return v;
 }
 
 
-void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const double *x)
+void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num)
 {
-	design_traits_grow(d, ntrait);
-	size_t ldx = design_count(d);
-	
+	if (num == 0)
+		return;
+
+	size_t n = design_count(d);
+	size_t ntrait = d->ntrait;
+	size_t ntrait1 = ntrait;
+
+	design_traits_grow(d, num);
+	struct var *v;
 	size_t i;
-	for (i = 0; i < ntrait; i++) {
-		design_add_trait_unsafe(d, names[i], MATRIX_COL(x, ldx, i));
+	
+	for (i = 0; i < num; i++) {
+		v = design_trait_alloc(d, names[i], ntrait1, 1);
+		d->trait_vars[ntrait1] = v;
+		ntrait1++;
 	}
+	assert(ntrait1 == ntrait + num);
+	
+	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + ntrait, ntrait1);
 	design_recompute_cohorts(d);
 }
 
@@ -272,7 +288,7 @@ const char *design_tvar_name(const struct design *d, size_t j)
 
 static void design_grow_tvars(struct design *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntvar, d->ntrait_max, delta, SIZE_MAX);
+	size_t nmax = array_grow(d->ntvar, d->ntvar_max, delta, SIZE_MAX);
 	if (nmax > d->ntvar_max) {
 		d->tvars = xrealloc(d->tvars, nmax * sizeof(*d->tvars));
 		d->ntvar_max = nmax;
@@ -361,23 +377,31 @@ const struct var *design_var(const struct design *d, const char *name)
 void design_traits_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y)
 {
-	size_t m = design_count(d);
-	size_t n = design_trait_dim(d);
+	size_t n = design_count(d);
+	size_t p = design_trait_dim(d);
 	const double *a = design_traits(d);
-	size_t lda = MAX(1, m);
-	
-	blas_dgemv(BLAS_NOTRANS, m, n, alpha, a, lda, x, 1, beta, y, 1);
+	size_t lda = p;
+
+	if (p) {
+		blas_dgemv(BLAS_TRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
+	} else if (beta == 0) {
+		memset(y, 0, n * sizeof(*y));
+	} else if (beta != 1) {
+		blas_dscal(n, beta, y, 1);
+	}
 }
 
 
 void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y)
 {
-	size_t m = design_count(d);
-	size_t n = design_trait_dim(d);
+	size_t n = design_count(d);
+	size_t p = design_trait_dim(d);
 	const double *a = design_traits(d);
-	size_t lda = MAX(1, m);
+	size_t lda = p;
 
-	blas_dgemv(BLAS_TRANS, m, n, alpha, a, lda, x, 1, beta, y, 1);
+	if (p) {
+		blas_dgemv(BLAS_NOTRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
+	}
 }
 
 
@@ -385,12 +409,10 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 {
 	assert(i < design_count(d));
 	
-
-	size_t dim = design_trait_dim(d);
 	const double *a = design_traits(d);
-	size_t lda = MAX(1, design_count(d));
+	size_t dim = design_trait_dim(d);
 	
-	blas_daxpy(dim, alpha, MATRIX_ROW(a, lda, i), lda, y, 1);	
+	blas_daxpy(dim, alpha, a + i * dim, 1, y, 1);	
 }
 
 

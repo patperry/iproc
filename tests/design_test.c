@@ -81,7 +81,7 @@ static void enron_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
 	design = frame_recv_design(&frame);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, ntrait, trait_names, traits);
+	design_add_traits(design, trait_names, traits, ntrait);
 }
 
 static void enron_teardown()
@@ -121,7 +121,7 @@ static void enron_reff_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
 	design = frame_recv_design(&frame);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, ntrait, trait_names, traits);
+	design_add_traits(design, trait_names, traits, ntrait);
 }
 
 static void enron_reff_teardown()
@@ -131,7 +131,7 @@ static void enron_reff_teardown()
 }
 
 
-static void matrix_assign_reffects(double *x, size_t ldx,
+static void matrix_assign_reffects(double *x, size_t tdx,
 				   size_t nrecv,
 				   int has_reffects)
 {
@@ -140,9 +140,9 @@ static void matrix_assign_reffects(double *x, size_t ldx,
 
 	size_t i;
 
-	matrix_dzero(nrecv, nrecv, x, ldx);
+	matrix_dzero(nrecv, nrecv, x, tdx);
 	for (i = 0; i < nrecv; i++) {
-		MATRIX_ITEM(x, ldx, i, i) = 1.0;
+		x[i * tdx + i] = 1.0;
 	}
 }
 
@@ -160,20 +160,20 @@ static void matrix_init_design0(double **px, const struct design *d)
 	size_t nstat = pr;
 	size_t dim =  istat + nstat;
 	double *x = xmalloc(nrecv * dim * sizeof(double));
-	size_t ldx = MAX(1, nrecv);
+	size_t tdx = MAX(1, dim);
 	
 	*px = x;
-	double *xreff = MATRIX_COL(x, ldx, ireff);
-	matrix_assign_reffects(xreff, ldx, nrecv, has_reffects);
-	double *xstat = MATRIX_COL(x, ldx, istat);
-	lapack_dlacpy(LA_COPY_ALL, nrecv, nstat, traits, MAX(1, nrecv), xstat, ldx);
+	double *xreff = x + ireff;
+	matrix_assign_reffects(xreff, tdx, nrecv, has_reffects);
+	double *xstat = x + istat;
+	lapack_dlacpy(LA_COPY_ALL, nstat, nrecv, traits, MAX(1, nstat), xstat, tdx);
 }
 
 static void test_mul0()
 {
 
 	double *a;
-	size_t lda;
+	size_t tda;
 	
 	double *x, *y, *y1;	
 	size_t i, n, p;
@@ -186,26 +186,26 @@ static void test_mul0()
 	y1 = xmalloc(n * sizeof(double));
 	
 	matrix_init_design0(&a, design);
-	lda = MAX(1, n);
+	tda = MAX(1, p);
 	
 	for (i = 0; i < p; i++) {
 		x[i] =  (7 * i) % 5 - 2.0;
 	}
 		
 	design_traits_mul(1.0, design, x, 0.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, 0.0, y1, 1);
+	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
 	design_traits_mul(1.0, design, x, 1.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, 1.0, y1, 1);
+	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);
 		
 	design_traits_mul(1.0, design, x, -1.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, -1.0, y1, 1);	
+	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
 	design_traits_mul(2.0, design, x, 2.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 2.0, a, lda, x, 1, 2.0, y1, 1);	
+	blas_dgemv(BLAS_TRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
 	free(a);
@@ -219,7 +219,7 @@ static void test_tmul0()
 {
 	
 	double *a;
-	size_t lda;
+	size_t tda;
 	double *x, *y, *y1;	
 	size_t i, n, p;
 	
@@ -230,26 +230,26 @@ static void test_tmul0()
 	y = xmalloc(p * sizeof(double));
 	y1 = xmalloc(p * sizeof(double));
 	matrix_init_design0(&a, design);
-	lda = MAX(1, n);
+	tda = MAX(1, p);
 		
 	for (i = 0; i < n; i++) {
 		x[i] = (3 * i + 1) % 5 - 2.0;
 	}
 		
 	design_traits_tmul(1.0, design, x, 0.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, 0.0, y1, 1);
+	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);		
 		
 	design_traits_tmul(1.0, design, x, 1.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, 1.0, y1, 1);
+	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
 	design_traits_tmul(1.0, design, x, -1.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, -1.0, y1, 1);	
+	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
 	design_traits_tmul(2.0, design, x, 2.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 2.0, a, lda, x, 1, 2.0, y1, 1);
+	blas_dgemv(BLAS_NOTRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
 	free(a);

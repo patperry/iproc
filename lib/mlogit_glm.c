@@ -2,7 +2,7 @@
 #include <stdint.h> // SIZE_MAX
 #include <stdlib.h> // free
 #include <string.h> // memcpy, memset
-#include "blas.h"   // struct dmatrix, blas_gemv
+#include "blas.h"   // blas_gemv
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
 
@@ -73,16 +73,18 @@ void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t 
 	assert(dx || ndx == 0);
 	
 	size_t ncat = mlogit_glm_ncat(m);
+	size_t dim = mlogit_glm_dim(m);
+	double *x = m->x;
 	
 	if (jdx) {
 		for (k = 0; k < ndx; k++) {
 			assert(jdx[k] < ncat);
-			MATRIX_ITEM(m->x, ncat, i, jdx[k]) += dx[k];
+			x[i * dim + jdx[k]] += dx[k];
 		}
 	} else if (ndx) {
 		assert(ndx == mlogit_glm_dim(m));
 		for (j = 0; j < ndx; j++) {
-			MATRIX_ITEM(m->x, ncat, i, j) += dx[j];
+			x[i * dim + j] += dx[j];
 		}
 	}
 }
@@ -92,17 +94,18 @@ void recompute(struct mlogit_glm *m)
 {
 	size_t ncat = mlogit_glm_ncat(m);
 	size_t dim = mlogit_glm_dim(m);
+
 	
-	if (ncat == 0 || dim == 0)
+	if (dim == 0)
 		return;
 	
 	const double *beta = m->beta;
 	double *mean = m->mean;
-	double *tmp = m->cat_buf;
+	double *tmp = m->cat_buf;	
 	size_t i;
 
 	// tmp := x * beta
-	blas_dgemv(BLAS_NOTRANS, ncat, dim, 1.0, m->x, ncat, beta, 1, 0.0, tmp, 1);
+	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 0.0, tmp, 1);
 	mlogit_set_all_eta(&m->values, tmp);
 	
 	// tmp := p
@@ -111,7 +114,7 @@ void recompute(struct mlogit_glm *m)
 	}
 	
 	// mean := t(X) * p
-	blas_dgemv(BLAS_TRANS, ncat, dim, 1.0, m->x, ncat, tmp, 1, 0, mean, 1);
+	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, tmp, 1, 0, mean, 1);
 }
 
 

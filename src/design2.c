@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "coreutil.h"
+#include "lapack.h"
 #include "util.h"
 #include "xalloc.h"
 
@@ -57,12 +58,11 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->frame = f;
 	d->count1 = count1;
 	d->count2 = count2;
+	d->count = count1 * count2;
 	
 	d->traits = NULL;
-	d->ldtraits = MAX(1, count1 * count2);
 	d->trait_vars = NULL;
 	d->ntrait = 0;
-	d->ntrait_max = 0;
 
 	d->tvar_dim = 0;
 	d->tvars = NULL;
@@ -157,13 +157,19 @@ void design2_remove_observer(struct design2 *d, void *udata)
 
 static void design2_traits_grow(struct design2 *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntrait, d->ntrait_max, delta, SIZE_MAX);
-	if (nmax > d->ntrait_max) {
-		size_t count = design2_count1(d) * design2_count2(d);
-		d->traits = xrealloc(d->traits, nmax * count * sizeof(*d->traits));
-		d->trait_vars = xrealloc(d->trait_vars, nmax * sizeof(*d->trait_vars));
-		d->ntrait_max = nmax;
+	size_t count = d->count;
+	size_t dim = d->ntrait;
+	size_t dim1 = dim + delta;
+	
+	if (count) {
+		double *traits = xmalloc(count * dim1 * sizeof(*traits));
+		lapack_dlacpy(LA_COPY_ALL, dim, count, d->traits, dim, traits, dim1);
+		free(d->traits);
+		d->traits = traits;
 	}
+	
+	d->trait_vars = xrealloc(d->trait_vars, dim1 * sizeof(*d->trait_vars));
+	d->ntrait = dim1;	
 }
 
 
@@ -174,36 +180,57 @@ const char *design2_trait_name(const struct design2 *d, size_t j)
 }
 
 
-const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x)
+static struct var2 *design2_trait_alloc(const struct design2 *d, const char *name,
+				      size_t index, size_t dim)
 {
-	size_t ntrait = d->ntrait;
 	struct var2 *v = xmalloc(sizeof(*v));
 	
 	v->design = d;
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
-	v->dim = 1;
-	v->index = ntrait;
+	v->dim = dim;
+	v->index = index;
+	
+	return v;
+}
+
+
+const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x)
+{
+	size_t n = d->count;
+	size_t ntrait = d->ntrait;
+	size_t ntrait1 = ntrait + 1;
+	struct var2 *v = design2_trait_alloc(d, name, ntrait, 1);
 	
 	design2_traits_grow(d, 1);
 	d->trait_vars[ntrait] = v;
-		
-	memcpy(MATRIX_COL(&d->traits, d->ldtraits, ntrait), x, design2_count1(d) * design2_count2(d) * sizeof(*x));
-	
-	d->ntrait = ntrait + 1;
+	blas_dcopy(n, x, 1, d->traits + ntrait, ntrait1);
 
 	return v;
 }
 
-void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const double *x)
+
+void design2_add_traits(struct design2 *d, const char * const *names, const double *x, size_t num)
 {
-	design2_traits_grow(d, ntrait);
+	if (num == 0)
+		return;
 	
-	size_t ldx = d->ldtraits;
+	size_t n = d->count;
+	size_t ntrait = d->ntrait;
+	size_t ntrait1 = ntrait;
+	
+	design2_traits_grow(d, num);
+	struct var2 *v;
 	size_t i;
-	for (i = 0; i < ntrait; i++) {
-		design2_add_trait(d, names[i], MATRIX_COL(x, ldx, i));
+	
+	for (i = 0; i < num; i++) {
+		v = design2_trait_alloc(d, names[i], ntrait1, 1);
+		d->trait_vars[ntrait1] = v;
+		ntrait1++;
 	}
+	assert(ntrait1 == ntrait + num);
+	
+	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + ntrait, ntrait1);
 }
 
 
@@ -230,7 +257,7 @@ const char *design2_tvar_name(const struct design2 *d, size_t j)
 
 static void design2_grow_tvars(struct design2 *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntvar, d->ntrait_max, delta, SIZE_MAX);
+	size_t nmax = array_grow(d->ntvar, d->ntvar_max, delta, SIZE_MAX);
 	if (nmax > d->ntvar_max) {
 		d->tvars = xrealloc(d->tvars, nmax * sizeof(*d->tvars));
 		d->ntvar_max = nmax;
@@ -306,13 +333,18 @@ void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
 {
 	assert(i < design2_count1(d));
 
-	const double *a = design2_traits(d);
-	size_t lda = d->ldtraits;
-	size_t m = design2_count2(d);
-	size_t n = design2_trait_dim(d);
-	const double *asub = MATRIX_PTR(a, lda, i * m, 0);
+	size_t n = design2_count2(d);
+	size_t p = design2_trait_dim(d);
+	const double *a = design2_traits(d) + i * (n * p);
+	size_t lda = p;	
 	
-	blas_dgemv(BLAS_NOTRANS, m, n, alpha, asub, lda, x, 1, beta, y, 1);
+	if (p) {
+		blas_dgemv(BLAS_TRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
+	} else if (beta == 0.0) {
+		memset(y, 0, n * sizeof(*y));
+	} else if (beta != 1.0) {
+		blas_dscal(n, beta, y, 1);
+	}
 }
 
 
@@ -320,13 +352,14 @@ void design2_traits_tmul(double alpha, const struct design2 *d, size_t i, const 
 {
 	assert(i < design2_count1(d));
 	
-	const double *a = design2_traits(d);
-	size_t lda = d->ldtraits;
-	size_t m = design2_count2(d);
-	size_t n = design2_trait_dim(d);
-	const double *asub = MATRIX_PTR(a, lda, i * m, 0);
+	size_t n = design2_count2(d);
+	size_t p = design2_trait_dim(d);
+	const double *a = design2_traits(d) + i * (n * p);
+	size_t lda = p;
 	
-	blas_dgemv(BLAS_TRANS, m, n, alpha, asub, lda, x, 1, beta, y, 1);
+	if (p) {
+		blas_dgemv(BLAS_NOTRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
+	}
 
 }
 
@@ -336,12 +369,11 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 	
-	const double *a = design2_traits(d);
-	size_t lda = d->ldtraits;
-	size_t m = design2_count2(d);
-	size_t dim = design2_trait_dim(d);
+	size_t n = design2_count2(d);
+	size_t p = design2_trait_dim(d);
+	const double *x = design2_traits(d) + i * (n * p) + j * n;
 
-	blas_daxpy(dim, alpha, MATRIX_PTR(a, lda, i * m + j, 0), lda, y, 1);
+	blas_daxpy(p, alpha, x, 1, y, 1);
 }
 
 
