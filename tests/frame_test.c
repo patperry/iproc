@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <string.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -71,7 +72,8 @@ static void test_dv_nsend()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	
-	double *xnsend = xcalloc(nsend * nrecv, sizeof(double));
+	double xnsend[nsend][nrecv];
+	memset(xnsend, 0, nsend * nrecv * sizeof(double));
 
 	isend = 0;
 
@@ -84,10 +86,10 @@ static void test_dv_nsend()
 			const double *dx = design2_tvars(dyad_design, isend, jrecv);
 			
 			if (dx) {
-				assert(dx[0] == xnsend[isend * nrecv + jrecv]);
-				assert_true(dx[0] == xnsend[isend * nrecv + jrecv]);
+				assert(dx[0] == xnsend[isend][jrecv]);
+				assert_true(dx[0] == xnsend[isend][jrecv]);
 			} else {
-				assert_true(0.0 == xnsend[isend * nrecv + jrecv]);
+				assert_true(0.0 == xnsend[isend][jrecv]);
 			}
 		}
 		
@@ -97,12 +99,10 @@ static void test_dv_nsend()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				xnsend[msg->from * nrecv + msg->to[ito]] += 1.0;
+				xnsend[msg->from][msg->to[ito]] += 1.0;
 			}
 		}
 	}
-
-	free(xnsend);
 }
 
 
@@ -131,7 +131,10 @@ static void test_dv_nrecv()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 
-	double *xnsend = xcalloc(nsend * nrecv, sizeof(double));
+	double xnsend[nsend][nrecv];
+	memset(xnsend, 0, nsend * nrecv * sizeof(double));
+
+	assert(nsend == nrecv);
 
 	isend = 0;
 
@@ -145,10 +148,10 @@ static void test_dv_nrecv()
 			const double *dx = design2_tvars(dyad_design, isend, jrecv);
 			
 			if (dx) {
-				assert(dx[0] == xnsend[jrecv * nrecv + isend]);
-				assert_true(dx[0] == xnsend[jrecv * nrecv + isend]);
+				assert(dx[0] == xnsend[jrecv][isend]);
+				assert_true(dx[0] == xnsend[jrecv][isend]);
 			} else {
-				assert_true(0.0 == xnsend[jrecv * nrecv + isend]);
+				assert_true(0.0 == xnsend[jrecv][isend]);
 			}
 		}
 
@@ -158,12 +161,10 @@ static void test_dv_nrecv()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				xnsend[msg->from * nrecv + msg->to[ito]] += 1.0;
+				xnsend[msg->from][msg->to[ito]] += 1.0;
 			}
 		}
 	}
-
-	free(xnsend);
 }
 
 static void dv_irecv_setup()
@@ -191,16 +192,21 @@ static void test_dv_irecv()
 	double t;
 	size_t itie, ntie, ito;
 	size_t isend;
-	size_t jrecv, j, nrecv = frame_recv_count(&frame);
+	size_t jrecv, nrecv = frame_recv_count(&frame);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 
 	double tmsg;
 
-	double *tlast = xmalloc(nsend * nrecv * sizeof(double));
-	for (j = 0; j < nsend * nrecv; j++) {
-		tlast[j] = -INFINITY;
+	double tlast[nsend][nrecv];
+	for (isend = 0; isend < nsend; isend++) {
+		for (jrecv = 0; jrecv < nrecv; jrecv++) {
+			tlast[isend][jrecv] = -INFINITY;
+		}
 	}
+
+	assert(nsend == nrecv);
+
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
@@ -212,7 +218,7 @@ static void test_dv_irecv()
 				jrecv = msg->to[ito];
 				const double *dx = design2_tvars(dyad_design, isend, jrecv);
 				
-				tmsg = tlast[(jrecv % nrecv) * nrecv + isend];
+				tmsg = tlast[jrecv][isend];
 				
 				if (isfinite(tmsg)) {
 					assert(dx[0] == 1.0);
@@ -229,12 +235,10 @@ static void test_dv_irecv()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				tlast[msg->from * nrecv + msg->to[ito]] = msg->time;
+				tlast[msg->from][msg->to[ito]] = msg->time;
 			}
 		}
 	}
-
-	free(tlast);
 }
 
 
@@ -264,15 +268,18 @@ static void test_dv_isend()
 	double t;
 	size_t itie, ntie, ito;
 	size_t isend;
-	size_t jrecv, j, nrecv = frame_recv_count(&frame);
+	size_t jrecv, nrecv = frame_recv_count(&frame);
 	const struct message *msg = NULL;
 	struct messages_iter it;
 
 	double tmsg;
 
-	double *tlast = xmalloc(nsend * nrecv * sizeof(double));
-	for (j = 0; j < nsend * nrecv; j++) {
-		tlast[j] = -INFINITY;
+	double tlast[nsend][nrecv];
+
+	for (isend = 0; isend < nsend; isend++) {
+		for (jrecv = 0; jrecv < nrecv; jrecv++) {
+			tlast[isend][jrecv] = -INFINITY;
+		}
 	}
 
 	MESSAGES_FOREACH(it, &messages) {
@@ -285,7 +292,7 @@ static void test_dv_isend()
 				jrecv = msg->to[ito];
 				const double *dx = design2_tvars(dyad_design, isend, jrecv);
 				
-				tmsg = tlast[isend * nrecv + jrecv];
+				tmsg = tlast[isend][jrecv];
 				
 				if (isfinite(tmsg)) {
 					assert(dx[0] == 1.0);
@@ -302,12 +309,10 @@ static void test_dv_isend()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				tlast[msg->from * nrecv + msg->to[ito]] = msg->time;
+				tlast[msg->from][msg->to[ito]] = msg->time;
 			}
 		}
 	}
-
-	free(tlast);
 }
 
 
