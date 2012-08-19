@@ -1,4 +1,5 @@
 #include "port.h"
+#include <float.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -61,6 +62,18 @@ cleanup:
 }
 
 
+static void test_mean()
+{
+	double *mean = mlogit_glm_mean(&MGLM);
+	size_t i;
+	
+	for (i = 0; i < P; i++) {
+		assert_real_eqrel(DBL_MANT_DIG / 2, mean[i], MEAN[i]);
+	}
+}
+
+
+
 static void setup(const double *beta, size_t n, size_t p)
 {
 	size_t i, j;
@@ -96,6 +109,7 @@ static void setup(const double *beta, size_t n, size_t p)
 	}
 	
 	mlogit_glm_set_x(&MGLM, X);
+	recompute();
 }
 
 static void teardown()
@@ -153,12 +167,15 @@ int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(empty_suite, empty_setup_fixture),
+		unit_test_setup_teardown(test_mean, empty_setup, teardown),
 		unit_test_teardown(empty_suite, teardown_fixture),
 		
 		unit_test_setup(simple_suite, simple_setup_fixture),
+		unit_test_setup_teardown(test_mean, simple_setup, teardown),
 		unit_test_teardown(simple_suite, teardown_fixture),
 		
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
+		unit_test_setup_teardown(test_mean, zeros_setup, teardown),		
 		unit_test_teardown(zeros_suite, teardown_fixture),
 	};
 	

@@ -12,6 +12,7 @@
 		2219FBA315DFD163006E0F07 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2219FBA415DFD163006E0F07 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		2219FBA515DFD186006E0F07 /* mlogit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865315DEAB4A00720AA5 /* mlogit.c */; };
+		2219FBA615E0AD71006E0F07 /* mlogit_glm.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865915DEACF100720AA5 /* mlogit_glm.c */; };
 		2222181D136F1AAA00F0C7D2 /* frame_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2222181C136F1AAA00F0C7D2 /* frame_test.c */; };
 		22221824136F1AD400F0C7D2 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22221825136F1AD400F0C7D2 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -1403,6 +1404,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2219FBA615E0AD71006E0F07 /* mlogit_glm.c in Sources */,
 				2219FBA515DFD186006E0F07 /* mlogit.c in Sources */,
 				2219FBA215DFD152006E0F07 /* mlogit_glm_test.c in Sources */,
 			);

@@ -40,6 +40,8 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 	} else {
 		memset(m->beta, 0, len);
 	}
+
+	recompute(m);
 }
 
 void mlogit_glm_set_x(struct mlogit_glm *m, const double *x)
