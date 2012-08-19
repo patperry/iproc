@@ -246,8 +246,8 @@ static void cohort_init(struct recv_model_cohort *cm,
 	cm->eta0 = xmalloc(nrecv * sizeof(double));
 	cm->p0 = xmalloc(nrecv * sizeof(double));
 	cm->mean0 = xmalloc(dim * sizeof(double));
-	cm->imat0.data = xmalloc(dim2 * sizeof(double));
-	cm->imat0.lda = MAX(1, dim);
+	cm->imat0 = xmalloc(dim2 * sizeof(double));
+	cm->ldimat0 = MAX(1, dim);
 #ifndef NDEBUG
 	cm->w0 = xmalloc(nrecv * sizeof(double));
 #endif
@@ -260,7 +260,7 @@ static void cohort_deinit(struct recv_model_cohort *cm)
 #ifndef NDEBUG
 	free(cm->w0);
 #endif
-	free(cm->imat0.data);
+	free(cm->imat0);
 	free(cm->mean0);
 	free(cm->p0);
 	free(cm->eta0);
@@ -652,11 +652,11 @@ double *recv_model_mean0(const struct recv_model *m, size_t c)
 	return ((struct recv_model *)m)->cohort_models[c].mean0;
 }
 
-struct dmatrix *recv_model_imat0(const struct recv_model *m, size_t c)
+double *recv_model_imat0(const struct recv_model *m, size_t c)
 {
 	assert(m);
 	assert(c < recv_model_cohort_count(m));
-	return &((struct recv_model *)m)->cohort_models[c].imat0;
+	return ((struct recv_model *)m)->cohort_models[c].imat0;
 }
 
 void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs)

@@ -58,8 +58,8 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->count1 = count1;
 	d->count2 = count2;
 	
-	d->traits.data = NULL;
-	d->traits.lda = MAX(1, count1 * count2);
+	d->traits = NULL;
+	d->ldtraits = MAX(1, count1 * count2);
 	d->trait_vars = NULL;
 	d->ntrait = 0;
 	d->ntrait_max = 0;
@@ -110,7 +110,7 @@ void design2_deinit(struct design2 *d)
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
-	free(d->traits.data);
+	free(d->traits);
 }
 
 
@@ -160,7 +160,7 @@ static void design2_traits_grow(struct design2 *d, size_t delta)
 	size_t nmax = array_grow(d->ntrait, d->ntrait_max, delta, SIZE_MAX);
 	if (nmax > d->ntrait_max) {
 		size_t count = design2_count1(d) * design2_count2(d);
-		d->traits.data = xrealloc(d->traits.data, nmax * count * sizeof(*d->traits.data));
+		d->traits = xrealloc(d->traits, nmax * count * sizeof(*d->traits));
 		d->trait_vars = xrealloc(d->trait_vars, nmax * sizeof(*d->trait_vars));
 		d->ntrait_max = nmax;
 	}
@@ -188,20 +188,21 @@ const struct var2 *design2_add_trait(struct design2 *d, const char *name, const 
 	design2_traits_grow(d, 1);
 	d->trait_vars[ntrait] = v;
 		
-	memcpy(MATRIX_COL(&d->traits, ntrait), x, design2_count1(d) * design2_count2(d) * sizeof(*x));
+	memcpy(MATRIX_COL(&d->traits, d->ldtraits, ntrait), x, design2_count1(d) * design2_count2(d) * sizeof(*x));
 	
 	d->ntrait = ntrait + 1;
 
 	return v;
 }
 
-void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const struct dmatrix *x)
+void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const double *x)
 {
 	design2_traits_grow(d, ntrait);
 	
+	size_t ldx = d->ldtraits;
 	size_t i;
 	for (i = 0; i < ntrait; i++) {
-		design2_add_trait(d, names[i], MATRIX_COL(x, i));
+		design2_add_trait(d, names[i], MATRIX_COL(x, ldx, i));
 	}
 }
 
@@ -305,14 +306,13 @@ void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
 {
 	assert(i < design2_count1(d));
 
-	const struct dmatrix *a = design2_traits(d);
+	const double *a = design2_traits(d);
+	size_t lda = d->ldtraits;
 	size_t m = design2_count2(d);
 	size_t n = design2_trait_dim(d);
-	struct dmatrix asub;
-	asub.data = MATRIX_PTR(a, i * m, 0);
-	asub.lda = a->lda;
+	const double *asub = MATRIX_PTR(a, lda, i * m, 0);
 	
-	blas_dgemv(BLAS_NOTRANS, m, n, alpha, &asub, x, 1, beta, y, 1);
+	blas_dgemv(BLAS_NOTRANS, m, n, alpha, asub, lda, x, 1, beta, y, 1);
 }
 
 
@@ -320,14 +320,13 @@ void design2_traits_tmul(double alpha, const struct design2 *d, size_t i, const 
 {
 	assert(i < design2_count1(d));
 	
-	const struct dmatrix *a = design2_traits(d);
+	const double *a = design2_traits(d);
+	size_t lda = d->ldtraits;
 	size_t m = design2_count2(d);
 	size_t n = design2_trait_dim(d);
-	struct dmatrix asub;
-	asub.data = MATRIX_PTR(a, i * m, 0);
-	asub.lda = a->lda;
+	const double *asub = MATRIX_PTR(a, lda, i * m, 0);
 	
-	blas_dgemv(BLAS_TRANS, m, n, alpha, &asub, x, 1, beta, y, 1);
+	blas_dgemv(BLAS_TRANS, m, n, alpha, asub, lda, x, 1, beta, y, 1);
 
 }
 
@@ -337,14 +336,12 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 	
-	const struct dmatrix *a = design2_traits(d);
+	const double *a = design2_traits(d);
+	size_t lda = d->ldtraits;
 	size_t m = design2_count2(d);
 	size_t dim = design2_trait_dim(d);
-	struct dmatrix asub;
-	asub.data = MATRIX_PTR(a, i * m, 0);
-	asub.lda = a->lda;
 
-	blas_daxpy(dim, alpha, MATRIX_PTR(a, i * m + j, 0), a->lda, y, 1);
+	blas_daxpy(dim, alpha, MATRIX_PTR(a, lda, i * m + j, 0), lda, y, 1);
 }
 
 

@@ -20,7 +20,8 @@
 static size_t nsend;
 static size_t nrecv;
 static size_t ntrait;
-static struct dmatrix traits;
+static double *traits;
+static size_t ldtraits;
 static const char * const * trait_names;
 static int has_loops;
 static struct messages messages;
@@ -33,8 +34,8 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nsend, &traits.data, &ntrait, &trait_names);
-	traits.lda = MAX(1, nsend);
+	enron_employees_init(&nsend, &traits, &ntrait, &trait_names);
+	ldtraits = MAX(1, nsend);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 	has_loops = 0;	
@@ -43,7 +44,7 @@ static void enron_setup_fixture()
 static void enron_teardown_fixture()
 {
 	messages_deinit(&messages);
-	free(traits.data);
+	free(traits);
 	print_message("\n\n");
 }
 
@@ -53,7 +54,7 @@ static void dv_nsend_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 
 	recv_design = frame_recv_design(&frame);
-	design_add_traits(recv_design, ntrait, trait_names, &traits);
+	design_add_traits(recv_design, ntrait, trait_names, traits);
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "NSend", DYAD_VAR_NSEND);
@@ -72,7 +73,8 @@ static void test_dv_nsend()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 	
-	struct dmatrix xnsend = { xcalloc(nsend * nrecv, sizeof(double)), MAX(1, nsend) };
+	double *xnsend = xcalloc(nsend * nrecv, sizeof(double));
+	size_t ldxnsend = MAX(1, nsend);
 
 	isend = 0;
 
@@ -85,10 +87,10 @@ static void test_dv_nsend()
 			const double *dx = design2_tvars(dyad_design, isend, jrecv);
 			
 			if (dx) {
-				assert(dx[0] == MATRIX_ITEM(&xnsend, isend, jrecv));
-				assert_true(dx[0] == MATRIX_ITEM(&xnsend, isend, jrecv));
+				assert(dx[0] == MATRIX_ITEM(xnsend, ldxnsend, isend, jrecv));
+				assert_true(dx[0] == MATRIX_ITEM(xnsend, ldxnsend, isend, jrecv));
 			} else {
-				assert_true(0.0 == MATRIX_ITEM(&xnsend, isend, jrecv));
+				assert_true(0.0 == MATRIX_ITEM(xnsend, ldxnsend, isend, jrecv));
 			}
 		}
 		
@@ -98,12 +100,12 @@ static void test_dv_nsend()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				MATRIX_ITEM(&xnsend, msg->from, msg->to[ito]) += 1.0;
+				MATRIX_ITEM(xnsend, ldxnsend, msg->from, msg->to[ito]) += 1.0;
 			}
 		}
 	}
 
-	free(xnsend.data);
+	free(xnsend);
 }
 
 
@@ -112,7 +114,7 @@ static void dv_nrecv_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
 
 	recv_design = frame_recv_design(&frame);
-	design_add_traits(recv_design, ntrait, trait_names, &traits);
+	design_add_traits(recv_design, ntrait, trait_names, traits);
 	
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "NRecv", DYAD_VAR_NRECV);
@@ -132,8 +134,8 @@ static void test_dv_nrecv()
 	const struct message *msg = NULL;
 	struct messages_iter it;
 
-	struct dmatrix xnsend = { xcalloc(nsend * nrecv, sizeof(double)),
-				  MAX(1, nsend) };
+	double *xnsend = xcalloc(nsend * nrecv, sizeof(double));
+	size_t ldxnsend = MAX(1, nsend);
 
 	isend = 0;
 
@@ -147,10 +149,10 @@ static void test_dv_nrecv()
 			const double *dx = design2_tvars(dyad_design, isend, jrecv);
 			
 			if (dx) {
-				assert(dx[0] == MATRIX_ITEM(&xnsend, jrecv, isend));
-				assert_true(dx[0] == MATRIX_ITEM(&xnsend, jrecv, isend));
+				assert(dx[0] == MATRIX_ITEM(xnsend, ldxnsend, jrecv, isend));
+				assert_true(dx[0] == MATRIX_ITEM(xnsend, ldxnsend, jrecv, isend));
 			} else {
-				assert_true(0.0 == MATRIX_ITEM(&xnsend, jrecv, isend));
+				assert_true(0.0 == MATRIX_ITEM(xnsend, ldxnsend, jrecv, isend));
 			}
 		}
 
@@ -160,12 +162,12 @@ static void test_dv_nrecv()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				MATRIX_ITEM(&xnsend, msg->from, msg->to[ito]) += 1.0;
+				MATRIX_ITEM(xnsend, ldxnsend, msg->from, msg->to[ito]) += 1.0;
 			}
 		}
 	}
 
-	free(xnsend.data);
+	free(xnsend);
 }
 
 static void dv_irecv_setup()
@@ -176,7 +178,7 @@ static void dv_irecv_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 
 	recv_design = frame_recv_design(&frame);
-	design_add_traits(recv_design, ntrait, trait_names, &traits);
+	design_add_traits(recv_design, ntrait, trait_names, traits);
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "IRecv", DYAD_VAR_IRECV);
@@ -199,10 +201,10 @@ static void test_dv_irecv()
 
 	double tmsg;
 
-	struct dmatrix tlast = { xmalloc(nsend * nrecv * sizeof(double)),
-		MAX(1, nsend) };
+	double *tlast = xmalloc(nsend * nrecv * sizeof(double));
+	size_t ldtlast = MAX(1, nsend);
 	for (j = 0; j < nsend * nrecv; j++) {
-		tlast.data[j] = -INFINITY;
+		tlast[j] = -INFINITY;
 	}
 
 	MESSAGES_FOREACH(it, &messages) {
@@ -215,7 +217,7 @@ static void test_dv_irecv()
 				jrecv = msg->to[ito];
 				const double *dx = design2_tvars(dyad_design, isend, jrecv);
 				
-				tmsg = MATRIX_ITEM(&tlast, jrecv % nrecv, isend);
+				tmsg = MATRIX_ITEM(tlast, ldtlast, jrecv % nrecv, isend);
 				
 				if (isfinite(tmsg)) {
 					assert(dx[0] == 1.0);
@@ -232,12 +234,12 @@ static void test_dv_irecv()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				MATRIX_ITEM(&tlast, msg->from, msg->to[ito]) = msg->time;
+				MATRIX_ITEM(tlast, ldtlast, msg->from, msg->to[ito]) = msg->time;
 			}
 		}
 	}
 
-	free(tlast.data);
+	free(tlast);
 }
 
 
@@ -249,7 +251,7 @@ static void dv_isend_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
 
 	recv_design = frame_recv_design(&frame);
-	design_add_traits(recv_design, ntrait, trait_names, &traits);
+	design_add_traits(recv_design, ntrait, trait_names, traits);
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "ISend", DYAD_VAR_ISEND);
@@ -273,9 +275,10 @@ static void test_dv_isend()
 
 	double tmsg;
 
-	struct dmatrix tlast = { xmalloc(nsend * nrecv * sizeof(double)), MAX(1, nsend) };
+	double *tlast = xmalloc(nsend * nrecv * sizeof(double));
+	size_t ldtlast = MAX(1, nsend);
 	for (j = 0; j < nsend * nrecv; j++) {
-		tlast.data[j] = -INFINITY;
+		tlast[j] = -INFINITY;
 	}
 
 	MESSAGES_FOREACH(it, &messages) {
@@ -288,7 +291,7 @@ static void test_dv_isend()
 				jrecv = msg->to[ito];
 				const double *dx = design2_tvars(dyad_design, isend, jrecv);
 				
-				tmsg = MATRIX_ITEM(&tlast, isend, jrecv % nrecv);
+				tmsg = MATRIX_ITEM(tlast, ldtlast, isend, jrecv % nrecv);
 				
 				if (isfinite(tmsg)) {
 					assert(dx[0] == 1.0);
@@ -305,12 +308,12 @@ static void test_dv_isend()
 			frame_add(&frame, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
-				MATRIX_ITEM(&tlast, msg->from, msg->to[ito]) = msg->time;
+				MATRIX_ITEM(tlast, ldtlast, msg->from, msg->to[ito]) = msg->time;
 			}
 		}
 	}
 
-	free(tlast.data);
+	free(tlast);
 }
 
 

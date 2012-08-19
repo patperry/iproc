@@ -14,7 +14,7 @@ struct design {
 	size_t *cohorts;
 	size_t *cohort_reps;
 
-	struct dmatrix traits;
+	double *traits;
 	struct var **trait_vars;
 	size_t ntrait, ntrait_max;
 
@@ -101,10 +101,10 @@ static inline void design_get_cohorts(const struct design *d,
 
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
-static inline const struct dmatrix *design_traits(const struct design *d);
+static inline const double *design_traits(const struct design *d);
 const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x);
-void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
+void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const double *x);
 
 void design_traits_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y);
@@ -197,9 +197,9 @@ size_t design_trait_dim(const struct design *d)
 }
 
 
-const struct dmatrix *design_traits(const struct design *d)
+const double *design_traits(const struct design *d)
 {
-	return &d->traits;
+	return d->traits;
 }
 
 

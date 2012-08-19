@@ -64,16 +64,15 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	
 	size_t ncat = mlogit_glm_ncat(m);
 	size_t dim = mlogit_glm_dim(m);
-	struct dmatrix x = { m->x, ncat };
 	
 	if (idx) {
 		for (j = 0; j < ndx; j++) {
 			assert(idx[j] < ncat);
-			MATRIX_ITEM(&x, i, idx[j]) += dx[j];
+			MATRIX_ITEM(m->x, ncat, i, idx[j]) += dx[j];
 		}
 	} else {
 		for (j = 0; j < dim; j++) {
-			MATRIX_ITEM(&x, i, j) = 0;
+			MATRIX_ITEM(m->x, ncat, i, j) = 0;
 		}
 	}
 	
@@ -89,14 +88,13 @@ void recompute(struct mlogit_glm *m)
 	if (ncat == 0 || dim == 0)
 		return;
 	
-	const struct dmatrix x = { m->x, ncat };
 	const double *beta = m->beta;
 	double *mean = m->mean;
 	double *tmp = m->cat_buf;
 	size_t i;
 
 	// tmp := x * beta
-	blas_dgemv(BLAS_NOTRANS, ncat, dim, 1.0, &x, beta, 1, 0.0, tmp, 1);
+	blas_dgemv(BLAS_NOTRANS, ncat, dim, 1.0, m->x, ncat, beta, 1, 0.0, tmp, 1);
 	mlogit_set_all_eta(&m->values, tmp);
 	
 	// tmp := p
@@ -105,7 +103,7 @@ void recompute(struct mlogit_glm *m)
 	}
 	
 	// mean := t(X) * p
-	blas_dgemv(BLAS_TRANS, ncat, dim, 1.0, &x, tmp, 1, 0, mean, 1);
+	blas_dgemv(BLAS_TRANS, ncat, dim, 1.0, m->x, ncat, tmp, 1, 0, mean, 1);
 }
 
 

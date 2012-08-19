@@ -6,6 +6,7 @@
 #include <setjmp.h>
 #include "blas.h"
 #include "cmockery.h"
+#include "coreutil.h"
 #include "testutil.h"
 #include "xalloc.h"
 
@@ -14,7 +15,7 @@
 
 struct mlogit_glm MGLM;
 double *BETA, *MEAN;
-struct dmatrix X;
+double *X;
 size_t N;
 size_t P;
 
@@ -28,20 +29,22 @@ static void recompute()
 	size_t i;
 
 	mlogit_init(&m, N);
-	blas_dgemv(BLAS_NOTRANS, N, P, 1.0, &X, BETA, 1, 0.0, eta, 1.0);
-	mlogit_set_all_eta(&m, eta);
 	
 	memset(MEAN, 0, P * sizeof(*MEAN));
 	
 	if (N == 0)
 		goto cleanup;
+
+	blas_dgemv(BLAS_NOTRANS, N, P, 1.0, X, N, BETA, 1, 0.0, eta, 1.0);
+	mlogit_set_all_eta(&m, eta);
+
 	
-	blas_dcopy(P, X.data, X.lda, MEAN, 1);
+	blas_dcopy(P, X, N, MEAN, 1);
 	ptot = mlogit_prob(&m, 0);
 	
 	for (i = 1; i < N; i++) {
 		/* diff := x[i,:] - mean */
-		blas_dcopy(P, X.data + i, X.lda, diff, 1);
+		blas_dcopy(P, X + i, N, diff, 1);
 		blas_daxpy(P, -1.0, MEAN, 1, diff, 1);
 
 		/* ptot += p */
@@ -69,8 +72,7 @@ static void setup(const double *beta, size_t n, size_t p)
 	BETA = xmalloc(P * sizeof(*BETA));
 	MEAN = xcalloc(P, sizeof(*MEAN));
 	
-	X.lda = N;
-	X.data = xcalloc(N * P, sizeof(*X.data));
+	X = xcalloc(N * P, sizeof(*X));
 	
 	
 	if (beta) {
@@ -81,7 +83,7 @@ static void setup(const double *beta, size_t n, size_t p)
 	
 	for (j = 0; j < P; j++) {
 		for (i = 0; i < N; i++) {
-			MATRIX_ITEM(&X, i, j) = runif(-5.0, 5.0);
+			MATRIX_ITEM(X, N, i, j) = runif(-5.0, 5.0);
 		}
 	}
 	
@@ -93,16 +95,15 @@ static void setup(const double *beta, size_t n, size_t p)
 		_mlogit_glm_check_invariants(&MGLM);
 	}
 	
-	mlogit_glm_set_x(&MGLM, X.data);
+	mlogit_glm_set_x(&MGLM, X);
 }
 
 static void teardown()
 {
 	mlogit_glm_deinit(&MGLM);
 
-	free(X.data);
-	X.lda = 0;
-	X.data = NULL;
+	free(X);
+	X = NULL;
 	
 	free(MEAN);
 	MEAN = NULL;

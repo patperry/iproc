@@ -10,7 +10,8 @@ struct design2 {
 	struct frame *frame;
 	size_t count1, count2;
 
-	struct dmatrix traits;
+	double *traits;
+	size_t ldtraits;
 	struct var2 **trait_vars;
 	size_t ntrait, ntrait_max;
 
@@ -85,10 +86,10 @@ const struct var2 *design2_var(const struct design2 *d, const char *name);
 
 /* traits */
 static inline size_t design2_trait_dim(const struct design2 *d);
-static inline const struct dmatrix *design2_traits(const struct design2 *d);
+static inline const double *design2_traits(const struct design2 *d);
 const char *design2_trait_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
-void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const struct dmatrix *x);
+void design2_add_traits(struct design2 *d, size_t ntrait, const char * const *names, const double *x);
 
 //void design2_add_kron(struct design2 *d, const struct var *i,
 //			const struct var *j);
@@ -159,9 +160,9 @@ size_t design2_trait_dim(const struct design2 *d)
 }
 
 
-const struct dmatrix *design2_traits(const struct design2 *d)
+const double *design2_traits(const struct design2 *d)
 {
-	return &d->traits;
+	return d->traits;
 }
 
 

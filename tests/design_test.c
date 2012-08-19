@@ -18,7 +18,7 @@
 
 static size_t enron_nactor;
 static size_t enron_ntrait;
-static struct dmatrix enron_traits;
+static double *enron_traits;
 static const char * const *enron_trait_names;
 
 static struct frame frame;
@@ -26,7 +26,8 @@ static struct design *design;
 
 static size_t nsend, nrecv;
 static int has_loops;
-static struct dmatrix traits;
+static double *traits;
+
 static size_t ntrait;
 static const char * const *trait_names;
 static int has_effects;
@@ -53,14 +54,13 @@ static void enron_setup_fixture()
 {
 	print_message("Enron employees\n");
 	print_message("---------------\n");
-	enron_employees_init(&enron_nactor, &enron_traits.data,
+	enron_employees_init(&enron_nactor, &enron_traits,
 			     &enron_ntrait, &enron_trait_names);
-	enron_traits.lda = MAX(1, enron_nactor);
 }
 
 static void enron_teardown_fixture()
 {
-	free(enron_traits.data);
+	free(enron_traits);
 	print_message("\n\n");
 }
 
@@ -81,7 +81,7 @@ static void enron_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
 	design = frame_recv_design(&frame);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, ntrait, trait_names, &traits);
+	design_add_traits(design, ntrait, trait_names, traits);
 }
 
 static void enron_teardown()
@@ -94,14 +94,13 @@ static void enron_reff_setup_fixture()
 {
 	print_message("Enron employees (with receiver effects)\n");
 	print_message("---------------------------------------\n");
-	enron_employees_init(&enron_nactor, &enron_traits.data,
+	enron_employees_init(&enron_nactor, &enron_traits,
 			     &enron_ntrait, &enron_trait_names);
-	enron_traits.lda = MAX(1, enron_nactor);
 }
 
 static void enron_reff_teardown_fixture()
 {
-	free(enron_traits.data);
+	free(enron_traits);
 	print_message("\n\n");
 }
 
@@ -122,7 +121,7 @@ static void enron_reff_setup()
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
 	design = frame_recv_design(&frame);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, ntrait, trait_names, &traits);
+	design_add_traits(design, ntrait, trait_names, traits);
 }
 
 static void enron_reff_teardown()
@@ -132,7 +131,7 @@ static void enron_reff_teardown()
 }
 
 
-static void matrix_assign_reffects(struct dmatrix *x,
+static void matrix_assign_reffects(double *x, size_t ldx,
 				   size_t nrecv,
 				   int has_reffects)
 {
@@ -141,15 +140,15 @@ static void matrix_assign_reffects(struct dmatrix *x,
 
 	size_t i;
 
-	matrix_dzero(nrecv, nrecv, x);
+	matrix_dzero(nrecv, nrecv, x, ldx);
 	for (i = 0; i < nrecv; i++) {
-		MATRIX_ITEM(x, i, i) = 1.0;
+		MATRIX_ITEM(x, ldx, i, i) = 1.0;
 	}
 }
 
-static void matrix_init_design0(struct dmatrix *x, const struct design *d)
+static void matrix_init_design0(double **px, const struct design *d)
 {
-	const struct dmatrix *traits = design_traits(d);
+	const double *traits = design_traits(d);
 	//int has_reffects = design_has_effects(d);
 	int has_reffects = 0;
 	
@@ -160,18 +159,22 @@ static void matrix_init_design0(struct dmatrix *x, const struct design *d)
 	size_t istat = ireff + nreff;
 	size_t nstat = pr;
 	size_t dim =  istat + nstat;
+	double *x = xmalloc(nrecv * dim * sizeof(double));
+	size_t ldx = MAX(1, nrecv);
 	
-	*x = (struct dmatrix) { xmalloc(nrecv * dim * sizeof(double)), MAX(1, nrecv) };
-	struct dmatrix xreff = { MATRIX_COL(x, ireff), x->lda }; // nreff
-	matrix_assign_reffects(&xreff, nrecv, has_reffects);
-	struct dmatrix xstat = { MATRIX_COL(x, istat), x->lda };
-	lapack_dlacpy(LA_COPY_ALL, nrecv, nstat, traits, &xstat);
+	*px = x;
+	double *xreff = MATRIX_COL(x, ldx, ireff);
+	matrix_assign_reffects(xreff, ldx, nrecv, has_reffects);
+	double *xstat = MATRIX_COL(x, ldx, istat);
+	lapack_dlacpy(LA_COPY_ALL, nrecv, nstat, traits, MAX(1, nrecv), xstat, ldx);
 }
 
 static void test_mul0()
 {
 
-	struct dmatrix matrix;
+	double *a;
+	size_t lda;
+	
 	double *x, *y, *y1;	
 	size_t i, n, p;
 	
@@ -182,29 +185,30 @@ static void test_mul0()
 	y = xmalloc(n * sizeof(double));
 	y1 = xmalloc(n * sizeof(double));
 	
-	matrix_init_design0(&matrix, design);
+	matrix_init_design0(&a, design);
+	lda = MAX(1, n);
 	
 	for (i = 0; i < p; i++) {
 		x[i] =  (7 * i) % 5 - 2.0;
 	}
 		
 	design_traits_mul(1.0, design, x, 0.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, &matrix, x, 1, 0.0, y1, 1);
+	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
 	design_traits_mul(1.0, design, x, 1.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, &matrix, x, 1, 1.0, y1, 1);
+	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);
 		
 	design_traits_mul(1.0, design, x, -1.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, &matrix, x, 1, -1.0, y1, 1);	
+	blas_dgemv(BLAS_NOTRANS, n, p, 1.0, a, lda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
 	design_traits_mul(2.0, design, x, 2.0, y);
-	blas_dgemv(BLAS_NOTRANS, n, p, 2.0, &matrix, x, 1, 2.0, y1, 1);	
+	blas_dgemv(BLAS_NOTRANS, n, p, 2.0, a, lda, x, 1, 2.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
-	free(matrix.data);
+	free(a);
 	free(y1);
 	free(y);
 	free(x);
@@ -214,7 +218,8 @@ static void test_mul0()
 static void test_tmul0()
 {
 	
-	struct dmatrix matrix;
+	double *a;
+	size_t lda;
 	double *x, *y, *y1;	
 	size_t i, n, p;
 	
@@ -224,29 +229,30 @@ static void test_tmul0()
 	x = xmalloc(n * sizeof(double));
 	y = xmalloc(p * sizeof(double));
 	y1 = xmalloc(p * sizeof(double));
-	matrix_init_design0(&matrix, design);
+	matrix_init_design0(&a, design);
+	lda = MAX(1, n);
 		
 	for (i = 0; i < n; i++) {
 		x[i] = (3 * i + 1) % 5 - 2.0;
 	}
 		
 	design_traits_tmul(1.0, design, x, 0.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, &matrix, x, 1, 0.0, y1, 1);
+	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);		
 		
 	design_traits_tmul(1.0, design, x, 1.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, &matrix, x, 1, 1.0, y1, 1);
+	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
 	design_traits_tmul(1.0, design, x, -1.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 1.0, &matrix, x, 1, -1.0, y1, 1);	
+	blas_dgemv(BLAS_TRANS, n, p, 1.0, a, lda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
 	design_traits_tmul(2.0, design, x, 2.0, y);
-	blas_dgemv(BLAS_TRANS, n, p, 2.0, &matrix, x, 1, 2.0, y1, 1);
+	blas_dgemv(BLAS_TRANS, n, p, 2.0, a, lda, x, 1, 2.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
-	free(matrix.data);
+	free(a);
 	free(y1);
 	free(y);
 	free(x);

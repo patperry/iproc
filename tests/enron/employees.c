@@ -286,12 +286,14 @@ int enron_employees_init_fread(size_t *nactorp,
 
 		size_t n = parse.nactor;
 		size_t p = parse.dim;
-		struct dmatrix traits_t = { parse.traits_t, MAX(1, p) };
-		struct dmatrix traits = { xmalloc(n * p * sizeof(double)), MAX(1, n) };
+		double *traits_t = parse.traits_t;
+		size_t ldtraits_t = MAX(1, p);
+		double *traits = xmalloc(n * p * sizeof(double));
+		size_t ldtraits = MAX(1, n);
 
-		matrix_dtrans(p, n, &traits_t, &traits);
-		free(traits_t.data);
-		*traitsp = traits.data;
+		matrix_dtrans(p, n, traits_t, ldtraits_t, traits, ldtraits);
+		free(traits_t);
+		*traitsp = traits;
 		*ntraitp = p;
 		*trait_namesp = ENRON_TRAIT_NAMES;
 	}

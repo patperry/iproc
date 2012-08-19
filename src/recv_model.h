@@ -124,7 +124,8 @@ struct recv_model_cohort {
 	double *eta0;
 	double *p0;
 	double *mean0;
-	struct dmatrix imat0;
+	double *imat0;
+	size_t ldimat0;
 
 	/* debug */
 #ifndef NDEBUG
@@ -176,7 +177,7 @@ double *recv_model_probs0(const struct recv_model *m, size_t c);
 
 double recv_model_prob0(const struct recv_model *m, size_t c, size_t jrecv);
 double *recv_model_mean0(const struct recv_model *m, size_t c);
-struct dmatrix *recv_model_imat0(const struct recv_model *m, size_t c);
+double *recv_model_imat0(const struct recv_model *m, size_t c);
 
 /* updated values */
 double recv_model_logsumwt(const struct recv_model *m, size_t isend);

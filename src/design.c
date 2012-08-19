@@ -61,8 +61,7 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->cohort_reps[0] = 0;
 	d->ncohort = 1;	
 	
-	d->traits.data = NULL;
-	d->traits.lda = MAX(1, count);
+	d->traits = NULL;
 	d->trait_vars = NULL;
 	d->ntrait = 0;
 	d->ntrait_max = 0;
@@ -109,7 +108,7 @@ void design_deinit(struct design *d)
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
-	free(d->traits.data);
+	free(d->traits);
 	free(d->cohort_reps);	
 	free(d->cohorts);
 }
@@ -161,7 +160,7 @@ static void design_traits_grow(struct design *d, size_t delta)
 	size_t nmax = array_grow(d->ntrait, d->ntrait_max, delta, SIZE_MAX);
 	if (nmax > d->ntrait_max) {
 		size_t count = design_count(d);
-		d->traits.data = xrealloc(d->traits.data, nmax * count * sizeof(*d->traits.data));
+		d->traits = xrealloc(d->traits, nmax * count * sizeof(*d->traits));
 		d->trait_vars = xrealloc(d->trait_vars, nmax * sizeof(*d->trait_vars));
 		d->ntrait_max = nmax;
 	}
@@ -177,7 +176,8 @@ const char *design_trait_name(const struct design *d, size_t j)
 
 static void design_recompute_cohorts(struct design *d)
 {
-	const struct dmatrix *a = design_traits(d);
+	const double *a = design_traits(d);
+	size_t lda = design_count(d);
 	size_t dim = design_trait_dim(d);
 	size_t n = design_count(d);
 	size_t i, c;
@@ -190,7 +190,7 @@ static void design_recompute_cohorts(struct design *d)
 
 	d->ncohort = 0;
 	for (i = 0; i < n; i++) {
-		blas_dcopy(dim, MATRIX_PTR(a, i, 0), a->lda, buf, 1);
+		blas_dcopy(dim, MATRIX_ROW(a, lda, i), lda, buf, 1);
 		c = strata_add(&strat, buf);
 
 		d->cohorts[i] = c;
@@ -207,6 +207,7 @@ static void design_recompute_cohorts(struct design *d)
 
 static const struct var *design_add_trait_unsafe(struct design *d, const char *name, const double *x)
 {
+	size_t n = design_count(d);
 	size_t ntrait = d->ntrait;
 	struct var *v = xmalloc(sizeof(*v));
 	
@@ -219,7 +220,7 @@ static const struct var *design_add_trait_unsafe(struct design *d, const char *n
 	design_traits_grow(d, 1);
 	d->trait_vars[ntrait] = v;
 		
-	memcpy(MATRIX_COL(&d->traits, ntrait), x, design_count(d) * sizeof(*x));
+	memcpy(MATRIX_COL(d->traits, n, ntrait), x, n * sizeof(*x));
 	
 	d->ntrait = ntrait + 1;
 
@@ -235,13 +236,14 @@ const struct var *design_add_trait(struct design *d, const char *name, const dou
 }
 
 
-void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const struct dmatrix *x)
+void design_add_traits(struct design *d, size_t ntrait, const char * const *names, const double *x)
 {
 	design_traits_grow(d, ntrait);
+	size_t ldx = design_count(d);
 	
 	size_t i;
 	for (i = 0; i < ntrait; i++) {
-		design_add_trait_unsafe(d, names[i], MATRIX_COL(x, i));
+		design_add_trait_unsafe(d, names[i], MATRIX_COL(x, ldx, i));
 	}
 	design_recompute_cohorts(d);
 }
@@ -359,21 +361,23 @@ const struct var *design_var(const struct design *d, const char *name)
 void design_traits_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y)
 {
-	const struct dmatrix *a = design_traits(d);
 	size_t m = design_count(d);
 	size_t n = design_trait_dim(d);
+	const double *a = design_traits(d);
+	size_t lda = MAX(1, m);
 	
-	blas_dgemv(BLAS_NOTRANS, m, n, alpha, a, x, 1, beta, y, 1);
+	blas_dgemv(BLAS_NOTRANS, m, n, alpha, a, lda, x, 1, beta, y, 1);
 }
 
 
 void design_traits_tmul(double alpha, const struct design *d, const double *x, double beta, double *y)
 {
-	const struct dmatrix *a = design_traits(d);
 	size_t m = design_count(d);
 	size_t n = design_trait_dim(d);
-	
-	blas_dgemv(BLAS_TRANS, m, n, alpha, a, x, 1, beta, y, 1);
+	const double *a = design_traits(d);
+	size_t lda = MAX(1, m);
+
+	blas_dgemv(BLAS_TRANS, m, n, alpha, a, lda, x, 1, beta, y, 1);
 }
 
 
@@ -381,10 +385,12 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 {
 	assert(i < design_count(d));
 	
-	const struct dmatrix *a = design_traits(d);
+
 	size_t dim = design_trait_dim(d);
+	const double *a = design_traits(d);
+	size_t lda = MAX(1, design_count(d));
 	
-	blas_daxpy(dim, alpha, MATRIX_PTR(a, i, 0), a->lda, y, 1);	
+	blas_daxpy(dim, alpha, MATRIX_ROW(a, lda, i), lda, y, 1);	
 }
 
 
