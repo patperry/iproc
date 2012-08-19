@@ -7,6 +7,7 @@
 #include "mlogit_glm.h"
 
 static void recompute(struct mlogit_glm *m);
+static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 
 
 void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
@@ -56,7 +57,15 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 	recompute(m);
 }
 
+
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
+{
+	increment_x(m, i, dx, jdx, ndx);
+	recompute(m);
+}
+
+
+void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
 	size_t j, k;
 	
@@ -76,8 +85,6 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 			MATRIX_ITEM(m->x, ncat, i, j) += dx[j];
 		}
 	}
-	
-	recompute(m);
 }
 
 
