@@ -7,7 +7,8 @@
 #include "mlogit_glm.h"
 
 static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
-static void recompute(struct mlogit_glm *m);
+static void recompute_all(struct mlogit_glm *m);
+static void recompute_values(struct mlogit_glm *m);
 static void recompute_mean(struct mlogit_glm *m);
 static void recompute_cov(struct mlogit_glm *m);
 
@@ -50,7 +51,7 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 		memset(m->beta, 0, len);
 	}
 
-	recompute(m);
+	recompute_all(m);
 }
 
 void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
@@ -62,14 +63,14 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 		memset(m->x, 0, len);
 	}
 	
-	recompute(m);
+	recompute_all(m);
 }
 
 
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
 	increment_x(m, i, dx, jdx, ndx);
-	recompute(m);
+	recompute_all(m);
 }
 
 
@@ -98,10 +99,28 @@ void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t 
 }
 
 
-void recompute(struct mlogit_glm *m)
+void recompute_all(struct mlogit_glm *m)
 {
+	recompute_values(m);
 	recompute_mean(m);
 	recompute_cov(m);
+}
+
+
+void recompute_values(struct mlogit_glm *m)
+{
+	size_t ncat = mlogit_glm_ncat(m);
+	size_t dim = mlogit_glm_dim(m);
+	
+	if (dim == 0)
+		return;
+	
+	const double *beta = m->beta;
+	double *eta = m->cat_buf;	
+	
+	// tmp := x * beta
+	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 0.0, eta, 1);
+	mlogit_set_all_eta(&m->values, eta);
 }
 
 
@@ -113,22 +132,16 @@ void recompute_mean(struct mlogit_glm *m)
 	if (dim == 0)
 		return;
 	
-	const double *beta = m->beta;
 	double *mean = m->mean;
-	double *tmp = m->cat_buf;	
+	double *prob = m->cat_buf;	
 	size_t i;
-
-	// tmp := x * beta
-	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 0.0, tmp, 1);
-	mlogit_set_all_eta(&m->values, tmp);
 	
-	// tmp := p
 	for (i = 0; i < ncat; i++) {
-		tmp[i] = mlogit_prob(&m->values, i);
+		prob[i] = mlogit_prob(&m->values, i);
 	}
 	
-	// mean := t(X) * p
-	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, tmp, 1, 0, mean, 1);
+	// mean := t(X) * prob
+	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, prob, 1, 0, mean, 1);
 }
 
 
@@ -142,7 +155,7 @@ void recompute_cov(struct mlogit_glm *m)
 
 	const double *x = m->x;
 	const double *mean = m->mean;
-	double *tmp = m->dim_buf;	
+	double *diff = m->dim_buf;	
 	double *cov = m->cov;
 	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
 	size_t i;
@@ -154,16 +167,16 @@ void recompute_cov(struct mlogit_glm *m)
 	ptot = 0;
 	
 	for (i = 0; i < ncat; i++) {
-		/* tmp := mean - x[i,:] */
-		memcpy(tmp, x + i * dim, dim * sizeof(*tmp));
-		blas_daxpy(dim, -1.0, mean, 1, tmp, 1);
+		/* diff := mean - x[i,:] */
+		memcpy(diff, x + i * dim, dim * sizeof(*diff));
+		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
 		
 		/* ptot += p[i] */
 		p = mlogit_prob(&m->values, i);
 		ptot += p;
 		
-		/* cov += p[i] * tmp^2 */
-		blas_dspr(uplo, dim, p, tmp, 1, cov);
+		/* cov += p[i] * diff^2 */
+		blas_dspr(uplo, dim, p, diff, 1, cov);
 	}
 	
 	/* cov /= ptot */
