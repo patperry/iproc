@@ -108,7 +108,7 @@ static void setup(const double *beta, size_t n, size_t p)
 		_mlogit_glm_check_invariants(&MGLM);
 	}
 	
-	mlogit_glm_set_x(&MGLM, X);
+	mlogit_glm_set_all_x(&MGLM, X);
 	recompute();
 }
 

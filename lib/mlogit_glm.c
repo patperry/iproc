@@ -44,7 +44,7 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 	recompute(m);
 }
 
-void mlogit_glm_set_x(struct mlogit_glm *m, const double *x)
+void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 {
 	size_t len = mlogit_glm_ncat(m) * mlogit_glm_dim(m) * sizeof(*m->x);
 	if (x) {
@@ -74,7 +74,7 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 		}
 	} else {
 		for (j = 0; j < dim; j++) {
-			MATRIX_ITEM(m->x, ncat, i, j) = 0;
+			MATRIX_ITEM(m->x, ncat, i, j) += dx[j];
 		}
 	}
 	
