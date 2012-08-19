@@ -24,7 +24,7 @@ double *ETA;
 double PSI;
 size_t N;
 
-static double get_phi(const double *eta, size_t n)
+static double get_psi(const double *eta, size_t n)
 {
 	if (n == 0)
 		return -INFINITY;
@@ -43,13 +43,13 @@ static double get_phi(const double *eta, size_t n)
 		sum += exp(eta_sort[i] - etamax);
 	}
 	
-	double phi = etamax + log1p(sum);
+	double psi = etamax + log1p(sum);
 	
-	assert(isfinite(phi));
+	assert(isfinite(psi));
 	
 	free(eta_sort);
 	
-	return phi;
+	return psi;
 }
 
 static void setup(const double *eta, size_t n)
@@ -65,7 +65,7 @@ static void setup(const double *eta, size_t n)
 		memset(ETA, 0, N * sizeof(ETA[0]));
 	}
 	
-	PSI = get_phi(eta, n);
+	PSI = get_psi(eta, n);
 
 	mlogit_init(&MLOGIT, N);
 	_mlogit_check_invariants(&MLOGIT);
@@ -159,7 +159,7 @@ static void test_set_eta(size_t i, double eta)
 	assert(!isnan(eta));
 
 	ETA[i] = eta;
-	PSI = get_phi(ETA, N);
+	PSI = get_psi(ETA, N);
 	
 	mlogit_set_eta(&MLOGIT, i, eta);
 	_mlogit_check_invariants(&MLOGIT);
@@ -198,7 +198,7 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		double eta = runif(min, max);
 		
 		ETA[i] = eta;
-		PSI = get_phi(ETA, N);
+		PSI = get_psi(ETA, N);
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
 		_mlogit_check_invariants(&MLOGIT);

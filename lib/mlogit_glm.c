@@ -109,16 +109,14 @@ void recompute(struct mlogit_glm *m)
 }
 
 
+void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
+{
+	(void)m;
+}
+
+
 #if 0
 
-
-
-
-void mlogit_mean_deinit(struct mlogit_mean *m)
-{
-	free(m->xbuf);
-	free(m->mean);
-}
 
 
 void mlogit_mean_update(struct mlogit_mean *m, const struct mlogit *mlogit,
