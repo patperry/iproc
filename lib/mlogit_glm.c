@@ -6,27 +6,35 @@
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
 
-static void recompute(struct mlogit_glm *m);
 static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
+static void recompute(struct mlogit_glm *m);
+static void recompute_mean(struct mlogit_glm *m);
+static void recompute_cov(struct mlogit_glm *m);
+
 
 
 void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 {
-	assert(ncat == 0 || dim <= SIZE_MAX / ncat);
+	assert(ncat == 0 || dim <= SIZE_MAX / sizeof(double) / ncat);
+	assert(dim <= SIZE_MAX / sizeof(double) / (dim + 1));
 	
 	mlogit_init(&m->values, ncat);
 	m->x = xcalloc(ncat * dim, sizeof(*m->x));
 	m->beta = xcalloc(dim, sizeof(*m->beta));
-	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
 	m->mean = xcalloc(dim, sizeof(*m->mean));
+	m->cov = xcalloc(dim * (dim + 1) / 2, sizeof(*m->cov));
+	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
+	m->dim_buf = xcalloc(dim, sizeof(*m->dim_buf));	
 	m->dim = dim;
 	
 }
 
 void mlogit_glm_deinit(struct mlogit_glm *m)
 {
-	free(m->mean);
+	free(m->dim_buf);	
 	free(m->cat_buf);
+	free(m->cov);
+	free(m->mean);	
 	free(m->beta);
 	free(m->x);
 	mlogit_deinit(&m->values);
@@ -92,9 +100,15 @@ void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t 
 
 void recompute(struct mlogit_glm *m)
 {
+	recompute_mean(m);
+	recompute_cov(m);
+}
+
+
+void recompute_mean(struct mlogit_glm *m)
+{
 	size_t ncat = mlogit_glm_ncat(m);
 	size_t dim = mlogit_glm_dim(m);
-
 	
 	if (dim == 0)
 		return;
@@ -115,6 +129,45 @@ void recompute(struct mlogit_glm *m)
 	
 	// mean := t(X) * p
 	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, tmp, 1, 0, mean, 1);
+}
+
+
+void recompute_cov(struct mlogit_glm *m)
+{
+	size_t ncat = mlogit_glm_ncat(m);
+	size_t dim = mlogit_glm_dim(m);
+	
+	if (dim == 0)
+		return;
+
+	const double *x = m->x;
+	const double *mean = m->mean;
+	double *tmp = m->dim_buf;	
+	double *cov = m->cov;
+	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
+	size_t i;
+	double ptot;
+	double p;
+
+	/* cov := 0; ptot := 0 */
+	memset(cov, 0, dim * (dim + 1) / 2 * sizeof(*cov));
+	ptot = 0;
+	
+	for (i = 0; i < ncat; i++) {
+		/* tmp := mean - x[i,:] */
+		memcpy(tmp, x + i * dim, dim * sizeof(*tmp));
+		blas_daxpy(dim, -1.0, mean, 1, tmp, 1);
+		
+		/* ptot += p[i] */
+		p = mlogit_prob(&m->values, i);
+		ptot += p;
+		
+		/* cov += p[i] * tmp^2 */
+		blas_dspr(uplo, dim, p, tmp, 1, cov);
+	}
+	
+	/* cov /= ptot */
+	blas_dscal(dim * (dim + 1) / 2, 1.0 / ptot, cov, 1);
 }
 
 

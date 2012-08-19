@@ -14,11 +14,13 @@
 #include "mlogit_glm.h"
 
 
-struct mlogit_glm MGLM;
-double *BETA, *MEAN;
-double *X;
-size_t N;
-size_t P;
+static struct mlogit_glm MGLM;
+static double *BETA, *MEAN;
+static double *COV;
+static enum blas_uplo COV_UPLO;
+static double *X;
+static size_t N;
+static size_t P;
 
 
 static void recompute()
@@ -26,12 +28,14 @@ static void recompute()
 	struct mlogit m;
 	double *eta = xmalloc(N * sizeof(*eta));
 	double *diff = xcalloc(P, sizeof(*diff));
+	enum blas_uplo uplo = COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
 	double p, ptot;
 	size_t i;
 
 	mlogit_init(&m, N);
 	
 	memset(MEAN, 0, P * sizeof(*MEAN));
+	memset(COV, 0, (P * (P + 1) / 2) * sizeof(*COV));
 	
 	if (P == 0)
 		goto cleanup;
@@ -55,6 +59,25 @@ static void recompute()
 		/* mean := mean + p/ptot * diff */
 		blas_daxpy(P, p/ptot, diff, 1, MEAN, 1);
 	}
+	
+	
+	ptot = 0;
+	for (i = 0; i < N; i++) {
+		/* diff := x[i,:] - mean */
+		blas_dcopy(P, X + i * P, 1, diff, 1);
+		blas_daxpy(P, -1.0, MEAN, 1, diff, 1);
+		
+		/* ptot += p */
+		p = mlogit_prob(&m, i);
+		ptot += p;
+		
+		/* COV += sqrt(n) * diff^2 */
+		blas_dspr(uplo, P, p, diff, 1, COV);
+	}
+	
+	/* COV /= ptot */
+	blas_dscal(P * (P + 1) / 2, 1.0 / ptot, COV, 1);
+
 cleanup:
 	mlogit_deinit(&m);
 	free(diff);
@@ -102,6 +125,18 @@ static void test_mean()
 		assert_real_eqrel(DBL_MANT_DIG / 2, mean[i], MEAN[i]);
 	}
 }
+
+
+static void test_cov()
+{
+	double *cov = mlogit_glm_cov(&MGLM);
+	size_t i;
+	
+	for (i = 0; i < P * (P + 1) / 2; i++) {
+		assert_real_eqrel(DBL_MANT_DIG / 2, cov[i], COV[i]);
+	}
+}
+
 
 static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
@@ -170,11 +205,11 @@ static void setup(const double *beta, size_t n, size_t p)
 	
 	N = n;
 	P = p;
+	X = xcalloc(N * P, sizeof(*X));
 	BETA = xmalloc(P * sizeof(*BETA));
 	MEAN = xcalloc(P, sizeof(*MEAN));
-	
-	X = xcalloc(N * P, sizeof(*X));
-	
+	COV = xcalloc(P * (P + 1) / 2, sizeof(*COV));
+	COV_UPLO = MLOGIT_GLM_COV_UPLO;
 	
 	if (beta) {
 		memcpy(BETA, beta, P * sizeof(*BETA));
@@ -257,13 +292,15 @@ int main()
 		unit_test_setup(empty_suite, empty_setup_fixture),
 		unit_test_setup_teardown(test_x, empty_setup, teardown),	
 		unit_test_setup_teardown(test_coefs, empty_setup, teardown),	
-		unit_test_setup_teardown(test_mean, empty_setup, teardown),		
+		unit_test_setup_teardown(test_mean, empty_setup, teardown),
+		unit_test_setup_teardown(test_cov, empty_setup, teardown),
 		unit_test_teardown(empty_suite, teardown_fixture),
 		
 		unit_test_setup(simple_suite, simple_setup_fixture),
 		unit_test_setup_teardown(test_x, simple_setup, teardown),
 		unit_test_setup_teardown(test_coefs, simple_setup, teardown),
-		unit_test_setup_teardown(test_mean, simple_setup, teardown),		
+		unit_test_setup_teardown(test_mean, simple_setup, teardown),
+		unit_test_setup_teardown(test_cov, simple_setup, teardown),		
 		unit_test_setup_teardown(test_inc_x_small, simple_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_med, simple_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_big, simple_setup, teardown),		
@@ -272,7 +309,8 @@ int main()
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
 		unit_test_setup_teardown(test_x, zeros_setup, teardown),
 		unit_test_setup_teardown(test_coefs, zeros_setup, teardown),		
-		unit_test_setup_teardown(test_mean, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_mean, zeros_setup, teardown),
+		unit_test_setup_teardown(test_cov, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_small, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_med, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_big, zeros_setup, teardown),		

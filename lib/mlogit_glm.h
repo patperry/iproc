@@ -3,16 +3,21 @@
 
 #include <assert.h>
 #include <stddef.h>
-
+#include "blas.h"
 #include "mlogit.h"
+
+
+#define MLOGIT_GLM_COV_UPLO	BLAS_LOWER
 
 
 struct mlogit_glm {
 	struct mlogit values;
 	double *x;
 	double *beta;
-	double *cat_buf;
 	double *mean;
+	double *cov;
+	double *cat_buf;
+	double *dim_buf;
 	size_t dim;
 };
 
@@ -25,7 +30,7 @@ static inline size_t mlogit_glm_dim(const struct mlogit_glm *m);
 static inline double *mlogit_glm_coefs(const struct mlogit_glm *m);
 static inline double *mlogit_glm_x(const struct mlogit_glm *m);
 static inline double *mlogit_glm_mean(const struct mlogit_glm *m);
-// static inline double *mlogit_glm_cov(const struct mlogit_glm *m);
+static inline double *mlogit_glm_cov(const struct mlogit_glm *m);
 static inline struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
 
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
@@ -60,6 +65,11 @@ double *mlogit_glm_x(const struct mlogit_glm *m)
 double *mlogit_glm_mean(const struct mlogit_glm *m)
 {
 	return m->mean;
+}
+
+double *mlogit_glm_cov(const struct mlogit_glm *m)
+{
+	return m->cov;
 }
 
 struct mlogit *mlogit_glm_values(const struct mlogit_glm *m)
