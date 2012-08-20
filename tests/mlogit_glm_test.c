@@ -2,6 +2,7 @@
 #include <float.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
@@ -156,10 +157,11 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	recompute();
 	
 	mlogit_glm_inc_x(&MGLM, i, dx, jdx, ndx);
+	_mlogit_glm_check_invariants(&MGLM);
 	
 	test_x();
-	test_mean();
-	test_cov();
+	//test_mean();
+	//test_cov();
 }
 
 
@@ -187,6 +189,8 @@ static void test_many_inc_x_rand(size_t nrep, double dxmin, double dxmax, size_t
 	size_t rep;
 	
 	for (rep = 0; rep < nrep; rep++) {
+		print_message("."); fflush(stdout);
+		
 		test_inc_x_rand(dxmin, dxmax, ndx);
 	}
 }
@@ -354,9 +358,9 @@ int main()
 		unit_test_setup_teardown(test_inc_x_small, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_med, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_big, zeros_setup, teardown),		
-		unit_test_setup_teardown(test_many_inc_x_small, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_inc_x_med, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_inc_x_big, zeros_setup, teardown),		
+		//unit_test_setup_teardown(test_many_inc_x_small, zeros_setup, teardown),
+		//unit_test_setup_teardown(test_many_inc_x_med, zeros_setup, teardown),
+		//unit_test_setup_teardown(test_many_inc_x_big, zeros_setup, teardown),		
 		unit_test_teardown(zeros_suite, teardown_fixture),
 	};
 	

@@ -1,8 +1,10 @@
 #include "port.h"
+#include <float.h>  // DBL_MANT_DIG
 #include <stdint.h> // SIZE_MAX
 #include <stdlib.h> // free
 #include <string.h> // memcpy, memset
 #include "blas.h"   // blas_gemv
+#include "ieee754.h" // double_eqrel
 #include "sblas.h"
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
@@ -14,6 +16,9 @@ static void recompute_values(struct mlogit_glm *m);
 static void recompute_mean(struct mlogit_glm *m);
 static void recompute_cov(struct mlogit_glm *m);
 
+
+#define assert_approx(x, y) \
+	assert(fabs((x) - (y)) <= (1e-3) * (.1 + fabs((x))))
 
 
 void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
@@ -77,18 +82,39 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	double eta1 = eta + deta;
 	double *diff = m->dim_buf;
 	double *mean = m->mean;
-	//double a;
+	double *x = m->x + i * dim;
+	double *mean0 = xmalloc(dim * sizeof(*mean0)); // DEBUG
+	double *x0 = xmalloc(dim * sizeof(*x0)); // DEBUG
+	memcpy(mean0, mean, dim * sizeof(*mean0)); // DEBUG
+	memcpy(x0, x, dim * sizeof(*x0)); // DEBUG
+	double psi = mlogit_psi(&m->values); // DEBUG
+	(void)psi; // DEBUG
 	
 	/* x[i] += dx */
 	increment_x(m, i, dx, jdx, ndx);
-	
-	/* diff := x[i] - mu */
-	memcpy(diff, m->x + i * dim, dim * sizeof(*diff));
-	blas_daxpy(dim, -1.0, mean, 1, diff, 1);
-	
+
+	/* update eta, psi */
 	mlogit_set_eta(&m->values, i, eta1);
-	recompute_mean(m);
+	
+	/* compute relative weight changes */
+	double psi1 = mlogit_psi(&m->values);
+	double w1 = exp(eta1 - psi1);
+	double w = exp(eta - psi1);
+	double dw = w1 - w;
+	
+	/* update mean */
+	memcpy(diff, x, dim * sizeof(*diff));
+	blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
+	
+	blas_daxpy(dim, dw, diff, 1, mean, 1);
+	sblas_daxpyi(ndx, w, dx, jdx, mean);
+	
+	/* update cov */
 	recompute_cov(m);
+	
+	_mlogit_glm_check_invariants(m); // DEBUG
+	free(x0); // DEBUG
+	free(mean0); // DEBUG
 }
 
 
@@ -218,7 +244,57 @@ void recompute_cov(struct mlogit_glm *m)
 
 void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 {
-	(void)m;
+	size_t n = mlogit_glm_ncat(m);
+	size_t p = mlogit_glm_dim(m);
+	const double *x = mlogit_glm_x(m);	
+	const double *beta = mlogit_glm_coefs(m);
+	const double *mean = mlogit_glm_mean(m);
+	const double *cov = mlogit_glm_cov(m);	
+	size_t i, j, k;
+
+	double *eta0 = xcalloc(n, sizeof(*eta0));
+	double *prob0 = xcalloc(n, sizeof(*prob0));
+	double *mean0 = xcalloc(p, sizeof(*mean0));
+	double *cov0 = xcalloc(p * (p + 1) / 2, sizeof(*cov0));
+	double *diff = xcalloc(p, sizeof(*diff));
+	const enum blas_uplo uplo = (MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER);	
+	double probtot0 = 0;
+	
+	if (p > 0)
+		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
+	
+	for (i = 0; i < n; i++) {
+		assert_approx(eta0[i], mlogit_eta(&m->values, i));
+	}
+	
+	for (i = 0; i < n; i++) {
+		prob0[i] = mlogit_prob(&m->values, i);
+		probtot0 += prob0[i];
+	}
+	
+	if (p > 0)
+		blas_dgemv(BLAS_NOTRANS, p, n, 1.0, x, p, prob0, 1, 0.0, mean0, 1);
+	
+	for (j = 0; j < p; j++) {
+		assert_approx(mean0[j], mean[j]);
+	}
+	
+	for (i = 0; i < n; i++) {
+		blas_dcopy(p, x + i * p, 1, diff, 1);
+		blas_daxpy(p, -1.0, mean0, 1, diff, 1);
+		blas_dspr(uplo, p, prob0[i], diff, 1, cov0);
+	}
+	blas_dscal(p * (p + 1) / 2, 1.0 / probtot0, cov0, 1);
+	
+	for (k = 0; k < p * (p + 1) / 2; k++) {
+		assert_approx(cov0[k], cov[k]);
+	}
+	
+	free(diff);
+	free(cov0);
+	free(mean0);
+	free(prob0);
+	free(eta0);
 }
 
 
