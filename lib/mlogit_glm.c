@@ -3,9 +3,11 @@
 #include <stdlib.h> // free
 #include <string.h> // memcpy, memset
 #include "blas.h"   // blas_gemv
+#include "sblas.h"
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
 
+static double get_deta(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 static void recompute_all(struct mlogit_glm *m);
 static void recompute_values(struct mlogit_glm *m);
@@ -69,32 +71,62 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
+	size_t dim = mlogit_glm_dim(m);
+	double eta = mlogit_eta(&m->values, i);
+	double deta = get_deta(m, i, dx, jdx, ndx);
+	double eta1 = eta + deta;
+	double *diff = m->dim_buf;
+	double *mean = m->mean;
+	//double a;
+	
+	/* x[i] += dx */
 	increment_x(m, i, dx, jdx, ndx);
-	recompute_all(m);
+	
+	/* diff := x[i] - mu */
+	memcpy(diff, m->x + i * dim, dim * sizeof(*diff));
+	blas_daxpy(dim, -1.0, mean, 1, diff, 1);
+	
+	mlogit_set_eta(&m->values, i, eta1);
+	recompute_mean(m);
+	recompute_cov(m);
+}
+
+
+static double get_deta(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
+{
+	double deta;
+	
+	if (jdx) {
+		deta = sblas_ddoti(ndx, dx, jdx, m->beta);
+	} else {
+		assert(ndx == m->dim);
+		deta = blas_ddot(m->dim, dx, 1, m->beta, 1);
+	}
+	
+	return deta;
 }
 
 
 void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
-	size_t j, k;
-	
 	assert(i < mlogit_glm_ncat(m));
 	assert(dx || ndx == 0);
 	
 	size_t ncat = mlogit_glm_ncat(m);
 	size_t dim = mlogit_glm_dim(m);
-	double *x = m->x;
+	double *x = m->x + i * dim;
 	
 	if (jdx) {
+#ifndef NDEBUG
+		size_t k;
 		for (k = 0; k < ndx; k++) {
 			assert(jdx[k] < ncat);
-			x[i * dim + jdx[k]] += dx[k];
 		}
+#endif
+		sblas_daxpyi(ndx, 1.0, dx, jdx, x);
 	} else if (ndx) {
 		assert(ndx == mlogit_glm_dim(m));
-		for (j = 0; j < ndx; j++) {
-			x[i * dim + j] += dx[j];
-		}
+		blas_daxpy(dim, 1.0, dx, 1, x, 1);
 	}
 }
 
