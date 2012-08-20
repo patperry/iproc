@@ -122,7 +122,7 @@ static void test_mean()
 	size_t i;
 	
 	for (i = 0; i < P; i++) {
-		assert_real_eqrel(DBL_MANT_DIG / 2, mean[i], MEAN[i]);
+		assert_real_approx(mean[i], MEAN[i]);
 	}
 }
 
@@ -133,7 +133,7 @@ static void test_cov()
 	size_t i;
 	
 	for (i = 0; i < P * (P + 1) / 2; i++) {
-		assert_real_eqrel(DBL_MANT_DIG / 2, cov[i], COV[i]);
+		assert_real_approx(cov[i], COV[i]);
 	}
 }
 
@@ -159,7 +159,9 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	
 	test_x();
 	test_mean();
+	test_cov();
 }
+
 
 static void test_inc_x_rand(double dxmin, double dxmax, size_t ndx)
 {
@@ -180,6 +182,15 @@ static void test_inc_x_rand(double dxmin, double dxmax, size_t ndx)
 }
 
 
+static void test_many_inc_x_rand(size_t nrep, double dxmin, double dxmax, size_t ndx)
+{
+	size_t rep;
+	
+	for (rep = 0; rep < nrep; rep++) {
+		test_inc_x_rand(dxmin, dxmax, ndx);
+	}
+}
+
 static void test_inc_x_small()
 {
 	test_inc_x_rand(-1.0, 1.0, 1);
@@ -195,6 +206,20 @@ static void test_inc_x_big()
 	test_inc_x_rand(-100.0, 100.0, 1);
 }
 
+static void test_many_inc_x_small()
+{
+	test_many_inc_x_rand(1000, -1.0, 1.0, 1);
+}
+
+static void test_many_inc_x_med()
+{
+	test_many_inc_x_rand(1000, -10.0, 10.0, 1);
+}
+
+static void test_many_inc_x_big()
+{
+	test_many_inc_x_rand(1000, -100.0, 100.0, 1);
+}
 
 
 static void setup(const double *beta, size_t n, size_t p)
@@ -271,7 +296,19 @@ static void simple_setup_fixture()
 
 static void simple_setup()
 {
-	setup(NULL, 50, 5);
+	srand(2);
+	size_t ncat = 50;
+	size_t dim = 5;
+	double *beta = xmalloc(dim * sizeof(*beta));
+	size_t i;
+	
+	for (i = 0; i < dim; i++) {
+		beta[i] = runif(-2, 2);
+	}
+	
+	setup(beta, ncat, dim);
+	
+	free(beta);
 }
 
 
@@ -303,7 +340,10 @@ int main()
 		unit_test_setup_teardown(test_cov, simple_setup, teardown),		
 		unit_test_setup_teardown(test_inc_x_small, simple_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_med, simple_setup, teardown),
-		unit_test_setup_teardown(test_inc_x_big, simple_setup, teardown),		
+		unit_test_setup_teardown(test_inc_x_big, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_inc_x_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_inc_x_med, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_inc_x_big, simple_setup, teardown),		
 		unit_test_teardown(simple_suite, teardown_fixture),
 		
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
@@ -314,6 +354,9 @@ int main()
 		unit_test_setup_teardown(test_inc_x_small, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_med, zeros_setup, teardown),
 		unit_test_setup_teardown(test_inc_x_big, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_many_inc_x_small, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_inc_x_med, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_inc_x_big, zeros_setup, teardown),		
 		unit_test_teardown(zeros_suite, teardown_fixture),
 	};
 	
