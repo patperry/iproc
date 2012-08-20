@@ -30,23 +30,31 @@ void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 	assert(ncat == 0 || dim <= SIZE_MAX / sizeof(double) / ncat);
 	assert(dim <= SIZE_MAX / sizeof(double) / (dim + 1));
 	
+	size_t cov_dim = dim * (dim + 1) / 2;
+	
 	mlogit_init(&m->values, ncat);
 	m->x = xcalloc(ncat * dim, sizeof(*m->x));
 	m->beta = xcalloc(dim, sizeof(*m->beta));
 	m->mean = xcalloc(dim, sizeof(*m->mean));
-	m->cov = xcalloc(dim * (dim + 1) / 2, sizeof(*m->cov));
+	m->mean_diff = xcalloc(dim, sizeof(*m->mean));
+	
+	m->cov = xcalloc(cov_dim, sizeof(*m->cov));
+	m->log_cov_scale = 0;
+	m->cov_diff = xcalloc(cov_dim, sizeof(*m->cov_diff));
+	
 	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
 	m->dim_buf = xcalloc(dim, sizeof(*m->dim_buf));	
 	m->dim = dim;
 	m->mean_err = 0.0;
-	
 }
 
 void mlogit_glm_deinit(struct mlogit_glm *m)
 {
 	free(m->dim_buf);	
 	free(m->cat_buf);
+	free(m->cov_diff);
 	free(m->cov);
+	free(m->mean_diff);
 	free(m->mean);	
 	free(m->beta);
 	free(m->x);
@@ -81,57 +89,90 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
-	if (ndx == 0)
+	size_t dim = mlogit_glm_dim(m);
+	
+	if (ndx == 0 || dim == 0)
 		return;
 
-	size_t dim = mlogit_glm_dim(m);
-	double eta = mlogit_eta(&m->values, i);
-	double deta = get_deta(m, i, dx, jdx, ndx);
-	double eta1 = eta + deta;
+	const double psi = mlogit_psi(&m->values);
+	const double eta = mlogit_eta(&m->values, i);
+	const double deta = get_deta(m, i, dx, jdx, ndx);
+	const double eta1 = eta + deta;
+	double *mean_diff = m->mean_diff;
 	double *diff = m->dim_buf;
 	double *mean = m->mean;
 	double *x = m->x + i * dim;
-	//double *mean0 = xmalloc(dim * sizeof(*mean0)); // DEBUG
-	//double *x0 = xmalloc(dim * sizeof(*x0)); // DEBUG
-	//memcpy(mean0, mean, dim * sizeof(*mean0)); // DEBUG
-	//memcpy(x0, x, dim * sizeof(*x0)); // DEBUG
-	//double psi = mlogit_psi(&m->values); // DEBUG
-	//(void)psi; // DEBUG
-	
-	/* x[i] += dx */
+
+	// x := x + dx
 	increment_x(m, i, dx, jdx, ndx);
-
-	/* update eta, psi */
+	
+	// set ddx
+	const double *ddx;
+	
+	if (jdx) {
+		memset(m->dim_buf, 0, dim * sizeof(*ddx));
+		sblas_dsctr(ndx, dx, jdx, m->dim_buf);
+		ddx = m->dim_buf;
+	} else {
+		assert(ndx == dim);
+		ddx = dx;
+	}
+	
+	// update eta, psi
 	mlogit_set_eta(&m->values, i, eta1);
-	
-	/* compute relative weight changes */
-	double psi1 = mlogit_psi(&m->values);
-	double w1 = exp(eta1 - psi1);
-	double w = exp(eta - psi1);
-	double dw = w1 - w;
-	const double tol = 1.0 / ROOT4_DBL_EPSILON;
-	
-	m->mean_err += 1.0 + 8 * (fabs(dw) + w);
 
+	const double psi1 = mlogit_psi(&m->values);
+	const double w1 = exp(eta1 - psi1);
+	const double w = exp(eta - psi1);
+	const double dw = w1 - w;
+	const double tol = 1.0 / ROOT4_DBL_EPSILON;
+
+	m->mean_err += 1 + 8 * (fabs(dw) + w); // approximate relative error from update
+
+	// diff := x1 - mean
+	blas_dcopy(dim, x, 1, mean_diff, 1);
+	blas_daxpy(dim, -1.0, mean, 1, mean_diff, 1);
+
+	
 	if (m->mean_err <= tol) {
-		/* update mean */
-		memcpy(diff, x, dim * sizeof(*diff));
-		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
-		
-		/* blas_daxpy(dim, dw, diff, 1, mean, 1);
-		 * sblas_daxpyi(ndx, w, dx, jdx, mean);
-		 */
-		blas_dscal(dim, dw, diff, 1);
-		sblas_daxpyi(ndx, w, dx, jdx, diff);
-		blas_daxpy(dim, 1.0, diff, 1, mean, 1);
+		// mean_diff := dw * (x1 - mean)
+		blas_dcopy(dim, diff, 1, mean_diff, 1);
+		blas_dscal(dim, dw, mean_diff, 1);
+
+		// mean_diff += w * dx
+		blas_daxpy(ndx, w, ddx, 1, mean_diff, 1);
+
+		// mean += mean_diff
+		blas_daxpy(dim, 1.0, mean_diff, 1, mean, 1);
 	} else {
 		printf("!");
 		fflush(stdout);
 		recompute_mean(m);
 	}
+
+	size_t cov_dim = dim * (dim + 1) / 2;	
+	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
+	double *cov_diff = m->cov_diff;
+	const double log_cov_scale = m->log_cov_scale;	
+	const double W = exp(psi - log_cov_scale);
+	const double W1 = exp(psi1 - log_cov_scale);	
+	double *cov = m->cov;
+
+	// cov_diff := W * dw * (x1 - mean)^2
+	memset(cov_diff, 0, cov_dim * sizeof(double));
+	blas_dspr(uplo, dim, W * dw, diff, 1, cov_diff);
+	
+	// cov_diff += W * w * [ (x1 - mean) * dx + dx * (x1 - mean) ]
+	blas_dspr2(uplo, dim, W * w, diff, 1, ddx, 1, cov_diff);
+	
+	// cov_diff += - W1 * w * (1 + w) * (dx)^2
+	blas_dspr(uplo, dim, -W1 * w * (1 + w), ddx, 1, cov_diff);
+	
+	// cov += cov_diff
+	blas_daxpy(cov_dim, 1.0, cov_diff, 1, cov, 1);
 	
 	/* update cov */
-	recompute_cov(m);
+	//recompute_cov(m);
 	
 	_mlogit_glm_check_invariants(m); // DEBUG
 					 //free(x0); // DEBUG
@@ -221,7 +262,8 @@ void recompute_mean(struct mlogit_glm *m)
 	
 	// mean := t(X) * prob
 	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, prob, 1, 0, mean, 1);
-	m->mean_err = 0.0;
+	memset(m->mean_diff, 0, dim * sizeof(*m->mean_diff));
+	m->mean_err = 0.0;	
 }
 
 
@@ -229,6 +271,7 @@ void recompute_cov(struct mlogit_glm *m)
 {
 	size_t ncat = mlogit_glm_ncat(m);
 	size_t dim = mlogit_glm_dim(m);
+	size_t cov_dim = dim * (dim + 1) / 2;
 	
 	if (dim == 0)
 		return;
@@ -239,12 +282,11 @@ void recompute_cov(struct mlogit_glm *m)
 	double *cov = m->cov;
 	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
 	size_t i;
-	double ptot;
-	double p;
+	double p, ptot;
 
-	/* cov := 0; ptot := 0 */
+	// cov := 0; ptot := 0
 	memset(cov, 0, dim * (dim + 1) / 2 * sizeof(*cov));
-	ptot = 0;
+	ptot = 0;	
 	
 	for (i = 0; i < ncat; i++) {
 		/* diff := mean - x[i,:] */
@@ -259,8 +301,8 @@ void recompute_cov(struct mlogit_glm *m)
 		blas_dspr(uplo, dim, p, diff, 1, cov);
 	}
 	
-	/* cov /= ptot */
-	blas_dscal(dim * (dim + 1) / 2, 1.0 / ptot, cov, 1);
+	m->log_cov_scale = log(ptot);
+	memset(m->cov_diff, 0, cov_dim * sizeof(*m->mean_diff));
 }
 
 
@@ -271,7 +313,8 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	const double *x = mlogit_glm_x(m);	
 	const double *beta = mlogit_glm_coefs(m);
 	const double *mean = mlogit_glm_mean(m);
-	const double *cov = mlogit_glm_cov(m);	
+	double cov_scale;
+	const double *cov = mlogit_glm_cov(m, &cov_scale);
 	size_t i, j, k;
 
 	double *eta0 = xcalloc(n, sizeof(*eta0));
@@ -309,7 +352,7 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	blas_dscal(p * (p + 1) / 2, 1.0 / probtot0, cov0, 1);
 	
 	for (k = 0; k < p * (p + 1) / 2; k++) {
-		assert_approx(cov0[k], cov[k]);
+		assert_approx(cov0[k], cov[k] / cov_scale);
 	}
 	
 	free(diff);
@@ -318,38 +361,3 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	free(prob0);
 	free(eta0);
 }
-
-
-#if 0
-
-
-
-void mlogit_mean_update(struct mlogit_mean *m, const struct mlogit *mlogit,
-			const double *x1, const double *dx,
-			const struct vpattern *ix)
-{
-	size_t n = m->dim;
-	double *buf = m->xbuf;
-	double eta0 = mlogit->eta0;
-	double eta_max = mlogit->eta_max;
-	double phi = mlogit->phi;
-	double expm1_deta = mlogit->expm1_deta;
-	
-	// buf := expm1(deta) * (x1 - mean0)
-	memcpy(buf, x1, n * sizeof(*buf));
-	blas_daxpy(n, -1.0, m->mean, 1, buf, 1); 
-	blas_dscal(n, expm1_deta, buf, 1);
-	
-	// buf += dx
-	if (ix) {
-		sblas_daxpyi(1.0, dx, ix, buf);
-	} else {
-		blas_daxpy(n, 1.0, dx, 1, buf, 1);
-	}
-	
-	blas_daxpy(n, exp(eta0 - eta_max - phi), buf, 1, m->mean, 1);
-}
-
-#endif
-
-

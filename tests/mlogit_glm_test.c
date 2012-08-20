@@ -131,11 +131,12 @@ static void test_mean()
 
 static void test_cov()
 {
-	double *cov = mlogit_glm_cov(&MGLM);
+	double scale;
+	double *cov = mlogit_glm_cov(&MGLM, &scale);
 	size_t i;
 	
 	for (i = 0; i < P * (P + 1) / 2; i++) {
-		assert_real_approx(cov[i], COV[i]);
+		assert_real_approx(cov[i] / scale, COV[i]);
 	}
 }
 
@@ -190,7 +191,7 @@ static void test_many_inc_x_rand(size_t nrep, double dxmin, double dxmax, size_t
 	size_t rep;
 	
 	for (rep = 0; rep < nrep; rep++) {
-		// print_message("."); fflush(stdout);
+		print_message("."); fflush(stdout);
 		
 		test_inc_x_rand(dxmin, dxmax, ndx);
 	}

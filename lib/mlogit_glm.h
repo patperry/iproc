@@ -2,6 +2,7 @@
 #define MLOGIT_GLM_H
 
 #include <assert.h>
+#include <math.h>
 #include <stddef.h>
 #include "blas.h"
 #include "mlogit.h"
@@ -15,9 +16,14 @@ struct mlogit_glm {
 	double *x;
 	double *beta;
 	double *mean;
-	double *cov;
+	double *cov; // true covariance is cov / exp(log_cov_scale)
+	double log_cov_scale;
+
+	double *mean_diff;
+	double *cov_diff;
 	double *cat_buf;
 	double *dim_buf;
+
 	size_t dim;
 	double mean_err;
 };
@@ -31,7 +37,7 @@ static inline size_t mlogit_glm_dim(const struct mlogit_glm *m);
 static inline double *mlogit_glm_coefs(const struct mlogit_glm *m);
 static inline double *mlogit_glm_x(const struct mlogit_glm *m);
 static inline double *mlogit_glm_mean(const struct mlogit_glm *m);
-static inline double *mlogit_glm_cov(const struct mlogit_glm *m);
+static inline double *mlogit_glm_cov(const struct mlogit_glm *m, double *cov_scale);
 static inline struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
 
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
@@ -68,8 +74,9 @@ double *mlogit_glm_mean(const struct mlogit_glm *m)
 	return m->mean;
 }
 
-double *mlogit_glm_cov(const struct mlogit_glm *m)
+double *mlogit_glm_cov(const struct mlogit_glm *m, double *cov_scale)
 {
+	*cov_scale = exp(m->log_cov_scale);
 	return m->cov;
 }
 
