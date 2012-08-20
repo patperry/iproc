@@ -13,11 +13,12 @@ void teardown_fixture();
 double runif(double min, double max);
 
 
-// Assert that the two given real numbers are identical, otherwise fail.
-#define assert_real_identical(a, b) \
-	_assert_real_identical((double)(a), \
-			       (double)(b), \
-			       __FILE__, __LINE__)
+// Assert that the two given real numbers are approximately equal, otherwise fail.
+#define assert_real_approx(a, b) \
+	_assert_real_approx((double)(a), \
+			    (double)(b), \
+			    __FILE__, __LINE__)
+
 
 // Assert that the two given real numbers are equal relative to the
 // given precision, otherwise fail.
@@ -27,11 +28,23 @@ double runif(double min, double max);
 			   (double)(b), \
 			   __FILE__, __LINE__)
 
+// Assert that the two given real numbers are identical, otherwise fail.
+#define assert_real_identical(a, b) \
+	_assert_real_identical((double)(a), \
+	                       (double)(b), \
+	                       __FILE__, __LINE__)
+
+
+
+void _assert_real_approx(const double a, const double b,
+			 const char * const file, const int line);
+
+void _assert_real_eqrel(int precision, const double a, const double b,
+			const char * const file, const int line);
 
 void _assert_real_identical(const double a, const double b,
 			    const char * const file, const int line);
 
-void _assert_real_eqrel(int precision, const double a, const double b,
-			const char * const file, const int line);
+
 
 #endif // _TESTUTIL_H
