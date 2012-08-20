@@ -19,6 +19,7 @@ struct mlogit_glm {
 	double *cat_buf;
 	double *dim_buf;
 	size_t dim;
+	double mean_err;
 };
 
 

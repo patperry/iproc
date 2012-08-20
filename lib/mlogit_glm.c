@@ -1,13 +1,16 @@
 #include "port.h"
 #include <float.h>  // DBL_MANT_DIG
 #include <stdint.h> // SIZE_MAX
+#include <stdio.h>
 #include <stdlib.h> // free
 #include <string.h> // memcpy, memset
 #include "blas.h"   // blas_gemv
+#include "coreutil.h"
 #include "ieee754.h" // double_eqrel
 #include "sblas.h"
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
+
 
 static double get_deta(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
@@ -18,7 +21,8 @@ static void recompute_cov(struct mlogit_glm *m);
 
 
 #define assert_approx(x, y) \
-	assert(fabs((x) - (y)) <= (1e-3) * (.1 + fabs((x))))
+	assert(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
+	       || (fabs(x) <= SQRT_DBL_EPSILON && fabs(y) <= SQRT_DBL_EPSILON))
 
 
 void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
@@ -34,6 +38,7 @@ void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
 	m->dim_buf = xcalloc(dim, sizeof(*m->dim_buf));	
 	m->dim = dim;
+	m->mean_err = 0.0;
 	
 }
 
@@ -76,6 +81,9 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
 {
+	if (ndx == 0)
+		return;
+
 	size_t dim = mlogit_glm_dim(m);
 	double eta = mlogit_eta(&m->values, i);
 	double deta = get_deta(m, i, dx, jdx, ndx);
@@ -83,12 +91,12 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	double *diff = m->dim_buf;
 	double *mean = m->mean;
 	double *x = m->x + i * dim;
-	double *mean0 = xmalloc(dim * sizeof(*mean0)); // DEBUG
-	double *x0 = xmalloc(dim * sizeof(*x0)); // DEBUG
-	memcpy(mean0, mean, dim * sizeof(*mean0)); // DEBUG
-	memcpy(x0, x, dim * sizeof(*x0)); // DEBUG
-	double psi = mlogit_psi(&m->values); // DEBUG
-	(void)psi; // DEBUG
+	//double *mean0 = xmalloc(dim * sizeof(*mean0)); // DEBUG
+	//double *x0 = xmalloc(dim * sizeof(*x0)); // DEBUG
+	//memcpy(mean0, mean, dim * sizeof(*mean0)); // DEBUG
+	//memcpy(x0, x, dim * sizeof(*x0)); // DEBUG
+	//double psi = mlogit_psi(&m->values); // DEBUG
+	//(void)psi; // DEBUG
 	
 	/* x[i] += dx */
 	increment_x(m, i, dx, jdx, ndx);
@@ -101,20 +109,33 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	double w1 = exp(eta1 - psi1);
 	double w = exp(eta - psi1);
 	double dw = w1 - w;
+	const double tol = 1.0 / ROOT4_DBL_EPSILON;
 	
-	/* update mean */
-	memcpy(diff, x, dim * sizeof(*diff));
-	blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
-	
-	blas_daxpy(dim, dw, diff, 1, mean, 1);
-	sblas_daxpyi(ndx, w, dx, jdx, mean);
+	m->mean_err += 1.0 + 8 * (fabs(dw) + w);
+
+	if (m->mean_err <= tol) {
+		/* update mean */
+		memcpy(diff, x, dim * sizeof(*diff));
+		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
+		
+		/* blas_daxpy(dim, dw, diff, 1, mean, 1);
+		 * sblas_daxpyi(ndx, w, dx, jdx, mean);
+		 */
+		blas_dscal(dim, dw, diff, 1);
+		sblas_daxpyi(ndx, w, dx, jdx, diff);
+		blas_daxpy(dim, 1.0, diff, 1, mean, 1);
+	} else {
+		printf("!");
+		fflush(stdout);
+		recompute_mean(m);
+	}
 	
 	/* update cov */
 	recompute_cov(m);
 	
 	_mlogit_glm_check_invariants(m); // DEBUG
-	free(x0); // DEBUG
-	free(mean0); // DEBUG
+					 //free(x0); // DEBUG
+					 //free(mean0); // DEBUG
 }
 
 
@@ -200,6 +221,7 @@ void recompute_mean(struct mlogit_glm *m)
 	
 	// mean := t(X) * prob
 	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, prob, 1, 0, mean, 1);
+	m->mean_err = 0.0;
 }
 
 
@@ -213,7 +235,7 @@ void recompute_cov(struct mlogit_glm *m)
 
 	const double *x = m->x;
 	const double *mean = m->mean;
-	double *diff = m->dim_buf;	
+	double *diff = m->dim_buf;
 	double *cov = m->cov;
 	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
 	size_t i;
