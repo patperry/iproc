@@ -46,7 +46,7 @@ void mlogit_glm_deinit(struct mlogit_glm *m)
 
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 {
-	size_t len = mlogit_glm_dim(m);
+	size_t len = mlogit_glm_dim(m) * sizeof(*m->beta);
 	if (beta) {
 		memcpy(m->beta, beta, len);
 	} else {
