@@ -163,6 +163,7 @@
 		22EB6B6615E3E99C00762290 /* mlogit1.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EB6B5015E3E40200762290 /* mlogit1.c */; };
 		22EB6B6715E3E9A900762290 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		22EB6B6815E3E9B800762290 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
+		22EB6B6915E43BDE00762290 /* coreutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 2210A3FC146ADE9F00C42B90 /* coreutil.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1474,6 +1475,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22EB6B6915E43BDE00762290 /* coreutil.c in Sources */,
 				2223417C144F364D00D99D8E /* ieee754.c in Sources */,
 				22234180144F364D00D99D8E /* linesearch.c in Sources */,
 				22234182144F364D00D99D8E /* logsumexp.c in Sources */,
