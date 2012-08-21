@@ -23,7 +23,6 @@ struct mlogit {
 
 void mlogit_init(struct mlogit *m, size_t ncat);
 void mlogit_deinit(struct mlogit *m);
-void mlogit_clear(struct mlogit *m);
 
 static inline size_t mlogit_ncat(const struct mlogit *m);
 
@@ -36,7 +35,7 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta);
 void mlogit_set_all_eta(struct mlogit *m, const double *eta);
 
 
-int _mlogit_check_invariants(const struct mlogit *m);
+int _mlogit_check(const struct mlogit *m);
 
 size_t mlogit_ncat(const struct mlogit *m)
 {
@@ -63,7 +62,6 @@ double mlogit_lprob(const struct mlogit *m, size_t i)
 
 double mlogit_psi(const struct mlogit *m)
 {
-	assert(!isnan(m->eta_max + m->psi_shift));
 	return m->eta_max + m->psi_shift;
 }
 

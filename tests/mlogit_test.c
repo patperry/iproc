@@ -39,7 +39,7 @@ static double get_psi(const double *eta, size_t n)
 	double sum = 0.0;
 	size_t i;
 	
-	for (i = 0; i < N - 1; i++) {
+	for (i = 0; i < n - 1; i++) {
 		sum += exp(eta_sort[i] - etamax);
 	}
 	
@@ -68,11 +68,11 @@ static void setup(const double *eta, size_t n)
 	PSI = get_psi(eta, n);
 
 	mlogit_init(&MLOGIT, N);
-	assert_false(_mlogit_check_invariants(&MLOGIT));
+	assert_false(_mlogit_check(&MLOGIT));
 
 	if (eta) {
 		mlogit_set_all_eta(&MLOGIT, ETA);
-		assert_false(_mlogit_check_invariants(&MLOGIT));
+		assert_false(_mlogit_check(&MLOGIT));
 	}
 }
 
@@ -162,7 +162,7 @@ static void test_set_eta(size_t i, double eta)
 	PSI = get_psi(ETA, N);
 	
 	mlogit_set_eta(&MLOGIT, i, eta);
-	assert_false(_mlogit_check_invariants(&MLOGIT));
+	assert_false(_mlogit_check(&MLOGIT));
 	
 	test_eta();
 	test_psi();
@@ -201,7 +201,7 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		PSI = get_psi(ETA, N);
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
-		assert_false(_mlogit_check_invariants(&MLOGIT));
+		assert_false(_mlogit_check(&MLOGIT));
 		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_psi(&MLOGIT), PSI);
 		//print_message(".");
 		fflush(stdout);

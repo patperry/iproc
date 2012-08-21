@@ -50,8 +50,7 @@ static struct valerr_t compute_eta_tail(const struct mlogit *m);
 static void replace_eta(struct mlogit *m, size_t i, double eta1);
 static void sort_eta(struct mlogit *m);
 static void set_eta_tail(struct mlogit *m);
-
-
+static void clear(struct mlogit *m);
 
 
 
@@ -65,10 +64,10 @@ void mlogit_init(struct mlogit *m, size_t ncat)
 	m->eta_rank = xmalloc(ncat * sizeof(*m->eta_rank));
 	m->tol = sqrt(EPS) * sqrt(sqrt(EPS));
 	
-	mlogit_clear(m);
+	clear(m);
 }
 
-void mlogit_clear(struct mlogit *m)
+void clear(struct mlogit *m)
 {
 	size_t i, n = m->ncat;
 	memset(m->eta, 0, n * sizeof(*m->eta));
@@ -93,6 +92,11 @@ void mlogit_deinit(struct mlogit *m)
 
 void mlogit_set_all_eta(struct mlogit *m, const double *eta)
 {
+	if (!eta) {
+		clear(m);
+		return;
+	}
+
 	size_t n = mlogit_ncat(m);
 
 #ifndef NDEBUG
@@ -436,7 +440,7 @@ struct valerr_t compute_eta_tail(const struct mlogit *m)
 }
 
 
-int _mlogit_check_invariants(const struct mlogit *m)
+int _mlogit_check(const struct mlogit *m)
 {
 	int fail = 0;
 	size_t i, n = m->ncat;
