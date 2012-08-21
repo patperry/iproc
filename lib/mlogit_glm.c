@@ -407,7 +407,7 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 		const double *zi = z + i * p;
 		blas_dspmv(uplo, p, 1.0, cov_err, zi, 1, 0.0, err_z, 1);
 		double z_err_z = blas_ddot(p, zi, 1, err_z, 1);
-		assert(z_err_z <= (1 + w[i]) * SQRT_DBL_EPSILON);
+		assert(fabs(z_err_z) <= 2 * p * SQRT_DBL_EPSILON * (1 + fabs(w[i])));
 	}
 	
 	free(iwork);

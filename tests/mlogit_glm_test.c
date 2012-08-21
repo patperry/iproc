@@ -194,7 +194,7 @@ static void test_many_inc_x_rand(size_t nrep, double dxmin, double dxmax, size_t
 	
 	for (rep = 0; rep < nrep; rep++) {
 		test_inc_x_rand(dxmin, dxmax, ndx);
-		print_message("."); fflush(stdout);
+		//print_message("."); fflush(stdout);
 
 	}
 }
