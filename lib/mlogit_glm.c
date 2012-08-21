@@ -78,7 +78,8 @@ void mlogit_glm_deinit(struct mlogit_glm *m)
 	free(m->cov_diff);
 	free(m->cov);
 	free(m->mean_diff);
-	free(m->mean);	
+	free(m->mean);
+	free(m->offset);
 	free(m->beta);
 	free(m->x);
 	mlogit_deinit(&m->values);
