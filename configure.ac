@@ -12,6 +12,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 # Checks for programs
 AC_PROG_CC
 AC_PROG_RANLIB
+AM_PROG_AR
+AM_PROG_CC_C_O
 
 # Checks for libraries
 AC_CHECK_LIBM
