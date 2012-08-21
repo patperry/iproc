@@ -135,7 +135,7 @@ static void test_cov()
 	double *cov = mlogit_glm_cov(&MGLM, &scale);
 	size_t i;
 	
-	assert_false(_mlogit_glm_check_invariants(&MGLM));
+	assert_false(_mlogit_glm_check(&MGLM));
 	
 	for (i = 0; i < P * (P + 1) / 2; i++) {
 		assert_real_approx(cov[i] / scale, COV[i]);
@@ -162,7 +162,7 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	
 	mlogit_glm_inc_x(&MGLM, i, dx, jdx, ndx);
 	test_x();	
-	assert_false(_mlogit_glm_check_invariants(&MGLM));
+	assert_false(_mlogit_glm_check(&MGLM));
 }
 
 
@@ -254,11 +254,11 @@ static void setup(const double *beta, size_t n, size_t p)
 	}
 	
 	mlogit_glm_init(&MGLM, N, P);
-	assert_false(_mlogit_glm_check_invariants(&MGLM));
+	assert_false(_mlogit_glm_check(&MGLM));
 	
 	if (beta) {
 		mlogit_glm_set_coefs(&MGLM, BETA);
-		assert_false(_mlogit_glm_check_invariants(&MGLM));
+		assert_false(_mlogit_glm_check(&MGLM));
 	}
 	
 	mlogit_glm_set_all_x(&MGLM, X);

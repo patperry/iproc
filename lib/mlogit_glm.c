@@ -417,7 +417,7 @@ void recompute_cov(struct mlogit_glm *m)
 }
 
 
-int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
+int _mlogit_glm_check(const struct mlogit_glm *m)
 {
 	int fail = 0;
 	size_t n = mlogit_glm_ncat(m);

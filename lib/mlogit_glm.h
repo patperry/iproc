@@ -53,7 +53,7 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x);
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 
 
-int _mlogit_glm_check_invariants(const struct mlogit_glm *m);
+int _mlogit_glm_check(const struct mlogit_glm *m);
 
 
 size_t mlogit_glm_ncat(const struct mlogit_glm *m)
