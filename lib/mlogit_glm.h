@@ -8,7 +8,7 @@
 #include "mlogit.h"
 
 
-#define MLOGIT_GLM_COV_UPLO	BLAS_LOWER
+#define MLOGIT_GLM_COV_UPLO	BLAS_UPPER
 
 
 struct mlogit_glm {
@@ -22,10 +22,11 @@ struct mlogit_glm {
 	double *mean_diff;
 	double *cov_diff;
 	double *cat_buf;
-	double *dim_buf;
+	double *dim_buf1, *dim_buf2;
 
 	size_t dim;
 	double mean_err;
+	double cov_err;
 };
 
 

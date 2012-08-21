@@ -7,6 +7,7 @@
 #include "blas.h"   // blas_gemv
 #include "coreutil.h"
 #include "ieee754.h" // double_eqrel
+#include "lapack.h"
 #include "sblas.h"
 #include "xalloc.h" // xcalloc
 #include "mlogit_glm.h"
@@ -43,14 +44,17 @@ void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 	m->cov_diff = xcalloc(cov_dim, sizeof(*m->cov_diff));
 	
 	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
-	m->dim_buf = xcalloc(dim, sizeof(*m->dim_buf));	
+	m->dim_buf1 = xcalloc(dim, sizeof(*m->dim_buf1));
+	m->dim_buf2 = xcalloc(dim, sizeof(*m->dim_buf2));
 	m->dim = dim;
 	m->mean_err = 0.0;
+	m->cov_err = 0.0;
 }
 
 void mlogit_glm_deinit(struct mlogit_glm *m)
 {
-	free(m->dim_buf);	
+	free(m->dim_buf2);
+	free(m->dim_buf1);	
 	free(m->cat_buf);
 	free(m->cov_diff);
 	free(m->cov);
@@ -99,7 +103,7 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	const double deta = get_deta(m, i, dx, jdx, ndx);
 	const double eta1 = eta + deta;
 	double *mean_diff = m->mean_diff;
-	double *diff = m->dim_buf;
+	double *diff = m->dim_buf1;
 	double *mean = m->mean;
 	double *x = m->x + i * dim;
 
@@ -110,9 +114,9 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	const double *ddx;
 	
 	if (jdx) {
-		memset(m->dim_buf, 0, dim * sizeof(*ddx));
-		sblas_dsctr(ndx, dx, jdx, m->dim_buf);
-		ddx = m->dim_buf;
+		memset(m->dim_buf2, 0, dim * sizeof(*ddx));
+		sblas_dsctr(ndx, dx, jdx, m->dim_buf2);
+		ddx = m->dim_buf2;
 	} else {
 		assert(ndx == dim);
 		ddx = dx;
@@ -130,8 +134,8 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	m->mean_err += 1 + 8 * (fabs(dw) + w); // approximate relative error from update
 
 	// diff := x1 - mean
-	blas_dcopy(dim, x, 1, mean_diff, 1);
-	blas_daxpy(dim, -1.0, mean, 1, mean_diff, 1);
+	blas_dcopy(dim, x, 1, diff, 1);
+	blas_daxpy(dim, -1.0, mean, 1, diff, 1);
 
 	
 	if (m->mean_err <= tol) {
@@ -140,7 +144,8 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 		blas_dscal(dim, dw, mean_diff, 1);
 
 		// mean_diff += w * dx
-		blas_daxpy(ndx, w, ddx, 1, mean_diff, 1);
+		blas_daxpy(dim, w, ddx, 1, mean_diff, 1);
+		//sblas_daxpyi(ndx, w, dx, jdx, mean_diff);
 
 		// mean += mean_diff
 		blas_daxpy(dim, 1.0, mean_diff, 1, mean, 1);
@@ -153,10 +158,14 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	size_t cov_dim = dim * (dim + 1) / 2;	
 	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
 	double *cov_diff = m->cov_diff;
-	const double log_cov_scale = m->log_cov_scale;	
-	const double W = exp(psi - log_cov_scale);
-	const double W1 = exp(psi1 - log_cov_scale);	
+	const double log_cov_scale = m->log_cov_scale;
+	const double W = exp(log_cov_scale);
+	const double W1 = exp((psi1 - psi) + log_cov_scale);
 	double *cov = m->cov;
+	
+	m->cov_err += 1 + 64 * W * (fabs(dw) + w) + 64 * W1 * w * (1 + w);
+	
+	//printf("\ncov_err = %.10g", cov_err); fflush(stdout);
 
 	// cov_diff := W * dw * (x1 - mean)^2
 	memset(cov_diff, 0, cov_dim * sizeof(double));
@@ -171,12 +180,30 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	// cov += cov_diff
 	blas_daxpy(cov_dim, 1.0, cov_diff, 1, cov, 1);
 	
-	/* update cov */
+	// update cov
 	//recompute_cov(m);
+	m->log_cov_scale = log_cov_scale + (psi1 - psi);
+	m->cov_err += exp(m->log_cov_scale);
+	
+	const double cov_tol = 1.0 / ROOT4_DBL_EPSILON;
+	
+	if (!(m->cov_err < cov_tol)) {
+		printf("*");
+		fflush(stdout);
+		if (!(m->mean_err == 0.0)) {
+			printf("!");
+			fflush(stdout);
+			recompute_mean(m);
+		}
+		recompute_cov(m);
+	}
+
 	
 	_mlogit_glm_check_invariants(m); // DEBUG
 					 //free(x0); // DEBUG
 					 //free(mean0); // DEBUG
+	
+	recompute_cov(m);
 }
 
 
@@ -263,7 +290,7 @@ void recompute_mean(struct mlogit_glm *m)
 	// mean := t(X) * prob
 	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, prob, 1, 0, mean, 1);
 	memset(m->mean_diff, 0, dim * sizeof(*m->mean_diff));
-	m->mean_err = 0.0;	
+	m->mean_err = 0.0;
 }
 
 
@@ -278,9 +305,10 @@ void recompute_cov(struct mlogit_glm *m)
 
 	const double *x = m->x;
 	const double *mean = m->mean;
-	double *diff = m->dim_buf;
+	double *diff = m->dim_buf1;
 	double *cov = m->cov;
 	enum blas_uplo uplo = MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
+	//const double log_scale = mlogit_max_eta(&m->values);	
 	size_t i;
 	double p, ptot;
 
@@ -303,6 +331,9 @@ void recompute_cov(struct mlogit_glm *m)
 	
 	m->log_cov_scale = log(ptot);
 	memset(m->cov_diff, 0, cov_dim * sizeof(*m->mean_diff));
+	m->cov_err = 0.0;
+
+	_mlogit_glm_check_invariants(m);
 }
 
 
@@ -315,15 +346,25 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	const double *mean = mlogit_glm_mean(m);
 	double cov_scale;
 	const double *cov = mlogit_glm_cov(m, &cov_scale);
-	size_t i, j, k;
+	size_t i, j;
 
 	double *eta0 = xcalloc(n, sizeof(*eta0));
 	double *prob0 = xcalloc(n, sizeof(*prob0));
 	double *mean0 = xcalloc(p, sizeof(*mean0));
 	double *cov0 = xcalloc(p * (p + 1) / 2, sizeof(*cov0));
+	double *cov0_copy = xcalloc(p * (p + 1) / 2, sizeof(*cov0_copy));
+	double *cov_err = xcalloc(p * (p + 1) / 2, sizeof(*cov_err));
+	double *z = xmalloc(p * p * sizeof(*z));
+	double *w = xmalloc(p * sizeof(*w));
 	double *diff = xcalloc(p, sizeof(*diff));
+	double *err_z = xmalloc(p * sizeof(*err_z));
 	const enum blas_uplo uplo = (MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER);	
 	double probtot0 = 0;
+	size_t lwork, liwork;
+	
+	lwork = lapack_dspevd_lwork(LA_EIG_VEC, p, &liwork);
+	double *work = xmalloc(lwork * sizeof(*work));
+	ptrdiff_t *iwork = xmalloc(liwork * sizeof(*iwork));
 	
 	if (p > 0)
 		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
@@ -351,13 +392,34 @@ void _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	}
 	blas_dscal(p * (p + 1) / 2, 1.0 / probtot0, cov0, 1);
 	
-	for (k = 0; k < p * (p + 1) / 2; k++) {
-		assert_approx(cov0[k], cov[k] / cov_scale);
+	// cov_err := cov0 - (1/cov_scale) * cov
+	blas_dcopy(p * (p + 1) / 2, cov0, 1, cov_err, 1);
+	blas_daxpy(p * (p + 1) / 2, -1.0 / cov_scale, cov, 1, cov_err, 1);
+	
+	// compute cov0 eigendecomp
+	blas_dcopy(p * (p + 1) / 2, cov0, 1, cov0_copy, 1);
+	ptrdiff_t info = lapack_dspevd(LA_EIG_VEC, uplo, p, cov0_copy, w, z, MAX(1, p), work, lwork, iwork, liwork);
+	assert(info == 0);
+	
+	// check for relative equality of cov0 and (1/cov_scale) * cov
+	// on the eigenspaces of cov0
+	for (i = 0; i < p; i++) {
+		const double *zi = z + i * p;
+		blas_dspmv(uplo, p, 1.0, cov_err, zi, 1, 0.0, err_z, 1);
+		double z_err_z = blas_ddot(p, zi, 1, err_z, 1);
+		assert(z_err_z <= (1 + w[i]) * SQRT_DBL_EPSILON);
 	}
 	
-	free(diff);
-	free(cov0);
+	free(iwork);
+	free(work);	
+	free(err_z);	
+	free(diff);	
+	free(w);
+	free(z);	
+	free(cov_err);
+	free(cov0_copy);
+	free(cov0);	
 	free(mean0);
-	free(prob0);
-	free(eta0);
+	free(prob0);	
+	free(eta0);	
 }

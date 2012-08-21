@@ -135,6 +135,8 @@ static void test_cov()
 	double *cov = mlogit_glm_cov(&MGLM, &scale);
 	size_t i;
 	
+	_mlogit_glm_check_invariants(&MGLM);
+	
 	for (i = 0; i < P * (P + 1) / 2; i++) {
 		assert_real_approx(cov[i] / scale, COV[i]);
 	}
@@ -163,7 +165,7 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	
 	test_x();
 	test_mean();
-	test_cov();
+	//test_cov();
 }
 
 
@@ -191,9 +193,9 @@ static void test_many_inc_x_rand(size_t nrep, double dxmin, double dxmax, size_t
 	size_t rep;
 	
 	for (rep = 0; rep < nrep; rep++) {
-		print_message("."); fflush(stdout);
-		
 		test_inc_x_rand(dxmin, dxmax, ndx);
+		print_message("."); fflush(stdout);
+
 	}
 }
 
@@ -214,7 +216,7 @@ static void test_inc_x_big()
 
 static void test_many_inc_x_small()
 {
-	test_many_inc_x_rand(100000, -1.0, 1.0, 1);
+	test_many_inc_x_rand(1000, -1.0, 1.0, 1);
 }
 
 static void test_many_inc_x_med()
