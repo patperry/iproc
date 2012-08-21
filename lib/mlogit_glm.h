@@ -15,6 +15,7 @@ struct mlogit_glm {
 	struct mlogit values;
 	double *x;
 	double *beta;
+	double *offset;
 	double *mean;
 	double *cov; // true covariance is cov / exp(log_cov_scale)
 	double log_cov_scale;
@@ -36,13 +37,16 @@ void mlogit_glm_deinit(struct mlogit_glm *m);
 
 static inline size_t mlogit_glm_ncat(const struct mlogit_glm *m);
 static inline size_t mlogit_glm_dim(const struct mlogit_glm *m);
+
 static inline double *mlogit_glm_coefs(const struct mlogit_glm *m);
+static inline double *mlogit_glm_offset(const struct mlogit_glm *m);
 static inline double *mlogit_glm_x(const struct mlogit_glm *m);
 static inline double *mlogit_glm_mean(const struct mlogit_glm *m);
 static inline double *mlogit_glm_cov(const struct mlogit_glm *m, double *cov_scale);
 static inline struct mlogit *mlogit_glm_values(const struct mlogit_glm *m);
 
 void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
+void mlogit_glm_set_offset(struct mlogit_glm *m, const double *offset);
 void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x);
 void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 
@@ -65,6 +69,11 @@ double *mlogit_glm_coefs(const struct mlogit_glm *m)
 	return m->beta;
 }
 
+double *mlogit_glm_offset(const struct mlogit_glm *m)
+{
+	return m->offset;
+}
+
 double *mlogit_glm_x(const struct mlogit_glm *m)
 {
 	return m->x;
@@ -85,25 +94,6 @@ struct mlogit *mlogit_glm_values(const struct mlogit_glm *m)
 {
 	return &((struct mlogit_glm *)m)->values;
 }
-
-
-
-
-/*
- 
- struct mlogit_mean {
- size_t dim;
- double *mean; // expected covariates
- double *xbuf;
- };
- 
- struct mlogit_cov {
- double *cov; // covariance of covariates (packed)
- enum blas_uplo uplo;
- };
- 
- 
- */
 
 
 #endif /* MLOGIT_GLM_H */

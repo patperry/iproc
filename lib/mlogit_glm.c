@@ -54,6 +54,7 @@ void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 	mlogit_init(&m->values, ncat);
 	m->x = xcalloc(ncat * dim, sizeof(*m->x));
 	m->beta = xcalloc(dim, sizeof(*m->beta));
+	m->offset = xcalloc(ncat, sizeof(*m->offset));
 	m->mean = xcalloc(dim, sizeof(*m->mean));
 	m->mean_diff = xcalloc(dim, sizeof(*m->mean));
 	
@@ -93,6 +94,19 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 		memset(m->beta, 0, len);
 	}
 
+	recompute_all(m);
+}
+
+
+void mlogit_glm_set_offset(struct mlogit_glm *m, const double *offset)
+{
+	size_t len = mlogit_glm_ncat(m) * sizeof(*m->offset);
+	if (offset) {
+		memcpy(m->offset, offset, len);
+	} else {
+		memset(m->offset, 0, len);
+	}
+	
 	recompute_all(m);
 }
 
@@ -279,8 +293,10 @@ void recompute_values(struct mlogit_glm *m)
 	const double *beta = m->beta;
 	double *eta = m->cat_buf;	
 	
-	// tmp := x * beta
-	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 0.0, eta, 1);
+	blas_dcopy(ncat, m->offset, 1, eta, 1);
+	
+	// eta := offset + x * beta
+	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 1.0, eta, 1);
 	mlogit_set_all_eta(&m->values, eta);
 }
 
@@ -378,6 +394,8 @@ int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 	lwork = lapack_dspevd_lwork(LA_EIG_VEC, p, &liwork);
 	double *work = xmalloc(lwork * sizeof(*work));
 	ptrdiff_t *iwork = xmalloc(liwork * sizeof(*iwork));
+	
+	blas_dcopy(n, m->offset, 1, eta0, 1);
 	
 	if (p > 0)
 		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
