@@ -98,7 +98,7 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta)
 }
 
 
-void mlogit_glm_set_offset(struct mlogit_glm *m, const double *offset)
+void mlogit_glm_set_all_offset(struct mlogit_glm *m, const double *offset)
 {
 	size_t len = mlogit_glm_ncat(m) * sizeof(*m->offset);
 	if (offset) {
@@ -121,6 +121,40 @@ void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x)
 	}
 	
 	recompute_all(m);
+}
+
+
+void mlogit_glm_set_offset(struct mlogit_glm *m, size_t i, double offset)
+{
+	assert(i < mlogit_glm_ncat(m));
+	assert(offset < INFINITY);
+	
+	const size_t dim = mlogit_glm_dim(m);
+	const double psi = mlogit_psi(&m->values);
+	const double eta = mlogit_eta(&m->values, i);
+	const double deta = offset - m->offset[i];
+	const double eta1 = eta + deta;
+	
+	// offset[i] := offset
+	m->offset[i] = offset;
+	
+	// update eta, psi
+	mlogit_set_eta(&m->values, i, eta1);
+	
+	// compute weight changes
+	const double psi1 = mlogit_psi(&m->values);
+	const double dpsi = psi1 - psi;	
+	const double w1 = exp(eta1 - psi1);
+	const double w = exp(eta - psi1);
+	const double dw = w1 - w;
+	
+	// xresid := x1 - mean
+	double *xresid = m->dim_buf1;	
+	blas_dcopy(dim, m->x + i * dim, 1, xresid, 1);
+	blas_daxpy(dim, -1.0, m->mean, 1, xresid, 1);
+		
+	update_mean(m, NULL, xresid, w, dw);
+	update_cov(m, NULL, xresid, w, dw, dpsi);
 }
 
 
@@ -178,7 +212,11 @@ static void update_mean(struct mlogit_glm *m, const double *dx, const double *xr
 	double *mean_diff = m->mean_diff;
 	const double tol = 1.0 / ROOT4_DBL_EPSILON;
 	
-	m->mean_err += 1 + 8 * (fabs(dw) + w); // approximate relative error from update
+	if (dx) {
+		m->mean_err += 1 + 8 * (fabs(dw) + w); // approximate relative error from update
+	} else {
+		m->mean_err += 1 + 8 * fabs(dw);
+	}
 
 	if (!(m->mean_err < tol)) {
 		recompute_mean(m);
@@ -188,9 +226,11 @@ static void update_mean(struct mlogit_glm *m, const double *dx, const double *xr
 	// mean_diff := dw * (x1 - mean)
 	blas_dcopy(dim, xresid, 1, mean_diff, 1);
 	blas_dscal(dim, dw, mean_diff, 1);
-		
-	// mean_diff += w * dx
-	blas_daxpy(dim, w, dx, 1, mean_diff, 1);
+	
+	if (dx) {
+		// mean_diff += w * dx
+		blas_daxpy(dim, w, dx, 1, mean_diff, 1);
+	}
 		
 	// mean += mean_diff
 	blas_daxpy(dim, 1.0, mean_diff, 1, m->mean, 1);
@@ -209,7 +249,11 @@ static void update_cov(struct mlogit_glm *m, const double *dx, const double *xre
 	const double W1 = exp(log_scale1);
 	const double cov_tol = 1.0 / ROOT5_DBL_EPSILON;
 	
-	m->cov_err += 1 + 64 * W * (fabs(dw) + w) + 64 * W1 * w * (1 + w);
+	if (dx) {
+		m->cov_err += 1 + 64 * W * (fabs(dw) + w) + 64 * W1 * w * (1 + w);
+	} else {
+		m->cov_err += 1 + 64 * W * fabs(dw);
+	}
 	
 	if (!(m->cov_err < cov_tol)) {
 		if (!(m->mean_err == 0.0))
@@ -222,11 +266,13 @@ static void update_cov(struct mlogit_glm *m, const double *dx, const double *xre
 	memset(cov_diff, 0, cov_dim * sizeof(double));
 	blas_dspr(F77_COV_UPLO, dim, W * dw, xresid, 1, cov_diff);
 	
-	// cov_diff += W * w * [ (x1 - mean) * dx + dx * (x1 - mean) ]
-	blas_dspr2(F77_COV_UPLO, dim, W * w, xresid, 1, dx, 1, cov_diff);
-	
-	// cov_diff += - W1 * w * (1 + w) * (dx)^2
-	blas_dspr(F77_COV_UPLO, dim, -W1 * w * (1 + w), dx, 1, cov_diff);
+	if (dx) {
+		// cov_diff += W * w * [ (x1 - mean) * dx + dx * (x1 - mean) ]
+		blas_dspr2(F77_COV_UPLO, dim, W * w, xresid, 1, dx, 1, cov_diff);
+		
+		// cov_diff += - W1 * w * (1 + w) * (dx)^2
+		blas_dspr(F77_COV_UPLO, dim, -W1 * w * (1 + w), dx, 1, cov_diff);
+	}
 	
 	// cov += cov_diff
 	blas_daxpy(cov_dim, 1.0, cov_diff, 1, m->cov, 1);
