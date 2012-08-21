@@ -22,7 +22,7 @@
 
 static struct mlogit MLOGIT;
 static struct mlogit1 MLOGIT1;
-static double *ETA1;
+static double *DETA;
 static size_t *IND;
 static size_t NZ;
 
@@ -66,7 +66,7 @@ static void setup(const double *eta0, size_t n)
 	mlogit1_init(&MLOGIT1, &MLOGIT);
 	assert_false(_mlogit1_check(&MLOGIT1));
 
-	ETA1 = xmalloc(n * sizeof(*ETA1));
+	DETA = xmalloc(n * sizeof(*DETA));
 	IND = xmalloc(n * sizeof(*IND));
 	NZ = 0;
 }
@@ -74,7 +74,7 @@ static void setup(const double *eta0, size_t n)
 static void teardown()
 {
 	free(IND);
-	free(ETA1);
+	free(DETA);
 	mlogit1_deinit(&MLOGIT1);
 	mlogit_deinit(&MLOGIT);
 	memset(&MLOGIT, 0, sizeof(MLOGIT));
@@ -127,10 +127,11 @@ static void test_eta()
 	}
 
 	for (iz = 0; iz < NZ; iz++) {
-		eta[IND[iz]] = ETA1[iz];
+		eta[IND[iz]] += DETA[iz];
 	}
 
 	for (i = 0; i < n; i++) {
+		//assert(mlogit1_eta(&MLOGIT1, i) == eta[i]);
 		assert_real_identical(mlogit1_eta(&MLOGIT1, i), eta[i]);
 	}
 
@@ -176,10 +177,10 @@ static void test_prob()
 	}
 }
 
-static void test_set_eta(size_t i, double eta)
+static void test_set_deta(size_t i, double deta)
 {
 	assert(i < mlogit1_ncat(&MLOGIT1));
-	assert(!isnan(eta));
+	assert(deta < INFINITY);
 
 	size_t iz;
 	for (iz = 0; iz < NZ; iz++) {
@@ -187,69 +188,70 @@ static void test_set_eta(size_t i, double eta)
 			break;
 	}
 	if (iz == NZ)
-		IND[NZ++] = iz;
+		IND[NZ++] = i;
 
-	ETA1[iz] = eta;
+	DETA[iz] = deta;
 
-	mlogit1_set_eta(&MLOGIT1, i, eta);
+	mlogit1_set_deta(&MLOGIT1, i, deta);
 	assert_false(_mlogit1_check(&MLOGIT1));
 
 	test_ncat();
 	test_eta();
+	test_psi();
 }
 
-static void test_set_eta_small()
+static void test_set_deta_small()
 {
 	size_t n = mlogit1_ncat(&MLOGIT1);
 	size_t i = rand() % n;
-	double eta = runif(-1, 1);
-	test_set_eta(i, eta);
+	double deta = runif(-1, 1);
+	test_set_deta(i, deta);
 }
 
-static void test_set_eta_med()
+static void test_set_deta_med()
 {
 	size_t n = mlogit1_ncat(&MLOGIT1);
 	size_t i = rand() % n;
-	double eta = runif(-10, 10);
-	test_set_eta(i, eta);
+	double deta = runif(-10, 10);
+	test_set_deta(i, deta);
 }
 
-static void test_set_eta_big()
+static void test_set_deta_big()
 {
 	size_t n = mlogit1_ncat(&MLOGIT1);
 	size_t i = rand() % n;
-	double eta = runif(-1000, 1000);
-	test_set_eta(i, eta);
+	double deta = runif(-1000, 1000);
+	test_set_deta(i, deta);
 }
 
-static void test_many_set_eta(size_t nrep, double min, double max)
+static void test_many_set_deta(size_t nrep, double min, double max)
 {
 	size_t n = mlogit1_ncat(&MLOGIT1);
 	size_t rep;
 	
 	for (rep = 0; rep < nrep; rep++) {
 		size_t i = rand() % n;
-		double eta = runif(min, max);
+		double deta = runif(min, max);
 
-		test_set_eta(i, eta);
+		test_set_deta(i, deta);
 		//print_message(".");
 		fflush(stdout);
 	}
 }
 
-static void test_many_set_eta_small()
+static void test_many_set_deta_small()
 {
-	test_many_set_eta(1000, -1, 1);
+	test_many_set_deta(1000, -1, 1);
 }
 
-static void test_many_set_eta_med()
+static void test_many_set_deta_med()
 {
-	test_many_set_eta(1000, -10, 10);
+	test_many_set_deta(1000, -10, 10);
 }
 
-static void test_many_set_eta_big()
+static void test_many_set_deta_big()
 {
-	test_many_set_eta(1000, -1000, 1000);
+	test_many_set_deta(1000, -1000, 1000);
 }
 
 
@@ -270,12 +272,12 @@ int main()
 		unit_test_setup_teardown(test_psi, simple_setup, teardown),
 		unit_test_setup_teardown(test_lprob, simple_setup, teardown),
 		unit_test_setup_teardown(test_prob, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_small, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_small, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_med, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_med, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_big, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_big, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_big, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big, simple_setup, teardown),
 		unit_test_teardown(simple_suite, teardown_fixture),
 
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
@@ -284,12 +286,12 @@ int main()
 		unit_test_setup_teardown(test_psi, zeros_setup, teardown),
 		unit_test_setup_teardown(test_lprob, zeros_setup, teardown),
 		unit_test_setup_teardown(test_prob, zeros_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_small, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_small, zeros_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_med, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_med, zeros_setup, teardown),
-		unit_test_setup_teardown(test_set_eta_big, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_set_eta_big, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_small, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_big, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big, zeros_setup, teardown),
 		unit_test_teardown(zeros_suite, teardown_fixture),
 	};
 

@@ -9,7 +9,7 @@
 struct mlogit1 {
 	const struct mlogit *parent;
 
-	double *eta1;
+	double *deta;
 	size_t *ind;
 	size_t nz, nzmax;
 };
@@ -24,12 +24,11 @@ static inline size_t mlogit1_ncat(const struct mlogit1 *m1);
 double mlogit1_eta(const struct mlogit1 *m1, size_t i);
 double mlogit1_prob(const struct mlogit1 *m1, size_t i);
 double mlogit1_lprob(const struct mlogit1 *m1, size_t i);
+double mlogit1_psi(const struct mlogit1 *m);
 
-static inline double mlogit1_psi(const struct mlogit1 *m);
 static inline void mlogit1_get_ind(const struct mlogit1 *m1, const size_t **ind, size_t *nz);
 
-
-void mlogit1_set_eta(struct mlogit1 *m1, size_t i, double eta);
+void mlogit1_set_deta(struct mlogit1 *m1, size_t i, double deta);
 
 int _mlogit1_check(const struct mlogit1 *m);
 
@@ -37,11 +36,6 @@ int _mlogit1_check(const struct mlogit1 *m);
 size_t mlogit1_ncat(const struct mlogit1 *m1)
 {
 	return mlogit_ncat(m1->parent);
-}
-
-double mlogit1_psi(const struct mlogit1 *m1)
-{
-	return mlogit_psi(m1->parent);
 }
 
 void mlogit1_get_ind(const struct mlogit1 *m1, const size_t **ind, size_t *nz)
