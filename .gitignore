@@ -33,6 +33,7 @@
 /tests/enronfit
 /tests/frame_test
 /tests/mlogit_test
+/tests/mlogit1_test
 /tests/mlogit_glm_test
 /tests/model_test
 /tests/recv_loglik_test

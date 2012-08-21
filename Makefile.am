@@ -63,6 +63,8 @@ libcore_a_SOURCES = \
 	lib/port.h \
 	lib/mlogit.c \
 	lib/mlogit.h \
+	lib/mlogit1.c \
+	lib/mlogit1.h \
 	lib/mlogit_glm.c \
 	lib/mlogit_glm.h \
 	lib/util.c \
@@ -276,9 +278,13 @@ check_PROGRAMS += tests/mlogit_test
 tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_mlogit_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/mlogit_glm_test
-tests_mlogit_glm_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_mlogit_glm_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/mlogit1_test
+tests_mlogit1_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_mlogit1_test_LDADD    = $(check_LDADD)
+
+## check_PROGRAMS += tests/mlogit_glm_test
+## tests_mlogit_glm_test_CPPFLAGS = $(check_CPPFLAGS)
+## tests_mlogit_glm_test_LDADD    = $(check_LDADD)
 
 
 ## check_PROGRAMS += tests/model_test

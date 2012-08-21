@@ -156,6 +156,13 @@
 		22EA3334136B440B00C5627F /* frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3331136B440B00C5627F /* frame.c */; };
 		22EA3336136B440B00C5627F /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EA3332136B440B00C5627F /* frame.h */; };
 		22EA3338136B4CEC00C5627F /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3337136B4CEC00C5627F /* messages.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
+		22EB6B5215E3E40200762290 /* mlogit1.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EB6B5015E3E40200762290 /* mlogit1.c */; };
+		22EB6B5315E3E40200762290 /* mlogit1.h in Headers */ = {isa = PBXBuildFile; fileRef = 22EB6B5115E3E40200762290 /* mlogit1.h */; };
+		22EB6B6415E3E97000762290 /* mlogit1_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EB6B6315E3E97000762290 /* mlogit1_test.c */; };
+		22EB6B6515E3E99C00762290 /* mlogit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B9865315DEAB4A00720AA5 /* mlogit.c */; };
+		22EB6B6615E3E99C00762290 /* mlogit1.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EB6B5015E3E40200762290 /* mlogit1.c */; };
+		22EB6B6715E3E9A900762290 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
+		22EB6B6815E3E9B800762290 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -446,6 +453,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		22EB6B5715E3E94E00762290 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -579,6 +595,10 @@
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
 		22EA3332136B440B00C5627F /* frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frame.h; path = src/frame.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22EA3337136B4CEC00C5627F /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = tests/enron/messages.c; sourceTree = "<group>"; };
+		22EB6B5015E3E40200762290 /* mlogit1.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit1.c; path = lib/mlogit1.c; sourceTree = "<group>"; };
+		22EB6B5115E3E40200762290 /* mlogit1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mlogit1.h; path = lib/mlogit1.h; sourceTree = "<group>"; };
+		22EB6B5915E3E94E00762290 /* mlogit1_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mlogit1_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		22EB6B6315E3E97000762290 /* mlogit1_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit1_test.c; path = tests/mlogit1_test.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -716,6 +736,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22EB6B5615E3E94E00762290 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22EB6B6815E3E9B800762290 /* libcmockery.dylib in Frameworks */,
+				22EB6B6715E3E9A900762290 /* libcore.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -816,6 +845,7 @@
 				22EA3325136B29AE00C5627F /* design_test.c */,
 				2222181C136F1AAA00F0C7D2 /* frame_test.c */,
 				22B7E93D15D46B69009978F8 /* mlogit_test.c */,
+				22EB6B6315E3E97000762290 /* mlogit1_test.c */,
 				2219FBA115DFD152006E0F07 /* mlogit_glm_test.c */,
 				2288809613A9327E00D673A6 /* model_test.c */,
 				22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */,
@@ -886,6 +916,7 @@
 				22234165144F363900D99D8E /* libcore.dylib */,
 				22B7E93315D46B3F009978F8 /* mlogit_test */,
 				2219FB9615DFD129006E0F07 /* mlogit_glm_test */,
+				22EB6B5915E3E94E00762290 /* mlogit1_test */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -968,6 +999,8 @@
 			children = (
 				22B9865315DEAB4A00720AA5 /* mlogit.c */,
 				22B9865415DEAB4A00720AA5 /* mlogit.h */,
+				22EB6B5015E3E40200762290 /* mlogit1.c */,
+				22EB6B5115E3E40200762290 /* mlogit1.h */,
 				22B9865915DEACF100720AA5 /* mlogit_glm.c */,
 				22B9865A15DEACF100720AA5 /* mlogit_glm.h */,
 				22602687146B38EE00BA6347 /* port.h */,
@@ -1025,6 +1058,7 @@
 				227870A915B0A68C004B170B /* design2.h in Headers */,
 				22B9865615DEAB4B00720AA5 /* mlogit.h in Headers */,
 				22B9865C15DEACF100720AA5 /* mlogit_glm.h in Headers */,
+				22EB6B5315E3E40200762290 /* mlogit1.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1360,6 +1394,23 @@
 			productReference = 22EA331C136B299600C5627F /* design_test */;
 			productType = "com.apple.product-type.tool";
 		};
+		22EB6B5815E3E94E00762290 /* mlogit1_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22EB6B6015E3E94E00762290 /* Build configuration list for PBXNativeTarget "mlogit1_test" */;
+			buildPhases = (
+				22EB6B5515E3E94E00762290 /* Sources */,
+				22EB6B5615E3E94E00762290 /* Frameworks */,
+				22EB6B5715E3E94E00762290 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mlogit1_test;
+			productName = mlogit1_test;
+			productReference = 22EB6B5915E3E94E00762290 /* mlogit1_test */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1395,6 +1446,7 @@
 				22234164144F363900D99D8E /* core */,
 				22B7E93215D46B3F009978F8 /* mlogit_test */,
 				2219FB9515DFD129006E0F07 /* mlogit_glm_test */,
+				22EB6B5815E3E94E00762290 /* mlogit1_test */,
 			);
 		};
 /* End PBXProject section */
@@ -1463,6 +1515,7 @@
 				227870A815B0A68C004B170B /* design2.c in Sources */,
 				22B9865515DEAB4B00720AA5 /* mlogit.c in Sources */,
 				22B9865B15DEACF100720AA5 /* mlogit_glm.c in Sources */,
+				22EB6B5215E3E40200762290 /* mlogit1.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1553,6 +1606,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				22EA3327136B29CE00C5627F /* design_test.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22EB6B5515E3E94E00762290 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22EB6B6515E3E99C00762290 /* mlogit.c in Sources */,
+				22EB6B6615E3E99C00762290 /* mlogit1.c in Sources */,
+				22EB6B6415E3E97000762290 /* mlogit1_test.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2114,6 +2177,42 @@
 			};
 			name = Release;
 		};
+		22EB6B6115E3E94E00762290 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		22EB6B6215E3E94E00762290 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2124,6 +2223,7 @@
 				2219FB9E15DFD129006E0F07 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2222181A136F1A8C00F0C7D2 /* Build configuration list for PBXNativeTarget "frame_test" */ = {
 			isa = XCConfigurationList;
@@ -2250,6 +2350,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		22EB6B6015E3E94E00762290 /* Build configuration list for PBXNativeTarget "mlogit1_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22EB6B6115E3E94E00762290 /* Debug */,
+				22EB6B6215E3E94E00762290 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
