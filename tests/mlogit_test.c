@@ -68,11 +68,11 @@ static void setup(const double *eta, size_t n)
 	PSI = get_psi(eta, n);
 
 	mlogit_init(&MLOGIT, N);
-	_mlogit_check_invariants(&MLOGIT);
+	assert_false(_mlogit_check_invariants(&MLOGIT));
 
 	if (eta) {
 		mlogit_set_all_eta(&MLOGIT, ETA);
-		_mlogit_check_invariants(&MLOGIT);
+		assert_false(_mlogit_check_invariants(&MLOGIT));
 	}
 }
 
@@ -162,7 +162,7 @@ static void test_set_eta(size_t i, double eta)
 	PSI = get_psi(ETA, N);
 	
 	mlogit_set_eta(&MLOGIT, i, eta);
-	_mlogit_check_invariants(&MLOGIT);
+	assert_false(_mlogit_check_invariants(&MLOGIT));
 	
 	test_eta();
 	test_psi();
@@ -201,7 +201,7 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		PSI = get_psi(ETA, N);
 		
 		mlogit_set_eta(&MLOGIT, i, eta);
-		_mlogit_check_invariants(&MLOGIT);
+		assert_false(_mlogit_check_invariants(&MLOGIT));
 		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_psi(&MLOGIT), PSI);
 		//print_message(".");
 		fflush(stdout);

@@ -12,6 +12,14 @@
 #define ETA (DBL_MIN * DBL_EPSILON)
 #define EPS (DBL_EPSILON / 2)
 
+#define CHECK(x) \
+	do { \
+		fail = !(x); \
+		assert(!fail); \
+		if (fail) \
+			goto out; \
+	} while(0)
+
 
 struct valerr_t {
 	double val;
@@ -428,27 +436,28 @@ struct valerr_t compute_eta_tail(const struct mlogit *m)
 }
 
 
-void _mlogit_check_invariants(const struct mlogit *m)
+int _mlogit_check_invariants(const struct mlogit *m)
 {
+	int fail = 0;
 	size_t i, n = m->ncat;
 	const double *eta = m->eta;
 	const size_t *order = m->eta_order;
 	const size_t *rank = m->eta_rank;
 	
 	for (i = 0; i < n; i++) {
-		assert(order[rank[i]] == i);
-		assert(rank[order[i]] == i);
+		CHECK(order[rank[i]] == i);
+		CHECK(rank[order[i]] == i);
 	}
 	
 	for (i = 0; i < n; i++) {
 		if (HAS_LEFT(i))
-			assert(eta[i] >= eta[LEFT(i)]);
+			CHECK(eta[i] >= eta[LEFT(i)]);
 		if (HAS_RIGHT(i))
-			assert(eta[i] >= eta[RIGHT(i)]);
+			CHECK(eta[i] >= eta[RIGHT(i)]);
 	}
 	
 	for (i = 0; i < n; i++) {
-		assert(m->eta_max >= eta[i]);
+		CHECK(m->eta_max >= eta[i]);
 	}
 	
 	if (m->ncat > 0) {
@@ -458,10 +467,12 @@ void _mlogit_check_invariants(const struct mlogit *m)
 		
 		if (m->eta_tail < eta_tail.val) {
 			// eta_tail + eta_tail_err >= val - err
-			assert(eta_tail.val <= (m->eta_tail + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
+			CHECK(eta_tail.val <= (m->eta_tail + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
 		} else {
 			// eta_tail - eta_tail_err <= val + err
-			assert(m->eta_tail <= (eta_tail.val + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
+			CHECK(m->eta_tail <= (eta_tail.val + eta_tail.err + m->eta_tail_err) / (1 - 3 * EPS));
 		}
 	}
+out:
+	return fail;
 }

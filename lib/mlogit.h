@@ -36,7 +36,7 @@ void mlogit_set_eta(struct mlogit *m, size_t i, double eta);
 void mlogit_set_all_eta(struct mlogit *m, const double *eta);
 
 
-void _mlogit_check_invariants(const struct mlogit *m);
+int _mlogit_check_invariants(const struct mlogit *m);
 
 size_t mlogit_ncat(const struct mlogit *m)
 {

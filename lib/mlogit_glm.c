@@ -13,10 +13,22 @@
 #include "mlogit_glm.h"
 
 
+#define CHECK(x) \
+	do { \
+		fail = !(x); \
+		assert(!fail); \
+		if (fail) \
+			goto out; \
+	} while(0)
+
+#define CHECK_APPROX(x, y) \
+	CHECK(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
+	      || (fabs(x) <= SQRT_DBL_EPSILON && fabs(y) <= SQRT_DBL_EPSILON))
+
 #define F77_COV_UPLO (MLOGIT_GLM_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER)
 
 
-static double get_deta(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
+static double get_deta(struct mlogit_glm *m, const double *dx, const size_t *jdx, size_t ndx);
 static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
 static void recompute_all(struct mlogit_glm *m);
 static void recompute_values(struct mlogit_glm *m);
@@ -29,14 +41,6 @@ static void update_mean(struct mlogit_glm *m, const double *dx, const double *xr
 
 
 
-#define assert_approx(x, y) \
-	do { \
-		fail = !(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
-			|| (fabs(x) <= SQRT_DBL_EPSILON && fabs(y) <= SQRT_DBL_EPSILON)); \
-		assert(!fail); \
-		if (fail) \
-			goto out; \
-	} while(0)
 
 
 
@@ -119,7 +123,7 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 
 	const double psi = mlogit_psi(&m->values);
 	const double eta = mlogit_eta(&m->values, i);
-	const double deta = get_deta(m, i, dx, jdx, ndx);
+	const double deta = get_deta(m, dx, jdx, ndx);
 	const double eta1 = eta + deta;
 
 	// x := x + dx
@@ -216,7 +220,7 @@ static void update_cov(struct mlogit_glm *m, const double *dx, const double *xre
 }
 
 
-static double get_deta(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
+double get_deta(struct mlogit_glm *m, const double *dx, const size_t *jdx, size_t ndx)
 {
 	double deta;
 	
@@ -236,12 +240,13 @@ void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t 
 	assert(i < mlogit_glm_ncat(m));
 	assert(dx || ndx == 0);
 	
-	size_t ncat = mlogit_glm_ncat(m);
+
 	size_t dim = mlogit_glm_dim(m);
 	double *x = m->x + i * dim;
 	
 	if (jdx) {
 #ifndef NDEBUG
+		size_t ncat = mlogit_glm_ncat(m);
 		size_t k;
 		for (k = 0; k < ndx; k++) {
 			assert(jdx[k] < ncat);
@@ -378,7 +383,7 @@ int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
 	
 	for (i = 0; i < n; i++) {
-		assert_approx(eta0[i], mlogit_eta(&m->values, i));
+		CHECK_APPROX(eta0[i], mlogit_eta(&m->values, i));
 	}
 	
 	for (i = 0; i < n; i++) {
@@ -390,7 +395,7 @@ int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 		blas_dgemv(BLAS_NOTRANS, p, n, 1.0, x, p, prob0, 1, 0.0, mean0, 1);
 	
 	for (j = 0; j < p; j++) {
-		assert_approx(mean0[j], mean[j]);
+		CHECK_APPROX(mean0[j], mean[j]);
 	}
 	
 	for (i = 0; i < n; i++) {
@@ -417,10 +422,7 @@ int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 		const double *zi = z + (i - 1) * p;
 		blas_dspmv(uplo, p, 1.0, cov_err, zi, 1, 0.0, err_z, 1);
 		double z_err_z = blas_ddot(p, zi, 1, err_z, 1);
-		fail = !(fabs(z_err_z) <= 2 * p * SQRT_DBL_EPSILON * (100 + fabs(w[i - 1])));
-		assert(!fail);
-		if (fail)
-			goto out;
+		CHECK(fabs(z_err_z) <= 2 * p * SQRT_DBL_EPSILON * (100 + fabs(w[i - 1])));
 	}
 	
 out:
