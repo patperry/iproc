@@ -29,6 +29,7 @@ struct mlogit_glm {
 	size_t dim;
 	double mean_err;
 	double cov_err;
+	double log_cov_scale_err;
 };
 
 

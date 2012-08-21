@@ -68,6 +68,7 @@ void mlogit_glm_init(struct mlogit_glm *m, size_t ncat, size_t dim)
 	m->dim = dim;
 	m->mean_err = 0.0;
 	m->cov_err = 0.0;
+	m->log_cov_scale_err = 0.0;
 }
 
 void mlogit_glm_deinit(struct mlogit_glm *m)
@@ -255,8 +256,11 @@ static void update_cov(struct mlogit_glm *m, const double *dx, const double *xre
 	} else {
 		m->cov_err += 1 + 64 * W * fabs(dw);
 	}
+	m->log_cov_scale_err += 0.5 * DBL_EPSILON * (fabs(dpsi) + fabs(log_scale1));
 	
-	if (!(m->cov_err < cov_tol)) {
+	double err_prod = (1 + m->cov_err) * exp(m->log_cov_scale_err) - 1;
+
+	if (!(err_prod < cov_tol)) {
 		if (!(m->mean_err == 0.0))
 			recompute_mean(m);
 		recompute_cov(m);
@@ -409,6 +413,7 @@ void recompute_cov(struct mlogit_glm *m)
 	m->log_cov_scale = log(ptot);
 	memset(m->cov_diff, 0, cov_dim * sizeof(*m->mean_diff));
 	m->cov_err = 0.0;
+	m->log_cov_scale_err = 0.0;
 }
 
 
@@ -487,7 +492,7 @@ int _mlogit_glm_check_invariants(const struct mlogit_glm *m)
 		const double *zi = z + (i - 1) * p;
 		blas_dspmv(uplo, p, 1.0, cov_err, zi, 1, 0.0, err_z, 1);
 		double z_err_z = blas_ddot(p, zi, 1, err_z, 1);
-		CHECK(fabs(z_err_z) <= 2 * p * SQRT_DBL_EPSILON * (100 + fabs(w[i - 1])));
+		CHECK(fabs(z_err_z) <= 2 * p * SQRT_DBL_EPSILON * (1 + fabs(w[i - 1])));
 	}
 	
 out:
