@@ -24,7 +24,8 @@
 	      || (fabs(x) <= SQRT_DBL_EPSILON && fabs(y) <= SQRT_DBL_EPSILON))
 
 
-
+static double get_deta(const struct mlogit1 *m1, size_t i);
+static double get_dpsi(const struct mlogit1 *m1);
 static void grow_deta_array(struct mlogit1 *m1, size_t delta);
 static size_t find_ind(const struct mlogit1 *m1, size_t i);
 static size_t search_ind(struct mlogit1 *m1, size_t i);
@@ -56,18 +57,27 @@ void mlogit1_clear(struct mlogit1 *m1)
 
 }
 
+double get_deta(const struct mlogit1 *m1, size_t i)
+{
+	assert(i < mlogit1_ncat(m1));
+
+	double deta = 0.0;
+	size_t iz = find_ind(m1, i);
+
+	if (iz != m1->nz) {
+		deta = m1->deta[iz];
+	}
+
+	return deta;
+}
+
 double mlogit1_eta(const struct mlogit1 *m1, size_t i)
 {
 	assert(i < mlogit1_ncat(m1));
 
 	double eta = mlogit_eta(m1->parent, i);
-	size_t iz = find_ind(m1, i);
-
-	if (iz != m1->nz) {
-		eta += m1->deta[iz];
-	}
-
-	return eta;
+	double deta = get_deta(m1, i);
+	return eta + deta;
 }
 
 double mlogit1_prob(const struct mlogit1 *m1, size_t i)
@@ -77,16 +87,43 @@ double mlogit1_prob(const struct mlogit1 *m1, size_t i)
 	return exp(lp);
 }
 
+
 double mlogit1_lprob(const struct mlogit1 *m1, size_t i)
 {
 	assert(i < mlogit1_ncat(m1));
-	return mlogit_lprob(m1->parent, i);
+	double lp0 = mlogit_lprob(m1->parent, i);
+	double deta = get_deta(m1, i);
+	double dpsi = get_dpsi(m1);
+	double lp = lp0 + (deta - dpsi);
+	return lp;
+}
+
+
+double get_dpsi(const struct mlogit1 *m1)
+{
+	size_t iz, nz = m1->nz;
+	double sum = 0.0;
+
+	for (iz = 0; iz < nz; iz++) {
+		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+		double deta = m1->deta[iz];
+		double eta1 = eta + deta;
+		double dw = exp(eta1) - exp(eta);
+
+		sum += dw;
+	}
+
+	double dpsi = log1p(sum);
+	return dpsi;
 }
 
 
 double mlogit1_psi(const struct mlogit1 *m1)
 {
-	return mlogit_psi(m1->parent);
+	double psi = mlogit_psi(m1->parent);
+	double dpsi = get_dpsi(m1);
+	double psi1 = psi + dpsi;
+	return psi1;
 }
 
 
@@ -133,7 +170,7 @@ int _mlogit1_check(const struct mlogit1 *m1)
 	for (i = 0; i < n; i++) {
 		sum += exp(eta[i] - etamax);
 	}
-	double psi = etamax + log1p(sum);
+	double psi = etamax + log(sum);
 	CHECK_APPROX(mlogit1_psi(m1), psi);
 
 	for (i = 0; i < n; i++) {
