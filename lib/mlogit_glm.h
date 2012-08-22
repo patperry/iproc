@@ -50,7 +50,7 @@ void mlogit_glm_set_coefs(struct mlogit_glm *m, const double *beta);
 void mlogit_glm_set_all_offset(struct mlogit_glm *m, const double *offset);
 void mlogit_glm_set_offset(struct mlogit_glm *m, size_t i, double offset);
 void mlogit_glm_set_all_x(struct mlogit_glm *m, const double *x);
-void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
+void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const size_t *jdx, const double *dx, size_t ndx);
 
 
 int _mlogit_glm_check(const struct mlogit_glm *m);

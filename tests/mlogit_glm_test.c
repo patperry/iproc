@@ -160,7 +160,7 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	}
 	recompute();
 	
-	mlogit_glm_inc_x(&MGLM, i, dx, jdx, ndx);
+	mlogit_glm_inc_x(&MGLM, i, jdx, dx, ndx);
 	test_x();	
 	assert_false(_mlogit_glm_check(&MGLM));
 }

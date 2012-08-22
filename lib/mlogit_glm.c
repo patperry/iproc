@@ -29,7 +29,7 @@
 
 
 static double get_deta(struct mlogit_glm *m, const double *dx, const size_t *jdx, size_t ndx);
-static void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx);
+static void increment_x(struct mlogit_glm *m, size_t i, const size_t *jdx, const double *dx, size_t ndx);
 static void recompute_all(struct mlogit_glm *m);
 static void recompute_values(struct mlogit_glm *m);
 static void recompute_mean(struct mlogit_glm *m);
@@ -160,7 +160,7 @@ void mlogit_glm_set_offset(struct mlogit_glm *m, size_t i, double offset)
 }
 
 
-void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
+void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const size_t *jdx, const double *dx, size_t ndx)
 {
 	assert(i < mlogit_glm_ncat(m));
 	assert(dx || ndx == 0);
@@ -177,7 +177,7 @@ void mlogit_glm_inc_x(struct mlogit_glm *m, size_t i, const double *dx, const si
 	const double eta1 = eta + deta;
 
 	// x := x + dx
-	increment_x(m, i, dx, jdx, ndx);
+	increment_x(m, i, jdx, dx, ndx);
 	
 	// update eta, psi
 	mlogit_set_eta(&m->values, i, eta1);
@@ -300,7 +300,7 @@ double get_deta(struct mlogit_glm *m, const double *dx, const size_t *jdx, size_
 }
 
 
-void increment_x(struct mlogit_glm *m, size_t i, const double *dx, const size_t *jdx, size_t ndx)
+void increment_x(struct mlogit_glm *m, size_t i, const size_t *jdx, const double *dx, size_t ndx)
 {
 	assert(i < mlogit_glm_ncat(m));
 	assert(dx || ndx == 0);

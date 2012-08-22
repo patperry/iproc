@@ -282,9 +282,9 @@ check_PROGRAMS += tests/mlogit1_test
 tests_mlogit1_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_mlogit1_test_LDADD    = $(check_LDADD)
 
-## check_PROGRAMS += tests/mlogit_glm_test
-## tests_mlogit_glm_test_CPPFLAGS = $(check_CPPFLAGS)
-## tests_mlogit_glm_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/mlogit_glm_test
+tests_mlogit_glm_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_mlogit_glm_test_LDADD    = $(check_LDADD)
 
 
 ## check_PROGRAMS += tests/model_test

@@ -29,7 +29,7 @@ void mlogit1_set_deta(struct mlogit1 *m1, size_t i, double deta);
 double mlogit1_psi(const struct mlogit1 *m1);
 double mlogit_dpsi(const struct mlogit1 *m1);
 static inline void mlogit1_get_deta(const struct mlogit1 *m1,
-				    const double **deta, const size_t **ind,
+				    const size_t **ind, const double **deta, 
 				    size_t *nz);
 
 int _mlogit1_check(const struct mlogit1 *m);
@@ -39,11 +39,13 @@ size_t mlogit1_ncat(const struct mlogit1 *m1)
 	return mlogit_ncat(m1->parent);
 }
 
-void mlogit1_get_deta(const struct mlogit1 *m1, const double **deta,
-		      const size_t **ind, size_t *nz)
+void mlogit1_get_deta(const struct mlogit1 *m1,
+		      const size_t **ind,		      
+		      const double **deta,
+		      size_t *nz)
 {
+	*ind = m1->ind;	
 	*deta = m1->deta;
-	*ind = m1->ind;
 	*nz = m1->nz;
 }
 
