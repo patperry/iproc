@@ -2,6 +2,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,6 +10,9 @@
 #include "ieee754.h"
 #include "mlogit1.h"
 #include "xalloc.h"
+
+#define ETA (DBL_MIN * DBL_EPSILON)
+#define EPS (DBL_EPSILON / 2)
 
 
 #define CHECK(x) \
@@ -21,11 +25,38 @@
 
 #define CHECK_APPROX(x, y) \
 	CHECK(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
-	      || (fabs(x) <= SQRT_DBL_EPSILON && fabs(y) <= SQRT_DBL_EPSILON))
+	      || (fabs(x) <= ROOT3_DBL_EPSILON && fabs(y) <= ROOT3_DBL_EPSILON))
+
+
+struct valerr_t {
+	double val;
+	double err;
+};
+
+static struct valerr_t twosum(double a, double b);
+static struct valerr_t mult_err_e(struct valerr_t x, struct valerr_t y);
+static struct valerr_t exp_err_e(struct valerr_t x);
+static struct valerr_t exp_sum_e(double x, double y);
+
+
+struct sum_t {
+	size_t n;
+	double val;
+	double comp;
+	double acomp;
+	double err;
+};
+
+static void sum_init(struct sum_t *s);
+static void sum_add(struct sum_t *s, double x);
+static struct valerr_t sum_get(const struct sum_t *s);
+
 
 
 static double get_deta(const struct mlogit1 *m1, size_t i);
 static double get_dpsi(const struct mlogit1 *m1);
+static double get_dpsi_safe(const struct mlogit1 *m1);
+static double get_dpsi_safer(const struct mlogit1 *m1);
 static void grow_deta_array(struct mlogit1 *m1, size_t delta);
 static size_t find_ind(const struct mlogit1 *m1, size_t i);
 static size_t search_ind(struct mlogit1 *m1, size_t i);
@@ -101,6 +132,8 @@ double mlogit1_lprob(const struct mlogit1 *m1, size_t i)
 
 double get_dpsi(const struct mlogit1 *m1)
 {
+	printf("_"); fflush(stdout);
+	
 	size_t iz, nz = m1->nz;
 	double sum = 0.0;
 
@@ -114,8 +147,129 @@ double get_dpsi(const struct mlogit1 *m1)
 	}
 
 	double dpsi = log1p(sum);
+	
+	if (!isfinite(dpsi))
+		dpsi = get_dpsi_safe(m1);
+	
 	return dpsi;
 }
+
+
+double get_dpsi_safe(const struct mlogit1 *m1)
+{
+	printf("s"); fflush(stdout);
+	
+	size_t nz = m1->nz;
+	double dpsi = NAN;
+	
+	if (!nz)
+		return 0.0;
+
+	size_t iz;
+	double shift = -INFINITY;
+	double shift1 = -INFINITY;
+	double sum1 = 0.0;
+	double sum = 0.0;
+	
+	for (iz = 0; iz < nz; iz++) {
+		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+		double deta = m1->deta[iz];
+		double eta1 = eta + deta;
+
+		shift = MAX(shift, eta);		
+		shift1 = MAX(shift1, eta1);
+	}
+
+	if (shift1 < shift) {
+		printf("1"); fflush(stdout);
+		//double sum1 = 0.0;	
+		//double sum = 0.0;
+		
+		for (iz = 0; iz < nz; iz++) {
+			double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+			double deta = m1->deta[iz];
+			double eta1 = eta + deta;
+			
+			sum1 += exp(eta1 - shift1);
+			sum += exp(eta);
+		}
+	
+		dpsi = shift1 + log(exp(-shift1) * (1 - sum) + sum1);
+	} else if (shift1 - shift < log(DBL_MAX)) {
+		printf("2"); fflush(stdout);
+		//double sum = 0.0;
+		
+		for (iz = 0; iz < nz; iz++) {
+			double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+			double deta = m1->deta[iz];
+			double eta1 = eta + deta;
+			double dw = exp(eta1 - shift) - exp(eta);
+			
+			sum += dw;
+		}
+		
+		dpsi = shift + log(exp(-shift) + sum);
+	} else {
+		dpsi = get_dpsi_safer(m1);
+	}
+	
+	assert(isfinite(dpsi));
+	
+	return dpsi;
+}
+
+
+double get_dpsi_safer(const struct mlogit1 *m1)
+{
+	printf("S"); fflush(stdout);
+	
+	size_t iz, nz = m1->nz;
+	size_t i, n = mlogit1_ncat(m1);	
+	
+	if (!nz || !n)
+		return 0.0;
+	
+	double etamax = -INFINITY;
+	size_t imax = 0;
+	
+	for (i = 0, iz = 0; i < n; i++) {
+		double eta = mlogit_eta(m1->parent, i);
+		
+		if (iz < nz && m1->ind[iz] == i) {
+			eta += m1->deta[iz];
+			iz++;
+		}
+		
+		if (eta > etamax) {
+			etamax = eta;
+			imax = i;
+		}
+	}
+	
+	double sum = 0.0;
+
+	for (i = 0, iz = 0; i < n; i++) {
+		double eta = mlogit_eta(m1->parent, i);
+		
+		if (iz < nz && m1->ind[iz] == i) {
+			eta += m1->deta[iz];
+			iz++;
+		}
+		
+		if (i == imax)
+			continue;
+
+		sum += exp(eta - etamax);
+	}
+
+	double psi = mlogit_psi(m1->parent);
+	double psi1 = etamax + log1p(sum);
+	double dpsi = psi1 - psi;
+	
+	assert(isfinite(dpsi));
+	return dpsi;
+}
+
 
 
 double mlogit1_psi(const struct mlogit1 *m1)
@@ -161,16 +315,21 @@ int _mlogit1_check(const struct mlogit1 *m1)
 	}
 
 	double etamax = -INFINITY;
+	size_t imax = 0;
 
 	for (i = 0; i < n; i++) {
-		etamax = MAX(etamax, eta[i]);
+		if (eta[i] > etamax) {
+			etamax = eta[i];
+			imax = i;
+		}
 	}
 
 	double sum = 0.0;
 	for (i = 0; i < n; i++) {
-		sum += exp(eta[i] - etamax);
+		if (i != imax)
+			sum += exp(eta[i] - etamax);
 	}
-	double psi = etamax + log(sum);
+	double psi = etamax + log1p(sum);
 	CHECK_APPROX(mlogit1_psi(m1), psi);
 
 	for (i = 0; i < n; i++) {
@@ -250,5 +409,94 @@ size_t find_ind(const struct mlogit1 *m1, size_t i)
 
 	/* not found */
 	return m1->nz;
+}
+
+
+
+
+struct valerr_t twosum(double a, double b)
+{
+	assert(FLT_ROUNDS == 1); /* require round-to-nearest */
+	
+	struct valerr_t res;
+	double a1, b1, da, db;
+	res.val = a + b;
+	a1 = res.val - b;
+	b1 = res.val - a1;
+	da = a - a1;
+	db = b - b1;
+	res.err = da + db;
+	return res;
+}
+
+
+struct valerr_t mult_err_e(struct valerr_t x, struct valerr_t y)
+{
+	struct valerr_t res;
+	double adx = fabs(x.err);
+	double ady = fabs(y.err);
+	
+	res.val = x.val * y.val;
+	res.err = EPS * fabs(res.val);
+	res.err += adx * fabs(y.val) + ady * fabs(x.val) + adx * ady;
+	res.err = res.err / (1 - 6 * EPS) + 4 * ETA;
+	
+	return res;
+}
+
+struct valerr_t exp_err_e(struct valerr_t x)
+{
+	struct valerr_t res;
+	double adx = fabs(x.err);
+	double ex  = exp(x.val);
+	double edxm1 = expm1(adx);
+	res.val = ex;
+	res.err  = ((2 * EPS * ex + 3 * ETA) + (ex + ETA) * (edxm1 + ETA)) / (1 - 7 * EPS);
+	return res;
+}
+
+struct valerr_t exp_sum_e(double x, double y)
+{
+	struct valerr_t s = twosum(x, y);
+	return exp_err_e(s);
+}
+
+void sum_init(struct sum_t *s)
+{
+	s->n = 0;
+	s->val = 0;
+	s->comp = 0;
+	s->acomp = 0;
+	s->err = 0;
+}
+
+void sum_add(struct sum_t *s, double x)
+{
+	struct valerr_t t;
+	s->n++;
+	t = twosum(s->val, x);
+	s->val = t.val;
+	s->comp += t.err;
+	s->acomp += fabs(t.err);
+}
+
+/* Ogita, Rump, & Oishi (2005). "Accurate sum and dot product." SIAM Journal
+ * on Scientific Computing (SISC), 26(6):1955-1988.
+ *
+ * Cor. 4.7.
+ */
+struct valerr_t sum_get(const struct sum_t *s)
+{
+	assert((s->n) < 1.0 / DBL_EPSILON);
+	
+	struct valerr_t res;
+	double eps2 = EPS * EPS;
+	double two_n_eps = 2 * s->n * EPS;
+	
+	res.val = s->val + s->comp;
+	double ares = fabs(res.val);
+	double beta = two_n_eps / (1 - two_n_eps) * s->acomp;
+	res.err = EPS * ares + (beta + (2 * eps2 * ares + 3 * ETA));
+	return res;
 }
 

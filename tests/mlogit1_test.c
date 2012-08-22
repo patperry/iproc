@@ -234,7 +234,7 @@ static void test_many_set_deta(size_t nrep, double min, double max)
 		double deta = runif(min, max);
 
 		test_set_deta(i, deta);
-		//print_message(".");
+		print_message(".");
 		fflush(stdout);
 	}
 }
