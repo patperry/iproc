@@ -25,12 +25,12 @@ double mlogit1_lprob(const struct mlogit1 *m1, size_t i);
 double mlogit1_eta(const struct mlogit1 *m1, size_t i);
 double mlogit_deta(const struct mlogit1 *m1, size_t i);
 void mlogit1_set_deta(struct mlogit1 *m1, size_t i, double deta);
-
-double mlogit1_psi(const struct mlogit1 *m1);
-double mlogit_dpsi(const struct mlogit1 *m1);
 static inline void mlogit1_get_deta(const struct mlogit1 *m1,
 				    const size_t **ind, const double **deta, 
 				    size_t *nz);
+
+double mlogit1_psi(const struct mlogit1 *m1);
+double mlogit_dpsi(const struct mlogit1 *m1);
 
 int _mlogit1_check(const struct mlogit1 *m);
 
