@@ -27,6 +27,12 @@ static size_t *IND;
 static size_t NZ;
 
 
+static void clear()
+{
+	mlogit1_clear(&MLOGIT1);
+	NZ = 0;
+}
+
 static double get_psi(const double *eta, size_t n)
 {
 	if (n == 0)
@@ -99,6 +105,25 @@ static void simple_setup()
 {
 	static double eta[] = { -0.9,  0.8,  0.9,  1.4,  1.2 };
 	setup(eta, ARRAY_SIZE(eta));
+}
+
+static void hard_setup_fixture()
+{
+	setup_fixture("Hard");
+}
+
+static void hard_setup()
+{
+	size_t i, n = 100;
+	double eta[n];
+
+	srand(31337);	
+	
+	for (i = 0; i < 100; i++) {
+		eta[i] = runif(-10, 10);
+	}
+
+	setup(eta, n);
 }
 
 static void empty_setup_fixture()
@@ -177,11 +202,11 @@ static void test_prob()
 	}
 }
 
-static void test_set_deta(size_t i, double deta)
+static void set_deta(size_t i, double deta)
 {
 	assert(i < mlogit1_ncat(&MLOGIT1));
 	assert(deta < INFINITY);
-
+	
 	size_t iz;
 	for (iz = 0; iz < NZ; iz++) {
 		if (IND[iz] == i)
@@ -189,69 +214,132 @@ static void test_set_deta(size_t i, double deta)
 	}
 	if (iz == NZ)
 		IND[NZ++] = i;
-
+	
 	DETA[iz] = deta;
-
+	
 	mlogit1_set_deta(&MLOGIT1, i, deta);
-	assert_false(_mlogit1_check(&MLOGIT1));
+}
 
+static void test_set_deta(size_t i, double deta)
+{
+	set_deta(i, deta);
+	assert_false(_mlogit1_check(&MLOGIT1));
 	test_ncat();
 	test_eta();
-	test_psi();
+}
+
+static void test_set_deta_rand(double min, double max)
+{
+	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t i = rand() % n;
+	double deta = runif(min, max);
+	test_set_deta(i, deta);
+	
 }
 
 static void test_set_deta_small()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
-	size_t i = rand() % n;
-	double deta = runif(-1, 1);
-	test_set_deta(i, deta);
+	test_set_deta_rand(-1, 1);
 }
 
 static void test_set_deta_med()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
-	size_t i = rand() % n;
-	double deta = runif(-10, 10);
-	test_set_deta(i, deta);
+	test_set_deta_rand(-10, 10);
 }
 
 static void test_set_deta_big()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
-	size_t i = rand() % n;
-	double deta = runif(-1000, 1000);
-	test_set_deta(i, deta);
+	test_set_deta_rand(-1000, 1000);
 }
 
-static void test_many_set_deta(size_t nrep, double min, double max)
+
+
+static void test_set_deta_rand_rep(size_t nrep, double min, double max)
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
 	size_t rep;
 	
 	for (rep = 0; rep < nrep; rep++) {
-		size_t i = rand() % n;
-		double deta = runif(min, max);
-
-		test_set_deta(i, deta);
+		test_set_deta_rand(min, max);
 		print_message(".");
 		fflush(stdout);
 	}
 }
 
+static void test_set_deta_small_rep()
+{
+	test_set_deta_rand_rep(100, -1, 1);
+}
+
+static void test_set_deta_med_rep()
+{
+	test_set_deta_rand_rep(100, -10, 10);
+}
+
+static void test_set_deta_big_rep()
+{
+	test_set_deta_rand_rep(100, -1000, 1000);
+}
+
+
+
+static void test_many_set_deta(double min, double max)
+{
+	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t iz, nz = 5 * (rand() % n);
+	
+	for (iz = 0; iz < nz; iz++) {
+		size_t i = rand() % n;
+		double deta = runif(min, max);
+		set_deta(i, deta);
+	}
+	
+	assert_false(_mlogit1_check(&MLOGIT1));
+	test_ncat();
+	test_eta();
+}
+
+
 static void test_many_set_deta_small()
 {
-	test_many_set_deta(1000, -1, 1);
+	test_many_set_deta(-1, 1);
 }
 
 static void test_many_set_deta_med()
 {
-	test_many_set_deta(1000, -10, 10);
+	test_many_set_deta(-10, 10);
 }
 
 static void test_many_set_deta_big()
 {
-	test_many_set_deta(1000, -1000, 1000);
+	test_many_set_deta(-1000, 1000);
+}
+
+
+static void test_many_set_deta_rep(size_t nrep, double min, double max)
+{
+	size_t rep;
+	
+	for (rep = 0; rep < nrep; rep++) {
+		clear();
+		test_many_set_deta(min, max);
+		print_message(".");
+		fflush(stdout);
+	}
+}
+
+static void test_many_set_deta_small_rep()
+{
+	test_many_set_deta_rep(100, -1, 1);
+}
+
+static void test_many_set_deta_med_rep()
+{
+	test_many_set_deta_rep(100, -10, 10);
+}
+
+static void test_many_set_deta_big_rep()
+{
+	test_many_set_deta_rep(100, 0, 500);
 }
 
 
@@ -266,20 +354,6 @@ int main()
 		unit_test_setup_teardown(test_prob, empty_setup, teardown),
 		unit_test_teardown(empty_suite, teardown_fixture),
 
-		unit_test_setup(simple_suite, simple_setup_fixture),
-		unit_test_setup_teardown(test_ncat, simple_setup, teardown),
-		unit_test_setup_teardown(test_eta, simple_setup, teardown),
-		unit_test_setup_teardown(test_psi, simple_setup, teardown),
-		unit_test_setup_teardown(test_lprob, simple_setup, teardown),
-		unit_test_setup_teardown(test_prob, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_deta_small, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_deta_small, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_deta_med, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_deta_med, simple_setup, teardown),
-		unit_test_setup_teardown(test_set_deta_big, simple_setup, teardown),
-		unit_test_setup_teardown(test_many_set_deta_big, simple_setup, teardown),
-		unit_test_teardown(simple_suite, teardown_fixture),
-
 		unit_test_setup(zeros_suite, zeros_setup_fixture),
 		unit_test_setup_teardown(test_ncat, zeros_setup, teardown),
 		unit_test_setup_teardown(test_eta, zeros_setup, teardown),
@@ -287,12 +361,58 @@ int main()
 		unit_test_setup_teardown(test_lprob, zeros_setup, teardown),
 		unit_test_setup_teardown(test_prob, zeros_setup, teardown),
 		unit_test_setup_teardown(test_set_deta_small, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_set_deta_small, zeros_setup, teardown),
-		unit_test_setup_teardown(test_set_deta_med, zeros_setup, teardown),
-		unit_test_setup_teardown(test_many_set_deta_med, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med, zeros_setup, teardown),		
 		unit_test_setup_teardown(test_set_deta_big, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small_rep, zeros_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med_rep, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_set_deta_big_rep, zeros_setup, teardown),		
+		unit_test_setup_teardown(test_many_set_deta_small, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med, zeros_setup, teardown),
 		unit_test_setup_teardown(test_many_set_deta_big, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_small_rep, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med_rep, zeros_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big_rep, zeros_setup, teardown),
 		unit_test_teardown(zeros_suite, teardown_fixture),
+
+		unit_test_setup(simple_suite, simple_setup_fixture),
+		unit_test_setup_teardown(test_ncat, simple_setup, teardown),
+		unit_test_setup_teardown(test_eta, simple_setup, teardown),
+		unit_test_setup_teardown(test_psi, simple_setup, teardown),
+		unit_test_setup_teardown(test_lprob, simple_setup, teardown),
+		unit_test_setup_teardown(test_prob, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med, simple_setup, teardown),		
+		unit_test_setup_teardown(test_set_deta_big, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small_rep, simple_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med_rep, simple_setup, teardown),		
+		unit_test_setup_teardown(test_set_deta_big_rep, simple_setup, teardown),		
+		unit_test_setup_teardown(test_many_set_deta_small, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_small_rep, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med_rep, simple_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big_rep, simple_setup, teardown),
+		unit_test_teardown(simple_suite, teardown_fixture),
+
+		unit_test_setup(hard_suite, hard_setup_fixture),
+		unit_test_setup_teardown(test_ncat, hard_setup, teardown),
+		unit_test_setup_teardown(test_eta, hard_setup, teardown),
+		unit_test_setup_teardown(test_psi, hard_setup, teardown),
+		unit_test_setup_teardown(test_lprob, hard_setup, teardown),
+		unit_test_setup_teardown(test_prob, hard_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small, hard_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med, hard_setup, teardown),		
+		unit_test_setup_teardown(test_set_deta_big, hard_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_small_rep, hard_setup, teardown),
+		unit_test_setup_teardown(test_set_deta_med_rep, hard_setup, teardown),		
+		unit_test_setup_teardown(test_set_deta_big_rep, hard_setup, teardown),		
+		unit_test_setup_teardown(test_many_set_deta_small, hard_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med, hard_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big, hard_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_small_rep, hard_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_med_rep, hard_setup, teardown),
+		unit_test_setup_teardown(test_many_set_deta_big_rep, hard_setup, teardown),
+		unit_test_teardown(hard_suite, teardown_fixture),
 	};
 
 	return run_tests(tests);

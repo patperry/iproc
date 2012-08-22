@@ -132,21 +132,32 @@ double mlogit1_lprob(const struct mlogit1 *m1, size_t i)
 
 double get_dpsi(const struct mlogit1 *m1)
 {
-	printf("_"); fflush(stdout);
+	//printf("_"); fflush(stdout);
 	
 	size_t iz, nz = m1->nz;
-	double sum = 0.0;
+	//struct sum_t s;
 
+	//sum_init(&s);
+	
+	double sum = 0.0;
+	double sum1 = 0.0;
+	
 	for (iz = 0; iz < nz; iz++) {
 		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
 		double deta = m1->deta[iz];
 		double eta1 = eta + deta;
-		double dw = exp(eta1) - exp(eta);
+		double w1 = exp(eta1);
+		double w = exp(eta);
+		//double dw = w1 - w;
+		sum += w;
+		sum1 += w1;
 
-		sum += dw;
+		//sum_add(&s, dw);
 	}
-
-	double dpsi = log1p(sum);
+	
+	//struct valerr_t sum = sum_get(&s);
+	//printf("sum=%.5e; err=%.5e\n", sum.val, sum.err);
+	double dpsi = log((1 - sum) + sum1);
 	
 	if (!isfinite(dpsi))
 		dpsi = get_dpsi_safe(m1);
