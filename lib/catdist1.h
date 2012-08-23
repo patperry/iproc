@@ -8,8 +8,8 @@
 struct catdist1 {
 	const struct catdist *parent;
 
-	double *deta;
 	size_t *ind;
+	double *deta;
 	size_t nz, nzmax;
 };
 
