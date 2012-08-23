@@ -17,13 +17,14 @@ struct mlogitaug {
 	size_t *ind;
 	double *off;
 	double *x;
+	double *deta;
 	size_t nz, nzmax;
 };
 
 
-void mlogitaug_init(struct mlogitaug *m1, const struct mlogitaug *base,
+void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 		size_t dim);
-void mlogitaug_deinit(struct mlogitaug *m);
+void mlogitaug_deinit(struct mlogitaug *m1);
 
 static inline size_t mlogitaug_ncat(const struct mlogitaug *m1);
 static inline size_t mlogitaug_dim(const struct mlogitaug *m1);
@@ -35,15 +36,15 @@ double *mlogitaug_x(const struct mlogitaug *m1, size_t i);
 
 void mlogitaug_set_coefs(struct mlogitaug *m1, const double *beta);
 void mlogitaug_set_offset(struct mlogitaug *m1, size_t i, double offset);
-void mlogitaug_inc_x(struct mlogitaug *m, size_t i, const size_t *jdx,
+void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 		const double *dx, size_t ndx);
 
-// double *mlogitaug_mean(const struct mlogitaug *m);
-// double *mlogitaug_base_mean(const struct mlogitaug *m);
+// double *mlogitaug_mean(const struct mlogitaug *m1);
+// double *mlogitaug_base_mean(const struct mlogitaug *m1);
 //
-// double *mlogitaug_cov(const struct mlogitaug *m, double *scale);
-// double *mlogitaug_base_cov(const struct mlogitaug *m, double *scale);
-// double *mlogitaug_cross_cov(const struct mlogitaug *m, double *scale);
+// double *mlogitaug_cov(const struct mlogitaug *m1, double *scale);
+// double *mlogitaug_base_cov(const struct mlogitaug *m1, double *scale);
+// double *mlogitaug_cross_cov(const struct mlogitaug *m1, double *scale);
 
 struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1);
 

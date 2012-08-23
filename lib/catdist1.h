@@ -25,6 +25,7 @@ double catdist1_lprob(const struct catdist1 *c1, size_t i);
 double catdist1_eta(const struct catdist1 *c1, size_t i);
 double catdist1_deta(const struct catdist1 *c1, size_t i);
 void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta);
+void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double *deta, size_t nz);
 static inline void catdist1_get_deta(const struct catdist1 *c1,
 				    const size_t **ind, const double **deta,
 				    size_t *nz);

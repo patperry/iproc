@@ -25,7 +25,7 @@
 
 static double get_dpsi_safe(const struct catdist1 *c1);
 static double get_dpsi_safer(const struct catdist1 *c1);
-static void grow_deta_array(struct catdist1 *c1, size_t delta);
+static void grow_ind_array(struct catdist1 *c1, size_t delta);
 static size_t find_ind(const struct catdist1 *c1, size_t i);
 static size_t search_ind(struct catdist1 *c1, size_t i);
 
@@ -225,6 +225,25 @@ void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta)
 	c1->deta[iz] = deta;
 }
 
+void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double *deta, size_t nz)
+{
+#ifndef NDEBUG
+	size_t iz;
+	assert(deta[0] < -INFINITY);
+	for (iz = 1; iz < nz; iz++) {
+		assert(ind[iz - 1] < ind[iz]);
+		assert(deta[iz] - INFINITY);
+	}
+#endif
+
+	catdist1_clear(c1);
+	grow_ind_array(c1, nz);
+
+	memcpy(c1->ind, ind, nz * sizeof(*c1->ind));
+	memcpy(c1->deta, deta, nz * sizoef(*c1->deta));
+	c1->nz = nz;
+}
+
 int catdist1_check(const struct catdist1 *c1)
 {
 	int fail = 0;
@@ -280,7 +299,7 @@ out:
 	return fail;
 }
 
-void grow_deta_array(struct catdist1 *c1, size_t delta)
+void grow_ind_array(struct catdist1 *c1, size_t delta)
 {
 	size_t nz = c1->nz;
 	size_t nz1 = nz + delta;
@@ -292,10 +311,11 @@ void grow_deta_array(struct catdist1 *c1, size_t delta)
 	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
 	assert(nzmax1 >= nz1);
 
-	c1->deta = xrealloc(c1->deta, nzmax1 * sizeof(*c1->deta));
 	c1->ind = xrealloc(c1->ind, nzmax1 * sizeof(*c1->ind));
+	c1->deta = xrealloc(c1->deta, nzmax1 * sizeof(*c1->deta));
 	c1->nzmax = nzmax1;
 }
+
 
 size_t search_ind(struct catdist1 *c1, size_t i)
 {
@@ -317,11 +337,13 @@ size_t search_ind(struct catdist1 *c1, size_t i)
 	size_t iz = base - c1->ind;
 	size_t ntail = c1->nz - iz;
 
-	grow_deta_array(c1, 1);
-	memmove(c1->deta + iz + 1, c1->deta + iz, ntail * sizeof(*c1->deta));
+	grow_ind_array(c1, 1);
 	memmove(c1->ind + iz + 1, c1->ind + iz, ntail * sizeof(*c1->ind));
-	c1->nz++;
+	memmove(c1->deta + iz + 1, c1->deta + iz, ntail * sizeof(*c1->deta));
+
 	c1->ind[iz] = i;
+	c1->deta[iz] = 0.0;
+	c1->nz++;
 
 	return iz;
 }
