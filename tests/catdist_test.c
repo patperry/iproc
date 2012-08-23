@@ -18,7 +18,7 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-struct catdist MLOGIT;
+struct catdist CATDIST;
 double *ETA;
 double PSI;
 size_t N;
@@ -66,19 +66,19 @@ static void setup(const double *eta, size_t n)
 
 	PSI = get_psi(eta, n);
 
-	catdist_init(&MLOGIT, N);
-	assert_false(_catdist_check(&MLOGIT));
+	catdist_init(&CATDIST, N);
+	assert_false(_catdist_check(&CATDIST));
 
 	if (eta) {
-		catdist_set_all_eta(&MLOGIT, ETA);
-		assert_false(_catdist_check(&MLOGIT));
+		catdist_set_all_eta(&CATDIST, ETA);
+		assert_false(_catdist_check(&CATDIST));
 	}
 }
 
 static void teardown()
 {
-	catdist_deinit(&MLOGIT);
-	memset(&MLOGIT, 0, sizeof(MLOGIT));
+	catdist_deinit(&CATDIST);
+	memset(&CATDIST, 0, sizeof(CATDIST));
 	free(ETA);
 	ETA = NULL;
 	N = 0;
@@ -117,7 +117,7 @@ static void empty_setup()
 
 static void test_ncat()
 {
-	assert_int_equal(catdist_ncat(&MLOGIT), N);
+	assert_int_equal(catdist_ncat(&CATDIST), N);
 }
 
 static void test_eta()
@@ -125,13 +125,13 @@ static void test_eta()
 	size_t i;
 
 	for (i = 0; i < N; i++) {
-		assert_real_identical(catdist_eta(&MLOGIT, i), ETA[i]);
+		assert_real_identical(catdist_eta(&CATDIST, i), ETA[i]);
 	}
 }
 
 static void test_psi()
 {
-	assert_real_identical(catdist_psi(&MLOGIT), PSI);
+	assert_real_identical(catdist_psi(&CATDIST), PSI);
 }
 
 static void test_lprob()
@@ -139,7 +139,7 @@ static void test_lprob()
 	size_t i;
 
 	for (i = 0; i < N; i++) {
-		assert_real_identical(catdist_lprob(&MLOGIT, i), ETA[i] - PSI);
+		assert_real_identical(catdist_lprob(&CATDIST, i), ETA[i] - PSI);
 	}
 }
 
@@ -148,7 +148,7 @@ static void test_prob()
 	size_t i;
 
 	for (i = 0; i < N; i++) {
-		assert_real_identical(catdist_prob(&MLOGIT, i),
+		assert_real_identical(catdist_prob(&CATDIST, i),
 				      exp(ETA[i] - PSI));
 	}
 }
@@ -161,8 +161,8 @@ static void test_set_eta(size_t i, double eta)
 	ETA[i] = eta;
 	PSI = get_psi(ETA, N);
 
-	catdist_set_eta(&MLOGIT, i, eta);
-	assert_false(_catdist_check(&MLOGIT));
+	catdist_set_eta(&CATDIST, i, eta);
+	assert_false(_catdist_check(&CATDIST));
 
 	test_eta();
 	test_psi();
@@ -200,9 +200,9 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		ETA[i] = eta;
 		PSI = get_psi(ETA, N);
 
-		catdist_set_eta(&MLOGIT, i, eta);
-		assert_false(_catdist_check(&MLOGIT));
-		assert_real_eqrel(DBL_MANT_DIG / 2, catdist_psi(&MLOGIT), PSI);
+		catdist_set_eta(&CATDIST, i, eta);
+		assert_false(_catdist_check(&CATDIST));
+		assert_real_eqrel(DBL_MANT_DIG / 2, catdist_psi(&CATDIST), PSI);
 		//print_message(".");
 		fflush(stdout);
 	}

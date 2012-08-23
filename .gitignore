@@ -30,6 +30,7 @@
 /m4/lt~obsolete.m4
 /tests/array_test
 /tests/catdist_test
+/tests/catdist1_test
 /tests/design_test
 /tests/enronfit
 /tests/frame_test

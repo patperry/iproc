@@ -8,7 +8,7 @@
 
 #include "coreutil.h"
 #include "ieee754.h"
-#include "mlogit1.h"
+#include "catdist1.h"
 #include "xalloc.h"
 
 #define CHECK(x) \
@@ -23,13 +23,13 @@
 	CHECK(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
 	      || (fabs(x) <= ROOT3_DBL_EPSILON && fabs(y) <= ROOT3_DBL_EPSILON))
 
-static double get_dpsi_safe(const struct mlogit1 *m1);
-static double get_dpsi_safer(const struct mlogit1 *m1);
-static void grow_deta_array(struct mlogit1 *m1, size_t delta);
-static size_t find_ind(const struct mlogit1 *m1, size_t i);
-static size_t search_ind(struct mlogit1 *m1, size_t i);
+static double get_dpsi_safe(const struct catdist1 *m1);
+static double get_dpsi_safer(const struct catdist1 *m1);
+static void grow_deta_array(struct catdist1 *m1, size_t delta);
+static size_t find_ind(const struct catdist1 *m1, size_t i);
+static size_t search_ind(struct catdist1 *m1, size_t i);
 
-void mlogit1_init(struct mlogit1 *m1, const struct mlogit *parent)
+void catdist1_init(struct catdist1 *m1, const struct catdist *parent)
 {
 	assert(parent);
 
@@ -39,23 +39,23 @@ void mlogit1_init(struct mlogit1 *m1, const struct mlogit *parent)
 	m1->nz = 0;
 	m1->nzmax = 0;
 
-	mlogit1_clear(m1);
+	catdist1_clear(m1);
 }
 
-void mlogit1_deinit(struct mlogit1 *m1)
+void catdist1_deinit(struct catdist1 *m1)
 {
 	free(m1->ind);
 	free(m1->deta);
 }
 
-void mlogit1_clear(struct mlogit1 *m1)
+void catdist1_clear(struct catdist1 *m1)
 {
 	m1->nz = 0;
 }
 
-double mlogit_deta(const struct mlogit1 *m1, size_t i)
+double catdist1_deta(const struct catdist1 *m1, size_t i)
 {
-	assert(i < mlogit1_ncat(m1));
+	assert(i < catdist1_ncat(m1));
 
 	double deta = 0.0;
 	size_t iz = find_ind(m1, i);
@@ -67,40 +67,40 @@ double mlogit_deta(const struct mlogit1 *m1, size_t i)
 	return deta;
 }
 
-double mlogit1_eta(const struct mlogit1 *m1, size_t i)
+double catdist1_eta(const struct catdist1 *m1, size_t i)
 {
-	assert(i < mlogit1_ncat(m1));
+	assert(i < catdist1_ncat(m1));
 
-	double eta = mlogit_eta(m1->parent, i);
-	double deta = mlogit_deta(m1, i);
+	double eta = catdist_eta(m1->parent, i);
+	double deta = catdist1_deta(m1, i);
 	return eta + deta;
 }
 
-double mlogit1_prob(const struct mlogit1 *m1, size_t i)
+double catdist1_prob(const struct catdist1 *m1, size_t i)
 {
-	assert(i < mlogit1_ncat(m1));
-	double lp = mlogit1_lprob(m1, i);
+	assert(i < catdist1_ncat(m1));
+	double lp = catdist1_lprob(m1, i);
 	return exp(lp);
 }
 
-double mlogit1_lprob(const struct mlogit1 *m1, size_t i)
+double catdist1_lprob(const struct catdist1 *m1, size_t i)
 {
-	assert(i < mlogit1_ncat(m1));
-	double lp0 = mlogit_lprob(m1->parent, i);
-	double deta = mlogit_deta(m1, i);
-	double dpsi = mlogit_dpsi(m1);
+	assert(i < catdist1_ncat(m1));
+	double lp0 = catdist_lprob(m1->parent, i);
+	double deta = catdist1_deta(m1, i);
+	double dpsi = catdist1_dpsi(m1);
 	double lp = lp0 + (deta - dpsi);
 	return lp;
 }
 
-double mlogit_dpsi(const struct mlogit1 *m1)
+double catdist1_dpsi(const struct catdist1 *m1)
 {
 	size_t iz, nz = m1->nz;
 	double sum = 0.0;
 	double sum1 = 0.0;
 
 	for (iz = 0; iz < nz; iz++) {
-		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+		double eta = catdist_lprob(m1->parent, m1->ind[iz]);
 		double deta = m1->deta[iz];
 		double eta1 = eta + deta;
 		double w1 = exp(eta1);
@@ -117,7 +117,7 @@ double mlogit_dpsi(const struct mlogit1 *m1)
 	return dpsi;
 }
 
-double get_dpsi_safe(const struct mlogit1 *m1)
+double get_dpsi_safe(const struct catdist1 *m1)
 {
 	size_t nz = m1->nz;
 	double dpsi = NAN;
@@ -132,7 +132,7 @@ double get_dpsi_safe(const struct mlogit1 *m1)
 	double sum = 0.0;
 
 	for (iz = 0; iz < nz; iz++) {
-		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+		double eta = catdist_lprob(m1->parent, m1->ind[iz]);
 		double deta = m1->deta[iz];
 		double eta1 = eta + deta;
 
@@ -143,7 +143,7 @@ double get_dpsi_safe(const struct mlogit1 *m1)
 	double shift = MIN(max, max1);
 
 	for (iz = 0; iz < nz; iz++) {
-		double eta = mlogit_lprob(m1->parent, m1->ind[iz]);
+		double eta = catdist_lprob(m1->parent, m1->ind[iz]);
 		double deta = m1->deta[iz];
 		double eta1 = eta + deta;
 
@@ -159,10 +159,10 @@ double get_dpsi_safe(const struct mlogit1 *m1)
 	return dpsi;
 }
 
-double get_dpsi_safer(const struct mlogit1 *m1)
+double get_dpsi_safer(const struct catdist1 *m1)
 {
 	size_t iz, nz = m1->nz;
-	size_t i, n = mlogit1_ncat(m1);
+	size_t i, n = catdist1_ncat(m1);
 
 	if (!nz || !n)
 		return 0.0;
@@ -171,7 +171,7 @@ double get_dpsi_safer(const struct mlogit1 *m1)
 	size_t imax = 0;
 
 	for (i = 0, iz = 0; i < n; i++) {
-		double eta = mlogit_eta(m1->parent, i);
+		double eta = catdist_eta(m1->parent, i);
 
 		if (iz < nz && m1->ind[iz] == i) {
 			eta += m1->deta[iz];
@@ -187,7 +187,7 @@ double get_dpsi_safer(const struct mlogit1 *m1)
 	double sum = 0.0;
 
 	for (i = 0, iz = 0; i < n; i++) {
-		double eta = mlogit_eta(m1->parent, i);
+		double eta = catdist_eta(m1->parent, i);
 
 		if (iz < nz && m1->ind[iz] == i) {
 			eta += m1->deta[iz];
@@ -200,7 +200,7 @@ double get_dpsi_safer(const struct mlogit1 *m1)
 		sum += exp(eta - etamax);
 	}
 
-	double psi = mlogit_psi(m1->parent);
+	double psi = catdist_psi(m1->parent);
 	double psi1 = etamax + log1p(sum);
 	double dpsi = psi1 - psi;
 
@@ -208,27 +208,27 @@ double get_dpsi_safer(const struct mlogit1 *m1)
 	return dpsi;
 }
 
-double mlogit1_psi(const struct mlogit1 *m1)
+double catdist1_psi(const struct catdist1 *m1)
 {
-	double psi = mlogit_psi(m1->parent);
-	double dpsi = mlogit_dpsi(m1);
+	double psi = catdist_psi(m1->parent);
+	double dpsi = catdist1_dpsi(m1);
 	double psi1 = psi + dpsi;
 	return psi1;
 }
 
-void mlogit1_set_deta(struct mlogit1 *m1, size_t i, double deta)
+void catdist1_set_deta(struct catdist1 *m1, size_t i, double deta)
 {
-	assert(i < mlogit1_ncat(m1));
+	assert(i < catdist1_ncat(m1));
 	assert(deta < INFINITY);
 
 	size_t iz = search_ind(m1, i);
 	m1->deta[iz] = deta;
 }
 
-int _mlogit1_check(const struct mlogit1 *m1)
+int _catdist1_check(const struct catdist1 *m1)
 {
 	int fail = 0;
-	size_t i, n = mlogit1_ncat(m1);
+	size_t i, n = catdist1_ncat(m1);
 	size_t iz, nz = m1->nz;
 	const size_t *ind = m1->ind;
 	double *eta = xmalloc(n * sizeof(*eta));
@@ -238,7 +238,7 @@ int _mlogit1_check(const struct mlogit1 *m1)
 	}
 
 	for (i = 0; i < n; i++) {
-		eta[i] = mlogit_eta(m1->parent, i);
+		eta[i] = catdist_eta(m1->parent, i);
 	}
 
 	for (iz = 0; iz < nz; iz++) {
@@ -246,7 +246,7 @@ int _mlogit1_check(const struct mlogit1 *m1)
 	}
 
 	for (i = 0; i < n; i++) {
-		CHECK(mlogit1_eta(m1, i) == eta[i]);
+		CHECK(catdist1_eta(m1, i) == eta[i]);
 	}
 
 	double etamax = -INFINITY;
@@ -265,14 +265,14 @@ int _mlogit1_check(const struct mlogit1 *m1)
 			sum += exp(eta[i] - etamax);
 	}
 	double psi = etamax + log1p(sum);
-	CHECK_APPROX(mlogit1_psi(m1), psi);
+	CHECK_APPROX(catdist1_psi(m1), psi);
 
 	for (i = 0; i < n; i++) {
-		CHECK_APPROX(mlogit1_lprob(m1, i), eta[i] - psi);
+		CHECK_APPROX(catdist1_lprob(m1, i), eta[i] - psi);
 	}
 
 	for (i = 0; i < n; i++) {
-		CHECK_APPROX(mlogit1_prob(m1, i), exp(eta[i] - psi));
+		CHECK_APPROX(catdist1_prob(m1, i), exp(eta[i] - psi));
 	}
 
 out:
@@ -280,7 +280,7 @@ out:
 	return fail;
 }
 
-void grow_deta_array(struct mlogit1 *m1, size_t delta)
+void grow_deta_array(struct catdist1 *m1, size_t delta)
 {
 	size_t nz = m1->nz;
 	size_t nz1 = nz + delta;
@@ -297,7 +297,7 @@ void grow_deta_array(struct mlogit1 *m1, size_t delta)
 	m1->nzmax = nzmax1;
 }
 
-size_t search_ind(struct mlogit1 *m1, size_t i)
+size_t search_ind(struct catdist1 *m1, size_t i)
 {
 	const size_t *base = m1->ind, *ptr;
 	size_t nz;
@@ -326,7 +326,7 @@ size_t search_ind(struct mlogit1 *m1, size_t i)
 	return iz;
 }
 
-size_t find_ind(const struct mlogit1 *m1, size_t i)
+size_t find_ind(const struct catdist1 *m1, size_t i)
 {
 	const size_t *base = m1->ind, *ptr;
 	size_t nz;

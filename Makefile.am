@@ -63,6 +63,8 @@ libcore_a_SOURCES = \
 	lib/port.h \
 	lib/catdist.c \
 	lib/catdist.h \
+	lib/catdist1.c \
+	lib/catdist1.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \
@@ -273,6 +275,10 @@ check_PROGRAMS = # empty
 check_PROGRAMS += tests/catdist_test
 tests_catdist_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_catdist_test_LDADD    = $(check_LDADD)
+
+check_PROGRAMS += tests/catdist1_test
+tests_catdist1_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_catdist1_test_LDADD    = $(check_LDADD)
 
 
 ## check_PROGRAMS += tests/mlogit_test

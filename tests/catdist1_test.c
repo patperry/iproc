@@ -14,14 +14,14 @@
 #include <stdio.h> // fflush, stdout
 #include "ieee754.h" // double_compare
 #include "xalloc.h" // xmalloc
-#include "mlogit.h"
-#include "mlogit1.h"
+#include "catdist.h"
+#include "catdist1.h"
 
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-static struct mlogit MLOGIT;
-static struct mlogit1 MLOGIT1;
+static struct catdist CATDIST;
+static struct catdist1 CATDIST1;
 static double *DETA;
 static size_t *IND;
 static size_t NZ;
@@ -29,7 +29,7 @@ static size_t NZ;
 
 static void clear()
 {
-	mlogit1_clear(&MLOGIT1);
+	catdist1_clear(&CATDIST1);
 	NZ = 0;
 }
 
@@ -39,7 +39,7 @@ static double get_psi(const double *eta, size_t n)
 		return -INFINITY;
 	if (!eta)
 		return log(n);
-	
+
 	double *eta_sort = xmalloc(n * sizeof(*eta_sort));
 	memcpy(eta_sort, eta, n * sizeof(*eta_sort));
 	qsort(eta_sort, n, sizeof(double), double_compare);
@@ -47,17 +47,17 @@ static double get_psi(const double *eta, size_t n)
 	double etamax = eta_sort[n - 1];
 	double sum = 0.0;
 	size_t i;
-	
+
 	for (i = 0; i < n - 1; i++) {
 		sum += exp(eta_sort[i] - etamax);
 	}
-	
+
 	double psi = etamax + log1p(sum);
-	
+
 	assert(isfinite(psi));
-	
+
 	free(eta_sort);
-	
+
 	return psi;
 }
 
@@ -66,11 +66,11 @@ static void setup(const double *eta0, size_t n)
 	srand(1);
 
 
-	mlogit_init(&MLOGIT, n);
-	mlogit_set_all_eta(&MLOGIT, eta0);
+	catdist_init(&CATDIST, n);
+	catdist_set_all_eta(&CATDIST, eta0);
 
-	mlogit1_init(&MLOGIT1, &MLOGIT);
-	assert_false(_mlogit1_check(&MLOGIT1));
+	catdist1_init(&CATDIST1, &CATDIST);
+	assert_false(_catdist1_check(&CATDIST1));
 
 	DETA = xmalloc(n * sizeof(*DETA));
 	IND = xmalloc(n * sizeof(*IND));
@@ -81,9 +81,9 @@ static void teardown()
 {
 	free(IND);
 	free(DETA);
-	mlogit1_deinit(&MLOGIT1);
-	mlogit_deinit(&MLOGIT);
-	memset(&MLOGIT, 0, sizeof(MLOGIT));
+	catdist1_deinit(&CATDIST1);
+	catdist_deinit(&CATDIST);
+	memset(&CATDIST, 0, sizeof(CATDIST));
 }
 
 static void zeros_setup_fixture()
@@ -117,8 +117,8 @@ static void hard_setup()
 	size_t i, n = 100;
 	double eta[n];
 
-	srand(31337);	
-	
+	srand(31337);
+
 	for (i = 0; i < 100; i++) {
 		eta[i] = runif(-10, 10);
 	}
@@ -138,17 +138,17 @@ static void empty_setup()
 
 static void test_ncat()
 {
-	assert_int_equal(mlogit1_ncat(&MLOGIT1), mlogit_ncat(&MLOGIT));
+	assert_int_equal(catdist1_ncat(&CATDIST1), catdist_ncat(&CATDIST));
 }
 
 static void test_eta()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
 	double *eta = xmalloc(n * sizeof(*eta));
 	size_t i, iz;
 
 	for (i = 0; i < n; i++) {
-		eta[i] = mlogit_eta(&MLOGIT, i);
+		eta[i] = catdist_eta(&CATDIST, i);
 	}
 
 	for (iz = 0; iz < NZ; iz++) {
@@ -156,8 +156,8 @@ static void test_eta()
 	}
 
 	for (i = 0; i < n; i++) {
-		//assert(mlogit1_eta(&MLOGIT1, i) == eta[i]);
-		assert_real_identical(mlogit1_eta(&MLOGIT1, i), eta[i]);
+		//assert(catdist1_eta(&CATDIST1, i) == eta[i]);
+		assert_real_identical(catdist1_eta(&CATDIST1, i), eta[i]);
 	}
 
 	free(eta);
@@ -165,46 +165,46 @@ static void test_eta()
 
 static void test_psi()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
 	double *eta = xmalloc(n * sizeof(*eta));
 	size_t i;
 
 	for (i = 0; i < n; i++) {
-		eta[i] = mlogit1_eta(&MLOGIT1, i);
+		eta[i] = catdist1_eta(&CATDIST1, i);
 	}
 
 	double psi = get_psi(eta, n);
-	assert_real_approx(mlogit1_psi(&MLOGIT1), psi);
+	assert_real_approx(catdist1_psi(&CATDIST1), psi);
 
 	free(eta);
 }
 
 static void test_lprob()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
-	double psi = mlogit1_psi(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
+	double psi = catdist1_psi(&CATDIST1);
 	size_t i;
 	
 	for (i = 0; i < n; i++) {
-		double eta = mlogit1_eta(&MLOGIT1, i);
-		assert_real_approx(mlogit1_lprob(&MLOGIT1, i), eta - psi);
+		double eta = catdist1_eta(&CATDIST1, i);
+		assert_real_approx(catdist1_lprob(&CATDIST1, i), eta - psi);
 	}
 }
 
 static void test_prob()
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
 	size_t i;
 	
 	for (i = 0; i < n; i++) {
-		double lp = mlogit1_lprob(&MLOGIT1, i);
-		assert_real_identical(mlogit1_prob(&MLOGIT1, i), exp(lp));
+		double lp = catdist1_lprob(&CATDIST1, i);
+		assert_real_identical(catdist1_prob(&CATDIST1, i), exp(lp));
 	}
 }
 
 static void set_deta(size_t i, double deta)
 {
-	assert(i < mlogit1_ncat(&MLOGIT1));
+	assert(i < catdist1_ncat(&CATDIST1));
 	assert(deta < INFINITY);
 	
 	size_t iz;
@@ -217,20 +217,20 @@ static void set_deta(size_t i, double deta)
 	
 	DETA[iz] = deta;
 	
-	mlogit1_set_deta(&MLOGIT1, i, deta);
+	catdist1_set_deta(&CATDIST1, i, deta);
 }
 
 static void test_set_deta(size_t i, double deta)
 {
 	set_deta(i, deta);
-	assert_false(_mlogit1_check(&MLOGIT1));
+	assert_false(_catdist1_check(&CATDIST1));
 	test_ncat();
 	test_eta();
 }
 
 static void test_set_deta_rand(double min, double max)
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
 	size_t i = rand() % n;
 	double deta = runif(min, max);
 	test_set_deta(i, deta);
@@ -284,16 +284,16 @@ static void test_set_deta_big_rep()
 
 static void test_many_set_deta(double min, double max)
 {
-	size_t n = mlogit1_ncat(&MLOGIT1);
+	size_t n = catdist1_ncat(&CATDIST1);
 	size_t iz, nz = 5 * (rand() % n);
-	
+
 	for (iz = 0; iz < nz; iz++) {
 		size_t i = rand() % n;
 		double deta = runif(min, max);
 		set_deta(i, deta);
 	}
-	
-	assert_false(_mlogit1_check(&MLOGIT1));
+
+	assert_false(_catdist1_check(&CATDIST1));
 	test_ncat();
 	test_eta();
 }
@@ -318,7 +318,7 @@ static void test_many_set_deta_big()
 static void test_many_set_deta_rep(size_t nrep, double min, double max)
 {
 	size_t rep;
-	
+
 	for (rep = 0; rep < nrep; rep++) {
 		clear();
 		test_many_set_deta(min, max);
