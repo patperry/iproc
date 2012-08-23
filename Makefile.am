@@ -67,6 +67,8 @@ libcore_a_SOURCES = \
 	lib/catdist1.h \
 	lib/mlogit.c \
 	lib/mlogit.h \
+	lib/mlogitaug.c \
+	lib/mlogitaug.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \
