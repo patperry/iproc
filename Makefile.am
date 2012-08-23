@@ -65,6 +65,8 @@ libcore_a_SOURCES = \
 	lib/catdist.h \
 	lib/catdist1.c \
 	lib/catdist1.h \
+	lib/mlogit.c \
+	lib/mlogit.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \
@@ -280,10 +282,9 @@ check_PROGRAMS += tests/catdist1_test
 tests_catdist1_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_catdist1_test_LDADD    = $(check_LDADD)
 
-
-## check_PROGRAMS += tests/mlogit_test
-## tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
-## tests_mlogit_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/mlogit_test
+tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_mlogit_test_LDADD    = $(check_LDADD)
 
 ## check_PROGRAMS += tests/mlogit1_test
 ## tests_mlogit1_test_CPPFLAGS = $(check_CPPFLAGS)
