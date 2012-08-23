@@ -44,55 +44,55 @@ static struct valerr_t sum_get(const struct sum_t *s);
 
 static int pdouble_rcompar(const void *x, const void *y);
 
-static struct valerr_t compute_eta_tail(const struct catdist *m);
-static void replace_eta(struct catdist *m, size_t i, double eta1);
-static void sort_eta(struct catdist *m);
-static void set_eta_tail(struct catdist *m);
-static void clear(struct catdist *m);
+static struct valerr_t compute_eta_tail(const struct catdist *c);
+static void replace_eta(struct catdist *c, size_t i, double eta1);
+static void sort_eta(struct catdist *c);
+static void set_eta_tail(struct catdist *c);
+static void clear(struct catdist *c);
 
-void catdist_init(struct catdist *m, size_t ncat)
+void catdist_init(struct catdist *c, size_t ncat)
 {
-	m->ncat = ncat;
+	c->ncat = ncat;
 
-	m->eta = xmalloc(ncat * sizeof(*m->eta));
-	m->eta_order = xmalloc(ncat * sizeof(*m->eta_order));
-	m->eta_rank = xmalloc(ncat * sizeof(*m->eta_rank));
-	m->tol = sqrt(EPS) * sqrt(sqrt(EPS));
+	c->eta = xmalloc(ncat * sizeof(*c->eta));
+	c->eta_order = xmalloc(ncat * sizeof(*c->eta_order));
+	c->eta_rank = xmalloc(ncat * sizeof(*c->eta_rank));
+	c->tol = sqrt(EPS) * sqrt(sqrt(EPS));
 
-	clear(m);
+	clear(c);
 }
 
-void clear(struct catdist *m)
+void clear(struct catdist *c)
 {
-	size_t i, n = m->ncat;
-	memset(m->eta, 0, n * sizeof(*m->eta));
+	size_t i, n = c->ncat;
+	memset(c->eta, 0, n * sizeof(*c->eta));
 
 	for (i = 0; i < n; i++) {
-		m->eta_order[i] = i;
-		m->eta_rank[i] = i;
+		c->eta_order[i] = i;
+		c->eta_rank[i] = i;
 	}
 
-	m->eta_max = 0;
-	m->eta_tail = n == 0 ? NAN : n - 1;
-	m->eta_tail_err = 0;
-	m->psi_shift = log(n);
+	c->eta_max = 0;
+	c->eta_tail = n == 0 ? NAN : n - 1;
+	c->eta_tail_err = 0;
+	c->psi_shift = log(n);
 }
 
-void catdist_deinit(struct catdist *m)
+void catdist_deinit(struct catdist *c)
 {
-	free(m->eta_rank);
-	free(m->eta_order);
-	free(m->eta);
+	free(c->eta_rank);
+	free(c->eta_order);
+	free(c->eta);
 }
 
-void catdist_set_all_eta(struct catdist *m, const double *eta)
+void catdist_set_all_eta(struct catdist *c, const double *eta)
 {
 	if (!eta) {
-		clear(m);
+		clear(c);
 		return;
 	}
 
-	size_t n = catdist_ncat(m);
+	size_t n = catdist_ncat(c);
 
 #ifndef NDEBUG
 	size_t i;
@@ -101,11 +101,11 @@ void catdist_set_all_eta(struct catdist *m, const double *eta)
 	}
 #endif
 
-	memcpy(m->eta, eta, n * sizeof(*m->eta));
+	memcpy(c->eta, eta, n * sizeof(*c->eta));
 
-	sort_eta(m);
-	set_eta_tail(m);
-	m->psi_shift = log1p(m->eta_tail);
+	sort_eta(c);
+	set_eta_tail(c);
+	c->psi_shift = log1p(c->eta_tail);
 }
 
 #define IS_ROOT(i) (rank[i] == 0)
@@ -127,29 +127,29 @@ void catdist_set_all_eta(struct catdist *m, const double *eta)
 	rank[i] = rank[j]; \
 	rank[j] = tmp;
 
-void catdist_set_eta(struct catdist *m, size_t i, double eta1)
+void catdist_set_eta(struct catdist *c, size_t i, double eta1)
 {
-	assert(i < catdist_ncat(m));
+	assert(i < catdist_ncat(c));
 	assert(!isnan(eta1));
 
-	size_t *restrict order = m->eta_order;
-	size_t *restrict rank = m->eta_rank;
-	const double eta = m->eta[i];
-	const double eta_max = m->eta_max;
-	struct valerr_t eta_tail = { m->eta_tail, m->eta_tail_err };
+	size_t *restrict order = c->eta_order;
+	size_t *restrict rank = c->eta_rank;
+	const double eta = c->eta[i];
+	const double eta_max = c->eta_max;
+	struct valerr_t eta_tail = { c->eta_tail, c->eta_tail_err };
 	double eta_max1;
 	struct valerr_t eta_tail1;
 
 	if (IS_ROOT(i)) {
-		replace_eta(m, i, eta1);
+		replace_eta(c, i, eta1);
 		if (IS_ROOT(i)) {
 			eta_max1 = eta1;
-			// eta_tail1 = m->eta_tail * exp(-(eta1 - eta));
+			// eta_tail1 = c->eta_tail * exp(-(eta1 - eta));
 
 			struct valerr_t endeta = exp_sum_e(eta, -eta1);
 			eta_tail1 = mult_err_e(eta_tail, endeta);
 		} else {
-			eta_max1 = m->eta[order[0]];
+			eta_max1 = c->eta[order[0]];
 			// eta_tail1 = eta_tail * exp(eta_max - eta_max1) + exp(eta1 - eta_max1) - 1;
 
 			struct valerr_t endeta_max =
@@ -164,11 +164,11 @@ void catdist_set_eta(struct catdist *m, size_t i, double eta1)
 			eta_tail1.err +=
 			    (eta_tail_scale.err + ediff.err) / (1 - 2 * EPS);
 
-			m->eta_tail = eta_tail1.val;
-			m->eta_tail_err = eta_tail1.err;
+			c->eta_tail = eta_tail1.val;
+			c->eta_tail_err = eta_tail1.err;
 		}
 	} else {
-		replace_eta(m, i, eta1);
+		replace_eta(c, i, eta1);
 		if (IS_ROOT(i)) {
 			eta_max1 = eta1;
 			// eta_tail1 = (eta_tail - exp(eta - eta_max) + 1) * exp(eta_max - eta_max1) 
@@ -209,22 +209,22 @@ void catdist_set_eta(struct catdist *m, size_t i, double eta1)
 		}
 	}
 
-	m->eta_max = eta_max1;
-	m->eta_tail = eta_tail1.val;
-	m->eta_tail_err = eta_tail1.err;
+	c->eta_max = eta_max1;
+	c->eta_tail = eta_tail1.val;
+	c->eta_tail_err = eta_tail1.err;
 
-	if (!(m->eta_tail_err < m->tol * (1 + m->eta_tail))) {
-		//assert(isnan(m->eta_tail_err));
-		set_eta_tail(m);
-	} else if (!(m->eta_tail >= 0)) {
-		assert(m->eta_tail >= -m->eta_tail_err);
-		m->eta_tail_err =
-		    (m->eta_tail_err + m->eta_tail) / (1 - DBL_EPSILON);
-		m->eta_tail = 0;
+	if (!(c->eta_tail_err < c->tol * (1 + c->eta_tail))) {
+		//assert(isnan(c->eta_tail_err));
+		set_eta_tail(c);
+	} else if (!(c->eta_tail >= 0)) {
+		assert(c->eta_tail >= -c->eta_tail_err);
+		c->eta_tail_err =
+		    (c->eta_tail_err + c->eta_tail) / (1 - DBL_EPSILON);
+		c->eta_tail = 0;
 	}
-	//printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
-	assert(m->eta_tail >= 0);
-	m->psi_shift = log1p(m->eta_tail);
+	//printf("\neta_tail = %.10e +/- %.10e ", c->eta_tail, c->eta_tail_err);
+	assert(c->eta_tail >= 0);
+	c->psi_shift = log1p(c->eta_tail);
 }
 
 int pdouble_rcompar(const void *x, const void *y)
@@ -232,16 +232,16 @@ int pdouble_rcompar(const void *x, const void *y)
 	return double_rcompare(*(const double **)x, *(const double **)y);
 }
 
-static void replace_eta(struct catdist *m, size_t i, double eta1)
+static void replace_eta(struct catdist *c, size_t i, double eta1)
 {
-	double eta0 = m->eta[i];
+	double eta0 = c->eta[i];
 	size_t j, left, right, tmp;
-	size_t n = m->ncat;
-	size_t *restrict order = m->eta_order;
-	size_t *restrict rank = m->eta_rank;
-	const double *eta = m->eta;
+	size_t n = c->ncat;
+	size_t *restrict order = c->eta_order;
+	size_t *restrict rank = c->eta_rank;
+	const double *eta = c->eta;
 
-	m->eta[i] = eta1;
+	c->eta[i] = eta1;
 
 	if (eta1 >= eta0) {
 		// swap with parent until heap property is restored
@@ -274,16 +274,16 @@ static void replace_eta(struct catdist *m, size_t i, double eta1)
 	}
 }
 
-void sort_eta(struct catdist *m)
+void sort_eta(struct catdist *c)
 {
-	if (m->ncat == 0)
+	if (c->ncat == 0)
 		return;
 
-	size_t i, n = m->ncat;
-	const double *eta = m->eta;
+	size_t i, n = c->ncat;
+	const double *eta = c->eta;
 	const double **peta = xmalloc(n * sizeof(*peta));
-	size_t *restrict order = m->eta_order;
-	size_t *restrict rank = m->eta_rank;
+	size_t *restrict order = c->eta_order;
+	size_t *restrict rank = c->eta_rank;
 
 	for (i = 0; i < n; i++) {
 		peta[i] = eta + i;
@@ -299,7 +299,7 @@ void sort_eta(struct catdist *m)
 		rank[order[i]] = i;
 	}
 
-	m->eta_max = m->eta[order[0]];
+	c->eta_max = c->eta[order[0]];
 
 	free(peta);
 }
@@ -391,37 +391,37 @@ struct valerr_t sum_get(const struct sum_t *s)
 	return res;
 }
 
-void set_eta_tail(struct catdist *m)
+void set_eta_tail(struct catdist *c)
 {
-	struct valerr_t eta_tail = compute_eta_tail(m);
+	struct valerr_t eta_tail = compute_eta_tail(c);
 
-	m->eta_tail = eta_tail.val;
-	m->eta_tail_err = eta_tail.err;
+	c->eta_tail = eta_tail.val;
+	c->eta_tail_err = eta_tail.err;
 
-	//printf("\neta_tail = %.10e +/- %.10e ", m->eta_tail, m->eta_tail_err);
+	//printf("\neta_tail = %.10e +/- %.10e ", c->eta_tail, c->eta_tail_err);
 	//printf("!"); fflush(stdout); 
 }
 
-struct valerr_t compute_eta_tail(const struct catdist *m)
+struct valerr_t compute_eta_tail(const struct catdist *c)
 {
 	struct valerr_t eta_tail = { NAN, 0 };
 
-	if (m->ncat == 0)
+	if (c->ncat == 0)
 		return eta_tail;
 
-	size_t *order = m->eta_order;
-	double eta_max = m->eta_max;
+	size_t *order = c->eta_order;
+	double eta_max = c->eta_max;
 	struct sum_t eta_tail_sum;
 	double eta_tail_err = 0.0;
 
 	sum_init(&eta_tail_sum);
 
-	size_t i, n = m->ncat;
+	size_t i, n = c->ncat;
 
 	assert(n > 0);
 	for (i = n - 1; i > 0; i--) {
-		// m->eta_tail += exp(m->eta[order[i]] - eta_max);
-		struct valerr_t ediff = exp_sum_e(m->eta[order[i]], -eta_max);
+		// c->eta_tail += exp(c->eta[order[i]] - eta_max);
+		struct valerr_t ediff = exp_sum_e(c->eta[order[i]], -eta_max);
 		sum_add(&eta_tail_sum, ediff.val);
 		eta_tail_err += ediff.err;
 	}
@@ -433,13 +433,13 @@ struct valerr_t compute_eta_tail(const struct catdist *m)
 	return eta_tail;
 }
 
-int _catdist_check(const struct catdist *m)
+int _catdist_check(const struct catdist *c)
 {
 	int fail = 0;
-	size_t i, n = m->ncat;
-	const double *eta = m->eta;
-	const size_t *order = m->eta_order;
-	const size_t *rank = m->eta_rank;
+	size_t i, n = c->ncat;
+	const double *eta = c->eta;
+	const size_t *order = c->eta_order;
+	const size_t *rank = c->eta_rank;
 
 	for (i = 0; i < n; i++) {
 		CHECK(order[rank[i]] == i);
@@ -454,24 +454,24 @@ int _catdist_check(const struct catdist *m)
 	}
 
 	for (i = 0; i < n; i++) {
-		CHECK(m->eta_max >= eta[i]);
+		CHECK(c->eta_max >= eta[i]);
 	}
 
-	if (m->ncat > 0) {
-		// assert(m->psi_shift == log1p(m->eta_tail));
+	if (c->ncat > 0) {
+		// assert(c->psi_shift == log1p(c->eta_tail));
 
-		struct valerr_t eta_tail = compute_eta_tail(m);
+		struct valerr_t eta_tail = compute_eta_tail(c);
 
-		if (m->eta_tail < eta_tail.val) {
+		if (c->eta_tail < eta_tail.val) {
 			// eta_tail + eta_tail_err >= val - err
 			CHECK(eta_tail.val <=
-			      (m->eta_tail + eta_tail.err +
-			       m->eta_tail_err) / (1 - 3 * EPS));
+			      (c->eta_tail + eta_tail.err +
+			       c->eta_tail_err) / (1 - 3 * EPS));
 		} else {
 			// eta_tail - eta_tail_err <= val + err
-			CHECK(m->eta_tail <=
+			CHECK(c->eta_tail <=
 			      (eta_tail.val + eta_tail.err +
-			       m->eta_tail_err) / (1 - 3 * EPS));
+			       c->eta_tail_err) / (1 - 3 * EPS));
 		}
 	}
 out:
