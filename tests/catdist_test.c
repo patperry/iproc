@@ -1,7 +1,7 @@
 #include "port.h"
 
-#include <stdlib.h> // free
-#include <string.h> // memcpy, memset
+#include <stdlib.h>		// free
+#include <string.h>		// memcpy, memset
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -9,17 +9,16 @@
 #include "cmockery.h"
 #include "testutil.h"
 
-#include <math.h>  // INFINITY, isnan
-#include <float.h> // DBL_MANT_DIG
-#include <stdio.h> // fflush, stdout
-#include "ieee754.h" // double_compare
-#include "xalloc.h" // xmalloc
-#include "mlogit.h"
-
+#include <math.h>		// INFINITY, isnan
+#include <float.h>		// DBL_MANT_DIG
+#include <stdio.h>		// fflush, stdout
+#include "ieee754.h"		// double_compare
+#include "xalloc.h"		// xmalloc
+#include "catdist.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-struct mlogit MLOGIT;
+struct catdist MLOGIT;
 double *ETA;
 double PSI;
 size_t N;
@@ -30,7 +29,7 @@ static double get_psi(const double *eta, size_t n)
 		return -INFINITY;
 	if (!eta)
 		return log(n);
-	
+
 	double *eta_sort = xmalloc(n * sizeof(*eta_sort));
 	memcpy(eta_sort, eta, n * sizeof(*eta_sort));
 	qsort(eta_sort, n, sizeof(double), double_compare);
@@ -38,24 +37,24 @@ static double get_psi(const double *eta, size_t n)
 	double etamax = eta_sort[n - 1];
 	double sum = 0.0;
 	size_t i;
-	
+
 	for (i = 0; i < n - 1; i++) {
 		sum += exp(eta_sort[i] - etamax);
 	}
-	
+
 	double psi = etamax + log1p(sum);
-	
+
 	assert(isfinite(psi));
-	
+
 	free(eta_sort);
-	
+
 	return psi;
 }
 
 static void setup(const double *eta, size_t n)
 {
 	srand(1);
-	
+
 	N = n;
 	ETA = xmalloc(N * sizeof(ETA[0]));
 
@@ -64,21 +63,21 @@ static void setup(const double *eta, size_t n)
 	} else {
 		memset(ETA, 0, N * sizeof(ETA[0]));
 	}
-	
+
 	PSI = get_psi(eta, n);
 
-	mlogit_init(&MLOGIT, N);
-	assert_false(_mlogit_check(&MLOGIT));
+	catdist_init(&MLOGIT, N);
+	assert_false(_catdist_check(&MLOGIT));
 
 	if (eta) {
-		mlogit_set_all_eta(&MLOGIT, ETA);
-		assert_false(_mlogit_check(&MLOGIT));
+		catdist_set_all_eta(&MLOGIT, ETA);
+		assert_false(_catdist_check(&MLOGIT));
 	}
 }
 
 static void teardown()
 {
-	mlogit_deinit(&MLOGIT);
+	catdist_deinit(&MLOGIT);
 	memset(&MLOGIT, 0, sizeof(MLOGIT));
 	free(ETA);
 	ETA = NULL;
@@ -102,7 +101,7 @@ static void simple_setup_fixture()
 
 static void simple_setup()
 {
-	static double eta[] = { -0.9,  0.8,  0.9,  1.4,  1.2 };
+	static double eta[] = { -0.9, 0.8, 0.9, 1.4, 1.2 };
 	setup(eta, ARRAY_SIZE(eta));
 }
 
@@ -118,7 +117,7 @@ static void empty_setup()
 
 static void test_ncat()
 {
-	assert_int_equal(mlogit_ncat(&MLOGIT), N);
+	assert_int_equal(catdist_ncat(&MLOGIT), N);
 }
 
 static void test_eta()
@@ -126,30 +125,31 @@ static void test_eta()
 	size_t i;
 
 	for (i = 0; i < N; i++) {
-		assert_real_identical(mlogit_eta(&MLOGIT, i), ETA[i]);
+		assert_real_identical(catdist_eta(&MLOGIT, i), ETA[i]);
 	}
 }
 
 static void test_psi()
 {
-	assert_real_identical(mlogit_psi(&MLOGIT), PSI);	
+	assert_real_identical(catdist_psi(&MLOGIT), PSI);
 }
 
 static void test_lprob()
 {
 	size_t i;
-	
+
 	for (i = 0; i < N; i++) {
-		assert_real_identical(mlogit_lprob(&MLOGIT, i), ETA[i] - PSI);
+		assert_real_identical(catdist_lprob(&MLOGIT, i), ETA[i] - PSI);
 	}
 }
 
 static void test_prob()
 {
 	size_t i;
-	
+
 	for (i = 0; i < N; i++) {
-		assert_real_identical(mlogit_prob(&MLOGIT, i), exp(ETA[i] - PSI));
+		assert_real_identical(catdist_prob(&MLOGIT, i),
+				      exp(ETA[i] - PSI));
 	}
 }
 
@@ -160,10 +160,10 @@ static void test_set_eta(size_t i, double eta)
 
 	ETA[i] = eta;
 	PSI = get_psi(ETA, N);
-	
-	mlogit_set_eta(&MLOGIT, i, eta);
-	assert_false(_mlogit_check(&MLOGIT));
-	
+
+	catdist_set_eta(&MLOGIT, i, eta);
+	assert_false(_catdist_check(&MLOGIT));
+
 	test_eta();
 	test_psi();
 }
@@ -192,17 +192,17 @@ static void test_set_eta_big()
 static void test_many_set_eta(size_t nrep, double min, double max)
 {
 	size_t rep;
-	
+
 	for (rep = 0; rep < nrep; rep++) {
 		size_t i = rand() % N;
 		double eta = runif(min, max);
-		
+
 		ETA[i] = eta;
 		PSI = get_psi(ETA, N);
-		
-		mlogit_set_eta(&MLOGIT, i, eta);
-		assert_false(_mlogit_check(&MLOGIT));
-		assert_real_eqrel(DBL_MANT_DIG / 2, mlogit_psi(&MLOGIT), PSI);
+
+		catdist_set_eta(&MLOGIT, i, eta);
+		assert_false(_catdist_check(&MLOGIT));
+		assert_real_eqrel(DBL_MANT_DIG / 2, catdist_psi(&MLOGIT), PSI);
 		//print_message(".");
 		fflush(stdout);
 	}
@@ -222,7 +222,6 @@ static void test_many_set_eta_big()
 {
 	test_many_set_eta(1000, -1000, 1000);
 }
-
 
 int main()
 {
