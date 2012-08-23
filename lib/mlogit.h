@@ -10,7 +10,7 @@
 #define MLOGIT_COV_UPLO	BLAS_UPPER
 
 struct mlogit {
-	struct catdist values;
+	struct catdist dist;
 	double *x;
 	double *beta;
 	double *offset;
@@ -41,7 +41,7 @@ static inline double *mlogit_offset(const struct mlogit *m);
 static inline double *mlogit_x(const struct mlogit *m);
 static inline double *mlogit_mean(const struct mlogit *m);
 static inline double *mlogit_cov(const struct mlogit *m, double *cov_scale);
-static inline struct catdist *mlogit_values(const struct mlogit *m);
+static inline struct catdist *mlogit_dist(const struct mlogit *m);
 
 void mlogit_set_coefs(struct mlogit *m, const double *beta);
 void mlogit_set_all_offset(struct mlogit *m, const double *offset);
@@ -54,7 +54,7 @@ int _mlogit_check(const struct mlogit *m);
 
 size_t mlogit_ncat(const struct mlogit *m)
 {
-	return catdist_ncat(&m->values);
+	return catdist_ncat(&m->dist);
 }
 
 size_t mlogit_dim(const struct mlogit *m)
@@ -88,9 +88,9 @@ double *mlogit_cov(const struct mlogit *m, double *cov_scale)
 	return m->cov;
 }
 
-struct catdist *mlogit_values(const struct mlogit *m)
+struct catdist *mlogit_dist(const struct mlogit *m)
 {
-	return &((struct mlogit *)m)->values;
+	return &((struct mlogit *)m)->dist;
 }
 
 #endif /* MLOGIT_H */

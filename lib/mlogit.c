@@ -31,7 +31,7 @@ static double get_deta(struct mlogit *m, const double *dx, const size_t *jdx,
 static void increment_x(struct mlogit *m, size_t i, const size_t *jdx,
 			const double *dx, size_t ndx);
 static void recompute_all(struct mlogit *m);
-static void recompute_values(struct mlogit *m);
+static void recompute_dist(struct mlogit *m);
 static void recompute_mean(struct mlogit *m);
 static void recompute_cov(struct mlogit *m);
 static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
@@ -46,7 +46,7 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
 
 	size_t cov_dim = dim * (dim + 1) / 2;
 
-	catdist_init(&m->values, ncat);
+	catdist_init(&m->dist, ncat);
 	m->x = xcalloc(ncat * dim, sizeof(*m->x));
 	m->beta = xcalloc(dim, sizeof(*m->beta));
 	m->offset = xcalloc(ncat, sizeof(*m->offset));
@@ -78,7 +78,7 @@ void mlogit_deinit(struct mlogit *m)
 	free(m->offset);
 	free(m->beta);
 	free(m->x);
-	catdist_deinit(&m->values);
+	catdist_deinit(&m->dist);
 }
 
 void mlogit_set_coefs(struct mlogit *m, const double *beta)
@@ -123,8 +123,8 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 	assert(offset < INFINITY);
 
 	const size_t dim = mlogit_dim(m);
-	const double psi = catdist_psi(&m->values);
-	const double eta = catdist_eta(&m->values, i);
+	const double psi = catdist_psi(&m->dist);
+	const double eta = catdist_eta(&m->dist, i);
 	const double deta = offset - m->offset[i];
 	const double eta1 = eta + deta;
 
@@ -132,10 +132,10 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 	m->offset[i] = offset;
 
 	// update eta, psi
-	catdist_set_eta(&m->values, i, eta1);
+	catdist_set_eta(&m->dist, i, eta1);
 
 	// compute weight changes
-	const double psi1 = catdist_psi(&m->values);
+	const double psi1 = catdist_psi(&m->dist);
 	const double dpsi = psi1 - psi;
 	const double w1 = exp(eta1 - psi1);
 	const double w = exp(eta - psi1);
@@ -162,8 +162,8 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 	if (ndx == 0 || dim == 0)
 		return;
 
-	const double psi = catdist_psi(&m->values);
-	const double eta = catdist_eta(&m->values, i);
+	const double psi = catdist_psi(&m->dist);
+	const double eta = catdist_eta(&m->dist, i);
 	const double deta = get_deta(m, dx, jdx, ndx);
 	const double eta1 = eta + deta;
 
@@ -171,10 +171,10 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 	increment_x(m, i, jdx, dx, ndx);
 
 	// update eta, psi
-	catdist_set_eta(&m->values, i, eta1);
+	catdist_set_eta(&m->dist, i, eta1);
 
 	// compute weight changes
-	const double psi1 = catdist_psi(&m->values);
+	const double psi1 = catdist_psi(&m->dist);
 	const double dpsi = psi1 - psi;
 	const double w1 = exp(eta1 - psi1);
 	const double w = exp(eta - psi1);
@@ -314,12 +314,12 @@ void increment_x(struct mlogit *m, size_t i, const size_t *jdx,
 
 void recompute_all(struct mlogit *m)
 {
-	recompute_values(m);
+	recompute_dist(m);
 	recompute_mean(m);
 	recompute_cov(m);
 }
 
-void recompute_values(struct mlogit *m)
+void recompute_dist(struct mlogit *m)
 {
 	size_t ncat = mlogit_ncat(m);
 	size_t dim = mlogit_dim(m);
@@ -334,7 +334,7 @@ void recompute_values(struct mlogit *m)
 
 	// eta := offset + x * beta
 	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 1.0, eta, 1);
-	catdist_set_all_eta(&m->values, eta);
+	catdist_set_all_eta(&m->dist, eta);
 }
 
 void recompute_mean(struct mlogit *m)
@@ -350,7 +350,7 @@ void recompute_mean(struct mlogit *m)
 	size_t i;
 
 	for (i = 0; i < ncat; i++) {
-		prob[i] = catdist_prob(&m->values, i);
+		prob[i] = catdist_prob(&m->dist, i);
 	}
 
 	// mean := t(X) * prob
@@ -388,7 +388,7 @@ void recompute_cov(struct mlogit *m)
 		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
 
 		/* ptot += p[i] */
-		p = catdist_prob(&m->values, i);
+		p = catdist_prob(&m->dist, i);
 		ptot += p;
 
 		/* cov += p[i] * diff^2 */
@@ -437,11 +437,11 @@ int _mlogit_check(const struct mlogit *m)
 		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
 
 	for (i = 0; i < n; i++) {
-		CHECK_APPROX(eta0[i], catdist_eta(&m->values, i));
+		CHECK_APPROX(eta0[i], catdist_eta(&m->dist, i));
 	}
 
 	for (i = 0; i < n; i++) {
-		prob0[i] = catdist_prob(&m->values, i);
+		prob0[i] = catdist_prob(&m->dist, i);
 		probtot0 += prob0[i];
 	}
 
