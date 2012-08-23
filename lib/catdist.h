@@ -35,7 +35,7 @@ static inline double catdist_psi(const struct catdist *c);
 void catdist_set_eta(struct catdist *c, size_t i, double eta);
 void catdist_set_all_eta(struct catdist *c, const double *eta);
 
-int _catdist_check(const struct catdist *c);
+int catdist_check(const struct catdist *c);
 
 size_t catdist_ncat(const struct catdist *c)
 {

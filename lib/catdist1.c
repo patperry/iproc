@@ -225,7 +225,7 @@ void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta)
 	c1->deta[iz] = deta;
 }
 
-int _catdist1_check(const struct catdist1 *c1)
+int catdist1_check(const struct catdist1 *c1)
 {
 	int fail = 0;
 	size_t i, n = catdist1_ncat(c1);

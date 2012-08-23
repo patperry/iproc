@@ -433,7 +433,7 @@ struct valerr_t compute_eta_tail(const struct catdist *c)
 	return eta_tail;
 }
 
-int _catdist_check(const struct catdist *c)
+int catdist_check(const struct catdist *c)
 {
 	int fail = 0;
 	size_t i, n = c->ncat;

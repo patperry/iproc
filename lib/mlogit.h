@@ -50,7 +50,7 @@ void mlogit_set_all_x(struct mlogit *m, const double *x);
 void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 		  const double *dx, size_t ndx);
 
-int _mlogit_check(const struct mlogit *m);
+int mlogit_check(const struct mlogit *m);
 
 size_t mlogit_ncat(const struct mlogit *m)
 {

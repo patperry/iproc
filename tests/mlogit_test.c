@@ -135,7 +135,7 @@ static void test_cov()
 	double *cov = mlogit_cov(&MLOGIT, &scale);
 	size_t i;
 
-	assert_false(_mlogit_check(&MLOGIT));
+	assert_false(mlogit_check(&MLOGIT));
 
 	for (i = 0; i < P * (P + 1) / 2; i++) {
 		assert_real_approx(cov[i] / scale, COV[i]);
@@ -162,7 +162,7 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 
 	mlogit_inc_x(&MLOGIT, i, jdx, dx, ndx);
 	test_x();
-	assert_false(_mlogit_check(&MLOGIT));
+	assert_false(mlogit_check(&MLOGIT));
 }
 
 
@@ -254,11 +254,11 @@ static void setup(const double *beta, size_t n, size_t p)
 	}
 
 	mlogit_init(&MLOGIT, N, P);
-	assert_false(_mlogit_check(&MLOGIT));
+	assert_false(mlogit_check(&MLOGIT));
 
 	if (beta) {
 		mlogit_set_coefs(&MLOGIT, BETA);
-		assert_false(_mlogit_check(&MLOGIT));
+		assert_false(mlogit_check(&MLOGIT));
 	}
 
 	mlogit_set_all_x(&MLOGIT, X);

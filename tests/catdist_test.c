@@ -67,11 +67,11 @@ static void setup(const double *eta, size_t n)
 	PSI = get_psi(eta, n);
 
 	catdist_init(&CATDIST, N);
-	assert_false(_catdist_check(&CATDIST));
+	assert_false(catdist_check(&CATDIST));
 
 	if (eta) {
 		catdist_set_all_eta(&CATDIST, ETA);
-		assert_false(_catdist_check(&CATDIST));
+		assert_false(catdist_check(&CATDIST));
 	}
 }
 
@@ -162,7 +162,7 @@ static void test_set_eta(size_t i, double eta)
 	PSI = get_psi(ETA, N);
 
 	catdist_set_eta(&CATDIST, i, eta);
-	assert_false(_catdist_check(&CATDIST));
+	assert_false(catdist_check(&CATDIST));
 
 	test_eta();
 	test_psi();
@@ -201,7 +201,7 @@ static void test_many_set_eta(size_t nrep, double min, double max)
 		PSI = get_psi(ETA, N);
 
 		catdist_set_eta(&CATDIST, i, eta);
-		assert_false(_catdist_check(&CATDIST));
+		assert_false(catdist_check(&CATDIST));
 		assert_real_eqrel(DBL_MANT_DIG / 2, catdist_psi(&CATDIST), PSI);
 		//print_message(".");
 		fflush(stdout);

@@ -70,7 +70,7 @@ static void setup(const double *eta0, size_t n)
 	catdist_set_all_eta(&CATDIST, eta0);
 
 	catdist1_init(&CATDIST1, &CATDIST);
-	assert_false(_catdist1_check(&CATDIST1));
+	assert_false(catdist1_check(&CATDIST1));
 
 	DETA = xmalloc(n * sizeof(*DETA));
 	IND = xmalloc(n * sizeof(*IND));
@@ -223,7 +223,7 @@ static void set_deta(size_t i, double deta)
 static void test_set_deta(size_t i, double deta)
 {
 	set_deta(i, deta);
-	assert_false(_catdist1_check(&CATDIST1));
+	assert_false(catdist1_check(&CATDIST1));
 	test_ncat();
 	test_eta();
 }
@@ -293,7 +293,7 @@ static void test_many_set_deta(double min, double max)
 		set_deta(i, deta);
 	}
 
-	assert_false(_catdist1_check(&CATDIST1));
+	assert_false(catdist1_check(&CATDIST1));
 	test_ncat();
 	test_eta();
 }

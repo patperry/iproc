@@ -401,7 +401,7 @@ void recompute_cov(struct mlogit *m)
 	m->log_cov_scale_err = 0.0;
 }
 
-int _mlogit_check(const struct mlogit *m)
+int mlogit_check(const struct mlogit *m)
 {
 	int fail = 0;
 	size_t n = mlogit_ncat(m);

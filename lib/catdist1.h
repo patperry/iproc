@@ -32,7 +32,7 @@ static inline void catdist1_get_deta(const struct catdist1 *c1,
 double catdist1_psi(const struct catdist1 *c1);
 double catdist1_dpsi(const struct catdist1 *c1);
 
-int _catdist1_check(const struct catdist1 *c1);
+int catdist1_check(const struct catdist1 *c1);
 
 size_t catdist1_ncat(const struct catdist1 *c1)
 {
