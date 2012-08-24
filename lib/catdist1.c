@@ -76,6 +76,13 @@ double catdist1_prob(const struct catdist1 *c1, size_t i)
 	return exp(lp);
 }
 
+double catdist1_cached_prob(const struct catdist1 *c1, size_t i)
+{
+	assert(i < catdist1_ncat(c1));
+	double lp = catdist1_cached_lprob(c1, i);
+	return exp(lp);
+}
+
 double catdist1_lprob(const struct catdist1 *c1, size_t i)
 {
 	assert(i < catdist1_ncat(c1));
@@ -85,6 +92,18 @@ double catdist1_lprob(const struct catdist1 *c1, size_t i)
 	double lp = lp0 + (deta - dpsi);
 	return lp;
 }
+
+
+double catdist1_cached_lprob(const struct catdist1 *c1, size_t i)
+{
+	assert(i < catdist1_ncat(c1));
+	double lp0 = catdist_lprob(c1->parent, i);
+	double deta = catdist1_deta(c1, i);
+	double dpsi = catdist1_cached_dpsi(c1);
+	double lp = lp0 + (deta - dpsi);
+	return lp;
+}
+
 
 double catdist1_dpsi(const struct catdist1 *c1)
 {
@@ -109,6 +128,14 @@ double catdist1_dpsi(const struct catdist1 *c1)
 
 	return dpsi;
 }
+
+
+void catdist1_update_cache(struct catdist1 *c1)
+{
+	double dpsi = catdist1_dpsi(c1);
+	c1->cached_dpsi = dpsi;
+}
+
 
 double get_dpsi_safe(const struct catdist1 *c1)
 {
@@ -201,6 +228,13 @@ double get_dpsi_safer(const struct catdist1 *c1)
 	return dpsi;
 }
 
+
+double catdist1_cached_dpsi(const struct catdist1 *c1)
+{
+	return c1->cached_dpsi;
+}
+
+
 double catdist1_psi(const struct catdist1 *c1)
 {
 	double psi = catdist_psi(c1->parent);
@@ -208,6 +242,16 @@ double catdist1_psi(const struct catdist1 *c1)
 	double psi1 = psi + dpsi;
 	return psi1;
 }
+
+
+double catdist1_cached_psi(const struct catdist1 *c1)
+{
+	double psi = catdist_psi(c1->parent);
+	double dpsi = catdist1_cached_dpsi(c1);
+	double psi1 = psi + dpsi;
+	return psi1;
+}
+
 
 void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta)
 {

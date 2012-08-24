@@ -11,6 +11,8 @@ struct catdist1 {
 	size_t *ind;
 	double *deta;
 	size_t nz, nzmax;
+
+	double cached_dpsi;
 };
 
 void catdist1_init(struct catdist1 *c1, const struct catdist *parent);
@@ -33,6 +35,20 @@ double catdist1_psi(const struct catdist1 *c1);
 double catdist1_dpsi(const struct catdist1 *c1);
 
 int catdist1_check(const struct catdist1 *c1);
+
+
+double catdist1_psi(const struct catdist1 *c1);
+double catdist1_dpsi(const struct catdist1 *c1);
+
+/* fast (unsafe) operations; uses cached value of dpsi */
+void catdist1_update_cache(struct catdist1 *c1);
+double catdist1_cached_prob(const struct catdist1 *c1, size_t i);
+double catdist1_cached_lprob(const struct catdist1 *c1, size_t i);
+double catdist1_cached_psi(const struct catdist1 *c1);
+double catdist1_cached_dpsi(const struct catdist1 *c1);
+
+
+
 
 size_t catdist1_ncat(const struct catdist1 *c1)
 {
