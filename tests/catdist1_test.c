@@ -29,7 +29,7 @@ static size_t NZ;
 
 static void clear()
 {
-	catdist1_clear(&CATDIST1);
+	catdist1_set_all_deta(&CATDIST1, NULL, NULL, 0);
 	NZ = 0;
 }
 

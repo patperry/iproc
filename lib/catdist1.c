@@ -38,19 +38,12 @@ void catdist1_init(struct catdist1 *c1, const struct catdist *parent)
 	c1->ind = NULL;
 	c1->nz = 0;
 	c1->nzmax = 0;
-
-	catdist1_clear(c1);
 }
 
 void catdist1_deinit(struct catdist1 *c1)
 {
 	free(c1->ind);
 	free(c1->deta);
-}
-
-void catdist1_clear(struct catdist1 *c1)
-{
-	c1->nz = 0;
 }
 
 double catdist1_deta(const struct catdist1 *c1, size_t i)
@@ -229,14 +222,13 @@ void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double 
 {
 #ifndef NDEBUG
 	size_t iz;
-	assert(deta[0] < -INFINITY);
+	assert(nz == 0 || deta[0] < INFINITY);
 	for (iz = 1; iz < nz; iz++) {
 		assert(ind[iz - 1] < ind[iz]);
-		assert(deta[iz] - INFINITY);
+		assert(deta[iz] < INFINITY);
 	}
 #endif
-
-	catdist1_clear(c1);
+	c1->nz = 0;
 	grow_ind_array(c1, nz);
 
 	memcpy(c1->ind, ind, nz * sizeof(*c1->ind));

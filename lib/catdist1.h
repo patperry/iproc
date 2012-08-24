@@ -15,7 +15,6 @@ struct catdist1 {
 
 void catdist1_init(struct catdist1 *c1, const struct catdist *parent);
 void catdist1_deinit(struct catdist1 *c1);
-void catdist1_clear(struct catdist1 *c1);
 
 static inline size_t catdist1_ncat(const struct catdist1 *c1);
 
