@@ -345,16 +345,15 @@ void recompute_dist(struct mlogit *m)
 	size_t ncat = mlogit_ncat(m);
 	size_t dim = mlogit_dim(m);
 
-	if (dim == 0)
-		return;
-
 	const double *beta = m->beta;
 	double *eta = m->cat_buf;
 
 	blas_dcopy(ncat, m->offset, 1, eta, 1);
 
 	// eta := offset + x * beta
-	blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 1.0, eta, 1);
+	if (dim > 0)
+		blas_dgemv(BLAS_TRANS, dim, ncat, 1.0, m->x, dim, beta, 1, 1.0, eta, 1);
+
 	catdist_set_all_eta(&m->dist, eta);
 }
 
@@ -455,7 +454,7 @@ int mlogit_check(const struct mlogit *m)
 	blas_dcopy(n, m->offset, 1, eta0, 1);
 
 	if (p > 0)
-		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 0.0, eta0, 1);
+		blas_dgemv(BLAS_TRANS, p, n, 1.0, x, p, beta, 1, 1.0, eta0, 1);
 
 	for (i = 0; i < n; i++) {
 		CHECK_APPROX(eta0[i], catdist_eta(&m->dist, i));
