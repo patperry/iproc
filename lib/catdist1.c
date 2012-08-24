@@ -240,7 +240,7 @@ void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double 
 	grow_ind_array(c1, nz);
 
 	memcpy(c1->ind, ind, nz * sizeof(*c1->ind));
-	memcpy(c1->deta, deta, nz * sizoef(*c1->deta));
+	memcpy(c1->deta, deta, nz * sizeof(*c1->deta));
 	c1->nz = nz;
 }
 
