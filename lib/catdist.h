@@ -24,7 +24,6 @@ struct catdist {
 
 void catdist_init(struct catdist *c, size_t ncat);
 void catdist_deinit(struct catdist *c);
-void catdist_clear(struct catdist *c);
 
 static inline size_t catdist_ncat(const struct catdist *c);
 
