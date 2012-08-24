@@ -26,6 +26,7 @@
 
 #define F77_COV_UPLO (MLOGIT_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER)
 
+static void clear(struct mlogit *m);
 static double get_deta(struct mlogit *m, const double *dx, const size_t *jdx,
 		       size_t ndx);
 static void increment_x(struct mlogit *m, size_t i, const size_t *jdx,
@@ -61,7 +62,7 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
 	m->dim_buf1 = xmalloc(dim * sizeof(*m->dim_buf1));
 	m->dim_buf2 = xmalloc(dim * sizeof(*m->dim_buf2));
 	m->dim = dim;
-	mlogit_clear(m);
+	clear(m);
 }
 
 void mlogit_deinit(struct mlogit *m)
@@ -80,13 +81,13 @@ void mlogit_deinit(struct mlogit *m)
 }
 
 
-void mlogit_clear(struct mlogit *m)
+void clear(struct mlogit *m)
 {
 	size_t ncat = mlogit_ncat(m);
 	size_t dim = m->dim;
 	size_t cov_dim = dim * (dim + 1) / 2;
 
-	catdist_clear(&m->dist);
+	catdist_set_all_eta(&m->dist, NULL);
 	memset(m->x, 0, ncat * dim * sizeof(*m->x));
 	memset(m->beta, 0, dim * sizeof(*m->beta));
 	memset(m->offset, 0, ncat * sizeof(*m->offset));
