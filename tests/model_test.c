@@ -116,7 +116,7 @@ static void test_probs()
 	struct design *r = frame_recv_design(&frame);
 	struct design2 *d = frame_dyad_design(&frame);
 
-	double *eta, *probs, *logprobs, *y;
+	double *eta, *probs, *logprobs;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -127,15 +127,11 @@ static void test_probs()
 	eta = xmalloc(nrecv * sizeof(double));
 	probs = xmalloc(nrecv * sizeof(double));
 	logprobs = xmalloc(nrecv * sizeof(double));
-	y = xmalloc(nrecv * sizeof(double));
-
-	double alpha = 2.0;
-	double y0 = 3.14;
 
 	size_t minprec = DBL_MANT_DIG;
 	
 	MESSAGES_FOREACH(it, &messages) {
-		//fprintf(stderr, "."); fflush(stderr);
+		// fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
 		frame_advance(&frame, t);			
@@ -158,16 +154,18 @@ static void test_probs()
 			
 			blas_dcopy(nrecv, logprobs, 1, probs, 1);
 			vector_exp(nrecv, probs);
-			
-			vector_fill(nrecv, y0, y);
-			recv_model_axpy_probs(alpha, &model, isend, y);
-			
-			assert(double_eqrel(log_W + max_eta, recv_model_psi(&model, isend)) >= 36);
-			assert_in_range(double_eqrel(log_W + max_eta, recv_model_psi(&model, isend)), 36, DBL_MANT_DIG);
+
+			struct catdist1 *dist = recv_model_dist(&model, isend);
+			catdist1_update_cache(dist);
+
+			double psi = catdist1_cached_psi(dist);
+
+			assert(double_eqrel(log_W + max_eta, psi) >= 36);
+			assert_in_range(double_eqrel(log_W + max_eta, psi), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = logprobs[jrecv];
-				double lp1 = recv_model_lprob(&model, isend, jrecv);
+				double lp1 = catdist1_cached_lprob(dist, jrecv);
 
 				if (fabs(lp0) >= 5e-4) {
 					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
@@ -180,7 +178,7 @@ static void test_probs()
 				}
 
 				double p0 = probs[jrecv];
-				double p1 = recv_model_prob(&model, isend, jrecv);
+				double p1 = catdist1_cached_prob(dist, jrecv);
 
 				if (fabs(p0) >= 5e-4) {
 					minprec = MIN(minprec, (size_t)double_eqrel(p0, p1));
@@ -189,10 +187,6 @@ static void test_probs()
 				} else {
 					assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
 				}
-				
-				assert_in_range(double_eqrel(alpha * p0 + y0, y[jrecv]),
-						44,
-						DBL_MANT_DIG);
 			}
 		}
 		
@@ -206,7 +200,6 @@ static void test_probs()
 	free(probs);
 	free(logprobs);
 	free(eta);
-	free(y);	
 }
 
 int main()
