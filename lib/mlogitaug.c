@@ -7,6 +7,15 @@
 #include "mlogitaug.h"
 
 
+#define CHECK(x) \
+	do { \
+		fail = !(x); \
+		assert(!fail); \
+		if (fail) \
+			goto out; \
+	} while(0)
+
+
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
@@ -211,8 +220,10 @@ struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 
 int mlogitaug_check(const struct mlogitaug *m1)
 {
-	(void)m1;
-	return 0;
+	int fail = 0;
+	CHECK(!catdist1_check(&m1->dist));
+out:
+	return fail;
 }
 
 
@@ -265,6 +276,7 @@ size_t search_ind(struct mlogitaug *m1, size_t i)
 	memmove(m1->deta + iz + 1, m1->deta + iz, ntail * sizeof(*m1->deta));
 
 	m1->ind[iz] = i;
+	m1->offset[iz] = 0.0;
 	memset(m1->x + iz * dim, 0, sizeof(*m1->x) * dim);
 	m1->deta[iz] = 0.0;
 	m1->nz++;
