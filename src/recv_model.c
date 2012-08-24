@@ -321,52 +321,12 @@ size_t recv_model_dim(const struct recv_model *m)
 }
 
 
-double recv_model_lprob(const struct recv_model *m, size_t isend,
-			  size_t jrecv)
+struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend)
 {
 	assert(isend < recv_model_send_count(m));
-	assert(jrecv < recv_model_count(m));
-
 	const struct recv_model_sender *sm = &m->sender_models[isend];
-	const struct catdist1 *dist = mlogitaug_dist(&sm->mlogitaug);
-	double lp = catdist1_lprob(dist, jrecv);
-	return lp;
-}
-
-
-double recv_model_psi(const struct recv_model *m, size_t isend)
-{
-	assert(isend < recv_model_send_count(m));
-
-	const struct recv_model_sender *sm = &m->sender_models[isend];
-	const struct catdist1 *dist = mlogitaug_dist(&sm->mlogitaug);
-	double psi = catdist1_psi(dist);
-	return psi;
-}
-
-
-double recv_model_prob(const struct recv_model *m, size_t isend, size_t jrecv)
-{
-	assert(isend < recv_model_send_count(m));
-	assert(jrecv < recv_model_count(m));
-
-	double lp = recv_model_lprob(m, isend, jrecv);
-	double p = exp(lp);
-	return p;
-}
-
-void recv_model_axpy_probs(double alpha,
-			   const struct recv_model *m,
-			   size_t isend, double *y)
-{
-	assert(isend < recv_model_send_count(m));
-
-	size_t j, n = recv_model_count(m);
-
-	for (j = 0; j < n; j++) {
-		double p = recv_model_prob(m, isend, j);
-		y[j] += alpha * p;
-	}
+	struct catdist1 *dist = mlogitaug_dist(&sm->mlogitaug);
+	return dist;
 }
 
 
