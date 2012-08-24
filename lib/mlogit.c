@@ -451,6 +451,8 @@ int mlogit_check(const struct mlogit *m)
 	double *work = xmalloc(lwork * sizeof(*work));
 	ptrdiff_t *iwork = xmalloc(liwork * sizeof(*iwork));
 
+	CHECK(!catdist_check(&m->dist));
+
 	blas_dcopy(n, m->offset, 1, eta0, 1);
 
 	if (p > 0)
