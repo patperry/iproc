@@ -32,6 +32,7 @@ struct mlogit {
 
 void mlogit_init(struct mlogit *m, size_t ncat, size_t dim);
 void mlogit_deinit(struct mlogit *m);
+void mlogit_clear(struct mlogit *m);
 
 static inline size_t mlogit_ncat(const struct mlogit *m);
 static inline size_t mlogit_dim(const struct mlogit *m);

@@ -47,23 +47,21 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
 	size_t cov_dim = dim * (dim + 1) / 2;
 
 	catdist_init(&m->dist, ncat);
-	m->x = xcalloc(ncat * dim, sizeof(*m->x));
-	m->beta = xcalloc(dim, sizeof(*m->beta));
-	m->offset = xcalloc(ncat, sizeof(*m->offset));
-	m->mean = xcalloc(dim, sizeof(*m->mean));
-	m->mean_diff = xcalloc(dim, sizeof(*m->mean));
+	m->x = xmalloc(ncat * dim * sizeof(*m->x));
+	m->beta = xmalloc(dim * sizeof(*m->beta));
+	m->offset = xmalloc(ncat * sizeof(*m->offset));
+	m->mean = xmalloc(dim * sizeof(*m->mean));
+	m->mean_diff = xmalloc(dim * sizeof(*m->mean));
 
-	m->cov = xcalloc(cov_dim, sizeof(*m->cov));
+	m->cov = xmalloc(cov_dim * sizeof(*m->cov));
 	m->log_cov_scale = 0;
-	m->cov_diff = xcalloc(cov_dim, sizeof(*m->cov_diff));
+	m->cov_diff = xmalloc(cov_dim * sizeof(*m->cov_diff));
 
-	m->cat_buf = xcalloc(ncat, sizeof(*m->cat_buf));
-	m->dim_buf1 = xcalloc(dim, sizeof(*m->dim_buf1));
-	m->dim_buf2 = xcalloc(dim, sizeof(*m->dim_buf2));
+	m->cat_buf = xmalloc(ncat * sizeof(*m->cat_buf));
+	m->dim_buf1 = xmalloc(dim * sizeof(*m->dim_buf1));
+	m->dim_buf2 = xmalloc(dim * sizeof(*m->dim_buf2));
 	m->dim = dim;
-	m->mean_err = 0.0;
-	m->cov_err = 0.0;
-	m->log_cov_scale_err = 0.0;
+	mlogit_clear(m);
 }
 
 void mlogit_deinit(struct mlogit *m)
@@ -80,6 +78,28 @@ void mlogit_deinit(struct mlogit *m)
 	free(m->x);
 	catdist_deinit(&m->dist);
 }
+
+
+void mlogit_clear(struct mlogit *m)
+{
+	size_t ncat = mlogit_ncat(m);
+	size_t dim = m->dim;
+	size_t cov_dim = dim * (dim + 1) / 2;
+
+	catdist_clear(&m->dist);
+	memset(m->x, 0, ncat * dim * sizeof(*m->x));
+	memset(m->beta, 0, dim * sizeof(*m->beta));
+	memset(m->offset, 0, ncat * sizeof(*m->offset));
+	memset(m->mean, 0, dim * sizeof(*m->mean));
+	memset(m->mean_diff, 0, dim * sizeof(*m->mean));
+	memset(m->cov, 0, cov_dim * sizeof(*m->cov));
+	m->log_cov_scale = 0;
+	memset(m->cov_diff, 0, cov_dim * sizeof(*m->cov_diff));
+	m->mean_err = 0.0;
+	m->cov_err = 0.0;
+	m->log_cov_scale_err = 0.0;
+}
+
 
 void mlogit_set_coefs(struct mlogit *m, const double *beta)
 {
