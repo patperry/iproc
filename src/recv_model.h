@@ -2,10 +2,10 @@
 #define _IPROC_MODEL_H
 
 #include <stddef.h>
-#include "blas.h"
-#include "sblas.h"
 #include "design.h"
 #include "frame.h"
+#include "mlogit.h"
+#include "mlogitaug.h"
 
 /* I. Model
  * --------
@@ -118,28 +118,12 @@ struct recv_coefs {
 };
 
 struct recv_model_cohort {
-	double max_eta0;
-	double log_W0;		// (log_W0)_true - max_eta0
-				//double W0;		// (W0)_true / exp(max_eta0)
+	struct mlogit mlogit;
 	double *eta0;
-	double *p0;
-	double *mean0;
-	double *imat0;
-	size_t ldimat0;
-
-	/* debug */
-#ifndef NDEBUG
-	double *w0;
-#endif
 };
 
 struct recv_model_sender {
-	double gamma;
-	double scale;
-	double log_W;		// (log_W)_true - scale
-				//double W;		// (W)_true / exp(scale)
-	double *deta;
-	struct vpattern active;
+	struct mlogitaug mlogitaug;
 };
 
 struct recv_model {
@@ -170,6 +154,18 @@ size_t recv_model_dim(const struct recv_model *model);
 
 void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs);
 
+double recv_model_lprob(const struct recv_model *m, size_t isend,
+			  size_t jrecv);
+double recv_model_prob(const struct recv_model *m, size_t isend,
+		       size_t jrecv);
+void recv_model_axpy_probs(double alpha, const struct recv_model *m,
+			   size_t isend, double *y);
+
+double recv_model_psi(const struct recv_model *m, size_t isend);
+
+
+#if 0
+
 /* Initial probability, and expectations, without adjustment for self-loops. */
 double recv_model_logsumwt0(const struct recv_model *m, size_t c);
 double *recv_model_logwts0(const struct recv_model *m, size_t c);
@@ -179,17 +175,13 @@ double recv_model_prob0(const struct recv_model *m, size_t c, size_t jrecv);
 double *recv_model_mean0(const struct recv_model *m, size_t c);
 double *recv_model_imat0(const struct recv_model *m, size_t c);
 
-/* updated values */
-double recv_model_logsumwt(const struct recv_model *m, size_t isend);
-double recv_model_logprob(const struct recv_model *m, size_t isend,
-			  size_t jrecv);
-double recv_model_prob(const struct recv_model *m, size_t isend,
-		       size_t jrecv);
-void recv_model_axpy_probs(double alpha, const struct recv_model *m,
-			   size_t isend, double *y);
+
+
 
 void recv_model_get_active(const struct recv_model *m, size_t isend,
 			   size_t **jrecv, size_t *n);
 double recv_model_invgrow(const struct recv_model *m, size_t isend);
+
+#endif
 
 #endif /* _IPROC_MODEL_H */

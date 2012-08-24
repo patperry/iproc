@@ -162,12 +162,12 @@ static void test_probs()
 			vector_fill(nrecv, y0, y);
 			recv_model_axpy_probs(alpha, &model, isend, y);
 			
-			//assert(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)) >= 36);
-			assert_in_range(double_eqrel(log_W + max_eta, recv_model_logsumwt(&model, isend)), 36, DBL_MANT_DIG);
+			assert(double_eqrel(log_W + max_eta, recv_model_psi(&model, isend)) >= 36);
+			assert_in_range(double_eqrel(log_W + max_eta, recv_model_psi(&model, isend)), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = logprobs[jrecv];
-				double lp1 = recv_model_logprob(&model, isend, jrecv);
+				double lp1 = recv_model_lprob(&model, isend, jrecv);
 
 				if (fabs(lp0) >= 5e-4) {
 					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
