@@ -48,7 +48,6 @@ static struct valerr_t compute_eta_tail(const struct catdist *c);
 static void replace_eta(struct catdist *c, size_t i, double eta1);
 static void sort_eta(struct catdist *c);
 static void set_eta_tail(struct catdist *c);
-static void clear(struct catdist *c);
 
 void catdist_init(struct catdist *c, size_t ncat)
 {
@@ -59,10 +58,10 @@ void catdist_init(struct catdist *c, size_t ncat)
 	c->eta_rank = xmalloc(ncat * sizeof(*c->eta_rank));
 	c->tol = sqrt(EPS) * sqrt(sqrt(EPS));
 
-	clear(c);
+	catdist_clear(c);
 }
 
-void clear(struct catdist *c)
+void catdist_clear(struct catdist *c)
 {
 	size_t i, n = c->ncat;
 	memset(c->eta, 0, n * sizeof(*c->eta));
@@ -88,7 +87,7 @@ void catdist_deinit(struct catdist *c)
 void catdist_set_all_eta(struct catdist *c, const double *eta)
 {
 	if (!eta) {
-		clear(c);
+		catdist_clear(c);
 		return;
 	}
 
