@@ -15,7 +15,7 @@ struct mlogitaug {
 	size_t dim;
 
 	size_t *ind;
-	double *off;
+	double *offset;
 	double *x;
 	double *deta;
 	size_t nz, nzmax;
@@ -36,8 +36,11 @@ double *mlogitaug_x(const struct mlogitaug *m1, size_t i);
 
 void mlogitaug_set_coefs(struct mlogitaug *m1, const double *beta);
 void mlogitaug_set_offset(struct mlogitaug *m1, size_t i, double offset);
+void mlogitaug_set_all_offset(struct mlogitaug *m1, const size_t *i, const double *offset, size_t nz);
 void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 		const double *dx, size_t ndx);
+void mlogitaug_set_x(struct mlogitaug *m1, size_t i, const double *x);
+void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x, size_t nz);
 
 // double *mlogitaug_mean(const struct mlogitaug *m1);
 // double *mlogitaug_base_mean(const struct mlogitaug *m1);

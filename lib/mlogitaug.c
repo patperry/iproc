@@ -1,12 +1,17 @@
 #include "port.h"
 #include <stdint.h>
 #include <string.h>
+#include "coreutil.h"
 #include "sblas.h"
 #include "xalloc.h"
 #include "mlogitaug.h"
 
 
+static void clear(struct mlogitaug *m1);
+static void clear_x(struct mlogitaug *m1);
+static void clear_offset(struct mlogitaug *m1);
 static void recompute(struct mlogitaug *m1);
+static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
 static void grow_ind_array(struct mlogitaug *m1, size_t delta);
 static size_t find_ind(const struct mlogitaug *m1, size_t i);
 static size_t search_ind(struct mlogitaug *m1, size_t i);
@@ -18,15 +23,26 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->base = base;
 	catdist1_init(&m1->dist, mlogit_dist(base));
 
-	m1->beta = xcalloc(dim, sizeof(*m1->beta));
+	m1->beta = xmalloc(dim * sizeof(*m1->beta));
 	m1->dim = dim;
 
 	m1->ind = NULL;
-	m1->off = NULL;
+	m1->offset = NULL;
 	m1->x = NULL;
 	m1->deta = NULL;
 	m1->nz = 0;
 	m1->nzmax = 0;
+
+	clear(m1);
+}
+
+
+void clear(struct mlogitaug *m1)
+{
+	size_t dim = m1->dim;
+	catdist1_set_all_deta(&m1->dist, NULL, NULL, 0);
+	memset(m1->beta, 0, dim * sizeof(*m1->beta));
+	m1->nz = 0;
 }
 
 
@@ -34,7 +50,7 @@ void mlogitaug_deinit(struct mlogitaug *m1)
 {
 	free(m1->deta);
 	free(m1->x);
-	free(m1->off);
+	free(m1->offset);
 	free(m1->ind);
 	free(m1->beta);
 	catdist1_deinit(&m1->dist);
@@ -53,7 +69,7 @@ double mlogitaug_offset(const struct mlogitaug *m1, size_t i)
 	if (iz == m1->nz)
 		return 0.0;
 
-	return m1->off[iz];
+	return m1->offset[iz];
 }
 
 
@@ -82,7 +98,39 @@ void mlogitaug_set_coefs(struct mlogitaug *m1, const double *beta)
 void mlogitaug_set_offset(struct mlogitaug *m1, size_t i, double offset)
 {
 	size_t iz = search_ind(m1, i);
-	m1->off[i] = offset;
+	m1->offset[iz] = offset;
+}
+
+
+void mlogitaug_set_all_offset(struct mlogitaug *m1, const size_t *i, const double *offset, size_t nz)
+{
+	size_t iz;
+	clear_offset(m1);
+	for (iz = 0; iz < nz; iz++) {
+		mlogitaug_set_offset(m1, i[iz], offset[iz]);
+	}
+}
+
+
+void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x)
+{
+	size_t dim = m1->dim;
+	double *dst = m1->x + iz * dim;
+	size_t len = dim * sizeof(*dst);
+
+	if (x) {
+		memcpy(dst, x, len);
+	} else {
+		memset(dst, 0, len);
+	}
+
+}
+
+
+void mlogitaug_set_x(struct mlogitaug *m1, size_t i, const double *x)
+{
+	size_t iz = search_ind(m1, i);
+	set_x_iz(m1, iz, x);
 }
 
 
@@ -90,10 +138,10 @@ void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 		const double *dx, size_t ndx)
 {
 	assert(i < mlogitaug_ncat(m1));
-	
-	size_t iz = search_ind(m1, i);
+
 	size_t dim = m1->dim;
-	double *x = m1->x + i * dim;
+	size_t iz = search_ind(m1, i);
+	double *x = m1->x + iz * dim;
 
 	if (jdx) {
 		sblas_daxpyi(ndx, 1.0, dx, jdx, x);
@@ -104,16 +152,49 @@ void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 }
 
 
+/* Note: this implementation leaves the ind array unchanged; we could
+ * potentially reset the ind array, but we would have to leave the indices
+ * of the nonzero offsets.
+ */
+void clear_x(struct mlogitaug *m1)
+{
+	size_t dim = m1->dim;
+	size_t nz = m1->nz;
+
+	memset(m1->x, 0, dim * nz * sizeof(*m1->x));
+}
+
+/* Note from clear_x applies here */
+void clear_offset(struct mlogitaug *m1)
+{
+	size_t nz = m1->nz;
+	memset(m1->offset, 0, nz * sizeof(*m1->offset));
+}
+
+
+void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x, size_t nz)
+{
+	size_t dim = m1->dim;
+	size_t iz;
+
+	clear_x(m1);
+
+	for (iz = 0; iz < nz; iz++) {
+		mlogitaug_set_x(m1, i[iz], x + iz * dim);
+	}
+}
+
+
 void recompute(struct mlogitaug *m1)
 {
 	size_t nz = m1->nz;
 	size_t dim = m1->dim;
 	const double *beta = m1->beta;
-	const double *off = m1->off;
+	const double *offset = m1->offset;
 	double *deta = m1->deta;
 	const double *x = m1->x;
 
-	blas_dcopy(nz, off, 1, deta, 1);
+	blas_dcopy(nz, offset, 1, deta, 1);
 	if (dim)
 		blas_dgemv(BLAS_TRANS, dim, nz, 1.0, x, dim, beta, 1, 1.0, deta, 1);
 
@@ -130,6 +211,7 @@ struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 
 int mlogitaug_check(const struct mlogitaug *m1)
 {
+	(void)m1;
 	return 0;
 }
 
@@ -148,7 +230,7 @@ void grow_ind_array(struct mlogitaug *m1, size_t delta)
 	assert(nzmax1 >= nz1);
 
 	m1->ind = xrealloc(m1->ind, nzmax1 * sizeof(*m1->ind));
-	m1->off = xrealloc(m1->off, nzmax1 * sizeof(*m1->off));
+	m1->offset = xrealloc(m1->offset, nzmax1 * sizeof(*m1->offset));
 	m1->x = xrealloc(m1->x, nzmax1 * sizeof(*m1->x) * dim);
 	m1->deta = xrealloc(m1->deta, nzmax1 * sizeof(*m1->deta));
 	m1->nzmax = nzmax1;
@@ -178,7 +260,7 @@ size_t search_ind(struct mlogitaug *m1, size_t i)
 
 	grow_ind_array(m1, 1);
 	memmove(m1->ind + iz + 1, m1->ind + iz, ntail * sizeof(*m1->ind));
-	memmove(m1->off + iz + 1, m1->off + iz, ntail * sizeof(*m1->off));
+	memmove(m1->offset + iz + 1, m1->offset + iz, ntail * sizeof(*m1->offset));
 	memmove(m1->x + (iz + 1) * dim, m1->x + iz * dim, ntail * sizeof(*m1->x) * dim);
 	memmove(m1->deta + iz + 1, m1->deta + iz, ntail * sizeof(*m1->deta));
 
