@@ -90,7 +90,7 @@ double catdist1_dpsi(const struct catdist1 *c1)
 {
 	size_t iz, nz = c1->nz;
 	double sum = 0.0;
-	double suc1 = 0.0;
+	double sum1 = 0.0;
 
 	for (iz = 0; iz < nz; iz++) {
 		double eta = catdist_lprob(c1->parent, c1->ind[iz]);
@@ -99,10 +99,10 @@ double catdist1_dpsi(const struct catdist1 *c1)
 		double w1 = exp(eta1);
 		double w = exp(eta);
 		sum += w;
-		suc1 += w1;
+		sum1 += w1;
 	}
 
-	double dpsi = log((1 - sum) + suc1);
+	double dpsi = log((1 - sum) + sum1);
 
 	if (!isfinite(dpsi))
 		dpsi = get_dpsi_safe(c1);
