@@ -1,5 +1,5 @@
-#ifndef _IPROC_MODEL_H
-#define _IPROC_MODEL_H
+#ifndef RECV_MODEL_H
+#define RECV_MODEL_H
 
 #include <stddef.h>
 #include "design.h"
@@ -84,4 +84,4 @@ double recv_model_invgrow(const struct recv_model *m, size_t isend);
 
 #endif
 
-#endif /* _IPROC_MODEL_H */
+#endif /* RECV_MODEL_H */
