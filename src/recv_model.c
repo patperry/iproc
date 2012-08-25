@@ -169,8 +169,29 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 }
 
 
-static void model_clear(struct recv_model *m)
+static void recv_model_recv_update(void *udata, struct design *d,
+				   size_t jrecv, const double *delta,
+				   const size_t *ind, size_t nz)
 {
+	struct recv_model *m = udata;
+	assert(jrecv < recv_model_send_count(m));
+
+	struct recv_model_cohort *cms = m->cohort_models;
+
+	size_t ic, nc = recv_model_cohort_count(m);
+
+	for (ic = 0; ic < nc; ic++) {
+		struct recv_model_cohort *cm = &cms[ic];
+		mlogit_inc_x(&cm->mlogit, jrecv, ind, delta, nz);
+	}
+	//mlogitaug_check(&sm->mlogitaug);
+	(void)d;
+}
+
+
+static void recv_model_dyad_clear(void *udata, struct design2 *d)
+{
+	struct recv_model *m = udata;
 	struct recv_model_sender *sms = m->sender_models;
 	size_t i, n = recv_model_send_count(m);
 
@@ -178,22 +199,35 @@ static void model_clear(struct recv_model *m)
 		sender_clear(&sms[i]);
 	}
 
-	struct recv_model_cohort *cms = m->cohort_models;
-	size_t c, nc = recv_model_cohort_count(m);
-
-	for (c = 0; c < nc; c++) {
-		cohort_clear(&cms[c]);
-	}
+	(void)d;
 }
 
 
-static void recv_model_dyad_clear(void *udata, struct design2 *d)
+static void recv_model_recv_clear(void *udata, struct design *d)
 {
-	(void)d;		// unused
 	struct recv_model *m = udata;
-	assert(m);
-	model_clear(m);
+	struct recv_model_cohort *cms = m->cohort_models;
+	size_t ic, nc = recv_model_cohort_count(m);
+
+	for (ic = 0; ic < nc; ic++) {
+		cohort_clear(&cms[ic]);
+	}
+
+	(void)d;
 }
+
+
+static const struct design_callbacks RECV_CALLBACKS = {
+	recv_model_recv_update,
+	NULL,
+	recv_model_recv_clear
+};
+
+static const struct design2_callbacks DYAD_CALLBACKS = {
+	recv_model_dyad_update,
+	NULL,
+	recv_model_dyad_clear
+};
 
 
 void recv_model_init(struct recv_model *model,
@@ -206,31 +240,28 @@ void recv_model_init(struct recv_model *model,
 	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
 	const struct design *s = frame_send_design(f);
+	struct design *r = frame_recv_design(f);
 	struct design2 *d = frame_dyad_design(f);
-	const size_t nsend = frame_send_count(f);
+	size_t isend, nsend = frame_send_count(f);
+	size_t ic, nc = design_cohort_count(s);
 
 	model->frame = f;
 
 	recv_coefs_init(&model->coefs, f);
-	
+	size_t coefs_len = model->coefs.dim * sizeof(*model->coefs.all);
 	if (coefs) {
-		memcpy(model->coefs.all, coefs->all, model->coefs.dim * sizeof(*model->coefs.all));
+		memcpy(model->coefs.all, coefs->all, coefs_len);
 	} else {
-		memset(model->coefs.all, 0, model->coefs.dim * sizeof(*model->coefs.all));		
+		memset(model->coefs.all, 0, coefs_len);
 	}
 
-	size_t nc = design_cohort_count(s);
 	struct recv_model_cohort *cms = xcalloc(nc, sizeof(*cms));
-	size_t ic;
-	
 	for (ic = 0; ic < nc; ic++) {
 		cohort_init(&cms[ic], ic, f, &model->coefs);
 	}
 	model->cohort_models = cms;
 
-	size_t isend;
 	struct recv_model_sender *sms = xcalloc(nsend, sizeof(*sms));
-
 	for (isend = 0; isend < nsend; isend++) {
 		size_t c = recv_model_cohort(model, isend);
 		const struct recv_model_cohort *cm = &cms[c];
@@ -238,14 +269,10 @@ void recv_model_init(struct recv_model *model,
 	}
 	model->sender_models = sms;
 
-	struct design2_callbacks callbacks = {
-		recv_model_dyad_update,
-		NULL,
-		recv_model_dyad_clear
-	};
-
-	design2_add_observer(d, model, &callbacks);
+	design_add_observer(r, model, &RECV_CALLBACKS);
+	design2_add_observer(d, model, &DYAD_CALLBACKS);
 }
+
 
 void recv_model_deinit(struct recv_model *model)
 {
@@ -269,6 +296,7 @@ void recv_model_deinit(struct recv_model *model)
 
 	recv_coefs_deinit(&model->coefs);
 }
+
 
 struct frame *recv_model_frame(const struct recv_model *model)
 {
