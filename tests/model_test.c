@@ -156,8 +156,6 @@ static void test_probs()
 			vector_exp(nrecv, probs);
 
 			struct catdist1 *dist = recv_model_dist(&model, isend);
-			catdist1_update_cache(dist);
-
 			double psi = catdist1_cached_psi(dist);
 
 			assert(double_eqrel(log_W + max_eta, psi) >= 36);
