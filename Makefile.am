@@ -45,6 +45,8 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
+	src/recv_loglik.c \
+	src/recv_loglik.h \
 	src/recv_model.c \
 	src/recv_model.h \
 	src/strata.c \
@@ -292,9 +294,9 @@ check_PROGRAMS += tests/model_test
 tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_model_test_LDADD    = $(check_LDADD)
 
-#check_PROGRAMS += tests/recv_loglik_test
-#tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
-#tests_recv_loglik_test_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/recv_loglik_test
+tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_recv_loglik_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/enronfit
 #tests_enronfit_SOURCES  = tests/enron/enronfit.c

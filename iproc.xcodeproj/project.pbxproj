@@ -131,6 +131,8 @@
 		228B12C715E67EEC000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B12CC15E67EFB000DC495 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		228B12CD15E67EFB000DC495 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
+		228B12EF15E91785000DC495 /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B12ED15E91785000DC495 /* recv_loglik.c */; };
+		228B12F015E91785000DC495 /* recv_loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B12EE15E91785000DC495 /* recv_loglik.h */; };
 		228D4D5115A4CD0E007DBCCA /* dv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5015A4CD0E007DBCCA /* dv-irecv.c */; };
 		228D4D5515A4CD5F007DBCCA /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5315A4CD5F007DBCCA /* history.c */; };
 		228D4D5615A4CD5F007DBCCA /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 228D4D5415A4CD5F007DBCCA /* history.h */; };
@@ -617,6 +619,8 @@
 		228B12C015E67EB7000DC495 /* mlogit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit.c; path = lib/mlogit.c; sourceTree = "<group>"; };
 		228B12C115E67EB7000DC495 /* mlogit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mlogit.h; path = lib/mlogit.h; sourceTree = "<group>"; };
 		228B12C515E67ED0000DC495 /* mlogit_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit_test.c; path = tests/mlogit_test.c; sourceTree = "<group>"; };
+		228B12ED15E91785000DC495 /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
+		228B12EE15E91785000DC495 /* recv_loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_loglik.h; path = src/recv_loglik.h; sourceTree = "<group>"; };
 		228D4D5015A4CD0E007DBCCA /* dv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-irecv.c"; path = "src/dv-irecv.c"; sourceTree = "<group>"; };
 		228D4D5315A4CD5F007DBCCA /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/history.c; sourceTree = "<group>"; };
 		228D4D5415A4CD5F007DBCCA /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = src/history.h; sourceTree = "<group>"; };
@@ -860,6 +864,8 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				228B12ED15E91785000DC495 /* recv_loglik.c */,
+				228B12EE15E91785000DC495 /* recv_loglik.h */,
 				22BECECA15AC77AA00F630C4 /* recv_model.c */,
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				22597408133D0AFB0022B52E /* design.c */,
@@ -1109,6 +1115,7 @@
 				228B12A815E66568000DC495 /* catdist1.h in Headers */,
 				228B12C415E67EB7000DC495 /* mlogit.h in Headers */,
 				22EB6B7815E6A21100762290 /* mlogitaug.h in Headers */,
+				228B12F015E91785000DC495 /* recv_loglik.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1564,6 +1571,7 @@
 				228B12A615E66568000DC495 /* catdist1.c in Sources */,
 				228B12C215E67EB7000DC495 /* mlogit.c in Sources */,
 				22EB6B7715E6A21100762290 /* mlogitaug.c in Sources */,
+				228B12EF15E91785000DC495 /* recv_loglik.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
