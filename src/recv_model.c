@@ -81,8 +81,9 @@ static void cohort_init(struct recv_model_cohort *cm,
 			const struct frame *f,
 			const struct recv_coefs *coefs)
 {
+	const struct design *r = frame_recv_design(f);
 	size_t nrecv = frame_recv_count(f);
-	size_t dim = coefs->recv.dim + coefs->dyad.dim;
+	size_t dim = design_tvar_dim(r);
 
 	mlogit_init(&cm->mlogit, nrecv, dim);
 	cm->eta0 = xmalloc(nrecv * sizeof(double));
