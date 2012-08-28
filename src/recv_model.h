@@ -64,24 +64,4 @@ void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs);
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend);
 
 
-#if 0
-
-/* Initial probability, and expectations, without adjustment for self-loops. */
-double recv_model_logsumwt0(const struct recv_model *m, size_t c);
-double *recv_model_logwts0(const struct recv_model *m, size_t c);
-double *recv_model_probs0(const struct recv_model *m, size_t c);
-
-double recv_model_prob0(const struct recv_model *m, size_t c, size_t jrecv);
-double *recv_model_mean0(const struct recv_model *m, size_t c);
-double *recv_model_imat0(const struct recv_model *m, size_t c);
-
-
-
-
-void recv_model_get_active(const struct recv_model *m, size_t isend,
-			   size_t **jrecv, size_t *n);
-double recv_model_invgrow(const struct recv_model *m, size_t isend);
-
-#endif
-
 #endif /* RECV_MODEL_H */
