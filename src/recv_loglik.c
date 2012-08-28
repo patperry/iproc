@@ -13,7 +13,7 @@ static void cohort_add(struct recv_loglik_cohort *cll);
 
 static void sender_init(struct recv_loglik_sender *sll);
 static void sender_deinit(struct recv_loglik_sender *sll);
-static void sender_add(struct recv_loglik_sender *sll);
+static void sender_add(struct recv_loglik_sender *sll, size_t nto);
 static void sender_clear(struct recv_loglik_sender *sll);
 
 
@@ -38,6 +38,7 @@ void cohort_add(struct recv_loglik_cohort *cll)
 
 void sender_init(struct recv_loglik_sender *sll)
 {
+	sender_clear(sll);
 }
 
 void sender_deinit(struct recv_loglik_sender *sll)
@@ -46,11 +47,13 @@ void sender_deinit(struct recv_loglik_sender *sll)
 
 void sender_clear(struct recv_loglik_sender *sll)
 {
+	sll->count = 0;
 }
 
 
-void sender_add(struct recv_loglik_sender *sll)
+void sender_add(struct recv_loglik_sender *sll, size_t nto)
 {
+	sll->count += nto;
 }
 
 
@@ -78,7 +81,10 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 		sender_init(&senders[is]);
 	}
 	ll->senders = senders;
+
+	recv_loglik_clear(ll);
 }
+
 
 void recv_loglik_deinit(struct recv_loglik *ll)
 {
@@ -117,6 +123,8 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	for (is = 0; is < ns; is++) {
 		sender_clear(&senders[is]);
 	}
+
+	ll->count_last = 0;
 }
 
 
@@ -125,9 +133,11 @@ void recv_loglik_add(struct recv_loglik *ll,
 {
 	size_t isend = msg->from;
 	size_t c = recv_model_cohort(ll->model, isend);
-	sender_add(&ll->senders[isend]);
+	sender_add(&ll->senders[isend], msg->nto);
 	cohort_add(&ll->cohorts[c]);
+	ll->count_last = msg->nto;
 }
+
 
 void recv_loglik_add_all(struct recv_loglik *ll,
 			 struct frame *f, const struct messages *msgs)
@@ -157,7 +167,17 @@ void recv_loglik_add_all(struct recv_loglik *ll,
 
 size_t recv_loglik_count(const struct recv_loglik *ll)
 {
-	return 0;
+	size_t count = 0;
+	const struct recv_model *m = ll->model;
+	const struct recv_loglik_sender *sll;
+
+	size_t is, ns = recv_model_send_count(m);
+	for (is = 0; is < ns; is++) {
+		sll = &ll->senders[is];
+		count += sll->count;
+	}
+
+	return count;
 }
 
 double recv_loglik_dev(const struct recv_loglik *ll)
@@ -167,7 +187,7 @@ double recv_loglik_dev(const struct recv_loglik *ll)
 
 size_t recv_loglik_last_count(const struct recv_loglik *ll)
 {
-	return 0;
+	return ll->count_last;
 }
 
 double recv_loglik_last_dev(const struct recv_loglik *ll)

@@ -10,12 +10,14 @@ struct recv_loglik_cohort {
 };
 
 struct recv_loglik_sender {
+	size_t count;
 };
 
 struct recv_loglik {
 	struct recv_model *model;
 	struct recv_loglik_cohort *cohorts;
 	struct recv_loglik_sender *senders;
+	size_t count_last;
 };
 
 void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m);

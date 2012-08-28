@@ -119,6 +119,49 @@ static void teardown()
 	frame_deinit(&frame);
 }
 
+
+static void test_count()
+{
+	struct messages_iter it;
+	const struct message *msg = NULL;
+	double t;
+	size_t itie, ntie, nmsg;
+	size_t count0, count1;
+	size_t last_count0, last_count1;
+
+	count0 = 0;
+	nmsg = 0;
+
+	MESSAGES_FOREACH(it, &messages) {
+		printf("."); fflush(stdout);
+		t = MESSAGES_TIME(it);
+
+		frame_advance(&frame, t);
+
+		ntie = MESSAGES_COUNT(it);
+		for (itie = 0; itie < ntie; itie ++) {
+			msg = MESSAGES_VAL(it, itie);
+			frame_add(&frame, msg);
+			recv_loglik_add(&loglik, &frame, msg);
+			nmsg += msg->nto;
+
+			if (nmsg > 1000)
+				goto out;
+
+			last_count0 = msg->nto;
+			last_count1 = recv_loglik_last_count(&loglik);
+			assert_int_equal(last_count0, last_count1);
+
+			count0 = count0 + last_count0;
+			count1 = recv_loglik_count(&loglik);
+			assert_int_equal(count0, count1);
+		}
+	}
+out:
+	return;
+}
+
+
 static void test_dev()
 {
 	struct messages_iter it;
@@ -479,6 +522,8 @@ int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, enron_setup_fixture),
+		unit_test_setup_teardown(test_count, basic_setup, teardown),
+		unit_test_setup_teardown(test_count, hard_setup, teardown),
 		unit_test_setup_teardown(test_dev, basic_setup, teardown),
 		unit_test_setup_teardown(test_dev, hard_setup, teardown),
 		//unit_test_setup_teardown(test_mean, basic_setup, teardown),
