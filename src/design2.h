@@ -11,9 +11,16 @@ struct design2 {
 	size_t count1, count2;
 	size_t count; // count1 * count2
 
+	size_t ncohort;
+	size_t *cohorts;
+	size_t *cohort_reps;
+
 	double *traits;
-	struct var2 **trait_vars;
 	size_t ntrait;
+
+	size_t kvar_dim;
+	struct kvar2 **kvars;
+	size_t nkvar, nkvar_max;
 
 	size_t tvar_dim;
 	struct tvar2 **tvars;
@@ -35,6 +42,12 @@ struct var2 {
 	const char *name;
 	size_t dim;
 	size_t index;
+};
+
+struct kvar2 {
+	struct var2 var;
+	double *xi, *xj;
+	size_t dimi, dimj;
 };
 
 struct tvar2 {
@@ -86,13 +99,13 @@ const struct var2 *design2_var(const struct design2 *d, const char *name);
 
 /* traits */
 static inline size_t design2_trait_dim(const struct design2 *d);
-static inline const double *design2_traits(const struct design2 *d);
-const char *design2_trait_name(const struct design2 *d, size_t k);
-const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
-void design2_add_traits(struct design2 *d, const char * const *names, const double *x, size_t num);
+const double *design2_traits(const struct design2 *d, size_t i);
+//const char *design2_trait_name(const struct design2 *d, size_t k);
+//const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
+//void design2_add_traits(struct design2 *d, const char * const *names, const double *x, size_t num);
 
-//void design2_add_kron(struct design2 *d, const struct var *i,
-//			const struct var *j);
+const struct var2 *design2_add_kron(struct design2 *d, const char *name, const struct var *i,
+				    const struct var *j);
 
 void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
 			const double *x, double beta, double *y);
@@ -103,7 +116,7 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 /* tvars */
 static inline size_t design2_tvar_dim(const struct design2 *d);
 static inline const double *design2_tvars(const struct design2 *d, size_t i, size_t j);
-const char *design2_tvar_name(const struct design2 *d, size_t k);
+//const char *design2_tvar_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const struct tvar2_type *type, ...);
 
 static inline void design2_tvars_get(const struct design2 *d, size_t i, const double **dxp, const size_t **jp,
@@ -113,6 +126,16 @@ void design2_tvars_mul(double alpha, const struct design2 *d, size_t i,
 		      const double *x, double beta, double *y);
 void design2_tvars_tmul(double alpha, const struct design2 *d, size_t i, const double *x, double beta, double *y);
 void design2_tvars_axpy(double alpha, const struct design2 *d, size_t i, size_t j, double *y);
+
+
+/* cohorts */
+static inline size_t design2_cohort(const struct design2 *d, size_t i);
+static inline size_t design2_cohort_rep(const struct design2 *d, size_t c);
+static inline size_t design2_cohort_count(const struct design2 *d);
+static inline void design2_get_cohorts(const struct design2 *d,
+				      const size_t **cohortsp,
+				      const size_t **repsp, size_t *ncohortp);
+
 
 
 /* coefs2 */
@@ -160,12 +183,6 @@ size_t design2_trait_dim(const struct design2 *d)
 }
 
 
-const double *design2_traits(const struct design2 *d)
-{
-	return d->traits;
-}
-
-
 size_t design2_tvar_dim(const struct design2 *d)
 {
 	return d->tvar_dim;
@@ -203,6 +220,37 @@ void design2_tvars_get(const struct design2 *d, size_t i, const double **dxp, co
 	*jp = d->jc + ir0;
 	*dxp = d->dx + ir0 * d->tvar_dim;
 }
+
+
+size_t design2_cohort(const struct design2 *d, size_t i)
+{
+	assert(i < design2_count1(d));
+	return d->cohorts[i];
+}
+
+
+size_t design2_cohort_rep(const struct design2 *d, size_t c)
+{
+	assert(c < design2_cohort_count(d));
+	return d->cohort_reps[c];
+}
+
+
+size_t design2_cohort_count(const struct design2 *d)
+{
+	return d->ncohort;
+}
+
+
+void design2_get_cohorts(const struct design2 *d, const size_t **cohortsp,
+			 const size_t **repsp, size_t *ncohortp)
+{
+	*cohortsp = d->cohorts;
+	*repsp = d->cohort_reps;
+	*ncohortp = d->ncohort;
+}
+
+
 
 
 #endif /* DESIGN2_H */

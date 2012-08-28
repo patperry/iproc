@@ -9,6 +9,7 @@
 
 #include "coreutil.h"
 #include "lapack.h"
+#include "strata.h"
 #include "util.h"
 #include "xalloc.h"
 
@@ -45,6 +46,83 @@ static void design2_frame_clear(void *udata, struct frame *f)
 	}
 }
 
+
+
+
+static void recompute_cohorts(struct design2 *d)
+{
+
+	size_t dim = d->kvar_dim;
+	struct strata s;
+	double *x = xmalloc(dim * sizeof(*x));
+
+	strata_init(&s, dim);
+
+	size_t i, n = d->count1;
+	size_t k, nk = d->nkvar;
+
+	d->ncohort = 0;
+
+	for (i = 0; i < n; i++) {
+		size_t off = 0;
+		for (k = 0; k < nk; k++) {
+			const struct kvar2 *kv = d->kvars[k];
+			memcpy(x + off, kv->xi + i * kv->dimi, kv->dimi * sizeof(*x));
+			off += kv->dimi;
+		}
+		assert(off == dim);
+
+		size_t c = strata_add(&s, x);
+
+		d->cohorts[i] = c;
+
+		if (c == d->ncohort) {
+			d->cohort_reps[c] = i;
+			d->ncohort++;
+		}
+
+	}
+
+	strata_deinit(&s);
+	free(x);
+}
+
+
+static void recompute_traits(struct design2 *d)
+{
+	recompute_cohorts(d);
+
+	size_t j, n = d->count2;
+	size_t dim = d->kvar_dim;
+	size_t ic, nc = d->ncohort;
+	size_t k, nk = d->nkvar;
+
+	d->traits = xrealloc(d->traits, nc * n * dim * sizeof(*d->traits));
+	memset(d->traits, 0, nc * n * dim * sizeof(*d->traits));
+
+	for (ic = 0; ic < nc; ic++) {
+		size_t i = d->cohort_reps[i];
+		for (j = 0; j < n; j++) {
+			size_t off = 0;
+			for (k = 0; k < nk; k++) {
+				const struct kvar2 *kv = d->kvars[k];
+				const double *x = kv->xj + j * kv->dimj;
+				const double *y = kv->xi + i * kv->dimi;
+				double *a = d->traits + ic * n * dim + j * dim + off;
+
+				if (kv->dimj)
+					blas_dger(kv->dimj, kv->dimi, 1.0, x, 1, y, 1, a, kv->dimj);
+
+				off += kv->dimi * kv->dimj;
+			}
+			assert(off == dim);
+		}
+	}
+
+	d->ntrait = dim;
+}
+
+
 static struct frame_callbacks design2_frame_callbacks = {
 	NULL,
 	NULL,
@@ -59,10 +137,18 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->count1 = count1;
 	d->count2 = count2;
 	d->count = count1 * count2;
-	
+
+	d->ncohort = 1;
+	d->cohorts = xcalloc(count1, sizeof(*d->cohorts));
+	d->cohort_reps = xcalloc(1, sizeof(*d->cohort_reps));
+
 	d->traits = NULL;
-	d->trait_vars = NULL;
 	d->ntrait = 0;
+
+	d->kvar_dim = 0;
+	d->kvars = NULL;
+	d->nkvar = 0;
+	d->nkvar_max = 0;
 
 	d->tvar_dim = 0;
 	d->tvars = NULL;
@@ -98,6 +184,23 @@ static void tvars_deinit(struct tvar2 **tvars, size_t len, struct design2 *d)
 	}
 }
 
+static void kvar_deinit(struct kvar2 *kvar)
+{
+	free(kvar->xi);
+	free(kvar->xj);
+}
+
+static void kvars_deinit(struct kvar2 **kvars, size_t len)
+{
+	size_t i;
+	struct kvar2 *v;
+
+	for (i = len; i > 0; i--) {
+		v = kvars[i - 1];
+		kvar_deinit(v);
+	}
+}
+
 
 void design2_deinit(struct design2 *d)
 {
@@ -109,7 +212,8 @@ void design2_deinit(struct design2 *d)
 	free(d->pat_buf.indx);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
-	free2((void **)d->trait_vars, d->ntrait);
+	kvars_deinit(d->kvars, d->nkvar);
+	free2((void **)d->kvars, d->nkvar);
 	free(d->traits);
 }
 
@@ -154,7 +258,7 @@ void design2_remove_observer(struct design2 *d, void *udata)
 	}
 }
 
-
+/*
 static void design2_traits_grow(struct design2 *d, size_t delta)
 {
 	size_t count = d->count;
@@ -232,6 +336,68 @@ void design2_add_traits(struct design2 *d, const char * const *names, const doub
 	
 	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + ntrait, ntrait1);
 }
+ */
+
+
+static void design2_grow_kvars(struct design2 *d, size_t delta)
+{
+	size_t nmax = array_grow(d->nkvar, d->nkvar_max, delta, SIZE_MAX);
+	if (nmax > d->nkvar_max) {
+		d->kvars = xrealloc(d->kvars, nmax * sizeof(*d->kvars));
+		d->nkvar_max = nmax;
+	}
+}
+
+const struct var2 *design2_add_kron(struct design2 *d, const char *name,
+				    const struct var *i, const struct var *j)
+{
+	assert(design_count(i->design) == d->count1);
+	assert(design_count(j->design) == d->count2);
+	assert(i->type == VAR_TYPE_TRAIT); // other types not implemented
+	assert(j->type == VAR_TYPE_TRAIT); // ditto
+
+	size_t m = d->count1;
+	size_t n = d->count2;
+	size_t dimi = i->dim;
+	size_t dimj = j->dim;
+	struct kvar2 *kv = xmalloc(sizeof(*kv));
+	struct var2 *v = &kv->var;
+
+	v->design = d;
+	v->type = VAR_TYPE_TRAIT;
+	v->name = xstrdup(name);
+	v->index = d->kvar_dim;
+	v->dim = dimi * dimj;
+
+	kv->xi = xmalloc(dimi * m * sizeof(*kv->xi));
+	if (dimi)
+		lapack_dlacpy(LA_COPY_ALL, dimi, m, design_traits(i->design) + i->index, dimi, kv->xi, dimi);
+
+	kv->xj = xmalloc(dimj * n * sizeof(*kv->xj));
+	if (dimj)
+		lapack_dlacpy(LA_COPY_ALL, dimj, n, design_traits(j->design) + j->index, dimj, kv->xj, dimj);
+
+	size_t index = d->nkvar;
+	design2_grow_kvars(d, 1);
+	d->kvars[index] = kv;
+	d->kvar_dim += v->dim;
+
+
+	recompute_traits(d);
+
+	return v;
+}
+
+
+const double *design2_traits(const struct design2 *d, size_t i)
+{
+	assert(i < design2_count1(d));
+	size_t c = d->cohorts[i];
+	size_t n = design2_count2(d);
+	size_t dim = design2_trait_dim(d);
+	const double *x = d->traits + c * n * dim;
+	return x;
+}
 
 
 const char *design2_tvar_name(const struct design2 *d, size_t j)
@@ -307,9 +473,17 @@ const struct var2 *design2_var(const struct design2 *d, const char *name)
 	size_t i, n;
 	const struct var2 *v;
 
-	n = d->ntrait;
+	//n = d->ntrait;
+	//for (i = 0; i < n; i++) {
+	//	v = d->trait_vars[i];
+	//	if (strcmp(v->name, name) == 0) {
+	//		return v;
+	//	}
+	//}
+
+	n = d->nkvar;
 	for (i = 0; i < n; i++) {
-		v = d->trait_vars[i];
+		v = &(d->kvars[i]->var);
 		if (strcmp(v->name, name) == 0) {
 			return v;
 		}
@@ -335,7 +509,7 @@ void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
 
 	size_t n = design2_count2(d);
 	size_t p = design2_trait_dim(d);
-	const double *a = design2_traits(d) + i * (n * p);
+	const double *a = design2_traits(d, i);
 	size_t lda = p;	
 	
 	if (p) {
@@ -354,7 +528,7 @@ void design2_traits_tmul(double alpha, const struct design2 *d, size_t i, const 
 	
 	size_t n = design2_count2(d);
 	size_t p = design2_trait_dim(d);
-	const double *a = design2_traits(d) + i * (n * p);
+	const double *a = design2_traits(d, i);
 	size_t lda = p;
 	
 	if (p) {
@@ -369,9 +543,8 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 	
-	size_t n = design2_count2(d);
 	size_t p = design2_trait_dim(d);
-	const double *x = design2_traits(d) + i * (n * p) + j * n;
+	const double *x = design2_traits(d, i) + j * p;
 
 	blas_daxpy(p, alpha, x, 1, y, 1);
 }
