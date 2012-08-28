@@ -56,10 +56,9 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 		       const struct frame *f,
 		       const struct recv_coefs *coefs)
 {
-	const struct design *s = frame_send_design(f);
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
-	size_t isend = design_cohort_rep(s, c);
+	size_t isend = design2_cohort_rep(d, c);
 
 	design_traits_mul(1.0, r, coefs->recv.traits, 0.0, cm->eta0);
 	design2_traits_mul(1.0, d, isend, coefs->dyad.traits, 1.0, cm->eta0);
@@ -101,8 +100,8 @@ static void cohort_deinit(struct recv_model_cohort *cm)
 size_t recv_model_cohort(const struct recv_model *m, size_t isend)
 {
 	const struct frame *f = recv_model_frame(m);
-	const struct design *s = frame_send_design(f);
-	return design_cohort(s, isend);
+	const struct design2 *d = frame_dyad_design(f);
+	return design2_cohort(d, isend);
 }
 
 
@@ -240,11 +239,10 @@ void recv_model_init(struct recv_model *model,
 	assert(frame_recv_count(f) > 0);
 	assert(!frame_has_loops(f) || frame_recv_count(f) > 1);
 
-	const struct design *s = frame_send_design(f);
 	struct design *r = frame_recv_design(f);
 	struct design2 *d = frame_dyad_design(f);
 	size_t isend, nsend = frame_send_count(f);
-	size_t ic, nc = design_cohort_count(s);
+	size_t ic, nc = design2_cohort_count(d);
 
 	model->frame = f;
 
@@ -326,8 +324,8 @@ size_t recv_model_cohort_count(const struct recv_model *model)
 {
 	assert(model);
 	const struct frame *f = recv_model_frame(model);
-	const struct design *s = frame_send_design(f);
-	return design_cohort_count(s);
+	const struct design2 *d = frame_dyad_design(f);
+	return design2_cohort_count(d);
 }
 
 size_t recv_model_count(const struct recv_model *model)
