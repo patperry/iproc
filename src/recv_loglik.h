@@ -13,6 +13,7 @@ struct recv_loglik_sender {
 	size_t count;
 	double dev;
 	struct recv_coefs mean;
+	struct recv_coefs score;
 };
 
 struct recv_loglik_update {
@@ -44,7 +45,7 @@ void recv_loglik_clear(struct recv_loglik *ll);
 size_t recv_loglik_count(const struct recv_loglik *ll);
 double recv_loglik_dev(const struct recv_loglik *ll);
 void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
-//void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
+void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
 
 //void recv_loglik_axpy_imat(double alpha, const struct recv_loglik *ll,
 //			     double *y);

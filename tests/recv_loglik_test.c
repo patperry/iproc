@@ -341,7 +341,6 @@ static void test_score()
 				assert_real_approx(last_score0.all[i], last_score1.all[i]);
 			}
 
-			/*
 			blas_daxpy(dim, 1.0, last_score0.all, 1, score0.all, 1);
 
 			memset(score1.all, 0, dim * sizeof(*score1.all));
@@ -352,7 +351,6 @@ static void test_score()
 			}
 
 			blas_dcopy(dim, score1.all, 1, score0.all, 1);
-			 */
 		}
 	}
 
@@ -367,96 +365,6 @@ out:
 
 
 /*
-
-static void test_score()
-{
-	double *nrecv, *score0, *score1, *avg_score1, *diff;
-	struct messages_iter it;
-	const struct message *msg = NULL;
-	double t;
-	size_t isend, c, ito;
-	size_t itie, ntie;
-	size_t index, dim = design_dim(design);
-	size_t n, nmsg;
-
-
-	nrecv = xcalloc(design_count(design), sizeof(double));
-	score0 = xmalloc(dim * sizeof(double));
-	score1 = xmalloc(dim * sizeof(double));
-	struct dmatrix avg_score0 = { xcalloc(design_dim(design) * recv_model_cohort_count(&model), sizeof(double)),
-		MAX(1, design_dim(design)) };
-	avg_score1 = xmalloc(dim * sizeof(double));
-	diff = xmalloc(dim * sizeof(double));
-
-	nmsg = 0;
-
-	MESSAGES_FOREACH(it, &messages) {
-		t = MESSAGES_TIME(it);
-
-		frame_advance(&frame, t);
-
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
-			recv_loglik_add(&recv_loglik, &frame, msg);
-			nmsg++;
-
-			if (nmsg > 1000)
-				goto out;
-
-			isend = msg->from;
-			c = recv_model_cohort(&model, isend);
-			n = recv_loglik_count(&recv_loglik, c);			
-
-			memset(nrecv, 0, design_count(design) * sizeof(double));
-			for (ito = 0; ito < msg->nto; ito++) {
-				nrecv[msg->to[ito]] += 1.0;
-			}
-
-			frame_recv_mul(1.0, BLAS_TRANS, &frame, isend, nrecv, 0.0, score0);
-			recv_loglik_axpy_last_mean(-1.0, &recv_loglik, score0);
-
-			memset(score1, 0, dim * sizeof(double));
-			recv_loglik_axpy_last_score(1.0, &recv_loglik, score1);
-
-			for (index = 0; index < dim; index++) {
-				double x0 = score0[index];
-				double x1 = score1[index];
-				assert(double_eqrel(x0, x1) >= 40);
-				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
-			}
-			
-			double *avg_score0_c = MATRIX_COL(&avg_score0, c);
-			blas_dcopy(dim, avg_score0_c, 1, diff, 1);
-			blas_daxpy(dim, -1.0/msg->nto, score0, 1, diff, 1);
-			blas_daxpy(dim, -((double)msg->nto) / n, diff, 1, avg_score0_c, 1);
-			
-			memset(avg_score1, 0, dim * sizeof(double));
-			recv_loglik_axpy_avg_score(1.0, &recv_loglik, c, avg_score1);
-			
-			for (index = 0; index < dim; index++) {
-				double x0 = avg_score0_c[index];
-				double x1 = avg_score1[index];
-				if (fabs(x0) >= 5e-4) {
-					assert_in_range(double_eqrel(x0, x1), 37, DBL_MANT_DIG);
-				} else {
-					assert_true(fabs(x0 - x1) < sqrt(DBL_EPSILON));
-				}
-			}
-			
-			blas_dcopy(dim, avg_score1, 1, avg_score0_c, 1);
-		}
-	}
-out:
-	free(diff);
-	free(avg_score1);	
-	free(avg_score0.data);
-	free(score0);
-	free(score1);	
-	free(nrecv);	
-}
-
 
 static void test_imat()
 {
