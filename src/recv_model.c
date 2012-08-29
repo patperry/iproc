@@ -277,7 +277,12 @@ void recv_model_deinit(struct recv_model *model)
 {
 	assert(model);
 
-	frame_remove_observer(model->frame, model);
+	struct frame *f = model->frame;
+	struct design *r = frame_recv_design(f);
+	struct design2 *d = frame_dyad_design(f);
+
+	design2_remove_observer(d, model);
+	design_remove_observer(r, model);
 
 	struct recv_model_sender *sms = model->sender_models;
 	size_t isend, nsend = recv_model_send_count(model);
