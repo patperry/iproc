@@ -21,6 +21,7 @@ static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
 static void recompute_dist(struct mlogitaug *m1);
 static void recompute_mean(struct mlogitaug *m1);
+static void recompute_base_mean(struct mlogitaug *m1);
 static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
 static void grow_ind_array(struct mlogitaug *m1, size_t delta);
 static size_t find_ind(const struct mlogitaug *m1, size_t i);
@@ -30,6 +31,8 @@ static size_t search_ind(struct mlogitaug *m1, size_t i);
 void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 		size_t dim)
 {
+	size_t base_dim = mlogit_dim(base);
+
 	m1->base = base;
 	catdist1_init(&m1->dist, mlogit_dist(base));
 
@@ -43,8 +46,11 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->nz = 0;
 	m1->nzmax = 0;
 	m1->mean = xmalloc(dim * sizeof(*m1->mean));
-	m1->base_mean = xmalloc(mlogit_dim(m1->base) * sizeof(*m1->base_mean));
 	m1->xbuf = xmalloc(dim * sizeof(*m1->xbuf));
+
+	m1->base_mean = xmalloc(base_dim * sizeof(*m1->base_mean));
+	m1->base_dmean = xmalloc(base_dim * sizeof(*m1->base_dmean));
+	m1->base_xbuf = xmalloc(base_dim * sizeof(*m1->base_xbuf));
 
 	clear(m1);
 }
@@ -61,8 +67,10 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
-	free(m1->xbuf);
+	free(m1->base_xbuf);
+	free(m1->base_dmean);
 	free(m1->base_mean);
+	free(m1->xbuf);
 	free(m1->mean);
 	free(m1->deta);
 	free(m1->x);
@@ -215,6 +223,7 @@ void recompute_dist(struct mlogitaug *m1)
 		blas_dgemv(BLAS_TRANS, dim, nz, 1.0, x, dim, beta, 1, 1.0, deta, 1);
 
 	catdist1_set_all_deta(&m1->dist, m1->ind, m1->deta, m1->nz);
+	catdist1_update_cache(&m1->dist);
 }
 
 
@@ -225,11 +234,9 @@ struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 }
 
 
-static void recompute_mean(struct mlogitaug *m1)
+void recompute_mean(struct mlogitaug *m1)
 {
-	recompute_dist(m1);
-
-	const struct catdist1 *dist;
+	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
 	double *mean = m1->mean;
 	double *diff = m1->xbuf;
@@ -260,15 +267,74 @@ static void recompute_mean(struct mlogitaug *m1)
 
 double *mlogitaug_mean(const struct mlogitaug *m1)
 {
+	recompute_dist((struct mlogitaug *)m1);
 	recompute_mean((struct mlogitaug *)m1);
 	return m1->mean;
 }
 
+
+void recompute_base_mean(struct mlogitaug *m1)
+{
+	const struct catdist1 *dist = &m1->dist;
+	const struct catdist *dist0 = catdist1_parent(dist);
+	size_t dim = mlogit_dim(m1->base);
+
+	double *mean = m1->base_mean;
+	double *dmean = m1->base_dmean;
+	double *diff = m1->base_xbuf;
+	size_t iz, nz = m1->nz;
+	double psi = catdist1_cached_psi(dist);
+	const double *x = mlogit_x(m1->base);
+	const double *mean0 = mlogit_mean(m1->base);
+
+	memset(dmean, 0, dim * sizeof(*dmean));
+
+	for (iz = 0; iz < nz; iz++) {
+		size_t i = m1->ind[iz];
+		double eta0 = catdist_eta(dist0, i);
+		double w0 = exp(eta0 - psi);
+		double w = catdist1_cached_prob(dist, i);
+		double dw = w - w0;
+
+		blas_dcopy(dim, x + i * dim, 1, diff, 1);
+		blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
+
+		blas_daxpy(dim, dw, diff, 1, dmean, 1);
+	}
+
+	blas_daxpy(dim, 1.0, diff, 1, mean, 1);
+}
+
+
 double *mlogitaug_base_mean(const struct mlogitaug *m1)
 {
+	recompute_dist((struct mlogitaug *)m1);
+	recompute_base_mean((struct mlogitaug *)m1);
 	return m1->base_mean;
 }
 
+
+void mlogitaug_update_cache(struct mlogitaug *m1)
+{
+	recompute_dist((struct mlogitaug *)m1);
+	recompute_mean((struct mlogitaug *)m1);
+	recompute_base_mean((struct mlogitaug *)m1);
+}
+
+struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1)
+{
+	return &((struct mlogitaug *)m1)->dist;
+}
+
+double *mlogitaug_cached_mean(const struct mlogitaug *m1)
+{
+	return ((struct mlogitaug *)m1)->mean;
+}
+
+double *mlogitaug_cached_base_mean(const struct mlogitaug *m1)
+{
+	return ((struct mlogitaug *)m1)->base_mean;
+}
 
 
 int mlogitaug_check(const struct mlogitaug *m1)
