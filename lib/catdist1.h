@@ -19,6 +19,7 @@ void catdist1_init(struct catdist1 *c1, const struct catdist *parent);
 void catdist1_deinit(struct catdist1 *c1);
 
 static inline size_t catdist1_ncat(const struct catdist1 *c1);
+static inline const struct catdist *catdist1_parent(const struct catdist1 *c1);
 
 double catdist1_prob(const struct catdist1 *c1, size_t i);
 double catdist1_lprob(const struct catdist1 *c1, size_t i);
@@ -53,6 +54,11 @@ double catdist1_cached_dpsi(const struct catdist1 *c1);
 size_t catdist1_ncat(const struct catdist1 *c1)
 {
 	return catdist_ncat(c1->parent);
+}
+
+const struct catdist *catdist1_parent(const struct catdist1 *c1)
+{
+	return c1->parent;
 }
 
 void catdist1_get_deta(const struct catdist1 *c1,
