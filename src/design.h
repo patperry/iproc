@@ -21,7 +21,7 @@ struct design {
 	size_t tvar_dim;
 	struct tvar **tvars;
 	size_t ntvar, ntvar_max;
-	struct vpattern pat_buf;
+	size_t *ind_buf;
 	
 	struct vpattern active;
 	double *dx;	// dX[t]

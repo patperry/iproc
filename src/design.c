@@ -70,8 +70,7 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->tvars = NULL;
 	d->ntvar = 0;
 	d->ntvar_max = 0;
-	d->pat_buf.indx = NULL;
-	d->pat_buf.nzmax = 0;
+	d->ind_buf = NULL;
 	
 	vpattern_init(&d->active);
 	d->dx = NULL;
@@ -104,7 +103,7 @@ void design_deinit(struct design *d)
 	free(d->observers);
 	free(d->dx);
 	vpattern_deinit(&d->active);
-	free(d->pat_buf.indx);
+	free(d->ind_buf);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	free2((void **)d->trait_vars, d->ntrait);
@@ -324,8 +323,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	design_grow_tvars(d, 1);
 	d->tvars[index] = tv;
 	d->tvar_dim += v->dim;
-	d->pat_buf.indx = xrealloc(d->pat_buf.indx, d->tvar_dim * sizeof(*d->pat_buf.indx));
-	d->pat_buf.nzmax = d->tvar_dim;
+	d->ind_buf = xrealloc(d->ind_buf, d->tvar_dim * sizeof(*d->ind_buf));
 		
 	return v;
 }
@@ -506,15 +504,13 @@ static void design_notify_update(struct design *d, const struct var *v,
 	
 	if (ind) {
 		for (iz = 0; iz < nz; iz++) {
-			d->pat_buf.indx[iz] = ind[iz] + index;
+			d->ind_buf[iz] = ind[iz] + index;
 		}
-		d->pat_buf.nz = nz;
 	} else {
 		assert(nz == v->dim);
 		for (iz = 0; iz < v->dim; iz++) {
-			d->pat_buf.indx[iz] = iz + index;
+			d->ind_buf[iz] = iz + index;
 		}
-		d->pat_buf.nz = v->dim;
 	}
 	
 	size_t io, no = d->nobs;
@@ -522,7 +518,7 @@ static void design_notify_update(struct design *d, const struct var *v,
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, i, delta, d->pat_buf.indx, d->pat_buf.nz);
+			obs->callbacks.update(obs->udata, d, i, delta, d->ind_buf, nz);
 		}
 	}
 }
