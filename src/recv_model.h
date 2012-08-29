@@ -26,7 +26,6 @@ struct recv_coefs {
 
 struct recv_model_cohort {
 	struct mlogit mlogit;
-	double *eta0;
 };
 
 struct recv_model_sender {
@@ -38,6 +37,7 @@ struct recv_model {
 	struct recv_coefs coefs;
 	struct recv_model_cohort *cohort_models;
 	struct recv_model_sender *sender_models;
+	size_t *ind_buf;
 };
 
 

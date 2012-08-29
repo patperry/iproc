@@ -59,12 +59,30 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
 	size_t isend = design2_cohort_rep(d, c);
+	size_t nrecv = design_count(r);
+	size_t dimr = design_dim(r);
+	size_t dimr0 = design_trait_dim(r);
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dim = dimr + dimd0;
+	const double *xr = design_traits(r);
+	const double *xd = design2_traits(d, isend);
 
-	design_traits_mul(1.0, r, coefs->recv.traits, 0.0, cm->eta0);
-	design2_traits_mul(1.0, d, isend, coefs->dyad.traits, 1.0, cm->eta0);
+	double *x = xcalloc(nrecv * dim, sizeof(*x));
 
-	mlogit_set_all_offset(&cm->mlogit, cm->eta0);
-	mlogit_set_coefs(&cm->mlogit, coefs->recv.tvars);
+	if (dimr0 > 0) {
+		assert(dim > 0);
+		lapack_dlacpy(LA_COPY_ALL, dimr0, nrecv, xr, dimr0, x, dim);
+	}
+
+	if (dimd0 > 0) {
+		assert(dim > 0);
+		lapack_dlacpy(LA_COPY_ALL, dimd0, nrecv, xd, dimd0, x + dimr, dim);
+	}
+
+	mlogit_set_all_offset(&cm->mlogit, NULL);
+	mlogit_set_coefs(&cm->mlogit, coefs->all);
+	mlogit_set_all_x(&cm->mlogit, x);
+	free(x);
 	//mlogit_check(&cm->mlogit);
 }
 
@@ -81,18 +99,19 @@ static void cohort_init(struct recv_model_cohort *cm,
 			const struct recv_coefs *coefs)
 {
 	const struct design *r = frame_recv_design(f);
+	const struct design2 *d = frame_dyad_design(f);
 	size_t nrecv = frame_recv_count(f);
-	size_t dim = design_tvar_dim(r);
+	size_t dimr = design_dim(r);
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dim = dimr + dimd0;
 
 	mlogit_init(&cm->mlogit, nrecv, dim);
-	cm->eta0 = xmalloc(nrecv * sizeof(double));
 	cohort_set(cm, c, f, coefs);
 }
 
 
 static void cohort_deinit(struct recv_model_cohort *cm)
 {
-	free(cm->eta0);
 	mlogit_deinit(&cm->mlogit);
 }
 
@@ -169,12 +188,27 @@ static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
 }
 
 
-static void recv_model_recv_update(void *udata, struct design *d,
+static void recv_model_recv_update(void *udata, struct design *r,
 				   size_t jrecv, const double *delta,
 				   const size_t *ind, size_t nz)
 {
 	struct recv_model *m = udata;
 	assert(jrecv < recv_model_send_count(m));
+	assert(nz <= design_tvar_dim(r));
+
+	size_t off = design_trait_dim(r);
+	size_t iz;
+
+	if (ind) {
+		for (iz = 0; iz < nz; iz++) {
+			m->ind_buf[iz] = off + ind[iz];
+		}
+	} else {
+		assert(nz == design_tvar_dim(r));
+		for (iz = 0; iz < nz; iz++) {
+			m->ind_buf[iz] = off + iz;
+		}
+	}
 
 	struct recv_model_cohort *cms = m->cohort_models;
 
@@ -182,10 +216,10 @@ static void recv_model_recv_update(void *udata, struct design *d,
 
 	for (ic = 0; ic < nc; ic++) {
 		struct recv_model_cohort *cm = &cms[ic];
-		mlogit_inc_x(&cm->mlogit, jrecv, ind, delta, nz);
+		mlogit_inc_x(&cm->mlogit, jrecv, m->ind_buf, delta, nz);
 	}
 	//mlogitaug_check(&sm->mlogitaug);
-	(void)d;
+	(void)r;
 }
 
 
@@ -268,6 +302,8 @@ void recv_model_init(struct recv_model *model,
 	}
 	model->sender_models = sms;
 
+	model->ind_buf = xmalloc(coefs->dim * sizeof(*model->ind_buf));
+
 	design_add_observer(r, model, &RECV_CALLBACKS);
 	design2_add_observer(d, model, &DYAD_CALLBACKS);
 }
@@ -283,6 +319,8 @@ void recv_model_deinit(struct recv_model *model)
 
 	design2_remove_observer(d, model);
 	design_remove_observer(r, model);
+
+	free(model->ind_buf);
 
 	struct recv_model_sender *sms = model->sender_models;
 	size_t isend, nsend = recv_model_send_count(model);
