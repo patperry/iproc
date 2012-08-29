@@ -154,8 +154,7 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->tvars = NULL;
 	d->ntvar = 0;
 	d->ntvar_max = 0;
-	d->pat_buf.indx = NULL;
-	d->pat_buf.nzmax = 0;
+	d->ind_buf = NULL;
 	
 	d->ir = xcalloc(count1 + 1, sizeof(*d->ir));
 	d->jc = NULL;
@@ -209,7 +208,7 @@ void design2_deinit(struct design2 *d)
 	free(d->dx);
 	free(d->jc);
 	free(d->ir);
-	free(d->pat_buf.indx);
+	free(d->ind_buf);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
 	kvars_deinit(d->kvars, d->nkvar);
@@ -459,8 +458,7 @@ const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const s
 	design2_grow_tvars(d, 1);
 	d->tvars[index] = tv;
 	d->tvar_dim += v->dim;
-	d->pat_buf.indx = xrealloc(d->pat_buf.indx, d->tvar_dim * sizeof(*d->pat_buf.indx));
-	d->pat_buf.nzmax = d->tvar_dim;
+	d->ind_buf = xrealloc(d->ind_buf, d->tvar_dim * sizeof(*d->ind_buf));
 	
 	return v;
 }
@@ -667,15 +665,13 @@ static void design2_notify_update(struct design2 *d, const struct var2 *v,
 	
 	if (ind) {
 		for (iz = 0; iz < nz; iz++) {
-			d->pat_buf.indx[iz] = ind[iz] + index;
+			d->ind_buf[iz] = ind[iz] + index;
 		}
-		d->pat_buf.nz = nz;
 	} else {
 		assert(nz == v->dim);
 		for (iz = 0; iz < v->dim; iz++) {
-			d->pat_buf.indx[iz] = iz + index;
+			d->ind_buf[iz] = iz + index;
 		}
-		d->pat_buf.nz = v->dim;
 	}
 	
 	size_t io, no = d->nobs;
@@ -683,7 +679,7 @@ static void design2_notify_update(struct design2 *d, const struct var2 *v,
 	for (io = 0; io < no; io++) {
 		obs = &d->observers[io];
 		if (obs->callbacks.update) {
-			obs->callbacks.update(obs->udata, d, i, j, delta, d->pat_buf.indx, d->pat_buf.nz);
+			obs->callbacks.update(obs->udata, d, i, j, delta, d->ind_buf, nz);
 		}
 	}
 }
