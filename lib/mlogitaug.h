@@ -21,6 +21,7 @@ struct mlogitaug {
 	size_t nz, nzmax;
 
 	double *mean;
+	double *cov;
 	double *xbuf;
 
 	double *base_mean;
@@ -55,7 +56,7 @@ double *mlogitaug_mean(const struct mlogitaug *m1);
 double *mlogitaug_base_mean(const struct mlogitaug *m1);
 
 //
-// double *mlogitaug_cov(const struct mlogitaug *m1, double *scale);
+double *mlogitaug_cov(const struct mlogitaug *m1, double *scale);
 // double *mlogitaug_base_cov(const struct mlogitaug *m1, double *scale);
 // double *mlogitaug_cross_cov(const struct mlogitaug *m1, double *scale);
 
@@ -64,7 +65,7 @@ void mlogitaug_update_cache(struct mlogitaug *m1);
 struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1);
 double *mlogitaug_cached_mean(const struct mlogitaug *m1);
 double *mlogitaug_cached_base_mean(const struct mlogitaug *m1);
-
+double *mlogitaug_cached_cov(const struct mlogitaug *m1, double *scale);
 
 
 int mlogitaug_check(const struct mlogitaug *m1);
