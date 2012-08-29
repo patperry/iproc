@@ -249,7 +249,7 @@ static void test_mean()
 
 			dist = recv_model_dist(&model, msg->from);
 			for (i = 0; i < nrecv; i++) {
-				probs[i] = catdist1_prob(dist, i);
+				probs[i] = catdist1_cached_prob(dist, i);
 			}
 			design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
 			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
