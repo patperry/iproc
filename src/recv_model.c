@@ -393,8 +393,16 @@ size_t recv_model_dim(const struct recv_model *m)
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend)
 {
 	assert(isend < recv_model_send_count(m));
-	const struct recv_model_sender *sm = &m->sender_models[isend];
-	struct catdist1 *dist = mlogitaug_dist(&sm->mlogitaug);
-
+	const struct mlogitaug *mlogitaug = recv_model_mlogit(m, isend);
+	struct catdist1 *dist = mlogitaug_cached_dist(mlogitaug);
 	return dist;
+}
+
+struct mlogitaug *recv_model_mlogit(const struct recv_model *m, size_t isend)
+{
+	assert(isend < recv_model_send_count(m));
+	struct recv_model_sender *sm = &m->sender_models[isend];
+	struct mlogitaug *mlogitaug = &sm->mlogitaug;
+	mlogitaug_update_cache(mlogitaug);
+	return mlogitaug;
 }

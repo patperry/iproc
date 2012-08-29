@@ -62,6 +62,7 @@ size_t recv_model_dim(const struct recv_model *model);
 void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs);
 
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend);
+struct mlogitaug *recv_model_mlogit(const struct recv_model *m, size_t isend);
 
 
 #endif /* RECV_MODEL_H */
