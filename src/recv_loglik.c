@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include "xalloc.h"
 #include "recv_loglik.h"
 
@@ -13,7 +14,7 @@ static void cohort_add(struct recv_loglik_cohort *cll);
 
 static void sender_init(struct recv_loglik_sender *sll);
 static void sender_deinit(struct recv_loglik_sender *sll);
-void sender_add(struct recv_loglik_sender *sll, const struct catdist1 *dist,
+void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
 		const size_t *jrecv, size_t nto, struct recv_loglik_update *last);
 static void sender_clear(struct recv_loglik_sender *sll);
 
@@ -53,22 +54,33 @@ void sender_clear(struct recv_loglik_sender *sll)
 }
 
 
-void sender_add(struct recv_loglik_sender *sll, const struct catdist1 *dist,
+void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
 		const size_t *jrecv, size_t nto, struct recv_loglik_update *last)
 {
+	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
+	size_t dim = mlogitaug_dim(m1);
+
+	const struct catdist1 *dist = mlogitaug_cached_dist(m1);
+	const double *base_mean = mlogitaug_cached_base_mean(m1);
+	const double *mean = mlogitaug_cached_mean(m1);
+
 	double dev = 0.0;
 	size_t count = nto;
 	size_t ito;
 
 	for (ito = 0; ito < nto; ito++) {
-		double lp = catdist1_lprob(dist, jrecv[ito]);
+		double lp = catdist1_cached_lprob(dist, jrecv[ito]);
 		dev += -2 * lp;
 	}
 
-	sll->count += count;
-	sll->dev += dev;
 	last->count = count;
 	last->dev = dev;
+
+	blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
+	blas_dcopy(dim, mean, 1, last->mean.all + base_dim, 1);
+
+	sll->count += last->count;
+	sll->dev += last->dev;
 }
 
 
@@ -93,6 +105,8 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 	}
 	ll->senders = senders;
 
+	recv_coefs_init(&ll->last.mean, recv_model_frame(m));
+
 	recv_loglik_clear(ll);
 }
 
@@ -100,6 +114,8 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 void recv_loglik_deinit(struct recv_loglik *ll)
 {
 	assert(ll);
+
+	recv_coefs_deinit(&ll->last.mean);
 
 	struct recv_loglik_sender *senders = ll->senders;
 	size_t is, ns = recv_model_send_count(ll->model);
@@ -137,6 +153,7 @@ void recv_loglik_clear(struct recv_loglik *ll)
 
 	ll->last.count = 0;
 	ll->last.dev = 0;
+	memset(ll->last.mean.all, 0, ll->last.mean.dim * sizeof(*ll->last.mean.all));
 }
 
 
@@ -144,9 +161,9 @@ void recv_loglik_add(struct recv_loglik *ll,
 		     const struct frame *f, const struct message *msg)
 {
 	size_t isend = msg->from;
-	const struct catdist1 *dist = recv_model_dist(ll->model, isend);
+	const struct mlogitaug *m1 = recv_model_mlogit(ll->model, isend);
 	size_t c = recv_model_cohort(ll->model, isend);
-	sender_add(&ll->senders[isend], dist, msg->to, msg->nto, &ll->last);
+	sender_add(&ll->senders[isend], m1, msg->to, msg->nto, &ll->last);
 	cohort_add(&ll->cohorts[c]);
 }
 
@@ -223,5 +240,8 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	assert(ll->last.mean.dim == y->dim);
+	double scale = ll->last.count * alpha;
+	blas_daxpy(ll->last.mean.dim, scale, ll->last.mean.all, 1, y->all, 1);
 }
 

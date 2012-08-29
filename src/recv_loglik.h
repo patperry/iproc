@@ -17,6 +17,7 @@ struct recv_loglik_sender {
 struct recv_loglik_update {
 	size_t count;
 	double dev;
+	struct recv_coefs mean;
 };
 
 struct recv_loglik {
