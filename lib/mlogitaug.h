@@ -19,6 +19,10 @@ struct mlogitaug {
 	double *x;
 	double *deta;
 	size_t nz, nzmax;
+
+	double *mean;
+	double *base_mean;
+	double *xbuf;
 };
 
 
@@ -42,8 +46,9 @@ void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 void mlogitaug_set_x(struct mlogitaug *m1, size_t i, const double *x);
 void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x, size_t nz);
 
-// double *mlogitaug_mean(const struct mlogitaug *m1);
-// double *mlogitaug_base_mean(const struct mlogitaug *m1);
+double *mlogitaug_mean(const struct mlogitaug *m1);
+double *mlogitaug_base_mean(const struct mlogitaug *m1);
+
 //
 // double *mlogitaug_cov(const struct mlogitaug *m1, double *scale);
 // double *mlogitaug_base_cov(const struct mlogitaug *m1, double *scale);

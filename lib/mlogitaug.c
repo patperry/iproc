@@ -19,7 +19,8 @@
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
-static void recompute(struct mlogitaug *m1);
+static void recompute_dist(struct mlogitaug *m1);
+static void recompute_mean(struct mlogitaug *m1);
 static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
 static void grow_ind_array(struct mlogitaug *m1, size_t delta);
 static size_t find_ind(const struct mlogitaug *m1, size_t i);
@@ -41,6 +42,9 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->deta = NULL;
 	m1->nz = 0;
 	m1->nzmax = 0;
+	m1->mean = xmalloc(dim * sizeof(*m1->mean));
+	m1->base_mean = xmalloc(mlogit_dim(m1->base) * sizeof(*m1->base_mean));
+	m1->xbuf = xmalloc(dim * sizeof(*m1->xbuf));
 
 	clear(m1);
 }
@@ -57,6 +61,9 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
+	free(m1->xbuf);
+	free(m1->base_mean);
+	free(m1->mean);
 	free(m1->deta);
 	free(m1->x);
 	free(m1->offset);
@@ -194,7 +201,7 @@ void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x,
 }
 
 
-void recompute(struct mlogitaug *m1)
+void recompute_dist(struct mlogitaug *m1)
 {
 	size_t nz = m1->nz;
 	size_t dim = m1->dim;
@@ -213,9 +220,55 @@ void recompute(struct mlogitaug *m1)
 
 struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 {
-	recompute((struct mlogitaug *)m1);
+	recompute_dist((struct mlogitaug *)m1);
 	return &((struct mlogitaug *)m1)->dist;
 }
+
+
+static void recompute_mean(struct mlogitaug *m1)
+{
+	recompute_dist(m1);
+
+	const struct catdist1 *dist;
+	size_t dim = m1->dim;
+	double *mean = m1->mean;
+	double *diff = m1->xbuf;
+	size_t iz, nz = m1->nz;
+	double w, wtot = 0.0;
+
+	if (nz == 0) {
+		memset(mean, 0, dim * sizeof(*mean));
+		return;
+	}
+
+	blas_dcopy(dim, m1->x, 1, mean, 1);
+	wtot += catdist1_cached_prob(dist, m1->ind[0]);
+
+	for (iz = 1; iz < nz; iz++) {
+		blas_dcopy(dim, m1->x + iz * dim, 1, diff, 1);
+		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
+
+		w = catdist1_cached_prob(dist, m1->ind[iz]);
+		wtot += w;
+
+		blas_daxpy(dim, w/wtot, diff, 1, mean, 1);
+	}
+
+	blas_dscal(dim, wtot, mean, 1);
+}
+
+
+double *mlogitaug_mean(const struct mlogitaug *m1)
+{
+	recompute_mean((struct mlogitaug *)m1);
+	return m1->mean;
+}
+
+double *mlogitaug_base_mean(const struct mlogitaug *m1)
+{
+	return m1->base_mean;
+}
+
 
 
 int mlogitaug_check(const struct mlogitaug *m1)
