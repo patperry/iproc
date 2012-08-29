@@ -52,7 +52,7 @@ void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct re
 size_t recv_loglik_last_count(const struct recv_loglik *ll);
 double recv_loglik_last_dev(const struct recv_loglik *ll);
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
-//void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
+void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y);
 
 //void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll,
 //				double *y);

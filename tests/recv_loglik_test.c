@@ -289,6 +289,82 @@ out:
 }
 
 
+static void test_score()
+{
+	struct messages_iter it;
+	const struct message *msg = NULL;
+	double t;
+	size_t i, itie, ntie, nmsg;
+	struct recv_coefs last_score0, last_score1;
+	struct recv_coefs score0, score1;
+
+	recv_coefs_init(&score0, &frame);
+	recv_coefs_init(&score1, &frame);
+	recv_coefs_init(&last_score0, &frame);
+	recv_coefs_init(&last_score1, &frame);
+	size_t dim = score0.dim;
+
+	const struct design *r = frame_recv_design(&frame);
+	const struct design2 *d = frame_dyad_design(&frame);
+
+	nmsg = 0;
+
+	memset(score0.all, 0, dim * sizeof(*score0.all));
+
+	MESSAGES_FOREACH(it, &messages) {
+		printf("."); fflush(stdout);
+		t = MESSAGES_TIME(it);
+
+		frame_advance(&frame, t);
+
+		ntie = MESSAGES_COUNT(it);
+		for (itie = 0; itie < ntie; itie ++) {
+			msg = MESSAGES_VAL(it, itie);
+			frame_add(&frame, msg);
+			recv_loglik_add(&loglik, &frame, msg);
+			nmsg += msg->nto;
+
+			if (nmsg > 1000)
+				goto out;
+
+			memset(last_score0.all, 0, dim * sizeof(*last_score0.all));
+			for (i = 0; i < msg->nto; i++) {
+				design_axpy(1.0, r, msg->to[i], &last_score0.recv);
+				design2_axpy(1.0, d, msg->from, msg->to[i], &last_score0.dyad);
+			}
+			recv_loglik_axpy_last_mean(-1.0, &loglik, &last_score0);
+
+			memset(last_score1.all, 0, dim * sizeof(*last_score1.all));
+			recv_loglik_axpy_last_score(1.0, &loglik, &last_score1);
+
+			for (i = 0; i < dim; i++) {
+				assert_real_approx(last_score0.all[i], last_score1.all[i]);
+			}
+
+			/*
+			blas_daxpy(dim, 1.0, last_score0.all, 1, score0.all, 1);
+
+			memset(score1.all, 0, dim * sizeof(*score1.all));
+			recv_loglik_axpy_score(1.0, &loglik, &score1);
+
+			for (i = 0; i < dim; i++) {
+				assert_real_approx(score0.all[i], score1.all[i]);
+			}
+
+			blas_dcopy(dim, score1.all, 1, score0.all, 1);
+			 */
+		}
+	}
+
+	recv_coefs_deinit(&last_score1);
+	recv_coefs_deinit(&last_score0);
+	recv_coefs_deinit(&score1);
+	recv_coefs_deinit(&score0);
+out:
+	return;
+}
+
+
 
 /*
 
@@ -513,8 +589,8 @@ int main()
 		unit_test_setup_teardown(test_dev, hard_setup, teardown),
 		unit_test_setup_teardown(test_mean, basic_setup, teardown),
 		unit_test_setup_teardown(test_mean, hard_setup, teardown),
-		//unit_test_setup_teardown(test_score, basic_setup, teardown),
-		//unit_test_setup_teardown(test_score, hard_setup, teardown),
+		unit_test_setup_teardown(test_score, basic_setup, teardown),
+		unit_test_setup_teardown(test_score, hard_setup, teardown),
 		//unit_test_setup_teardown(test_imat, basic_setup, teardown),
 		//unit_test_setup_teardown(test_imat, hard_setup, teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),

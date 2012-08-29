@@ -266,3 +266,6 @@ void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, stru
 	blas_daxpy(ll->last.mean.dim, scale, ll->last.mean.all, 1, y->all, 1);
 }
 
+void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+{
+}
