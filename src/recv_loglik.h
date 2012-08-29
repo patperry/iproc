@@ -12,6 +12,7 @@ struct recv_loglik_cohort {
 struct recv_loglik_sender {
 	size_t count;
 	double dev;
+	struct recv_coefs mean;
 };
 
 struct recv_loglik_update {

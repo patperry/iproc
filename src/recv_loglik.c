@@ -12,10 +12,10 @@ static void cohort_deinit(struct recv_loglik_cohort *cll);
 static void cohort_clear(struct recv_loglik_cohort *cll);
 static void cohort_add(struct recv_loglik_cohort *cll);
 
-static void sender_init(struct recv_loglik_sender *sll);
+static void sender_init(struct recv_loglik_sender *sll, const struct frame *f);
 static void sender_deinit(struct recv_loglik_sender *sll);
-void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
-		const size_t *jrecv, size_t nto, struct recv_loglik_update *last);
+static void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
+		       const size_t *jrecv, size_t nto, struct recv_loglik_update *last);
 static void sender_clear(struct recv_loglik_sender *sll);
 
 
@@ -38,19 +38,23 @@ void cohort_add(struct recv_loglik_cohort *cll)
 
 
 
-void sender_init(struct recv_loglik_sender *sll)
+void sender_init(struct recv_loglik_sender *sll, const struct frame *f)
 {
+	recv_coefs_init(&sll->mean, f);
 	sender_clear(sll);
 }
 
 void sender_deinit(struct recv_loglik_sender *sll)
 {
+	recv_coefs_deinit(&sll->mean);
 }
 
 void sender_clear(struct recv_loglik_sender *sll)
 {
+	size_t dim = sll->mean.dim;
 	sll->count = 0;
 	sll->dev = 0;
+	memset(sll->mean.all, 0, dim * sizeof(*sll->mean.all));
 }
 
 
@@ -58,7 +62,8 @@ void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
 		const size_t *jrecv, size_t nto, struct recv_loglik_update *last)
 {
 	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
-	size_t dim = mlogitaug_dim(m1);
+	size_t dim1 = mlogitaug_dim(m1);
+	size_t dim = base_dim + dim1;
 
 	const struct catdist1 *dist = mlogitaug_cached_dist(m1);
 	const double *base_mean = mlogitaug_cached_base_mean(m1);
@@ -77,10 +82,11 @@ void sender_add(struct recv_loglik_sender *sll, const struct mlogitaug *m1,
 	last->dev = dev;
 
 	blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
-	blas_dcopy(dim, mean, 1, last->mean.all + base_dim, 1);
+	blas_dcopy(dim1, mean, 1, last->mean.all + base_dim, 1);
 
 	sll->count += last->count;
 	sll->dev += last->dev;
+	blas_daxpy(dim, last->count, last->mean.all, 1, sll->mean.all, 1);
 }
 
 
@@ -88,6 +94,8 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 {
 	assert(ll);
 	assert(m);
+
+	const struct frame *f = recv_model_frame(m);
 
 	ll->model = m;
 
@@ -101,7 +109,7 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 	size_t is, ns = recv_model_send_count(m);
 	struct recv_loglik_sender *senders = xcalloc(ns, sizeof(*senders));
 	for (is = 0; is < ns; is++) {
-		sender_init(&senders[is]);
+		sender_init(&senders[is], f);
 	}
 	ll->senders = senders;
 
@@ -229,6 +237,15 @@ double recv_loglik_dev(const struct recv_loglik *ll)
 
 void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	const struct recv_model *m = ll->model;
+	const struct recv_loglik_sender *sll;
+	size_t dim = recv_model_dim(m);
+
+	size_t is, ns = recv_model_send_count(m);
+	for (is = 0; is < ns; is++) {
+		sll = &ll->senders[is];
+		blas_daxpy(dim, alpha, sll->mean.all, 1, y->all, 1);
+	}
 }
 
 size_t recv_loglik_last_count(const struct recv_loglik *ll)
