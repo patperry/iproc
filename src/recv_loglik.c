@@ -221,4 +221,7 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 	return ll->last.dev;
 }
 
+void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+{
+}
 

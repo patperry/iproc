@@ -213,99 +213,65 @@ out:
 }
 
 
-/*
-
 static void test_mean()
 {
-	double *probs, *mean0, *mean1, *avg_mean1, *diff;
 	struct messages_iter it;
 	const struct message *msg = NULL;
+	const struct catdist1 *dist = NULL;
 	double t;
-	size_t isend;
-	size_t itie, ntie;
-	size_t index, dim = design_dim(design);
-	size_t nmsg;
-	
-	probs = xmalloc(design_count(design) * sizeof(double));
-	mean0 = xmalloc(dim * sizeof(double));
-	mean1 = xmalloc(dim * sizeof(double));
-	struct dmatrix avg_mean0 = { xcalloc(design_dim(design) * ncohort, sizeof(double)),
-				     MAX(1, design_dim(design)) };
-	avg_mean1 = xmalloc(dim * sizeof(double));
-	diff = xmalloc(dim * sizeof(double));
-	
+	size_t i, itie, ntie, nmsg;
+	double probs[nrecv];
+	struct recv_coefs last_mean0, last_mean1;
+
+	recv_coefs_init(&last_mean0, &frame);
+	recv_coefs_init(&last_mean1, &frame);
+
+	const struct design *r = frame_recv_design(&frame);
+	const struct design2 *d = frame_dyad_design(&frame);
+
 	nmsg = 0;
-	
+
 	MESSAGES_FOREACH(it, &messages) {
+		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 
-		frame_advance(&frame, t);			
-		
+		frame_advance(&frame, t);
+
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);			
-			recv_loglik_add(&recv_loglik, &frame, msg);
-
+			frame_add(&frame, msg);
+			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
-		
+
 			if (nmsg > 1000)
 				goto out;
 
-			isend = msg->from;
-			size_t c = recv_model_cohort(&model, isend);
-			size_t n = recv_loglik_count(&recv_loglik, c);			
-			
-			memset(probs, 0, design_count(design) * sizeof(double));
-			recv_model_axpy_probs(1.0, &model, isend, probs);
-			
-			frame_recv_mul(msg->nto, BLAS_TRANS, &frame, isend, probs,
-				       0.0, mean0);
-			
-			memset(mean1, 0, dim * sizeof(double));
-			recv_loglik_axpy_last_mean(1.0, &recv_loglik, mean1);
-			
-			for (index = 0; index < dim; index++) {
-				double x0 = mean0[index];
-				double x1 = mean1[index];	
-				assert(double_eqrel(x0, x1) >= 40);
-				assert_in_range(double_eqrel(x0, x1), 40, DBL_MANT_DIG);
+			dist = recv_model_dist(&model, msg->from);
+			for (i = 0; i < nrecv; i++) {
+				probs[i] = catdist1_prob(dist, i);
 			}
-			
-			double *avg_mean0_c = MATRIX_COL(&avg_mean0, c);
-			blas_dcopy(dim, avg_mean0_c, 1, diff, 1);
-			blas_daxpy(dim, -1.0/msg->nto, mean0, 1, diff, 1);
-			blas_daxpy(dim, -((double)msg->nto) / n, diff, 1, avg_mean0_c, 1);
-			
-			memset(avg_mean1, 0, dim * sizeof(double));
-			recv_loglik_axpy_avg_mean(1.0, &recv_loglik, c, avg_mean1);
+			design_tmul(msg->nto, r, probs, 0.0, &coefs.recv);
+			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &coefs.dyad);
 
-			for (index = 0; index < dim; index++) {
-				double x0 = avg_mean0_c[index];
-				double x1 = avg_mean1[index];
-				
-				if (fabs(x0) >= 5e-4) {
-					assert(double_eqrel(x0, x1) >= 47);
-					assert_in_range(double_eqrel(x0, x1), 47, DBL_MANT_DIG);
-					
-				} else {
-					assert(fabs(x0 - x1) < sqrt(DBL_EPSILON));
-					assert_true(fabs(x0 - x1) < sqrt(DBL_EPSILON));
-				}
+			memset(last_mean1.all, 0, last_mean1.dim * sizeof(*last_mean1.all));
+			recv_loglik_axpy_last_mean(1.0, &loglik, &last_mean1);
+
+			for (i = 0; i < coefs.dim; i++) {
+				assert_real_approx(last_mean0.all[i], last_mean1.all[i]);
 			}
-
-			blas_dcopy(dim, avg_mean1, 1, avg_mean0_c, 1);
 		}
 	}
+
+	recv_coefs_deinit(&last_mean1);
+	recv_coefs_deinit(&last_mean0);
 out:
-	free(diff);
-	free(avg_mean1);	
-	free(avg_mean0.data);
-	free(mean0);
-	free(mean1);	
-	free(probs);	
+	return;
 }
 
+
+
+/*
 
 static void test_score()
 {
@@ -526,8 +492,8 @@ int main()
 		unit_test_setup_teardown(test_count, hard_setup, teardown),
 		unit_test_setup_teardown(test_dev, basic_setup, teardown),
 		unit_test_setup_teardown(test_dev, hard_setup, teardown),
-		//unit_test_setup_teardown(test_mean, basic_setup, teardown),
-		//unit_test_setup_teardown(test_mean, hard_setup, teardown),
+		unit_test_setup_teardown(test_mean, basic_setup, teardown),
+		unit_test_setup_teardown(test_mean, hard_setup, teardown),
 		//unit_test_setup_teardown(test_score, basic_setup, teardown),
 		//unit_test_setup_teardown(test_score, hard_setup, teardown),
 		//unit_test_setup_teardown(test_imat, basic_setup, teardown),
