@@ -251,13 +251,13 @@ static void test_mean()
 			for (i = 0; i < nrecv; i++) {
 				probs[i] = catdist1_prob(dist, i);
 			}
-			design_tmul(msg->nto, r, probs, 0.0, &coefs.recv);
-			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &coefs.dyad);
+			design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
+			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
 
 			memset(last_mean1.all, 0, last_mean1.dim * sizeof(*last_mean1.all));
 			recv_loglik_axpy_last_mean(1.0, &loglik, &last_mean1);
 
-			for (i = 0; i < coefs.dim; i++) {
+			for (i = 0; i < last_mean0.dim; i++) {
 				assert_real_approx(last_mean0.all[i], last_mean1.all[i]);
 			}
 		}
