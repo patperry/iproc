@@ -19,6 +19,7 @@ struct recv_loglik_update {
 	size_t count;
 	double dev;
 	struct recv_coefs mean;
+	struct recv_coefs score;
 };
 
 struct recv_loglik {
