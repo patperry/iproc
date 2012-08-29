@@ -222,14 +222,20 @@ static void test_mean()
 	size_t i, itie, ntie, nmsg;
 	double probs[nrecv];
 	struct recv_coefs last_mean0, last_mean1;
+	struct recv_coefs mean0, mean1;
 
+	recv_coefs_init(&mean0, &frame);
+	recv_coefs_init(&mean1, &frame);
 	recv_coefs_init(&last_mean0, &frame);
 	recv_coefs_init(&last_mean1, &frame);
+	size_t dim = mean0.dim;
 
 	const struct design *r = frame_recv_design(&frame);
 	const struct design2 *d = frame_dyad_design(&frame);
 
 	nmsg = 0;
+
+	memset(mean0.all, 0, dim * sizeof(*mean0.all));
 
 	MESSAGES_FOREACH(it, &messages) {
 		printf("."); fflush(stdout);
@@ -254,17 +260,30 @@ static void test_mean()
 			design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
 			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
 
-			memset(last_mean1.all, 0, last_mean1.dim * sizeof(*last_mean1.all));
+			memset(last_mean1.all, 0, dim * sizeof(*last_mean1.all));
 			recv_loglik_axpy_last_mean(1.0, &loglik, &last_mean1);
 
-			for (i = 0; i < last_mean0.dim; i++) {
+			for (i = 0; i < dim; i++) {
 				assert_real_approx(last_mean0.all[i], last_mean1.all[i]);
 			}
+
+			blas_daxpy(dim, 1.0, last_mean0.all, 1, mean0.all, 1);
+
+			memset(mean1.all, 0, dim * sizeof(*mean1.all));
+			recv_loglik_axpy_mean(1.0, &loglik, &mean1);
+
+			for (i = 0; i < dim; i++) {
+				assert_real_approx(mean0.all[i], mean1.all[i]);
+			}
+
+			blas_dcopy(dim, mean1.all, 1, mean0.all, 1);
 		}
 	}
 
 	recv_coefs_deinit(&last_mean1);
 	recv_coefs_deinit(&last_mean0);
+	recv_coefs_deinit(&mean1);
+	recv_coefs_deinit(&mean0);
 out:
 	return;
 }

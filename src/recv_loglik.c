@@ -227,6 +227,10 @@ double recv_loglik_dev(const struct recv_loglik *ll)
 }
 
 
+void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+{
+}
+
 size_t recv_loglik_last_count(const struct recv_loglik *ll)
 {
 	return ll->last.count;
