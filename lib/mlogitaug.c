@@ -302,7 +302,8 @@ void recompute_base_mean(struct mlogitaug *m1)
 		blas_daxpy(dim, dw, diff, 1, dmean, 1);
 	}
 
-	blas_daxpy(dim, 1.0, diff, 1, mean, 1);
+	blas_dcopy(dim, mean0, 1, mean, 1);
+	blas_daxpy(dim, 1.0, dmean, 1, mean, 1);
 }
 
 
