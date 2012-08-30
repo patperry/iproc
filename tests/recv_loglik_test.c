@@ -404,7 +404,7 @@ static void test_imat()
 
 			/* compute mean */
 			memset(mean.all, 0, dim * sizeof(double));
-			recv_loglik_axpy_last_mean(1.0, &loglik, &mean);
+			recv_loglik_axpy_last_mean(1.0 / (msg->nto), &loglik, &mean);
 
 			/* compute last_cov0 */
 			dist = recv_model_dist(&model, msg->from);
