@@ -302,7 +302,7 @@ void recv_model_init(struct recv_model *model,
 	}
 	model->sender_models = sms;
 
-	model->ind_buf = xmalloc(coefs->dim * sizeof(*model->ind_buf));
+	model->ind_buf = xmalloc(model->coefs.dim * sizeof(*model->ind_buf));
 
 	design_add_observer(r, model, &RECV_CALLBACKS);
 	design2_add_observer(d, model, &DYAD_CALLBACKS);
@@ -405,4 +405,28 @@ struct mlogitaug *recv_model_mlogit(const struct recv_model *m, size_t isend)
 	struct mlogitaug *mlogitaug = &sm->mlogitaug;
 	mlogitaug_update_cache(mlogitaug);
 	return mlogitaug;
+}
+
+void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs)
+{
+	const struct frame *f = recv_model_frame(m);
+	size_t dim = recv_model_dim(m);
+
+	if (coefs) {
+		memcpy(m->coefs.all, coefs->all, dim * sizeof(*m->coefs.all));
+	} else {
+		memset(m->coefs.all, 0, dim * sizeof(*m->coefs.all));
+	}
+
+	struct recv_model_cohort *cms = m->cohort_models;
+	size_t ic, nc = recv_model_cohort_count(m);
+	for (ic = 0; ic < nc; ic++) {
+		cohort_set(&cms[ic], ic, f, &m->coefs);
+	}
+
+	struct recv_model_sender *sms = m->sender_models;
+	size_t is, ns = recv_model_send_count(m);
+	for (is = 0; is < ns; is++) {
+		sender_set(&sms[is], is, f, &m->coefs);
+	}
 }
