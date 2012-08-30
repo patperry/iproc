@@ -18,6 +18,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
+#include "testutil.h"
 #include "recv_model.h"
 
 
@@ -95,8 +96,9 @@ static void hard_setup()
 	design_add_traits(r, trait_names, traits, ntrait);
 	
 	struct design2 *d = frame_dyad_design(&frame);
+	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	
+
 	recv_coefs_init(&coefs, &frame);
 	
 	for (i = 0; i < coefs.dim; i++) {
@@ -128,8 +130,6 @@ static void test_probs()
 	probs = xmalloc(nrecv * sizeof(double));
 	logprobs = xmalloc(nrecv * sizeof(double));
 
-	size_t minprec = DBL_MANT_DIG;
-	
 	MESSAGES_FOREACH(it, &messages) {
 		// fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
@@ -164,27 +164,11 @@ static void test_probs()
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = logprobs[jrecv];
 				double lp1 = catdist1_cached_lprob(dist, jrecv);
-
-				if (fabs(lp0) >= 5e-4) {
-					//minprec = MIN(minprec, double_eqrel(lp0, lp1));
-					assert(double_eqrel(lp0, lp1) >= 36);
-					assert_in_range(double_eqrel(lp0, lp1), 36, DBL_MANT_DIG);
-
-				} else {
-					assert(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
-					assert_true(fabs(lp0 - lp1) < sqrt(DBL_EPSILON));
-				}
+				assert_real_approx(lp0, lp1);
 
 				double p0 = probs[jrecv];
 				double p1 = catdist1_cached_prob(dist, jrecv);
-
-				if (fabs(p0) >= 5e-4) {
-					minprec = MIN(minprec, (size_t)double_eqrel(p0, p1));
-					assert(double_eqrel(p0, p1) >= 38);
-					assert_in_range(double_eqrel(p0, p1), 38, DBL_MANT_DIG);
-				} else {
-					assert_true(fabs(p0 - p1) < sqrt(DBL_EPSILON));
-				}
+				assert_real_approx(p0, p1);
 			}
 		}
 		

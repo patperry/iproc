@@ -94,6 +94,7 @@ static void hard_setup()
 	design_add_traits(r, trait_names, traits, ntrait);
 
 	struct design2 *d = frame_dyad_design(&frame);
+	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	recv_coefs_init(&coefs, &frame);
 
