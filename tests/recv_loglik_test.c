@@ -372,6 +372,8 @@ static void test_imat()
 
 	double *cov0 = xmalloc(cov_dim * sizeof(double));
 	double *cov1 = xmalloc(cov_dim * sizeof(double));
+	double *scaled_cov0 = xmalloc(cov_dim * sizeof(double));
+	double *scaled_cov1 = xmalloc(cov_dim * sizeof(double));
 	double *last_cov0 = xmalloc(cov_dim * sizeof(double));
 	double *last_cov1 = xmalloc(cov_dim * sizeof(double));
 
@@ -425,17 +427,21 @@ static void test_imat()
 
 			assert_sym_approx(last_cov0, last_cov1, BLAS_UPPER, dim);
 
-			/*
+			/* compute cov0 */
 			blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
 
+			/* compute cov1 */
 			memset(cov1, 0, cov_dim * sizeof(double));
 			recv_loglik_axpy_imat(1.0, &loglik, cov1);
 
-			for (i = 0; i < cov_dim; i++) {
-				assert_real_approx(cov0[i], cov1[i]);
-			}
+			double n = (double)recv_loglik_count(&loglik);
+			memcpy(scaled_cov0, cov0, cov_dim * sizeof(double));
+			memcpy(scaled_cov1, cov1, cov_dim * sizeof(double));
+			blas_dscal(cov_dim, 1.0/n, scaled_cov0, 1);
+			blas_dscal(cov_dim, 1.0/n, scaled_cov1, 1);
+			assert_sym_approx(scaled_cov0, scaled_cov1, BLAS_UPPER, dim);
 
-			blas_dcopy(dim, cov1, 1, cov0, 1);*/
+			blas_dcopy(dim, cov1, 1, cov0, 1);
 		}
 	}
 out:
@@ -443,6 +449,8 @@ out:
 	recv_coefs_deinit(&mean);
 	free(last_cov1);
 	free(last_cov0);
+	free(scaled_cov1);
+	free(scaled_cov0);
 	free(cov1);
 	free(cov0);
 }

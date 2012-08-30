@@ -22,19 +22,22 @@ static void sender_clear(struct recv_loglik_sender *sll);
 
 void cohort_init(struct recv_loglik_cohort *cll)
 {
+	(void)cll;
 }
 
 void cohort_deinit(struct recv_loglik_cohort *cll)
 {
-
+	(void)cll;
 }
 
 void cohort_clear(struct recv_loglik_cohort *cll)
 {
+	(void)cll;
 }
 
 void cohort_add(struct recv_loglik_cohort *cll)
 {
+	(void)cll;
 }
 
 
@@ -43,11 +46,17 @@ void sender_init(struct recv_loglik_sender *sll, const struct frame *f)
 {
 	recv_coefs_init(&sll->mean, f);
 	recv_coefs_init(&sll->score, f);
+
+	size_t dim = sll->mean.dim;
+	size_t cov_dim = dim * (dim + 1) / 2;
+	sll->cov = xmalloc(cov_dim * sizeof(*sll->cov));
+
 	sender_clear(sll);
 }
 
 void sender_deinit(struct recv_loglik_sender *sll)
 {
+	free(sll->cov);
 	recv_coefs_deinit(&sll->score);
 	recv_coefs_deinit(&sll->mean);
 }
@@ -55,10 +64,12 @@ void sender_deinit(struct recv_loglik_sender *sll)
 void sender_clear(struct recv_loglik_sender *sll)
 {
 	size_t dim = sll->mean.dim;
+	size_t cov_dim = dim * (dim + 1) / 2;
 	sll->count = 0;
 	sll->dev = 0;
 	memset(sll->mean.all, 0, dim * sizeof(*sll->mean.all));
 	memset(sll->score.all, 0, dim * sizeof(*sll->score.all));
+	memset(sll->cov, 0, cov_dim * sizeof(*sll->cov));
 }
 
 
@@ -105,6 +116,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 
 	/* copy cov */
 	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
+	size_t cov_dim = dim * (dim + 1) / 2;
 	const double *base_cov = mlogitaug_cached_base_cov(m1);
 	const double *cross_cov = mlogitaug_cached_cross_cov(m1);
 	const double *aug_cov = mlogitaug_cached_cov(m1);
@@ -128,6 +140,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	sll->dev += last->dev;
 	blas_daxpy(dim, last->count, last->mean.all, 1, sll->mean.all, 1);
 	blas_daxpy(dim, 1.0, last->score.all, 1, sll->score.all, 1);
+	blas_daxpy(cov_dim, last->count, last->cov, 1, sll->cov, 1);
 }
 
 
@@ -308,6 +321,21 @@ void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct r
 	for (is = 0; is < ns; is++) {
 		sll = &ll->senders[is];
 		blas_daxpy(dim, alpha, sll->score.all, 1, y->all, 1);
+	}
+}
+
+
+void recv_loglik_axpy_imat(double alpha, const struct recv_loglik *ll, double *y)
+{
+	const struct recv_model *m = ll->model;
+	const struct recv_loglik_sender *sll;
+	size_t dim = recv_model_dim(m);
+	size_t cov_dim = dim * (dim + 1) / 2;
+
+	size_t is, ns = recv_model_send_count(m);
+	for (is = 0; is < ns; is++) {
+		sll = &ll->senders[is];
+		blas_daxpy(cov_dim, alpha, sll->cov, 1, y, 1);
 	}
 }
 
