@@ -70,9 +70,10 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
 
-	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
-	size_t dim1 = mlogitaug_dim(m1);
-	size_t dim = base_dim + dim1;
+	size_t i, base_dim = mlogit_dim(mlogitaug_base(m1));
+	size_t aug_dim = mlogitaug_dim(m1);
+	size_t dim = base_dim + aug_dim;
+
 
 	const struct catdist1 *dist = mlogitaug_cached_dist(m1);
 
@@ -97,10 +98,30 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	const double *base_mean = mlogitaug_cached_base_mean(m1);
 	const double *mean = mlogitaug_cached_mean(m1);
 	blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
-	blas_dcopy(dim1, mean, 1, last->mean.all + base_dim, 1);
+	blas_dcopy(aug_dim, mean, 1, last->mean.all + base_dim, 1);
 
 	/* compute score := observed - expected */
 	blas_daxpy(dim, -(double)nto, last->mean.all, 1, last->score.all, 1);
+
+	/* copy cov */
+	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
+	const double *base_cov = mlogitaug_cached_base_cov(m1);
+	const double *cross_cov = mlogitaug_cached_cross_cov(m1);
+	const double *aug_cov = mlogitaug_cached_cov(m1);
+	double *cov = last->cov;
+
+	assert(MLOGIT_COV_UPLO == BLAS_UPPER);
+	for (i = 0; i < base_dim; i++) {
+		size_t rowlen = base_dim - i;
+		memcpy(cov, base_cov, rowlen * sizeof(double));
+		cov += rowlen;
+		base_cov += rowlen;
+		
+		memcpy(cov, cross_cov, aug_dim * sizeof(double));
+		cov += aug_dim;
+		cross_cov += aug_dim;
+	}
+	memcpy(cov, aug_cov, aug_cov_dim * sizeof(double));
 
 	/* update totals */
 	sll->count += last->count;
@@ -136,6 +157,10 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 	recv_coefs_init(&ll->last.mean, recv_model_frame(m));
 	recv_coefs_init(&ll->last.score, recv_model_frame(m));
 
+	size_t dim = ll->last.mean.dim;
+	size_t cov_dim = dim * (dim + 1) / 2;
+	ll->last.cov = xmalloc(cov_dim * sizeof(*ll->last.cov));
+
 	recv_loglik_clear(ll);
 }
 
@@ -144,6 +169,7 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 {
 	assert(ll);
 
+	free(ll->last.cov);
 	recv_coefs_deinit(&ll->last.score);
 	recv_coefs_deinit(&ll->last.mean);
 
@@ -310,3 +336,10 @@ void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, str
 	blas_daxpy(ll->last.score.dim, alpha, ll->last.score.all, 1, y->all, 1);
 }
 
+void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, double *y)
+{
+	size_t dim = recv_model_dim(ll->model);
+	size_t cov_dim = dim * (dim + 1) / 2;
+	double scale = ll->last.count * alpha;
+	blas_daxpy(cov_dim, scale, ll->last.cov, 1, y, 1);
+}

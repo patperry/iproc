@@ -224,11 +224,11 @@ static void test_mean()
 	struct recv_coefs last_mean0, last_mean1;
 	struct recv_coefs mean0, mean1;
 
+	size_t dim = recv_model_dim(&model);
 	recv_coefs_init(&mean0, &frame);
 	recv_coefs_init(&mean1, &frame);
 	recv_coefs_init(&last_mean0, &frame);
 	recv_coefs_init(&last_mean1, &frame);
-	size_t dim = mean0.dim;
 
 	const struct design *r = frame_recv_design(&frame);
 	const struct design2 *d = frame_dyad_design(&frame);
@@ -279,13 +279,11 @@ static void test_mean()
 			blas_dcopy(dim, mean1.all, 1, mean0.all, 1);
 		}
 	}
-
+out:
 	recv_coefs_deinit(&last_mean1);
 	recv_coefs_deinit(&last_mean0);
 	recv_coefs_deinit(&mean1);
 	recv_coefs_deinit(&mean0);
-out:
-	return;
 }
 
 
@@ -298,11 +296,11 @@ static void test_score()
 	struct recv_coefs last_score0, last_score1;
 	struct recv_coefs score0, score1;
 
+	size_t dim = recv_model_dim(&model);
 	recv_coefs_init(&score0, &frame);
 	recv_coefs_init(&score1, &frame);
 	recv_coefs_init(&last_score0, &frame);
 	recv_coefs_init(&last_score1, &frame);
-	size_t dim = score0.dim;
 
 	const struct design *r = frame_recv_design(&frame);
 	const struct design2 *d = frame_dyad_design(&frame);
@@ -353,139 +351,105 @@ static void test_score()
 			blas_dcopy(dim, score1.all, 1, score0.all, 1);
 		}
 	}
-
+out:
 	recv_coefs_deinit(&last_score1);
 	recv_coefs_deinit(&last_score0);
 	recv_coefs_deinit(&score1);
 	recv_coefs_deinit(&score0);
-out:
-	return;
 }
 
-
-
-/*
 
 static void test_imat()
 {
-	double *mean, *y;
-
-	struct dmatrix *avg_imat0;
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
-	size_t isend, jrecv, nrecv = design_count(design);
-	size_t itie, ntie, c, n, nmsg;
-	size_t index1, index2, dim = design_dim(design);
-	size_t dim2 = dim * dim;
-	double one = 1.0;
-	struct vpattern pat_j;
-	pat_j.indx = &jrecv;
-	pat_j.nz = 1;
+	size_t i, itie, ntie, nmsg;
 
-	mean = xmalloc(dim * sizeof(double));
-	y = xmalloc(dim * sizeof(double));
-	struct dmatrix imat0 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
-	struct dmatrix imat1 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
-	struct dmatrix diff = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
-	struct dmatrix avg_imat1 = { xcalloc(dim2, sizeof(double)), MAX(1, dim) };	
+	size_t dim = recv_model_dim(&model);
+	size_t cov_dim = dim * (dim + 1) / 2;
+	struct recv_coefs mean, diff;
 
-	avg_imat0 = xcalloc(recv_model_cohort_count(&model), sizeof(*avg_imat0));
-	for (c = 0; c < recv_model_cohort_count(&model); c++) {
-		avg_imat0[c] = (struct dmatrix) { xcalloc(dim2, sizeof(double)), MAX(1, dim) };
-	}
-	
+	double *cov0 = xmalloc(cov_dim * sizeof(double));
+	double *cov1 = xmalloc(cov_dim * sizeof(double));
+	double *last_cov0 = xmalloc(cov_dim * sizeof(double));
+	double *last_cov1 = xmalloc(cov_dim * sizeof(double));
+
+	recv_coefs_init(&mean, &frame);
+	recv_coefs_init(&diff, &frame);
+
+	const struct design *r = frame_recv_design(&frame);
+	const struct design2 *d = frame_dyad_design(&frame);
+	const struct catdist1 *dist = NULL;
+
 	nmsg = 0;
-	
+
+	memset(cov0, 0, cov_dim * sizeof(*cov0));
+
 	MESSAGES_FOREACH(it, &messages) {
+		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
-		
-		frame_advance(&frame, t);			
-		
+
+		frame_advance(&frame, t);
+
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
-			printf("."); fflush(stdout);
 			msg = MESSAGES_VAL(it, itie);
 			frame_add(&frame, msg);
-			recv_loglik_add(&recv_loglik, &frame, msg);
+			recv_loglik_add(&loglik, &frame, msg);
+			nmsg += msg->nto;
 
-			nmsg++;
 			if (nmsg > 1000)
 				goto out;
 
-			isend = msg->from;
-			c = recv_model_cohort(&model, isend);
-			n = recv_loglik_count(&recv_loglik, c);			
-			
-			memset(mean, 0, dim * sizeof(double));
-			recv_loglik_axpy_last_mean(1.0 / msg->nto, &recv_loglik, mean);
-			matrix_dzero(dim, dim, &imat1);
-			recv_loglik_axpy_last_imat(1.0, &recv_loglik, &imat1);
-			
-			matrix_dzero(dim, dim, &imat0);
-			for (jrecv = 0; jrecv < nrecv; jrecv++) {
-				double p = recv_model_prob(&model, isend, jrecv);
-				blas_dcopy(dim, mean, 1, y, 1);
-			
-				
-				frame_recv_muls(1.0, BLAS_TRANS, &frame, isend, &one, &pat_j, -1.0, y);
-				blas_dger(dim, dim, p, y, 1, y, 1, &imat0);
-			}
-			matrix_dscal(dim, dim, msg->nto, &imat0);
-			
-			for (index2 = 0; index2 < dim; index2++) {
-				for (index1 = 0; index1 < dim; index1++) {				
-					double v0 = MATRIX_ITEM(&imat0, index1, index2);
-					double v1 = MATRIX_ITEM(&imat1, index1, index2);
-					//printf("v0: %.4f  v1: %.4f (%d)\n", v0, v1, double_eqrel(v0, v1));
-					assert(double_eqrel(v0, v1) >= DBL_MANT_DIG / 2
-					       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
-					if (abs(v0 - v1) >= sqrt(DBL_EPSILON)) {
-						assert_in_range(double_eqrel(v0, v1), 50, DBL_MANT_DIG);
-					}
-				}
-			}
-			
-			lapack_dlacpy(LA_COPY_ALL, dim, dim, &avg_imat0[c], &diff);
-			matrix_daxpy(dim, dim, -1.0/msg->nto, &imat0, &diff);
-			matrix_daxpy(dim, dim, -((double)msg->nto) / n, &diff, &avg_imat0[c]);
-			
-			matrix_dzero(dim, dim, &avg_imat1);
-			recv_loglik_axpy_avg_imat(1.0, &recv_loglik, c, &avg_imat1);
-			
-			for (index2 = 0; index2 < dim; index2++) {
-				for (index1 = 0; index1 < dim; index1++) {				
-					double v0 = MATRIX_ITEM(&avg_imat0[c], index1, index2);
-					double v1 = MATRIX_ITEM(&avg_imat1, index1, index2);
-					//assert(double_eqrel(v0, v1) >= 37
-					//       || ((fabs(v0) < 1e-1) && fabs(v0 - v1) < sqrt(DBL_EPSILON)));
-					if (fabs(v0) >= 5e-4) {
-						assert_in_range(double_eqrel(v0, v1), 37, DBL_MANT_DIG);
-					} else {
-						assert_true(fabs(v0 - v1) < sqrt(DBL_EPSILON));
-					}
-				}
-			}
-			
-			lapack_dlacpy(LA_COPY_ALL, dim, dim, &avg_imat1, &avg_imat0[c]);
+			/* compute mean */
+			memset(mean.all, 0, dim * sizeof(double));
+			recv_loglik_axpy_last_mean(1.0, &loglik, &mean);
 
+			/* compute last_cov0 */
+			dist = recv_model_dist(&model, msg->from);
+			memset(last_cov0, 0, cov_dim * sizeof(double));
+			for (i = 0; i < nrecv; i++) {
+				memcpy(diff.all, mean.all, dim * sizeof(double));
+				design_axpy(-1.0, r, i, &diff.recv);
+				design2_axpy(-1.0, d, msg->from, i, &diff.dyad);
+
+				double w = catdist1_cached_prob(dist, i);
+				blas_dspr(BLAS_LOWER, dim, w, diff.all, 1, last_cov0);
+			}
+			blas_dscal(cov_dim, msg->nto, last_cov0, 1);
+
+			/* compute last_cov1 */
+			memset(last_cov1, 0, cov_dim * sizeof(double));
+			recv_loglik_axpy_last_imat(1.0, &loglik, last_cov1);
+
+			for (i = 0; i < cov_dim; i++) {
+				//assert(double_eqrel(last_cov0[i], last_cov1[i]) >= 23);
+				assert_real_approx(last_cov0[i], last_cov1[i]);
+			}
+
+			/*
+			blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
+
+			memset(cov1, 0, cov_dim * sizeof(double));
+			recv_loglik_axpy_imat(1.0, &loglik, cov1);
+
+			for (i = 0; i < cov_dim; i++) {
+				assert_real_approx(cov0[i], cov1[i]);
+			}
+
+			blas_dcopy(dim, cov1, 1, cov0, 1);*/
 		}
-		
 	}
-	
 out:
-	free(mean);
-	free(y);
-	free(imat0.data);
-	free(imat1.data);
-	free(diff.data);
-	free(avg_imat1.data);	
-	for (c = 0; c < recv_model_cohort_count(&model); c++) {
-		free(avg_imat0[c].data);
-	}
-	free(avg_imat0);
+	recv_coefs_deinit(&diff);
+	recv_coefs_deinit(&mean);
+	free(last_cov1);
+	free(last_cov0);
+	free(cov1);
+	free(cov0);
 }
-*/
+
 
 int main()
 {
@@ -499,8 +463,8 @@ int main()
 		unit_test_setup_teardown(test_mean, hard_setup, teardown),
 		unit_test_setup_teardown(test_score, basic_setup, teardown),
 		unit_test_setup_teardown(test_score, hard_setup, teardown),
-		//unit_test_setup_teardown(test_imat, basic_setup, teardown),
-		//unit_test_setup_teardown(test_imat, hard_setup, teardown),
+		unit_test_setup_teardown(test_imat, basic_setup, teardown),
+		unit_test_setup_teardown(test_imat, hard_setup, teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 		
 	};
