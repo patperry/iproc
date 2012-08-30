@@ -254,18 +254,24 @@ void recompute_mean(struct mlogitaug *m1)
 	size_t dim = m1->dim;
 	double *mean = m1->mean;
 	double *diff = m1->xbuf;
-	size_t iz, nz = m1->nz;
+	size_t iz, iz0, nz = m1->nz;
 	double w, wtot = 0.0;
 
-	if (nz == 0) {
+
+	for (iz0 = 0; iz0 < nz; iz0++) {
+		wtot = catdist1_cached_prob(dist, m1->ind[iz0]);
+		if (wtot != 0)
+			break;
+	}
+
+	if (wtot == 0) {
 		memset(mean, 0, dim * sizeof(*mean));
 		return;
 	}
 
-	blas_dcopy(dim, m1->x, 1, mean, 1);
-	wtot += catdist1_cached_prob(dist, m1->ind[0]);
+	blas_dcopy(dim, m1->x + iz0 * dim, 1, mean, 1);
 
-	for (iz = 1; iz < nz; iz++) {
+	for (iz = iz0 + 1; iz < nz; iz++) {
 		blas_dcopy(dim, m1->x + iz * dim, 1, diff, 1);
 		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
 
