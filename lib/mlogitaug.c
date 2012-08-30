@@ -390,7 +390,6 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	const double *cov0 = m1->base->cov;
 	double log_scale0 = m1->base->log_cov_scale;
 	const double log_scale = log_scale0 + dpsi;
-	const double W0 = exp(log_scale0);
 	const double W = exp(log_scale);
 
 	memset(cov, 0, cov_dim * sizeof(*cov));
@@ -406,10 +405,9 @@ static void recompute_base_cov(struct mlogitaug *m1)
 		blas_dcopy(dim, x + i * dim, 1, diff, 1);
 		blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
 
-		blas_dspr(F77_COV_UPLO, dim, W0 * dw, diff, 1, cov);
+		blas_dspr(F77_COV_UPLO, dim, W * dw, diff, 1, cov);
 	}
-
-	blas_dspr(F77_COV_UPLO, dim, -W0, dmean, 1, cov);
+	blas_dspr(F77_COV_UPLO, dim, -W, dmean, 1, cov);
 	blas_daxpy(cov_dim, 1.0, cov0, 1, cov, 1);
 	blas_dscal(cov_dim, 1.0/W, cov, 1);
 }
