@@ -346,11 +346,6 @@ struct frame *recv_model_frame(const struct recv_model *model)
 	return model->frame;
 }
 
-const struct design *recv_model_design(const struct recv_model *model)
-{
-	return frame_recv_design(recv_model_frame(model));
-}
-
 const struct recv_coefs *recv_model_coefs(const struct recv_model *model)
 {
 	assert(model);
@@ -374,8 +369,9 @@ size_t recv_model_cohort_count(const struct recv_model *model)
 size_t recv_model_count(const struct recv_model *model)
 {
 	assert(model);
-	const struct design *design = recv_model_design(model);
-	return design_count(design);
+	const struct frame *f = recv_model_frame(model);
+	const struct design *r = frame_recv_design(f);
+	return design_count(r);
 }
 
 size_t recv_model_dim(const struct recv_model *m)

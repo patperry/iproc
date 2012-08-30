@@ -19,7 +19,7 @@
 
 static void design_clear_range(struct design *d, size_t joff, size_t len)
 {
-	assert(joff + len < design_tvar_dim(d));
+	assert(joff + len <= design_tvar_dim(d));
 	
 	size_t i, n = d->active.nz;
 	size_t dim = design_tvar_dim(d);
@@ -58,8 +58,7 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->count= count;
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
-	d->cohort_reps = xmalloc(count * sizeof(*d->cohort_reps));
-	d->cohort_reps[0] = 0;
+	d->cohort_reps = xcalloc(1, sizeof(*d->cohort_reps));
 	d->ncohort = 1;	
 	
 	d->traits = NULL;
@@ -200,8 +199,9 @@ static void design_recompute_cohorts(struct design *d)
 		d->cohorts[i] = c;
 		
 		if (c == d->ncohort) {
-			d->cohort_reps[c] = i;
 			d->ncohort++;
+			d->cohort_reps = xrealloc(d->cohort_reps, d->ncohort * sizeof(*d->cohort_reps));
+			d->cohort_reps[c] = i;
 		}
 	}
 	

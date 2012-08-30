@@ -19,7 +19,7 @@
 
 static void design2_clear_range(struct design2 *d, size_t joff, size_t len)
 {
-	assert(joff + len < design2_tvar_dim(d));
+	assert(joff + len <= design2_tvar_dim(d));
 	
 	size_t i, n = d->nnz;
 	size_t dim = design2_tvar_dim(d);
@@ -77,8 +77,9 @@ static void recompute_cohorts(struct design2 *d)
 		d->cohorts[i] = c;
 
 		if (c == d->ncohort) {
-			d->cohort_reps[c] = i;
 			d->ncohort++;
+			d->cohort_reps = xrealloc(d->cohort_reps, d->ncohort * sizeof(*d->cohort_reps));
+			d->cohort_reps[c] = i;
 		}
 
 	}
@@ -101,7 +102,7 @@ static void recompute_traits(struct design2 *d)
 	memset(d->traits, 0, nc * n * dim * sizeof(*d->traits));
 
 	for (ic = 0; ic < nc; ic++) {
-		size_t i = d->cohort_reps[i];
+		size_t i = d->cohort_reps[ic];
 		for (j = 0; j < n; j++) {
 			size_t off = 0;
 			for (k = 0; k < nk; k++) {
@@ -368,10 +369,12 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 	v->index = d->kvar_dim;
 	v->dim = dimi * dimj;
 
+	kv->dimi = dimi;
 	kv->xi = xmalloc(dimi * m * sizeof(*kv->xi));
 	if (dimi)
 		lapack_dlacpy(LA_COPY_ALL, dimi, m, design_traits(i->design) + i->index, dimi, kv->xi, dimi);
 
+	kv->dimj = dimj;
 	kv->xj = xmalloc(dimj * n * sizeof(*kv->xj));
 	if (dimj)
 		lapack_dlacpy(LA_COPY_ALL, dimj, n, design_traits(j->design) + j->index, dimj, kv->xj, dimj);
@@ -379,6 +382,7 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 	size_t index = d->nkvar;
 	design2_grow_kvars(d, 1);
 	d->kvars[index] = kv;
+	d->nkvar++;
 	d->kvar_dim += v->dim;
 
 

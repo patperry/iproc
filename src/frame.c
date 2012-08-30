@@ -60,15 +60,16 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	f->nsend = nsend;
 	f->nrecv = nrecv;
 	f->has_loops = has_loops;
+	f->observers = NULL;
+	f->nobs = 0;
+	f->nobs_max = 0;
+
 	history_init(&f->history, nsend, nrecv, intvls, nintvl);
 	history_add_observer(&f->history, f, &frame_history_callbacks);
 	design_init(&f->send_design, f, nsend);
 	design_init(&f->recv_design, f, nrecv);
 	design2_init(&f->dyad_design, f, nsend, nrecv);
 	
-	f->observers = NULL;
-	f->nobs = 0;
-	f->nobs_max = 0;
 	frame_clear(f);
 }
 
