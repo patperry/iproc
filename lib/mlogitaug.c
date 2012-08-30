@@ -26,6 +26,7 @@ static void recompute_mean(struct mlogitaug *m1);
 static void recompute_base_mean(struct mlogitaug *m1);
 static void recompute_cov(struct mlogitaug *m1);
 static void recompute_base_cov(struct mlogitaug *m1);
+static void recompute_cross_cov(struct mlogitaug *m1);
 static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
 static void grow_ind_array(struct mlogitaug *m1, size_t delta);
 static size_t find_ind(const struct mlogitaug *m1, size_t i);
@@ -60,6 +61,8 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->base_dmean = xmalloc(base_dim * sizeof(*m1->base_dmean));
 	m1->base_xbuf = xmalloc(base_dim * sizeof(*m1->base_xbuf));
 
+	m1->cross_cov = xmalloc(base_dim * dim * sizeof(*m1->cross_cov));
+
 	clear(m1);
 }
 
@@ -75,6 +78,7 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
+	free(m1->cross_cov);
 	free(m1->base_xbuf);
 	free(m1->base_dmean);
 	free(m1->base_cov);
@@ -371,8 +375,6 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	double *dmean = m1->base_dmean;
 	double *diff = m1->base_xbuf;
 	double *cov = m1->base_cov;
-	
-	size_t iz, nz = m1->nz;
 
 	double psi0 = catdist_psi(dist0);
 	double psi = catdist1_cached_psi(dist);
@@ -387,6 +389,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 
 	memset(cov, 0, cov_dim * sizeof(*cov));
 
+	size_t iz, nz = m1->nz;
 	for (iz = 0; iz < nz; iz++) {
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
@@ -415,6 +418,44 @@ double *mlogitaug_base_cov(const struct mlogitaug *m1)
 }
 
 
+void recompute_cross_cov(struct mlogitaug *m1)
+{
+	size_t dim = m1->dim;
+	size_t base_dim = mlogit_dim(m1->base);
+	const struct catdist1 *dist = &m1->dist;
+	const double *base_mean = m1->base_mean;
+	const double *base_x = mlogit_x(m1->base);
+	double *cov = m1->cross_cov;
+	double *diff = m1->base_xbuf;
+
+	if (dim == 0)
+		return;
+
+	memset(cov, 0, base_dim * dim * sizeof(*cov));
+
+	size_t iz, nz = m1->nz;
+	for (iz = 0; iz < nz; iz++) {
+		size_t i = m1->ind[iz];
+		double w = catdist1_cached_prob(dist, i);
+
+		blas_dcopy(base_dim, base_x + i * base_dim, 1, diff, 1);
+		blas_daxpy(base_dim, -1.0, base_mean, 1, diff, 1);
+
+		const double *y = m1->x + iz * dim;
+
+		blas_dger(dim, base_dim, w, y, 1, diff, 1, cov, dim);
+	}
+}
+
+
+double *mlogitaug_cross_cov(const struct mlogitaug *m1)
+{
+	recompute_dist((struct mlogitaug *)m1);
+	recompute_base_mean((struct mlogitaug *)m1);
+	return m1->cross_cov;
+}
+
+
 void mlogitaug_update_cache(struct mlogitaug *m1)
 {
 	recompute_dist((struct mlogitaug *)m1);
@@ -422,6 +463,7 @@ void mlogitaug_update_cache(struct mlogitaug *m1)
 	recompute_base_mean((struct mlogitaug *)m1);
 	recompute_cov((struct mlogitaug *)m1);
 	recompute_base_cov((struct mlogitaug *)m1);
+	recompute_cross_cov((struct mlogitaug *)m1);
 }
 
 struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1)
@@ -447,6 +489,11 @@ double *mlogitaug_cached_cov(const struct mlogitaug *m1)
 double *mlogitaug_cached_base_cov(const struct mlogitaug *m1)
 {
 	return ((struct mlogitaug *)m1)->base_cov;
+}
+
+double *mlogitaug_cached_cross_cov(const struct mlogitaug *m1)
+{
+	return ((struct mlogitaug *)m1)->cross_cov;
 }
 
 int mlogitaug_check(const struct mlogitaug *m1)
