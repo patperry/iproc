@@ -44,11 +44,11 @@ double runif(double min, double max)
 
 static int reals_approx_display_error(const double left, const double right)
 {
-	const int minprec = DBL_MANT_DIG / 2 - 5;
+	const int minprec = DBL_MANT_DIG / 2;
 	const int p = double_eqrel(left, right);
 	const int rel_approx = p >= minprec;
-	const int abs_approx = (fabs(left) <= SQRT_DBL_EPSILON
-				&& fabs(right) <= SQRT_DBL_EPSILON);
+	const int abs_approx = (fabs(left) <= ROOT4_DBL_EPSILON
+				&& fabs(right) <= ROOT4_DBL_EPSILON);
 	const int approx = rel_approx || abs_approx;
 	
 	if (!approx) {
