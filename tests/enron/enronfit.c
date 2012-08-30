@@ -73,12 +73,23 @@ static void setup(void) {
 	design_add_traits(r, trait_names, traits, ntrait);
 	
 	/* dyad design */
-	//struct design2 *d = frame_dyad_design(&frame);
-	//design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	//design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	//design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	//design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
-	//design2_add_kron(d, "Legal:Legal", design_var(s, "Legal"), design_var(r, "Legal"));
+	struct design2 *d = frame_dyad_design(&frame);
+	/*
+	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
+	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
+	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);*/
+
+	char buf[1024];
+	size_t i, j;
+	for (i = 0; i < ntrait; i++) {
+		for (j = 0; j < ntrait; j++) {
+			sprintf(buf, "%s*%s", trait_names[i], trait_names[j]);
+			design2_add_kron(d, buf, design_var(s, trait_names[i]), design_var(r, trait_names[j]));
+		}
+	}
+
+
 	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
@@ -142,23 +153,14 @@ static void teardown(void)
 
 yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 {
-	yajl_gen_status err = yajl_gen_status_ok;
-	return err;
-}
-
-/*
-yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
-{
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
 	const struct recv_model *m = ll->model;
 	struct frame *f = recv_model_frame(m);
-	const struct design *d = recv_model_design(m);
 
 	size_t ne = recv_fit_constr_count(fit);
 	size_t dim = recv_model_dim(m);
-	size_t ic, nc = recv_model_cohort_count(m);
 	size_t i, n;
 
 	YG(yajl_gen_map_open(hand));
@@ -174,29 +176,18 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_array_close(hand));
 
 		// variate_names
-		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
-		YG(yajl_gen_array_open(hand));
-		n = design_dim(d);
-		for (i = 0; i < n; i++) {
-			YG(yajl_gen_string(hand, YSTR(design_name(d, i))));
-		}
-		YG(yajl_gen_array_close(hand));
-
-		// cohort names
-		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES)));
-		YG(yajl_gen_array_open(hand));
-		{
-			for (ic = 0; ic < nc; ic++) {
-				const char *name = cohort_names[ic];
-				YG(yajl_gen_string(hand, YSTR(name)));
-			}
-		}
-		YG(yajl_gen_array_close(hand));
+		//YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
+		//YG(yajl_gen_array_open(hand));
+		//n = design_dim(d);
+		//for (i = 0; i < n; i++) {
+		//		YG(yajl_gen_string(hand, YSTR(design_name(d, i))));
+		//}
+		//YG(yajl_gen_array_close(hand));
 
 		// coefficients
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS)));
-		const struct dmatrix *coefs = recv_fit_coefs(fit);
-		YG(yajl_gen_matrix(hand, dim, nc, coefs));
+		const struct recv_coefs *coefs = recv_fit_coefs(fit);
+		YG(yajl_gen_vector(hand, dim, coefs->all));
 
 		// constraint names
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES)));
@@ -226,7 +217,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 				YG(yajl_gen_map_open(hand));
 				YG(yajl_gen_string(hand, YSTR("dim")));
-				YG(yajl_gen_integer(hand, dim * nc));
+				YG(yajl_gen_integer(hand, dim));
 
 				YG(yajl_gen_string(hand, YSTR("count")));
 				YG(yajl_gen_integer(hand, nz));
@@ -270,36 +261,32 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 		// count
 		YG(yajl_gen_string(hand, YSTR(COUNT)));
-		YG(yajl_gen_array_open(hand));
-		for (ic = 0; ic < nc; ic++) {
-			size_t count = recv_loglik_count(ll, ic);
-			YG(yajl_gen_integer(hand, count));
-		}
-		YG(yajl_gen_array_close(hand));
+		size_t count = recv_loglik_count(ll);
+		YG(yajl_gen_integer(hand, count));
 
 		// score
-		YG(yajl_gen_string(hand, YSTR(SCORE)));
-		YG(yajl_gen_array_open(hand));
-		for (ic = 0; ic < nc; ic++) {
-			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-			const double *score = info->score;
-			YG(yajl_gen_vector(hand, dim, score));
-		}
-		YG(yajl_gen_array_close(hand));
+		//YG(yajl_gen_string(hand, YSTR(SCORE)));
+		//YG(yajl_gen_array_open(hand));
+		//for (ic = 0; ic < nc; ic++) {
+		//	const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		//	const double *score = info->score;
+		//	YG(yajl_gen_vector(hand, dim, score));
+		//}
+		//YG(yajl_gen_array_close(hand));
 
 		// information
-		YG(yajl_gen_string(hand, YSTR(INFORMATION)));
-		YG(yajl_gen_array_open(hand));
-		for (ic = 0; ic < nc; ic++) {
-			const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-			const struct dmatrix *imat = &info->imat;
-			YG(yajl_gen_matrix(hand, dim, dim, imat));
-		}
-		YG(yajl_gen_array_close(hand));
+		//YG(yajl_gen_string(hand, YSTR(INFORMATION)));
+		//YG(yajl_gen_array_open(hand));
+		//for (ic = 0; ic < nc; ic++) {
+		//	const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
+		//	const struct dmatrix *imat = &info->imat;
+		//	YG(yajl_gen_matrix(hand, dim, dim, imat));
+		//}
+		//YG(yajl_gen_array_close(hand));
 
 		// rank
 		YG(yajl_gen_string(hand, YSTR(RANK)));
-		size_t rank = dim * nc - ne;
+		size_t rank = dim - ne;
 		YG(yajl_gen_integer(hand, rank));
 
 		// deviance
@@ -309,7 +296,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 		// df.residual
 		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL)));
-		size_t ntot = recv_loglik_count_sum(ll);
+		size_t ntot = recv_loglik_count(ll);
 		YG(yajl_gen_integer(hand, ntot - rank));
 
 		// null.deviance
@@ -323,19 +310,19 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		// residuals
 		// fitted.values
 		// y = y
-		struct recv_resid resid;
+		//struct recv_resid resid;
 
-		frame_clear(f);
-		recv_resid_init(&resid, f, fit->ymsgs,
-				fit->model.ncohort, fit->model.cohorts,
-				coefs);
-		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
-		YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.obs.dyad));
+		//frame_clear(f);
+		//recv_resid_init(&resid, f, fit->ymsgs,
+		//		fit->model.ncohort, fit->model.cohorts,
+		//		coefs);
+		//YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
+		//YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.obs.dyad));
 
-		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
-		YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.exp.dyad));
+		//YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
+		//YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.exp.dyad));
 
-		recv_resid_deinit(&resid);
+		//recv_resid_deinit(&resid);
 	}
 	YG(yajl_gen_map_close(hand));
 
@@ -361,7 +348,6 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 	return err;
 }
-*/
 
 
 static void output(const struct recv_fit *fit)
