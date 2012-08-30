@@ -9,6 +9,9 @@
 #include "xalloc.h"
 #include "enron.h"
 
+
+static const size_t ENRON_NTRAIT[ENRON_TERMS_MAX + 1] = { 0, 4, 9, 11 };
+
 enum department_code { DEPARTMENT_NA =
 	    -1, DEPARTMENT_LEGAL, DEPARTMENT_TRADING, DEPARTMENT_OTHER };
 enum seniority_code { SENIORITY_NA = -1, SENIORITY_JUNIOR, SENIORITY_SENIOR };
@@ -34,6 +37,7 @@ struct employee_parse {
 	size_t dim;
 	double *traits;
 	size_t nactor_max;
+	size_t terms;
 
 	ptrdiff_t id;
 	enum gender_code gender;
@@ -163,6 +167,10 @@ static int parse_end_map(void *ctx)
 	parse->nactor++;
 
 	memset(x, 0, parse->dim * sizeof(x[0]));
+
+	if (parse->terms < 1)
+		goto out;
+
 	/* department */
 	if (parse->department == DEPARTMENT_LEGAL)
 		x[ENRON_TRAIT_L] = 1.0;
@@ -176,6 +184,10 @@ static int parse_end_map(void *ctx)
 	/* gender */
 	if (parse->gender == GENDER_FEMALE)
 		x[ENRON_TRAIT_F] = 1.0;
+
+
+	if (parse->terms < 2)
+		goto out;
 
 	/* department * seniority */
 	if (parse->department == DEPARTMENT_LEGAL
@@ -198,6 +210,9 @@ static int parse_end_map(void *ctx)
 	    && parse->gender == GENDER_FEMALE)
 		x[ENRON_TRAIT_JF] = 1.0;
 
+	if (parse->terms < 3)
+		goto out;
+
 	/* department * seniority * gender */
 	if (parse->department == DEPARTMENT_LEGAL
 	    && parse->seniority == SENIORITY_JUNIOR
@@ -208,7 +223,7 @@ static int parse_end_map(void *ctx)
 	    && parse->gender == GENDER_FEMALE)
 		x[ENRON_TRAIT_TJF] = 1.0;
 
-
+out:
 	return 1;
 }
 
@@ -229,6 +244,7 @@ static yajl_callbacks parse_callbacks = {
 int enron_employees_init_fread(size_t *nactorp,
 			       double **traitsp, size_t *ntraitp,
 			       const char * const **trait_namesp,
+			       size_t terms,
 			       FILE *stream)
 {
 	unsigned char fileData[65536];
@@ -238,10 +254,13 @@ int enron_employees_init_fread(size_t *nactorp,
 
 	struct employee_parse parse;
 
-	parse.dim = ENRON_NTRAIT;
+	terms = MIN(terms, ENRON_TERMS_MAX);
+
+	parse.dim = ENRON_NTRAIT[terms];
 	parse.nactor = 0;
 	parse.traits = NULL;
 	parse.nactor_max = 0;
+	parse.terms = terms;
 
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *)&parse);
 	yajl_config(hand, yajl_allow_comments, 1);
@@ -293,7 +312,8 @@ int enron_employees_init_fread(size_t *nactorp,
 
 int enron_employees_init(size_t *nactorp,
 			 double **traitsp, size_t *ntraitsp,
-			 const char * const **trait_namesp)
+			 const char * const **trait_namesp,
+			 size_t terms)
 {
 	FILE *f = fopen(ENRON_EMPLOYEES_FILE, "r");
 
@@ -304,7 +324,7 @@ int enron_employees_init(size_t *nactorp,
 	}
 
 	if (!enron_employees_init_fread(nactorp, traitsp, ntraitsp,
-				trait_namesp, f)) {
+				trait_namesp, terms, f)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_EMPLOYEES_FILE);
 		fclose(f);

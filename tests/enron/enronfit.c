@@ -36,7 +36,8 @@ static struct frame frame;
 
 
 static void setup(void) {
-	enron_employees_init(&nsend, &traits, &ntrait, &trait_names);
+	size_t terms = 2; // second-order interactions only
+	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, terms);
 	nrecv = nsend;
 	has_loops = 0;
 
@@ -74,11 +75,11 @@ static void setup(void) {
 	
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
-	/*
-	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);*/
+
+	//design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
+	//design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	//design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
+	//design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
 
 	char buf[1024];
 	size_t i, j;

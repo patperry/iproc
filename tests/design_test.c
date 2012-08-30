@@ -55,7 +55,7 @@ static void enron_setup_fixture()
 	print_message("Enron employees\n");
 	print_message("---------------\n");
 	enron_employees_init(&enron_nactor, &enron_traits,
-			     &enron_ntrait, &enron_trait_names);
+			     &enron_ntrait, &enron_trait_names, ENRON_TERMS_MAX);
 }
 
 static void enron_teardown_fixture()
@@ -95,7 +95,7 @@ static void enron_reff_setup_fixture()
 	print_message("Enron employees (with receiver effects)\n");
 	print_message("---------------------------------------\n");
 	enron_employees_init(&enron_nactor, &enron_traits,
-			     &enron_ntrait, &enron_trait_names);
+			     &enron_ntrait, &enron_trait_names, ENRON_TERMS_MAX);
 }
 
 static void enron_reff_teardown_fixture()

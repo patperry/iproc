@@ -22,15 +22,17 @@ enum enron_trait {
 	ENRON_TRAIT_TJF
 };
 
-#define ENRON_NTRAIT (ENRON_TRAIT_TJF + 1)
+
+#define ENRON_TERMS_MAX 3
 
 int enron_employees_init(size_t *nactorp,
 			 double **traitsp, size_t *ntraitp,
-			 const char * const **trait_namesp);
+			 const char * const **trait_namesp,
+			 size_t terms);
 int enron_employees_init_fread(size_t *nactorp,
 			       double **traitsp, size_t *ntraitp,
 			       const char * const **trait_namesp,
-			       FILE *stream);
+			       size_t terms, FILE *stream);
 
 int enron_messages_init(struct messages *messages, size_t maxrecip);
 int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream);

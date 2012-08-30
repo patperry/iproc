@@ -34,7 +34,7 @@ static void enron_setup_fixture()
 {
 	print_message("Enron\n");
 	print_message("-----\n");
-	enron_employees_init(&nsend, &traits, &ntrait, &trait_names);
+	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, ENRON_TERMS_MAX);
 	nrecv = nsend;
 	enron_messages_init(&messages, -1);
 	has_loops = 0;	
