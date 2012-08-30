@@ -423,10 +423,7 @@ static void test_imat()
 			memset(last_cov1, 0, cov_dim * sizeof(double));
 			recv_loglik_axpy_last_imat(1.0, &loglik, last_cov1);
 
-			for (i = 0; i < cov_dim; i++) {
-				//assert(double_eqrel(last_cov0[i], last_cov1[i]) >= 23);
-				assert_real_approx(last_cov0[i], last_cov1[i]);
-			}
+			assert_sym_approx(last_cov0, last_cov1, BLAS_UPPER, dim);
 
 			/*
 			blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
