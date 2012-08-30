@@ -85,32 +85,61 @@ static void basic_setup()
 
 static void hard_setup()
 {	
-	double intvls[3] = {
-		112.50,  450.00, 1800.00,
+	double intvls[6] = {
+		1800.00,   // 30 min
+		7200.00,   //  2 hr
+		28800.00,  //  8 hr
+		115200.00, // 32 hr
+		460800.00, // 5.33 day
+		1843200.00, // 21.33 day
 	};
+
+	double beta[] = {
+		0.4824403589966597,
+		-0.215108203814423,
+		-0.4182912193871692,
+		-0.04491132567966908,
+		0.05698656051879408,
+		0.1420793131926562,
+		-0.249037515029601,
+		-0.02644490380870458,
+		0.2987018579760873,
+		1.128469426856978,
+		1.258299141255399,
+		0.3882642769919149,
+		0.0984948728445552,
+		0.03433916773539594,
+		0.01662024071711138,
+		-0.007969263858043221,
+		0.0006115999551254905,
+		3.739814520709765,
+		0.9588447963575467,
+		0.4521880948047269,
+		0.187294928856629,
+		0.1757997396356974,
+		0.08539282957216279,
+		0.05050240510803124,
+		0.001111188823465376
+	};
+
 	int has_loops = 0;
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 6);
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, trait_names, traits, ntrait);
 
 	struct design2 *d = frame_dyad_design(&frame);
 	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	recv_coefs_init(&coefs, &frame);
+	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
+	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
 
-	size_t i, dim = coefs.dim;
-	for (i = 0; i < dim; i++) {
-		double val = (i + 1 % 7 == 0 ?  0.1 :
-			      i + 2 % 7 == 1 ?  0.3 :
-			      i + 3 % 7 == 2 ? -0.2 :
-			      i + 5 % 7 == 4 ? -10 :
-			      i + 11 % 7 == 6 ? +10 : 0.0);
-		coefs.all[i] = val;
-	}
+	recv_coefs_init(&coefs, &frame);
+	memcpy(coefs.all, beta, coefs.dim * sizeof(double));
 
 	recv_model_init(&model, &frame, &coefs);
 	recv_loglik_init(&loglik, &model);
 }
+
 
 static void teardown()
 {
