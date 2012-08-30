@@ -18,20 +18,17 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
-#include "recv_boot.h"
+//#include "recv_boot.h"
 #include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
-#include "recv_resid.h"
+//#include "recv_resid.h"
 
 
 static size_t nsend;
 static size_t nrecv;
-static size_t ncohort;
 static size_t ntrait;
-static size_t *cohorts;
-static struct dmatrix traits;
-static const char * const *cohort_names;
+static double *traits;
 static const char * const *trait_names;
 static int has_loops;
 
@@ -39,9 +36,7 @@ static struct frame frame;
 
 
 static void setup(void) {
-	enron_employees_init(&nsend, &cohorts, &ncohort, &cohort_names,
-			     &traits.data, &ntrait, &trait_names);
-	traits.lda = MAX(1, nsend);
+	enron_employees_init(&nsend, &traits, &ntrait, &trait_names);
 	nrecv = nsend;
 	has_loops = 0;
 
@@ -66,24 +61,24 @@ static void setup(void) {
 		// 58982400.00
 	};
 	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
-	int has_effects = 0;
+	//int has_effects = 0;
 	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvls);
 
 	/* send design */
 	struct design *s = frame_send_design(&frame);
-	design_add_traits(s, ntrait, trait_names, &traits);
+	design_add_traits(s, trait_names, traits, ntrait);
        
 	/* recv design */
 	struct design *r = frame_recv_design(&frame);
-	design_add_traits(r, ntrait, trait_names, &traits);
+	design_add_traits(r, trait_names, traits, ntrait);
 	
 	/* dyad design */
-	struct design2 *d = frame_dyad_design(&frame);
-	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
-	design2_add_kron(d, "Legal:Legal", design_var(s, "Legal"), design_var(r, "Legal"));
+	//struct design2 *d = frame_dyad_design(&frame);
+	//design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
+	//design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	//design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
+	//design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	//design2_add_kron(d, "Legal:Legal", design_var(s, "Legal"), design_var(r, "Legal"));
 	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
 	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
@@ -93,7 +88,7 @@ static void setup(void) {
 	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
 	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);  */
 
-	recv_model_init(&m, &frame);
+	// recv_model_init(&m, &frame);
 	//recv_model_add_inter(&m, design_var(r, "Female"), design_var(d, "NRecv"));
 	
 	/* dyad design */
@@ -103,124 +98,6 @@ static void setup(void) {
 
 static void add_constraints(struct recv_fit *fit)
 {
-	const struct recv_loglik *ll = recv_fit_loglik(fit);
-	const struct recv_model *m = ll->model;
-	int dim = (int)recv_model_dim(m);
-	size_t nc = recv_model_cohort_count(m);
-
-	double ce[dim * nc];
-	size_t ind[dim * nc];
-	size_t nz;
-	int i;
-	char name[1024];
-
-
-	for (i = 0; i < dim; i++) {
-
-		// intercept
-		if (!((0 <= i && i < 9) // 2nd-order interactions
-		      || (11 <= i) // dynamic effects
-		      )) {
-
-			ind[0] = i + dim * ENRON_COHORT_OSM; ce[0] = 1.0;
-			nz = 1;
-			sprintf(name, "Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-		}
-
-		if (!((0 <= i && i < 9) // 2nd-order interactions
-		      )) {
-			ind[0] = i + dim * ENRON_COHORT_LSM; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_OSM; ce[1] = -1.0;
-			nz = 2;
-			sprintf(name, "L*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_TSM; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_OSM; ce[1] = -1.0;
-			nz = 2;
-			sprintf(name, "T*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_OJM; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_OSM; ce[1] = -1.0;
-			nz = 2;
-			sprintf(name, "J*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_OSF; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_OSM; ce[1] = -1.0;
-			nz = 2;
-			sprintf(name, "F*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			// 2-way interactions
-			ind[0] = i + dim * ENRON_COHORT_LJM; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_LSM; ce[1] = -1.0;
-			ind[2] = i + dim * ENRON_COHORT_OJM; ce[2] = -1.0;
-			ind[3] = i + dim * ENRON_COHORT_OSM; ce[3] = +1.0;
-			nz = 4;
-			sprintf(name, "LJ*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_TJM; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_TSM; ce[1] = -1.0;
-			ind[2] = i + dim * ENRON_COHORT_OJM; ce[2] = -1.0;
-			ind[3] = i + dim * ENRON_COHORT_OSM; ce[3] = +1.0;
-			nz = 4;
-			sprintf(name, "TJ*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_LSF; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_LSM; ce[1] = -1.0;
-			ind[2] = i + dim * ENRON_COHORT_OSF; ce[2] = -1.0;
-			ind[3] = i + dim * ENRON_COHORT_OSM; ce[3] = +1.0;
-			nz = 4;
-			sprintf(name, "LF*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_TSF; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_TSM; ce[1] = -1.0;
-			ind[2] = i + dim * ENRON_COHORT_OSF; ce[2] = -1.0;
-			ind[3] = i + dim * ENRON_COHORT_OSM; ce[3] = +1.0;
-			nz = 4;
-			sprintf(name, "TF*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-			ind[0] = i + dim * ENRON_COHORT_OJF; ce[0] = +1.0;
-			ind[1] = i + dim * ENRON_COHORT_OJM; ce[1] = -1.0;
-			ind[2] = i + dim * ENRON_COHORT_OSF; ce[2] = -1.0;
-			ind[3] = i + dim * ENRON_COHORT_OSM; ce[3] = +1.0;
-			nz = 4;
-			sprintf(name, "JF*Var%d", i + 1);
-			recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-		}
-
-		// 3-way interactions
-		ind[0] = i + dim * ENRON_COHORT_LJF; ce[0] = +1.0;
-		ind[1] = i + dim * ENRON_COHORT_LJM; ce[1] = -1.0;
-		ind[2] = i + dim * ENRON_COHORT_LSF; ce[2] = -1.0;
-		ind[3] = i + dim * ENRON_COHORT_LSM; ce[3] = +1.0;
-		ind[4] = i + dim * ENRON_COHORT_OJF; ce[4] = -1.0;
-		ind[5] = i + dim * ENRON_COHORT_OJM; ce[5] = +1.0;
-		ind[6] = i + dim * ENRON_COHORT_OSF; ce[6] = +1.0;
-		ind[7] = i + dim * ENRON_COHORT_OSM; ce[7] = -1.0;
-		nz = 8;
-		sprintf(name, "LJF*Var%d", i + 1);
-		recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-
-		ind[0] = i + dim * ENRON_COHORT_TJF; ce[0] = +1.0;
-		ind[1] = i + dim * ENRON_COHORT_TJM; ce[1] = -1.0;
-		ind[2] = i + dim * ENRON_COHORT_TSF; ce[2] = -1.0;
-		ind[3] = i + dim * ENRON_COHORT_TSM; ce[3] = +1.0;
-		ind[4] = i + dim * ENRON_COHORT_OJF; ce[4] = -1.0;
-		ind[5] = i + dim * ENRON_COHORT_OJM; ce[5] = +1.0;
-		ind[6] = i + dim * ENRON_COHORT_OSF; ce[6] = +1.0;
-		ind[7] = i + dim * ENRON_COHORT_OSM; ce[7] = -1.0;
-		nz = 8;
-		sprintf(name, "TJF*Var%d", i + 1);
-		recv_fit_add_constr(fit, ce, ind, nz, 0.0, name);
-	}
 
 	/* add constraints to make the model identifiable (TODO/not implemented) */
 	//size_t nadd = recv_fit_add_constr_identify(fit);
@@ -231,8 +108,7 @@ static void add_constraints(struct recv_fit *fit)
 static void teardown(void)
 {
 	frame_deinit(&frame);
-	free(traits.data);
-	free(cohorts);
+	free(traits);
 }
 
 
@@ -263,6 +139,14 @@ static void teardown(void)
 #define OBSERVED_COUNTS		"observed_counts"
 #define EXPECTED_COUNTS		"expected_counts"
 
+
+yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
+{
+	yajl_gen_status err = yajl_gen_status_ok;
+	return err;
+}
+
+/*
 yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 {
 	assert(fit);
@@ -279,7 +163,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 
 	YG(yajl_gen_map_open(hand));
 	{
-		/* intervals */
+		// intervals
 		YG(yajl_gen_string(hand, YSTR(INTERVALS)));
 		const double *intvls = frame_intervals(f);
 		n = frame_interval_count(f);
@@ -289,7 +173,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* variate_names */
+		// variate_names
 		YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		n = design_dim(d);
@@ -298,7 +182,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* cohort names */
+		// cohort names
 		YG(yajl_gen_string(hand, YSTR(COHORT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
@@ -309,12 +193,12 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* coefficients */
+		// coefficients
 		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS)));
 		const struct dmatrix *coefs = recv_fit_coefs(fit);
 		YG(yajl_gen_matrix(hand, dim, nc, coefs));
 
-		/* constraint names */
+		// constraint names
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES)));
 		YG(yajl_gen_array_open(hand));
 		{
@@ -328,7 +212,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* constraints */
+		// constraints
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS)));
 		YG(yajl_gen_array_open(hand));
 		{
@@ -365,7 +249,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* constraint values */
+		// constraint values
 		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES)));
 		YG(yajl_gen_array_open(hand));
 		{
@@ -379,12 +263,12 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* duals */
+		// duals
 		YG(yajl_gen_string(hand, YSTR(DUALS)));
 		const double *duals = recv_fit_duals(fit);
 		YG(yajl_gen_vector(hand, ne, duals));
 
-		/* count */
+		// count
 		YG(yajl_gen_string(hand, YSTR(COUNT)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
@@ -393,7 +277,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* score */
+		// score
 		YG(yajl_gen_string(hand, YSTR(SCORE)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
@@ -403,7 +287,7 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* information */
+		// information
 		YG(yajl_gen_string(hand, YSTR(INFORMATION)));
 		YG(yajl_gen_array_open(hand));
 		for (ic = 0; ic < nc; ic++) {
@@ -413,32 +297,32 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		}
 		YG(yajl_gen_array_close(hand));
 
-		/* rank */
+		// rank
 		YG(yajl_gen_string(hand, YSTR(RANK)));
 		size_t rank = dim * nc - ne;
 		YG(yajl_gen_integer(hand, rank));
 
-		/* deviance */
+		// deviance
 		YG(yajl_gen_string(hand, YSTR(DEVIANCE)));
 		double dev = recv_fit_dev(fit);
 		YG(yajl_gen_ieee754(hand, dev));
 
-		/* df.residual */
+		// df.residual
 		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL)));
 		size_t ntot = recv_loglik_count_sum(ll);
 		YG(yajl_gen_integer(hand, ntot - rank));
 
-		/* null.deviance */
+		// null.deviance
 		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE)));
 		YG(yajl_gen_ieee754(hand, recv_fit_dev0(fit)));
 
-		/* df.null */
+		// df.null
 		YG(yajl_gen_string(hand, YSTR(DF_NULL)));
 		YG(yajl_gen_integer(hand, ntot));
 
-		/* residuals */
-		/* fitted.values */
-		/* y = y */
+		// residuals
+		// fitted.values
+		// y = y
 		struct recv_resid resid;
 
 		frame_clear(f);
@@ -455,28 +339,29 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 	}
 	YG(yajl_gen_map_close(hand));
 
-	/* effects */
-	/* qr */
-	/* linear.predictors (eta) */
-	/* aic */
-	/* iter */
-	/* weights = wt */
-	/* prior.weights = weights */
-	/* converged = conv */
-	/* boundary = boundary */
-	/* call */
-	/* formula */
-	/* terms */
-	/* data */
-	/* offset */
-	/* control */
-	/* method */
-	/* contrasts */
-	/* xlevels */
+	// effects
+	// qr
+	// linear.predictors (eta)
+	// aic
+	// iter
+	// weights = wt
+	// prior.weights = weights
+	// converged = conv
+	// boundary = boundary
+	// call
+	// formula
+	// terms
+	// data
+	// offset
+	// control
+	// method
+	// contrasts
+	// xlevels
 
 
 	return err;
 }
+*/
 
 
 static void output(const struct recv_fit *fit)
@@ -497,7 +382,7 @@ static void output(const struct recv_fit *fit)
 }
 
 static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
-		  const struct dmatrix *coefs0)
+		  const struct recv_fit_params *params0)
 {
 	size_t maxit = 30;
 	size_t report = 1;
@@ -506,7 +391,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	struct recv_fit fit;
 	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
 	ctrl.gtol = 1e-7;
-	recv_fit_init(&fit, &frame, xmsgs, ymsgs, ncohort, cohorts, &ctrl);
+	recv_fit_init(&fit, &frame, xmsgs, ymsgs, &ctrl);
 	add_constraints(&fit);
 
 	enum recv_fit_task task;
@@ -516,7 +401,7 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	//matrix_init(&coefs0, dim, nc);
 	//matrix_fill(&coefs0, 0.0001);
 
-	for (it = 0, task = recv_fit_start(&fit, coefs0);
+	for (it = 0, task = recv_fit_start(&fit, params0);
 	     it < maxit && task == RECV_FIT_STEP;
 	     it++, task = recv_fit_advance(&fit)) {
 		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
@@ -551,6 +436,15 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	return err;
 }
 
+
+static void init_params(struct recv_fit_params *params, const char *filename)
+{
+	fprintf(stderr, "Not implemented");
+	exit(EXIT_FAILURE);
+}
+
+
+/*
 static void init_coefs(struct dmatrix *coefs, char *filename)
 {
 	int err = 1;
@@ -565,7 +459,7 @@ static void init_coefs(struct dmatrix *coefs, char *filename)
 	char *filebuf = xmalloc(sz + 1);
 	size_t rd = fread(filebuf, 1, sz, fp);
 
-	/* file read error handling */
+	// file read error handling
 	if (rd == 0 && !feof(fp)) {
 		fprintf(stderr, "error encountered on file read\n");
 		goto cleanup_file;
@@ -578,7 +472,7 @@ static void init_coefs(struct dmatrix *coefs, char *filename)
 
 	yajl_val node = yajl_tree_parse(filebuf, errbuf, sizeof(errbuf));
 
-	/* parse error handling */
+	// parse error handling
 	if (node == NULL) {
 		fprintf(stderr, "parse_error: ");
 		if (strlen(errbuf)) fprintf(stderr, " %s", errbuf);
@@ -587,7 +481,7 @@ static void init_coefs(struct dmatrix *coefs, char *filename)
 		goto cleanup_yajl;
 	}
 
-	/* ... and extract a nested value from the config file */
+	// ... and extract a nested value from the config file
 	const char * coefs_path[] = { COEFFICIENTS, NULL };
 	const char * nrow_path[] = { "nrow", NULL};
 	const char * ncol_path[] = { "ncol", NULL};
@@ -641,6 +535,7 @@ out:
 	if (err)
 		exit(err);
 }
+*/
 
 struct options {
 	char *startfile;
@@ -697,44 +592,47 @@ int main(int argc, char **argv)
 	int err = 0;
 
 	struct options opts = parse_options(argc, argv);
-	struct dmatrix coefs0;
-	int has_coefs0 = 0;
+	struct recv_fit_params params0;
+	int has_params0 = 0;
 
 	if (opts.startfile) {
-		has_coefs0 = 1;
-		init_coefs(&coefs0, opts.startfile);
+		has_params0 = 1;
+		init_params(&params0, opts.startfile);
 	}
 
-	struct recv_boot boot;
+	//struct recv_boot boot;
 	struct messages enron_messages;
 	struct messages *xmsgs, *ymsgs;
 	xmsgs = ymsgs = &enron_messages;
 
 	setup();
 	enron_messages_init(&enron_messages, 5);
-	struct dmatrix *pcoefs0 = has_coefs0 ? &coefs0 : NULL;
+	struct recv_fit_params *pparams0 = has_params0 ? &params0 : NULL;
 
 	if (opts.boot) {
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		recv_boot_init(&boot, &frame, &enron_messages, ncohort,
-			       cohorts, pcoefs0, &dsfmt);
-		ymsgs = &boot.messages;
+		//recv_boot_init(&boot, &frame, &enron_messages, ncohort,
+		//	       cohorts, pcoefs0, &dsfmt);
+		//ymsgs = &boot.messages;
+
+		fprintf(stderr, "Not Implemented");
+		exit(EXIT_FAILURE);
 	}
 
-	err = do_fit(xmsgs, ymsgs, pcoefs0);
+	err = do_fit(xmsgs, ymsgs, pparams0);
 
 	messages_deinit(&enron_messages);
 
 	if (opts.boot) {
-		recv_boot_deinit(&boot);
+		//recv_boot_deinit(&boot);
 	}
 
 	teardown();
 
-	if (has_coefs0) {
-		free(coefs0.data);
+	if (has_params0) {
+		recv_fit_params_deinit(&params0);
 	}
 
 	return err;
