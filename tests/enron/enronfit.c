@@ -18,7 +18,7 @@
 #include "design.h"
 #include "vars.h"
 #include "frame.h"
-//#include "recv_boot.h"
+#include "recv_boot.h"
 #include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
@@ -585,7 +585,7 @@ int main(int argc, char **argv)
 		init_params(&params0, opts.startfile);
 	}
 
-	//struct recv_boot boot;
+	struct recv_boot boot;
 	struct messages enron_messages;
 	struct messages *xmsgs, *ymsgs;
 	xmsgs = ymsgs = &enron_messages;
@@ -593,14 +593,14 @@ int main(int argc, char **argv)
 	setup();
 	enron_messages_init(&enron_messages, 5);
 	struct recv_fit_params *pparams0 = has_params0 ? &params0 : NULL;
+	struct recv_coefs *pcoefs0 = has_params0 ? &params0.coefs : NULL;
 
 	if (opts.boot) {
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
-		//recv_boot_init(&boot, &frame, &enron_messages, ncohort,
-		//	       cohorts, pcoefs0, &dsfmt);
-		//ymsgs = &boot.messages;
+		recv_boot_init(&boot, &frame, &enron_messages, pcoefs0, &dsfmt);
+		ymsgs = &boot.messages;
 
 		fprintf(stderr, "Not Implemented");
 		exit(EXIT_FAILURE);
@@ -611,7 +611,7 @@ int main(int argc, char **argv)
 	messages_deinit(&enron_messages);
 
 	if (opts.boot) {
-		//recv_boot_deinit(&boot);
+		recv_boot_deinit(&boot);
 	}
 
 	teardown();
