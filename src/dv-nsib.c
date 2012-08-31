@@ -13,47 +13,24 @@
  *     I2
  */
 
-static void nsib_init(struct design_var *v, const struct design *d,
-		      void *params)
-{
-	(void)d;		// unused
-	(void)params;		// unused;
-	assert(v);
-	assert(d);
-	assert(!params);
-
-	size_t n = frame_interval_count(design_frame(d));
-	size_t n1 = n + 1;
-	v->dim = n1 * n1;
-	v->names = var_names_alloc2("NSib", strlen("NSib"), n + 1, n + 1);
-}
-
-static void nsib_deinit(struct design_var *v)
-{
-	var_names_free(v->names);
-}
 
 static void nsib_message_add(void *udata, struct frame *f,
 			     const struct message *msg)
 {
-	struct design_var *v = udata;
+	const struct tvar2 *tv = udata;
+	const struct var2 *v = &tv->var;
+	struct design2 *d = frame_dyad_design(f);
 
-	assert(v);
-	assert(f);
-	assert(msg);
-	assert(v->dyn_index + v->dim
-	       <= design_dvars_dim(frame_recv_design(f)));
+	double dx_data[1] = { +1.0 };
+	size_t dx_index[1] = { 0 };
+	size_t dx_nz = 1;
 
 	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
-	size_t dyn_index = v->dyn_index;
 	size_t ito, nto = msg->nto;
 
-	double dx_data[1] = { +1.0 };
-	size_t dx_index[1] = { 0, };
-	struct vpattern pat = vpattern_make(dx_index, 1);
 	size_t iz, nz;
 	const size_t *indx;
 	const size_t *nmsg;
@@ -76,8 +53,8 @@ static void nsib_message_add(void *udata, struct frame *f,
 			if (*nmsg == 0)
 				continue;
 
-			size_t ix = dyn_index + intvl1 * nintvl1;
-			size_t coix = dyn_index + intvl1;
+			size_t ix = intvl1 * nintvl1;
+			size_t coix = intvl1;
 
 			dx_data[0] = +(double)(*nmsg);
 			dx_index[0] = ix;
@@ -88,7 +65,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 				if (hsend == isend || hsend == jrecv || isend == jrecv)
 					continue;
 
-				frame_recv_update(f, isend, jrecv, dx_data, &pat);
+				design2_update(d, v, isend, jrecv, dx_data, dx_index, dx_nz);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       isend, jrecv, 0, intvl1, dx_data[0]);
 			}
@@ -101,7 +78,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 				if (hsend == coisend || hsend == cojrecv || coisend == cojrecv)
 					continue;
 
-				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				design2_update(d, v, coisend, cojrecv, dx_data, dx_index, dx_nz);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       coisend, cojrecv, intvl1, 0, dx_data[0]);
 			}
@@ -115,24 +92,20 @@ static void nsib_message_add(void *udata, struct frame *f,
 static void nsib_message_advance(void *udata, struct frame *f,
 				 const struct message *msg, size_t intvl)
 {
-	struct design_var *v = udata;
+	const struct tvar2 *tv = udata;
+	const struct var2 *v = &tv->var;
+	struct design2 *d = frame_dyad_design(f);
 
-	assert(v);
-	assert(f);
-	assert(msg);
-	assert(v->dyn_index + v->dim
-	       <= design_dvars_dim(frame_recv_design(f)));
+	double dx_data[2] = { -1.0, +1.0 };
+	size_t dx_index[2];
+	size_t dx_nz = 2;
 
 	const struct history *h = frame_history(f);
 	size_t nintvl = frame_interval_count(f);
 	size_t nintvl1 = nintvl + 1;
 	size_t hsend = msg->from;
-	size_t dyn_index = v->dyn_index;
 	size_t ito, nto = msg->nto;
 
-	double dx_data[2] = { -1.0, +1.0 };
-	size_t dx_index[2] = { 0, 1 };
-	struct vpattern pat = vpattern_make(dx_index, 2);
 	size_t iz, nz;
 	const size_t *indx;
 	const size_t *nmsg;
@@ -156,9 +129,9 @@ static void nsib_message_advance(void *udata, struct frame *f,
 			if (*nmsg == 0)
 				continue;
 
-			size_t ix0 = dyn_index + (intvl - 1) + intvl1 * nintvl1;
+			size_t ix0 = (intvl - 1) + intvl1 * nintvl1;
 			size_t ix1 = ix0 + 1;
-			size_t coix0 = dyn_index + intvl1 + (intvl - 1) * nintvl1;
+			size_t coix0 = intvl1 + (intvl - 1) * nintvl1;
 			size_t coix1 = coix0 + nintvl1;
 
 			dx_data[0] = -(double)(*nmsg);
@@ -172,7 +145,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 				if (hsend == isend || hsend == jrecv || isend == jrecv)
 					continue;
 
-				frame_recv_update(f, isend, jrecv, dx_data, &pat);
+				design2_update(d, v, isend, jrecv, dx_data, dx_index, dx_nz);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       isend, jrecv, intvl - 1, intvl1, dx_data[0]);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
@@ -188,7 +161,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 				if (hsend == coisend || hsend == cojrecv || coisend == cojrecv)
 					continue;
 
-				frame_recv_update(f, coisend, cojrecv, dx_data, &pat);
+				design2_update(d, v, coisend, cojrecv, dx_data, dx_index, dx_nz);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
 				//       coisend, cojrecv, intvl1, intvl - 1, dx_data[0]);
 				//printf("    dx[%zu, %zu](%zu, %zu) += %g\n",
@@ -200,16 +173,41 @@ static void nsib_message_advance(void *udata, struct frame *f,
 
 }
 
-static struct var_type RECV_VAR_NSIB_REP = {
-	VAR_RECV_VAR,
-	nsib_init,
-	nsib_deinit,
-	{
-	 nsib_message_add,
-	 nsib_message_advance,
-	 NULL,			// recv_update
-	 NULL,			// clear
-	 }
+
+static struct frame_callbacks nsib_frame_callbacks = {
+	nsib_message_add,
+	nsib_message_advance,
+	NULL
 };
 
-const struct var_type *RECV_VAR_NSIB = &RECV_VAR_NSIB_REP;
+
+static void nsib_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
+{
+	(void)ap;		// unused;
+
+	struct frame *f = design2_frame(d);
+	size_t n = frame_interval_count(f);
+
+	tv->var.dim = (n + 1) * (n + 1);
+	tv->udata = NULL;
+
+	frame_add_observer(f, tv, &nsib_frame_callbacks);
+}
+
+
+static void nsib_deinit(struct tvar2 *tv, const struct design2 *d)
+{
+	struct frame *f = design2_frame(d);
+	frame_remove_observer(f, tv);
+}
+
+
+static struct tvar2_type DYAD_VAR_NSIB_REP = {
+	nsib_init,
+	nsib_deinit,
+};
+
+
+const struct tvar2_type *DYAD_VAR_NSIB = &DYAD_VAR_NSIB_REP;
+
+

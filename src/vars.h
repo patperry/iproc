@@ -27,16 +27,16 @@ extern const struct tvar2_type *DYAD_VAR_NRECV;
 extern const struct tvar2_type *DYAD_VAR_NSEND;
 
 extern const struct tvar2_type *DYAD_VAR_IRECV2;
-//extern const struct tvar2_type *DYAD_VAR_NRECV2;
+extern const struct tvar2_type *DYAD_VAR_NRECV2;
 
 extern const struct tvar2_type *DYAD_VAR_ISEND2;
-//extern const struct tvar2_type *DYAD_VAR_NSEND2;
+extern const struct tvar2_type *DYAD_VAR_NSEND2;
 
 extern const struct tvar2_type *DYAD_VAR_ISIB;
-//extern const struct tvar2_type *DYAD_VAR_NSIB;
+extern const struct tvar2_type *DYAD_VAR_NSIB;
 
 extern const struct tvar2_type *DYAD_VAR_ICOSIB;
-//extern const struct tvar2_type *DYAD_VAR_NCOSIB;
+extern const struct tvar2_type *DYAD_VAR_NCOSIB;
 
 char **var_name_alloc(const char *name, size_t len); /* DEPRECATED */
 char **var_names_alloc(const char *name, size_t len, size_t n); /* DEPRECATED */

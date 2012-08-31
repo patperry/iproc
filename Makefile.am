@@ -41,8 +41,12 @@ libiproc_a_SOURCES = \
 	src/dv-isend.c \
 	src/dv-isend2.c \
 	src/dv-isib.c \
+	src/dv-ncosib.c \
 	src/dv-nrecv.c \
+	src/dv-nrecv2.c \
 	src/dv-nsend.c \
+	src/dv-nsend2.c \
+	src/dv-nsib.c \
 	src/frame.c \
 	src/frame.h \
 	src/history.c \
