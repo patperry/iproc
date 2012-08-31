@@ -80,6 +80,15 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
 	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	design2_add_tvar(d, "IRecv2", DYAD_VAR_IRECV2);
+	//design2_add_tvar(d, "NRecv2", DYAD_VAR_NRECV2);
+	design2_add_tvar(d, "ISend2", DYAD_VAR_ISEND2);
+	//design2_add_tvar(d, "NSend2", DYAD_VAR_NSEND2);
+	design2_add_tvar(d, "ISib", DYAD_VAR_ISIB);
+	//design2_add_tvar(d, "NSib", DYAD_VAR_NSIB);
+	design2_add_tvar(d, "ICosib", DYAD_VAR_ICOSIB);
+	//design2_add_tvar(d, "NCosib", DYAD_VAR_NCOSIB);
+
 
 	char buf[1024];
 	size_t i, j;
@@ -91,14 +100,6 @@ static void setup_frame(void) {
 	}
 
 
-	/*design_add_dvar(r, RECV_VAR_IRECV2, NULL);
-	design_add_dvar(r, RECV_VAR_NRECV2, NULL);
-	design_add_dvar(r, RECV_VAR_ISEND2, NULL);
-	design_add_dvar(r, RECV_VAR_NSEND2, NULL);
-	design_add_dvar(r, RECV_VAR_ISIB, NULL);
-	design_add_dvar(r, RECV_VAR_NSIB, NULL);
-	design_add_dvar(r, RECV_VAR_ICOSIB, NULL);
-	design_add_dvar(r, RECV_VAR_NCOSIB, NULL);  */
 
 	// recv_model_init(&m, &frame);
 	//recv_model_add_inter(&m, design_var(r, "Female"), design_var(d, "NRecv"));
