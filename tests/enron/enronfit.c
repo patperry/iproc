@@ -76,10 +76,10 @@ static void setup(void) {
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
 
-	//design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	//design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	//design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	//design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
+	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
+	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
 
 	char buf[1024];
 	size_t i, j;
