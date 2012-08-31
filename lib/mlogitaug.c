@@ -437,10 +437,10 @@ void recompute_cross_cov(struct mlogitaug *m1)
 	double *cov = m1->cross_cov;
 	double *diff = m1->base_xbuf;
 
-	if (dim == 0)
+	if (dim == 0 || base_dim == 0)
 		return;
 
-	memset(cov, 0, base_dim * dim * sizeof(*cov));
+	memset(cov, 0, dim * base_dim * sizeof(*cov));
 
 	size_t iz, nz = m1->nz;
 	for (iz = 0; iz < nz; iz++) {
@@ -452,7 +452,11 @@ void recompute_cross_cov(struct mlogitaug *m1)
 
 		const double *y = m1->x + iz * dim;
 
-		blas_dger(dim, base_dim, w, y, 1, diff, 1, cov, dim);
+		if (MLOGIT_COV_UPLO == BLAS_LOWER) {
+			blas_dger(base_dim, dim, w, diff, 1, y, 1, cov, base_dim);
+		} else { // BLAS_UPPER
+			blas_dger(dim, base_dim, w, y, 1, diff, 1, cov, dim);
+		}
 	}
 }
 

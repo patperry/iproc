@@ -73,6 +73,47 @@ void sender_clear(struct recv_loglik_sender *sll)
 }
 
 
+static void copy_cov(const struct mlogitaug *m1, double *dst)
+{
+	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
+	size_t aug_dim = mlogitaug_dim(m1);
+	//size_t dim = base_dim + aug_dim;
+	size_t base_cov_dim = base_dim * (base_dim + 1) / 2;
+	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
+	const double *base_cov = mlogitaug_cached_base_cov(m1);
+	const double *cross_cov = mlogitaug_cached_cross_cov(m1);
+	const double *aug_cov = mlogitaug_cached_cov(m1);
+	size_t i;
+
+	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
+		for (i = 0; i < base_dim; i++) {
+			size_t rowlen = base_dim - i;
+			memcpy(dst, base_cov, rowlen * sizeof(double));
+			dst += rowlen;
+			base_cov += rowlen;
+
+			memcpy(dst, cross_cov, aug_dim * sizeof(double));
+			dst += aug_dim;
+			cross_cov += aug_dim;
+		}
+		memcpy(dst, aug_cov, aug_cov_dim * sizeof(double));
+	} else {
+		memcpy(dst, base_cov, base_cov_dim * sizeof(double));
+		dst += base_cov_dim;
+
+		for (i = 0; i < aug_dim; i++) {
+			memcpy(dst, cross_cov, base_dim * sizeof(double));
+			dst += base_dim;
+			cross_cov += base_dim;
+
+			size_t rowlen = i + 1;
+			memcpy(dst, aug_cov, rowlen * sizeof(double));
+			dst += rowlen;
+			aug_cov += rowlen;
+		}
+	}
+}
+
 void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 		const struct mlogitaug *m1, size_t isend,
 		const size_t *jrecv, size_t nto,
@@ -81,10 +122,10 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
 
-	size_t i, base_dim = mlogit_dim(mlogitaug_base(m1));
+	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
 	size_t aug_dim = mlogitaug_dim(m1);
 	size_t dim = base_dim + aug_dim;
-
+	size_t cov_dim = dim * (dim + 1) / 2;
 
 	const struct catdist1 *dist = mlogitaug_cached_dist(m1);
 
@@ -115,26 +156,8 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	blas_daxpy(dim, -(double)nto, last->mean.all, 1, last->score.all, 1);
 
 	/* copy cov */
-	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
-	size_t cov_dim = dim * (dim + 1) / 2;
-	const double *base_cov = mlogitaug_cached_base_cov(m1);
-	const double *cross_cov = mlogitaug_cached_cross_cov(m1);
-	const double *aug_cov = mlogitaug_cached_cov(m1);
-	double *cov = last->cov;
-
-	assert(MLOGIT_COV_UPLO == BLAS_UPPER);
-	for (i = 0; i < base_dim; i++) {
-		size_t rowlen = base_dim - i;
-		memcpy(cov, base_cov, rowlen * sizeof(double));
-		cov += rowlen;
-		base_cov += rowlen;
-		
-		memcpy(cov, cross_cov, aug_dim * sizeof(double));
-		cov += aug_dim;
-		cross_cov += aug_dim;
-	}
-	memcpy(cov, aug_cov, aug_cov_dim * sizeof(double));
-
+	copy_cov(m1, last->cov);
+	
 	/* update totals */
 	sll->count += last->count;
 	sll->dev += last->dev;

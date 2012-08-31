@@ -476,16 +476,32 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	recv_loglik_axpy_imat(1.0/df, ll, kkt->imat_buf);
 	double *dst = kkt->matrix;
 	const double *src = kkt->imat_buf;
-	for (i = 0; i < dim; i++) {
-		size_t rowlen = dim - i;
-		
-		memcpy(dst + i, src, rowlen * sizeof(*dst));
-		dst += n;
-		src += rowlen;
-	}
 
-	// k12
-	sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds, ce->wt_cols, kkt->matrix + dim, dim + ne);
+	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = dim - i;
+			
+			memcpy(dst + i, src, rowlen * sizeof(*dst));
+			dst += n;
+			src += rowlen;
+		}
+
+		// k12
+		sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds,
+			       ce->wt_cols, kkt->matrix + dim, n);
+	} else {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = i + 1;
+
+			memcpy(dst, src, rowlen * sizeof(*dst));
+			dst += n;
+			src += rowlen;
+		}
+
+		// k21
+		sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds,
+			       ce->wt_cols, kkt->matrix + dim * n, n);
+	}
 
 	kkt->factored = 0;
 }
@@ -522,7 +538,8 @@ static void search_set(struct recv_fit_search *search,
 	blas_dcopy(n, resid->params.all, 1, s, 1);
 	blas_dscal(n, -1.0, s, 1);
 
-	ptrdiff_t info = lapack_dsysv(BLAS_LOWER, n, 1, kkt->matrix, n,
+	enum blas_uplo uplo = MLOGIT_COV_UPLO == BLAS_UPPER ? BLAS_LOWER : BLAS_UPPER;
+	ptrdiff_t info = lapack_dsysv(uplo, n, 1, kkt->matrix, n,
 				      kkt->ldl_ipiv, s, n, kkt->ldl_work,
 				      kkt->ldl_lwork);
 	kkt->factored = 1;
@@ -553,11 +570,12 @@ static void rgrad_set(struct recv_fit_rgrad *rgrad, size_t dim, size_t ne,
 	assert(!kkt->factored);
 
 	size_t n = dim + ne;
+	enum blas_uplo uplo = MLOGIT_COV_UPLO == BLAS_UPPER ? BLAS_LOWER : BLAS_UPPER;
 
 	if (!n)
 		return;
 
-	blas_dsymv(BLAS_LOWER, n, 2.0, kkt->matrix, n, resid->params.all, 1, 0.0, rgrad->params.all, 1);
+	blas_dsymv(uplo, n, 2.0, kkt->matrix, n, resid->params.all, 1, 0.0, rgrad->params.all, 1);
 }
 
 static enum recv_fit_task primal_dual_step(struct recv_fit *fit)

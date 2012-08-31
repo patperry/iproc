@@ -413,6 +413,8 @@ static void test_imat()
 	const struct design *r = frame_recv_design(&frame);
 	const struct design2 *d = frame_dyad_design(&frame);
 	const struct catdist1 *dist = NULL;
+	const enum blas_uplo uplo = MLOGIT_COV_UPLO;
+	const enum blas_uplo fuplo = uplo == BLAS_UPPER ? BLAS_LOWER : BLAS_UPPER;
 
 	nmsg = 0;
 
@@ -447,7 +449,7 @@ static void test_imat()
 				design2_axpy(-1.0, d, msg->from, i, &diff.dyad);
 
 				double w = catdist1_cached_prob(dist, i);
-				blas_dspr(BLAS_LOWER, dim, w, diff.all, 1, last_cov0);
+				blas_dspr(fuplo, dim, w, diff.all, 1, last_cov0);
 			}
 			blas_dscal(cov_dim, msg->nto, last_cov0, 1);
 
@@ -455,7 +457,7 @@ static void test_imat()
 			memset(last_cov1, 0, cov_dim * sizeof(double));
 			recv_loglik_axpy_last_imat(1.0, &loglik, last_cov1);
 
-			assert_sym_approx(last_cov0, last_cov1, BLAS_UPPER, dim);
+			assert_sym_approx(last_cov0, last_cov1, uplo, dim);
 
 			/* compute cov0 */
 			blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
