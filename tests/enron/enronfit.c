@@ -22,7 +22,7 @@
 #include "recv_model.h"
 #include "recv_loglik.h"
 #include "recv_fit.h"
-//#include "recv_resid.h"
+#include "recv_resid.h"
 
 
 static size_t nsend;
@@ -266,24 +266,24 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		YG(yajl_gen_integer(hand, count));
 
 		// score
-		//YG(yajl_gen_string(hand, YSTR(SCORE)));
-		//YG(yajl_gen_array_open(hand));
-		//for (ic = 0; ic < nc; ic++) {
-		//	const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-		//	const double *score = info->score;
-		//	YG(yajl_gen_vector(hand, dim, score));
-		//}
-		//YG(yajl_gen_array_close(hand));
+		struct recv_coefs score;
+		
+		recv_coefs_init(&score, f);
+		memset(score.all, 0, dim * sizeof(double));
+		recv_loglik_axpy_score(1.0, ll, &score);
+		YG(yajl_gen_string(hand, YSTR(SCORE)));
+		YG(yajl_gen_vector(hand, dim, score.all));
+
+		recv_coefs_deinit(&score);
 
 		// information
-		//YG(yajl_gen_string(hand, YSTR(INFORMATION)));
-		//YG(yajl_gen_array_open(hand));
-		//for (ic = 0; ic < nc; ic++) {
-		//	const struct recv_loglik_info *info = recv_loglik_info(ll, ic);
-		//	const struct dmatrix *imat = &info->imat;
-		//	YG(yajl_gen_matrix(hand, dim, dim, imat));
-		//}
-		//YG(yajl_gen_array_close(hand));
+		double *imat = xcalloc(dim * (dim + 1) / 2, sizeof(double));
+		recv_loglik_axpy_imat(1.0, ll, imat);
+
+		YG(yajl_gen_string(hand, YSTR(INFORMATION)));
+		YG(yajl_gen_vector(hand, dim * (dim + 1) / 2, imat));
+
+		free(imat);
 
 		// rank
 		YG(yajl_gen_string(hand, YSTR(RANK)));
@@ -311,19 +311,17 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		// residuals
 		// fitted.values
 		// y = y
-		//struct recv_resid resid;
+		struct recv_resid resid;
 
-		//frame_clear(f);
-		//recv_resid_init(&resid, f, fit->ymsgs,
-		//		fit->model.ncohort, fit->model.cohorts,
-		//		coefs);
-		//YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
-		//YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.obs.dyad));
+		frame_clear(f);
+		recv_resid_init(&resid, f, fit->ymsgs, coefs);
+		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
+		YG(yajl_gen_matrix(hand, nsend, nrecv, resid.obs.dyad));
 
-		//YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
-		//YG(yajl_gen_matrix(hand, nsend, nrecv, &resid.exp.dyad));
+		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
+		YG(yajl_gen_matrix(hand, nsend, nrecv, resid.exp.dyad));
 
-		//recv_resid_deinit(&resid);
+		recv_resid_deinit(&resid);
 	}
 	YG(yajl_gen_map_close(hand));
 
