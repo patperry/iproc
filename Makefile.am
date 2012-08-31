@@ -45,6 +45,8 @@ libiproc_a_SOURCES = \
 	src/history.h \
 	src/messages.c \
 	src/messages.h \
+	src/recv_boot.c \
+	src/recv_boot.h \
 	src/recv_fit.c \
 	src/recv_fit.h \
 	src/recv_loglik.c \

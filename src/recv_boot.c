@@ -57,15 +57,27 @@ static int sample_subset(const double *probs, size_t n, dsfmt_t * dsfmt,
 	return 0;
 }
 
+
+static void axpy_probs(double alpha, const struct recv_model *m, size_t isend,
+		       double *y)
+{
+	const struct catdist1 *dist = recv_model_dist(m, isend);
+	const struct frame *f = recv_model_frame(m);
+	size_t j, n = frame_recv_count(f);
+
+	for (j = 0; j < n; j++) {
+		double p = catdist1_cached_prob(dist, j);
+		y[j] += alpha * p;
+	}
+}
+
 void recv_boot_init(struct recv_boot *boot,
 		    struct frame *f,
 		    const struct messages *msgs,
-		    size_t ncohort,
-		    const size_t *cohorts,
-		    const struct dmatrix *coefs, dsfmt_t * dsfmt)
+		    const struct recv_coefs *coefs, dsfmt_t * dsfmt)
 {
 	messages_init(&boot->messages);
-	recv_model_init(&boot->model, f, ncohort, cohorts, coefs);
+	recv_model_init(&boot->model, f, coefs);
 
 	size_t nrecv = frame_recv_count(f);
 	size_t max_nto = messages_max_nto(msgs);
@@ -91,7 +103,7 @@ void recv_boot_init(struct recv_boot *boot,
 			nto = msg->nto;
 
 			memset(p, 0, nrecv * sizeof(p[0]));
-			recv_model_axpy_probs(1.0, &boot->model, from, p);
+			axpy_probs(1.0, &boot->model, from, p);
 
 			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
 				fprintf(stdout,
