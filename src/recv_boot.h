@@ -1,5 +1,5 @@
-#ifndef _RECV_BOOT_H
-#define _RECV_BOOT_H
+#ifndef RECV_BOOT_H
+#define RECV_BOOT_H
 
 /* must #include dSFMT/dSFMT.h before including this file */
 
@@ -23,4 +23,4 @@ void recv_boot_init(struct recv_boot *boot,
 		    const struct recv_coefs *coefs, dsfmt_t * dsfmt);
 void recv_boot_deinit(struct recv_boot *boot);
 
-#endif /* _RECV_BOOT_H */
+#endif /* RECV_BOOT_H */
