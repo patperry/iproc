@@ -300,10 +300,10 @@ check_PROGRAMS += tests/recv_loglik_test
 tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_recv_loglik_test_LDADD    = $(check_LDADD)
 
-#check_PROGRAMS += tests/enronfit
-#tests_enronfit_SOURCES  = tests/enron/enronfit.c
-#tests_enronfit_CPPFLAGS = $(check_CPPFLAGS)
-#tests_enronfit_LDADD    = $(check_LDADD)
+check_PROGRAMS += tests/enronfit
+tests_enronfit_SOURCES  = tests/enron/enronfit.c
+tests_enronfit_CPPFLAGS = $(check_CPPFLAGS)
+tests_enronfit_LDADD    = $(check_LDADD)
 
 TESTS = \
 	$(check_PROGRAMS)
