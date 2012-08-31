@@ -11,43 +11,42 @@
 static void recv_resid_count_init(struct recv_resid_count *c,
 				  size_t nsend, size_t nrecv)
 {
-	c->dyad = (struct dmatrix) { xcalloc(nsend * nrecv, sizeof(double)), MAX(1, nsend) };
-	c->dyad_trans = (struct dmatrix) { xcalloc(nrecv * nsend, sizeof(double)), MAX(1, nrecv) };
+	c->dyad = xcalloc(nsend * nrecv, sizeof(double));
 	c->send = xcalloc(nsend, sizeof(double));
 	c->recv = xcalloc(nrecv, sizeof(double));
 	c->tot = 0.0;
-	c->dyad_cached = 1;
 }
 
 static void recv_resid_count_deinit(struct recv_resid_count *c)
 {
 	free(c->recv);
 	free(c->send);
-	free(c->dyad_trans.data);
-	free(c->dyad.data);
+	free(c->dyad);
 }
 
 static void recv_resid_clear(struct recv_resid_count *c, size_t nsend,
 			     size_t nrecv)
 {
-	matrix_dzero(nsend, nrecv, &c->dyad);
-	matrix_dzero(nrecv, nsend, &c->dyad_trans);
+	memset(c->dyad, 0, nsend * nrecv * sizeof(double));
 	memset(c->send, 0, nsend * sizeof(double));
 	memset(c->recv, 0, nrecv * sizeof(double));
 	c->tot = 0;
-	c->dyad_cached = 1;
 }
 
-static void recv_resid_count_compute_dyad(struct recv_resid_count *c,
-					  size_t nsend, size_t nrecv)
+static void axpy_probs(double alpha, const struct recv_model *m, size_t isend,
+		       double *y)
 {
-	if (!c->dyad_cached) {
-		matrix_dtrans(nrecv, nsend, &c->dyad_trans, &c->dyad);
-		c->dyad_cached = 1;
+	const struct catdist1 *dist = recv_model_dist(m, isend);
+	const struct frame *f = recv_model_frame(m);
+	size_t j, n = frame_recv_count(f);
+
+	for (j = 0; j < n; j++) {
+		double p = catdist1_cached_prob(dist, j);
+		y[j] += alpha * p;
 	}
 }
 
-static void update_obs(struct recv_resid_count *obs, const struct message *msg)
+static void update_obs(struct recv_resid_count *obs, const struct message *msg, size_t nrecv)
 {
 	size_t isend = msg->from;
 	size_t ito, nto = msg->nto;
@@ -57,17 +56,18 @@ static void update_obs(struct recv_resid_count *obs, const struct message *msg)
 	for (ito = 0; ito < nto; ito++) {
 		size_t jrecv = msg->to[ito];
 
-		MATRIX_ITEM(&obs->dyad_trans, jrecv, isend) += 1.0;
+		obs->dyad[isend * nrecv + jrecv] += 1.0;
 		obs->recv[jrecv] += 1.0;
 	}
 
 	obs->tot += nto;
-	obs->dyad_cached = 0;
 }
 
 static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 		       const struct recv_model *model)
 {
+	const struct frame *f = recv_model_frame(model);
+	size_t nrecv = frame_recv_count(f);
 	size_t isend = msg->from;
 	size_t nto = msg->nto;
 
@@ -75,18 +75,16 @@ static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 
 	exp->send[isend] += (double)nto;
 
-	recv_model_axpy_probs(nto, model, isend, exp->recv);
+	axpy_probs(nto, model, isend, exp->recv);
 
-	double *col = MATRIX_COL(&exp->dyad_trans, isend);
-	recv_model_axpy_probs(nto, model, isend, col);
-
-	exp->dyad_cached = 0;
+	double *row = exp->dyad + isend * nrecv;
+	axpy_probs(nto, model, isend, row);
 }
 
 static void recv_resid_set(struct recv_resid *resid,
 		           struct frame *f,
 			   const struct messages *msgs,
-			   const struct dmatrix *coefs)
+			   const struct recv_coefs *coefs)
 {
 	size_t nsend = frame_send_count(f);
 	size_t nrecv = frame_recv_count(f);
@@ -105,25 +103,21 @@ static void recv_resid_set(struct recv_resid *resid,
 			struct message *msg = MESSAGES_VAL(it, i);
 			frame_add(f, msg);
 
-			update_obs(&resid->obs, msg);
+			update_obs(&resid->obs, msg, nrecv);
 			update_exp(&resid->exp, msg, &resid->model);
 		}
 	}
-
-	recv_resid_count_compute_dyad(&resid->obs, nsend, nrecv);
-	recv_resid_count_compute_dyad(&resid->exp, nsend, nrecv);
 }
 
 void recv_resid_init(struct recv_resid *resid,
 		     struct frame *f,
 		     const struct messages *msgs,
-		     size_t ncohort,
-		     const size_t *cohorts, const struct dmatrix *coefs)
+		     const struct recv_coefs *coefs)
 {
 	size_t nsend = frame_send_count(f);
 	size_t nrecv = frame_recv_count(f);
 
-	recv_model_init(&resid->model, f, ncohort, cohorts, coefs);
+	recv_model_init(&resid->model, f, coefs);
 	recv_resid_count_init(&resid->obs, nsend, nrecv);
 	recv_resid_count_init(&resid->exp, nsend, nrecv);
 
