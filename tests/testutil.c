@@ -124,7 +124,7 @@ static int sym_approx(const double *expect, const double *actual,
 		blas_dspmv(fuplo, n, 1.0, diff, zi, 1, 0.0, err_z, 1);
 		double z_err_z = blas_ddot(n, zi, 1, err_z, 1);
 		if (!(fabs(z_err_z) <=
-		      n * ROOT4_DBL_EPSILON * (1 + fabs(w[i - 1])))) {
+		      n * ROOT3_DBL_EPSILON * (1 + fabs(w[i - 1])))) {
 			approx = 0;
 			goto out;
 		}
