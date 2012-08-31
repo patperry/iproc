@@ -35,7 +35,7 @@ static int has_loops;
 static struct frame frame;
 
 
-static void setup(void) {
+static void setup_frame(void) {
 	size_t terms = 2; // second-order interactions only
 	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, terms);
 	nrecv = nsend;
@@ -117,7 +117,7 @@ static void add_constraints(struct recv_fit *fit)
 	//	fprintf(stderr, "Adding %d constraints to make parameters identifiable\n", nadd);
 }
 
-static void teardown(void)
+static void teardown_frame(void)
 {
 	frame_deinit(&frame);
 	free(traits);
@@ -366,18 +366,14 @@ static void output(const struct recv_fit *fit)
 	yajl_gen_free(g);
 }
 
-static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
+static int do_fit(struct recv_fit *fit,
+		  const struct messages *xmsgs, const struct messages *ymsgs,
 		  const struct recv_fit_params *params0)
 {
 	size_t maxit = 30;
 	size_t report = 1;
 	int trace = 1;
 
-	struct recv_fit fit;
-	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
-	ctrl.gtol = 1e-7;
-	recv_fit_init(&fit, &frame, xmsgs, ymsgs, &ctrl);
-	add_constraints(&fit);
 
 	enum recv_fit_task task;
 	size_t it = 0;
@@ -386,9 +382,9 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	//matrix_init(&coefs0, dim, nc);
 	//matrix_fill(&coefs0, 0.0001);
 
-	for (it = 0, task = recv_fit_start(&fit, params0);
+	for (it = 0, task = recv_fit_start(fit, params0);
 	     it < maxit && task == RECV_FIT_STEP;
-	     it++, task = recv_fit_advance(&fit)) {
+	     it++, task = recv_fit_advance(fit)) {
 		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
 			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
 			// const struct recv_loglik_info *info = recv_loglik_info(ll);
@@ -396,8 +392,8 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 			// double dev = n * info->dev;
 			// const struct vector *score = &info->score;
 			// double ngrad = vector_max_abs(score);
-			double step = recv_fit_step(&fit);
-			double ngrad = recv_fit_grad_norm2(&fit);
+			double step = recv_fit_step(fit);
+			double ngrad = recv_fit_grad_norm2(fit);
 			fprintf(stderr, "iter %zu; |grad| = %.16f; step = %.16f\n",
 				it, ngrad, step);
 
@@ -411,26 +407,17 @@ static int do_fit(const struct messages *xmsgs, const struct messages *ymsgs,
 	int err = 0;
 
 	if (task != RECV_FIT_CONV) {
-		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(&fit));
+		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(fit));
 		err = -1;
 	}
-
-	output(&fit);
-	recv_fit_deinit(&fit);
 
 	return err;
 }
 
 
-static void init_params(struct recv_fit_params *params, const char *filename)
-{
-	fprintf(stderr, "Not implemented");
-	exit(EXIT_FAILURE);
-}
-
-
-/*
-static void init_coefs(struct dmatrix *coefs, char *filename)
+static void init_params(struct recv_fit_params *params,
+			const struct recv_fit *fit,
+			const char *filename)
 {
 	int err = 1;
 	FILE *fp = fopen(filename, "rb");
@@ -468,49 +455,52 @@ static void init_coefs(struct dmatrix *coefs, char *filename)
 
 	// ... and extract a nested value from the config file
 	const char * coefs_path[] = { COEFFICIENTS, NULL };
-	const char * nrow_path[] = { "nrow", NULL};
-	const char * ncol_path[] = { "ncol", NULL};
-	const char * data_path[] = { "data", NULL};
+	yajl_val vcoefs = yajl_tree_get(node, coefs_path,  yajl_t_array);
 
-	yajl_val vcoefs = yajl_tree_get(node, coefs_path, yajl_t_any);
-
-	if (!vcoefs)
+	if (!vcoefs
+	    || YAJL_GET_ARRAY(vcoefs)->len != recv_fit_coefs_count(fit))
 		goto cleanup_yajl;
 
-	yajl_val vnrow = yajl_tree_get(vcoefs, nrow_path, yajl_t_number);
-	yajl_val vncol = yajl_tree_get(vcoefs, ncol_path, yajl_t_number);
-	yajl_val vdata = yajl_tree_get(vcoefs, data_path, yajl_t_array);
+	size_t i, dim = YAJL_GET_ARRAY(vcoefs)->len;
+	double *coefs = xcalloc(dim, sizeof(*coefs));
+	yajl_val *item = YAJL_GET_ARRAY(vcoefs)->values;
 
-	if (!vnrow || !vncol || !vdata)
-		goto cleanup_yajl;
-
-	long long nrow = YAJL_GET_INTEGER(vnrow);
-	long long ncol = YAJL_GET_INTEGER(vncol);
-	size_t i, n = nrow * ncol;
-
-	if (nrow < 0 || ncol < 0)
-		goto cleanup_yajl;
-
-	if (YAJL_GET_ARRAY(vdata)->len != n)
-		goto cleanup_yajl;
-
-	*coefs = (struct dmatrix) { xcalloc(nrow * ncol, sizeof(double)), MAX(1, nrow) };
-	yajl_val *item = YAJL_GET_ARRAY(vdata)->values;
-	double *ptr = coefs->data;
-
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < dim; i++) {
 		if (!YAJL_IS_NUMBER(item[i])) {
 			err = 1;
 			goto cleanup_coefs;
 		}
-		ptr[i] = YAJL_GET_DOUBLE(item[i]);
+		coefs[i] = YAJL_GET_DOUBLE(item[i]);
 	}
+	
+	const char * duals_path[] = { DUALS, NULL };
+	yajl_val vduals = yajl_tree_get(node, duals_path,  yajl_t_array);
+
+	if (!vduals
+	    || YAJL_GET_ARRAY(vduals)->len != recv_fit_constr_count(fit))
+		goto cleanup_coefs;
+
+	size_t nduals = YAJL_GET_ARRAY(vduals)->len;
+	double *duals = xcalloc(nduals, sizeof(*duals));
+	item = YAJL_GET_ARRAY(vduals)->values;
+
+	for (i = 0; i < nduals; i++) {
+		if (!YAJL_IS_NUMBER(item[i])) {
+			err = 1;
+			goto cleanup_duals;
+		}
+		duals[i] = YAJL_GET_DOUBLE(item[i]);
+	}
+
+	recv_fit_params_init(params, fit);
+	memcpy(params->coefs.all, coefs, dim * sizeof(double));
+	memcpy(params->duals, duals, nduals * sizeof(double));
 	err = 0;
-	goto cleanup_yajl;
 
-
+cleanup_duals:
+	free(duals);
 cleanup_coefs:
-	free(coefs->data);
+	free(coefs);
 cleanup_yajl:
 	yajl_tree_free(node);
 	free(filebuf);
@@ -520,7 +510,7 @@ out:
 	if (err)
 		exit(err);
 }
-*/
+
 
 struct options {
 	char *startfile;
@@ -572,53 +562,61 @@ static struct options parse_options(int argc, char **argv)
 	return opts;
 }
 
+
 int main(int argc, char **argv)
 {
 	int err = 0;
 
 	struct options opts = parse_options(argc, argv);
+
+	// setup frame
+	setup_frame();
+
+	// setup messages
+	struct messages enron_messages;
+	struct messages *xmsgs = &enron_messages;
+	struct messages *ymsgs = &enron_messages;
+	enron_messages_init(&enron_messages, 5);
+
+	// setup fit
+	struct recv_fit fit;
+	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
+	recv_fit_init(&fit, &frame, xmsgs, ymsgs, &ctrl);
+	add_constraints(&fit);
+
+	// setup initial parameters
 	struct recv_fit_params params0;
 	int has_params0 = 0;
-
 	if (opts.startfile) {
 		has_params0 = 1;
-		init_params(&params0, opts.startfile);
+		init_params(&params0, &fit, opts.startfile);
 	}
-
-	struct recv_boot boot;
-	struct messages enron_messages;
-	struct messages *xmsgs, *ymsgs;
-	xmsgs = ymsgs = &enron_messages;
-
-	setup();
-	enron_messages_init(&enron_messages, 5);
 	struct recv_fit_params *pparams0 = has_params0 ? &params0 : NULL;
 	struct recv_coefs *pcoefs0 = has_params0 ? &params0.coefs : NULL;
 
+	// setup bootstrap (if required)
+	struct recv_boot boot;
 	if (opts.boot) {
 		dsfmt_t dsfmt;
 		dsfmt_init_gen_rand(&dsfmt, opts.seed);
 
 		recv_boot_init(&boot, &frame, &enron_messages, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
-
-		fprintf(stderr, "Not Implemented");
-		exit(EXIT_FAILURE);
 	}
 
-	err = do_fit(xmsgs, ymsgs, pparams0);
+	// fit the model
+	err = do_fit(&fit, xmsgs, ymsgs, pparams0);
 
-	messages_deinit(&enron_messages);
+	// output the results
+	output(&fit);
 
-	if (opts.boot) {
+	if (opts.boot)
 		recv_boot_deinit(&boot);
-	}
-
-	teardown();
-
-	if (has_params0) {
+	if (has_params0)
 		recv_fit_params_deinit(&params0);
-	}
+	recv_fit_deinit(&fit);
+	messages_deinit(&enron_messages);
+	teardown_frame();
 
 	return err;
 }
