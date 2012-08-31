@@ -866,3 +866,9 @@ double recv_fit_dev0(const struct recv_fit *fit)
 {
 	return fit->dev0;
 }
+
+size_t recv_fit_coefs_count(const struct recv_fit *fit)
+{
+	const struct recv_model *m = &fit->model;
+	return recv_model_dim(m);
+}

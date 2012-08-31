@@ -135,6 +135,10 @@ void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t i2);
 //size_t recv_fit_add_constr_identify(struct recv_fit *fit);
 
+
+size_t recv_fit_coefs_count(const struct recv_fit *fit);
+
+
 /* fitting */
 enum recv_fit_task recv_fit_start(struct recv_fit *fit, const struct recv_fit_params *params0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
