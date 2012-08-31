@@ -111,7 +111,7 @@ static void setup_frame(void) {
 
 static void add_constraints(struct recv_fit *fit)
 {
-
+	(void)fit;
 	/* add constraints to make the model identifiable (TODO/not implemented) */
 	//size_t nadd = recv_fit_add_constr_identify(fit);
 	//if (nadd > 0)
@@ -153,7 +153,8 @@ static void teardown_frame(void)
 #define EXPECTED_COUNTS		"expected_counts"
 
 
-yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
+yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit,
+				  int has_resid)
 {
 	assert(fit);
 	yajl_gen_status err = yajl_gen_status_ok;
@@ -312,17 +313,19 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 		// residuals
 		// fitted.values
 		// y = y
-		struct recv_resid resid;
+		if (has_resid) {
+			struct recv_resid resid;
 
-		frame_clear(f);
-		recv_resid_init(&resid, f, fit->ymsgs, coefs);
-		YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
-		YG(yajl_gen_matrix(hand, nsend, nrecv, resid.obs.dyad));
+			frame_clear(f);
+			recv_resid_init(&resid, f, fit->ymsgs, coefs);
+			YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
+			YG(yajl_gen_matrix(hand, nsend, nrecv, resid.obs.dyad));
 
-		YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
-		YG(yajl_gen_matrix(hand, nsend, nrecv, resid.exp.dyad));
+			YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
+			YG(yajl_gen_matrix(hand, nsend, nrecv, resid.exp.dyad));
 
-		recv_resid_deinit(&resid);
+			recv_resid_deinit(&resid);
+		}
 	}
 	YG(yajl_gen_map_close(hand));
 
@@ -350,12 +353,12 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit)
 }
 
 
-static void output(const struct recv_fit *fit)
+static void output(const struct recv_fit *fit, int resid)
 {
 	/* generator config */
 	yajl_gen g = yajl_gen_alloc(NULL);
 	yajl_gen_config(g, yajl_gen_beautify, 1);
-	yajl_gen_recv_fit(g, fit);
+	yajl_gen_recv_fit(g, fit, resid);
 
 
 	/* output */
@@ -367,9 +370,7 @@ static void output(const struct recv_fit *fit)
 	yajl_gen_free(g);
 }
 
-static int do_fit(struct recv_fit *fit,
-		  const struct messages *xmsgs, const struct messages *ymsgs,
-		  const struct recv_fit_params *params0)
+static int do_fit(struct recv_fit *fit, const struct recv_fit_params *params0)
 {
 	size_t maxit = 30;
 	size_t report = 1;
@@ -516,6 +517,7 @@ out:
 struct options {
 	char *startfile;
 	int boot;
+	int resid;
 	int32_t seed;
 };
 
@@ -525,6 +527,7 @@ static struct options parse_options(int argc, char **argv)
 	static struct option long_options[] = {
 		{ "start", required_argument, 0, 's' },
 		{ "boot", optional_argument, 0, 'b' },
+		{ "resid", no_argument, 0, 'r' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int option_index = 0;
@@ -532,17 +535,18 @@ static struct options parse_options(int argc, char **argv)
 	struct options opts;
 	opts.startfile = NULL;
 	opts.boot = 0;
+	opts.resid = 0;
 	opts.seed = 0;
 
 
 	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
-		 switch (c) {
-		 case 's':
+		switch (c) {
+		case 's':
 			opts.startfile = optarg;
 			fprintf(stderr, "start file: '%s'\n", opts.startfile);
 			fflush(stderr);
 			break;
-		 case 'b':
+		case 'b':
 			opts.boot = 1;
 			if (optarg) {
 				opts.seed = (int32_t)strtol(optarg, NULL, 10);
@@ -550,10 +554,12 @@ static struct options parse_options(int argc, char **argv)
 			fprintf(stderr, "bootstrap seed: '%zu'\n", (size_t)opts.seed);
 			fflush(stderr);
 			break;
-		 default:
+		case 'r':
+			opts.resid = 1;
+		default:
 			exit(1);
-		 }
-	 }
+		}
+	}
 
 	if (opts.boot && !opts.startfile) {
 		fprintf(stderr, "Must specify start file for bootstrap\n");
@@ -606,10 +612,10 @@ int main(int argc, char **argv)
 	}
 
 	// fit the model
-	err = do_fit(&fit, xmsgs, ymsgs, pparams0);
+	err = do_fit(&fit, pparams0);
 
 	// output the results
-	output(&fit);
+	output(&fit, opts.resid);
 
 	if (opts.boot)
 		recv_boot_deinit(&boot);
