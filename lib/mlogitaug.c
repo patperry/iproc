@@ -391,6 +391,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	double log_scale0 = m1->base->log_cov_scale;
 	const double log_scale = log_scale0 + dpsi;
 	const double W = exp(log_scale);
+	const double scale = isfinite(W) ? W : 1.0;
 
 	memset(cov, 0, cov_dim * sizeof(*cov));
 
@@ -402,14 +403,18 @@ static void recompute_base_cov(struct mlogitaug *m1)
 		double w = catdist1_cached_prob(dist, i);
 		double dw = w - w0;
 
+		if (dw == 0)
+			continue;
+
 		blas_dcopy(dim, x + i * dim, 1, diff, 1);
 		blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
 
-		blas_dspr(F77_COV_UPLO, dim, W * dw, diff, 1, cov);
+		blas_dspr(F77_COV_UPLO, dim, scale * dw, diff, 1, cov);
 	}
-	blas_dspr(F77_COV_UPLO, dim, -W, dmean, 1, cov);
-	blas_daxpy(cov_dim, 1.0, cov0, 1, cov, 1);
-	blas_dscal(cov_dim, 1.0/W, cov, 1);
+	blas_dspr(F77_COV_UPLO, dim, -scale, dmean, 1, cov);
+	if (isfinite(W))
+		blas_daxpy(cov_dim, 1.0, cov0, 1, cov, 1);
+	blas_dscal(cov_dim, 1.0/scale, cov, 1);
 }
 
 
