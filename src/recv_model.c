@@ -155,14 +155,15 @@ static void sender_set(struct recv_model_sender *sm,
 
 static void sender_init(struct recv_model_sender *sm, size_t isend,
 			const struct frame *f, const struct recv_coefs *coefs,
-			const struct recv_model_cohort *cm)
+			const struct recv_model_cohort *cm,
+			struct mlogitaug_work *work)
 {
 	assert(isend < frame_send_count(f));
 
 	const struct design2 *d = frame_dyad_design(f);
 	size_t dim = design2_tvar_dim(d);
 
-	mlogitaug_init(&sm->mlogitaug, &cm->mlogit, dim);
+	mlogitaug_init(&sm->mlogitaug, &cm->mlogit, dim, work);
 	sender_set(sm, isend, f, coefs);
 }
 
@@ -275,10 +276,14 @@ void recv_model_init(struct recv_model *model,
 
 	struct design *r = frame_recv_design(f);
 	struct design2 *d = frame_dyad_design(f);
+	size_t base_dim = design_dim(r) + design2_trait_dim(d);
+	size_t aug_dim = design2_tvar_dim(d);
 	size_t isend, nsend = frame_send_count(f);
 	size_t ic, nc = design2_cohort_count(d);
 
 	model->frame = f;
+
+	mlogitaug_work_init(&model->work, base_dim, aug_dim);
 
 	recv_coefs_init(&model->coefs, f);
 	size_t coefs_len = model->coefs.dim * sizeof(*model->coefs.all);
@@ -298,7 +303,7 @@ void recv_model_init(struct recv_model *model,
 	for (isend = 0; isend < nsend; isend++) {
 		size_t c = recv_model_cohort(model, isend);
 		const struct recv_model_cohort *cm = &cms[c];
-		sender_init(&sms[isend], isend, f, &model->coefs, cm);
+		sender_init(&sms[isend], isend, f, &model->coefs, cm, &model->work);
 	}
 	model->sender_models = sms;
 
@@ -337,6 +342,7 @@ void recv_model_deinit(struct recv_model *model)
 	free(cms);
 
 	recv_coefs_deinit(&model->coefs);
+	mlogitaug_work_deinit(&model->work);
 }
 
 

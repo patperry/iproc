@@ -7,6 +7,11 @@
 #include "catdist1.h"
 #include "mlogit.h"
 
+struct mlogitaug_work {
+	double *cov_full;
+	double *xbuf;
+};
+
 struct mlogitaug {
 	const struct mlogit *base;
 	struct catdist1 dist;
@@ -22,19 +27,24 @@ struct mlogitaug {
 
 	double *mean;
 	double *cov;
-	double *cov_full;
-	double *xbuf;
 
 	double *base_mean;
 	double *base_dmean;
 	double *base_cov;
 
 	double *cross_cov;
+
+	struct mlogitaug_work work;
+	int deinit_work;
 };
+
+void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
+			 size_t aug_dim);
+void mlogitaug_work_deinit(struct mlogitaug_work *work);
 
 
 void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
-		size_t dim);
+		    size_t dim, struct mlogitaug_work *work);
 void mlogitaug_deinit(struct mlogitaug *m1);
 
 static inline size_t mlogitaug_ncat(const struct mlogitaug *m1);

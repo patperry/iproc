@@ -38,6 +38,7 @@ struct recv_model {
 	struct recv_model_cohort *cohort_models;
 	struct recv_model_sender *sender_models;
 	size_t *ind_buf;
+	struct mlogitaug_work work;
 };
 
 
