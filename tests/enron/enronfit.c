@@ -372,7 +372,7 @@ static void output(const struct recv_fit *fit, int resid)
 
 static int do_fit(struct recv_fit *fit, const struct recv_fit_params *params0)
 {
-	size_t maxit = 2;
+	size_t maxit = 30;
 	size_t report = 1;
 	int trace = 1;
 

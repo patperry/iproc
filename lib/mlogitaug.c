@@ -79,12 +79,13 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->cross_cov = xmalloc(base_dim * dim * sizeof(*m1->cross_cov));
 
 	if (work) {
-		m1->work = *work;
-		m1->deinit_work = 0;
+		m1->free_work = 0;
 	} else {
-		mlogitaug_work_init(&m1->work, base_dim, dim);
-		m1->deinit_work = 1;
+		work = xmalloc(sizeof(*work));
+		mlogitaug_work_init(work, base_dim, dim);
+		m1->free_work = 1;
 	}
+	m1->work = work;
 
 	clear(m1);
 }
@@ -101,8 +102,9 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
-	if (m1->deinit_work) {
-		mlogitaug_work_deinit(&m1->work);
+	if (m1->free_work) {
+		mlogitaug_work_deinit(m1->work);
+		free(m1->work);
 	}
 	free(m1->cross_cov);
 	free(m1->base_dmean);
@@ -277,7 +279,7 @@ void recompute_mean(struct mlogitaug *m1)
 	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
 	double *mean = m1->mean;
-	double *diff = m1->work.xbuf;
+	double *diff = m1->work->xbuf;
 	size_t iz, iz0, nz = m1->nz;
 	double w, wtot = 0.0;
 
@@ -325,7 +327,7 @@ void recompute_base_mean(struct mlogitaug *m1)
 
 	double *mean = m1->base_mean;
 	double *dmean = m1->base_dmean;
-	double *diff = m1->work.xbuf;
+	double *diff = m1->work->xbuf;
 	size_t iz, nz = m1->nz;
 	double psi = catdist1_cached_psi(dist);
 	const double *x = mlogit_x(m1->base);
@@ -361,7 +363,7 @@ double *mlogitaug_base_mean(const struct mlogitaug *m1)
 static void copy_cov_full(struct mlogitaug *m1)
 {
 	size_t i, dim = m1->dim;
-	const double *src = m1->work.cov_full;
+	const double *src = m1->work->cov_full;
 	double *dst = m1->cov;
 
 	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
@@ -387,9 +389,9 @@ void recompute_cov(struct mlogitaug *m1)
 	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
 	const double *mean = m1->mean;
-	double *diff = m1->work.xbuf;
+	double *diff = m1->work->xbuf;
 	double *diff_i;
-	double *cov = m1->work.cov_full;
+	double *cov = m1->work->cov_full;
 	double w, wtot = 0.0;
 
 	if (dim == 0)
@@ -456,7 +458,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	size_t cov_dim = dim * (dim + 1) / 2;
 
 	double *dmean = m1->base_dmean;
-	double *diff = m1->work.xbuf;
+	double *diff = m1->work->xbuf;
 	double *cov = m1->base_cov;
 
 	double psi0 = catdist_psi(dist0);
@@ -513,7 +515,7 @@ void recompute_cross_cov(struct mlogitaug *m1)
 	const double *base_x = mlogit_x(m1->base);
 	const double *x = m1->x;
 	double *cov = m1->cross_cov;
-	double *diff = m1->work.xbuf;
+	double *diff = m1->work->xbuf;
 	double *diff_i;
 
 	if (dim == 0 || base_dim == 0)

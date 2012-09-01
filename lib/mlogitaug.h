@@ -34,8 +34,8 @@ struct mlogitaug {
 
 	double *cross_cov;
 
-	struct mlogitaug_work work;
-	int deinit_work;
+	struct mlogitaug_work *work;
+	int free_work;
 };
 
 void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
