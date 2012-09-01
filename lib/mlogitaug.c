@@ -40,7 +40,7 @@ void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
 			 size_t aug_dim)
 {
 	size_t dim = MAX(base_dim, aug_dim);
-	size_t dim2 = dim * dim;
+	size_t dim2 = MAX(dim * dim, BLOCK_SIZE);
 	work->cov_full = xmalloc(dim2 * sizeof(double));
 	work->xbuf = xmalloc(dim * BLOCK_SIZE * sizeof(double));
 }
@@ -282,34 +282,33 @@ void recompute_mean(struct mlogitaug *m1)
 	size_t dim = m1->dim;
 	double *mean = m1->mean;
 	double *diff = m1->work->xbuf;
-	size_t iz, iz0, nz = m1->nz;
-	double w, wtot = 0.0;
+	double *prob = m1->work->cov_full;
 
-
-	for (iz0 = 0; iz0 < nz; iz0++) {
-		wtot = catdist1_cached_prob(dist, m1->ind[iz0]);
-		if (wtot != 0)
-			break;
-	}
-
-	if (wtot == 0) {
-		memset(mean, 0, dim * sizeof(*mean));
+	if (dim == 0)
 		return;
+
+	memset(mean, 0, dim * sizeof(*mean));
+
+	size_t iz, nz = m1->nz;
+	double *diff_i = diff;
+	size_t nk = 0;
+
+	for (iz = 0; iz < nz; iz++) {
+		double w = catdist1_cached_prob(dist, m1->ind[iz]);
+
+		if (w > 0) {
+			prob[nk] = w;
+			blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
+			diff_i += dim;
+			nk++;
+		}
+
+		if (nk == BLOCK_SIZE || iz + 1 == nz) {
+			blas_dgemv(BLAS_NOTRANS, dim, nk, 1.0, diff, dim, prob, 1, 1.0, mean, 1);
+			diff_i = diff;
+			nk = 0;
+		}
 	}
-
-	blas_dcopy(dim, m1->x + iz0 * dim, 1, mean, 1);
-
-	for (iz = iz0 + 1; iz < nz; iz++) {
-		blas_dcopy(dim, m1->x + iz * dim, 1, diff, 1);
-		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
-
-		w = catdist1_cached_prob(dist, m1->ind[iz]);
-		wtot += w;
-
-		blas_daxpy(dim, w/wtot, diff, 1, mean, 1);
-	}
-
-	blas_dscal(dim, wtot, mean, 1);
 }
 
 
