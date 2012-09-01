@@ -39,8 +39,10 @@ static size_t search_ind(struct mlogitaug *m1, size_t i);
 void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
 			 size_t aug_dim)
 {
-	work->cov_full = xmalloc(aug_dim * aug_dim * sizeof(double));
-	work->xbuf = xmalloc(MAX(base_dim, aug_dim) * BLOCK_SIZE * sizeof(double));
+	size_t dim = MAX(base_dim, aug_dim);
+	size_t dim2 = dim * dim;
+	work->cov_full = xmalloc(dim2 * sizeof(double));
+	work->xbuf = xmalloc(dim * BLOCK_SIZE * sizeof(double));
 }
 
 void mlogitaug_work_deinit(struct mlogitaug_work *work)
@@ -360,13 +362,13 @@ double *mlogitaug_base_mean(const struct mlogitaug *m1)
 	return m1->base_mean;
 }
 
-static void copy_cov_full(struct mlogitaug *m1)
-{
-	size_t i, dim = m1->dim;
-	const double *src = m1->work->cov_full;
-	double *dst = m1->cov;
 
-	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
+static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo)
+{
+
+	size_t i;
+
+	if (uplo == BLAS_UPPER) {
 		for (i = 0; i < dim; i++) {
 			size_t rowlen = dim - i;
 			memcpy(dst, src + i, rowlen * sizeof(*dst));
@@ -423,9 +425,9 @@ void recompute_cov(struct mlogitaug *m1)
 		}
 	}
 
-	blas_dsyr(F77_COV_UPLO, dim, 1.0 - wtot, mean, 1, cov, dim);
+	blas_dsyr(F77_COV_UPLO, dim, 1.0 - wtot, mean, 1, cov, dim); // note: could be included in block
 
-	copy_cov_full(m1);
+	copy_packed(m1->cov, cov, dim, MLOGIT_COV_UPLO);
 }
 
 
@@ -447,7 +449,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 
 	double *dmean = m1->base_dmean;
 	double *diff = m1->work->xbuf;
-	double *cov = m1->base_cov;
+	double *cov = m1->work->cov_full;
 
 	double psi0 = catdist_psi(dist0);
 	double psi = catdist1_cached_psi(dist);
@@ -460,9 +462,16 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	const double W = exp(log_scale);
 	const double scale = isfinite(W) ? W : 1.0;
 
-	memset(cov, 0, cov_dim * sizeof(*cov));
+	if (dim == 0)
+		return;
+
+	memset(cov, 0, dim * dim * sizeof(*cov));
 
 	size_t iz, nz = m1->nz;
+	size_t nk = 0;
+	double *diff_i = diff;
+
+	// handle positive dw
 	for (iz = 0; iz < nz; iz++) {
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
@@ -470,19 +479,64 @@ static void recompute_base_cov(struct mlogitaug *m1)
 		double w = catdist1_cached_prob(dist, i);
 		double dw = w - w0;
 
-		if (dw == 0)
-			continue;
+		if (dw > 0) {
+			blas_dcopy(dim, x + i * dim, 1, diff_i, 1);
+			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
+			blas_dscal(dim, sqrt(dw), diff_i, 1);
 
-		blas_dcopy(dim, x + i * dim, 1, diff, 1);
-		blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
+			diff_i += dim;
+			nk++;
+		}
 
-		blas_dspr(F77_COV_UPLO, dim, scale * dw, diff, 1, cov);
+		if (nk == BLOCK_SIZE || iz + 1 == nz) {
+			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, scale, diff, dim, 1.0, cov, dim);
+
+			diff_i = diff;
+			nk = 0;
+		}
 	}
-	blas_dspr(F77_COV_UPLO, dim, -scale, dmean, 1, cov);
+
+	nk = 0;
+	diff_i = diff;
+
+	// handle dmean and negative dw
+	blas_dcopy(dim, dmean, 1, diff_i, 1);
+	diff_i += dim;
+	nk++;
+
+	for (iz = 0; iz < nz; iz++) {
+		size_t i = m1->ind[iz];
+		double eta0 = catdist_eta(dist0, i);
+		double w0 = exp(eta0 - psi);
+		double w = catdist1_cached_prob(dist, i);
+		double dw = w - w0;
+
+		if (dw < 0) {
+			blas_dcopy(dim, x + i * dim, 1, diff_i, 1);
+			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
+			blas_dscal(dim, sqrt(-dw), diff_i, 1);
+
+			diff_i += dim;
+			nk++;
+		}
+
+		if (nk == BLOCK_SIZE || iz + 1 == nz) {
+			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, -scale, diff, dim, 1.0, cov, dim);
+
+			diff_i = diff;
+			nk = 0;
+		}
+	}
+
+	// note: nz = 0 implies dmean = 0; no need to call dsyrk
+
+	copy_packed(m1->base_cov, cov, dim, MLOGIT_COV_UPLO);
+
 	if (isfinite(W))
-		blas_daxpy(cov_dim, 1.0, cov0, 1, cov, 1);
-	blas_dscal(cov_dim, 1.0/scale, cov, 1);
+		blas_daxpy(cov_dim, 1.0, cov0, 1, m1->base_cov, 1);
+	blas_dscal(cov_dim, 1.0/scale, m1->base_cov, 1);
 }
+
 
 
 double *mlogitaug_base_cov(const struct mlogitaug *m1)
