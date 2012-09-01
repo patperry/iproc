@@ -28,7 +28,6 @@ struct mlogitaug {
 	double *base_mean;
 	double *base_dmean;
 	double *base_cov;
-	double *base_xbuf;
 
 	double *cross_cov;
 };

@@ -58,12 +58,11 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->mean = xmalloc(dim * sizeof(*m1->mean));
 	m1->cov = xmalloc(cov_dim * sizeof(*m1->cov));
 	m1->cov_full = xmalloc(dim * dim * sizeof(*m1->cov));
-	m1->xbuf = xmalloc(dim * BLOCK_SIZE * sizeof(*m1->xbuf));
+	m1->xbuf = xmalloc(MAX(base_dim, dim) * BLOCK_SIZE * sizeof(*m1->xbuf));
 
 	m1->base_mean = xmalloc(base_dim * sizeof(*m1->base_mean));
 	m1->base_cov = xmalloc(base_cov_dim * sizeof(*m1->base_cov));
 	m1->base_dmean = xmalloc(base_dim * sizeof(*m1->base_dmean));
-	m1->base_xbuf = xmalloc(base_dim * sizeof(*m1->base_xbuf));
 
 	m1->cross_cov = xmalloc(base_dim * dim * sizeof(*m1->cross_cov));
 
@@ -83,7 +82,6 @@ void clear(struct mlogitaug *m1)
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
 	free(m1->cross_cov);
-	free(m1->base_xbuf);
 	free(m1->base_dmean);
 	free(m1->base_cov);
 	free(m1->base_mean);
@@ -306,7 +304,7 @@ void recompute_base_mean(struct mlogitaug *m1)
 
 	double *mean = m1->base_mean;
 	double *dmean = m1->base_dmean;
-	double *diff = m1->base_xbuf;
+	double *diff = m1->xbuf;
 	size_t iz, nz = m1->nz;
 	double psi = catdist1_cached_psi(dist);
 	const double *x = mlogit_x(m1->base);
@@ -437,7 +435,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	size_t cov_dim = dim * (dim + 1) / 2;
 
 	double *dmean = m1->base_dmean;
-	double *diff = m1->base_xbuf;
+	double *diff = m1->xbuf;
 	double *cov = m1->base_cov;
 
 	double psi0 = catdist_psi(dist0);
@@ -492,29 +490,62 @@ void recompute_cross_cov(struct mlogitaug *m1)
 	const struct catdist1 *dist = &m1->dist;
 	const double *base_mean = m1->base_mean;
 	const double *base_x = mlogit_x(m1->base);
+	const double *x = m1->x;
 	double *cov = m1->cross_cov;
-	double *diff = m1->base_xbuf;
+	double *diff = m1->xbuf;
+	double *diff_i;
 
 	if (dim == 0 || base_dim == 0)
 		return;
 
 	memset(cov, 0, dim * base_dim * sizeof(*cov));
 
-	size_t iz, nz = m1->nz;
-	for (iz = 0; iz < nz; iz++) {
+	size_t nz = m1->nz;
+	size_t iz;
+	size_t k, nk = BLOCK_SIZE;
+	size_t b, nb = nz / nk;
+
+	iz = 0;
+	for (b = 0; b < nb; b++) {
+		diff_i = diff;
+		for (k = 0; k < nk; k++, iz++) {
+			size_t i = m1->ind[iz];
+			double w = catdist1_cached_prob(dist, i);
+
+			blas_dcopy(base_dim, base_x + i * base_dim, 1, diff_i, 1);
+			blas_daxpy(base_dim, -1.0, base_mean, 1, diff_i, 1);
+			blas_dscal(base_dim, w, diff_i, 1);
+			diff_i += base_dim;
+		}
+		if (MLOGIT_COV_UPLO == BLAS_LOWER) {
+			blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, base_dim, dim, nk,
+				   1.0, diff, base_dim, x, dim, 1.0, cov, base_dim);
+		} else {
+			blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, dim, base_dim, nk,
+				   1.0, x, dim, diff, base_dim, 1.0, cov, dim);
+
+		}
+		x += nk * dim;
+	}
+
+	size_t ntail = nz - iz;
+	diff_i = diff;
+	for (; iz < nz; iz++) {
 		size_t i = m1->ind[iz];
 		double w = catdist1_cached_prob(dist, i);
+		
+		blas_dcopy(base_dim, base_x + i * base_dim, 1, diff_i, 1);
+		blas_daxpy(base_dim, -1.0, base_mean, 1, diff_i, 1);
+		blas_dscal(base_dim, w, diff_i, 1);
+		diff_i += base_dim;
+	}
+	if (MLOGIT_COV_UPLO == BLAS_LOWER) {
+		blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, base_dim, dim, ntail,
+			   1.0, diff, base_dim, x, dim, 1.0, cov, base_dim);
+	} else {
+		blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, dim, base_dim, ntail,
+			   1.0, x, dim, diff, base_dim, 1.0, cov, dim);
 
-		blas_dcopy(base_dim, base_x + i * base_dim, 1, diff, 1);
-		blas_daxpy(base_dim, -1.0, base_mean, 1, diff, 1);
-
-		const double *y = m1->x + iz * dim;
-
-		if (MLOGIT_COV_UPLO == BLAS_LOWER) {
-			blas_dger(base_dim, dim, w, diff, 1, y, 1, cov, base_dim);
-		} else { // BLAS_UPPER
-			blas_dger(dim, base_dim, w, y, 1, diff, 1, cov, dim);
-		}
 	}
 }
 
