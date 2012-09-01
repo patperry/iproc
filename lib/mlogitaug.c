@@ -322,31 +322,50 @@ double *mlogitaug_mean(const struct mlogitaug *m1)
 
 void recompute_base_mean(struct mlogitaug *m1)
 {
+	size_t dim = mlogit_dim(m1->base);
+
+	if (dim == 0)
+		return;
+
 	const struct catdist1 *dist = &m1->dist;
 	const struct catdist *dist0 = catdist1_parent(dist);
-	size_t dim = mlogit_dim(m1->base);
 
 	double *mean = m1->base_mean;
 	double *dmean = m1->base_dmean;
 	double *diff = m1->work->xbuf;
-	size_t iz, nz = m1->nz;
+	double *dw = m1->work->cov_full;
+
 	double psi = catdist1_cached_psi(dist);
 	const double *x = mlogit_x(m1->base);
 	const double *mean0 = mlogit_mean(m1->base);
 
+
 	memset(dmean, 0, dim * sizeof(*dmean));
+
+	size_t iz, nz = m1->nz;
+	double *diff_i = diff;
+	size_t nk = 0;
 
 	for (iz = 0; iz < nz; iz++) {
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
 		double w = catdist1_cached_prob(dist, i);
-		double dw = w - w0;
+		double dw_i = w - w0;
 
-		blas_dcopy(dim, x + i * dim, 1, diff, 1);
-		blas_daxpy(dim, -1.0, mean0, 1, diff, 1);
+		if (dw_i != 0) {
+			dw[nk] = dw_i;
+			blas_dcopy(dim, x + i * dim, 1, diff_i, 1);
+			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
+			diff_i += dim;
+			nk++;
+		}
 
-		blas_daxpy(dim, dw, diff, 1, dmean, 1);
+		if (nk == BLOCK_SIZE || iz + 1 == nz) {
+			blas_dgemv(BLAS_NOTRANS, dim, nk, 1.0, diff, dim, dw, 1, 1.0, dmean, 1);
+			diff_i = diff;
+			nk = 0;
+		}
 	}
 
 	blas_dcopy(dim, mean0, 1, mean, 1);
