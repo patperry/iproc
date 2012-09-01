@@ -403,15 +403,17 @@ void recompute_cov(struct mlogitaug *m1)
 	double *diff_i = diff;
 
 	for (iz = 0; iz < nz; iz++) {
-		blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
-		blas_daxpy(dim, -1.0, mean, 1, diff_i, 1);
-
 		w = catdist1_cached_prob(dist, m1->ind[iz]);
-		wtot += w;
 
-		blas_dscal(dim, sqrt(w), diff_i, 1);
-		diff_i += dim;
-		nk++;
+		if (w != 0) {
+			blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
+			blas_daxpy(dim, -1.0, mean, 1, diff_i, 1);
+			blas_dscal(dim, sqrt(w), diff_i, 1);
+			wtot += w;
+
+			diff_i += dim;
+			nk++;
+		}
 
 		if (nk == BLOCK_SIZE || iz + 1 == nz) {
 			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov, dim);
@@ -516,9 +518,14 @@ void recompute_cross_cov(struct mlogitaug *m1)
 		size_t i = m1->ind[iz];
 		double w = catdist1_cached_prob(dist, i);
 
-		blas_dcopy(base_dim, base_x + i * base_dim, 1, diff_i, 1);
-		blas_daxpy(base_dim, -1.0, base_mean, 1, diff_i, 1);
-		blas_dscal(base_dim, w, diff_i, 1);
+		if (w != 0) {
+			blas_dcopy(base_dim, base_x + i * base_dim, 1, diff_i, 1);
+			blas_daxpy(base_dim, -1.0, base_mean, 1, diff_i, 1);
+			blas_dscal(base_dim, w, diff_i, 1);
+		} else {
+			memset(diff_i, 0, base_dim * sizeof(double));
+		}
+
 		diff_i += base_dim;
 		nk++;
 
@@ -529,7 +536,6 @@ void recompute_cross_cov(struct mlogitaug *m1)
 			} else {
 				blas_dgemm(BLAS_NOTRANS, BLAS_TRANS, dim, base_dim, nk,
 					   1.0, x, dim, diff, base_dim, 1.0, cov, dim);
-				
 			}
 			x += nk * dim;
 			
