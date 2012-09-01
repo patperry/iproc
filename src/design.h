@@ -114,7 +114,7 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 
 /* tvars */
 static inline size_t design_tvar_dim(const struct design *d);
-static inline const double *design_tvars(const struct design *d, size_t i);
+static inline const double *design_tvars(const struct design *d, const struct var *v, size_t i);
 const char *design_tvar_name(const struct design *d, size_t k);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
@@ -209,15 +209,18 @@ size_t design_tvar_dim(const struct design *d)
 }
 
 
-const double *design_tvars(const struct design *d, size_t i)
+const double *design_tvars(const struct design *d, const struct var *v, size_t i)
 {
+	assert(!v || v->design == d);
 	assert(i < design_count(d));
 	ptrdiff_t ix = vpattern_find(&d->active, i);
 
 	if (ix < 0)
 		return NULL;
 
-	return d->dx + ix * d->tvar_dim;
+	const double *dx = d->dx + ix * d->tvar_dim;
+	size_t off = v ? v->index : 0;
+	return dx + off;
 }
 
 

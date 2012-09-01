@@ -115,7 +115,7 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 
 /* tvars */
 static inline size_t design2_tvar_dim(const struct design2 *d);
-static inline const double *design2_tvars(const struct design2 *d, size_t i, size_t j);
+static inline const double *design2_tvars(const struct design2 *d, const struct var2 *v, size_t i, size_t j);
 //const char *design2_tvar_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const struct tvar2_type *type, ...);
 
@@ -189,8 +189,9 @@ size_t design2_tvar_dim(const struct design2 *d)
 }
 
 
-const double *design2_tvars(const struct design2 *d, size_t i, size_t j)
+const double *design2_tvars(const struct design2 *d, const struct var2 *v, size_t i, size_t j)
 {
+	assert(!v || v->design == d);
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 	
@@ -205,7 +206,9 @@ const double *design2_tvars(const struct design2 *d, size_t i, size_t j)
 	if (ix < 0)
 		return NULL;
 
-	return d->dx + (ir0 + ix) * d->tvar_dim;
+	const double *dx = d->dx + (ir0 + ix) * d->tvar_dim;
+	const size_t off = v ? v->index : 0;
+	return dx + off;
 }
 
 

@@ -71,6 +71,7 @@ static void test_dv_nsend()
 	size_t isend, jrecv;
 	const struct message *msg = NULL;
 	struct messages_iter it;
+	const struct var2 *v = design2_var(dyad_design, "NSend");
 	
 	double xnsend[nsend][nrecv];
 	memset(xnsend, 0, nsend * nrecv * sizeof(double));
@@ -83,7 +84,7 @@ static void test_dv_nsend()
 
 		isend = msg ? msg->from : 0;
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			const double *dx = design2_tvars(dyad_design, isend, jrecv);
+			const double *dx = design2_tvars(dyad_design, v, isend, jrecv);
 			
 			if (dx) {
 				assert(dx[0] == xnsend[isend][jrecv]);
@@ -130,6 +131,7 @@ static void test_dv_nrecv()
 	size_t jrecv, nrecv = frame_recv_count(&frame);
 	const struct message *msg = NULL;
 	struct messages_iter it;
+	const struct var2 *v = design2_var(dyad_design, "NRecv");
 
 	double xnsend[nsend][nrecv];
 	memset(xnsend, 0, nsend * nrecv * sizeof(double));
@@ -145,7 +147,7 @@ static void test_dv_nrecv()
 		isend = msg ? msg->from : 0;
 
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
-			const double *dx = design2_tvars(dyad_design, isend, jrecv);
+			const double *dx = design2_tvars(dyad_design, v, isend, jrecv);
 			
 			if (dx) {
 				assert(dx[0] == xnsend[jrecv][isend]);
@@ -195,6 +197,7 @@ static void test_dv_irecv()
 	size_t jrecv, nrecv = frame_recv_count(&frame);
 	const struct message *msg = NULL;
 	struct messages_iter it;
+	const struct var2 *v = design2_var(dyad_design, "IRecv");
 
 	double tmsg;
 
@@ -216,7 +219,7 @@ static void test_dv_irecv()
 			isend = msg->from;
 			for (ito = 0; ito < msg->nto; ito++) {
 				jrecv = msg->to[ito];
-				const double *dx = design2_tvars(dyad_design, isend, jrecv);
+				const double *dx = design2_tvars(dyad_design, v, isend, jrecv);
 				
 				tmsg = tlast[jrecv][isend];
 				
@@ -271,6 +274,7 @@ static void test_dv_isend()
 	size_t jrecv, nrecv = frame_recv_count(&frame);
 	const struct message *msg = NULL;
 	struct messages_iter it;
+	const struct var2 *v = design2_var(dyad_design, "ISend");
 
 	double tmsg;
 
@@ -290,7 +294,7 @@ static void test_dv_isend()
 			isend = msg->from;
 			for (ito = 0; ito < msg->nto; ito++) {
 				jrecv = msg->to[ito];
-				const double *dx = design2_tvars(dyad_design, isend, jrecv);
+				const double *dx = design2_tvars(dyad_design, v, isend, jrecv);
 				
 				tmsg = tlast[isend][jrecv];
 				

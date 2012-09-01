@@ -460,7 +460,7 @@ void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y
 {
 	assert(i < design_count(d));
 
-	const double *dx = design_tvars(d, i);
+	const double *dx = design_tvars(d, NULL, i);
 	
 	if (dx) {
 		size_t dim = design_tvar_dim(d);

@@ -16,7 +16,6 @@ static void isib_message_add(void *udata, struct frame *f,
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = frame_dyad_design(f);
-	size_t index = v->index;
 	const double one = 1.0;
 	const size_t izero = 0;
 	const struct history *h = frame_history(f);
@@ -37,8 +36,8 @@ static void isib_message_add(void *udata, struct frame *f,
 			if (hsend == isend || hsend == jrecv || isend == jrecv)
 				continue;
 				
-			const double *dx = design2_tvars(d, isend, jrecv);
-			if (!dx || dx[index] == 0.0) {
+			const double *dx = design2_tvars(d, v, isend, jrecv);
+			if (!dx || *dx == 0.0) {
 				design2_update(d, v, isend, jrecv, &one, &izero, 1);
 			}
 		}
@@ -49,8 +48,8 @@ static void isib_message_add(void *udata, struct frame *f,
 			if (hsend == coisend || hsend == cojrecv || coisend == cojrecv)
 				continue;
 			
-			const double *dx = design2_tvars(d, coisend, cojrecv);
-			if (!dx || dx[index] == 0.0) {
+			const double *dx = design2_tvars(d, v, coisend, cojrecv);
+			if (!dx || *dx == 0.0) {
 				design2_update(d, v, coisend, cojrecv, &one, &izero, 1);
 			}
 		}

@@ -164,8 +164,8 @@ struct dyad frame_ix_dyad(const struct frame *f, size_t ix)
 	imaxdiv_t res = imaxdiv(ix, nrecv);
 
 	struct dyad dyad;
-	dyad.isend = res.quot;
-	dyad.jrecv = res.rem;
+	dyad.isend = (size_t)res.quot;
+	dyad.jrecv = (size_t)res.rem;
 	
 	return dyad;
 }

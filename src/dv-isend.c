@@ -12,7 +12,6 @@ static void isend_message_add(void *udata, struct frame *f,
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = frame_dyad_design(f);	
-	size_t index = v->index;
 	const double one = 1.0;	
 	const size_t izero = 0;
 	size_t isend = msg->from;
@@ -23,8 +22,8 @@ static void isend_message_add(void *udata, struct frame *f,
 			continue;
 		
 		size_t jrecv = msg->to[ito];
-		const double *dx = design2_tvars(d, isend, jrecv);
-		if (!dx || dx[index] == 0.0) {
+		const double *dx = design2_tvars(d, v, isend, jrecv);
+		if (!dx || *dx == 0.0) {
 			design2_update(d, v, isend, jrecv, &one, &izero, 1);
 		}
 	}
