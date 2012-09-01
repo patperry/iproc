@@ -417,7 +417,7 @@ void recompute_cov(struct mlogitaug *m1)
 			nk++;
 		}
 
-		if (nk == BLOCK_SIZE || iz + 1 == nz) {
+		if (nk == BLOCK_SIZE) {
 			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov, dim);
 
 			nk = 0;
@@ -425,7 +425,13 @@ void recompute_cov(struct mlogitaug *m1)
 		}
 	}
 
-	blas_dsyr(F77_COV_UPLO, dim, 1.0 - wtot, mean, 1, cov, dim); // note: could be included in block
+	assert(nk < BLOCK_SIZE);
+	if (wtot < 1) { // note: wtot might be > 1 due to numerical error
+		blas_dcopy(dim, mean, 1, diff_i, 1);
+		blas_dscal(dim, sqrt(1.0 - wtot), diff_i, 1);
+		nk++;
+	}
+	blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov, dim);
 
 	copy_packed(m1->cov, cov, dim, MLOGIT_COV_UPLO);
 }
