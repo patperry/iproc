@@ -18,6 +18,9 @@
 #define F77_COV_UPLO (MLOGIT_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER)
 
 
+#define BLOCK_SIZE	64
+
+
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
@@ -54,7 +57,8 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->nzmax = 0;
 	m1->mean = xmalloc(dim * sizeof(*m1->mean));
 	m1->cov = xmalloc(cov_dim * sizeof(*m1->cov));
-	m1->xbuf = xmalloc(dim * sizeof(*m1->xbuf));
+	m1->cov_full = xmalloc(dim * dim * sizeof(*m1->cov));
+	m1->xbuf = xmalloc(dim * BLOCK_SIZE * sizeof(*m1->xbuf));
 
 	m1->base_mean = xmalloc(base_dim * sizeof(*m1->base_mean));
 	m1->base_cov = xmalloc(base_cov_dim * sizeof(*m1->base_cov));
@@ -84,6 +88,7 @@ void mlogitaug_deinit(struct mlogitaug *m1)
 	free(m1->base_cov);
 	free(m1->base_mean);
 	free(m1->xbuf);
+	free(m1->cov_full);
 	free(m1->cov);
 	free(m1->mean);
 	free(m1->deta);
@@ -334,31 +339,84 @@ double *mlogitaug_base_mean(const struct mlogitaug *m1)
 	return m1->base_mean;
 }
 
+static void copy_cov_full(struct mlogitaug *m1)
+{
+	size_t i, dim = m1->dim;
+	const double *src = m1->cov_full;
+	double *dst = m1->cov;
+
+	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = dim - i;
+			memcpy(dst, src + i, rowlen * sizeof(*dst));
+			dst += rowlen;
+			src += dim;
+		}
+	} else {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = i + 1;
+			memcpy(dst, src, rowlen * sizeof(*dst));
+			dst += rowlen;
+			src += dim;
+		}
+	}
+}
+
 
 void recompute_cov(struct mlogitaug *m1)
 {
 	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
-	size_t cov_dim = dim * (dim + 1) / 2;
 	const double *mean = m1->mean;
 	double *diff = m1->xbuf;
-	double *cov = m1->cov;
+	double *diff_i;
+	double *cov = m1->cov_full;
 	double w, wtot = 0.0;
 
-	memset(cov, 0, cov_dim * sizeof(*cov));
+	if (dim == 0)
+		return;
 
-	size_t iz, nz = m1->nz;
-	for (iz = 0; iz < nz; iz++) {
-		blas_dcopy(dim, m1->x + iz * dim, 1, diff, 1);
-		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
+	memset(cov, 0, dim * dim * sizeof(*cov));
+
+	size_t nz = m1->nz;
+	size_t iz;
+	size_t k, nk = BLOCK_SIZE;
+	size_t b, nb = nz / nk;
+
+	iz = 0;
+	for (b = 0; b < nb; b++) {
+		diff_i = diff;
+		for (k = 0; k < nk; k++, iz++) {
+
+			blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
+			blas_daxpy(dim, -1.0, mean, 1, diff_i, 1);
+
+			w = catdist1_cached_prob(dist, m1->ind[iz]);
+			wtot += w;
+
+			blas_dscal(dim, sqrt(w), diff_i, 1);
+			diff_i += dim;
+		}
+		blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov, dim);
+	}
+
+	size_t ntail = nz - iz;
+	diff_i = diff;
+	for (; iz < nz; iz++) {
+		blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
+		blas_daxpy(dim, -1.0, mean, 1, diff_i, 1);
 
 		w = catdist1_cached_prob(dist, m1->ind[iz]);
 		wtot += w;
 
-		blas_dspr(F77_COV_UPLO, dim, w, diff, 1, cov);
+		blas_dscal(dim, sqrt(w), diff_i, 1);
+		diff_i += dim;
 	}
+	blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, ntail, 1.0, diff, dim, 1.0, cov, dim);
 
-	blas_dspr(F77_COV_UPLO, dim, 1.0 - wtot, mean, 1, cov);
+	blas_dsyr(F77_COV_UPLO, dim, 1.0 - wtot, mean, 1, cov, dim);
+
+	copy_cov_full(m1);
 }
 
 

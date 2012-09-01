@@ -7,7 +7,7 @@
 #include "blas.h"
 #include "catdist.h"
 
-#define MLOGIT_COV_UPLO	BLAS_UPPER
+#define MLOGIT_COV_UPLO	BLAS_LOWER
 
 struct mlogit {
 	struct catdist dist;

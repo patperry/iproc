@@ -22,6 +22,7 @@ struct mlogitaug {
 
 	double *mean;
 	double *cov;
+	double *cov_full;
 	double *xbuf;
 
 	double *base_mean;
