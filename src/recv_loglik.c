@@ -19,6 +19,9 @@ static void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 		       struct recv_loglik_update *last);
 static void sender_clear(struct recv_loglik_sender *sll);
 
+#ifndef NDEBUG
+static int recv_loglik_moments(const struct recv_loglik *ll);
+#endif
 
 void cohort_init(struct recv_loglik_cohort *cll)
 {
@@ -121,6 +124,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 {
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
+	int moments = mlogit_moments(mlogitaug_base(m1));
 
 	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
 	size_t aug_dim = mlogitaug_dim(m1);
@@ -134,17 +138,27 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	size_t ito;
 
 	/* compute dev and set score := observed */
-	memset(last->score.all, 0, dim * sizeof(*last->score.all));
+	if (moments >= 1) {
+		memset(last->score.all, 0, dim * sizeof(*last->score.all));
+	}
 	for (ito = 0; ito < nto; ito++) {
 		double lp = catdist1_cached_lprob(dist, jrecv[ito]);
 		dev += -2 * lp;
-		design_axpy(1.0, r, jrecv[ito], &last->score.recv);
-		design2_axpy(1.0, d, isend, jrecv[ito], &last->score.dyad);
+		if (moments >= 1) {
+			design_axpy(1.0, r, jrecv[ito], &last->score.recv);
+			design2_axpy(1.0, d, isend, jrecv[ito], &last->score.dyad);
+		}
 	}
 
 	/* set count, dev */
 	last->count = count;
 	last->dev = dev;
+
+	sll->count += last->count;
+	sll->dev += last->dev;
+
+	if (moments < 1)
+		return;
 
 	/* compute mean */
 	const double *base_mean = mlogitaug_cached_base_mean(m1);
@@ -155,14 +169,15 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	/* compute score := observed - expected */
 	blas_daxpy(dim, -(double)nto, last->mean.all, 1, last->score.all, 1);
 
-	/* copy cov */
-	copy_cov(m1, last->cov);
-	
-	/* update totals */
-	sll->count += last->count;
-	sll->dev += last->dev;
 	blas_daxpy(dim, last->count, last->mean.all, 1, sll->mean.all, 1);
 	blas_daxpy(dim, 1.0, last->score.all, 1, sll->score.all, 1);
+
+	if (moments < 2)
+		return;
+
+	/* copy cov */
+	copy_cov(m1, last->cov);
+
 	blas_daxpy(cov_dim, last->count, last->cov, 1, sll->cov, 1);
 }
 
@@ -322,6 +337,7 @@ double recv_loglik_dev(const struct recv_loglik *ll)
 
 void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	assert(recv_loglik_moments(ll) >= 1);
 	const struct recv_model *m = ll->model;
 	const struct recv_loglik_sender *sll;
 	size_t dim = recv_model_dim(m);
@@ -336,6 +352,7 @@ void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct re
 
 void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	assert(recv_loglik_moments(ll) >= 1);
 	const struct recv_model *m = ll->model;
 	const struct recv_loglik_sender *sll;
 	size_t dim = recv_model_dim(m);
@@ -350,6 +367,7 @@ void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct r
 
 void recv_loglik_axpy_imat(double alpha, const struct recv_loglik *ll, double *y)
 {
+	assert(recv_loglik_moments(ll) >= 2);
 	const struct recv_model *m = ll->model;
 	const struct recv_loglik_sender *sll;
 	size_t dim = recv_model_dim(m);
@@ -376,6 +394,7 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 
 void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	assert(recv_loglik_moments(ll) >= 1);
 	assert(ll->last.mean.dim == y->dim);
 	double scale = ll->last.count * alpha;
 	blas_daxpy(ll->last.mean.dim, scale, ll->last.mean.all, 1, y->all, 1);
@@ -383,14 +402,23 @@ void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, stru
 
 void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
 {
+	assert(recv_loglik_moments(ll) >= 1);
 	assert(ll->last.score.dim == y->dim);
 	blas_daxpy(ll->last.score.dim, alpha, ll->last.score.all, 1, y->all, 1);
 }
 
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, double *y)
 {
+	assert(recv_loglik_moments(ll) >= 2);
 	size_t dim = recv_model_dim(ll->model);
 	size_t cov_dim = dim * (dim + 1) / 2;
 	double scale = ll->last.count * alpha;
 	blas_daxpy(cov_dim, scale, ll->last.cov, 1, y, 1);
 }
+
+#ifndef NDEBUG
+int recv_loglik_moments(const struct recv_loglik *ll)
+{
+	return recv_model_moments(ll->model);
+}
+#endif

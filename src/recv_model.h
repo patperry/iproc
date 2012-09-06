@@ -39,6 +39,7 @@ struct recv_model {
 	struct recv_model_sender *sender_models;
 	size_t *ind_buf;
 	struct mlogitaug_work work;
+	int moments;
 };
 
 
@@ -58,6 +59,11 @@ size_t recv_model_cohort_count(const struct recv_model *model);
 size_t recv_model_cohort(const struct recv_model *model, size_t isend);
 size_t recv_model_count(const struct recv_model *model);
 size_t recv_model_dim(const struct recv_model *model);
+
+
+int recv_model_moments(const struct recv_model *m);
+void recv_model_set_moments(struct recv_model *m, int k);
+
 
 void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs);
 

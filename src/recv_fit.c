@@ -347,11 +347,13 @@ static void eval_reinit(struct recv_fit_eval *eval, const struct frame *f,
 static void _eval_update(struct recv_fit_eval *eval,
 			 const struct messages *xmsgs,
 			 const struct messages *ymsgs,
-			 struct frame *frame, struct recv_model *model)
+			 struct frame *frame, struct recv_model *model,
+			 int moments)
 {
 	// clear frame; set model coefs
 	frame_clear(frame);
 	recv_model_set_coefs(model, &eval->params.coefs);
+	recv_model_set_moments(model, moments);
 
 	// set loglik
 	recv_loglik_clear(&eval->loglik);
@@ -400,7 +402,7 @@ static void eval_set(struct recv_fit_eval *eval,
 		     const struct recv_fit_params *params,
 		     const struct messages *xmsgs,
 		     const struct messages *ymsgs,
-		     struct frame *frame, struct recv_model *model)
+		     struct frame *frame, struct recv_model *model, int moments)
 {
 	if (params) {
 		memcpy(eval->params.all, params->all, eval->params.dim * sizeof(double));
@@ -408,18 +410,18 @@ static void eval_set(struct recv_fit_eval *eval,
 		memset(eval->params.all, 0, eval->params.dim * sizeof(double));
 	}
 
-	_eval_update(eval, xmsgs, ymsgs, frame, model);
+	_eval_update(eval, xmsgs, ymsgs, frame, model, moments);
 }
 
 static void eval_step(struct recv_fit_eval *eval,
 		      const struct recv_fit_params *params0, double scale,
 		      const struct recv_fit_params *dir, const struct messages *xmsgs,
 		      const struct messages *ymsgs,
-		      struct frame *frame, struct recv_model *model)
+		      struct frame *frame, struct recv_model *model, int moments)
 {
 	blas_dcopy(eval->params.dim, params0->all, 1, eval->params.all, 1);
 	blas_daxpy(eval->params.dim, scale, dir->all, 1, eval->params.all, 1);
-	_eval_update(eval, xmsgs, ymsgs, frame, model);
+	_eval_update(eval, xmsgs, ymsgs, frame, model, moments);
 }
 
 static void kkt_reinit(struct recv_fit_kkt *kkt, const struct frame *f, size_t ne)
@@ -632,15 +634,12 @@ static enum recv_fit_task primal_dual_step(struct recv_fit *fit)
 
 		// evaluate the function at the new point
 		eval_step(fit->cur, &fit->prev->params, fit->step, &fit->search.params,
-			  fit->xmsgs, fit->ymsgs, fit->frame, &fit->model);
+			  fit->xmsgs, fit->ymsgs, fit->frame, &fit->model, 1);
 
 		resid_set(&fit->cur->resid, &fit->cur->loglik, &fit->constr, &fit->cur->params);
 		if (!isfinite(fit->cur->resid.norm2)) {
 			goto domain_error_f;
 		}
-		// compute the kkt matrix and residual gradient at the new point
-		kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
-		rgrad_set(&fit->rgrad, dim, ne, &fit->kkt, &fit->cur->resid);
 
 		double f = fit->cur->resid.norm2;
 		//double g = vector_dot(&fit->search.vector, &fit->rgrad.vector);
@@ -666,6 +665,11 @@ domain_error_f:
 		assert(0 && "DOMAIN ERROR");
 		task = LINESEARCH_STEP;
 	} while (it < fit->ctrl.ls_maxit && task == LINESEARCH_STEP);	// && !linesearch_sdec(&fit->ls));
+
+	// compute the kkt matrix and residual gradient at the new point
+	eval_set(fit->cur, &fit->cur->params, fit->xmsgs, fit->ymsgs, fit->frame, &fit->model, 2);
+	kkt_set(&fit->kkt, &fit->cur->loglik, &fit->constr);
+	rgrad_set(&fit->rgrad, dim, ne, &fit->kkt, &fit->cur->resid); // TODO: remove this?
 
 	if (task == LINESEARCH_WARN_XTOL) {
 		return RECV_FIT_ERR_XTOL;
@@ -715,7 +719,7 @@ void recv_fit_init(struct recv_fit *fit,
 	rgrad_init(&fit->rgrad, f, ne);
 
 	// evaluate the model at zero
-	eval_set(fit->cur, NULL, fit->xmsgs, fit->ymsgs, fit->frame, &fit->model);
+	eval_set(fit->cur, NULL, fit->xmsgs, fit->ymsgs, fit->frame, &fit->model, 2);
 
 	fit->dev0 = recv_fit_dev(fit);
 }
@@ -726,7 +730,7 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 {
 	if (params0 != NULL) {
 		eval_set(fit->cur, params0, fit->xmsgs, fit->ymsgs, fit->frame,
-			 &fit->model);
+			 &fit->model, 2);
 	}
 
 	resid_set(&fit->cur->resid, &fit->cur->loglik, &fit->constr, &fit->cur->params);

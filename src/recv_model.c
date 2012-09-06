@@ -93,6 +93,12 @@ static void cohort_clear(struct recv_model_cohort *cm)
 }
 
 
+static void cohort_set_moments(struct recv_model_cohort *cm, int k)
+{
+	mlogit_set_moments(&cm->mlogit, k);
+}
+
+
 static void cohort_init(struct recv_model_cohort *cm,
 			size_t c,
 			const struct frame *f,
@@ -309,6 +315,8 @@ void recv_model_init(struct recv_model *model,
 
 	model->ind_buf = xmalloc(model->coefs.dim * sizeof(*model->ind_buf));
 
+	model->moments = 2;
+
 	design_add_observer(r, model, &RECV_CALLBACKS);
 	design2_add_observer(d, model, &DYAD_CALLBACKS);
 }
@@ -431,4 +439,20 @@ void recv_model_set_coefs(struct recv_model *m, const struct recv_coefs *coefs)
 	for (is = 0; is < ns; is++) {
 		sender_set(&sms[is], is, f, &m->coefs);
 	}
+}
+
+int recv_model_moments(const struct recv_model *m)
+{
+	return m->moments;
+}
+
+void recv_model_set_moments(struct recv_model *m, int k)
+{
+	struct recv_model_cohort *cms = m->cohort_models;
+	size_t ic, nc = recv_model_cohort_count(m);
+	for (ic = 0; ic < nc; ic++) {
+		cohort_set_moments(&cms[ic], k);
+	}
+
+	m->moments = k;
 }

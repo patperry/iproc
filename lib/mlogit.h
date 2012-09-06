@@ -28,6 +28,8 @@ struct mlogit {
 	double mean_err;
 	double cov_err;
 	double log_cov_scale_err;
+
+	int moments;
 };
 
 void mlogit_init(struct mlogit *m, size_t ncat, size_t dim);
@@ -35,6 +37,9 @@ void mlogit_deinit(struct mlogit *m);
 
 static inline size_t mlogit_ncat(const struct mlogit *m);
 static inline size_t mlogit_dim(const struct mlogit *m);
+
+static inline int mlogit_moments(const struct mlogit *m);
+void mlogit_set_moments(struct mlogit *m, int k);
 
 static inline double *mlogit_coefs(const struct mlogit *m);
 static inline double *mlogit_offset(const struct mlogit *m);
@@ -62,6 +67,11 @@ size_t mlogit_dim(const struct mlogit *m)
 	return m->dim;
 }
 
+int mlogit_moments(const struct mlogit *m)
+{
+	return m->moments;
+}
+
 double *mlogit_coefs(const struct mlogit *m)
 {
 	return m->beta;
@@ -79,11 +89,13 @@ double *mlogit_x(const struct mlogit *m)
 
 double *mlogit_mean(const struct mlogit *m)
 {
+	assert(m->moments >= 1);
 	return m->mean;
 }
 
 double *mlogit_cov(const struct mlogit *m, double *cov_scale)
 {
+	assert(m->moments >= 2);
 	*cov_scale = exp(m->log_cov_scale);
 	return m->cov;
 }

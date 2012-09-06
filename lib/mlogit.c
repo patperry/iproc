@@ -62,6 +62,7 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
 	m->dim_buf1 = xmalloc(dim * sizeof(*m->dim_buf1));
 	m->dim_buf2 = xmalloc(dim * sizeof(*m->dim_buf2));
 	m->dim = dim;
+	m->moments = 2;
 	clear(m);
 }
 
@@ -155,6 +156,9 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 	// update eta, psi
 	catdist_set_eta(&m->dist, i, eta1);
 
+	if (m->moments < 1)
+		return;
+
 	// compute weight changes
 	const double psi1 = catdist_psi(&m->dist);
 	const double dpsi = psi1 - psi;
@@ -194,6 +198,9 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 	// update eta, psi
 	catdist_set_eta(&m->dist, i, eta1);
 
+	if (m->moments < 1)
+		return;
+
 	// compute weight changes
 	const double psi1 = catdist_psi(&m->dist);
 	const double dpsi = psi1 - psi;
@@ -221,6 +228,9 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 static void update_mean(struct mlogit *m, const double *dx,
 			const double *xresid, const double w, const double dw)
 {
+	if (m->moments < 1)
+		return;
+
 	size_t dim = mlogit_dim(m);
 	double *mean_diff = m->mean_diff;
 	const double tol = 1.0 / ROOT4_DBL_EPSILON;
@@ -250,6 +260,9 @@ static void update_mean(struct mlogit *m, const double *dx,
 static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 		       const double w, const double dw, const double dpsi)
 {
+	if (m->moments < 2)
+		return;
+
 	const size_t dim = mlogit_dim(m);
 	const size_t cov_dim = dim * (dim + 1) / 2;
 	double *cov_diff = m->cov_diff;
@@ -421,6 +434,23 @@ void recompute_cov(struct mlogit *m)
 	m->log_cov_scale_err = 0.0;
 }
 
+
+void mlogit_set_moments(struct mlogit *m, int k)
+{
+	assert(k >= 0);
+
+	int k0 = m->moments;
+	m->moments = k;
+
+	if (k0 < k) {
+		if (k0 <= 0)
+			recompute_mean(m);
+		if (k0 <= 1)
+			recompute_cov(m);
+	}
+}
+
+
 int mlogit_check(const struct mlogit *m)
 {
 	int fail = 0;
@@ -467,6 +497,9 @@ int mlogit_check(const struct mlogit *m)
 		probtot0 += prob0[i];
 	}
 
+	if (m->moments < 1)
+		goto out;
+
 	if (p > 0)
 		blas_dgemv(BLAS_NOTRANS, p, n, 1.0, x, p, prob0, 1, 0.0, mean0,
 			   1);
@@ -474,6 +507,9 @@ int mlogit_check(const struct mlogit *m)
 	for (j = 0; j < p; j++) {
 		CHECK_APPROX(mean0[j], mean[j]);
 	}
+
+	if (m->moments < 2)
+		goto out;
 
 	for (i = 0; i < n; i++) {
 		blas_dcopy(p, x + i * p, 1, diff, 1);

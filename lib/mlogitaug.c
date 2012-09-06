@@ -20,7 +20,7 @@
 
 #define BLOCK_SIZE	64
 
-
+static int mlogitaug_moments(const struct mlogitaug *m1);
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
@@ -278,6 +278,9 @@ struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 
 void recompute_mean(struct mlogitaug *m1)
 {
+	if (mlogitaug_moments(m1) < 1)
+		return;
+
 	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
 	double *mean = m1->mean;
@@ -314,6 +317,7 @@ void recompute_mean(struct mlogitaug *m1)
 
 double *mlogitaug_mean(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 1);
 	recompute_dist((struct mlogitaug *)m1);
 	recompute_mean((struct mlogitaug *)m1);
 	return m1->mean;
@@ -322,6 +326,9 @@ double *mlogitaug_mean(const struct mlogitaug *m1)
 
 void recompute_base_mean(struct mlogitaug *m1)
 {
+	if (mlogitaug_moments(m1) < 1)
+		return;
+
 	size_t dim = mlogit_dim(m1->base);
 
 	if (dim == 0)
@@ -373,8 +380,17 @@ void recompute_base_mean(struct mlogitaug *m1)
 }
 
 
+int mlogitaug_moments(const struct mlogitaug *m1)
+{
+	const struct mlogit *m = mlogitaug_base(m1);
+	return mlogit_moments(m);
+}
+
+
+
 double *mlogitaug_base_mean(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 1);
 	recompute_dist((struct mlogitaug *)m1);
 	recompute_base_mean((struct mlogitaug *)m1);
 	return m1->base_mean;
@@ -406,6 +422,9 @@ static void copy_packed(double *dst, const double *src, size_t dim, enum blas_up
 
 void recompute_cov(struct mlogitaug *m1)
 {
+	if (mlogitaug_moments(m1) < 2)
+		return;
+
 	const struct catdist1 *dist = &m1->dist;
 	size_t dim = m1->dim;
 	const double *mean = m1->mean;
@@ -457,6 +476,7 @@ void recompute_cov(struct mlogitaug *m1)
 
 double *mlogitaug_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	recompute_dist((struct mlogitaug *)m1);
 	recompute_mean((struct mlogitaug *)m1);
 	recompute_cov((struct mlogitaug *)m1);
@@ -466,6 +486,9 @@ double *mlogitaug_cov(const struct mlogitaug *m1)
 
 static void recompute_base_cov(struct mlogitaug *m1)
 {
+	if (mlogitaug_moments(m1) < 2)
+		return;
+
 	const struct catdist1 *dist = &m1->dist;
 	const struct catdist *dist0 = catdist1_parent(dist);
 	size_t dim = mlogit_dim(m1->base);
@@ -565,6 +588,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 
 double *mlogitaug_base_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	recompute_dist((struct mlogitaug *)m1);
 	recompute_base_mean((struct mlogitaug *)m1);
 	recompute_base_cov((struct mlogitaug *)m1);
@@ -574,6 +598,9 @@ double *mlogitaug_base_cov(const struct mlogitaug *m1)
 
 void recompute_cross_cov(struct mlogitaug *m1)
 {
+	if (mlogitaug_moments(m1) < 2)
+		return;
+
 	size_t dim = m1->dim;
 	size_t base_dim = mlogit_dim(m1->base);
 	const struct catdist1 *dist = &m1->dist;
@@ -626,6 +653,7 @@ void recompute_cross_cov(struct mlogitaug *m1)
 
 double *mlogitaug_cross_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	recompute_dist((struct mlogitaug *)m1);
 	recompute_base_mean((struct mlogitaug *)m1);
 	return m1->cross_cov;
@@ -649,26 +677,31 @@ struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1)
 
 double *mlogitaug_cached_mean(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 1);
 	return ((struct mlogitaug *)m1)->mean;
 }
 
 double *mlogitaug_cached_base_mean(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 1);
 	return ((struct mlogitaug *)m1)->base_mean;
 }
 
 double *mlogitaug_cached_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	return ((struct mlogitaug *)m1)->cov;
 }
 
 double *mlogitaug_cached_base_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	return ((struct mlogitaug *)m1)->base_cov;
 }
 
 double *mlogitaug_cached_cross_cov(const struct mlogitaug *m1)
 {
+	assert(mlogitaug_moments(m1) >= 2);
 	return ((struct mlogitaug *)m1)->cross_cov;
 }
 
