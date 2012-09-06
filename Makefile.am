@@ -35,18 +35,6 @@ libiproc_a_SOURCES = \
 	src/design.h \
 	src/design2.c \
 	src/design2.h \
-	src/dv-icosib.c \
-	src/dv-irecv.c \
-	src/dv-irecv2.c \
-	src/dv-isend.c \
-	src/dv-isend2.c \
-	src/dv-isib.c \
-	src/dv-ncosib.c \
-	src/dv-nrecv.c \
-	src/dv-nrecv2.c \
-	src/dv-nsend.c \
-	src/dv-nsend2.c \
-	src/dv-nsib.c \
 	src/frame.c \
 	src/frame.h \
 	src/history.c \
@@ -65,6 +53,18 @@ libiproc_a_SOURCES = \
 	src/recv_resid.h \
 	src/strata.c \
 	src/strata.h \
+	src/v2-icosib.c \
+	src/v2-irecv.c \
+	src/v2-irecv2.c \
+	src/v2-isend.c \
+	src/v2-isend2.c \
+	src/v2-isib.c \
+	src/v2-ncosib.c \
+	src/v2-nrecv.c \
+	src/v2-nrecv2.c \
+	src/v2-nsend.c \
+	src/v2-nsend2.c \
+	src/v2-nsib.c \
 	src/vars.c \
 	src/vars.h
 

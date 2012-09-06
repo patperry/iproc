@@ -89,14 +89,6 @@
 		224DDDFE15F0EAB500C0CA88 /* recv_boot.h in Headers */ = {isa = PBXBuildFile; fileRef = 224DDDFC15F0EAB500C0CA88 /* recv_boot.h */; };
 		224DDE0215F0EC6F00C0CA88 /* recv_resid.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0015F0EC6F00C0CA88 /* recv_resid.c */; };
 		224DDE0315F0EC6F00C0CA88 /* recv_resid.h in Headers */ = {isa = PBXBuildFile; fileRef = 224DDE0115F0EC6F00C0CA88 /* recv_resid.h */; };
-		224DDE0815F1073E00C0CA88 /* dv-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0415F1073D00C0CA88 /* dv-icosib.c */; };
-		224DDE0915F1073E00C0CA88 /* dv-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0515F1073D00C0CA88 /* dv-irecv2.c */; };
-		224DDE0A15F1073E00C0CA88 /* dv-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0615F1073D00C0CA88 /* dv-isend2.c */; };
-		224DDE0B15F1073E00C0CA88 /* dv-isib.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0715F1073D00C0CA88 /* dv-isib.c */; };
-		224DDE1015F1103D00C0CA88 /* dv-ncosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0C15F1103C00C0CA88 /* dv-ncosib.c */; };
-		224DDE1115F1103D00C0CA88 /* dv-nrecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0D15F1103D00C0CA88 /* dv-nrecv2.c */; };
-		224DDE1215F1103D00C0CA88 /* dv-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0E15F1103D00C0CA88 /* dv-nsend2.c */; };
-		224DDE1315F1103D00C0CA88 /* dv-nsib.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0F15F1103D00C0CA88 /* dv-nsib.c */; };
 		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
 		226216C415F1BA50000C83C4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226216C315F1BA50000C83C4 /* Accelerate.framework */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
@@ -146,12 +138,20 @@
 		228B12CD15E67EFB000DC495 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		228B12EF15E91785000DC495 /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B12ED15E91785000DC495 /* recv_loglik.c */; };
 		228B12F015E91785000DC495 /* recv_loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B12EE15E91785000DC495 /* recv_loglik.h */; };
-		228D4D5115A4CD0E007DBCCA /* dv-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5015A4CD0E007DBCCA /* dv-irecv.c */; };
 		228D4D5515A4CD5F007DBCCA /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5315A4CD5F007DBCCA /* history.c */; };
 		228D4D5615A4CD5F007DBCCA /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 228D4D5415A4CD5F007DBCCA /* history.h */; };
-		228D4D5815A62E37007DBCCA /* dv-isend.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5715A62E37007DBCCA /* dv-isend.c */; };
-		228D4D5A15A6334B007DBCCA /* dv-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5915A6334A007DBCCA /* dv-nrecv.c */; };
-		228D4D5C15A6362D007DBCCA /* dv-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 228D4D5B15A6362D007DBCCA /* dv-nsend.c */; };
+		22A64C6315F8E863005C7DE4 /* v2-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5715F8E863005C7DE4 /* v2-icosib.c */; };
+		22A64C6415F8E863005C7DE4 /* v2-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5815F8E863005C7DE4 /* v2-irecv.c */; };
+		22A64C6515F8E863005C7DE4 /* v2-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5915F8E863005C7DE4 /* v2-irecv2.c */; };
+		22A64C6615F8E863005C7DE4 /* v2-isend.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5A15F8E863005C7DE4 /* v2-isend.c */; };
+		22A64C6715F8E863005C7DE4 /* v2-isend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5B15F8E863005C7DE4 /* v2-isend2.c */; };
+		22A64C6815F8E863005C7DE4 /* v2-isib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5C15F8E863005C7DE4 /* v2-isib.c */; };
+		22A64C6915F8E863005C7DE4 /* v2-ncosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5D15F8E863005C7DE4 /* v2-ncosib.c */; };
+		22A64C6A15F8E863005C7DE4 /* v2-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5E15F8E863005C7DE4 /* v2-nrecv.c */; };
+		22A64C6B15F8E863005C7DE4 /* v2-nrecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5F15F8E863005C7DE4 /* v2-nrecv2.c */; };
+		22A64C6C15F8E863005C7DE4 /* v2-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6015F8E863005C7DE4 /* v2-nsend.c */; };
+		22A64C6D15F8E863005C7DE4 /* v2-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6115F8E863005C7DE4 /* v2-nsend2.c */; };
+		22A64C6E15F8E863005C7DE4 /* v2-nsib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6215F8E863005C7DE4 /* v2-nsib.c */; };
 		22B7E92B15D46A70009978F8 /* testutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B7E92915D46A70009978F8 /* testutil.c */; };
 		22B7E92C15D46A70009978F8 /* testutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B7E92A15D46A70009978F8 /* testutil.h */; };
 		22B7E92E15D46AD0009978F8 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
@@ -590,14 +590,6 @@
 		224DDDFC15F0EAB500C0CA88 /* recv_boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_boot.h; path = src/recv_boot.h; sourceTree = "<group>"; };
 		224DDE0015F0EC6F00C0CA88 /* recv_resid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_resid.c; path = src/recv_resid.c; sourceTree = "<group>"; };
 		224DDE0115F0EC6F00C0CA88 /* recv_resid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_resid.h; path = src/recv_resid.h; sourceTree = "<group>"; };
-		224DDE0415F1073D00C0CA88 /* dv-icosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-icosib.c"; path = "src/dv-icosib.c"; sourceTree = "<group>"; };
-		224DDE0515F1073D00C0CA88 /* dv-irecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-irecv2.c"; path = "src/dv-irecv2.c"; sourceTree = "<group>"; };
-		224DDE0615F1073D00C0CA88 /* dv-isend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-isend2.c"; path = "src/dv-isend2.c"; sourceTree = "<group>"; };
-		224DDE0715F1073D00C0CA88 /* dv-isib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-isib.c"; path = "src/dv-isib.c"; sourceTree = "<group>"; };
-		224DDE0C15F1103C00C0CA88 /* dv-ncosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-ncosib.c"; path = "src/dv-ncosib.c"; sourceTree = "<group>"; };
-		224DDE0D15F1103D00C0CA88 /* dv-nrecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nrecv2.c"; path = "src/dv-nrecv2.c"; sourceTree = "<group>"; };
-		224DDE0E15F1103D00C0CA88 /* dv-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nsend2.c"; path = "src/dv-nsend2.c"; sourceTree = "<group>"; };
-		224DDE0F15F1103D00C0CA88 /* dv-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nsib.c"; path = "src/dv-nsib.c"; sourceTree = "<group>"; };
 		22597408133D0AFB0022B52E /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
 		22597409133D0AFB0022B52E /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		22597411133D0AFB0022B52E /* messages.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = messages.c; path = src/messages.c; sourceTree = "<group>"; };
@@ -649,12 +641,20 @@
 		228B12C515E67ED0000DC495 /* mlogit_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = mlogit_test.c; path = tests/mlogit_test.c; sourceTree = "<group>"; };
 		228B12ED15E91785000DC495 /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
 		228B12EE15E91785000DC495 /* recv_loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_loglik.h; path = src/recv_loglik.h; sourceTree = "<group>"; };
-		228D4D5015A4CD0E007DBCCA /* dv-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-irecv.c"; path = "src/dv-irecv.c"; sourceTree = "<group>"; };
 		228D4D5315A4CD5F007DBCCA /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = src/history.c; sourceTree = "<group>"; };
 		228D4D5415A4CD5F007DBCCA /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = src/history.h; sourceTree = "<group>"; };
-		228D4D5715A62E37007DBCCA /* dv-isend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-isend.c"; path = "src/dv-isend.c"; sourceTree = "<group>"; };
-		228D4D5915A6334A007DBCCA /* dv-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nrecv.c"; path = "src/dv-nrecv.c"; sourceTree = "<group>"; };
-		228D4D5B15A6362D007DBCCA /* dv-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "dv-nsend.c"; path = "src/dv-nsend.c"; sourceTree = "<group>"; };
+		22A64C5715F8E863005C7DE4 /* v2-icosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-icosib.c"; path = "src/v2-icosib.c"; sourceTree = "<group>"; };
+		22A64C5815F8E863005C7DE4 /* v2-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv.c"; path = "src/v2-irecv.c"; sourceTree = "<group>"; };
+		22A64C5915F8E863005C7DE4 /* v2-irecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv2.c"; path = "src/v2-irecv2.c"; sourceTree = "<group>"; };
+		22A64C5A15F8E863005C7DE4 /* v2-isend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-isend.c"; path = "src/v2-isend.c"; sourceTree = "<group>"; };
+		22A64C5B15F8E863005C7DE4 /* v2-isend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-isend2.c"; path = "src/v2-isend2.c"; sourceTree = "<group>"; };
+		22A64C5C15F8E863005C7DE4 /* v2-isib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-isib.c"; path = "src/v2-isib.c"; sourceTree = "<group>"; };
+		22A64C5D15F8E863005C7DE4 /* v2-ncosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-ncosib.c"; path = "src/v2-ncosib.c"; sourceTree = "<group>"; };
+		22A64C5E15F8E863005C7DE4 /* v2-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nrecv.c"; path = "src/v2-nrecv.c"; sourceTree = "<group>"; };
+		22A64C5F15F8E863005C7DE4 /* v2-nrecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nrecv2.c"; path = "src/v2-nrecv2.c"; sourceTree = "<group>"; };
+		22A64C6015F8E863005C7DE4 /* v2-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend.c"; path = "src/v2-nsend.c"; sourceTree = "<group>"; };
+		22A64C6115F8E863005C7DE4 /* v2-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend2.c"; path = "src/v2-nsend2.c"; sourceTree = "<group>"; };
+		22A64C6215F8E863005C7DE4 /* v2-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsib.c"; path = "src/v2-nsib.c"; sourceTree = "<group>"; };
 		22B7E92915D46A70009978F8 /* testutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testutil.c; path = tests/testutil.c; sourceTree = "<group>"; };
 		22B7E92A15D46A70009978F8 /* testutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = testutil.h; path = tests/testutil.h; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
@@ -899,18 +899,6 @@
 				22597409133D0AFB0022B52E /* design.h */,
 				227870A615B0A68C004B170B /* design2.c */,
 				227870A715B0A68C004B170B /* design2.h */,
-				224DDE0415F1073D00C0CA88 /* dv-icosib.c */,
-				228D4D5015A4CD0E007DBCCA /* dv-irecv.c */,
-				224DDE0515F1073D00C0CA88 /* dv-irecv2.c */,
-				228D4D5715A62E37007DBCCA /* dv-isend.c */,
-				224DDE0615F1073D00C0CA88 /* dv-isend2.c */,
-				224DDE0715F1073D00C0CA88 /* dv-isib.c */,
-				224DDE0C15F1103C00C0CA88 /* dv-ncosib.c */,
-				228D4D5915A6334A007DBCCA /* dv-nrecv.c */,
-				224DDE0D15F1103D00C0CA88 /* dv-nrecv2.c */,
-				228D4D5B15A6362D007DBCCA /* dv-nsend.c */,
-				224DDE0E15F1103D00C0CA88 /* dv-nsend2.c */,
-				224DDE0F15F1103D00C0CA88 /* dv-nsib.c */,
 				22EA3331136B440B00C5627F /* frame.c */,
 				22EA3332136B440B00C5627F /* frame.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
@@ -929,6 +917,18 @@
 				224DDE0115F0EC6F00C0CA88 /* recv_resid.h */,
 				22DB0A7F13CB68B5004149CE /* strata.c */,
 				22DB0A8013CB68B5004149CE /* strata.h */,
+				22A64C5715F8E863005C7DE4 /* v2-icosib.c */,
+				22A64C5815F8E863005C7DE4 /* v2-irecv.c */,
+				22A64C5915F8E863005C7DE4 /* v2-irecv2.c */,
+				22A64C5A15F8E863005C7DE4 /* v2-isend.c */,
+				22A64C5B15F8E863005C7DE4 /* v2-isend2.c */,
+				22A64C5C15F8E863005C7DE4 /* v2-isib.c */,
+				22A64C5D15F8E863005C7DE4 /* v2-ncosib.c */,
+				22A64C5E15F8E863005C7DE4 /* v2-nrecv.c */,
+				22A64C5F15F8E863005C7DE4 /* v2-nrecv2.c */,
+				22A64C6015F8E863005C7DE4 /* v2-nsend.c */,
+				22A64C6115F8E863005C7DE4 /* v2-nsend2.c */,
+				22A64C6215F8E863005C7DE4 /* v2-nsib.c */,
 				223BFE4613AA98F200835B8F /* vars.h */,
 				22749E5C1402E2EB00C5A955 /* vars.c */,
 			);
@@ -1608,11 +1608,7 @@
 				22DB0A8213CB68B5004149CE /* strata.c in Sources */,
 				22749E5E1402E2EC00C5A955 /* vars.c in Sources */,
 				2210A3FD146ADE9F00C42B90 /* coreutil.c in Sources */,
-				228D4D5115A4CD0E007DBCCA /* dv-irecv.c in Sources */,
 				228D4D5515A4CD5F007DBCCA /* history.c in Sources */,
-				228D4D5815A62E37007DBCCA /* dv-isend.c in Sources */,
-				228D4D5A15A6334B007DBCCA /* dv-nrecv.c in Sources */,
-				228D4D5C15A6362D007DBCCA /* dv-nsend.c in Sources */,
 				22BECEBF15AA05BD00F630C4 /* util.c in Sources */,
 				22BECECC15AC77AB00F630C4 /* recv_model.c in Sources */,
 				227870A815B0A68C004B170B /* design2.c in Sources */,
@@ -1624,14 +1620,18 @@
 				22EB6B9215EFBC5A00762290 /* recv_fit.c in Sources */,
 				224DDDFD15F0EAB500C0CA88 /* recv_boot.c in Sources */,
 				224DDE0215F0EC6F00C0CA88 /* recv_resid.c in Sources */,
-				224DDE0815F1073E00C0CA88 /* dv-icosib.c in Sources */,
-				224DDE0915F1073E00C0CA88 /* dv-irecv2.c in Sources */,
-				224DDE0A15F1073E00C0CA88 /* dv-isend2.c in Sources */,
-				224DDE0B15F1073E00C0CA88 /* dv-isib.c in Sources */,
-				224DDE1015F1103D00C0CA88 /* dv-ncosib.c in Sources */,
-				224DDE1115F1103D00C0CA88 /* dv-nrecv2.c in Sources */,
-				224DDE1215F1103D00C0CA88 /* dv-nsend2.c in Sources */,
-				224DDE1315F1103D00C0CA88 /* dv-nsib.c in Sources */,
+				22A64C6315F8E863005C7DE4 /* v2-icosib.c in Sources */,
+				22A64C6415F8E863005C7DE4 /* v2-irecv.c in Sources */,
+				22A64C6515F8E863005C7DE4 /* v2-irecv2.c in Sources */,
+				22A64C6615F8E863005C7DE4 /* v2-isend.c in Sources */,
+				22A64C6715F8E863005C7DE4 /* v2-isend2.c in Sources */,
+				22A64C6815F8E863005C7DE4 /* v2-isib.c in Sources */,
+				22A64C6915F8E863005C7DE4 /* v2-ncosib.c in Sources */,
+				22A64C6A15F8E863005C7DE4 /* v2-nrecv.c in Sources */,
+				22A64C6B15F8E863005C7DE4 /* v2-nrecv2.c in Sources */,
+				22A64C6C15F8E863005C7DE4 /* v2-nsend.c in Sources */,
+				22A64C6D15F8E863005C7DE4 /* v2-nsend2.c in Sources */,
+				22A64C6E15F8E863005C7DE4 /* v2-nsib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
