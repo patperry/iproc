@@ -60,7 +60,8 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
 	d->cohort_reps = xcalloc(1, sizeof(*d->cohort_reps));
 	d->ncohort = 1;	
-	
+
+	d->trait_dim = 0;
 	d->traits = NULL;
 	d->trait_vars = NULL;
 	d->ntrait = 0;
@@ -153,11 +154,14 @@ void design_remove_observer(struct design *d, void *udata)
 }
 
 
-static void design_traits_grow(struct design *d, size_t delta)
+static void design_traits_grow(struct design *d, size_t dntrait, size_t ddim)
 {
-	size_t count = design_count(d);		
+	size_t count = design_count(d);
+
+	size_t ntrait = design_trait_count(d);
+	size_t ntrait1 = ntrait + dntrait;
 	size_t dim = design_trait_dim(d);
-	size_t dim1 = dim + delta;
+	size_t dim1 = dim + ddim;
 
 	if (count) {
 		double *traits = xmalloc(count * dim1 * sizeof(*traits));		
@@ -166,8 +170,8 @@ static void design_traits_grow(struct design *d, size_t delta)
 		d->traits = traits;
 	}
 	
-	d->trait_vars = xrealloc(d->trait_vars, dim1 * sizeof(*d->trait_vars));
-	d->ntrait = dim1;	
+	d->trait_vars = xrealloc(d->trait_vars, ntrait1 * sizeof(*d->trait_vars));
+	d->trait_dim = dim1;
 }
 
 
@@ -224,16 +228,22 @@ static struct var *design_trait_alloc(const struct design *d, const char *name,
 }
 
 
-const struct var *design_add_trait(struct design *d, const char *name, const double *x)
+const struct var *design_add_trait(struct design *d, const char *name, const double *x, size_t dim)
 {
+	assert(dim > 0);
+
 	size_t n = design_count(d);
-	size_t ntrait = d->ntrait;
-	size_t ntrait1 = ntrait + 1;
-	struct var *v = design_trait_alloc(d, name, ntrait, 1);
+
+	size_t dim0 = design_trait_dim(d);
+	size_t dim1 = dim0 + dim;
+	size_t index = dim0;
+	struct var *v = design_trait_alloc(d, name, index, dim);
 	
-	design_traits_grow(d, 1);
-	d->trait_vars[ntrait] = v;
-	blas_dcopy(n, x, 1, d->traits + ntrait, ntrait1);
+	design_traits_grow(d, 1, dim);
+	d->trait_vars[d->ntrait++] = v;
+
+	lapack_dlacpy(LA_COPY_ALL, dim, n, x, dim, d->traits + dim0, dim1);
+
 	design_recompute_cohorts(d);
 	return v;
 }
@@ -245,21 +255,26 @@ void design_add_traits(struct design *d, const char * const *names, const double
 		return;
 
 	size_t n = design_count(d);
+	size_t dim0 = d->trait_dim;
+	size_t dim1 = dim0 + num;
+	size_t index = dim0;
 	size_t ntrait = d->ntrait;
 	size_t ntrait1 = ntrait;
 
-	design_traits_grow(d, num);
+	design_traits_grow(d, num, num);
 	struct var *v;
 	size_t i;
 	
 	for (i = 0; i < num; i++) {
-		v = design_trait_alloc(d, names[i], ntrait1, 1);
+		v = design_trait_alloc(d, names[i], index, 1);
 		d->trait_vars[ntrait1] = v;
 		ntrait1++;
+		index++;
 	}
-	assert(ntrait1 == ntrait + num);
-	
-	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + ntrait, ntrait1);
+	d->ntrait = ntrait1;
+	assert(d->trait_dim == dim1);
+
+	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + dim0, dim1);
 	design_recompute_cohorts(d);
 }
 
@@ -299,6 +314,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 {
 	assert(name);
 	assert(type);
+	assert(!d->dx); // Not Implemented otherwise
 
 	struct tvar *tv = xmalloc(sizeof(*tv));
 	struct var *v = &tv->var;
@@ -596,3 +612,31 @@ void design_axpy(double alpha, const struct design *d, size_t i, struct coefs *c
 	design_tvars_axpy(alpha, d, i, c->tvars);
 }
 
+const struct var *design_add_prod(struct design *d, const char *name, const struct var *u, const struct var *v)
+{
+	assert(u->design == d);
+	assert(v->design == d);
+	assert(u->dim > 0);
+	assert(v->dim > 0);
+
+	const struct var *res = NULL;
+	size_t dim = u->dim * v->dim;
+	size_t i, n = design_count(d);
+
+	if (u->type == VAR_TYPE_TRAIT && v->type == VAR_TYPE_TRAIT) {
+		double *x = xcalloc(n * dim, sizeof(double));
+
+		for (i = 0; i < n; i++) {
+			const double *xu = design_trait(d, u, i);
+			const double *xv = design_trait(d, v, i);
+			blas_dger(v->dim, u->dim, 1.0, xv, 1, xu, 1, x + i * dim, v->dim);
+		}
+
+		res = design_add_trait(d, name, x, dim);
+		free(x);
+	} else {
+		assert("Not Implemented" && 0);
+	}
+
+	return res;
+}

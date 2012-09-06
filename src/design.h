@@ -14,6 +14,7 @@ struct design {
 	size_t *cohorts;
 	size_t *cohort_reps;
 
+	size_t trait_dim;
 	double *traits;
 	struct var **trait_vars;
 	size_t ntrait;
@@ -101,12 +102,13 @@ static inline void design_get_cohorts(const struct design *d,
 
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
+static inline size_t design_trait_count(const struct design *d);
 static inline const double *design_all_traits(const struct design *d);
 static inline const double *design_traits(const struct design *d, size_t i);
 static inline const double *design_trait(const struct design *d, const struct var *v, size_t i);
 
 const char *design_trait_name(const struct design *d, size_t k);
-const struct var *design_add_trait(struct design *d, const char *name, const double *x);
+const struct var *design_add_trait(struct design *d, const char *name, const double *x, size_t dim);
 void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num);
 
 void design_traits_mul(double alpha, const struct design *d,
@@ -130,6 +132,10 @@ void design_tvars_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y);
 void design_tvars_tmul(double alpha, const struct design *d, const double *x, double beta, double *y);
 void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y);
+
+
+/* interactions */
+const struct var *design_add_prod(struct design *d, const char *name, const struct var *u, const struct var *v);
 
 
 /* coefs */
@@ -196,6 +202,12 @@ void design_get_cohorts(const struct design *d, const size_t **cohortsp,
 
 
 size_t design_trait_dim(const struct design *d)
+{
+	return d->trait_dim;
+}
+
+
+size_t design_trait_count(const struct design *d)
 {
 	return d->ntrait;
 }
