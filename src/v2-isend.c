@@ -22,7 +22,7 @@ static void isend_message_add(void *udata, struct frame *f,
 			continue;
 		
 		size_t jrecv = msg->to[ito];
-		const double *dx = design2_tvars(d, v, isend, jrecv);
+		const double *dx = design2_tvar(d, v, isend, jrecv);
 		if (!dx || *dx == 0.0) {
 			design2_update(d, v, isend, jrecv, &one, &izero, 1);
 		}

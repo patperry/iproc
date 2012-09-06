@@ -324,6 +324,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	d->tvars[index] = tv;
 	d->tvar_dim += v->dim;
 	d->ind_buf = xrealloc(d->ind_buf, d->tvar_dim * sizeof(*d->ind_buf));
+	d->ntvar = index + 1;
 		
 	return v;
 }
@@ -460,7 +461,7 @@ void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y
 {
 	assert(i < design_count(d));
 
-	const double *dx = design_tvars(d, NULL, i);
+	const double *dx = design_tvars(d, i);
 	
 	if (dx) {
 		size_t dim = design_tvar_dim(d);
