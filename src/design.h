@@ -101,7 +101,10 @@ static inline void design_get_cohorts(const struct design *d,
 
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
-static inline const double *design_traits(const struct design *d);
+static inline const double *design_all_traits(const struct design *d);
+static inline const double *design_traits(const struct design *d, size_t i);
+static inline const double *design_trait(const struct design *d, const struct var *v, size_t i);
+
 const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x);
 void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num);
@@ -119,7 +122,7 @@ static inline const double *design_tvars(const struct design *d, size_t i);
 const char *design_tvar_name(const struct design *d, size_t k);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
-static inline void design_tvars_get(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
+static inline void design_tvars_get_all(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
 void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip);
 void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip);
 
@@ -198,11 +201,28 @@ size_t design_trait_dim(const struct design *d)
 }
 
 
-const double *design_traits(const struct design *d)
+const double *design_all_traits(const struct design *d)
 {
 	return d->traits;
 }
 
+
+const double *design_traits(const struct design *d, size_t i)
+{
+	assert(i < design_count(d));
+	size_t dim = design_trait_dim(d);
+	const double *x = design_all_traits(d);
+	return x + i * dim;
+}
+
+const double *design_trait(const struct design *d, const struct var *v, size_t i)
+{
+	assert(v->design == d);
+	assert(v->type == VAR_TYPE_TRAIT);
+	const double *x = design_traits(d, i);
+	size_t off = v->index;
+	return x + off;
+}
 
 size_t design_tvar_dim(const struct design *d)
 {
@@ -213,13 +233,11 @@ size_t design_tvar_dim(const struct design *d)
 const double *design_tvar(const struct design *d, const struct var *v, size_t i)
 {
 	assert(v->design == d);
-	assert(i < design_count(d));
-	ptrdiff_t ix = vpattern_find(&d->active, i);
-
-	if (ix < 0)
+	assert(v->type == VAR_TYPE_TVAR);
+	const double *dx = design_tvars(d, i);
+	if (!dx)
 		return NULL;
 
-	const double *dx = d->dx + ix * d->tvar_dim;
 	size_t off = v->index;
 	return dx + off;
 }
@@ -236,7 +254,7 @@ const double *design_tvars(const struct design *d, size_t i)
 	return dx;
 }
 
-void design_tvars_get(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp)
+void design_tvars_get_all(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp)
 {
 	*dxp = d->dx;
 	*ip = d->active.indx;

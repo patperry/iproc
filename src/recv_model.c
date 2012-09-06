@@ -64,8 +64,8 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 	size_t dimr0 = design_trait_dim(r);
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dim = dimr + dimd0;
-	const double *xr = design_traits(r);
-	const double *xd = design2_traits(d, isend);
+	const double *xr = design_all_traits(r);
+	const double *xd = design2_all_traits(d, isend);
 
 	double *x = xcalloc(nrecv * dim, sizeof(*x));
 
@@ -146,7 +146,7 @@ static void sender_set(struct recv_model_sender *sm,
 	const double *x;
 	const size_t *indx;
 	size_t nzx;
-	design2_tvars_get(d, isend, &x, &indx, &nzx);
+	design2_tvars_get_all(d, isend, &x, &indx, &nzx);
 	mlogitaug_set_all_x(&sm->mlogitaug, indx, x, nzx);
 
 	if (!has_loops) {

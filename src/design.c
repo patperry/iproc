@@ -180,7 +180,6 @@ const char *design_trait_name(const struct design *d, size_t j)
 
 static void design_recompute_cohorts(struct design *d)
 {
-	const double *a = design_traits(d);
 	size_t dim = design_trait_dim(d);
 	size_t n = design_count(d);
 	size_t i, c;
@@ -193,7 +192,8 @@ static void design_recompute_cohorts(struct design *d)
 
 	d->ncohort = 0;
 	for (i = 0; i < n; i++) {
-		blas_dcopy(dim, a + i * dim, 1, buf, 1);
+		const double *x = design_traits(d, i);
+		blas_dcopy(dim, x, 1, buf, 1);
 		c = strata_add(&strat, buf);
 
 		d->cohorts[i] = c;
@@ -378,7 +378,7 @@ void design_traits_mul(double alpha, const struct design *d,
 {
 	size_t n = design_count(d);
 	size_t p = design_trait_dim(d);
-	const double *a = design_traits(d);
+	const double *a = design_all_traits(d);
 	size_t lda = p;
 
 	if (p) {
@@ -395,7 +395,7 @@ void design_traits_tmul(double alpha, const struct design *d, const double *x, d
 {
 	size_t n = design_count(d);
 	size_t p = design_trait_dim(d);
-	const double *a = design_traits(d);
+	const double *a = design_all_traits(d);
 	size_t lda = p;
 
 	if (p) {
@@ -408,10 +408,10 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 {
 	assert(i < design_count(d));
 	
-	const double *a = design_traits(d);
+	const double *x = design_traits(d, i);
 	size_t dim = design_trait_dim(d);
 	
-	blas_daxpy(dim, alpha, a + i * dim, 1, y, 1);	
+	blas_daxpy(dim, alpha, x, 1, y, 1);
 }
 
 
@@ -430,7 +430,7 @@ void design_tvars_mul(double alpha, const struct design *d,
 		blas_dscal(n, beta, y, 1);
 	}
 	
-	design_tvars_get(d, &a, &k, &nz);
+	design_tvars_get_all(d, &a, &k, &nz);
 	for (; nz != 0; a += dim, k++, nz--) {
 		y[*k] += alpha * blas_ddot(dim, a, 1, x, 1);
 	}
@@ -450,7 +450,7 @@ void design_tvars_tmul(double alpha, const struct design *d, const double *x, do
 		blas_dscal(dim, beta, y, 1);
 	}
 
-	design_tvars_get(d, &a, &k, &nz);
+	design_tvars_get_all(d, &a, &k, &nz);
 	for (; nz != 0; a += dim, k++, nz--) {
 		blas_daxpy(dim, alpha * x[*k], a, 1, y, 1);
 	}

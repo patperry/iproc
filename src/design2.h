@@ -99,7 +99,9 @@ const struct var2 *design2_var(const struct design2 *d, const char *name);
 
 /* traits */
 static inline size_t design2_trait_dim(const struct design2 *d);
-const double *design2_traits(const struct design2 *d, size_t i);
+const double *design2_all_traits(const struct design2 *d, size_t i);
+const double *design2_traits(const struct design2 *d, size_t i, size_t j);
+const double *design2_trait(const struct design2 *d, const struct var2 *v, size_t i, size_t j);
 //const char *design2_trait_name(const struct design2 *d, size_t k);
 //const struct var2 *design2_add_trait(struct design2 *d, const char *name, const double *x);
 //void design2_add_traits(struct design2 *d, const char * const *names, const double *x, size_t num);
@@ -120,8 +122,8 @@ static inline const double *design2_tvars(const struct design2 *d, size_t i, siz
 //const char *design2_tvar_name(const struct design2 *d, size_t k);
 const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const struct tvar2_type *type, ...);
 
-static inline void design2_tvars_get(const struct design2 *d, size_t i, const double **dxp, const size_t **jp,
-				     size_t *nzp);
+static inline void design2_tvars_get_all(const struct design2 *d, size_t i, const double **dxp, const size_t **jp,
+					 size_t *nzp);
 
 void design2_tvars_mul(double alpha, const struct design2 *d, size_t i,
 		      const double *x, double beta, double *y);
@@ -195,19 +197,12 @@ const double *design2_tvar(const struct design2 *d, const struct var2 *v, size_t
 	assert(v->design == d);
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
+	assert(v->type == VAR_TYPE_TVAR);
 	
-	size_t ir0 = d->ir[i];
-	size_t ir1 = d->ir[i+1];
-	size_t nz = ir1 - ir0;
-	size_t *indx = d->jc + ir0;
-	struct vpattern pat = vpattern_make(indx, nz);
-	
-	ptrdiff_t ix = vpattern_find(&pat, j);
-
-	if (ix < 0)
+	const double *dx = design2_tvars(d, i, j);
+	if (!dx)
 		return NULL;
 
-	const double *dx = d->dx + (ir0 + ix) * d->tvar_dim;
 	const size_t off = v->index;
 	return dx + off;
 }
@@ -234,7 +229,7 @@ const double *design2_tvars(const struct design2 *d, size_t i, size_t j)
 }
 
 
-void design2_tvars_get(const struct design2 *d, size_t i, const double **dxp, const size_t **jp, size_t *nzp)
+void design2_tvars_get_all(const struct design2 *d, size_t i, const double **dxp, const size_t **jp, size_t *nzp)
 {
 	assert(i < design2_count1(d));
 

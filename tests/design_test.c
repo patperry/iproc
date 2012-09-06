@@ -148,7 +148,7 @@ static void matrix_assign_reffects(double *x, size_t tdx,
 
 static void matrix_init_design0(double **px, const struct design *d)
 {
-	const double *traits = design_traits(d);
+	const double *traits = design_all_traits(d);
 	//int has_reffects = design_has_effects(d);
 	int has_reffects = 0;
 	
