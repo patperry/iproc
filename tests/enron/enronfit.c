@@ -36,7 +36,10 @@ static struct frame frame;
 
 
 static void setup_frame(void) {
-	size_t terms = 2; // second-order interactions only
+	char namebuf[1024];
+	size_t i, j;
+
+	size_t terms = 1; // first-order interactions only
 	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, terms);
 	nrecv = nsend;
 	has_loops = 0;
@@ -68,11 +71,21 @@ static void setup_frame(void) {
 	/* send design */
 	struct design *s = frame_send_design(&frame);
 	design_add_traits(s, trait_names, traits, ntrait);
+	design_add_prod(s, "Leg:Jun", design_var(s, "Leg"), design_var(s, "Jun"));
+	design_add_prod(s, "Trad:Jun", design_var(s, "Trad"), design_var(s, "Jun"));
+	design_add_prod(s, "Leg:Fem", design_var(s, "Leg"), design_var(s, "Fem"));
+	design_add_prod(s, "Trad:Fem", design_var(s, "Trad"), design_var(s, "Fem"));
+	design_add_prod(s, "Jun:Fem", design_var(s, "Jun"), design_var(s, "Fem"));
        
 	/* recv design */
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, trait_names, traits, ntrait);
-	
+	design_add_prod(r, "Leg:Jun", design_var(r, "Leg"), design_var(r, "Jun"));
+	design_add_prod(r, "Trad:Jun", design_var(r, "Trad"), design_var(r, "Jun"));
+	design_add_prod(r, "Leg:Fem", design_var(r, "Leg"), design_var(r, "Fem"));
+	design_add_prod(r, "Trad:Fem", design_var(r, "Trad"), design_var(r, "Fem"));
+	design_add_prod(r, "Jun:Fem", design_var(r, "Jun"), design_var(r, "Fem"));
+
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
 
@@ -80,22 +93,22 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
 	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
-	design2_add_tvar(d, "IRecv2", DYAD_VAR_IRECV2);
-	design2_add_tvar(d, "NRecv2", DYAD_VAR_NRECV2);
-	design2_add_tvar(d, "ISend2", DYAD_VAR_ISEND2);
-	design2_add_tvar(d, "NSend2", DYAD_VAR_NSEND2);
-	design2_add_tvar(d, "ISib", DYAD_VAR_ISIB);
-	design2_add_tvar(d, "NSib", DYAD_VAR_NSIB);
-	design2_add_tvar(d, "ICosib", DYAD_VAR_ICOSIB);
-	design2_add_tvar(d, "NCosib", DYAD_VAR_NCOSIB);
+	//design2_add_tvar(d, "IRecv2", DYAD_VAR_IRECV2);
+	//design2_add_tvar(d, "NRecv2", DYAD_VAR_NRECV2);
+	//design2_add_tvar(d, "ISend2", DYAD_VAR_ISEND2);
+	//design2_add_tvar(d, "NSend2", DYAD_VAR_NSEND2);
+	//design2_add_tvar(d, "ISib", DYAD_VAR_ISIB);
+	//design2_add_tvar(d, "NSib", DYAD_VAR_NSIB);
+	//design2_add_tvar(d, "ICosib", DYAD_VAR_ICOSIB);
+	//design2_add_tvar(d, "NCosib", DYAD_VAR_NCOSIB);
 
 
-	char buf[1024];
-	size_t i, j;
-	for (i = 0; i < ntrait; i++) {
-		for (j = 0; j < ntrait; j++) {
-			sprintf(buf, "%s*%s", trait_names[i], trait_names[j]);
-			design2_add_kron(d, buf, design_var(s, trait_names[i]), design_var(r, trait_names[j]));
+	for (i = 0; i < design_trait_count(s); i++) {
+		const struct var *vi = design_trait_var(s, i);
+		for (j = 0; j < design_trait_count(r); j++) {
+			const struct var *vj = design_trait_var(r, j);
+			sprintf(namebuf, "%s*%s", var_name(vi), var_name(vj));
+			design2_add_kron(d, namebuf, vi, vj);
 		}
 	}
 

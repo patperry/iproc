@@ -75,6 +75,10 @@ struct coefs {
 	size_t dim;
 };
 
+static inline const char *var_name(const struct var *v)
+{
+	return v->name;
+}
 
 void design_init(struct design *d, struct frame *f, size_t count);
 void design_deinit(struct design *d);
@@ -103,6 +107,7 @@ static inline void design_get_cohorts(const struct design *d,
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
 static inline size_t design_trait_count(const struct design *d);
+static inline const struct var * design_trait_var(const struct design *d, size_t i);
 static inline const double *design_all_traits(const struct design *d);
 static inline const double *design_traits(const struct design *d, size_t i);
 static inline const double *design_trait(const struct design *d, const struct var *v, size_t i);
@@ -212,6 +217,11 @@ size_t design_trait_count(const struct design *d)
 	return d->ntrait;
 }
 
+const struct var * design_trait_var(const struct design *d, size_t i)
+{
+	assert(i < design_trait_count(d));
+	return d->trait_vars[i];
+}
 
 const double *design_all_traits(const struct design *d)
 {

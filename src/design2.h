@@ -108,6 +108,9 @@ const double *design2_trait(const struct design2 *d, const struct var2 *v, size_
 
 const struct var2 *design2_add_kron(struct design2 *d, const char *name, const struct var *i,
 				    const struct var *j);
+//const struct var2 *design2_add_prod(struct design2 *d, const char *name, const struct var2 *u, const struct var2 *v);
+//const struct var2 *design2_add_prod1(struct design2 *d, const char *name, const struct var *i, const struct var2 *v);
+//const struct var2 *design2_add_prod2(struct design2 *d, const char *name, const struct var *j, const struct var2 *v);
 
 void design2_traits_mul(double alpha, const struct design2 *d, size_t i,
 			const double *x, double beta, double *y);
