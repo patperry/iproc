@@ -62,7 +62,8 @@ static void setup_frame(void) {
 			    // 7372800.00, // 85.33 day
 			    // 14745600.00, // 170.66 day
 			    // 29491200.00 // 341.33 day
-		// 58982400.00
+			    // 58982400.00 // 682.66 day
+		INFINITY
 	};
 	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
 	//int has_effects = 0;
@@ -89,19 +90,23 @@ static void setup_frame(void) {
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
 
-	design2_add_tvar(d, "IRecv", VAR2_IRECV);
-	design2_add_tvar(d, "ISend", VAR2_ISEND);
-	design2_add_prod(d, "IRecv:ISend", design2_var(d, "IRecv"), design2_var(d, "ISend"));
-	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
-	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
-	//design2_add_tvar(d, "ISib", VAR2_ISIB);
-	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
+	//design2_add_prod(d, "IRecv:ISend", design2_var(d, "IRecv"), design2_var(d, "ISend"));
 
+	design2_add_tvar(d, "IRecv", VAR2_IRECV);
 	design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	design2_add_tvar(d, "ISend", VAR2_ISEND);
 	design2_add_tvar(d, "NSend", VAR2_NSEND);
+
+	design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
 	design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+
+	design2_add_tvar(d, "ISend2", VAR2_ISEND2);
 	design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+
+	design2_add_tvar(d, "ISib", VAR2_ISIB);
 	design2_add_tvar(d, "NSib", VAR2_NSIB);
+
+	design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
 	design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 

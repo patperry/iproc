@@ -58,11 +58,11 @@ static void enron_teardown_fixture()
 
 static void basic_setup()
 {
-	double intvls[3] = {
-		112.50,  450.00, 1800.00,
+	double intvls[4] = {
+		112.50,  450.00, 1800.00, INFINITY
 	};
 	int has_loops = 0;
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 4);
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, trait_names, traits, ntrait);
 
@@ -85,13 +85,14 @@ static void basic_setup()
 
 static void hard_setup()
 {	
-	double intvls[6] = {
+	double intvls[7] = {
 		1800.00,   // 30 min
 		7200.00,   //  2 hr
 		28800.00,  //  8 hr
 		115200.00, // 32 hr
 		460800.00, // 5.33 day
 		1843200.00, // 21.33 day
+		INFINITY
 	};
 
 	double beta[] = {
@@ -123,7 +124,7 @@ static void hard_setup()
 	};
 
 	int has_loops = 0;
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, 6);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 7);
 	struct design *r = frame_recv_design(&frame);
 	design_add_traits(r, trait_names, traits, ntrait);
 

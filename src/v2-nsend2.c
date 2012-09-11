@@ -13,6 +13,9 @@
 static void nsend2_message_add(void *udata, struct frame *f,
 			       const struct message *msg)
 {
+	if (!frame_interval_count(f))
+		return;
+
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = frame_dyad_design(f);
@@ -22,11 +25,9 @@ static void nsend2_message_add(void *udata, struct frame *f,
 	size_t dx_nz = 1;
 
 	const struct history *h = frame_history(f);
-	size_t nintvl = frame_interval_count(f);
-	size_t nintvl1 = nintvl + 1;
+	size_t iintvl, nintvl = frame_interval_count(f);
 	size_t ito, nto = msg->nto;
 	const size_t *nmsg;
-	size_t intvl1;
 
 	size_t iz, nz;
 	const size_t *indx;
@@ -39,11 +40,11 @@ static void nsend2_message_add(void *udata, struct frame *f,
 
 		for (iz = 0; iz < nz; iz++) {
 			size_t jrecv = indx[iz];
-			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+			for (iintvl = 0; iintvl < nintvl; iintvl++, nmsg++) {
 				if (*nmsg == 0)
 					continue;
 
-				size_t ix = intvl1 * nintvl1;
+				size_t ix = iintvl * nintvl;
 
 				dx_data[0] = (double)(*nmsg);
 				dx_index[0] = ix;
@@ -63,10 +64,10 @@ static void nsend2_message_add(void *udata, struct frame *f,
 	for (iz = 0; iz < nz; iz++) {
 		size_t coisend = indx[iz];
 
-		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+		for (iintvl = 0; iintvl < nintvl; iintvl++, nmsg++) {
 			if (*nmsg == 0)
 				continue;
-			size_t coix = intvl1;
+			size_t coix = iintvl;
 
 			dx_data[0] = +(double)(*nmsg);
 			dx_index[0] = coix;
@@ -96,10 +97,8 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 	size_t dx_nz = 2;
 
 	const struct history *h = frame_history(f);
-	size_t nintvl = frame_interval_count(f);
-	size_t nintvl1 = nintvl + 1;
+	size_t iintvl, nintvl = frame_interval_count(f);
 	size_t ito, nto = msg->nto;
-	size_t intvl1;
 
 	size_t iz, nz;
 	const size_t *indx;
@@ -113,11 +112,11 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 
 		for (iz = 0; iz < nz; iz++) {
 			size_t jrecv = indx[iz];
-			for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+			for (iintvl = 0; iintvl < nintvl; iintvl++, nmsg++) {
 				if (*nmsg == 0)
 					continue;
 
-				size_t ix0 = (intvl - 1) + intvl1 * nintvl1;
+				size_t ix0 = (intvl - 1) + iintvl * nintvl;
 				size_t ix1 = ix0 + 1;
 
 				dx_data[0] = -(double)(*nmsg);
@@ -140,11 +139,11 @@ static void nsend2_message_advance(void *udata, struct frame *f,
 	for (iz = 0; iz < nz; iz++) {
 		size_t coisend = indx[iz];
 
-		for (intvl1 = 0; intvl1 < nintvl1; intvl1++, nmsg++) {
+		for (iintvl = 0; iintvl < nintvl; iintvl++, nmsg++) {
 			if (*nmsg == 0)
 				continue;
-			size_t coix0 = intvl1 + (intvl - 1) * nintvl1;
-			size_t coix1 = coix0 + nintvl1;
+			size_t coix0 = iintvl + (intvl - 1) * nintvl;
+			size_t coix1 = coix0 + nintvl;
 
 			dx_data[0] = -(double)(*nmsg);
 			dx_data[1] = +(double)(*nmsg);
@@ -179,7 +178,7 @@ static void nsend2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	struct frame *f = design2_frame(d);
 	size_t n = frame_interval_count(f);
 
-	tv->var.dim = (n + 1) * (n + 1);
+	tv->var.dim = n * n;
 	tv->udata = NULL;
 
 	frame_add_observer(f, tv, &nsend2_frame_callbacks);

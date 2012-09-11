@@ -7,6 +7,9 @@
 #include <stdarg.h>
 
 
+//extern const struct tvar_type VAR_NRECV;
+//extern const struct tvar_type VAR_NSEND;
+
 
 /* Indicator 1{ j -> i in (-Infty, t) } */
 extern const struct tvar2_type *VAR2_IRECV;

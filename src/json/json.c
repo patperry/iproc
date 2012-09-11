@@ -27,8 +27,6 @@
 yajl_gen_status yajl_gen_ieee754(yajl_gen hand, double val)
 {
 	switch (fpclassify(val)) {
-	case FP_INFINITE:
-		return yajl_gen_double(hand, val > 0 ? DBL_MAX : -DBL_MAX);
 	case FP_NAN:
 		return yajl_gen_null(hand);
 	default:

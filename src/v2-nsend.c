@@ -8,11 +8,14 @@
 static void nsend_message_add(void *udata, struct frame *f,
 			      const struct message *msg)
 {
+	if (!frame_interval_count(f))
+		return;
+
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = frame_dyad_design(f);
 	size_t isend = msg->from;
-	
+
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
 	size_t nz = 1;
@@ -74,7 +77,7 @@ static void nsend_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	struct frame *f = design2_frame(d);
 	size_t n = frame_interval_count(f);
 
-	tv->var.dim = n + 1;
+	tv->var.dim = n;
 	tv->udata = NULL;
 	
 	frame_add_observer(f, tv, &nsend_frame_callbacks);

@@ -43,7 +43,7 @@ static void history_actor_deinit(struct history_actor *actr)
 	vpattern_deinit(&actr->active);
 	free(actr->message_ixs);
 }
-static size_t history_actor_search(struct history_actor *actr, size_t nintvl1, size_t i)
+static size_t history_actor_search(struct history_actor *actr, size_t nintvl, size_t i)
 {
 	int ins;
 	size_t nzmax = actr->active.nzmax;
@@ -52,11 +52,11 @@ static size_t history_actor_search(struct history_actor *actr, size_t nintvl1, s
 	if (ins) {
 		if (nzmax != actr->active.nzmax) {
 			nzmax = actr->active.nzmax;
-			actr->nmsg = xrealloc(actr->nmsg, nzmax * nintvl1 * sizeof(actr->nmsg[0]));
+			actr->nmsg = xrealloc(actr->nmsg, nzmax * nintvl * sizeof(actr->nmsg[0]));
 		}
-		memmove(actr->nmsg + (ix + 1) * nintvl1, actr->nmsg + ix * nintvl1,
-			(actr->active.nz - 1 - ix) * nintvl1 * sizeof(actr->nmsg[0]));
-		memset(actr->nmsg + ix * nintvl1, 0, nintvl1 * sizeof(actr->nmsg[0]));
+		memmove(actr->nmsg + (ix + 1) * nintvl, actr->nmsg + ix * nintvl,
+			(actr->active.nz - 1 - ix) * nintvl * sizeof(actr->nmsg[0]));
+		memset(actr->nmsg + ix * nintvl, 0, nintvl * sizeof(actr->nmsg[0]));
 	}
 
 	return ix;
@@ -108,6 +108,10 @@ void history_init(struct history *h, size_t nsend, size_t nrecv, const double *i
 	assert(intvls || !nintvl);
 #ifndef NDEBUG
 	{
+		if (nintvl) {
+			assert(0 < intvls[0]);
+		}
+
 		size_t i;
 		for (i = 1; i < nintvl; i++) {
 			assert(intvls[i - 1] < intvls[i]);
@@ -249,7 +253,6 @@ static void process_current_messages(struct history *h)
 
 	const double *intvls = history_intervals(h);
 	size_t nintvl = history_interval_count(h);
-	size_t nintvl1 = nintvl + 1;
 	double delta = nintvl ? intvls[0] : INFINITY;
 	double tnext = history_time(h) + delta;
 
@@ -269,8 +272,8 @@ static void process_current_messages(struct history *h)
 		actr->message_ixs[actr->nix++] = imsg;
 
 		for (ito = 0; ito < nto; ito++) {
-			size_t ix = history_actor_search(actr, nintvl1, msg->to[ito]);
-			size_t *ptr = actr->nmsg + ix * nintvl1;
+			size_t ix = history_actor_search(actr, nintvl, msg->to[ito]);
+			size_t *ptr = actr->nmsg + ix * nintvl;
 			ptr[0]++;
 		}
 
@@ -279,8 +282,8 @@ static void process_current_messages(struct history *h)
 			actr = &h->receivers[msg->to[ito]];
 			history_actor_grow_ixs(actr, 1);
 			actr->message_ixs[actr->nix++] = imsg;
-			size_t ix = history_actor_search(actr, nintvl1, msg->from);
-			size_t *ptr = actr->nmsg + ix * nintvl1;
+			size_t ix = history_actor_search(actr, nintvl, msg->from);
+			size_t *ptr = actr->nmsg + ix * nintvl;
 			ptr[0]++;
 		}
 
@@ -343,17 +346,15 @@ static void process_event(struct history *h)
 	// update the event queue
 	const double *intvls = history_intervals(h);
 	size_t nintvl = history_interval_count(h);
-	size_t nintvl1 = nintvl + 1;
+	double delta = (intvl < nintvl) ? intvls[intvl] : INFINITY;
+	double tnext = msg->time + delta;
 
-	if (intvl < nintvl) {
-		double delta = intvls[intvl];
-		double tnext = msg->time + delta;
+	if (isfinite(tnext)) {
 		e->time = tnext;
 		pqueue_update_top(&h->events);
 	} else {
 		pqueue_pop(&h->events);
 	}
-
 
 	// update the actors;
 	struct history_actor *actr;
@@ -361,8 +362,8 @@ static void process_event(struct history *h)
 
 	actr = &h->senders[msg->from];
 	for (ito = 0; ito < nto; ito++) {
-		size_t ix = history_actor_search(actr, nintvl1, msg->to[ito]);
-		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl1;
+		size_t ix = history_actor_search(actr, nintvl, msg->to[ito]);
+		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl;
 		assert(ptr[0]);
 		ptr[0]--;
 		ptr[1]++;
@@ -370,8 +371,8 @@ static void process_event(struct history *h)
 
 	for (ito = 0; ito < nto; ito++) {
 		actr = &h->receivers[msg->to[ito]];
-		size_t ix = history_actor_search(actr, nintvl1, msg->from);
-		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl1;
+		size_t ix = history_actor_search(actr, nintvl, msg->from);
+		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl;
 		assert(ptr[0]);
 		ptr[0]--;
 		ptr[1]++;

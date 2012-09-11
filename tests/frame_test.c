@@ -50,7 +50,8 @@ static void enron_teardown_fixture()
 
 static void dv_nsend_setup()
 {
-	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
+	double intvls[] = { INFINITY };
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 1);
 
 	recv_design = frame_recv_design(&frame);
 	design_add_traits(recv_design, trait_names, traits, ntrait);
@@ -90,6 +91,7 @@ static void test_dv_nsend()
 				assert(dx[0] == xnsend[isend][jrecv]);
 				assert_true(dx[0] == xnsend[isend][jrecv]);
 			} else {
+				assert(0.0 == xnsend[isend][jrecv]);
 				assert_true(0.0 == xnsend[isend][jrecv]);
 			}
 		}
@@ -109,7 +111,8 @@ static void test_dv_nsend()
 
 static void dv_nrecv_setup()
 {
-	frame_init(&frame, nsend, nrecv, has_loops, NULL, 0);
+	double intvls[] = { INFINITY };
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 1);
 
 	recv_design = frame_recv_design(&frame);
 	design_add_traits(recv_design, trait_names, traits, ntrait);
@@ -171,10 +174,10 @@ static void test_dv_nrecv()
 
 static void dv_irecv_setup()
 {
-	double intvls[3] = {
-		112.50,  450.00, 1800.00,
+	double intvls[4] = {
+		112.50,  450.00, 1800.00, INFINITY
 	};
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 4);
 
 	recv_design = frame_recv_design(&frame);
 	design_add_traits(recv_design, trait_names, traits, ntrait);
@@ -247,10 +250,10 @@ static void test_dv_irecv()
 
 static void dv_isend_setup()
 {
-	double intvls[3] = {
-		112.50,  450.00, 1800.00,
+	double intvls[4] = {
+		112.50,  450.00, 1800.00, INFINITY
 	};
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, 3);
+	frame_init(&frame, nsend, nrecv, has_loops, intvls, 4);
 
 	recv_design = frame_recv_design(&frame);
 	design_add_traits(recv_design, trait_names, traits, ntrait);
