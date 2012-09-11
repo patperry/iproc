@@ -62,7 +62,7 @@ static void basic_setup()
 	design_add_traits(r, trait_names, traits, ntrait);
 	
 	struct design2 *d = frame_dyad_design(&frame);
-	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
+	design2_add_tvar(d, "NRecv", VAR2_NRECV);
 	recv_coefs_init(&coefs, &frame);
 	
 	
@@ -130,10 +130,10 @@ static void hard_setup()
 	design_add_traits(r, trait_names, traits, ntrait);
 
 	struct design2 *d = frame_dyad_design(&frame);
-	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	design2_add_tvar(d, "IRecv", VAR2_IRECV);
+	design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	design2_add_tvar(d, "ISend", VAR2_ISEND);
+	design2_add_tvar(d, "NSend", VAR2_NSEND);
 
 	recv_coefs_init(&coefs, &frame);
 	memcpy(coefs.all, beta, coefs.dim * sizeof(double));

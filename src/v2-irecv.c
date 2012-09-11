@@ -57,10 +57,10 @@ static void irecv_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_IRECV_REP = {
+static struct tvar2_type VAR2_IRECV_REP = {
 	irecv_init,
 	irecv_deinit
 };
 
 
-const struct tvar2_type *DYAD_VAR_IRECV = &DYAD_VAR_IRECV_REP;
+const struct tvar2_type *VAR2_IRECV = &VAR2_IRECV_REP;

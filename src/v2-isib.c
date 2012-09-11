@@ -82,11 +82,11 @@ static void isib_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_ISIB_REP = {
+static struct tvar2_type VAR2_ISIB_REP = {
 	isib_init,
 	isib_deinit
 };
 
 
-const struct tvar2_type *DYAD_VAR_ISIB = &DYAD_VAR_ISIB_REP;
+const struct tvar2_type *VAR2_ISIB = &VAR2_ISIB_REP;
 

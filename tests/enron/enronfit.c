@@ -89,19 +89,20 @@ static void setup_frame(void) {
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
 
-	design2_add_tvar(d, "IRecv", DYAD_VAR_IRECV);
-	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
-	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
-	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	design2_add_tvar(d, "IRecv", VAR2_IRECV);
+	design2_add_tvar(d, "ISend", VAR2_ISEND);
 	design2_add_prod(d, "IRecv:ISend", design2_var(d, "IRecv"), design2_var(d, "ISend"));
-	//design2_add_tvar(d, "IRecv2", DYAD_VAR_IRECV2);
-	//design2_add_tvar(d, "NRecv2", DYAD_VAR_NRECV2);
-	//design2_add_tvar(d, "ISend2", DYAD_VAR_ISEND2);
-	//design2_add_tvar(d, "NSend2", DYAD_VAR_NSEND2);
-	//design2_add_tvar(d, "ISib", DYAD_VAR_ISIB);
-	//design2_add_tvar(d, "NSib", DYAD_VAR_NSIB);
-	//design2_add_tvar(d, "ICosib", DYAD_VAR_ICOSIB);
-	//design2_add_tvar(d, "NCosib", DYAD_VAR_NCOSIB);
+	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
+	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
+	//design2_add_tvar(d, "ISib", VAR2_ISIB);
+	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
+
+	design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	design2_add_tvar(d, "NSend", VAR2_NSEND);
+	design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+	design2_add_tvar(d, "NSib", VAR2_NSIB);
+	design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 
 	for (i = 0; i < design_trait_count(s); i++) {

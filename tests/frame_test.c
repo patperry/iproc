@@ -56,7 +56,7 @@ static void dv_nsend_setup()
 	design_add_traits(recv_design, trait_names, traits, ntrait);
 
 	dyad_design = frame_dyad_design(&frame);
-	design2_add_tvar(dyad_design, "NSend", DYAD_VAR_NSEND);
+	design2_add_tvar(dyad_design, "NSend",VAR2_NSEND);
 }
 
 static void dv_nsend_teardown()
@@ -115,7 +115,7 @@ static void dv_nrecv_setup()
 	design_add_traits(recv_design, trait_names, traits, ntrait);
 	
 	dyad_design = frame_dyad_design(&frame);
-	design2_add_tvar(dyad_design, "NRecv", DYAD_VAR_NRECV);
+	design2_add_tvar(dyad_design, "NRecv", VAR2_NRECV);
 }
 
 static void dv_nrecv_teardown()
@@ -180,7 +180,7 @@ static void dv_irecv_setup()
 	design_add_traits(recv_design, trait_names, traits, ntrait);
 
 	dyad_design = frame_dyad_design(&frame);
-	design2_add_tvar(dyad_design, "IRecv", DYAD_VAR_IRECV);
+	design2_add_tvar(dyad_design, "IRecv", VAR2_IRECV);
 }
 
 static void dv_irecv_teardown()
@@ -256,7 +256,7 @@ static void dv_isend_setup()
 	design_add_traits(recv_design, trait_names, traits, ntrait);
 
 	dyad_design = frame_dyad_design(&frame);
-	design2_add_tvar(dyad_design, "ISend", DYAD_VAR_ISEND);
+	design2_add_tvar(dyad_design, "ISend", VAR2_ISEND);
 }
 
 

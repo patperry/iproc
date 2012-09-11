@@ -89,12 +89,12 @@ static void isend2_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_ISEND2_REP = {
+static struct tvar2_type VAR2_ISEND2_REP = {
 	isend2_init,
 	isend2_deinit
 };
 
 
-const struct tvar2_type *DYAD_VAR_ISEND2 = &DYAD_VAR_ISEND2_REP;
+const struct tvar2_type *VAR2_ISEND2 = &VAR2_ISEND2_REP;
 
 

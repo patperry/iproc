@@ -202,12 +202,12 @@ static void nrecv2_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_NRECV2_REP = {
+static struct tvar2_type VAR2_NRECV2_REP = {
 	nrecv2_init,
 	nrecv2_deinit,
 };
 
 
-const struct tvar2_type *DYAD_VAR_NRECV2 = &DYAD_VAR_NRECV2_REP;
+const struct tvar2_type *VAR2_NRECV2 = &VAR2_NRECV2_REP;
 
 

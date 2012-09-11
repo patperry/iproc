@@ -87,9 +87,9 @@ static void nsend_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_NSEND_REP = {
+static struct tvar2_type VAR2_NSEND_REP = {
 	nsend_init,
 	nsend_deinit,
 	};
 
-const struct tvar2_type *DYAD_VAR_NSEND = &DYAD_VAR_NSEND_REP;
+const struct tvar2_type *VAR2_NSEND = &VAR2_NSEND_REP;

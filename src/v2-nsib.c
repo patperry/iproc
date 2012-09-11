@@ -202,12 +202,12 @@ static void nsib_deinit(struct tvar2 *tv, struct design2 *d)
 }
 
 
-static struct tvar2_type DYAD_VAR_NSIB_REP = {
+static struct tvar2_type VAR2_NSIB_REP = {
 	nsib_init,
 	nsib_deinit,
 };
 
 
-const struct tvar2_type *DYAD_VAR_NSIB = &DYAD_VAR_NSIB_REP;
+const struct tvar2_type *VAR2_NSIB = &VAR2_NSIB_REP;
 
 
