@@ -137,7 +137,7 @@ static struct frame_callbacks ncosib_frame_callbacks = {
 };
 
 
-static void ncosib_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
+static void ncosib_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 {
 	(void)ap;		// unused;
 
@@ -151,7 +151,7 @@ static void ncosib_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
 }
 
 
-static void ncosib_deinit(struct tvar2 *tv, const struct design2 *d)
+static void ncosib_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
 	frame_remove_observer(f, tv);

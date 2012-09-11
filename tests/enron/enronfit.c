@@ -93,6 +93,7 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "NRecv", DYAD_VAR_NRECV);
 	design2_add_tvar(d, "ISend", DYAD_VAR_ISEND);
 	design2_add_tvar(d, "NSend", DYAD_VAR_NSEND);
+	design2_add_prod(d, "IRecv:ISend", design2_var(d, "IRecv"), design2_var(d, "ISend"));
 	//design2_add_tvar(d, "IRecv2", DYAD_VAR_IRECV2);
 	//design2_add_tvar(d, "NRecv2", DYAD_VAR_NRECV2);
 	//design2_add_tvar(d, "ISend2", DYAD_VAR_ISEND2);

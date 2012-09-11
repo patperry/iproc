@@ -768,6 +768,8 @@ void prod_update_var(void *udata, struct design *d, const struct var *v, size_t 
 				*dst++ = ix * ny + ind[iz];
 			}
 		}		
+	} else {
+		return;
 	}
 
 	design_update(d, &tv->var, i, vdelta, vind, vnz);

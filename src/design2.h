@@ -57,8 +57,8 @@ struct tvar2 {
 };
 
 struct tvar2_type {
-	void (*init) (struct tvar2 *tv, const struct design2 *d, va_list ap);
-	void (*deinit) (struct tvar2 * tv, const struct design2 *d);
+	void (*init) (struct tvar2 *tv, struct design2 *d, va_list ap);
+	void (*deinit) (struct tvar2 * tv, struct design2 *d);
 };
 
 struct design2_callbacks {
@@ -108,7 +108,7 @@ const double *design2_trait(const struct design2 *d, const struct var2 *v, size_
 
 const struct var2 *design2_add_kron(struct design2 *d, const char *name, const struct var *i,
 				    const struct var *j);
-//const struct var2 *design2_add_prod(struct design2 *d, const char *name, const struct var2 *u, const struct var2 *v);
+const struct var2 *design2_add_prod(struct design2 *d, const char *name, const struct var2 *u, const struct var2 *v);
 //const struct var2 *design2_add_prod1(struct design2 *d, const char *name, const struct var *i, const struct var2 *v);
 //const struct var2 *design2_add_prod2(struct design2 *d, const char *name, const struct var *j, const struct var2 *v);
 

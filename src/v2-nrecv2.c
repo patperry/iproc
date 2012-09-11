@@ -181,7 +181,7 @@ static struct frame_callbacks nrecv2_frame_callbacks = {
 };
 
 
-static void nrecv2_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
+static void nrecv2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 {
 	(void)ap;		// unused;
 
@@ -195,7 +195,7 @@ static void nrecv2_init(struct tvar2 *tv, const struct design2 *d, va_list ap)
 }
 
 
-static void nrecv2_deinit(struct tvar2 *tv, const struct design2 *d)
+static void nrecv2_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
 	frame_remove_observer(f, tv);
