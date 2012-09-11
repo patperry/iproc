@@ -51,8 +51,8 @@ struct tvar {
 };
 
 struct tvar_type {
-	void (*init) (struct tvar *tv, const struct design *d, va_list ap);
-	void (*deinit) (struct tvar * tv, const struct design *d);
+	void (*init) (struct tvar *tv, struct design *d, va_list ap);
+	void (*deinit) (struct tvar * tv, struct design *d);
 };
 
 struct design_callbacks {

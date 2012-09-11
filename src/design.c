@@ -16,6 +16,25 @@
 #include "vars.h"
 #include "design.h"
 
+static void prod_init(struct tvar *tv, struct design *d, va_list ap);
+static void prod_deinit(struct tvar *tv, struct design *d);
+static void prod_update_var(void *udata, struct design *d, const struct var *v, size_t i,
+				  const double *delta, const size_t *ind, size_t nz);
+
+static struct design_callbacks prod_design_callbacks = {
+	NULL, // update
+	prod_update_var,
+	NULL // clear
+};
+
+static struct tvar_type VAR_PROD_REP = {
+	prod_init,
+	prod_deinit
+};
+
+static const struct tvar_type *VAR_PROD = &VAR_PROD_REP;
+
+
 
 static void design_clear_range(struct design *d, size_t joff, size_t len)
 {
@@ -635,8 +654,121 @@ const struct var *design_add_prod(struct design *d, const char *name, const stru
 		res = design_add_trait(d, name, x, dim);
 		free(x);
 	} else {
-		assert("Not Implemented" && 0);
+		res = design_add_tvar(d, name, VAR_PROD, u, v);
 	}
 
 	return res;
+}
+
+
+struct prod_udata {
+	const struct var *u;
+	const struct var *v;
+	double *delta;
+	size_t *ind;
+};
+
+void prod_init(struct tvar *tv, struct design *d, va_list ap)
+{
+	const struct var *u = va_arg(ap, const struct var*);
+	const struct var *v = va_arg(ap, const struct var*);
+	size_t dim = u->dim * v->dim;
+
+	struct prod_udata *udata = xmalloc(sizeof(*udata));
+	udata->u = u;
+	udata->v = v;
+	udata->delta = xmalloc(dim * sizeof(*udata->delta));
+	udata->ind = xmalloc(dim * sizeof(*udata->ind));
+
+	tv->var.dim = dim;
+	tv->udata = udata;
+
+	design_add_observer(d, tv, &prod_design_callbacks);
+}
+
+
+void prod_deinit(struct tvar *tv, struct design *d)
+{
+	design_remove_observer(d, tv);
+
+	struct prod_udata *udata = tv->udata;
+	free(udata->ind);
+	free(udata->delta);
+	free(udata);
+}
+
+
+void prod_update_var(void *udata, struct design *d, const struct var *v, size_t i,
+		     const double *delta, const size_t *ind, size_t nz)
+{
+	assert(ind || !nz);
+	assert(nz <= v->dim);
+
+	const struct tvar *tv = udata;
+	const struct prod_udata *udata0 = tv->udata;
+	double *vdelta = udata0->delta;
+	size_t *vind = udata0->ind;
+	size_t vnz;
+	size_t iz;
+
+	if (!nz)
+		return;
+
+	if (v == udata0->u) {
+		const double *dx = delta;
+		const double *y;
+
+		if (udata0->v->type == VAR_TYPE_TRAIT) {
+			y = design_trait(d, udata0->v, i);
+		} else {
+			y = design_tvar(d, udata0->v, i);
+		}
+
+		size_t iy, ny = udata0->v->dim;
+
+		if (!y || !ny)
+			return;
+
+		vnz = nz * ny;
+		memset(vdelta, 0, vnz * sizeof(*vdelta));
+		blas_dger(ny, nz, 1.0, y, 1, dx, 1, vdelta, ny);
+
+		size_t *dst = vind;
+
+		for (iz = 0; iz < nz; iz++) {
+			for (iy = 0; iy < ny; iy++) {
+				*dst++ = ind[iz] * ny + iy;
+			}
+		}
+
+	} else if (v == udata0->v) {
+		const double *dy = delta;
+		const double *x;
+
+		if (udata0->u->type == VAR_TYPE_TRAIT) {
+			x = design_trait(d, udata0->u, i);
+		} else {
+			x = design_tvar(d, udata0->u, i);
+		}
+
+		size_t ix, nx = udata0->u->dim;
+		size_t ny = udata0->v->dim;
+
+		if (!x || !nx)
+			return;
+
+		vnz = nx * nz;
+		memset(vdelta, 0, vnz * sizeof(*vdelta));
+		blas_dger(nz, nx, 1.0, dy, 1, x, 1, vdelta, nz);
+
+		size_t *dst = vind;
+
+		for (ix = 0; ix < nx; ix++) {
+			for (iz = 0; iz < nz; iz++) {
+				*dst++ = ix * ny + ind[iz];
+			}
+		}		
+	}
+
+	design_update(d, &tv->var, i, vdelta, vind, vnz);
 }
