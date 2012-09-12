@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <hdf5.h>
+#include <hdf5_hl.h>
 #include "coreutil.h"
 #include "xalloc.h"
 #include "yajl/yajl_tree.h"
@@ -90,24 +92,21 @@ static void setup_frame(void) {
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
 
-	//design2_add_prod(d, "IRecv:ISend", design2_var(d, "IRecv"), design2_var(d, "ISend"));
-
-	design2_add_tvar(d, "IRecv", VAR2_IRECV);
-	design2_add_tvar(d, "NRecv", VAR2_NRECV);
 	design2_add_tvar(d, "ISend", VAR2_ISEND);
-	design2_add_tvar(d, "NSend", VAR2_NSEND);
+	design2_add_tvar(d, "IRecv", VAR2_IRECV);
+	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
-	design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	//design2_add_tvar(d, "NSend", VAR2_NSEND);
+	//design2_add_tvar(d, "NRecv", VAR2_NRECV);
 
-	design2_add_tvar(d, "ISend2", VAR2_ISEND2);
-	design2_add_tvar(d, "NSend2", VAR2_NSEND2);
-
-	design2_add_tvar(d, "ISib", VAR2_ISIB);
-	design2_add_tvar(d, "NSib", VAR2_NSIB);
-
-	design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
-	design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
+	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
+	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
+	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	//design2_add_tvar(d, "ISib", VAR2_ISIB);
+	//design2_add_tvar(d, "NSib", VAR2_NSIB);
+	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
+	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 
 	for (i = 0; i < design_trait_count(s); i++) {
@@ -145,14 +144,6 @@ static void teardown_frame(void)
 }
 
 
-#define YG(gen) \
-	do { \
-		if ((err = gen) != yajl_gen_status_ok) \
-			return err; \
-	} while (0)
-
-#define YSTR(str) ((const unsigned char *)(str)), (strlen(str))
-
 #define INTERVALS		"intervals"
 #define VARIATE_NAMES		"variate_names"
 #define COHORT_NAMES		"cohort_names"
@@ -169,185 +160,168 @@ static void teardown_frame(void)
 #define NULL_DEVIANCE		"null_deviance"
 #define DF_RESIDUAL		"df_residual"
 #define DF_NULL			"df_null"
+#define FITTED_COUNTS		"fitted_counts"
 #define OBSERVED_COUNTS		"observed_counts"
-#define EXPECTED_COUNTS		"expected_counts"
 
 
-yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit,
-				  int has_resid)
+static const char **alloc_varnames(const struct frame *f, size_t *pn)
 {
-	assert(fit);
-	yajl_gen_status err = yajl_gen_status_ok;
+	const struct design *r = frame_recv_design(f);
+	const struct design2 *d = frame_dyad_design(f);
+	size_t dimr = design_dim(r);
+	size_t dimd = design2_dim(d);
+	size_t i, dim = dimr + dimd;
+
+	const char **res = xmalloc(dim * sizeof(*res));
+	for (i = 0; i < dim; i++) {
+		res[i] = "";
+	}
+
+	*pn = dim;
+
+	return res;
+}
+
+
+static herr_t output_variate_names(hid_t loc_id, const struct frame *f)
+{
+	hid_t dataset_id, dataspace_id;
+	herr_t status;
+
+	hsize_t dims[1];
+	size_t nvarnames;
+	const char **varnames = alloc_varnames(f, &nvarnames);
+
+	hid_t type;
+	type = H5Tcopy(H5T_C_S1);
+	status = H5Tset_size(type, H5T_VARIABLE);
+	//status = H5Tset_cset(type, H5T_CSET_UTF8);
+	
+	dims[0] = nvarnames;
+	dataspace_id = H5Screate_simple(1, dims, NULL);
+
+	dataset_id = H5Dcreate(loc_id, VARIATE_NAMES, type, dataspace_id,
+			       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+	status = H5Dwrite(dataset_id, type, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+			  varnames);
+	status = H5Dclose(dataset_id);
+	status = H5Sclose(dataspace_id);
+
+	free(varnames);
+
+	return status;
+}
+
+
+static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has_resid)
+{
+	herr_t status = 0;
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
 	const struct recv_model *m = ll->model;
 	struct frame *f = recv_model_frame(m);
 
-	size_t ne = recv_fit_constr_count(fit);
-	size_t dim = recv_model_dim(m);
-	size_t i, n;
+	hsize_t ne = (hsize_t)recv_fit_constr_count(fit);
+	hsize_t dim = (hsize_t)recv_model_dim(m);
+	hsize_t one = 1;
+	//size_t i, n;
 
-	YG(yajl_gen_map_open(hand));
+	// intervals
 	{
-		// intervals
-		YG(yajl_gen_string(hand, YSTR(INTERVALS)));
+		hsize_t nintvl = (hsize_t)frame_interval_count(f);
 		const double *intvls = frame_intervals(f);
-		n = frame_interval_count(f);
-		YG(yajl_gen_array_open(hand));
-		for (i = 0; i < n; i++) {
-			YG(yajl_gen_ieee754(hand, intvls[i]));
-		}
-		YG(yajl_gen_array_close(hand));
+		status = H5LTmake_dataset(file_id, INTERVALS, 1, &nintvl, H5T_NATIVE_DOUBLE, intvls);
+	}
 
-		// variate_names
-		//YG(yajl_gen_string(hand, YSTR(VARIATE_NAMES)));
-		//YG(yajl_gen_array_open(hand));
-		//n = design_dim(d);
-		//for (i = 0; i < n; i++) {
-		//		YG(yajl_gen_string(hand, YSTR(design_name(d, i))));
-		//}
-		//YG(yajl_gen_array_close(hand));
+	// variate_names
+	status = output_variate_names(file_id, f);
 
-		// coefficients
-		YG(yajl_gen_string(hand, YSTR(COEFFICIENTS)));
+	// coefficients
+	{
 		const struct recv_coefs *coefs = recv_fit_coefs(fit);
-		YG(yajl_gen_vector(hand, dim, coefs->all));
+		status = H5LTmake_dataset(file_id, COEFFICIENTS, 1, &dim, H5T_NATIVE_DOUBLE, coefs->all);
+	}
 
-		// constraint names
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_NAMES)));
-		YG(yajl_gen_array_open(hand));
-		{
-			n = recv_fit_constr_count(fit);
+	// constraint_names
+	// constraints
+	// constraint_values
 
-			for (i = 0; i < n; i++) {
-				const char *name;
-				recv_fit_get_constr(fit, i, NULL, NULL, NULL, NULL, &name);
-				YG(yajl_gen_string(hand, YSTR(name)));
-			}
-		}
-		YG(yajl_gen_array_close(hand));
-
-		// constraints
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINTS)));
-		YG(yajl_gen_array_open(hand));
-		{
-			n = recv_fit_constr_count(fit);
-
-			for (i = 0; i < n; i++) {
-				const double *wts;
-				const size_t *ind;
-				size_t iz, nz = 0;
-				recv_fit_get_constr(fit, i, &wts, &ind, &nz, NULL, NULL);
-
-				YG(yajl_gen_map_open(hand));
-				YG(yajl_gen_string(hand, YSTR("dim")));
-				YG(yajl_gen_integer(hand, dim));
-
-				YG(yajl_gen_string(hand, YSTR("count")));
-				YG(yajl_gen_integer(hand, nz));
-
-				YG(yajl_gen_string(hand, YSTR("pattern")));
-				YG(yajl_gen_array_open(hand));
-				for (iz = 0; iz < nz; iz++) {
-					YG(yajl_gen_integer(hand, ind[iz] + 1));
-				}
-				YG(yajl_gen_array_close(hand));
-
-				YG(yajl_gen_string(hand, YSTR("data")));
-				YG(yajl_gen_array_open(hand));
-				for (iz = 0; iz < nz; iz++) {
-					YG(yajl_gen_ieee754(hand, wts[iz]));
-				}
-				YG(yajl_gen_array_close(hand));
-				YG(yajl_gen_map_close(hand));
-			}
-		}
-		YG(yajl_gen_array_close(hand));
-
-		// constraint values
-		YG(yajl_gen_string(hand, YSTR(CONSTRAINT_VALUES)));
-		YG(yajl_gen_array_open(hand));
-		{
-			n = recv_fit_constr_count(fit);
-
-			for (i = 0; i < n; i++) {
-				double value;
-				recv_fit_get_constr(fit, i, NULL, NULL, NULL, &value, NULL);
-				YG(yajl_gen_ieee754(hand, value));
-			}
-		}
-		YG(yajl_gen_array_close(hand));
-
-		// duals
-		YG(yajl_gen_string(hand, YSTR(DUALS)));
+	// duals
+	{
 		const double *duals = recv_fit_duals(fit);
-		YG(yajl_gen_vector(hand, ne, duals));
+		status = H5LTmake_dataset(file_id, DUALS, 1, &ne, H5T_NATIVE_DOUBLE, duals);
+	}
 
-		// count
-		YG(yajl_gen_string(hand, YSTR(COUNT)));
-		size_t count = recv_loglik_count(ll);
-		YG(yajl_gen_integer(hand, count));
+	// count
+	{
+		hsize_t count = recv_loglik_count(ll);
+		status = H5LTmake_dataset(file_id, COUNT, 1, &one, H5T_NATIVE_HSIZE, &count);
+	}
 
-		// score
+	// score
+	{
 		struct recv_coefs score;
-		
 		recv_coefs_init(&score, f);
 		memset(score.all, 0, dim * sizeof(double));
 		recv_loglik_axpy_score(1.0, ll, &score);
-		YG(yajl_gen_string(hand, YSTR(SCORE)));
-		YG(yajl_gen_vector(hand, dim, score.all));
-
+		status = H5LTmake_dataset(file_id, SCORE, 1, &dim, H5T_NATIVE_DOUBLE, score.all);
 		recv_coefs_deinit(&score);
+	}
 
-		// information
-		double *imat = xcalloc(dim * (dim + 1) / 2, sizeof(double));
+	// information
+	{
+		hsize_t dim2 = dim * (dim + 1) / 2;
+		const char *uplo = (MLOGIT_COV_UPLO == BLAS_LOWER) ? "LOWER" : "UPPER";
+		double *imat = xcalloc(dim2, sizeof(double));
+
 		recv_loglik_axpy_imat(1.0, ll, imat);
-
-		YG(yajl_gen_string(hand, YSTR(INFORMATION)));
-		YG(yajl_gen_vector(hand, dim * (dim + 1) / 2, imat));
+		status = H5LTmake_dataset(file_id, INFORMATION, 1, &dim2, H5T_NATIVE_DOUBLE, imat);
+		status = H5LTset_attribute_string(file_id, INFORMATION, "uplo", uplo);
 
 		free(imat);
-
-		// rank
-		YG(yajl_gen_string(hand, YSTR(RANK)));
-		size_t rank = dim - ne;
-		YG(yajl_gen_integer(hand, rank));
-
-		// deviance
-		YG(yajl_gen_string(hand, YSTR(DEVIANCE)));
-		double dev = recv_fit_dev(fit);
-		YG(yajl_gen_ieee754(hand, dev));
-
-		// df.residual
-		YG(yajl_gen_string(hand, YSTR(DF_RESIDUAL)));
-		size_t ntot = recv_loglik_count(ll);
-		YG(yajl_gen_integer(hand, ntot - rank));
-
-		// null.deviance
-		YG(yajl_gen_string(hand, YSTR(NULL_DEVIANCE)));
-		YG(yajl_gen_ieee754(hand, recv_fit_dev0(fit)));
-
-		// df.null
-		YG(yajl_gen_string(hand, YSTR(DF_NULL)));
-		YG(yajl_gen_integer(hand, ntot));
-
-		// residuals
-		// fitted.values
-		// y = y
-		if (has_resid) {
-			struct recv_resid resid;
-
-			frame_clear(f);
-			recv_resid_init(&resid, f, fit->ymsgs, coefs);
-			YG(yajl_gen_string(hand, YSTR(OBSERVED_COUNTS)));
-			YG(yajl_gen_matrix(hand, nsend, nrecv, resid.obs.dyad));
-
-			YG(yajl_gen_string(hand, YSTR(EXPECTED_COUNTS)));
-			YG(yajl_gen_matrix(hand, nsend, nrecv, resid.exp.dyad));
-
-			recv_resid_deinit(&resid);
-		}
 	}
-	YG(yajl_gen_map_close(hand));
+
+	// rank, df_residual, df_null
+	{
+		hsize_t rank = dim - ne;
+		hsize_t ntot = recv_loglik_count(ll);
+		double dfresid = (double)(ntot - rank);
+		double dfnull = (double)ntot;
+
+		status = H5LTmake_dataset(file_id, RANK, 1, &one, H5T_NATIVE_HSIZE, &rank);
+		status = H5LTmake_dataset(file_id, DF_RESIDUAL, 1, &one, H5T_NATIVE_DOUBLE, &dfresid);
+		status = H5LTmake_dataset(file_id, DF_NULL, 1, &one, H5T_NATIVE_DOUBLE, &dfnull);
+	}
+
+	// deviance, null_deviance
+	{
+		double dev = recv_fit_dev(fit);
+		double dev0 = recv_fit_dev0(fit);
+		
+		status = H5LTmake_dataset(file_id, DEVIANCE, 1, &one, H5T_NATIVE_DOUBLE, &dev);
+		status = H5LTmake_dataset(file_id, NULL_DEVIANCE, 1, &one, H5T_NATIVE_DOUBLE, &dev0);
+	}
+
+
+	// fitted_counts, observed_counts (residuals)
+	if (has_resid) {
+		const struct recv_coefs *coefs = recv_fit_coefs(fit);
+		hsize_t dims[2];
+		struct recv_resid resid;
+
+		dims[0] = frame_send_count(f);
+		dims[1] = frame_recv_count(f);
+
+
+		frame_clear(f);
+		recv_resid_init(&resid, f, fit->ymsgs, coefs);
+
+		status = H5LTmake_dataset(file_id, FITTED_COUNTS, 2, dims, H5T_NATIVE_DOUBLE, resid.fit.dyad);
+		status = H5LTmake_dataset(file_id, OBSERVED_COUNTS, 2, dims, H5T_NATIVE_DOUBLE, resid.obs.dyad);
+		recv_resid_deinit(&resid);
+	}
+
+
 
 	// effects
 	// qr
@@ -368,26 +342,24 @@ yajl_gen_status yajl_gen_recv_fit(yajl_gen hand, const struct recv_fit *fit,
 	// contrasts
 	// xlevels
 
-
-	return err;
+	return status;
 }
 
 
-static void output(const struct recv_fit *fit, int resid)
+static herr_t output(const char *output, const struct recv_fit *fit, int resid)
 {
-	/* generator config */
-	yajl_gen g = yajl_gen_alloc(NULL);
-	yajl_gen_config(g, yajl_gen_beautify, 1);
-	yajl_gen_recv_fit(g, fit, resid);
+	hid_t file_id;
+	herr_t status;
 
+	/* Create a new file using default properties. */
+	file_id = H5Fcreate(output, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-	/* output */
-	const unsigned char * buf;
-	size_t len;
-	yajl_gen_get_buf(g, &buf, &len);
-	fwrite(buf, 1, len, stdout);
-	yajl_gen_clear(g);
-	yajl_gen_free(g);
+	status = output_recv_fit(file_id, fit, resid);
+
+	/* Terminate access to the file. */
+	status = H5Fclose(file_id);
+	
+	return status;
 }
 
 static int do_fit(struct recv_fit *fit, const struct recv_fit_params *params0)
@@ -536,6 +508,7 @@ out:
 
 struct options {
 	char *startfile;
+	char *output;
 	int boot;
 	int resid;
 	int32_t seed;
@@ -548,16 +521,17 @@ static struct options parse_options(int argc, char **argv)
 		{ "start", required_argument, 0, 's' },
 		{ "boot", optional_argument, 0, 'b' },
 		{ "resid", no_argument, 0, 'r' },
+		{ "output", required_argument, 0, 's' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int option_index = 0;
 
 	struct options opts;
+	opts.output = "output.h5";
 	opts.startfile = NULL;
 	opts.boot = 0;
 	opts.resid = 0;
 	opts.seed = 0;
-
 
 	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
 		switch (c) {
@@ -576,6 +550,8 @@ static struct options parse_options(int argc, char **argv)
 			break;
 		case 'r':
 			opts.resid = 1;
+		case 'o':
+			opts.output = optarg;
 		default:
 			exit(1);
 		}
@@ -635,7 +611,7 @@ int main(int argc, char **argv)
 	err = do_fit(&fit, pparams0);
 
 	// output the results
-	output(&fit, opts.resid);
+	output(opts.output, &fit, opts.resid);
 
 	if (opts.boot)
 		recv_boot_deinit(&boot);

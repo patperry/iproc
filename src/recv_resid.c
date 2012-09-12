@@ -63,7 +63,7 @@ static void update_obs(struct recv_resid_count *obs, const struct message *msg, 
 	obs->tot += nto;
 }
 
-static void update_exp(struct recv_resid_count *exp, const struct message *msg,
+static void update_fit(struct recv_resid_count *fit, const struct message *msg,
 		       const struct recv_model *model)
 {
 	const struct frame *f = recv_model_frame(model);
@@ -71,13 +71,13 @@ static void update_exp(struct recv_resid_count *exp, const struct message *msg,
 	size_t isend = msg->from;
 	size_t nto = msg->nto;
 
-	exp->tot += nto;
+	fit->tot += nto;
 
-	exp->send[isend] += (double)nto;
+	fit->send[isend] += (double)nto;
 
-	axpy_probs(nto, model, isend, exp->recv);
+	axpy_probs(nto, model, isend, fit->recv);
 
-	double *row = exp->dyad + isend * nrecv;
+	double *row = fit->dyad + isend * nrecv;
 	axpy_probs(nto, model, isend, row);
 }
 
@@ -91,7 +91,7 @@ static void recv_resid_set(struct recv_resid *resid,
 
 	recv_model_set_coefs(&resid->model, coefs);
 	recv_resid_clear(&resid->obs, nsend, nrecv);
-	recv_resid_clear(&resid->exp, nsend, nrecv);
+	recv_resid_clear(&resid->fit, nsend, nrecv);
 
 	struct messages_iter it;
 	MESSAGES_FOREACH(it, msgs) {
@@ -104,7 +104,7 @@ static void recv_resid_set(struct recv_resid *resid,
 			frame_add(f, msg);
 
 			update_obs(&resid->obs, msg, nrecv);
-			update_exp(&resid->exp, msg, &resid->model);
+			update_fit(&resid->fit, msg, &resid->model);
 		}
 	}
 }
@@ -119,14 +119,14 @@ void recv_resid_init(struct recv_resid *resid,
 
 	recv_model_init(&resid->model, f, coefs);
 	recv_resid_count_init(&resid->obs, nsend, nrecv);
-	recv_resid_count_init(&resid->exp, nsend, nrecv);
+	recv_resid_count_init(&resid->fit, nsend, nrecv);
 
 	recv_resid_set(resid, f, msgs, coefs);
 }
 
 void recv_resid_deinit(struct recv_resid *resid)
 {
-	recv_resid_count_deinit(&resid->exp);
+	recv_resid_count_deinit(&resid->fit);
 	recv_resid_count_deinit(&resid->obs);
 	recv_model_deinit(&resid->model);
 }

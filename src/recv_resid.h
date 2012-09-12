@@ -14,7 +14,7 @@ struct recv_resid_count {
 struct recv_resid {
 	struct recv_model model;
 	struct recv_resid_count obs;
-	struct recv_resid_count exp;
+	struct recv_resid_count fit;
 };
 
 void recv_resid_init(struct recv_resid *resid,
