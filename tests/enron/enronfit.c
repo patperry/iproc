@@ -96,8 +96,8 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "IRecv", VAR2_IRECV);
 	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	//design2_add_tvar(d, "NSend", VAR2_NSEND);
-	//design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	design2_add_tvar(d, "NSend", VAR2_NSEND);
+	design2_add_tvar(d, "NRecv", VAR2_NRECV);
 
 	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
 	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
@@ -413,96 +413,60 @@ static void init_params(struct recv_fit_params *params,
 			const struct recv_fit *fit,
 			const char *filename)
 {
-	int err = 1;
-	FILE *fp = fopen(filename, "rb");
-	if (!fp)
-		goto out;
+	hid_t file_id;
+	herr_t status;
+	int rank;
+	hsize_t dims;
+	H5T_class_t type_class;
+	size_t type_size;
 
-	fseek(fp, 0L, SEEK_END);
-	size_t sz = ftell(fp);
-	fseek(fp, 0L, SEEK_SET);
-
-	char *filebuf = xmalloc(sz + 1);
-	size_t rd = fread(filebuf, 1, sz, fp);
-
-	// file read error handling
-	if (rd == 0 && !feof(fp)) {
-		fprintf(stderr, "error encountered on file read\n");
-		goto cleanup_file;
-	}
-	assert(rd == sz);
-	filebuf[sz] = '\0';
-
-	char errbuf[1024];
-	errbuf[0] = '\0';
-
-	yajl_val node = yajl_tree_parse(filebuf, errbuf, sizeof(errbuf));
-
-	// parse error handling
-	if (node == NULL) {
-		fprintf(stderr, "parse_error: ");
-		if (strlen(errbuf)) fprintf(stderr, " %s", errbuf);
-		else fprintf(stderr, "unknown error");
-		fprintf(stderr, "\n");
-		goto cleanup_yajl;
-	}
-
-	// ... and extract a nested value from the config file
-	const char * coefs_path[] = { COEFFICIENTS, NULL };
-	yajl_val vcoefs = yajl_tree_get(node, coefs_path,  yajl_t_array);
-
-	if (!vcoefs
-	    || YAJL_GET_ARRAY(vcoefs)->len != recv_fit_coefs_count(fit))
-		goto cleanup_yajl;
-
-	size_t i, dim = YAJL_GET_ARRAY(vcoefs)->len;
-	double *coefs = xcalloc(dim, sizeof(*coefs));
-	yajl_val *item = YAJL_GET_ARRAY(vcoefs)->values;
-
-	for (i = 0; i < dim; i++) {
-		if (!YAJL_IS_NUMBER(item[i])) {
-			err = 1;
-			goto cleanup_coefs;
-		}
-		coefs[i] = YAJL_GET_DOUBLE(item[i]);
-	}
-	
-	const char * duals_path[] = { DUALS, NULL };
-	yajl_val vduals = yajl_tree_get(node, duals_path,  yajl_t_array);
-
-	if (!vduals
-	    || YAJL_GET_ARRAY(vduals)->len != recv_fit_constr_count(fit))
-		goto cleanup_coefs;
-
-	size_t nduals = YAJL_GET_ARRAY(vduals)->len;
-	double *duals = xcalloc(nduals, sizeof(*duals));
-	item = YAJL_GET_ARRAY(vduals)->values;
-
-	for (i = 0; i < nduals; i++) {
-		if (!YAJL_IS_NUMBER(item[i])) {
-			err = 1;
-			goto cleanup_duals;
-		}
-		duals[i] = YAJL_GET_DOUBLE(item[i]);
-	}
+	file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if (file_id < 0)
+		exit(EXIT_FAILURE);
 
 	recv_fit_params_init(params, fit);
-	memcpy(params->coefs.all, coefs, dim * sizeof(double));
-	memcpy(params->duals, duals, nduals * sizeof(double));
-	err = 0;
 
-cleanup_duals:
-	free(duals);
-cleanup_coefs:
-	free(coefs);
-cleanup_yajl:
-	yajl_tree_free(node);
-	free(filebuf);
-cleanup_file:
-	fclose(fp);
-out:
-	if (err)
-		exit(err);
+	// coefficients
+	{
+		status = H5LTfind_dataset(file_id, COEFFICIENTS);
+		if (!status)
+			exit(EXIT_FAILURE);
+
+		status = H5LTget_dataset_ndims(file_id, COEFFICIENTS, &rank);
+		if (status < 0 || rank != 1)
+			exit(EXIT_FAILURE);
+
+		status = H5LTget_dataset_info(file_id, COEFFICIENTS, &dims, &type_class, &type_size);
+		if (status < 0 || dims != params->coefs.dim)
+			exit(EXIT_FAILURE);
+
+		status = H5LTread_dataset(file_id, COEFFICIENTS, H5T_NATIVE_DOUBLE, params->coefs.all);
+		if (status < 0)
+			exit(EXIT_FAILURE);
+	}
+
+	// duals
+	{
+		status = H5LTfind_dataset(file_id, DUALS);
+		if (!status)
+			exit(EXIT_FAILURE);
+
+		status = H5LTget_dataset_ndims(file_id, DUALS, &rank);
+		if (status < 0 || rank != 1)
+			exit(EXIT_FAILURE);
+
+		status = H5LTget_dataset_info(file_id, DUALS, &dims, &type_class, &type_size);
+		if (status < 0 || dims != recv_fit_constr_count(fit))
+			exit(EXIT_FAILURE);
+
+		status = H5LTread_dataset(file_id, DUALS, H5T_NATIVE_DOUBLE, params->duals);
+		if (status < 0)
+			exit(EXIT_FAILURE);
+	}
+
+	status = H5Fclose(file_id);
+	if (status < 0)
+		exit(EXIT_FAILURE);
 }
 
 
@@ -518,10 +482,13 @@ static struct options parse_options(int argc, char **argv)
 {
 	int c;
 	static struct option long_options[] = {
+		/* These optoins set a flag. */
+		{ "resid", no_argument, 0, 'r' },
+
+		/* These options don't set a flag */
+		{ "output", required_argument, 0, 'o' },
 		{ "start", required_argument, 0, 's' },
 		{ "boot", optional_argument, 0, 'b' },
-		{ "resid", no_argument, 0, 'r' },
-		{ "output", required_argument, 0, 's' },
 		{ NULL, 0, NULL, 0 }
 	};
 	int option_index = 0;
@@ -533,7 +500,7 @@ static struct options parse_options(int argc, char **argv)
 	opts.resid = 0;
 	opts.seed = 0;
 
-	while ((c = getopt_long(argc, argv, "s:b:", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "ro:s:b::", long_options, &option_index)) != -1) {
 		switch (c) {
 		case 's':
 			opts.startfile = optarg;
@@ -550,8 +517,10 @@ static struct options parse_options(int argc, char **argv)
 			break;
 		case 'r':
 			opts.resid = 1;
+			break;
 		case 'o':
 			opts.output = optarg;
+			break;
 		default:
 			exit(1);
 		}
