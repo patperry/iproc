@@ -12,7 +12,7 @@ static void nrecv_message_add(void *udata, struct frame *f,
 
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
-	struct design2 *d = frame_dyad_design(f);
+	struct design2 *d = v->design;
 
 	size_t jrecv = msg->from;
 	double dx_data[1] = { +1.0 };
@@ -35,7 +35,7 @@ static void nrecv_message_advance(void *udata, struct frame *f,
 {
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
-	struct design2 *d = frame_dyad_design(f);	
+	struct design2 *d = v->design;
 	size_t jrecv = msg->from;
 
 	double dx_data[2] = { -1.0, +1.0 };

@@ -37,7 +37,7 @@ enum var_type {
 };
 
 struct var {
-	const struct design *design;
+	struct design *design;
 	enum var_type type;
 	const char *name;
 	size_t dim;

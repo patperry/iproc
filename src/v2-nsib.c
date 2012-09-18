@@ -22,7 +22,7 @@ static void nsib_message_add(void *udata, struct frame *f,
 
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
-	struct design2 *d = frame_dyad_design(f);
+	struct design2 *d = v->design;
 
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
@@ -95,7 +95,7 @@ static void nsib_message_advance(void *udata, struct frame *f,
 {
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
-	struct design2 *d = frame_dyad_design(f);
+	struct design2 *d = v->design;
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2];

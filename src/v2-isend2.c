@@ -14,7 +14,7 @@ static void isend2_message_add(void *udata, struct frame *f,
 {
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
-	struct design2 *d = frame_dyad_design(f);
+	struct design2 *d = v->design;
 	const double one = 1.0;
 	const size_t izero = 0;
 	const struct history *h = frame_history(f);
