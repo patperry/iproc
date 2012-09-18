@@ -12,6 +12,7 @@
 struct mlogit_work {
 	double *mean_diff;
 	double *cov_diff;
+	double *cov_diff_full;
 	double *cat_buf;
 	double *dim_buf1;
 	double *dim_buf2;

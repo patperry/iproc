@@ -44,8 +44,11 @@ static void update_mean(struct mlogit *m, const double *dx,
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim)
 {
 	size_t cov_dim = dim * (dim + 1) / 2;
+	size_t cov_dim_full = dim * dim;
+
 	work->mean_diff = xmalloc(dim * sizeof(*work->mean_diff));
 	work->cov_diff = xmalloc(cov_dim * sizeof(*work->cov_diff));
+	work->cov_diff_full = xmalloc(cov_dim_full * sizeof(*work->cov_diff_full));
 	work->cat_buf = xmalloc(ncat * sizeof(*work->cat_buf));
 	work->dim_buf1 = xmalloc(dim * sizeof(*work->dim_buf1));
 	work->dim_buf2 = xmalloc(dim * sizeof(*work->dim_buf2));
@@ -57,6 +60,7 @@ void mlogit_work_deinit(struct mlogit_work *work)
 	free(work->dim_buf2);
 	free(work->dim_buf1);
 	free(work->cat_buf);
+	free(work->cov_diff_full);
 	free(work->cov_diff);
 	free(work->mean_diff);
 }
@@ -280,14 +284,38 @@ static void update_mean(struct mlogit *m, const double *dx,
 	blas_daxpy(dim, 1.0, mean_diff, 1, m->mean, 1);
 }
 
+static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo)
+{
+
+	size_t i;
+
+	if (uplo == BLAS_UPPER) {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = dim - i;
+			memcpy(dst, src + i, rowlen * sizeof(*dst));
+			dst += rowlen;
+			src += dim;
+		}
+	} else {
+		for (i = 0; i < dim; i++) {
+			size_t rowlen = i + 1;
+			memcpy(dst, src, rowlen * sizeof(*dst));
+			dst += rowlen;
+			src += dim;
+		}
+	}
+}
+
 static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 		       const double w, const double dw, const double dpsi)
 {
-	if (m->moments < 2)
+	if (m->moments < 2 || mlogit_dim(m) == 0)
 		return;
 
 	const size_t dim = mlogit_dim(m);
 	const size_t cov_dim = dim * (dim + 1) / 2;
+	const size_t cov_dim_full = dim * dim;
+	double *cov_diff_full = m->work->cov_diff_full;
 	double *cov_diff = m->work->cov_diff;
 	const double log_scale = m->log_cov_scale;
 	const double log_scale1 = log_scale + dpsi;
@@ -313,19 +341,20 @@ static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 		return;
 	}
 	// cov_diff := W * dw * (x1 - mean)^2
-	memset(cov_diff, 0, cov_dim * sizeof(double));
-	blas_dspr(F77_COV_UPLO, dim, W * dw, xresid, 1, cov_diff);
+	memset(cov_diff_full, 0, cov_dim_full * sizeof(double));
+	blas_dsyr(F77_COV_UPLO, dim, W * dw, xresid, 1, cov_diff_full, dim);
 
 	if (dx) {
 		// cov_diff += W * w * [ (x1 - mean) * dx + dx * (x1 - mean) ]
-		blas_dspr2(F77_COV_UPLO, dim, W * w, xresid, 1, dx, 1,
-			   cov_diff);
+		blas_dsyr2(F77_COV_UPLO, dim, W * w, xresid, 1, dx, 1,
+			   cov_diff_full, dim);
 
 		// cov_diff += - W1 * w * (1 + w) * (dx)^2
-		blas_dspr(F77_COV_UPLO, dim, -W1 * w * (1 + w), dx, 1,
-			  cov_diff);
+		blas_dsyr(F77_COV_UPLO, dim, -W1 * w * (1 + w), dx, 1,
+			  cov_diff_full, dim);
 	}
 	// cov += cov_diff
+	copy_packed(cov_diff, cov_diff_full, dim, MLOGIT_COV_UPLO);
 	blas_daxpy(cov_dim, 1.0, cov_diff, 1, m->cov, 1);
 	m->log_cov_scale = log_scale1;
 }
@@ -427,13 +456,14 @@ void recompute_cov(struct mlogit *m)
 	const double *mean = m->mean;
 	double *diff = m->work->dim_buf1;
 	double *cov = m->cov;
+	double *cov_full = m->work->cov_diff_full;
 	enum blas_uplo uplo = F77_COV_UPLO;
 
 	size_t i;
 	double p, ptot;
 
 	// cov := 0; ptot := 0
-	memset(cov, 0, dim * (dim + 1) / 2 * sizeof(*cov));
+	memset(cov_full, 0, dim * dim * sizeof(*cov_full));
 	ptot = 0;
 
 	for (i = 0; i < ncat; i++) {
@@ -446,8 +476,9 @@ void recompute_cov(struct mlogit *m)
 		ptot += p;
 
 		/* cov += p[i] * diff^2 */
-		blas_dspr(uplo, dim, p, diff, 1, cov);
+		blas_dsyr(uplo, dim, p, diff, 1, cov_full, dim);
 	}
+	copy_packed(cov, cov_full, dim, MLOGIT_COV_UPLO);
 
 	m->log_cov_scale = log(ptot);
 	m->cov_err = 0.0;
