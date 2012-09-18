@@ -102,7 +102,8 @@ static void cohort_set_moments(struct recv_model_cohort *cm, int k)
 static void cohort_init(struct recv_model_cohort *cm,
 			size_t c,
 			const struct frame *f,
-			const struct recv_coefs *coefs)
+			const struct recv_coefs *coefs,
+			struct mlogit_work *work)
 {
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
@@ -111,7 +112,7 @@ static void cohort_init(struct recv_model_cohort *cm,
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dim = dimr + dimd0;
 
-	mlogit_init(&cm->mlogit, nrecv, dim);
+	mlogit_init(&cm->mlogit, nrecv, dim, work);
 	cohort_set(cm, c, f, coefs);
 }
 
@@ -282,6 +283,7 @@ void recv_model_init(struct recv_model *model,
 
 	struct design *r = frame_recv_design(f);
 	struct design2 *d = frame_dyad_design(f);
+	size_t nrecv = frame_recv_count(f);
 	size_t base_dim = design_dim(r) + design2_trait_dim(d);
 	size_t aug_dim = design2_tvar_dim(d);
 	size_t isend, nsend = frame_send_count(f);
@@ -289,7 +291,8 @@ void recv_model_init(struct recv_model *model,
 
 	model->frame = f;
 
-	mlogitaug_work_init(&model->work, base_dim, aug_dim);
+	mlogit_work_init(&model->work, nrecv, base_dim);
+	mlogitaug_work_init(&model->augwork, base_dim, aug_dim);
 
 	recv_coefs_init(&model->coefs, f);
 	size_t coefs_len = model->coefs.dim * sizeof(*model->coefs.all);
@@ -301,7 +304,7 @@ void recv_model_init(struct recv_model *model,
 
 	struct recv_model_cohort *cms = xcalloc(nc, sizeof(*cms));
 	for (ic = 0; ic < nc; ic++) {
-		cohort_init(&cms[ic], ic, f, &model->coefs);
+		cohort_init(&cms[ic], ic, f, &model->coefs, &model->work);
 	}
 	model->cohort_models = cms;
 
@@ -309,7 +312,7 @@ void recv_model_init(struct recv_model *model,
 	for (isend = 0; isend < nsend; isend++) {
 		size_t c = recv_model_cohort(model, isend);
 		const struct recv_model_cohort *cm = &cms[c];
-		sender_init(&sms[isend], isend, f, &model->coefs, cm, &model->work);
+		sender_init(&sms[isend], isend, f, &model->coefs, cm, &model->augwork);
 	}
 	model->sender_models = sms;
 
@@ -350,7 +353,8 @@ void recv_model_deinit(struct recv_model *model)
 	free(cms);
 
 	recv_coefs_deinit(&model->coefs);
-	mlogitaug_work_deinit(&model->work);
+	mlogitaug_work_deinit(&model->augwork);
+	mlogit_work_deinit(&model->work);
 }
 
 

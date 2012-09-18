@@ -9,6 +9,14 @@
 
 #define MLOGIT_COV_UPLO	BLAS_UPPER
 
+struct mlogit_work {
+	double *mean_diff;
+	double *cov_diff;
+	double *cat_buf;
+	double *dim_buf1;
+	double *dim_buf2;
+};
+
 struct mlogit {
 	struct catdist dist;
 	double *x;
@@ -18,21 +26,23 @@ struct mlogit {
 	double *cov;		// true covariance is cov / exp(log_cov_scale)
 	double log_cov_scale;
 
-	double *mean_diff;
-	double *cov_diff;
-	double *cat_buf;
-	double *dim_buf1;
-	double *dim_buf2;
-
 	size_t dim;
 	double mean_err;
 	double cov_err;
 	double log_cov_scale_err;
 
 	int moments;
+
+	struct mlogit_work *work;
+	int free_work;
+
 };
 
-void mlogit_init(struct mlogit *m, size_t ncat, size_t dim);
+void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim);
+void mlogit_work_deinit(struct mlogit_work *work);
+
+
+void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *work);
 void mlogit_deinit(struct mlogit *m);
 
 static inline size_t mlogit_ncat(const struct mlogit *m);

@@ -40,7 +40,29 @@ static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 static void update_mean(struct mlogit *m, const double *dx,
 			const double *xresid, const double w, const double dw);
 
-void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
+
+void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim)
+{
+	size_t cov_dim = dim * (dim + 1) / 2;
+	work->mean_diff = xmalloc(dim * sizeof(*work->mean_diff));
+	work->cov_diff = xmalloc(cov_dim * sizeof(*work->cov_diff));
+	work->cat_buf = xmalloc(ncat * sizeof(*work->cat_buf));
+	work->dim_buf1 = xmalloc(dim * sizeof(*work->dim_buf1));
+	work->dim_buf2 = xmalloc(dim * sizeof(*work->dim_buf2));
+
+}
+
+void mlogit_work_deinit(struct mlogit_work *work)
+{
+	free(work->dim_buf2);
+	free(work->dim_buf1);
+	free(work->cat_buf);
+	free(work->cov_diff);
+	free(work->mean_diff);
+}
+
+
+void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *work)
 {
 	assert(ncat == 0 || dim <= SIZE_MAX / sizeof(double) / ncat);
 	assert(dim <= SIZE_MAX / sizeof(double) / (dim + 1));
@@ -52,28 +74,31 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim)
 	m->beta = xmalloc(dim * sizeof(*m->beta));
 	m->offset = xmalloc(ncat * sizeof(*m->offset));
 	m->mean = xmalloc(dim * sizeof(*m->mean));
-	m->mean_diff = xmalloc(dim * sizeof(*m->mean));
-
 	m->cov = xmalloc(cov_dim * sizeof(*m->cov));
 	m->log_cov_scale = 0;
-	m->cov_diff = xmalloc(cov_dim * sizeof(*m->cov_diff));
-
-	m->cat_buf = xmalloc(ncat * sizeof(*m->cat_buf));
-	m->dim_buf1 = xmalloc(dim * sizeof(*m->dim_buf1));
-	m->dim_buf2 = xmalloc(dim * sizeof(*m->dim_buf2));
 	m->dim = dim;
 	m->moments = 2;
+
+	if (work) {
+		m->free_work = 0;
+	} else {
+		work = xmalloc(sizeof(*work));
+		mlogit_work_init(work, ncat, dim);
+		m->free_work = 1;
+	}
+	m->work = work;
+
 	clear(m);
 }
 
+
 void mlogit_deinit(struct mlogit *m)
 {
-	free(m->dim_buf2);
-	free(m->dim_buf1);
-	free(m->cat_buf);
-	free(m->cov_diff);
+	if (m->free_work) {
+		mlogit_work_deinit(m->work);
+		free(m->work);
+	}
 	free(m->cov);
-	free(m->mean_diff);
 	free(m->mean);
 	free(m->offset);
 	free(m->beta);
@@ -93,10 +118,8 @@ void clear(struct mlogit *m)
 	memset(m->beta, 0, dim * sizeof(*m->beta));
 	memset(m->offset, 0, ncat * sizeof(*m->offset));
 	memset(m->mean, 0, dim * sizeof(*m->mean));
-	memset(m->mean_diff, 0, dim * sizeof(*m->mean));
 	memset(m->cov, 0, cov_dim * sizeof(*m->cov));
 	m->log_cov_scale = 0;
-	memset(m->cov_diff, 0, cov_dim * sizeof(*m->cov_diff));
 	m->mean_err = 0.0;
 	m->cov_err = 0.0;
 	m->log_cov_scale_err = 0.0;
@@ -167,7 +190,7 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 	const double dw = w1 - w;
 
 	// xresid := x1 - mean
-	double *xresid = m->dim_buf1;
+	double *xresid = m->work->dim_buf1;
 	blas_dcopy(dim, m->x + i * dim, 1, xresid, 1);
 	blas_daxpy(dim, -1.0, m->mean, 1, xresid, 1);
 
@@ -209,12 +232,12 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 	const double dw = w1 - w;
 
 	// xresid := x1 - mean
-	double *xresid = m->dim_buf1;
+	double *xresid = m->work->dim_buf1;
 	blas_dcopy(dim, m->x + i * dim, 1, xresid, 1);
 	blas_daxpy(dim, -1.0, m->mean, 1, xresid, 1);
 
 	// set ddx (dense dx)
-	double *ddx = jdx ? m->dim_buf2 : (double *)dx;
+	double *ddx = jdx ? m->work->dim_buf2 : (double *)dx;
 
 	if (jdx) {
 		memset(ddx, 0, dim * sizeof(*ddx));
@@ -232,7 +255,7 @@ static void update_mean(struct mlogit *m, const double *dx,
 		return;
 
 	size_t dim = mlogit_dim(m);
-	double *mean_diff = m->mean_diff;
+	double *mean_diff = m->work->mean_diff;
 	const double tol = 1.0 / ROOT4_DBL_EPSILON;
 
 	if (dx) {
@@ -265,7 +288,7 @@ static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 
 	const size_t dim = mlogit_dim(m);
 	const size_t cov_dim = dim * (dim + 1) / 2;
-	double *cov_diff = m->cov_diff;
+	double *cov_diff = m->work->cov_diff;
 	const double log_scale = m->log_cov_scale;
 	const double log_scale1 = log_scale + dpsi;
 	const double W = exp(log_scale);
@@ -359,7 +382,7 @@ void recompute_dist(struct mlogit *m)
 	size_t dim = mlogit_dim(m);
 
 	const double *beta = m->beta;
-	double *eta = m->cat_buf;
+	double *eta = m->work->cat_buf;
 
 	blas_dcopy(ncat, m->offset, 1, eta, 1);
 
@@ -379,7 +402,7 @@ void recompute_mean(struct mlogit *m)
 		return;
 
 	double *mean = m->mean;
-	double *prob = m->cat_buf;
+	double *prob = m->work->cat_buf;
 	size_t i;
 
 	for (i = 0; i < ncat; i++) {
@@ -389,7 +412,6 @@ void recompute_mean(struct mlogit *m)
 	// mean := t(X) * prob
 	blas_dgemv(BLAS_NOTRANS, dim, ncat, 1.0, m->x, dim, prob, 1, 0, mean,
 		   1);
-	memset(m->mean_diff, 0, dim * sizeof(*m->mean_diff));
 	m->mean_err = 0.0;
 }
 
@@ -397,14 +419,13 @@ void recompute_cov(struct mlogit *m)
 {
 	size_t ncat = mlogit_ncat(m);
 	size_t dim = mlogit_dim(m);
-	size_t cov_dim = dim * (dim + 1) / 2;
 
 	if (dim == 0)
 		return;
 
 	const double *x = m->x;
 	const double *mean = m->mean;
-	double *diff = m->dim_buf1;
+	double *diff = m->work->dim_buf1;
 	double *cov = m->cov;
 	enum blas_uplo uplo = F77_COV_UPLO;
 
@@ -429,7 +450,6 @@ void recompute_cov(struct mlogit *m)
 	}
 
 	m->log_cov_scale = log(ptot);
-	memset(m->cov_diff, 0, cov_dim * sizeof(*m->mean_diff));
 	m->cov_err = 0.0;
 	m->log_cov_scale_err = 0.0;
 }

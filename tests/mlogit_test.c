@@ -253,7 +253,7 @@ static void setup(const double *beta, size_t n, size_t p)
 		}
 	}
 
-	mlogit_init(&MLOGIT, N, P);
+	mlogit_init(&MLOGIT, N, P, NULL);
 	assert_false(mlogit_check(&MLOGIT));
 
 	if (beta) {
