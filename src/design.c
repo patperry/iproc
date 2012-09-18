@@ -232,7 +232,7 @@ static void design_recompute_cohorts(struct design *d)
 	strata_deinit(&strat);
 }
 
-static struct var *design_trait_alloc(const struct design *d, const char *name,
+static struct var *design_trait_alloc(struct design *d, const char *name,
 				      size_t index, size_t dim)
 {
 	struct var *v = xmalloc(sizeof(*v));
