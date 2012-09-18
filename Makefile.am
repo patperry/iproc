@@ -53,6 +53,7 @@ libiproc_a_SOURCES = \
 	src/recv_resid.h \
 	src/strata.c \
 	src/strata.h \
+	src/v-nrecvtot.c \
 	src/v2-icosib.c \
 	src/v2-irecv.c \
 	src/v2-irecv2.c \

@@ -7,8 +7,8 @@
 #include <stdarg.h>
 
 
-//extern const struct tvar_type VAR_NRECV;
-//extern const struct tvar_type VAR_NSEND;
+extern const struct tvar_type *VAR_NRECVTOT;
+//extern const struct tvar_type *VAR_NSENDTOT;
 
 
 /* Indicator 1{ j -> i in (-Infty, t) } */
