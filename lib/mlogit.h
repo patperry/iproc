@@ -32,6 +32,10 @@ struct mlogit {
 	double cov_err;
 	double log_cov_scale_err;
 
+	size_t *ind;
+	double *dx;
+	size_t nz, nzmax;
+
 	int moments;
 
 	struct mlogit_work *work;

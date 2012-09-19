@@ -39,6 +39,10 @@ static void update_cov(struct mlogit *m, const double *dx, const double *xresid,
 		       const double w, const double dw, const double dpsi);
 static void update_mean(struct mlogit *m, const double *dx,
 			const double *xresid, const double w, const double dw);
+static void grow_ind_array(struct mlogit *m, size_t delta);
+static size_t find_ind(const struct mlogit *m, size_t i);
+static size_t search_ind(struct mlogit *m, size_t i);
+
 
 
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim)
@@ -83,6 +87,11 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *
 	m->dim = dim;
 	m->moments = 2;
 
+	m->ind = NULL;
+	m->dx = NULL;
+	m->nz = 0;
+	m->nzmax = 0;
+
 	if (work) {
 		m->free_work = 0;
 	} else {
@@ -102,6 +111,8 @@ void mlogit_deinit(struct mlogit *m)
 		mlogit_work_deinit(m->work);
 		free(m->work);
 	}
+	free(m->dx);
+	free(m->ind);
 	free(m->cov);
 	free(m->mean);
 	free(m->offset);
@@ -605,4 +616,77 @@ out:
 	free(eta0);
 
 	return fail;
+}
+
+void grow_ind_array(struct mlogit *m, size_t delta)
+{
+	size_t nz = m->nz;
+	size_t nz1 = nz + delta;
+	size_t nzmax = m->nzmax;
+
+	if (nz1 <= nzmax)
+		return;
+
+	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
+	size_t dim = m->dim;
+	assert(nzmax1 >= nz1);
+
+	m->ind = xrealloc(m->ind, nzmax1 * sizeof(*m->ind));
+	m->dx = xrealloc(m->dx, nzmax1 * sizeof(*m->dx) * dim);
+	m->nzmax = nzmax1;
+}
+
+
+size_t search_ind(struct mlogit *m, size_t i)
+{
+	const size_t *base = m->ind, *ptr;
+	size_t nz;
+
+	for (nz = m->nz; nz != 0; nz >>= 1) {
+		ptr = base + (nz >> 1);
+		if (i == *ptr) {
+			return ptr - m->ind;
+		}
+		if (i > *ptr) {
+			base = ptr + 1;
+			nz--;
+		}
+	}
+
+	/* not found */
+	size_t iz = base - m->ind;
+	size_t ntail = m->nz - iz;
+	size_t dim = m->dim;
+
+	grow_ind_array(m, 1);
+	memmove(m->ind + iz + 1, m->ind + iz, ntail * sizeof(*m->ind));
+	memmove(m->dx + (iz + 1) * dim, m->dx + iz * dim, ntail * sizeof(*m->dx) * dim);
+
+	m->ind[iz] = i;
+	m->offset[iz] = 0.0;
+	memset(m->dx + iz * dim, 0, sizeof(*m->dx) * dim);
+	m->nz++;
+
+	return iz;
+}
+
+
+size_t find_ind(const struct mlogit *m, size_t i)
+{
+	const size_t *base = m->ind, *ptr;
+	size_t nz;
+
+	for (nz = m->nz; nz != 0; nz >>= 1) {
+		ptr = base + (nz >> 1);
+		if (i == *ptr) {
+			return ptr - m->ind;
+		}
+		if (i > *ptr) {
+			base = ptr + 1;
+			nz--;
+		}
+	}
+
+	/* not found */
+	return m->nz;
 }
