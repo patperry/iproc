@@ -88,6 +88,7 @@ static void setup_frame(void) {
 	design_add_prod(r, "Leg:Fem", design_var(r, "Leg"), design_var(r, "Fem"));
 	design_add_prod(r, "Trad:Fem", design_var(r, "Trad"), design_var(r, "Fem"));
 	design_add_prod(r, "Jun:Fem", design_var(r, "Jun"), design_var(r, "Fem"));
+	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
 
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
@@ -100,12 +101,13 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "NRecv", VAR2_NRECV);
 
 	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
-	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
 	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
-	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
 	//design2_add_tvar(d, "ISib", VAR2_ISIB);
-	//design2_add_tvar(d, "NSib", VAR2_NSIB);
 	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
+
+	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	//design2_add_tvar(d, "NSib", VAR2_NSIB);
 	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 
@@ -272,7 +274,7 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 	{
 		hsize_t dim2 = dim * (dim + 1) / 2;
 		const char *uplo = (MLOGIT_COV_UPLO == BLAS_LOWER) ? "LOWER" : "UPPER";
-		double *imat = xcalloc(dim2, sizeof(double));
+		double *imat = xcalloc((size_t)dim2, sizeof(double));
 
 		recv_loglik_axpy_imat(1.0, ll, imat);
 		status = H5LTmake_dataset(file_id, INFORMATION, 1, &dim2, H5T_NATIVE_DOUBLE, imat);
