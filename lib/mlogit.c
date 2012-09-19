@@ -138,6 +138,7 @@ void clear(struct mlogit *m)
 	m->mean_err = 0.0;
 	m->cov_err = 0.0;
 	m->log_cov_scale_err = 0.0;
+	m->nz = 0;
 }
 
 
@@ -173,6 +174,7 @@ void mlogit_set_all_x(struct mlogit *m, const double *x)
 	} else {
 		memset(m->x, 0, len);
 	}
+	m->nz = 0;
 
 	recompute_all(m);
 }
