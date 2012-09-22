@@ -169,6 +169,7 @@ static int sym_approx_display_error(const double *expect, const double *actual,
 		print_error_vector(expect, n * (n + 1) / 2);
 		print_error("\n!=(sym)\n");
 		print_error_vector(actual, n * (n + 1) / 2);
+		assert(approx);
 	}
 	return approx;
 }

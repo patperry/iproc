@@ -503,8 +503,11 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	double dpsi = psi - psi0;
 	const double *x = mlogit_x(m1->base);
 	const double *mean0 = mlogit_mean(m1->base);
-	const double *cov0 = m1->base->cov;
-	double log_scale0 = m1->base->log_cov_scale;
+	//const double *cov0 = m1->base->cov;
+	//double log_scale0 = m1->base->log_cov_scale;
+	double scale0;
+	const double *cov0 = mlogit_cov(m1->base, &scale0);
+	const double log_scale0 = log(scale0);
 	const double log_scale = log_scale0 + dpsi;
 	const double W = exp(log_scale);
 	const double scale = isfinite(W) ? W : 1.0;

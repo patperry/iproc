@@ -131,15 +131,21 @@ static void test_mean()
 
 static void test_cov()
 {
+	size_t dim = P * (P + 1) / 2;
 	double scale;
 	double *cov = mlogit_cov(&MLOGIT, &scale);
-	size_t i;
+	double *cov_copy = xmalloc(dim * sizeof(double));
 
-	assert_false(mlogit_check(&MLOGIT));
+	memcpy(cov_copy, cov, dim * sizeof(double));
+	blas_dscal(dim, 1.0 / scale, cov_copy, 1);
 
-	for (i = 0; i < P * (P + 1) / 2; i++) {
+	//assert_false(mlogit_check(&MLOGIT));
+
+	assert_sym_approx(cov_copy, COV, MLOGIT_COV_UPLO, P);
+
+	/*for (i = 0; i < P * (P + 1) / 2; i++) {
 		assert_real_approx(cov[i] / scale, COV[i]);
-	}
+	}*/
 }
 
 
@@ -161,8 +167,13 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	recompute();
 
 	mlogit_inc_x(&MLOGIT, i, jdx, dx, ndx);
+	print_error("\tx...");
 	test_x();
-	assert_false(mlogit_check(&MLOGIT));
+	print_error("ok\n\tmean...");
+	test_mean();
+	print_error("ok\n\tcov...");
+	test_cov();
+	print_error("ok\n");
 }
 
 
