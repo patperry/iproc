@@ -264,10 +264,9 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 
 	if (jdx) {
 #ifndef NDEBUG
-		size_t ncat = mlogit_ncat(m);
 		size_t k;
 		for (k = 0; k < ndx; k++) {
-			assert(jdx[k] < ncat);
+			assert(jdx[k] < dim);
 		}
 #endif
 		sblas_daxpyi(ndx, 1.0, dx, jdx, dst);
@@ -282,12 +281,10 @@ void update(struct mlogit *m)
 {
 	if (m->nz) {
 		update_x(m);
+		update_dist(m);
+		update_mean(m);
+		update_cov(m);
 		m->nz = 0;
-		recompute_all(m);
-		//update_dist(m);
-		//update_mean(m);
-		//update_cov(m);
-
 	}
 }
 
@@ -323,7 +320,7 @@ void update_dist(struct mlogit *m)
 		return;
 
 	if (m->nz >= 0 * mlogit_ncat(m) / 2) {
-		recompute_mean(m);
+		recompute_dist(m);
 		return;
 	}
 

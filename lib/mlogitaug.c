@@ -260,6 +260,8 @@ void recompute_dist(struct mlogitaug *m1)
 	double *deta = m1->deta;
 	const double *x = m1->x;
 
+	(void)mlogit_dist(m1->base); // update pareent dist;
+
 	blas_dcopy(nz, offset, 1, deta, 1);
 	if (dim)
 		blas_dgemv(BLAS_TRANS, dim, nz, 1.0, x, dim, beta, 1, 1.0, deta, 1);
