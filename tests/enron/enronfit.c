@@ -89,6 +89,10 @@ static void setup_frame(void) {
 	design_add_prod(r, "Trad:Fem", design_var(r, "Trad"), design_var(r, "Fem"));
 	design_add_prod(r, "Jun:Fem", design_var(r, "Jun"), design_var(r, "Fem"));
 
+	design_add_tvar(r, "ISendTot", VAR_ISENDTOT);
+	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT);
+	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
+
 	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
 	design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
 

@@ -7,6 +7,9 @@
 #include <stdarg.h>
 
 
+extern const struct tvar_type *VAR_IRECVTOT;
+extern const struct tvar_type *VAR_ISENDTOT;
+
 extern const struct tvar_type *VAR_NRECVTOT;
 extern const struct tvar_type *VAR_NSENDTOT;
 
