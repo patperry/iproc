@@ -14,13 +14,13 @@ static void nrecvtot_message_add(void *udata, struct frame *f,
 	const struct var *v = &tv->var;
 	struct design *d = v->design;
 
-	size_t jrecv = msg->from;
 	double dx_data[1] = { +1.0 };
 	size_t dx_index[1] = { 0 };
 	size_t nz = 1;
 	
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		size_t jrecv = msg->to[ito];
 		design_update(d, v, jrecv, dx_data, dx_index, nz);
 	}
 }
@@ -32,7 +32,6 @@ static void nrecvtot_message_advance(void *udata, struct frame *f,
 	const struct tvar *tv = udata;
 	const struct var *v = &tv->var;
 	struct design *d = v->design;
-	size_t jrecv = msg->from;
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2];
@@ -40,6 +39,7 @@ static void nrecvtot_message_advance(void *udata, struct frame *f,
 	
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
+		size_t jrecv = msg->to[ito];
 		size_t ix1 = intvl;
 		size_t ix0 = ix1 - 1;
 		
