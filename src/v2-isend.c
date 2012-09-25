@@ -18,9 +18,6 @@ static void isend_message_add(void *udata, struct frame *f,
 		
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {
-		if (msg->to[ito] == msg->from)
-			continue;
-		
 		size_t jrecv = msg->to[ito];
 		const double *dx = design2_tvar(d, v, isend, jrecv);
 		if (!dx || *dx == 0.0) {

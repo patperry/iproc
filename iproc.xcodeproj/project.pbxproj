@@ -903,10 +903,6 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
-				222EF69616125EE9005CA886 /* v-isendtot.c */,
-				222EF69416125DB2005CA886 /* v-irecvtot.c */,
-				222EF6921612587A005CA886 /* v-nsendtot.c */,
-				222EF68F16090010005CA886 /* v-nrecvtot.c */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
 				227870A615B0A68C004B170B /* design2.c */,
@@ -929,6 +925,10 @@
 				224DDE0115F0EC6F00C0CA88 /* recv_resid.h */,
 				22DB0A7F13CB68B5004149CE /* strata.c */,
 				22DB0A8013CB68B5004149CE /* strata.h */,
+				222EF69616125EE9005CA886 /* v-isendtot.c */,
+				222EF69416125DB2005CA886 /* v-irecvtot.c */,
+				222EF6921612587A005CA886 /* v-nsendtot.c */,
+				222EF68F16090010005CA886 /* v-nrecvtot.c */,
 				22A64C5715F8E863005C7DE4 /* v2-icosib.c */,
 				22A64C5815F8E863005C7DE4 /* v2-irecv.c */,
 				22A64C5915F8E863005C7DE4 /* v2-irecv2.c */,
