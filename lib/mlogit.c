@@ -953,7 +953,7 @@ void recompute_mean(struct mlogit *m)
 
 void recompute_cov(struct mlogit *m)
 {
-	size_t ncat = mlogit_ncat(m);
+	size_t i, ncat = mlogit_ncat(m);
 	size_t dim = mlogit_dim(m);
 
 	if (dim == 0)
@@ -961,30 +961,43 @@ void recompute_cov(struct mlogit *m)
 
 	const double *x = m->x_;
 	const double *mean = m->mean_;
-	double *diff = m->work->dim_buf1;
 	double *cov = m->cov_;
 	double *cov_full = m->work->cov_diff_full;
-	enum blas_uplo uplo = F77_COV_UPLO;
+	double *diff = m->work->xbuf1;
+	double ptot;
 
-	size_t i;
-	double p, ptot;
+	size_t nk = 0;
+	double *diff_i = diff;
 
 	// cov := 0; ptot := 0
 	memset(cov_full, 0, dim * dim * sizeof(*cov_full));
 	ptot = 0;
 
 	for (i = 0; i < ncat; i++) {
-		/* diff := mean - x[i,:] */
-		memcpy(diff, x + i * dim, dim * sizeof(*diff));
-		blas_daxpy(dim, -1.0, mean, 1, diff, 1);
+		double p = catdist_prob(&m->dist_, i);
 
-		/* ptot += p[i] */
-		p = catdist_prob(&m->dist_, i);
-		ptot += p;
+		if (p) {
+			/* diff := mean - x[i,:] */
+			memcpy(diff_i, x + i * dim, dim * sizeof(*diff_i));
+			blas_daxpy(dim, -1.0, mean, 1, diff_i, 1);
+			blas_dscal(dim, sqrt(p), diff_i, 1);
+			ptot += p;
 
-		/* cov += p[i] * diff^2 */
-		blas_dsyr(uplo, dim, p, diff, 1, cov_full, dim);
+			diff_i += dim;
+			nk++;
+		}
+
+		if (nk == BLOCK_SIZE || i + 1 == ncat) {
+			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov_full, dim);
+
+			diff_i = diff;
+			nk = 0;
+		}
 	}
+
+	assert(nk == 0);
+	assert(diff_i == diff);
+
 	copy_packed(cov, cov_full, dim, MLOGIT_COV_UPLO);
 
 	m->log_cov_scale_ = log(ptot);
