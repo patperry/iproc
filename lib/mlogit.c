@@ -30,34 +30,20 @@
 
 
 static void clear(struct mlogit *m);
-static double get_deta(struct mlogit *m, const double *dx, const size_t *jdx,
-		       size_t ndx);
-static void increment_x(struct mlogit *m, size_t i, const size_t *jdx,
-			const double *dx, size_t ndx);
 static void recompute_all(struct mlogit *m);
 static void recompute_dist(struct mlogit *m);
 static void recompute_mean(struct mlogit *m);
 static void recompute_cov(struct mlogit *m);
-static void update_cov_old(struct mlogit *m, const double *dx, const double *xresid,
-			   const double w, const double dw, const double dpsi);
-static void update_mean_old(struct mlogit *m, const double *dx,
-			    const double *xresid, const double w, const double dw);
 static void update(struct mlogit *m);
 static void update_x(struct mlogit *m);
 static void update_dist(struct mlogit *m);
 static void update_mean(struct mlogit *m);
 static void update_cov(struct mlogit *m);
-static void update_cov1(struct mlogit *m);
-static void update_cov2(struct mlogit *m);
-static void update_cov3(struct mlogit *m);
+static void compute_cov_diff(struct mlogit *m);
 
 static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo);
 static void grow_ind_array(struct mlogit *m, size_t delta);
-static size_t find_ind(const struct mlogit *m, size_t i);
 static size_t search_ind(struct mlogit *m, size_t i);
-static void raw_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
-		      const double *dx, size_t ndx);
-
 
 
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim)
@@ -215,40 +201,20 @@ void mlogit_set_all_x(struct mlogit *m, const double *x)
 	recompute_all(m);
 }
 
+
 void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 {
 	assert(i < mlogit_ncat(m));
 	assert(offset < INFINITY);
 
-	const size_t dim = mlogit_dim(m);
-	const double psi = catdist_psi(&m->dist_);
-	const double eta = catdist_eta(&m->dist_, i);
-	const double deta = offset - m->offset[i];
-	const double eta1 = eta + deta;
-
 	// offset[i] := offset
 	m->offset[i] = offset;
 
-	// update eta, psi
-	catdist_set_eta(&m->dist_, i, eta1);
-
-	if (m->moments < 1)
-		return;
-
-	// compute weight changes
-	const double psi1 = catdist_psi(&m->dist_);
-	const double dpsi = psi1 - psi;
-	const double w1 = exp(eta1 - psi1);
-	const double w = exp(eta - psi1);
-	const double dw = w1 - w;
-
-	// xresid := x1 - mean
-	double *xresid = m->work->dim_buf1;
-	blas_dcopy(dim, m->x_ + i * dim, 1, xresid, 1);
-	blas_daxpy(dim, -1.0, m->mean_, 1, xresid, 1);
-
-	update_mean_old(m, NULL, xresid, w, dw);
-	update_cov_old(m, NULL, xresid, w, dw, dpsi);
+	if (m->nz) {
+		update_x(m);
+		m->nz = 0;
+	}
+	recompute_all(m);
 }
 
 
@@ -457,16 +423,10 @@ void update_cov(struct mlogit *m)
 	const double log_scale1 = log_scale + dpsi;
 	//const double W = exp(log_scale);
 	const double W1 = exp(log_scale1);
-	double *dcov_full = m->work->cov_diff_full;
 	double *dcov = m->work->cov_diff;
 
-	memset(dcov_full, 0, dim * dim * sizeof(*dcov_full));
+	compute_cov_diff(m);
 
-	update_cov1(m);
-	update_cov2(m);
-	update_cov3(m);
-
-	copy_packed(dcov, dcov_full, dim, MLOGIT_COV_UPLO);
 	blas_daxpy(cov_dim, W1, dcov, 1, m->cov_, 1);
 	m->log_cov_scale_ = log_scale1;
 
@@ -482,6 +442,7 @@ void update_cov(struct mlogit *m)
 		if (!(m->mean_err == 0.0))
 			recompute_mean(m);
 		recompute_cov(m);
+		printf("!");
 
 		blas_dscal(cov_dim, -exp(m->log_cov_scale_ - log_scale1), dcov, 1);
 		blas_daxpy(cov_dim, 1.0, m->cov_, 1, dcov, 1);
@@ -489,17 +450,15 @@ void update_cov(struct mlogit *m)
 }
 
 
-void update_cov1(struct mlogit *m)
+void compute_cov_diff(struct mlogit *m)
 {
 	size_t dim = mlogit_dim(m);
 	const double *x0 = m->work->x0;
 	const double *x1 = m->x_;
 	const double *w0 = m->work->w0;
-	const double *dw = m->work->dw;
 	const double *mean0 = m->work->mean0;
 	const double *dmean = m->work->dmean;
 	const double log_scale = m->log_cov_scale_;
-	//const double W0 = exp(log_scale);
 	const double dpsi = m->work->dpsi;
 	const double W1 = exp(log_scale + dpsi);
 	double *dcov = m->work->cov_diff_full;
@@ -511,24 +470,19 @@ void update_cov1(struct mlogit *m)
 
 	assert(dim > 0);
 
-	// handle positive dw
+	memset(dcov, 0, dim * dim * sizeof(*dcov));
+
+	// handle positive terms
 	for (iz = 0; iz < nz; iz++) {
 		const size_t i = m->ind[iz];
-		const double *x0_i = x0 + iz * dim;
 		const double *x1_i = x1 + i * dim;
-		const double w0_i = w0[iz];
 		const double w1_i = catdist_prob(&m->dist_, i);
-		const double dw_i = dw[iz];
 
-		if (dw_i > 0) {
-			if (w0_i <= w1_i) {
-				blas_dcopy(dim, x1_i, 1, diff_i, 1);
-			} else {
-				blas_dcopy(dim, x0_i, 1, diff_i, 1);
-			}
+		if (w1_i > 0) {
+			blas_dcopy(dim, x1_i, 1, diff_i, 1);
 			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
-			blas_dscal(dim, sqrt(dw_i), diff_i, 1);
-			m->cov_err += 64 * W1 * dw_i;
+			blas_dscal(dim, sqrt(w1_i), diff_i, 1);
+			m->cov_err += 64 * W1 * w1_i;
 
 			diff_i += dim;
 			nk++;
@@ -546,7 +500,7 @@ void update_cov1(struct mlogit *m)
 	assert(nk == 0);
 	assert(diff_i == diff);
 
-	// handle dmean and negative dw
+	// handle dmean and negative terms
 	blas_dcopy(dim, dmean, 1, diff_i, 1);
 	m->cov_err += W1;
 
@@ -554,118 +508,12 @@ void update_cov1(struct mlogit *m)
 	nk++;
 
 	for (iz = 0; iz < nz; iz++) {
-		const size_t i = m->ind[iz];
 		const double *x0_i = x0 + iz * dim;
-		const double *x1_i = x1 + i * dim;
 		const double w0_i = w0[iz];
-		const double w1_i = catdist_prob(&m->dist_, i);
-		const double dw_i = dw[iz];
 
-		if (dw_i < 0) {
-			if (w0_i <= w1_i) {
-				blas_dcopy(dim, x1_i, 1, diff_i, 1);
-			} else {
-				blas_dcopy(dim, x0_i, 1, diff_i, 1);
-			}
-			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
-			blas_dscal(dim, sqrt(-dw_i), diff_i, 1);
-			m->cov_err += 64 * W1 * (-dw_i);
-
-			diff_i += dim;
-			nk++;
-		}
-
-		if (nk == BLOCK_SIZE || iz + 1 == nz) {
-			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, -1.0, diff, dim, 1.0, dcov, dim);
-
-			diff_i = diff;
-			nk = 0;
-		}
-	}
-	// note: nz = 0 implies dmean = 0; no need to call dsyrk
-}
-
-
-void update_cov2(struct mlogit *m)
-{
-	size_t dim = mlogit_dim(m);
-	const double *x0 = m->work->x0;
-	const double *x1 = m->x_;
-	const double *dx = m->dx;
-	const double *w0 = m->work->w0;
-	const double *mean0 = m->work->mean0;
-	const double log_scale = m->log_cov_scale_;
-	//const double W0 = exp(log_scale);
-	const double dpsi = m->work->dpsi;
-	const double W1 = exp(log_scale + dpsi);
-	double *dcov = m->work->cov_diff_full;
-	double *diff = m->work->xbuf1;
-
-	size_t iz, nz = m->nz;
-	size_t nk = 0;
-	double *diff_i = diff;
-
-	assert(dim > 0);
-
-	for (iz = 0; iz < nz; iz++) {
-		const size_t i = m->ind[iz];
-		const double *x0_i = x0 + iz * dim;
-		const double *x1_i = x1 + i * dim;
-		const double w0_i = w0[iz];
-		const double w1_i = catdist_prob(&m->dist_, i);
-
-		if (w0_i <= w1_i) {
-			blas_dcopy(dim, x1_i, 1, diff_i, 1);
-			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
-			blas_dscal(dim, w0_i, diff_i, 1);
-			m->cov_err += 2 * 64 * W1 * w0_i;
-		} else {
+		if (w0_i > 0) {
 			blas_dcopy(dim, x0_i, 1, diff_i, 1);
 			blas_daxpy(dim, -1.0, mean0, 1, diff_i, 1);
-			blas_dscal(dim, w1_i, diff_i, 1);
-			m->cov_err += 2 * 64 * W1 * w1_i;
-		}
-
-		diff_i += dim;
-		nk++;
-
-		if (nk == BLOCK_SIZE || iz + 1 == nz) {
-			blas_dsyr2k(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, dx, dim, 1.0, dcov, dim);
-			dx += nk * dim;
-
-			diff_i = diff;
-			nk = 0;
-		}
-	}
-}
-
-
-void update_cov3(struct mlogit *m)
-{
-	size_t dim = mlogit_dim(m);
-	const double *dx = m->dx;
-	const double *w0 = m->work->w0;
-	const double log_scale = m->log_cov_scale_;
-	//const double W0 = exp(log_scale);
-	const double dpsi = m->work->dpsi;
-	const double W1 = exp(log_scale + dpsi);
-	double *dcov = m->work->cov_diff_full;
-	double *diff = m->work->xbuf1;
-
-	size_t iz, nz = m->nz;
-	size_t nk = 0;
-	double *diff_i = diff;
-
-	assert(dim > 0);
-
-	for (iz = 0; iz < nz; iz++) {
-		const size_t i = m->ind[iz];
-		const double *dx_i = dx + iz * dim;
-		const double w0_i = w0[iz];
-		const double w1_i = catdist_prob(&m->dist_, i);
-
-		if (w0_i <= w1_i) {
-			blas_dcopy(dim, dx_i, 1, diff_i, 1);
 			blas_dscal(dim, sqrt(w0_i), diff_i, 1);
 			m->cov_err += 64 * W1 * w0_i;
 
@@ -680,116 +528,11 @@ void update_cov3(struct mlogit *m)
 			nk = 0;
 		}
 	}
+	// note: nz = 0 implies dmean = 0; no need to call dsyrk
 
-	assert(nk == 0);
-	assert(diff_i == diff);
-
-	for (iz = 0; iz < nz; iz++) {
-		const size_t i = m->ind[iz];
-		const double *dx_i = dx + iz * dim;
-		const double w0_i = w0[iz];
-		const double w1_i = catdist_prob(&m->dist_, i);
-
-		if (!(w0_i <= w1_i)) {
-			blas_dcopy(dim, dx_i, 1, diff_i, 1);
-			blas_dscal(dim, sqrt(w1_i), diff_i, 1);
-			m->cov_err += 64 * W1 * w1_i;
-
-			diff_i += dim;
-			nk++;
-		}
-
-		if (nk == BLOCK_SIZE || iz + 1 == nz) {
-			blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, +1.0, diff, dim, 1.0, dcov, dim);
-
-			diff_i = diff;
-			nk = 0;
-		}
-	}
+	copy_packed(m->work->cov_diff, dcov, dim, MLOGIT_COV_UPLO);
 }
 
-
-void raw_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
-		  const double *dx, size_t ndx)
-{
-	assert(i < mlogit_ncat(m));
-	assert(dx || ndx == 0);
-	assert(jdx || ndx == 0 || ndx == mlogit_dim(m));
-
-	size_t dim = mlogit_dim(m);
-
-	if (ndx == 0 || dim == 0)
-		return;
-
-	const double psi = catdist_psi(&m->dist_);
-	const double eta = catdist_eta(&m->dist_, i);
-	const double deta = get_deta(m, dx, jdx, ndx);
-	const double eta1 = eta + deta;
-
-	// x := x + dx
-	increment_x(m, i, jdx, dx, ndx);
-
-	// update eta, psi
-	catdist_set_eta(&m->dist_, i, eta1);
-
-	if (m->moments < 1)
-		return;
-
-	// compute weight changes
-	const double psi1 = catdist_psi(&m->dist_);
-	const double dpsi = psi1 - psi;
-	const double w1 = exp(eta1 - psi1);
-	const double w = exp(eta - psi1);
-	const double dw = w1 - w;
-
-	// xresid := x1 - mean
-	double *xresid = m->work->dim_buf1;
-	blas_dcopy(dim, m->x_ + i * dim, 1, xresid, 1);
-	blas_daxpy(dim, -1.0, m->mean_, 1, xresid, 1);
-
-	// set ddx (dense dx)
-	double *ddx = jdx ? m->work->dim_buf2 : (double *)dx;
-
-	if (jdx) {
-		memset(ddx, 0, dim * sizeof(*ddx));
-		sblas_dsctr(ndx, dx, jdx, ddx);
-	}
-
-	update_mean_old(m, ddx, xresid, w, dw);
-	update_cov_old(m, ddx, xresid, w, dw, dpsi);
-}
-
-static void update_mean_old(struct mlogit *m, const double *dx,
-			    const double *xresid, const double w, const double dw)
-{
-	if (m->moments < 1)
-		return;
-
-	size_t dim = mlogit_dim(m);
-	double *mean_diff = m->work->dmean;
-	const double tol = 1.0 / ROOT4_DBL_EPSILON;
-
-	if (dx) {
-		m->mean_err += 1 + 8 * (fabs(dw) + w);	// approximate relative error from update
-	} else {
-		m->mean_err += 1 + 8 * fabs(dw);
-	}
-
-	if (!(m->mean_err < tol)) {
-		recompute_mean(m);
-		return;
-	}
-	// mean_diff := dw * (x1 - mean)
-	blas_dcopy(dim, xresid, 1, mean_diff, 1);
-	blas_dscal(dim, dw, mean_diff, 1);
-
-	if (dx) {
-		// mean_diff += w * dx
-		blas_daxpy(dim, w, dx, 1, mean_diff, 1);
-	}
-	// mean += mean_diff
-	blas_daxpy(dim, 1.0, mean_diff, 1, m->mean_, 1);
-}
 
 static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo)
 {
@@ -810,98 +553,6 @@ static void copy_packed(double *dst, const double *src, size_t dim, enum blas_up
 			dst += rowlen;
 			src += dim;
 		}
-	}
-}
-
-static void update_cov_old(struct mlogit *m, const double *dx, const double *xresid,
-			   const double w, const double dw, const double dpsi)
-{
-	if (m->moments < 2 || mlogit_dim(m) == 0)
-		return;
-
-	const size_t dim = mlogit_dim(m);
-	const size_t cov_dim = dim * (dim + 1) / 2;
-	const size_t cov_dim_full = dim * dim;
-	double *cov_diff_full = m->work->cov_diff_full;
-	double *cov_diff = m->work->cov_diff;
-	const double log_scale = m->log_cov_scale_;
-	const double log_scale1 = log_scale + dpsi;
-	const double W = exp(log_scale);
-	const double W1 = exp(log_scale1);
-	const double cov_tol = 1.0 / ROOT5_DBL_EPSILON;
-
-	if (dx) {
-		m->cov_err +=
-		    1 + 64 * W * (fabs(dw) + w) + 64 * W1 * w * (1 + w);
-	} else {
-		m->cov_err += 1 + 64 * W * fabs(dw);
-	}
-	m->log_cov_scale_err +=
-	    0.5 * DBL_EPSILON * (fabs(dpsi) + fabs(log_scale1));
-
-	double err_prod = (1 + m->cov_err) * exp(m->log_cov_scale_err) - 1;
-
-	if (!(err_prod < cov_tol)) {
-		if (!(m->mean_err == 0.0))
-			recompute_mean(m);
-		recompute_cov(m);
-		return;
-	}
-	// cov_diff := W * dw * (x1 - mean)^2
-	memset(cov_diff_full, 0, cov_dim_full * sizeof(double));
-	blas_dsyr(F77_COV_UPLO, dim, W * dw, xresid, 1, cov_diff_full, dim);
-
-	if (dx) {
-		// cov_diff += W * w * [ (x1 - mean) * dx + dx * (x1 - mean) ]
-		blas_dsyr2(F77_COV_UPLO, dim, W * w, xresid, 1, dx, 1,
-			   cov_diff_full, dim);
-
-		// cov_diff += - W1 * w * (1 + w) * (dx)^2
-		blas_dsyr(F77_COV_UPLO, dim, -W1 * w * (1 + w), dx, 1,
-			  cov_diff_full, dim);
-	}
-	// cov += cov_diff
-	copy_packed(cov_diff, cov_diff_full, dim, MLOGIT_COV_UPLO);
-	blas_daxpy(cov_dim, 1.0, cov_diff, 1, m->cov_, 1);
-	m->log_cov_scale_ = log_scale1;
-}
-
-double get_deta(struct mlogit *m, const double *dx, const size_t *jdx,
-		size_t ndx)
-{
-	double deta;
-
-	if (jdx) {
-		deta = sblas_ddoti(ndx, dx, jdx, m->beta);
-	} else {
-		assert(ndx == m->dim);
-		deta = blas_ddot(m->dim, dx, 1, m->beta, 1);
-	}
-
-	return deta;
-}
-
-void increment_x(struct mlogit *m, size_t i, const size_t *jdx,
-		 const double *dx, size_t ndx)
-{
-	assert(i < mlogit_ncat(m));
-	assert(dx || ndx == 0);
-
-	size_t dim = mlogit_dim(m);
-	double *x = m->x_ + i * dim;
-
-	if (jdx) {
-#ifndef NDEBUG
-		size_t ncat = mlogit_ncat(m);
-		size_t k;
-		for (k = 0; k < ndx; k++) {
-			assert(jdx[k] < ncat);
-		}
-#endif
-		sblas_daxpyi(ndx, 1.0, dx, jdx, x);
-	} else if (ndx) {
-		assert(ndx == mlogit_dim(m));
-		blas_daxpy(dim, 1.0, dx, 1, x, 1);
 	}
 }
 
@@ -1208,25 +859,4 @@ size_t search_ind(struct mlogit *m, size_t i)
 	m->nz++;
 
 	return iz;
-}
-
-
-size_t find_ind(const struct mlogit *m, size_t i)
-{
-	const size_t *base = m->ind, *ptr;
-	size_t nz;
-
-	for (nz = m->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - m->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
-	}
-
-	/* not found */
-	return m->nz;
 }

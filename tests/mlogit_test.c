@@ -167,13 +167,13 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	recompute();
 
 	mlogit_inc_x(&MLOGIT, i, jdx, dx, ndx);
-	print_error("\tx...");
+	//print_error("\tx...");
 	test_x();
-	print_error("ok\n\tmean...");
+	//print_error("ok\n\tmean...");
 	test_mean();
-	print_error("ok\n\tcov...");
+	//print_error("ok\n\tcov...");
 	test_cov();
-	print_error("ok\n");
+	//print_error("ok\n");
 }
 
 
