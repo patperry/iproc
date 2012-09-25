@@ -8,7 +8,7 @@
 
 
 extern const struct tvar_type *VAR_NRECVTOT;
-//extern const struct tvar_type *VAR_NSENDTOT;
+extern const struct tvar_type *VAR_NSENDTOT;
 
 
 /* Indicator 1{ j -> i in (-Infty, t) } */

@@ -77,6 +77,7 @@
 		22234206144F3E5000D99D8E /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		2223420D144F3E9900D99D8E /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		222EF69016090010005CA886 /* v-nrecvtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 222EF68F16090010005CA886 /* v-nrecvtot.c */; };
+		222EF6931612587A005CA886 /* v-nsendtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 222EF6921612587A005CA886 /* v-nsendtot.c */; };
 		222FC41613607C7900E64FC9 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597408133D0AFB0022B52E /* design.c */; };
 		222FC41F13607C7900E64FC9 /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22597411133D0AFB0022B52E /* messages.c */; };
 		2235DC0213C7AD0300053BAA /* json.c in Sources */ = {isa = PBXBuildFile; fileRef = 2235DC0013C7AD0300053BAA /* json.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include"; }; };
@@ -583,6 +584,7 @@
 		222341EF144F3BDA00D99D8E /* yajl_parse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_parse.h; path = lib/yajl/src/api/yajl_parse.h; sourceTree = "<group>"; };
 		222341F0144F3BDA00D99D8E /* yajl_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_tree.h; path = lib/yajl/src/api/yajl_tree.h; sourceTree = "<group>"; };
 		222EF68F16090010005CA886 /* v-nrecvtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-nrecvtot.c"; path = "src/v-nrecvtot.c"; sourceTree = "<group>"; };
+		222EF6921612587A005CA886 /* v-nsendtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-nsendtot.c"; path = "src/v-nsendtot.c"; sourceTree = "<group>"; };
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2235DBFC13C7ACE100053BAA /* libjson.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libjson.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2235DC0013C7AD0300053BAA /* json.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = json.c; path = src/json/json.c; sourceTree = "<group>"; };
@@ -897,6 +899,7 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				222EF6921612587A005CA886 /* v-nsendtot.c */,
 				222EF68F16090010005CA886 /* v-nrecvtot.c */,
 				22597408133D0AFB0022B52E /* design.c */,
 				22597409133D0AFB0022B52E /* design.h */,
@@ -1636,6 +1639,7 @@
 				22A64C6D15F8E863005C7DE4 /* v2-nsend2.c in Sources */,
 				22A64C6E15F8E863005C7DE4 /* v2-nsib.c in Sources */,
 				222EF69016090010005CA886 /* v-nrecvtot.c in Sources */,
+				222EF6931612587A005CA886 /* v-nsendtot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -88,7 +88,9 @@ static void setup_frame(void) {
 	design_add_prod(r, "Leg:Fem", design_var(r, "Leg"), design_var(r, "Fem"));
 	design_add_prod(r, "Trad:Fem", design_var(r, "Trad"), design_var(r, "Fem"));
 	design_add_prod(r, "Jun:Fem", design_var(r, "Jun"), design_var(r, "Fem"));
+
 	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
+	design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
 
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
