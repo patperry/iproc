@@ -117,63 +117,26 @@ void recv_fit_params_deinit(struct recv_fit_params *params)
 static void constr_init(struct recv_fit_constr *c)
 {
 	c->wts = NULL;
-	c->wt_inds = NULL;
-	c->wt_cols = NULL;
 	c->vals = NULL;
-	c->names = NULL;
 	c->n = 0;
 	c->nmax = 0;
-	c->wt_nzmax = 0;
 }
 
 
 static void constr_deinit(struct recv_fit_constr *c)
 {
-	size_t i, n = c->n;
-
-	for (i = 0; i < n; i++) {
-		free(c->names[i]);
-	}
-	free(c->names);
 	free(c->vals);
-	free(c->wt_cols);
-	free(c->wt_inds);
 	free(c->wts);
 }
 
-static void constr_grow(struct recv_fit_constr *c)
+static void constr_grow(struct recv_fit_constr *c, size_t dim)
 {
 	if (c->n == c->nmax) {
 		size_t nmax = ARRAY_GROW1(c->nmax, SIZE_MAX);
-		c->wt_cols = xrealloc(c->wt_cols,
-				      (nmax + 1) * sizeof(c->wt_cols[0]));
-		c->vals = xrealloc(c->vals, nmax * sizeof(c->vals[0]));
-		c->names = xrealloc(c->names, nmax * sizeof(c->names[0]));
+		c->wts = xrealloc(c->wts, nmax * dim * sizeof(*c->wts));
+		c->vals = xrealloc(c->vals, nmax * sizeof(*c->vals));
 		c->nmax = nmax;
-
-		if (!c->n)
-			c->wt_cols[0] = 0;
 	}
-}
-
-static void constr_grow_nz(struct recv_fit_constr *c, size_t delta)
-{
-	size_t nz0 = c->n ? c->wt_cols[c->n] : 0;
-	assert(delta <= SIZE_MAX - nz0);
-
-	size_t nz = nz0 + delta;
-	size_t nzmax = c->wt_nzmax;
-
-	if (nz <= nzmax)
-		return;
-
-	while (nz > nzmax) {
-		nzmax = ARRAY_GROW1(nzmax, SIZE_MAX);
-	}
-
-	c->wts = xrealloc(c->wts, nzmax * sizeof(c->wts[0]));
-	c->wt_inds = xrealloc(c->wt_inds, nzmax * sizeof(c->wt_inds[0]));
-	c->wt_nzmax = nzmax;
 }
 
 static size_t constr_count(const struct recv_fit_constr *c)
@@ -181,93 +144,61 @@ static size_t constr_count(const struct recv_fit_constr *c)
 	return c->n;
 }
 
-static void constr_add(struct recv_fit_constr *c, const double *wts,
-		       const size_t *ind, size_t nz,
-		       double val, const char *name)
+static void constr_add(struct recv_fit_constr *c, size_t dim, const double *wts,
+		       double val)
 {
-	constr_grow(c);
-	constr_grow_nz(c, nz);
+	constr_grow(c, dim);
 
 	size_t n = c->n;
-	memcpy(c->wts + c->wt_cols[n], wts, nz * sizeof(wts[0]));
-	memcpy(c->wt_inds + c->wt_cols[n], ind, nz * sizeof(ind[0]));
-	c->wt_cols[n+1] = c->wt_cols[n] + nz;
+	memcpy(c->wts + n * dim, wts, dim * sizeof(*c->wts));
 	c->vals[n] = val;
-	c->names[n] = xstrdup(name);
 	c->n = n + 1;
 }
 
-static void constr_add_set(struct recv_fit_constr *c, size_t i, double val)
+static void constr_add_set(struct recv_fit_constr *c, size_t dim, size_t i, double val)
 {
 	assert(c);
+	assert(i < dim);
 	assert(isfinite(val));
 
-	const char *fmt = "Set(%zu,%g)";
-	char buf;
-	size_t len = snprintf(&buf, 1, fmt, i + 1, val);
-	char *name = xmalloc((len + 1) * sizeof(char));
-	snprintf(name, len + 1, fmt, i + 1, val);
-
-	constr_grow(c);
-	constr_grow_nz(c, 1);
+	constr_grow(c, dim);
 
 	size_t n = c->n;
-	c->wts[c->wt_cols[n]] = 1.0;
-	c->wt_inds[c->wt_cols[n]] = i;
-	c->wt_cols[n+1] = c->wt_cols[n] + 1;
+	memset(c->wts + n * dim, 0, dim * sizeof(*c->wts));
+	c->wts[i + n * dim] = 1.0;
 	c->vals[n] = val;
-	c->names[n] = name;
 	c->n = n + 1;
 }
 
-static void constr_add_eq(struct recv_fit_constr *c, size_t i1, size_t i2)
+static void constr_add_eq(struct recv_fit_constr *c, size_t dim, size_t i1, size_t i2)
 {
 	assert(c);
 	assert(i1 != i2);
+	assert(i1 < dim);
+	assert(i2 < dim);
 
-	const char *fmt = "Eq(%zu,%zu)";
-	char buf;
-	size_t len = snprintf(&buf, 1, fmt, i1 + 1, i2 + 1);
-	char *name = xmalloc((len + 1) * sizeof(char));
-	snprintf(name, len + 1, fmt, i1 + 1, i2 + 1);
-
-	constr_grow(c);
-	constr_grow_nz(c, 2);
+	constr_grow(c, dim);
 
 	size_t n = c->n;
-	c->wts[c->wt_cols[n]] = +1.0;
-	c->wt_inds[c->wt_cols[n]] = i1;
-	c->wts[c->wt_cols[n] + 1] = -1.0;
-	c->wt_inds[c->wt_cols[n]] = i2;
-	c->wt_cols[n+1] = c->wt_cols[n] + 2;
+	memset(c->wts + n * dim, 0, dim * sizeof(*c->wts));
+	c->wts[i1 + n * dim] = +1.0;
+	c->wts[i2 + n * dim] = -1.0;
 	c->vals[n] = 0.0;
-	c->names[n] = name;
 	c->n = n + 1;
 }
 
-static void constr_get(const struct recv_fit_constr *c, size_t i,
-		       const double **weightsp, const size_t **indp,
-		       size_t *nzp, double *valp, const char **namep)
+static void constr_get(const struct recv_fit_constr *c, size_t dim, size_t i,
+		       const double **weightsp, double *valp)
 {
 	assert(i < constr_count(c));
 
-	const double *wts = c->wts + c->wt_cols[i];
-	const size_t *ind = c->wt_inds + c->wt_cols[i];
-	size_t nz = c->wt_cols[i+1] - c->wt_cols[i];
+	const double *wts = c->wts + i * dim;
 	double val = c->vals[i];
-	const char *name = c->names[i];
 
 	if (weightsp)
 		*weightsp = wts;
-	if (indp)
-		*indp = ind;
-	if (nzp)
-		*nzp = nz;
 	if (valp)
 		*valp = val;
-	if (namep)
-		*namep = name;
-
 }
 
 static void resid_init(struct recv_fit_resid *resid, const struct frame *f,
@@ -298,21 +229,23 @@ static void resid_set(struct recv_fit_resid *resid,
 	size_t dim = recv_model_dim(m);
 	size_t ne = constr_count(ce);
 
+	params_clear(&resid->params);
+	if (!dim)
+		return;
+
 	/* r1 is the dual residual: grad(f) + ce * nu,
 	 *   where grad(f) = grad(nll)
 	 *                 = -(score)
 	 */
-	params_clear(&resid->params);
 	double df = (double)recv_loglik_count(ll);
 	recv_loglik_axpy_score(-1.0/df, ll, &resid->params.coefs);
-
-	sblas_dcscmv(BLAS_NOTRANS, dim, ne, 1.0, ce->wts, ce->wt_inds,
-		     ce->wt_cols, resid->params.duals, 1.0, resid->params.coefs.all);
+	blas_dgemv(BLAS_NOTRANS, dim, ne, 1.0, ce->wts, dim,
+		   resid->params.duals, 1, 1.0, resid->params.coefs.all, 1);
 
 	// r2 is the primal residual: ce' * x - be
 	blas_dcopy(ne, ce->vals, 1, resid->params.duals, 1);
-	sblas_dcscmv(BLAS_TRANS, dim, ne, 1.0, ce->wts, ce->wt_inds,
-		     ce->wt_cols, params->coefs.all, -1.0, resid->params.duals);
+	blas_dgemv(BLAS_NOTRANS, dim, ne, 1.0, ce->wts, dim,
+		   params->coefs.all, 1, -1.0, resid->params.duals, 1);
 
 	// compute ||r||^2
 	double norm = blas_dnrm2(dim + ne, resid->params.all, 1);
@@ -489,8 +422,8 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		}
 
 		// k12
-		sblas_dcscsctr(BLAS_TRANS, ce->n, ce->wts, ce->wt_inds,
-			       ce->wt_cols, kkt->matrix + dim, n);
+		if (ne)
+			lapack_dlacpy(LA_COPY_ALL, dim, ne, ce->wts, dim, kkt->matrix + dim, n);
 	} else {
 		for (i = 0; i < dim; i++) {
 			size_t rowlen = i + 1;
@@ -501,8 +434,8 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		}
 
 		// k21
-		sblas_dcscsctr(BLAS_NOTRANS, ce->n, ce->wts, ce->wt_inds,
-			       ce->wt_cols, kkt->matrix + dim * n, n);
+		if (ne)
+			matrix_dtrans(dim, ne, ce->wts, dim, kkt->matrix + dim * n, n);
 	}
 
 	kkt->factored = 0;
@@ -773,10 +706,20 @@ size_t recv_fit_constr_count(const struct recv_fit *fit)
 }
 
 void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
-			 const double **weightsp, const size_t **indp,
-			 size_t *nzp, double *valp, const char **namep)
+			 const double **weightsp, double *valp)
 {
-	constr_get(&fit->constr, i, weightsp, indp, nzp, valp, namep);
+	size_t dim = recv_model_dim(&fit->model);
+	constr_get(&fit->constr, dim, i, weightsp, valp);
+}
+
+const double *recv_fit_constrs(const struct recv_fit *fit)
+{
+	return fit->constr.wts;
+}
+
+const double *recv_fit_constr_vals(const struct recv_fit *fit)
+{
+	return fit->constr.vals;
 }
 
 static void _recv_fit_add_constrs(struct recv_fit *fit)
@@ -792,18 +735,19 @@ static void _recv_fit_add_constrs(struct recv_fit *fit)
 }
 
 void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
-			 const size_t *ind, size_t nz, double val,
-			 const char *name)
+			 double val)
 {
-	constr_add(&fit->constr, weights, ind, nz, val, name);
+	size_t dim = recv_model_dim(&fit->model);
+	constr_add(&fit->constr, dim, weights, val);
 	_recv_fit_add_constrs(fit);
 }
 
 void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, double val)
 {
 	assert(i < recv_model_dim(&fit->model));
-
-	constr_add_set(&fit->constr, i, val);
+	
+	size_t dim = recv_model_dim(&fit->model);
+	constr_add_set(&fit->constr, dim, i, val);
 	_recv_fit_add_constrs(fit);
 }
 
@@ -812,8 +756,9 @@ void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t i2)
 	assert(i1 < recv_model_dim(&fit->model));
 	assert(i2 < recv_model_dim(&fit->model));
 	assert(i1 != i2);
-	
-	constr_add_eq(&fit->constr, i1, i2);
+
+	size_t dim = recv_model_dim(&fit->model);
+	constr_add_eq(&fit->constr, dim, i1, i2);
 	_recv_fit_add_constrs(fit);
 }
 

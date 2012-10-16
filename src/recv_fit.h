@@ -44,11 +44,8 @@ enum recv_fit_task {
 
 struct recv_fit_constr {
 	double *wts;
-	size_t *wt_inds;
-	size_t *wt_cols;
 	double *vals;
-	char **names;
-	size_t n, nmax, wt_nzmax;
+	size_t n, nmax;
 };
 
 struct recv_fit_params {
@@ -126,11 +123,11 @@ void recv_fit_params_deinit(struct recv_fit_params *params);
 /* constraints */
 size_t recv_fit_constr_count(const struct recv_fit *fit);
 void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
-			 const double **weightsp, const size_t **indp,
-			 size_t *nzp, double *valp, const char **namep);
+			 const double **weightsp, double *valp);
+const double *recv_fit_constrs(const struct recv_fit *fit);
+const double *recv_fit_constr_vals(const struct recv_fit *fit);
 void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
-			 const size_t *ind, size_t nz, double val,
-			 const char *name);
+			 double val);
 void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, double val);
 void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t i2);
 //size_t recv_fit_add_constr_identify(struct recv_fit *fit);
