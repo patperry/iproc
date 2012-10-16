@@ -160,7 +160,6 @@ static void teardown_frame(void)
 #define SCORE			"score"
 #define INFORMATION		"information"
 #define RANK			"rank"
-#define CONSTRAINT_NAMES	"constraint_names"
 #define CONSTRAINTS		"constraints"
 #define CONSTRAINT_VALUES	"constraint_values"
 #define DUALS			"duals"
@@ -231,8 +230,6 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 
 	hsize_t ne = (hsize_t)recv_fit_constr_count(fit);
 	hsize_t dim = (hsize_t)recv_model_dim(m);
-	hsize_t one = 1;
-	//size_t i, n;
 
 	// intervals
 	{
@@ -250,9 +247,15 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 		status = H5LTmake_dataset(file_id, COEFFICIENTS, 1, &dim, H5T_NATIVE_DOUBLE, coefs->all);
 	}
 
-	// constraint_names
-	// constraints
-	// constraint_values
+	// constraints, constraint_values
+	{
+		hsize_t dims[2] = { dim, ne };
+		const double *wts = recv_fit_constrs(fit);
+		const double *vals = recv_fit_constr_vals(fit);
+
+		status = H5LTmake_dataset(file_id, CONSTRAINTS, 2, dims, H5T_NATIVE_DOUBLE, wts);
+		status = H5LTmake_dataset(file_id, CONSTRAINT_VALUES, 1, &ne, H5T_NATIVE_DOUBLE, vals);
+	}
 
 	// duals
 	{
@@ -263,7 +266,7 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 	// count
 	{
 		hsize_t count = recv_loglik_count(ll);
-		status = H5LTmake_dataset(file_id, COUNT, 1, &one, H5T_NATIVE_HSIZE, &count);
+		status = H5LTmake_dataset(file_id, COUNT, 0, NULL, H5T_NATIVE_HSIZE, &count);
 	}
 
 	// score
@@ -296,9 +299,9 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 		double dfresid = (double)(ntot - rank);
 		double dfnull = (double)ntot;
 
-		status = H5LTmake_dataset(file_id, RANK, 1, &one, H5T_NATIVE_HSIZE, &rank);
-		status = H5LTmake_dataset(file_id, DF_RESIDUAL, 1, &one, H5T_NATIVE_DOUBLE, &dfresid);
-		status = H5LTmake_dataset(file_id, DF_NULL, 1, &one, H5T_NATIVE_DOUBLE, &dfnull);
+		status = H5LTmake_dataset(file_id, RANK, 0, NULL, H5T_NATIVE_HSIZE, &rank);
+		status = H5LTmake_dataset(file_id, DF_RESIDUAL, 0, NULL, H5T_NATIVE_DOUBLE, &dfresid);
+		status = H5LTmake_dataset(file_id, DF_NULL, 0, NULL, H5T_NATIVE_DOUBLE, &dfnull);
 	}
 
 	// deviance, null_deviance
@@ -306,8 +309,8 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 		double dev = recv_fit_dev(fit);
 		double dev0 = recv_fit_dev0(fit);
 		
-		status = H5LTmake_dataset(file_id, DEVIANCE, 1, &one, H5T_NATIVE_DOUBLE, &dev);
-		status = H5LTmake_dataset(file_id, NULL_DEVIANCE, 1, &one, H5T_NATIVE_DOUBLE, &dev0);
+		status = H5LTmake_dataset(file_id, DEVIANCE, 0, NULL, H5T_NATIVE_DOUBLE, &dev);
+		status = H5LTmake_dataset(file_id, NULL_DEVIANCE, 0, NULL, H5T_NATIVE_DOUBLE, &dev0);
 	}
 
 
