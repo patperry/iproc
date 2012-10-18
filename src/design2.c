@@ -388,8 +388,8 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
 	v->rank = i->rank + j->rank;
-	memcpy(v->dims, i->dims, i->rank * sizeof(*v->dims));
-	memcpy(v->dims + i->rank, j->dims, j->rank * sizeof(*v->dims));
+	memcpy(v->dims, i->dims, i->rank * sizeof(v->dims[0]));
+	memcpy(v->dims + i->rank, j->dims, j->rank * sizeof(v->dims[0]));
 	v->size = sizei * sizej;
 	v->index = d->kvar_dim;
 
@@ -843,8 +843,8 @@ void prod2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	size_t size = u->size * v->size;
 
 	tv->var.rank = u->rank + v->rank;
-	memcpy(tv->var.dims, u->dims, u->rank * sizeof(*tv->var.dims));
-	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(*tv->var.dims));
+	memcpy(tv->var.dims, u->dims, u->rank * sizeof(tv->var.dims[0]));
+	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(tv->var.dims[0]));
 
 	struct prod2_udata *udata = xmalloc(sizeof(*udata));
 	udata->u = u;

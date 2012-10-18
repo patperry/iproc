@@ -102,6 +102,8 @@ const struct var2 *design2_var(const struct design2 *d, const char *name);
 
 /* traits */
 static inline size_t design2_trait_dim(const struct design2 *d);
+static inline size_t design2_trait_count(const struct design2 *d);
+static inline const struct var2 *design2_trait_var(const struct design2 *d, size_t k);
 const double *design2_all_traits(const struct design2 *d, size_t i);
 const double *design2_traits(const struct design2 *d, size_t i, size_t j);
 const double *design2_trait(const struct design2 *d, const struct var2 *v, size_t i, size_t j);
@@ -123,6 +125,8 @@ void design2_traits_axpy(double alpha, const struct design2 *d, size_t i, size_t
 
 /* tvars */
 static inline size_t design2_tvar_dim(const struct design2 *d);
+static inline size_t design2_tvar_count(const struct design2 *d);
+static inline const struct var2 *design2_tvar_var(const struct design2 *d, size_t k);
 static inline const double *design2_tvar(const struct design2 *d, const struct var2 *v, size_t i, size_t j);
 static inline const double *design2_tvars(const struct design2 *d, size_t i, size_t j);
 //const char *design2_tvar_name(const struct design2 *d, size_t k);
@@ -191,12 +195,32 @@ size_t design2_trait_dim(const struct design2 *d)
 	return d->ntrait;
 }
 
+size_t design2_trait_count(const struct design2 *d)
+{
+	return d->nkvar;
+}
+
+const struct var2 *design2_trait_var(const struct design2 *d, size_t k)
+{
+	assert(k < design2_trait_count(d));
+	return &d->kvars[k]->var;
+}
 
 size_t design2_tvar_dim(const struct design2 *d)
 {
 	return d->tvar_dim;
 }
 
+size_t design2_tvar_count(const struct design2 *d)
+{
+	return d->ntvar;
+}
+
+const struct var2 *design2_tvar_var(const struct design2 *d, size_t k)
+{
+	assert(k < design2_tvar_count(d));
+	return &d->tvars[k]->var;
+}
 
 const double *design2_tvar(const struct design2 *d, const struct var2 *v, size_t i, size_t j)
 {

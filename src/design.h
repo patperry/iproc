@@ -110,12 +110,11 @@ static inline void design_get_cohorts(const struct design *d,
 /* traits */
 static inline size_t design_trait_dim(const struct design *d);
 static inline size_t design_trait_count(const struct design *d);
-static inline const struct var * design_trait_var(const struct design *d, size_t i);
+static inline const struct var * design_trait_var(const struct design *d, size_t k);
 static inline const double *design_all_traits(const struct design *d);
 static inline const double *design_traits(const struct design *d, size_t i);
 static inline const double *design_trait(const struct design *d, const struct var *v, size_t i);
 
-const char *design_trait_name(const struct design *d, size_t k);
 const struct var *design_add_trait(struct design *d, const char *name, const double *x, const size_t *dims, size_t rank);
 void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num);
 
@@ -127,9 +126,10 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 
 /* tvars */
 static inline size_t design_tvar_dim(const struct design *d);
+static inline size_t design_tvar_count(const struct design *d);
+static inline const struct var * design_tvar_var(const struct design *d, size_t k);
 static inline const double *design_tvar(const struct design *d, const struct var *v, size_t i);
 static inline const double *design_tvars(const struct design *d, size_t i);
-const char *design_tvar_name(const struct design *d, size_t k);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
 static inline void design_tvars_get_all(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
@@ -220,10 +220,10 @@ size_t design_trait_count(const struct design *d)
 	return d->ntrait;
 }
 
-const struct var * design_trait_var(const struct design *d, size_t i)
+const struct var * design_trait_var(const struct design *d, size_t k)
 {
-	assert(i < design_trait_count(d));
-	return d->trait_vars[i];
+	assert(k < design_trait_count(d));
+	return d->trait_vars[k];
 }
 
 const double *design_all_traits(const struct design *d)
@@ -254,6 +254,16 @@ size_t design_tvar_dim(const struct design *d)
 	return d->tvar_dim;
 }
 
+size_t design_tvar_count(const struct design *d)
+{
+	return d->ntvar;
+}
+
+const struct var * design_tvar_var(const struct design *d, size_t k)
+{
+	assert(k <- design_tvar_count(d));
+	return &d->tvars[k]->var;
+}
 
 const double *design_tvar(const struct design *d, const struct var *v, size_t i)
 {

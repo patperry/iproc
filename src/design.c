@@ -196,13 +196,6 @@ static void design_traits_grow(struct design *d, size_t dntrait, size_t ddim)
 }
 
 
-const char *design_trait_name(const struct design *d, size_t j)
-{
-	assert(j < design_trait_dim(d));
-	return d->trait_vars[j]->name;
-}
-
-
 static void design_recompute_cohorts(struct design *d)
 {
 	size_t dim = design_trait_dim(d);
@@ -244,7 +237,7 @@ static struct var *design_trait_alloc(struct design *d, const char *name,
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
 	v->size = size;
-	memcpy(v->dims, dims, rank * sizeof(*v->dims));
+	memcpy(v->dims, dims, rank * sizeof(v->dims[0]));
 	v->rank = rank;
 	v->index = index;
 	
@@ -301,27 +294,6 @@ void design_add_traits(struct design *d, const char * const *names, const double
 
 	lapack_dlacpy(LA_COPY_ALL, num, n, x, num, d->traits + dim0, dim1);
 	design_recompute_cohorts(d);
-}
-
-
-const char *design_tvar_name(const struct design *d, size_t j)
-{
-	assert(j < design_tvar_dim(d));
-	
-	size_t i, n = d->ntvar;
-	
-	for (i = 0; i < n; i++) {
-		const struct tvar *tv = d->tvars[i];
-		const struct var *v = &tv->var;
-		
-		if (j < v->size)
-			return v->name;
-		
-		j -= v->size;
-	}
-	
-	assert(0);
-	return NULL;
 }
 
 
@@ -653,8 +625,8 @@ const struct var *design_add_prod(struct design *d, const char *name, const stru
 	size_t dims[VAR_RANK_MAX];
 	size_t i, n = design_count(d);
 
-	memcpy(dims, u->dims, u->rank * sizeof(*dims));
-	memcpy(dims + u->rank, v->dims, v->rank * sizeof(*dims));
+	memcpy(dims, u->dims, u->rank * sizeof(dims[0]));
+	memcpy(dims + u->rank, v->dims, v->rank * sizeof(dims[0]));
 
 	if (u->type == VAR_TYPE_TRAIT && v->type == VAR_TYPE_TRAIT) {
 		double *x = xcalloc(n * size, sizeof(double));
@@ -702,8 +674,8 @@ void prod_init(struct tvar *tv, struct design *d, va_list ap)
 	size_t size = u->size * v->size;
 
 	tv->var.rank = u->rank + v->rank;
-	memcpy(tv->var.dims, u->dims, u->rank * sizeof(*tv->var.dims));
-	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(*tv->var.dims));
+	memcpy(tv->var.dims, u->dims, u->rank * sizeof(tv->var.dims[0]));
+	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(tv->var.dims[0]));
 
 	struct prod_udata *udata = xmalloc(sizeof(*udata));
 	udata->u = u;
