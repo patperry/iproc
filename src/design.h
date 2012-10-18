@@ -5,6 +5,7 @@
 #include "sblas.h"
 #include <stdarg.h>
 
+#define VAR_RANK_MAX 8
 
 struct design {
 	struct frame *frame;
@@ -40,7 +41,9 @@ struct var {
 	struct design *design;
 	enum var_type type;
 	const char *name;
-	size_t dim;
+	size_t dims[VAR_RANK_MAX];
+	size_t rank;
+	size_t size;
 	size_t index;
 };
 
@@ -113,7 +116,7 @@ static inline const double *design_traits(const struct design *d, size_t i);
 static inline const double *design_trait(const struct design *d, const struct var *v, size_t i);
 
 const char *design_trait_name(const struct design *d, size_t k);
-const struct var *design_add_trait(struct design *d, const char *name, const double *x, size_t dim);
+const struct var *design_add_trait(struct design *d, const char *name, const double *x, const size_t *dims, size_t rank);
 void design_add_traits(struct design *d, const char * const *names, const double *x, size_t num);
 
 void design_traits_mul(double alpha, const struct design *d,

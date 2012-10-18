@@ -67,7 +67,8 @@ static void nrecv_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	struct frame *f = design2_frame(d);
 	size_t n = frame_interval_count(f);
 
-	tv->var.dim = n;
+	tv->var.rank = 1;
+	tv->var.dims[0] = n;
 	tv->udata = NULL;
 	
 	frame_add_observer(f, tv, &nrecv_frame_callbacks);

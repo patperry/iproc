@@ -65,7 +65,8 @@ static void nrecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 	struct frame *f = design_frame(d);
 	size_t n = frame_interval_count(f);
 
-	tv->var.dim = n;
+	tv->var.rank = 1;
+	tv->var.dims[0] = n;
 	tv->udata = NULL;
 	
 	frame_add_observer(f, tv, &nrecvtot_frame_callbacks);

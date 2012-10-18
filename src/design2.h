@@ -3,6 +3,7 @@
 
 #include "blas.h"
 #include "sblas.h"
+#include "design.h"
 #include <stdarg.h>
 
 
@@ -40,7 +41,9 @@ struct var2 {
 	struct design2 *design;
 	enum var_type type;
 	const char *name;
-	size_t dim;
+	size_t dims[VAR_RANK_MAX];
+	size_t rank;
+	size_t size;
 	size_t index;
 };
 

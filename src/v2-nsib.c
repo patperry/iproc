@@ -187,7 +187,9 @@ static void nsib_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	struct frame *f = design2_frame(d);
 	size_t n = frame_interval_count(f);
 
-	tv->var.dim = n * n;
+	tv->var.rank = 2;
+	tv->var.dims[0] = n;
+	tv->var.dims[1] = n;
 	tv->udata = NULL;
 
 	frame_add_observer(f, tv, &nsib_frame_callbacks);

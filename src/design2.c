@@ -16,6 +16,7 @@
 #include "vars.h"
 #include "design2.h"
 
+static size_t compute_size(const size_t *dims, size_t rank);
 
 static void prod2_init(struct tvar2 *tv, struct design2 *d, va_list ap);
 static void prod2_deinit(struct tvar2 *tv, struct design2 *d);
@@ -378,32 +379,36 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 
 	size_t m = d->count1;
 	size_t n = d->count2;
-	size_t dimi = i->dim;
-	size_t dimj = j->dim;
+	size_t sizei = i->size;
+	size_t sizej = j->size;
 	struct kvar2 *kv = xmalloc(sizeof(*kv));
 	struct var2 *v = &kv->var;
 
 	v->design = d;
 	v->type = VAR_TYPE_TRAIT;
 	v->name = xstrdup(name);
+	v->rank = i->rank + j->rank;
+	memcpy(v->dims, i->dims, i->rank * sizeof(*v->dims));
+	memcpy(v->dims + i->rank, j->dims, j->rank * sizeof(*v->dims));
+	v->size = sizei * sizej;
 	v->index = d->kvar_dim;
-	v->dim = dimi * dimj;
 
-	kv->dimi = dimi;
-	kv->xi = xmalloc(dimi * m * sizeof(*kv->xi));
-	if (dimi)
-		lapack_dlacpy(LA_COPY_ALL, dimi, m, design_all_traits(i->design) + i->index, dimi, kv->xi, dimi);
 
-	kv->dimj = dimj;
-	kv->xj = xmalloc(dimj * n * sizeof(*kv->xj));
-	if (dimj)
-		lapack_dlacpy(LA_COPY_ALL, dimj, n, design_all_traits(j->design) + j->index, dimj, kv->xj, dimj);
+	kv->dimi = sizei;
+	kv->xi = xmalloc(sizei * m * sizeof(*kv->xi));
+	if (sizei)
+		lapack_dlacpy(LA_COPY_ALL, sizei, m, design_all_traits(i->design) + i->index, sizei, kv->xi, sizei);
+
+	kv->dimj = sizej;
+	kv->xj = xmalloc(sizej * n * sizeof(*kv->xj));
+	if (sizej)
+		lapack_dlacpy(LA_COPY_ALL, sizej, n, design_all_traits(j->design) + j->index, sizej, kv->xj, sizej);
 
 	size_t index = d->nkvar;
 	design2_grow_kvars(d, 1);
 	d->kvars[index] = kv;
 	d->nkvar++;
-	d->kvar_dim += v->dim;
+	d->kvar_dim += v->size;
 
 
 	recompute_traits(d);
@@ -452,10 +457,10 @@ const char *design2_tvar_name(const struct design2 *d, size_t j)
 		const struct tvar2 *tv = d->tvars[i];
 		const struct var2 *v = &tv->var;
 		
-		if (j < v->dim)
+		if (j < v->size)
 			return v->name;
 		
-		j -= v->dim;
+		j -= v->size;
 	}
 	
 	assert(0);
@@ -486,21 +491,23 @@ const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const s
 	v->type = VAR_TYPE_TVAR;
 	v->name = xstrdup(name);
 	v->index = d->tvar_dim;
-	v->dim = 0;
+	v->size = 0;
 	tv->type = type;
 	tv->udata = NULL;
 
 	va_start(ap, type);
 	type->init(tv, d, ap);
 	va_end(ap);
-	
+
 	assert(tv->type == type);
+	assert(v->size == 0);
 	assert(v->index == d->tvar_dim);
+	v->size = compute_size(v->dims, v->rank);
 	
 	size_t index = d->ntvar;
 	design2_grow_tvars(d, 1);
 	d->tvars[index] = tv;
-	d->tvar_dim += v->dim;
+	d->tvar_dim += v->size;
 	d->ind_buf = xrealloc(d->ind_buf, d->tvar_dim * sizeof(*d->ind_buf));
 	d->ntvar = index + 1;
 	
@@ -712,8 +719,8 @@ static void design2_notify_update(struct design2 *d, const struct var2 *v,
 			d->ind_buf[iz] = ind[iz] + index;
 		}
 	} else {
-		assert(nz == v->dim);
-		for (iz = 0; iz < v->dim; iz++) {
+		assert(nz == v->size);
+		for (iz = 0; iz < v->size; iz++) {
 			d->ind_buf[iz] = iz + index;
 		}
 	}
@@ -744,8 +751,8 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 	if (ind) {
 		sblas_daxpyi(nz, 1.0, delta, ind, dx);
 	} else {
-		assert(nz == v->dim);
-		blas_daxpy(v->dim, 1.0, delta, 1, dx, 1);
+		assert(nz == v->size);
+		blas_daxpy(v->size, 1.0, delta, 1, dx, 1);
 	}
 	
 	size_t io, no = d->nobs;
@@ -807,8 +814,8 @@ const struct var2 *design2_add_prod(struct design2 *d, const char *name, const s
 {
 	assert(u->design == d);
 	assert(v->design == d);
-	assert(u->dim > 0);
-	assert(v->dim > 0);
+	assert(u->size > 0);
+	assert(v->size > 0);
 
 	const struct var2 *res = NULL;
 
@@ -833,15 +840,17 @@ void prod2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 {
 	const struct var2 *u = va_arg(ap, const struct var2*);
 	const struct var2 *v = va_arg(ap, const struct var2*);
-	size_t dim = u->dim * v->dim;
+	size_t size = u->size * v->size;
+
+	tv->var.rank = u->rank + v->rank;
+	memcpy(tv->var.dims, u->dims, u->rank * sizeof(*tv->var.dims));
+	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(*tv->var.dims));
 
 	struct prod2_udata *udata = xmalloc(sizeof(*udata));
 	udata->u = u;
 	udata->v = v;
-	udata->delta = xmalloc(dim * sizeof(*udata->delta));
-	udata->ind = xmalloc(dim * sizeof(*udata->ind));
-
-	tv->var.dim = dim;
+	udata->delta = xmalloc(size * sizeof(*udata->delta));
+	udata->ind = xmalloc(size * sizeof(*udata->ind));
 	tv->udata = udata;
 
 	design2_add_observer(d, tv, &prod2_design_callbacks);
@@ -863,7 +872,7 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 		      size_t j, const double *delta, const size_t *ind, size_t nz)
 {
 	assert(ind || !nz);
-	assert(nz <= v->dim);
+	assert(nz <= v->size);
 
 	const struct tvar2 *tv = udata;
 	const struct prod2_udata *udata0 = tv->udata;
@@ -885,7 +894,7 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 			y = design2_tvar(d, udata0->v, i, j);
 		}
 
-		size_t iy, ny = udata0->v->dim;
+		size_t iy, ny = udata0->v->size;
 
 		if (!y || !ny)
 			return;
@@ -912,8 +921,8 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 			x = design2_tvar(d, udata0->u, i, j);
 		}
 
-		size_t ix, nx = udata0->u->dim;
-		size_t ny = udata0->v->dim;
+		size_t ix, nx = udata0->u->size;
+		size_t ny = udata0->v->size;
 
 		if (!x || !nx)
 			return;
@@ -934,4 +943,16 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 	}
 
 	design2_update(d, &tv->var, i, j, vdelta, vind, vnz);
+}
+
+size_t compute_size(const size_t *dims, size_t rank)
+{
+	size_t size = 1;
+	size_t i;
+
+	for (i = 0; i < rank; i++) {
+		size *= dims[i];
+	}
+
+	return size;
 }

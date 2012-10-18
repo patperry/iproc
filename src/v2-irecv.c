@@ -40,7 +40,7 @@ static void irecv_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	
 	struct frame *f = design2_frame(d);
 	
-	tv->var.dim = 1;
+	tv->var.rank = 0;
 	tv->udata = NULL;
 
 	frame_add_observer(f, tv, &irecv_frame_callbacks);

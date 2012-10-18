@@ -39,7 +39,7 @@ static void irecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 	
 	struct frame *f = design_frame(d);
 	
-	tv->var.dim = 1;
+	tv->var.rank = 0;
 	tv->udata = NULL;
 
 	frame_add_observer(f, tv, &irecvtot_frame_callbacks);
