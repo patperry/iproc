@@ -111,10 +111,10 @@ static void setup_frame(void) {
 	//design2_add_tvar(d, "ISib", VAR2_ISIB);
 	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
 
-	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
-	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
-	//design2_add_tvar(d, "NSib", VAR2_NSIB);
-	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
+	design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+	design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	design2_add_tvar(d, "NSib", VAR2_NSIB);
+	design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 
 	for (i = 0; i < design_trait_count(s); i++) {
@@ -171,22 +171,141 @@ static void teardown_frame(void)
 #define OBSERVED_COUNTS		"observed_counts"
 
 
+static void indices_clear(size_t *indices, size_t rank)
+{
+	memset(indices, 0, rank * sizeof(indices[0]));
+}
+
+static int indices_advance(size_t *indices, const  size_t *dims, size_t rank)
+{
+	if (!rank)
+		return 0;
+
+	size_t r = rank;
+
+	indices[r - 1]++;
+	while (indices[r - 1] == dims[r-1]) {
+		indices[r - 1] = 0;
+		r--;
+
+		if (r > 0) {
+			indices[r - 1]++;
+		} else {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+static int indices_sprintf(char *str, const char *fmt, const size_t *indices, size_t rank)
+{
+	int len = 0;
+	size_t k;
+
+	if (rank > 0) {
+		str[len++] = '[';
+		len += sprintf(str + len, fmt, indices[0] + 1);
+	}
+
+	for (k = 1; k < rank; k++) {
+		str[len++] = ',';
+		len += sprintf(str + len, fmt, indices[k] + 1);
+	}
+
+	if (rank > 0) {
+		str[len++] = ']';
+	}
+
+	str[len] = '\0';
+	return len;
+}
+
+
 static const char **alloc_varnames(const struct frame *f, size_t *pn)
 {
+	char namebuf[2048];
+	size_t indices[VAR_RANK_MAX];
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
 	size_t dimr = design_dim(r);
 	size_t dimd = design2_dim(d);
-	size_t i, dim = dimr + dimd;
+	size_t index = 0, dim = dimr + dimd;
+	size_t k, n;
+	size_t i;
 
 	const char **res = xmalloc(dim * sizeof(*res));
-	for (i = 0; i < dim; i++) {
-		res[i] = "";
+
+	n = design_trait_count(r);
+	for (k = 0; k < n; k++) {
+		const struct var *v = design_trait_var(r, k);
+		size_t prefix = strlen(v->name);
+		memcpy(namebuf, v->name, prefix);
+
+		indices_clear(indices, v->rank);
+		for (i = 0; i < v->size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
+			indices_advance(indices, v->dims, v->rank);
+			res[index++] = xstrdup(namebuf);
+		}
 	}
+
+	n = design_tvar_count(r);
+	for (k = 0; k < n; k++) {
+		const struct var *v = design_tvar_var(r, k);
+		size_t prefix = strlen(v->name);
+		memcpy(namebuf, v->name, prefix);
+
+		indices_clear(indices, v->rank);
+		for (i = 0; i < v->size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
+			indices_advance(indices, v->dims, v->rank);
+			res[index++] = xstrdup(namebuf);
+		}
+	}
+
+	n = design2_trait_count(d);
+	for (k = 0; k < n; k++) {
+		const struct var2 *v = design2_trait_var(d, k);
+		size_t prefix = strlen(v->name);
+		memcpy(namebuf, v->name, prefix);
+
+		indices_clear(indices, v->rank);
+		for (i = 0; i < v->size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
+			indices_advance(indices, v->dims, v->rank);
+			res[index++] = xstrdup(namebuf);
+		}
+	}
+
+	n = design2_tvar_count(d);
+	for (k = 0; k < n; k++) {
+		const struct var2 *v = design2_tvar_var(d, k);
+		size_t prefix = strlen(v->name);
+		memcpy(namebuf, v->name, prefix);
+
+		indices_clear(indices, v->rank);
+		for (i = 0; i < v->size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
+			indices_advance(indices, v->dims, v->rank);
+			res[index++] = xstrdup(namebuf);
+		}
+	}
+	assert(index == dim);
 
 	*pn = dim;
 
 	return res;
+}
+
+static void free_varnames(const char **varnames, size_t nvarnames)
+{
+	size_t i;
+
+	for (i = 0; i < nvarnames; i++) {
+		free((char *)(varnames[i]));
+	}
+	free(varnames);
 }
 
 
@@ -215,7 +334,7 @@ static herr_t output_variate_names(hid_t loc_id, const struct frame *f)
 	status = H5Dclose(dataset_id);
 	status = H5Sclose(dataspace_id);
 
-	free(varnames);
+	free_varnames(varnames, nvarnames);
 
 	return status;
 }
