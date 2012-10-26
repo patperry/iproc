@@ -240,11 +240,11 @@ static void resid_set(struct recv_fit_resid *resid,
 	double df = (double)recv_loglik_count(ll);
 	recv_loglik_axpy_score(-1.0/df, ll, &resid->params.coefs);
 	blas_dgemv(BLAS_NOTRANS, dim, ne, 1.0, ce->wts, dim,
-		   resid->params.duals, 1, 1.0, resid->params.coefs.all, 1);
+		   params->duals, 1, 1.0, resid->params.coefs.all, 1);
 
 	// r2 is the primal residual: ce' * x - be
 	blas_dcopy(ne, ce->vals, 1, resid->params.duals, 1);
-	blas_dgemv(BLAS_NOTRANS, dim, ne, 1.0, ce->wts, dim,
+	blas_dgemv(BLAS_TRANS, dim, ne, 1.0, ce->wts, dim,
 		   params->coefs.all, 1, -1.0, resid->params.duals, 1);
 
 	// compute ||r||^2
@@ -366,9 +366,9 @@ static void kkt_reinit(struct recv_fit_kkt *kkt, const struct frame *f, size_t n
 	size_t lwork = lapack_dsysv_lwork(n);
 
 	kkt->factored = 0;
-	kkt->matrix = xrealloc(kkt->matrix, n * n * sizeof(double));
-	kkt->ldl_ipiv = xrealloc(kkt->ldl_ipiv, n * sizeof(ptrdiff_t));
-	kkt->ldl_work = xrealloc(kkt->ldl_work, lwork * sizeof(ptrdiff_t));
+	kkt->matrix = xrealloc(kkt->matrix, n * n * sizeof(kkt->matrix[0]));
+	kkt->ldl_ipiv = xrealloc(kkt->ldl_ipiv, n * sizeof(kkt->ldl_ipiv[0]));
+	kkt->ldl_work = xrealloc(kkt->ldl_work, lwork * sizeof(kkt->ldl_work[0]));
 	kkt->ldl_lwork = lwork;
 }
 
@@ -403,10 +403,10 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 	size_t ne = constr_count(ce);
 	size_t n = dim + ne;
 
-	memset(kkt->matrix, 0, n * n * sizeof(*kkt->matrix));
+	memset(kkt->matrix, 0, n * n * sizeof(kkt->matrix[0]));
 
 	// k11
-	memset(kkt->imat_buf, 0, dim * (dim + 1) / 2 * sizeof(*kkt->imat_buf));
+	memset(kkt->imat_buf, 0, dim * (dim + 1) / 2 * sizeof(kkt->imat_buf[0]));
 	double df = (double)recv_loglik_count(ll);
 	recv_loglik_axpy_imat(1.0/df, ll, kkt->imat_buf);
 	double *dst = kkt->matrix;
@@ -416,26 +416,27 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 		for (i = 0; i < dim; i++) {
 			size_t rowlen = dim - i;
 			
-			memcpy(dst + i, src, rowlen * sizeof(*dst));
+			memcpy(dst + i, src, rowlen * sizeof(dst[0]));
 			dst += n;
 			src += rowlen;
 		}
 
 		// k12
 		if (ne)
-			lapack_dlacpy(LA_COPY_ALL, dim, ne, ce->wts, dim, kkt->matrix + dim, n);
+			matrix_dtrans(dim, ne, ce->wts, dim, kkt->matrix + dim, n);
 	} else {
 		for (i = 0; i < dim; i++) {
 			size_t rowlen = i + 1;
 
-			memcpy(dst, src, rowlen * sizeof(*dst));
+			memcpy(dst, src, rowlen * sizeof(dst[0]));
 			dst += n;
 			src += rowlen;
 		}
 
 		// k21
 		if (ne)
-			matrix_dtrans(dim, ne, ce->wts, dim, kkt->matrix + dim * n, n);
+			lapack_dlacpy(LA_COPY_ALL, dim, ne, ce->wts, dim, kkt->matrix + dim * n, n);
+
 	}
 
 	kkt->factored = 0;
@@ -761,6 +762,154 @@ void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t i2)
 	constr_add_eq(&fit->constr, dim, i1, i2);
 	_recv_fit_add_constrs(fit);
 }
+
+
+size_t recv_fit_add_constr_identify(struct recv_fit *fit)
+{
+	size_t iadd, nadd = 0;
+	const struct recv_loglik *ll = &fit->cur->loglik;
+	const struct recv_model *m = recv_loglik_model(ll);
+	size_t i, n = recv_model_dim(m);
+
+	if (n == 0)
+		goto out;
+
+	// copy the information matrix at 0
+	double *imat = xmalloc(n * n * sizeof(imat[0]));
+	double *imat_buf = xmalloc(n * (n + 1) / 2 * sizeof(imat_buf[0]));
+	double *scale = xmalloc(n * sizeof(scale[0]));
+	memset(imat, 0, n * n * sizeof(imat[0]));
+	memset(imat_buf, 0, n * (n + 1) / 2 * sizeof(imat_buf[0]));
+
+	double df = (double)recv_loglik_count(ll);
+	recv_loglik_axpy_imat(1.0/df, ll, imat_buf);
+
+	double *dst = imat;
+	const double *src = imat_buf;
+
+	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
+		for (i = 0; i < n; i++) {
+			size_t rowlen = n - i;
+
+			memcpy(dst + i, src, rowlen * sizeof(*dst));
+			scale[i] = 1.0 / (dst[i] < fit->ctrl.vartol ? 1.0 : sqrt(dst[i]));
+
+			dst += n;
+			src += rowlen;
+		}
+	} else {
+		for (i = 0; i < n; i++) {
+			size_t rowlen = i + 1;
+
+			memcpy(dst, src, rowlen * sizeof(*dst));
+			scale[i] = 1.0 / (dst[i] < fit->ctrl.vartol ? 1.0 : sqrt(dst[i]));
+
+			dst += n;
+			src += rowlen;
+		}
+	}
+
+	// scale the information matrix
+	for (i = 0; i < n; i++) {
+		blas_dscal(n, scale[i], imat + i * n, 1); // columns
+	}
+	for (i = 0; i < n; i++) {
+		blas_dscal(n, scale[i], imat + i, n); // rows
+	}
+
+
+	// compute the eigendecomposition of the information matrix
+	enum lapack_eigjob jobz = LA_EIG_VEC;
+	enum blas_uplo uplo = MLOGIT_COV_UPLO == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
+	size_t lwork, liwork;
+	lwork = lapack_dsyevd_lwork(jobz, n, &liwork);
+	double *work = xmalloc(lwork * sizeof(work[0]));
+	ptrdiff_t *iwork = xmalloc(liwork * sizeof(iwork[0]));
+	double *evals = xmalloc(n * sizeof(evals[0]));
+	ptrdiff_t info = lapack_dsyevd(jobz, uplo, n, imat, n, evals, work, lwork, iwork, liwork);
+	assert(info == 0);
+
+	// change back to the original scale
+	for (i = 0; i < n; i++) {
+		blas_dscal(n, scale[i], imat + i, n);
+	}
+
+	// compute the dimension of the nullspace
+	size_t nulldim;
+	for (nulldim = 0; nulldim < n; nulldim++) {
+		if (evals[nulldim] > fit->ctrl.eigtol)
+			break;
+	}
+	// at this point, the first nulldim columns of imat store its nullspace
+
+	if (nulldim == 0)
+		goto cleanup_eig_imat;
+
+
+	// compute the projection of the constraints onto the nullspace
+	const struct recv_fit_constr *ce = &fit->constr;
+	size_t ne = constr_count(ce);
+
+	if (ne > 0) {
+		double *proj = xmalloc(nulldim * ne * sizeof(proj[0]));
+		blas_dgemm(BLAS_TRANS, BLAS_NOTRANS, nulldim, ne, n, 1.0, imat, n, ce->wts, n, 0.0, proj, nulldim);
+
+		// compute the nullspace of the projection
+		double *s = xmalloc(MIN(ne, nulldim) * sizeof(s[0]));
+		double *u = xmalloc(nulldim * nulldim * sizeof(u[0]));
+		double *vt = xmalloc(ne * ne * sizeof(vt[0]));
+
+		enum lapack_svdjob svd_jobz = LA_SVD_ALL;
+		lwork = lapack_dgesdd_lwork(svd_jobz, nulldim, ne, &liwork);
+		work = xrealloc(work, lwork * sizeof(work[0]));
+		iwork = xrealloc(iwork, liwork * sizeof(iwork[0]));
+		ptrdiff_t svd_info = lapack_dgesdd(svd_jobz, nulldim, ne, proj, nulldim, s, u, nulldim, vt, ne, work, lwork, iwork);
+		assert(svd_info == 0);
+
+		// compute the rank
+		size_t rank, maxrank = MIN(ne, nulldim);
+		for (rank = maxrank; rank > 0; rank--) {
+			if (s[rank - 1] > fit->ctrl.svtol * fabs(s[maxrank - 1]))
+				break;
+		}
+
+		// at this point the last nulldim - rank columns of u hold the coefficients of
+		// the orthogonal complement to the constraint matrix in the nullspace
+
+
+		// compute a basis for the orthogonal complement; these are the consstraints
+		nadd = nulldim - rank;
+		double *compl = xmalloc(n * nadd * sizeof(compl[0]));
+		blas_dgemm(BLAS_NOTRANS, BLAS_NOTRANS, n, nadd, nulldim, 1.0, imat, n, u + rank, nulldim, 0.0, compl, n);
+
+		for (iadd = 0; iadd < nadd; iadd++) {
+			constr_add(&fit->constr, n, compl + iadd * n, 0.0);
+		}
+
+
+		free(vt);
+		free(u);
+		free(s);
+	} else {
+		// add the nullspace of the information matrix as constraints
+		nadd = nulldim;
+		for (iadd = 0; iadd < nadd; iadd++) {
+			constr_add(&fit->constr, n, imat + iadd * n, 0.0);
+		}
+	}
+	_recv_fit_add_constrs(fit);
+
+cleanup_eig_imat:
+	free(evals);
+	free(iwork);
+	free(work);
+	free(scale);
+	free(imat_buf);
+	free(imat);
+out:
+	return nadd;
+}
+
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 {
