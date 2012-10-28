@@ -152,13 +152,10 @@ static void setup_frame(void) {
 
 static void add_constraints(struct recv_fit *fit)
 {
-
-	recv_fit_add_constr_set(fit, 0, 1.0);
-
 	/* add constraints to make the model identifiable (TODO/not implemented) */
 	size_t nadd = recv_fit_add_constr_identify(fit);
 	if (nadd > 0)
-		fprintf(stderr, "Adding %zd constraints to make parameters identifiable\n", nadd);
+		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n", nadd, nadd == 1 ? "constraint" : "constraints");
 }
 
 static void teardown_frame(void)
