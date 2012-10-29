@@ -397,12 +397,17 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 	kv->dimi = sizei;
 	kv->xi = xmalloc(sizei * m * sizeof(*kv->xi));
 	if (sizei)
-		lapack_dlacpy(LA_COPY_ALL, sizei, m, design_all_traits(i->design) + i->index, sizei, kv->xi, sizei);
+		lapack_dlacpy(LA_COPY_ALL, sizei, m,
+			      design_all_traits(i->design) + i->index,
+			      design_trait_count(i->design),
+			      kv->xi, sizei);
 
 	kv->dimj = sizej;
 	kv->xj = xmalloc(sizej * n * sizeof(*kv->xj));
 	if (sizej)
-		lapack_dlacpy(LA_COPY_ALL, sizej, n, design_all_traits(j->design) + j->index, sizej, kv->xj, sizej);
+		lapack_dlacpy(LA_COPY_ALL, sizej, n,
+			      design_all_traits(j->design) + j->index,
+			      design_trait_count(j->design), kv->xj, sizej);
 
 	size_t index = d->nkvar;
 	design2_grow_kvars(d, 1);
