@@ -89,6 +89,8 @@
 		2235DC0A13C7BBA500053BAA /* libjson.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2235DBFC13C7ACE100053BAA /* libjson.dylib */; };
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223BFE4813AA98F300835B8F /* vars.h in Headers */ = {isa = PBXBuildFile; fileRef = 223BFE4613AA98F200835B8F /* vars.h */; };
+		223E4116164060C100FAB1C7 /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 223E4114164060C100FAB1C7 /* strata.c */; };
+		223E4117164060C100FAB1C7 /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 223E4115164060C100FAB1C7 /* strata.h */; };
 		224DDDFD15F0EAB500C0CA88 /* recv_boot.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDDFB15F0EAB500C0CA88 /* recv_boot.c */; };
 		224DDDFE15F0EAB500C0CA88 /* recv_boot.h in Headers */ = {isa = PBXBuildFile; fileRef = 224DDDFC15F0EAB500C0CA88 /* recv_boot.h */; };
 		224DDE0215F0EC6F00C0CA88 /* recv_resid.c in Sources */ = {isa = PBXBuildFile; fileRef = 224DDE0015F0EC6F00C0CA88 /* recv_resid.c */; };
@@ -171,8 +173,6 @@
 		22D4788A13AC4C2400FF46CD /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22D4788B13AC4C2400FF46CD /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22D4788C13AC4C2400FF46CD /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
-		22DB0A8213CB68B5004149CE /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 22DB0A7F13CB68B5004149CE /* strata.c */; };
-		22DB0A8413CB68B5004149CE /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 22DB0A8013CB68B5004149CE /* strata.h */; };
 		22E9214514082F8D008115DE /* libdSFMT.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */; };
 		22E9214A14083CEA008115DE /* libdSFMT.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */; };
 		22EA3327136B29CE00C5627F /* design_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3325136B29AE00C5627F /* design_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
@@ -594,6 +594,8 @@
 		2235DC0013C7AD0300053BAA /* json.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = json.c; path = src/json/json.c; sourceTree = "<group>"; };
 		2235DC0113C7AD0300053BAA /* json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = json.h; path = src/json/json.h; sourceTree = "<group>"; };
 		223BFE4613AA98F200835B8F /* vars.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vars.h; path = src/vars.h; sourceTree = "<group>"; };
+		223E4114164060C100FAB1C7 /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = lib/strata.c; sourceTree = "<group>"; };
+		223E4115164060C100FAB1C7 /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = lib/strata.h; sourceTree = "<group>"; };
 		224DDDFB15F0EAB500C0CA88 /* recv_boot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_boot.c; path = src/recv_boot.c; sourceTree = "<group>"; };
 		224DDDFC15F0EAB500C0CA88 /* recv_boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_boot.h; path = src/recv_boot.h; sourceTree = "<group>"; };
 		224DDE0015F0EC6F00C0CA88 /* recv_resid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_resid.c; path = src/recv_resid.c; sourceTree = "<group>"; };
@@ -677,8 +679,6 @@
 		22D2DDB3136A5E5B0048244C /* libenron.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libenron.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D4787E13AC4BF600FF46CD /* recv_loglik_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = recv_loglik_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik_test.c; path = tests/recv_loglik_test.c; sourceTree = "<group>"; };
-		22DB0A7F13CB68B5004149CE /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = src/strata.c; sourceTree = "<group>"; };
-		22DB0A8013CB68B5004149CE /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = src/strata.h; sourceTree = "<group>"; };
 		22EA331C136B299600C5627F /* design_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22EA3325136B29AE00C5627F /* design_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_test.c; path = tests/design_test.c; sourceTree = "<group>"; };
 		22EA3331136B440B00C5627F /* frame.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = frame.c; path = src/frame.c; sourceTree = "<group>"; };
@@ -923,8 +923,6 @@
 				22BECECB15AC77AA00F630C4 /* recv_model.h */,
 				224DDE0015F0EC6F00C0CA88 /* recv_resid.c */,
 				224DDE0115F0EC6F00C0CA88 /* recv_resid.h */,
-				22DB0A7F13CB68B5004149CE /* strata.c */,
-				22DB0A8013CB68B5004149CE /* strata.h */,
 				222EF69616125EE9005CA886 /* v-isendtot.c */,
 				222EF69416125DB2005CA886 /* v-irecvtot.c */,
 				222EF6921612587A005CA886 /* v-nsendtot.c */,
@@ -1108,15 +1106,17 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
-				22EB6B7515E6A21100762290 /* mlogitaug.c */,
-				22EB6B7615E6A21100762290 /* mlogitaug.h */,
-				228B12C015E67EB7000DC495 /* mlogit.c */,
-				228B12C115E67EB7000DC495 /* mlogit.h */,
-				228B12A415E66568000DC495 /* catdist1.c */,
-				228B12A515E66568000DC495 /* catdist1.h */,
 				228B128915E605A9000DC495 /* catdist.c */,
 				228B128A15E605A9000DC495 /* catdist.h */,
+				228B12A415E66568000DC495 /* catdist1.c */,
+				228B12A515E66568000DC495 /* catdist1.h */,
+				228B12C015E67EB7000DC495 /* mlogit.c */,
+				228B12C115E67EB7000DC495 /* mlogit.h */,
+				22EB6B7515E6A21100762290 /* mlogitaug.c */,
+				22EB6B7615E6A21100762290 /* mlogitaug.h */,
 				22602687146B38EE00BA6347 /* port.h */,
+				223E4114164060C100FAB1C7 /* strata.c */,
+				223E4115164060C100FAB1C7 /* strata.h */,
 				22BECEBD15AA05BD00F630C4 /* util.c */,
 				22BECEBE15AA05BD00F630C4 /* util.h */,
 				22234160144F351300D99D8E /* Core */,
@@ -1163,7 +1163,6 @@
 			files = (
 				22EA3336136B440B00C5627F /* frame.h in Headers */,
 				223BFE4813AA98F300835B8F /* vars.h in Headers */,
-				22DB0A8413CB68B5004149CE /* strata.h in Headers */,
 				22602688146B38EE00BA6347 /* port.h in Headers */,
 				228D4D5615A4CD5F007DBCCA /* history.h in Headers */,
 				22BECEC015AA05BD00F630C4 /* util.h in Headers */,
@@ -1177,6 +1176,7 @@
 				22EB6B9315EFBC5A00762290 /* recv_fit.h in Headers */,
 				224DDDFE15F0EAB500C0CA88 /* recv_boot.h in Headers */,
 				224DDE0315F0EC6F00C0CA88 /* recv_resid.h in Headers */,
+				223E4117164060C100FAB1C7 /* strata.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1617,7 +1617,6 @@
 				222FC41613607C7900E64FC9 /* design.c in Sources */,
 				222FC41F13607C7900E64FC9 /* messages.c in Sources */,
 				22EA3334136B440B00C5627F /* frame.c in Sources */,
-				22DB0A8213CB68B5004149CE /* strata.c in Sources */,
 				22749E5E1402E2EC00C5A955 /* vars.c in Sources */,
 				2210A3FD146ADE9F00C42B90 /* coreutil.c in Sources */,
 				228D4D5515A4CD5F007DBCCA /* history.c in Sources */,
@@ -1648,6 +1647,7 @@
 				222EF6931612587A005CA886 /* v-nsendtot.c in Sources */,
 				222EF69516125DB2005CA886 /* v-irecvtot.c in Sources */,
 				222EF69716125EEA005CA886 /* v-isendtot.c in Sources */,
+				223E4116164060C100FAB1C7 /* strata.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

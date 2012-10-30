@@ -51,8 +51,6 @@ libiproc_a_SOURCES = \
 	src/recv_model.h \
 	src/recv_resid.c \
 	src/recv_resid.h \
-	src/strata.c \
-	src/strata.h \
 	src/v-irecvtot.c \
 	src/v-isendtot.c \
 	src/v-nrecvtot.c \
@@ -89,6 +87,8 @@ libcore_a_SOURCES = \
 	lib/mlogit.h \
 	lib/mlogitaug.c \
 	lib/mlogitaug.h \
+	lib/strata.c \
+	lib/strata.h \
 	lib/util.c \
 	lib/util.h \
 	lib/core/src/coreutil.c \
