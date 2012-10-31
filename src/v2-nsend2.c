@@ -175,7 +175,7 @@ static void nsend2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 
 	struct frame *f = design2_frame(d);
 	struct history *h = frame_history(f);
-	size_t n = frame_interval_count(f);
+	size_t n = history_interval_count(h);
 
 	tv->var.rank = 2;
 	tv->var.dims[0] = n;

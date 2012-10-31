@@ -25,11 +25,6 @@ struct frame {
 	struct design2 dyad_design;
 
 	int has_loops;
-
-	double *intvls;
-	size_t nintvl;
-
-	double time;
 };
 
 
@@ -39,9 +34,6 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 void frame_deinit(struct frame *f);
 
 /* properties */
-static inline const double *frame_intervals(const struct frame *f);
-static inline size_t frame_interval_count(const struct frame *f);
-
 static inline struct history *frame_history(const struct frame *f);
 static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
@@ -58,16 +50,6 @@ static inline int frame_has_loops(const struct frame *f);
 
 
 /* inline function definitions */
-const double *frame_intervals(const struct frame *f)
-{
-	return history_intervals(&f->history);
-}
-
-size_t frame_interval_count(const struct frame *f)
-{
-	return history_interval_count(&f->history);
-}
-
 struct history *frame_history(const struct frame *f)
 {
 	return &((struct frame *)f)->history;
