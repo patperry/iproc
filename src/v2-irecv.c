@@ -38,8 +38,7 @@ static void irecv_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 {
 	(void)ap; // unused
 	
-	struct frame *f = design2_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design2_history(d);	
 	
 	tv->var.rank = 0;
 	tv->udata = NULL;
@@ -50,8 +49,7 @@ static void irecv_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 
 static void irecv_deinit(struct tvar2 *tv, struct design2 *d)
 {
-	struct frame *f = design2_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design2_history(d);
 	history_remove_observer(h, tv);
 }
 

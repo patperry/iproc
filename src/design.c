@@ -77,11 +77,9 @@ static struct history_callbacks design_history_callbacks = {
 };
 
 
-void design_init(struct design *d, struct frame *f, size_t count)
+void design_init(struct design *d, struct history *h, size_t count)
 {
-	struct history *h = frame_history(f);
-
-	d->frame = f;
+	d->history = h;
 	d->count= count;
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
@@ -126,8 +124,7 @@ static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 
 void design_deinit(struct design *d)
 {
-	struct history *h = frame_history(d->frame);
-	history_remove_observer(h, d);
+	history_remove_observer(d->history, d);
 	free(d->observers);
 	free(d->dx);
 	vpattern_deinit(&d->active);

@@ -153,13 +153,11 @@ static struct history_callbacks design2_history_callbacks = {
 	design2_history_clear
 };
 
-void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t count2)
+void design2_init(struct design2 *d, struct history *h, size_t count1, size_t count2)
 {
 	assert(count2 == 0 || count1 <= SIZE_MAX / count2);  // ensure count1 * count2 < SIZE_MAX
 
-	struct history *h = frame_history(f);
-
-	d->frame = f;
+	d->history = h;
 	d->count1 = count1;
 	d->count2 = count2;
 	d->count = count1 * count2;
@@ -229,9 +227,7 @@ static void kvars_deinit(struct kvar2 **kvars, size_t len)
 
 void design2_deinit(struct design2 *d)
 {
-	struct history *h = frame_history(d->frame);
-	history_remove_observer(h, d);
-
+	history_remove_observer(d->history, d);
 	free(d->observers);
 	free(d->dx);
 	free(d->jc);

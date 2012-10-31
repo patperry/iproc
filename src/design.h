@@ -1,6 +1,7 @@
 #ifndef DESIGN_H
 #define DESIGN_H
 
+#include "history.h"
 #include "blas.h"
 #include "sblas.h"
 #include <stdarg.h>
@@ -8,7 +9,7 @@
 #define VAR_RANK_MAX 8
 
 struct design {
-	struct frame *frame;
+	struct history *history;
 	size_t count;
 
 	size_t ncohort;
@@ -83,7 +84,7 @@ static inline const char *var_name(const struct var *v)
 	return v->name;
 }
 
-void design_init(struct design *d, struct frame *f, size_t count);
+void design_init(struct design *d, struct history *h, size_t count);
 void design_deinit(struct design *d);
 
 /* observers */
@@ -92,7 +93,7 @@ void design_add_observer(struct design *d, void *udata,
 void design_remove_observer(struct design *d, void *udata);
 
 /* properties */
-static inline struct frame *design_frame(const struct design *d);
+static inline struct history *design_history(const struct design *d);
 static inline size_t design_count(const struct design *d);
 static inline size_t design_dim(const struct design *d);
 const struct var *design_var(const struct design *d, const char *name);
@@ -162,9 +163,9 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 
 
 /* inline function definitions */
-struct frame *design_frame(const struct design *d)
+struct history *design_history(const struct design *d)
 {
-	return d->frame;
+	return d->history;
 }
 
 

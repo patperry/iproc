@@ -1,14 +1,15 @@
 #ifndef DESIGN2_H
 #define DESIGN2_H
 
+#include "design.h"
+#include "history.h"
 #include "blas.h"
 #include "sblas.h"
-#include "design.h"
 #include <stdarg.h>
 
 
 struct design2 {
-	struct frame *frame;
+	struct history *history;
 	size_t count1, count2;
 	size_t count; // count1 * count2
 
@@ -85,7 +86,7 @@ struct coefs2 {
 };
 
 
-void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t count2);
+void design2_init(struct design2 *d, struct history *h, size_t count1, size_t count2);
 void design2_deinit(struct design2 *d);
 
 /* observers */
@@ -94,7 +95,7 @@ void design2_add_observer(struct design2 *d, void *udata,
 void design2_remove_observer(struct design2 *d, void *udata);
 
 /* properties */
-static inline struct frame *design2_frame(const struct design2 *d);
+static inline struct history *design2_history(const struct design2 *d);
 static inline size_t design2_count1(const struct design2 *d);
 static inline size_t design2_count2(const struct design2 *d);
 static inline size_t design2_dim(const struct design2 *d);
@@ -169,9 +170,9 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 
 
 /* inline function definitions */
-struct frame *design2_frame(const struct design2 *d)
+struct history *design2_history(const struct design2 *d)
 {
-	return d->frame;
+	return d->history;
 }
 
 

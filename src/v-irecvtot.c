@@ -37,8 +37,7 @@ static void irecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 {
 	(void)ap; // unused
 	
-	struct frame *f = design_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design_history(d);
 	
 	tv->var.rank = 0;
 	tv->udata = NULL;
@@ -49,8 +48,7 @@ static void irecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 
 static void irecvtot_deinit(struct tvar *tv, struct design *d)
 {
-	struct frame *f = design_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design_history(d);
 	history_remove_observer(h, tv);
 }
 

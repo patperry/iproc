@@ -62,8 +62,7 @@ static void nrecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 {
 	(void)ap;		// unused;
 
-	struct frame *f = design_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design_history(d);
 	size_t n = history_interval_count(h);
 
 	tv->var.rank = 1;
@@ -76,8 +75,7 @@ static void nrecvtot_init(struct tvar *tv, struct design *d, va_list ap)
 
 static void nrecvtot_deinit(struct tvar *tv, struct design *d)
 {
-	struct frame *f = design_frame(d);
-	struct history *h = frame_history(f);
+	struct history *h = design_history(d);
 	history_remove_observer(h, tv);
 }
 
