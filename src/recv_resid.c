@@ -88,6 +88,7 @@ static void recv_resid_set(struct recv_resid *resid,
 {
 	size_t nsend = frame_send_count(f);
 	size_t nrecv = frame_recv_count(f);
+	struct history *h = frame_history(f);
 
 	recv_model_set_coefs(&resid->model, coefs);
 	recv_resid_clear(&resid->obs, nsend, nrecv);
@@ -98,10 +99,10 @@ static void recv_resid_set(struct recv_resid *resid,
 		size_t i, n = MESSAGES_COUNT(it);
 		double t = MESSAGES_TIME(it);
 
-		frame_advance(f, t);
+		history_advance(h, t);
 		for (i = 0; i < n; i++) {
 			struct message *msg = MESSAGES_VAL(it, i);
-			frame_add(f, msg);
+			history_add(h, msg);
 
 			update_obs(&resid->obs, msg, nrecv);
 			update_fit(&resid->fit, msg, &resid->model);

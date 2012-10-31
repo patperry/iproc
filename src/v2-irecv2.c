@@ -9,7 +9,7 @@
  */
 
 
-static void irecv2_message_add(void *udata, struct frame *f,
+static void irecv2_message_add(void *udata, struct history *h,
 			       const struct message *msg)
 {
 	const struct tvar2 *tv = udata;
@@ -17,7 +17,6 @@ static void irecv2_message_add(void *udata, struct frame *f,
 	struct design2 *d = v->design;
 	const double one = 1.0;
 	const size_t izero = 0;
-	const struct history *h = frame_history(f);
 	size_t ito, nto = msg->nto;
 	size_t hrecv = msg->from;
 	size_t iz, nz;
@@ -65,7 +64,7 @@ static void irecv2_message_add(void *udata, struct frame *f,
 }
 
 
-static struct frame_callbacks irecv2_frame_callbacks = {
+static struct history_callbacks irecv2_history_callbacks = {
 	irecv2_message_add,
 	NULL,			// message_advance,
 	NULL
@@ -76,17 +75,20 @@ static void irecv2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	(void)ap; // unused
 
 	struct frame *f = design2_frame(d);
+	struct history *h = frame_history(f);
 
 	tv->var.rank = 0;
 	tv->udata = NULL;
 
-	frame_add_observer(f, tv, &irecv2_frame_callbacks);
+	history_add_observer(h, tv, &irecv2_history_callbacks);
 }
 
 static void irecv2_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
-	frame_remove_observer(f, tv);
+	struct history *h = frame_history(f);
+
+	history_remove_observer(h, tv);
 }
 
 

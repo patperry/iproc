@@ -279,13 +279,14 @@ void recv_loglik_add(struct recv_loglik *ll,
 void recv_loglik_add_all(struct recv_loglik *ll,
 			 struct frame *f, const struct messages *msgs)
 {
+	struct history *h = frame_history(f);
 	struct messages_iter it;
 	const struct message *msg;
 	size_t i, n;
 
 	MESSAGES_FOREACH(it, msgs) {
 		double t = MESSAGES_TIME(it);
-		frame_advance(f, t);
+		history_advance(h, t);
 
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i++) {
@@ -296,7 +297,7 @@ void recv_loglik_add_all(struct recv_loglik *ll,
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i++) {
 			msg = MESSAGES_VAL(it, i);
-			frame_add(f, msg);
+			history_add(h, msg);
 		}
 	}
 

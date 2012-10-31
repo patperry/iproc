@@ -52,7 +52,7 @@ static void design2_clear_range(struct design2 *d, size_t joff, size_t len)
 	}
 }
 
-static void design2_frame_clear(void *udata, struct frame *f)
+static void design2_history_clear(void *udata, struct history *h)
 {
 	struct design2 *d = udata;
 	design2_clear_range(d, 0, design2_tvar_dim(d));
@@ -65,6 +65,8 @@ static void design2_frame_clear(void *udata, struct frame *f)
 			obs->callbacks.clear(obs->udata, d);
 		}
 	}
+
+	(void)h;
 }
 
 
@@ -145,15 +147,17 @@ static void recompute_traits(struct design2 *d)
 }
 
 
-static struct frame_callbacks design2_frame_callbacks = {
+static struct history_callbacks design2_history_callbacks = {
 	NULL,
 	NULL,
-	design2_frame_clear
+	design2_history_clear
 };
 
 void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t count2)
 {
 	assert(count2 == 0 || count1 <= SIZE_MAX / count2);  // ensure count1 * count2 < SIZE_MAX
+
+	struct history *h = frame_history(f);
 
 	d->frame = f;
 	d->count1 = count1;
@@ -187,8 +191,8 @@ void design2_init(struct design2 *d, struct frame *f, size_t count1, size_t coun
 	d->observers = NULL;
 	d->nobs = 0;
 	d->nobs_max = 0;
-	
-	frame_add_observer(f, d, &design2_frame_callbacks);
+
+	history_add_observer(h, d, &design2_history_callbacks);
 }
 
 
@@ -225,7 +229,9 @@ static void kvars_deinit(struct kvar2 **kvars, size_t len)
 
 void design2_deinit(struct design2 *d)
 {
-	frame_remove_observer(d->frame, d);
+	struct history *h = frame_history(d->frame);
+	history_remove_observer(h, d);
+
 	free(d->observers);
 	free(d->dx);
 	free(d->jc);

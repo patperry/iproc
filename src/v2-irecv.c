@@ -6,7 +6,7 @@
 #include "vars.h"
 
 
-static void irecv_message_add(void *udata, struct frame *f,
+static void irecv_message_add(void *udata, struct history *h,
 			      const struct message *msg)
 {
 	const struct tvar2 *tv = udata;
@@ -27,7 +27,7 @@ static void irecv_message_add(void *udata, struct frame *f,
 }
 
 
-static struct frame_callbacks irecv_frame_callbacks = {
+static struct history_callbacks irecv_history_callbacks = {
 	irecv_message_add,
 	NULL,			// message_advance,
 	NULL
@@ -39,18 +39,20 @@ static void irecv_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	(void)ap; // unused
 	
 	struct frame *f = design2_frame(d);
+	struct history *h = frame_history(f);
 	
 	tv->var.rank = 0;
 	tv->udata = NULL;
 
-	frame_add_observer(f, tv, &irecv_frame_callbacks);
+	history_add_observer(h, tv, &irecv_history_callbacks);
 }
 
 
 static void irecv_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
-	frame_remove_observer(f, tv);
+	struct history *h = frame_history(f);
+	history_remove_observer(h, tv);
 }
 
 

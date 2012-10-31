@@ -153,6 +153,7 @@ static void teardown()
 
 static void test_count()
 {
+	struct history *h = frame_history(&frame);
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -167,12 +168,12 @@ static void test_count()
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 
-		frame_advance(&frame, t);
+		history_advance(h, t);
 
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
 
@@ -195,6 +196,7 @@ out:
 
 static void test_dev()
 {
+	struct history *h = frame_history(&frame);
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	const struct catdist1 *dist = NULL;
@@ -211,12 +213,12 @@ static void test_dev()
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 		
-		frame_advance(&frame, t);			
+		history_advance(h, t);
 		
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
 			
@@ -246,6 +248,7 @@ out:
 
 static void test_mean()
 {
+	struct history *h = frame_history(&frame);
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	const struct catdist1 *dist = NULL;
@@ -272,12 +275,12 @@ static void test_mean()
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 
-		frame_advance(&frame, t);
+		history_advance(h, t);
 
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
 
@@ -320,6 +323,7 @@ out:
 
 static void test_score()
 {
+	struct history *h = frame_history(&frame);
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -344,12 +348,12 @@ static void test_score()
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 
-		frame_advance(&frame, t);
+		history_advance(h, t);
 
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
 
@@ -392,6 +396,7 @@ out:
 
 static void test_imat()
 {
+	struct history *h = frame_history(&frame);
 	struct messages_iter it;
 	const struct message *msg = NULL;
 	double t;
@@ -425,12 +430,12 @@ static void test_imat()
 		printf("."); fflush(stdout);
 		t = MESSAGES_TIME(it);
 
-		frame_advance(&frame, t);
+		history_advance(h, t);
 
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie ++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 			recv_loglik_add(&loglik, &frame, msg);
 			nmsg += msg->nto;
 

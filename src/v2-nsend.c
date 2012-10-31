@@ -5,10 +5,10 @@
 #include "vars.h"
 
 
-static void nsend_message_add(void *udata, struct frame *f,
+static void nsend_message_add(void *udata, struct history *h,
 			      const struct message *msg)
 {
-	if (!frame_interval_count(f))
+	if (!history_interval_count(h))
 		return;
 
 	const struct tvar2 *tv = udata;
@@ -29,7 +29,7 @@ static void nsend_message_add(void *udata, struct frame *f,
 }
 
 
-static void nsend_message_advance(void *udata, struct frame *f,
+static void nsend_message_advance(void *udata, struct history *h,
 				  const struct message *msg, size_t intvl)
 {
 	const struct tvar2 *tv = udata;
@@ -57,7 +57,7 @@ static void nsend_message_advance(void *udata, struct frame *f,
 }
 
 
-struct frame_callbacks nsend_frame_callbacks = {
+struct history_callbacks nsend_history_callbacks = {
 	nsend_message_add,
 	nsend_message_advance,
 	NULL
@@ -69,25 +69,27 @@ static void nsend_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	(void)ap;		// unused;
 
 	struct frame *f = design2_frame(d);
-	size_t n = frame_interval_count(f);
+	struct history *h = frame_history(f);
+	size_t n = history_interval_count(h);
 
 	tv->var.rank = 1;
 	tv->var.dims[0] = n;
 	tv->udata = NULL;
 	
-	frame_add_observer(f, tv, &nsend_frame_callbacks);
+	history_add_observer(h, tv, &nsend_history_callbacks);
 }
 
 static void nsend_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
-	frame_remove_observer(f, tv);
+	struct history *h = frame_history(f);
+	history_remove_observer(h, tv);
 }
 
 
 static struct tvar2_type VAR2_NSEND_REP = {
 	nsend_init,
 	nsend_deinit,
-	};
+};
 
 const struct tvar2_type *VAR2_NSEND = &VAR2_NSEND_REP;

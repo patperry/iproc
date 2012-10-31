@@ -52,7 +52,7 @@ static void design_clear_range(struct design *d, size_t joff, size_t len)
 	}
 }
 
-static void design_frame_clear(void *udata, struct frame *f)
+static void design_history_clear(void *udata, struct history *h)
 {
 	struct design *d = udata;
 	design_clear_range(d, 0, design_tvar_dim(d));
@@ -65,16 +65,22 @@ static void design_frame_clear(void *udata, struct frame *f)
 			obs->callbacks.clear(obs->udata, d);
 		}
 	}
+
+	(void)h;
 }
 
-static struct frame_callbacks design_frame_callbacks = {
-	NULL,
-	NULL,
-	design_frame_clear
+
+static struct history_callbacks design_history_callbacks = {
+       NULL,
+       NULL,
+       design_history_clear
 };
+
 
 void design_init(struct design *d, struct frame *f, size_t count)
 {
+	struct history *h = frame_history(f);
+
 	d->frame = f;
 	d->count= count;
 
@@ -99,8 +105,8 @@ void design_init(struct design *d, struct frame *f, size_t count)
 	d->observers = NULL;
 	d->nobs = 0;
 	d->nobs_max = 0;
-	
-	frame_add_observer(f, d, &design_frame_callbacks);
+
+	history_add_observer(h, d, &design_history_callbacks);
 }
 
 
@@ -120,7 +126,8 @@ static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 
 void design_deinit(struct design *d)
 {
-	frame_remove_observer(d->frame, d);
+	struct history *h = frame_history(d->frame);
+	history_remove_observer(h, d);
 	free(d->observers);
 	free(d->dx);
 	vpattern_deinit(&d->active);

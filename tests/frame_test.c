@@ -27,6 +27,7 @@ static int has_loops;
 static struct messages messages;
 static struct design *recv_design;
 static struct design2 *dyad_design;
+static struct history *history;
 static struct frame frame;
 
 
@@ -58,6 +59,8 @@ static void dv_nsend_setup()
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "NSend",VAR2_NSEND);
+
+	history = frame_history(&frame);
 }
 
 static void dv_nsend_teardown()
@@ -81,7 +84,7 @@ static void test_dv_nsend()
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance(&frame, t);
+		history_advance(history, t);
 
 		isend = msg ? msg->from : 0;
 		for (jrecv = 0; jrecv < nrecv; jrecv += 5) {
@@ -99,7 +102,7 @@ static void test_dv_nsend()
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(history, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
 				xnsend[msg->from][msg->to[ito]] += 1.0;
@@ -119,6 +122,8 @@ static void dv_nrecv_setup()
 	
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "NRecv", VAR2_NRECV);
+
+	history = frame_history(&frame);
 }
 
 static void dv_nrecv_teardown()
@@ -145,7 +150,7 @@ static void test_dv_nrecv()
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance(&frame, t);
+		history_advance(history, t);
 
 		isend = msg ? msg->from : 0;
 
@@ -163,7 +168,7 @@ static void test_dv_nrecv()
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(history, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
 				xnsend[msg->from][msg->to[ito]] += 1.0;
@@ -184,6 +189,8 @@ static void dv_irecv_setup()
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "IRecv", VAR2_IRECV);
+
+	history = frame_history(&frame);
 }
 
 static void dv_irecv_teardown()
@@ -216,7 +223,7 @@ static void test_dv_irecv()
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance(&frame, t);
+		history_advance(history, t);
 
 		if (msg) {
 			isend = msg->from;
@@ -238,7 +245,7 @@ static void test_dv_irecv()
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(history, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
 				tlast[msg->from][msg->to[ito]] = msg->time;
@@ -260,6 +267,8 @@ static void dv_isend_setup()
 
 	dyad_design = frame_dyad_design(&frame);
 	design2_add_tvar(dyad_design, "ISend", VAR2_ISEND);
+
+	history = frame_history(&frame);
 }
 
 
@@ -291,7 +300,7 @@ static void test_dv_isend()
 
 	MESSAGES_FOREACH(it, &messages) {
 		t = MESSAGES_TIME(it);
-		frame_advance(&frame, t);
+		history_advance(history, t);
 
 		if (msg) {
 			isend = msg->from;
@@ -313,7 +322,7 @@ static void test_dv_isend()
 		ntie = MESSAGES_COUNT(it);
 		for (itie = 0; itie < ntie; itie++) {
 			msg = MESSAGES_VAL(it, itie);
-			frame_add(&frame, msg);
+			history_add(history, msg);
 
 			for (ito = 0; ito < msg->nto; ito++) {
 				tlast[msg->from][msg->to[ito]] = msg->time;

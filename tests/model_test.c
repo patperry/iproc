@@ -147,6 +147,7 @@ static void test_probs()
 {
 	struct design *r = frame_recv_design(&frame);
 	struct design2 *d = frame_dyad_design(&frame);
+	struct history *h = frame_history(&frame);
 
 	double *eta, *probs, *logprobs;
 	struct messages_iter it;
@@ -164,7 +165,7 @@ static void test_probs()
 		// fprintf(stderr, "."); fflush(stderr);
 		t = MESSAGES_TIME(it);
 		
-		frame_advance(&frame, t);			
+		history_advance(h, t);
 		
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i ++) {
@@ -205,7 +206,7 @@ static void test_probs()
 		n = MESSAGES_COUNT(it);
 		for (i = 0; i < n; i ++) {
 			msg = MESSAGES_VAL(it, i);
-			frame_add(&frame, msg);
+			history_add(h, msg);
 		}
 	}
 	

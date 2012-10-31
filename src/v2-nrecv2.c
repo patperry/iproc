@@ -12,10 +12,10 @@
 
 
 
-static void nrecv2_message_add(void *udata, struct frame *f,
+static void nrecv2_message_add(void *udata, struct history *h,
 			       const struct message *msg)
 {
-	if (!frame_interval_count(f))
+	if (!history_interval_count(h))
 		return;
 
 	const struct tvar2 *tv = udata;
@@ -26,8 +26,7 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 	size_t dx_index[1] = { 0 };
 	size_t dx_nz = 1;
 
-	const struct history *h = frame_history(f);
-	size_t iintvl, nintvl = frame_interval_count(f);
+	size_t iintvl, nintvl = history_interval_count(h);
 	size_t ito, nto = msg->nto;
 
 	const size_t *indx;
@@ -90,7 +89,7 @@ static void nrecv2_message_add(void *udata, struct frame *f,
 }
 
 
-static void nrecv2_message_advance(void *udata, struct frame *f,
+static void nrecv2_message_advance(void *udata, struct history *h,
 				   const struct message *msg, size_t intvl)
 {
 	const struct tvar2 *tv = udata;
@@ -101,8 +100,7 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 	size_t dx_index[2];
 	size_t dx_nz = 2;
 
-	const struct history *h = frame_history(f);
-	size_t iintvl, nintvl = frame_interval_count(f);
+	size_t iintvl, nintvl = history_interval_count(h);
 
 	size_t ito, nto = msg->nto;
 	size_t iz, nz;
@@ -173,7 +171,7 @@ static void nrecv2_message_advance(void *udata, struct frame *f,
 
 
 
-static struct frame_callbacks nrecv2_frame_callbacks = {
+static struct history_callbacks nrecv2_history_callbacks = {
 	nrecv2_message_add,
 	nrecv2_message_advance,
 	NULL
@@ -185,21 +183,23 @@ static void nrecv2_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	(void)ap;		// unused;
 
 	struct frame *f = design2_frame(d);
-	size_t n = frame_interval_count(f);
+	struct history *h = frame_history(f);
+	size_t n = history_interval_count(h);
 
 	tv->var.rank = 2;
 	tv->var.dims[0] = n;
 	tv->var.dims[1] = n;
 	tv->udata = NULL;
 
-	frame_add_observer(f, tv, &nrecv2_frame_callbacks);
+	history_add_observer(h, tv, &nrecv2_history_callbacks);
 }
 
 
 static void nrecv2_deinit(struct tvar2 *tv, struct design2 *d)
 {
 	struct frame *f = design2_frame(d);
-	frame_remove_observer(f, tv);
+	struct history *h = frame_history(f);
+	history_remove_observer(h, tv);
 }
 
 

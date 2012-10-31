@@ -359,14 +359,15 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 	const struct recv_loglik *ll = recv_fit_loglik(fit);
 	const struct recv_model *m = ll->model;
 	struct frame *f = recv_model_frame(m);
+	struct history *h = frame_history(f);
 
 	hsize_t ne = (hsize_t)recv_fit_constr_count(fit);
 	hsize_t dim = (hsize_t)recv_model_dim(m);
 
 	// intervals
 	{
-		hsize_t nintvl = (hsize_t)frame_interval_count(f);
-		const double *intvls = frame_intervals(f);
+		hsize_t nintvl = (hsize_t)history_interval_count(h);
+		const double *intvls = history_intervals(h);
 		status = H5LTmake_dataset(file_id, INTERVALS, 1, &nintvl, H5T_NATIVE_DOUBLE, intvls);
 	}
 
@@ -455,8 +456,7 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 		dims[0] = frame_send_count(f);
 		dims[1] = frame_recv_count(f);
 
-
-		frame_clear(f);
+		history_clear(h);
 		recv_resid_init(&resid, f, fit->ymsgs, coefs);
 
 		status = H5LTmake_dataset(file_id, FITTED_COUNTS, 2, dims, H5T_NATIVE_DOUBLE, resid.fit.dyad);

@@ -4,10 +4,10 @@
 #include "frame.h"
 #include "vars.h"
 
-static void nsendtot_message_add(void *udata, struct frame *f,
+static void nsendtot_message_add(void *udata, struct history *h,
 				 const struct message *msg)
 {
-	if (!frame_interval_count(f))
+	if (!history_interval_count(h))
 		return;
 
 	const struct tvar *tv = udata;
@@ -24,7 +24,7 @@ static void nsendtot_message_add(void *udata, struct frame *f,
 }
 
 
-static void nsendtot_message_advance(void *udata, struct frame *f,
+static void nsendtot_message_advance(void *udata, struct history *h,
 				     const struct message *msg, size_t intvl)
 {
 	const struct tvar *tv = udata;
@@ -47,7 +47,7 @@ static void nsendtot_message_advance(void *udata, struct frame *f,
 }
 
 
-static struct frame_callbacks nsendtot_frame_callbacks = {
+static struct history_callbacks nsendtot_history_callbacks = {
 	nsendtot_message_add,
 	nsendtot_message_advance,
 	NULL
@@ -59,20 +59,22 @@ static void nsendtot_init(struct tvar *tv, struct design *d, va_list ap)
 	(void)ap;		// unused;
 
 	struct frame *f = design_frame(d);
-	size_t n = frame_interval_count(f);
+	struct history *h = frame_history(f);
+	size_t n = history_interval_count(h);
 
 	tv->var.rank = 1;
 	tv->var.dims[0] = n;
 	tv->udata = NULL;
 	
-	frame_add_observer(f, tv, &nsendtot_frame_callbacks);
+	history_add_observer(h, tv, &nsendtot_history_callbacks);
 }
 
 
 static void nsendtot_deinit(struct tvar *tv, struct design *d)
 {
 	struct frame *f = design_frame(d);
-	frame_remove_observer(f, tv);
+	struct history *h = frame_history(f);
+	history_remove_observer(h, tv);
 }
 
 

@@ -30,33 +30,13 @@ struct frame {
 	size_t nintvl;
 
 	double time;
-
-	struct frame_observer *observers;
-	size_t nobs, nobs_max;
 };
 
-
-/* NOTE: these are just the history callbacks, re-exported.  Should these
- * get removed?
- */
-struct frame_callbacks {
-	void (*message_add) (void *udata, struct frame * f,
-			     const struct message * msg);
-	void (*message_advance) (void *udata, struct frame * f,
-				 const struct message * msg, size_t intvl);
-	void (*clear) (void *udata, struct frame * f);
-};
-
-struct frame_observer {
-	void *udata;
-	struct frame_callbacks callbacks;
-};
 
 /* create/destroy/clear */
 void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 		const double *intvls, size_t nintvl);
 void frame_deinit(struct frame *f);
-void frame_clear(struct frame *f);
 
 /* properties */
 static inline const double *frame_intervals(const struct frame *f);
@@ -67,14 +47,6 @@ static inline struct design *frame_send_design(const struct frame *f);
 static inline struct design *frame_recv_design(const struct frame *f);
 static inline struct design2 *frame_dyad_design(const struct frame *f);
 
-/* time */
-static inline double frame_time(const struct frame *f);	// current time
-static inline double frame_next_time(const struct frame *f);	// next change
-void frame_advance(struct frame *f, double time);	// advance time
-
-/* messages */
-void frame_add(struct frame *f, const struct message *msg);
-
 /* actors */
 static inline size_t frame_send_count(const struct frame *f);
 static inline size_t frame_recv_count(const struct frame *f);
@@ -83,11 +55,6 @@ static inline struct dyad frame_ix_dyad(const struct frame *f, size_t ix);
 static inline int frame_has_loops(const struct frame *f);
 
 
-
-/* observers */
-void frame_add_observer(struct frame *f, void *udata,
-			const struct frame_callbacks *callbacks);
-void frame_remove_observer(struct frame *f, void *udata);
 
 
 /* inline function definitions */
@@ -124,18 +91,6 @@ struct design2 *frame_dyad_design(const struct frame *f)
 	return &((struct frame *)f)->dyad_design;
 }
 
-double frame_time(const struct frame *f)
-{
-	assert(f);
-	return history_time(&f->history);
-}
-
-double frame_next_time(const struct frame *f)
-{
-	assert(f);
-	return history_next_time(&f->history);
-}
-
 size_t frame_send_count(const struct frame *f)
 {
 	assert(f);
@@ -169,7 +124,6 @@ struct dyad frame_ix_dyad(const struct frame *f, size_t ix)
 	
 	return dyad;
 }
-
 
 int frame_has_loops(const struct frame *f)
 {

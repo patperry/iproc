@@ -284,7 +284,8 @@ static void _eval_update(struct recv_fit_eval *eval,
 			 int moments)
 {
 	// clear frame; set model coefs
-	frame_clear(frame);
+	struct history *h = frame_history(frame);
+	history_clear(h);
 	recv_model_set_coefs(model, &eval->params.coefs);
 	recv_model_set_moments(model, moments);
 
@@ -307,12 +308,12 @@ static void _eval_update(struct recv_fit_eval *eval,
 		yt = MESSAGES_TIME(yit);
 
 		while (xt < yt) {
-			frame_advance(frame, xt);
+			history_advance(h, xt);
 
 			n = MESSAGES_COUNT(xit);
 			for (i = 0; i < n; i++) {
 				msg = MESSAGES_VAL(xit, i);
-				frame_add(frame, msg);
+				history_add(h, msg);
 			}
 
 			if (messages_iter_advance(&xit)) {
@@ -322,7 +323,7 @@ static void _eval_update(struct recv_fit_eval *eval,
 			}
 		}
 
-		frame_advance(frame, yt);
+		history_advance(h, yt);
 		n = MESSAGES_COUNT(yit);
 		for (i = 0; i < n; i++) {
 			msg = MESSAGES_VAL(yit, i);
@@ -629,6 +630,7 @@ void recv_fit_init(struct recv_fit *fit,
 	assert(!ymsgs || (messages_max_from(ymsgs) < frame_recv_count(f)));
 	assert(!ctrl || recv_fit_ctrl_valid(ctrl));
 
+	struct history *h = frame_history(f);
 	size_t ne = 0;
 
 	if (!ctrl) {
@@ -637,7 +639,7 @@ void recv_fit_init(struct recv_fit *fit,
 		fit->ctrl = *ctrl;
 	}
 
-	frame_clear(f);
+	history_clear(h);
 	fit->frame = f;
 	fit->xmsgs = xmsgs;
 	fit->ymsgs = ymsgs ? ymsgs : xmsgs;
