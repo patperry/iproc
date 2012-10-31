@@ -64,11 +64,10 @@ struct history_callbacks nsend_history_callbacks = {
 };
 
 
-static void nsend_init(struct tvar2 *tv, struct design2 *d, va_list ap)
+static void nsend_init(struct tvar2 *tv, struct history *h, va_list ap)
 {
 	(void)ap;		// unused;
 
-	struct history *h = design2_history(d);
 	size_t n = history_interval_count(h);
 
 	tv->var.rank = 1;
@@ -78,9 +77,8 @@ static void nsend_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 	history_add_observer(h, tv, &nsend_history_callbacks);
 }
 
-static void nsend_deinit(struct tvar2 *tv, struct design2 *d)
+static void nsend_deinit(struct tvar2 *tv, struct history *h)
 {
-	struct history *h = design2_history(d);
 	history_remove_observer(h, tv);
 }
 

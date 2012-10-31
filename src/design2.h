@@ -61,8 +61,8 @@ struct tvar2 {
 };
 
 struct tvar2_type {
-	void (*init) (struct tvar2 *tv, struct design2 *d, va_list ap);
-	void (*deinit) (struct tvar2 * tv, struct design2 *d);
+	void (*init) (struct tvar2 *tv, struct history *h, va_list ap);
+	void (*deinit) (struct tvar2 * tv, struct history *h);
 };
 
 struct design2_callbacks {

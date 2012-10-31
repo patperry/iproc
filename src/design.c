@@ -18,8 +18,8 @@
 
 static size_t compute_size(const size_t *dims, size_t rank);
 
-static void prod_init(struct tvar *tv, struct design *d, va_list ap);
-static void prod_deinit(struct tvar *tv, struct design *d);
+static void prod_init(struct tvar *tv, struct history *h, va_list ap);
+static void prod_deinit(struct tvar *tv, struct history *h);
 static void prod_update_var(void *udata, struct design *d, const struct var *v, size_t i,
 				  const double *delta, const size_t *ind, size_t nz);
 
@@ -110,13 +110,14 @@ void design_init(struct design *d, struct history *h, size_t count)
 
 static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 {
+	struct history *h = design_history(d);
 	struct tvar *v;
 	size_t i;
 
 	for (i = len; i > 0; i--) {
 		v = tvars[i - 1];
 		if (v->type->deinit) {
-			v->type->deinit(v, d);
+			v->type->deinit(v, h);
 		}
 	}
 }
@@ -317,6 +318,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	assert(type);
 	assert(!d->dx); // Not Implemented otherwise
 
+	struct history *h = design_history(d);
 	struct tvar *tv = xmalloc(sizeof(*tv));
 	struct var *v = &tv->var;
 	va_list ap;
@@ -331,7 +333,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	tv->udata = NULL;
 
 	va_start(ap, type);
-	type->init(tv, d, ap);
+	type->init(tv, h, ap);
 	va_end(ap);
 	
 	assert(tv->type == type);
@@ -644,7 +646,7 @@ const struct var *design_add_prod(struct design *d, const char *name, const stru
 		res = design_add_trait(d, name, x, dims, rank);
 		free(x);
 	} else {
-		res = design_add_tvar(d, name, VAR_PROD, u, v);
+		res = design_add_tvar(d, name, VAR_PROD, d, u, v);
 	}
 
 	return res;
@@ -665,14 +667,16 @@ size_t compute_size(const size_t *dims, size_t rank)
 
 
 struct prod_udata {
+	struct design *design;
 	const struct var *u;
 	const struct var *v;
 	double *delta;
 	size_t *ind;
 };
 
-void prod_init(struct tvar *tv, struct design *d, va_list ap)
+void prod_init(struct tvar *tv, struct history *h, va_list ap)
 {
+	struct design *d = va_arg(ap, struct design*);
 	const struct var *u = va_arg(ap, const struct var*);
 	const struct var *v = va_arg(ap, const struct var*);
 	size_t size = u->size * v->size;
@@ -682,6 +686,7 @@ void prod_init(struct tvar *tv, struct design *d, va_list ap)
 	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(tv->var.dims[0]));
 
 	struct prod_udata *udata = xmalloc(sizeof(*udata));
+	udata->design = d;
 	udata->u = u;
 	udata->v = v;
 	udata->delta = xmalloc(size * sizeof(*udata->delta));
@@ -692,11 +697,10 @@ void prod_init(struct tvar *tv, struct design *d, va_list ap)
 }
 
 
-void prod_deinit(struct tvar *tv, struct design *d)
+void prod_deinit(struct tvar *tv, struct history *h)
 {
-	design_remove_observer(d, tv);
-
 	struct prod_udata *udata = tv->udata;
+	design_remove_observer(udata->design, tv);
 	free(udata->ind);
 	free(udata->delta);
 	free(udata);

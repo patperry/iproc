@@ -134,11 +134,10 @@ static struct history_callbacks ncosib_history_callbacks = {
 };
 
 
-static void ncosib_init(struct tvar2 *tv, struct design2 *d, va_list ap)
+static void ncosib_init(struct tvar2 *tv, struct history *h, va_list ap)
 {
 	(void)ap;		// unused;
 
-	struct history *h = design2_history(d);
 	size_t n = history_interval_count(h);
 
 	tv->var.rank = 2;
@@ -150,9 +149,8 @@ static void ncosib_init(struct tvar2 *tv, struct design2 *d, va_list ap)
 }
 
 
-static void ncosib_deinit(struct tvar2 *tv, struct design2 *d)
+static void ncosib_deinit(struct tvar2 *tv, struct history *h)
 {
-	struct history *h = design2_history(d);
 	history_remove_observer(h, tv);
 }
 
