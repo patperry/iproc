@@ -888,10 +888,11 @@ size_t recv_fit_add_constr_identify(struct recv_fit *fit)
 			constr_add(&fit->constr, n, compl + iadd * n, 0.0);
 		}
 
-
+		free(compl);
 		free(vt);
 		free(u);
 		free(s);
+		free(proj);
 	} else {
 		// add the nullspace of the information matrix as constraints
 		nadd = nulldim;
