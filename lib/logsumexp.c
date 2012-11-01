@@ -1,6 +1,3 @@
-#include "port.h"
-
-#include <assert.h>
 #include <math.h>
 #include "logsumexp.h"
 
@@ -28,15 +25,12 @@
  */
 void logsumexp_init(struct logsumexp *lse)
 {
-	assert(lse);
 	lse->max = -INFINITY;
 	lse->sumexpm1 = -1.0;
 }
 
 void logsumexp_insert(struct logsumexp *lse, double val)
 {
-	assert(lse);
-
 	if (isinf(val)) {
 		if (val > 0) {
 			lse->max = val;
@@ -59,16 +53,12 @@ void logsumexp_insert(struct logsumexp *lse, double val)
 
 double logsumexp_value(const struct logsumexp *lse)
 {
-	assert(lse);
-
 	double sumexpm1 = lse->sumexpm1;
 	double max = lse->max;
-
 	return max + log1p(sumexpm1);
 }
 
 double logsumexp_max(const struct logsumexp *lse)
 {
-	assert(lse);
 	return lse->max;
 }

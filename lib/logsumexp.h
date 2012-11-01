@@ -1,5 +1,5 @@
-#ifndef _LOGSUMEXP_H
-#define _LOGSUMEXP_H
+#ifndef LOGSUMEXP_H
+#define LOGSUMEXP_H
 
 struct logsumexp {
 	double max;
@@ -11,4 +11,4 @@ void logsumexp_insert(struct logsumexp *lse, double value);
 double logsumexp_max(const struct logsumexp *lse);
 double logsumexp_value(const struct logsumexp *lse);
 
-#endif /* _LOGSUMEXP_H */
+#endif /* LOGSUMEXP_H */

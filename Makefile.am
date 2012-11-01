@@ -83,6 +83,8 @@ libcore_a_SOURCES = \
 	lib/catdist.h \
 	lib/catdist1.c \
 	lib/catdist1.h \
+	lib/logsumexp.c \
+	lib/logsumexp.h \
 	lib/mlogit.c \
 	lib/mlogit.h \
 	lib/mlogitaug.c \
@@ -120,9 +122,7 @@ libcore_a_SOURCES = \
 	src/core/ieee754.c \
 	src/core/ieee754.h \
 	src/core/linesearch.c \
-	src/core/linesearch.h \
-	src/core/logsumexp.c \
-	src/core/logsumexp.h
+	src/core/linesearch.h
 
 libcore_a_LIBADD = \
 	libminpack.a \

@@ -8,7 +8,6 @@
 #include "coreutil.h"
 #include "xalloc.h"
 #include "ieee754.h"
-#include "logsumexp.h"
 #include "lapack.h"
 #include "matrixutil.h"
 #include "util.h"
