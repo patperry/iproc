@@ -1,14 +1,5 @@
 #include "port.h"
 #include <assert.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include "sblas.h"
-#include "coreutil.h"
-#include "xalloc.h"
-#include "ieee754.h"
-#include "vars.h"
 #include "frame.h"
 
 
@@ -18,10 +9,7 @@ void frame_init(struct frame *f, size_t nsend, size_t nrecv, int has_loops,
 	assert(f);
 	assert(intvls || !nintvl);
 
-	f->nsend = nsend;
-	f->nrecv = nrecv;
 	f->has_loops = has_loops;
-
 	history_init(&f->history, nsend, nrecv, intvls, nintvl);
 	design_init(&f->send_design, &f->history, nsend);
 	design_init(&f->recv_design, &f->history, nrecv);
