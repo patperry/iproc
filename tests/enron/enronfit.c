@@ -80,8 +80,6 @@ static void setup_frame(void) {
 	design_add_prod(s, "Trad:Fem", design_var(s, "Trad"), design_var(s, "Fem"));
 	design_add_prod(s, "Jun:Fem", design_var(s, "Jun"), design_var(s, "Fem"));
 
-	//design_add_prod(s, "Leg:Jun2", design_var(s, "Leg"), design_var(s, "Jun"));
-
 	/* third order */
 	//design_add_prod(s, "Leg:Jun:Fem", design_var(s, "Leg:Jun"), design_var(s, "Fem"));
 	//design_add_prod(s, "Trad:Jun:Fem", design_var(s, "Trad:Jun"), design_var(s, "Fem"));
@@ -96,8 +94,6 @@ static void setup_frame(void) {
 	design_add_prod(r, "Trad:Fem", design_var(r, "Trad"), design_var(r, "Fem"));
 	design_add_prod(r, "Jun:Fem", design_var(r, "Jun"), design_var(r, "Fem"));
 
-	//design_add_prod(r, "Jun:Fem2", design_var(r, "Jun"), design_var(r, "Fem"));
-
 	/* third order */
 	//design_add_prod(r, "Leg:Jun:Fem", design_var(r, "Leg:Jun"), design_var(r, "Fem"));
 	//design_add_prod(r, "Trad:Jun:Fem", design_var(r, "Trad:Jun"), design_var(r, "Fem"));
@@ -107,8 +103,8 @@ static void setup_frame(void) {
 	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT);
 	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
-	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
-	design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
+	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
+	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
 
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
@@ -117,8 +113,8 @@ static void setup_frame(void) {
 	design2_add_tvar(d, "IRecv", VAR2_IRECV);
 	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	design2_add_tvar(d, "NSend", VAR2_NSEND);
-	design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	//design2_add_tvar(d, "NSend", VAR2_NSEND);
+	//design2_add_tvar(d, "NRecv", VAR2_NRECV);
 
 	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
 	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
@@ -152,7 +148,12 @@ static void setup_frame(void) {
 
 static void add_constraints(struct recv_fit *fit)
 {
-	/* add constraints to make the model identifiable (TODO/not implemented) */
+	//size_t i, dim = recv_model_dim(&fit->model);
+	//for (i = 0; i < dim; i++) {
+	//	recv_fit_add_constr_set(fit, i, 0.0);
+	//}
+
+	/* add constraints to make the model identifiable */
 	size_t nadd = recv_fit_add_constr_identify(fit);
 	if (nadd > 0)
 		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n", nadd, nadd == 1 ? "constraint" : "constraints");
