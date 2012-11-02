@@ -98,6 +98,8 @@ libcore_a_SOURCES = \
 	lib/core/src/hash.h \
 	lib/core/src/hashset.c \
 	lib/core/src/hashset.h \
+	lib/core/src/ieee754.c \
+	lib/core/src/ieee754.h \
 	lib/core/src/pqueue.c \
 	lib/core/src/pqueue.h \
 	lib/core/src/timsort-impl.h \
@@ -119,8 +121,6 @@ libcore_a_SOURCES = \
 	lib/linalg/src/matrixutil.h \
 	lib/linalg/src/sblas.c \
 	lib/linalg/src/sblas.h \
-	src/core/ieee754.c \
-	src/core/ieee754.h \
 	src/core/linesearch.c \
 	src/core/linesearch.h
 
