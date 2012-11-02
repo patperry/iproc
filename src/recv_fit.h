@@ -1,9 +1,11 @@
 #ifndef RECV_FIT_H
 #define RECV_FIT_H
 
+#include "constr.h"
 #include "design.h"
 #include "linesearch.h"
 #include "messages.h"
+
 #include "recv_loglik.h"
 #include "recv_model.h"
 
@@ -11,18 +13,12 @@
 #define RECV_FIT_XTOL0		(1e-8)
 #define RECV_FIT_LSMAX0		(10)
 #define RECV_FIT_LSCTRL0	LINESEARCH_CTRL0
-#define RECV_FIT_VARTOL		(1e-8)
-#define RECV_FIT_EIGTOL		(1e-8)
-#define RECV_FIT_SVTOL		(1e-8)
 
 #define RECV_FIT_CTRL0 ((struct recv_fit_ctrl) { \
 		RECV_FIT_GTOL0, \
 		RECV_FIT_XTOL0, \
 		RECV_FIT_LSMAX0, \
-		RECV_FIT_LSCTRL0, \
-		RECV_FIT_VARTOL, \
-		RECV_FIT_EIGTOL, \
-		RECV_FIT_SVTOL \
+		RECV_FIT_LSCTRL0 \
 	})
 
 struct recv_fit_ctrl {
@@ -30,9 +26,6 @@ struct recv_fit_ctrl {
 	double xtol;
 	size_t ls_maxit;
 	struct linesearch_ctrl ls;
-	double vartol;
-	double eigtol;
-	double svtol;
 };
 
 enum recv_fit_task {
@@ -42,13 +35,8 @@ enum recv_fit_task {
 	RECV_FIT_ERR_XTOL = -2,	// step size is smaller than tolerance
 };
 
-struct recv_fit_constr {
-	double *wts;
-	double *vals;
-	size_t n, nmax;
-};
 
-struct recv_fit_params {
+struct recv_params {
 	double *all;
 	size_t dim;
 	struct recv_coefs coefs;
@@ -57,13 +45,13 @@ struct recv_fit_params {
 };
 
 struct recv_fit_resid {
-	struct recv_fit_params params;
+	struct recv_params params;
 	double norm2;
 };
 
 struct recv_fit_eval {
 	struct recv_loglik loglik;
-	struct recv_fit_params params;
+	struct recv_params params;
 	struct recv_fit_resid resid;
 };
 
@@ -77,11 +65,11 @@ struct recv_fit_kkt {
 };
 
 struct recv_fit_search {
-	struct recv_fit_params params;
+	struct recv_params params;
 };
 
 struct recv_fit_rgrad {
-	struct recv_fit_params params;
+	struct recv_params params;
 };
 
 struct recv_fit {
@@ -96,7 +84,7 @@ struct recv_fit {
 	double dev0;
 
 	/* optimization constraints */
-	struct recv_fit_constr constr;
+	struct constr *constr;
 
 	/* optimization workspace */
 	struct recv_fit_eval eval[2], *cur, *prev;
@@ -112,33 +100,22 @@ struct recv_fit {
 
 void recv_fit_init(struct recv_fit *fit,
 		   struct frame *f,
+		   struct constr *c,
 		   const struct messages *xmsgs,
 		   const struct messages *ymsgs,
 		   const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 
 
-void recv_fit_params_init(struct recv_fit_params *params, const struct recv_fit *fit);
-void recv_fit_params_deinit(struct recv_fit_params *params);
-
-/* constraints */
-size_t recv_fit_constr_count(const struct recv_fit *fit);
-void recv_fit_get_constr(const struct recv_fit *fit, size_t i,
-			 const double **weightsp, double *valp);
-const double *recv_fit_constrs(const struct recv_fit *fit);
-const double *recv_fit_constr_vals(const struct recv_fit *fit);
-void recv_fit_add_constr(struct recv_fit *fit, const double *weights,
-			 double val);
-void recv_fit_add_constr_set(struct recv_fit *fit, size_t i, double val);
-void recv_fit_add_constr_eq(struct recv_fit *fit, size_t i1, size_t i2);
-size_t recv_fit_add_constr_identify(struct recv_fit *fit);
-
-
-size_t recv_fit_coefs_count(const struct recv_fit *fit);
+void recv_params_init(struct recv_params *params, const struct frame *f,
+		      const struct constr *c);
+void recv_params_init_view(struct recv_params *params, const struct frame *f,
+			   const struct constr *c, const double *data);
+void recv_params_deinit(struct recv_params *params);
 
 
 /* fitting */
-enum recv_fit_task recv_fit_start(struct recv_fit *fit, const struct recv_fit_params *params0);
+enum recv_fit_task recv_fit_start(struct recv_fit *fit, const struct recv_params *params0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 

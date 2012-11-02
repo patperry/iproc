@@ -78,6 +78,8 @@ libcore_a_SOURCES = \
 	lib/catdist.h \
 	lib/catdist1.c \
 	lib/catdist1.h \
+	lib/constr.c \
+	lib/constr.h \
 	lib/linesearch.h \
 	lib/logsumexp.c \
 	lib/logsumexp.h \

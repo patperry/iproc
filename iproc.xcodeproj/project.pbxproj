@@ -134,6 +134,8 @@
 		228E845C1643467800A189E5 /* ieee754.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E845A1643467800A189E5 /* ieee754.h */; };
 		228E845D1643476200A189E5 /* ieee754.c in Sources */ = {isa = PBXBuildFile; fileRef = 228E84591643467800A189E5 /* ieee754.c */; };
 		228E845F1643598C00A189E5 /* linesearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E845E1643598C00A189E5 /* linesearch.h */; };
+		228E846616444C6600A189E5 /* constr.c in Sources */ = {isa = PBXBuildFile; fileRef = 228E846416444C6500A189E5 /* constr.c */; };
+		228E846716444C6600A189E5 /* constr.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E846516444C6500A189E5 /* constr.h */; };
 		22A64C6315F8E863005C7DE4 /* v2-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5715F8E863005C7DE4 /* v2-icosib.c */; };
 		22A64C6415F8E863005C7DE4 /* v2-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5815F8E863005C7DE4 /* v2-irecv.c */; };
 		22A64C6515F8E863005C7DE4 /* v2-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5915F8E863005C7DE4 /* v2-irecv2.c */; };
@@ -604,6 +606,8 @@
 		228E84591643467800A189E5 /* ieee754.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ieee754.c; path = lib/core/src/ieee754.c; sourceTree = "<group>"; };
 		228E845A1643467800A189E5 /* ieee754.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ieee754.h; path = lib/core/src/ieee754.h; sourceTree = "<group>"; };
 		228E845E1643598C00A189E5 /* linesearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = linesearch.h; path = lib/linesearch.h; sourceTree = "<group>"; };
+		228E846416444C6500A189E5 /* constr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = constr.c; path = lib/constr.c; sourceTree = "<group>"; };
+		228E846516444C6500A189E5 /* constr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constr.h; path = lib/constr.h; sourceTree = "<group>"; };
 		22A64C5715F8E863005C7DE4 /* v2-icosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-icosib.c"; path = "src/v2-icosib.c"; sourceTree = "<group>"; };
 		22A64C5815F8E863005C7DE4 /* v2-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv.c"; path = "src/v2-irecv.c"; sourceTree = "<group>"; };
 		22A64C5915F8E863005C7DE4 /* v2-irecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv2.c"; path = "src/v2-irecv2.c"; sourceTree = "<group>"; };
@@ -1008,6 +1012,8 @@
 				228B128A15E605A9000DC495 /* catdist.h */,
 				228B12A415E66568000DC495 /* catdist1.c */,
 				228B12A515E66568000DC495 /* catdist1.h */,
+				228E846416444C6500A189E5 /* constr.c */,
+				228E846516444C6500A189E5 /* constr.h */,
 				228E845E1643598C00A189E5 /* linesearch.h */,
 				228E8455164342B900A189E5 /* logsumexp.c */,
 				228E8456164342B900A189E5 /* logsumexp.h */,
@@ -1050,6 +1056,7 @@
 				222341C2144F36CB00D99D8E /* f77blas.h in Headers */,
 				222341C3144F36CB00D99D8E /* f77lapack.h in Headers */,
 				228E845F1643598C00A189E5 /* linesearch.h in Headers */,
+				228E846716444C6600A189E5 /* constr.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1469,6 +1476,7 @@
 				222341B9144F36BB00D99D8E /* sblas.c in Sources */,
 				222341C0144F36CB00D99D8E /* f77.c in Sources */,
 				222341C4144F36CB00D99D8E /* xerbla.c in Sources */,
+				228E846616444C6600A189E5 /* constr.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

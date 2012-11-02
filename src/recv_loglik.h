@@ -6,6 +6,9 @@
 #include "recv_model.h"
 
 
+#define RECV_LOGLIK_UPLO  MLOGIT_COV_UPLO
+
+
 struct recv_loglik_cohort {
 };
 

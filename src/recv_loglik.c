@@ -88,6 +88,7 @@ static void copy_cov(const struct mlogitaug *m1, double *dst)
 	const double *aug_cov = mlogitaug_cached_cov(m1);
 	size_t i;
 
+	assert(RECV_LOGLIK_UPLO == MLOGIT_COV_UPLO);
 	if (MLOGIT_COV_UPLO == BLAS_UPPER) {
 		for (i = 0; i < base_dim; i++) {
 			size_t rowlen = base_dim - i;

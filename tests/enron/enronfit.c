@@ -34,6 +34,7 @@ static const char * const *trait_names;
 static int has_loops;
 
 static struct frame frame;
+static struct constr constr;
 
 
 static void setup_frame(void) {
@@ -145,15 +146,14 @@ static void setup_frame(void) {
 	//dyad_design_add_interact(d, design_ix(s, "Legal"), design_ix(r, "Legal"));
 }
 
-static void add_constraints(struct recv_fit *fit)
+static void setup_constr(const struct frame *f)
 {
-	//size_t i, dim = recv_model_dim(&fit->model);
-	//for (i = 0; i < dim; i++) {
-	//	recv_fit_add_constr_set(fit, i, 0.0);
-	//}
+	size_t dim = recv_coefs_dim(f);
+	constr_init(&constr, dim);
+	
 
 	/* add constraints to make the model identifiable */
-	size_t nadd = recv_fit_add_constr_identify(fit);
+	size_t nadd = 0; // recv_fit_add_constr_identify(fit);
 	if (nadd > 0)
 		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n", nadd, nadd == 1 ? "constraint" : "constraints");
 }
@@ -361,8 +361,8 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 	struct frame *f = recv_model_frame(m);
 	struct history *h = frame_history(f);
 
-	hsize_t ne = (hsize_t)recv_fit_constr_count(fit);
 	hsize_t dim = (hsize_t)recv_model_dim(m);
+	hsize_t nc = (hsize_t)constr_count(&constr);
 
 	// intervals
 	{
@@ -382,18 +382,18 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 
 	// constraints, constraint_values
 	{
-		hsize_t dims[2] = { dim, ne };
-		const double *wts = recv_fit_constrs(fit);
-		const double *vals = recv_fit_constr_vals(fit);
+		hsize_t dims[2] = { dim, nc };
+		const double *wts = constr_all_wts(&constr);
+		const double *vals = constr_all_vals(&constr);
 
 		status = H5LTmake_dataset(file_id, CONSTRAINTS, 2, dims, H5T_NATIVE_DOUBLE, wts);
-		status = H5LTmake_dataset(file_id, CONSTRAINT_VALUES, 1, &ne, H5T_NATIVE_DOUBLE, vals);
+		status = H5LTmake_dataset(file_id, CONSTRAINT_VALUES, 1, &nc, H5T_NATIVE_DOUBLE, vals);
 	}
 
 	// duals
 	{
 		const double *duals = recv_fit_duals(fit);
-		status = H5LTmake_dataset(file_id, DUALS, 1, &ne, H5T_NATIVE_DOUBLE, duals);
+		status = H5LTmake_dataset(file_id, DUALS, 1, &nc, H5T_NATIVE_DOUBLE, duals);
 	}
 
 	// count
@@ -427,7 +427,7 @@ static herr_t output_recv_fit(hid_t file_id, const struct recv_fit *fit, int has
 
 	// rank, df_residual, df_null
 	{
-		hsize_t rank = dim - ne;
+		hsize_t rank = dim - nc;
 		hsize_t ntot = recv_loglik_count(ll);
 		double dfresid = (double)(ntot - rank);
 		double dfnull = (double)ntot;
@@ -505,7 +505,7 @@ static herr_t output(const char *output, const struct recv_fit *fit, int resid)
 	return status;
 }
 
-static int do_fit(struct recv_fit *fit, const struct recv_fit_params *params0)
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0)
 {
 	size_t maxit = 30;
 	size_t report = 1;
@@ -552,8 +552,9 @@ static int do_fit(struct recv_fit *fit, const struct recv_fit_params *params0)
 }
 
 
-static void init_params(struct recv_fit_params *params,
-			const struct recv_fit *fit,
+static void init_params(struct recv_params *params,
+			const struct frame *f,
+			const struct constr *c,
 			const char *filename)
 {
 	hid_t file_id;
@@ -567,7 +568,7 @@ static void init_params(struct recv_fit_params *params,
 	if (file_id < 0)
 		exit(EXIT_FAILURE);
 
-	recv_fit_params_init(params, fit);
+	recv_params_init(params, f, c);
 
 	// coefficients
 	{
@@ -599,7 +600,7 @@ static void init_params(struct recv_fit_params *params,
 			exit(EXIT_FAILURE);
 
 		status = H5LTget_dataset_info(file_id, DUALS, &dims, &type_class, &type_size);
-		if (status < 0 || dims != recv_fit_constr_count(fit))
+		if (status < 0 || dims != constr_count(c))
 			exit(EXIT_FAILURE);
 
 		status = H5LTread_dataset(file_id, DUALS, H5T_NATIVE_DOUBLE, params->duals);
@@ -681,11 +682,11 @@ static struct options parse_options(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	int err = 0;
-
 	struct options opts = parse_options(argc, argv);
 
 	// setup frame
 	setup_frame();
+	setup_constr(&frame);
 
 	// setup messages
 	struct messages enron_messages;
@@ -693,20 +694,14 @@ int main(int argc, char **argv)
 	struct messages *ymsgs = &enron_messages;
 	enron_messages_init(&enron_messages, 5);
 
-	// setup fit
-	struct recv_fit fit;
-	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
-	recv_fit_init(&fit, &frame, xmsgs, ymsgs, &ctrl);
-	add_constraints(&fit);
-
 	// setup initial parameters
-	struct recv_fit_params params0;
+	struct recv_params params0;
 	int has_params0 = 0;
 	if (opts.startfile) {
 		has_params0 = 1;
-		init_params(&params0, &fit, opts.startfile);
+		init_params(&params0, &frame, &constr, opts.startfile);
 	}
-	struct recv_fit_params *pparams0 = has_params0 ? &params0 : NULL;
+	struct recv_params *pparams0 = has_params0 ? &params0 : NULL;
 	struct recv_coefs *pcoefs0 = has_params0 ? &params0.coefs : NULL;
 
 	// setup bootstrap (if required)
@@ -719,6 +714,11 @@ int main(int argc, char **argv)
 		ymsgs = &boot.messages;
 	}
 
+	// setup fit
+	struct recv_fit fit;
+	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
+	recv_fit_init(&fit, &frame, &constr, xmsgs, ymsgs, &ctrl);
+
 	// fit the model
 	err = do_fit(&fit, pparams0);
 
@@ -728,7 +728,7 @@ int main(int argc, char **argv)
 	if (opts.boot)
 		recv_boot_deinit(&boot);
 	if (has_params0)
-		recv_fit_params_deinit(&params0);
+		recv_params_deinit(&params0);
 	recv_fit_deinit(&fit);
 	messages_deinit(&enron_messages);
 	teardown_frame();
