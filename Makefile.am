@@ -23,10 +23,8 @@ LDADD = \
 noinst_LIBRARIES = \
 	libcore.a \
 	libdSFMT.a \
-	libf2c.a \
 	libiproc.a \
 	libjson.a \
-	libminpack.a \
 	libyajl.a
 
 
@@ -83,6 +81,7 @@ libcore_a_SOURCES = \
 	lib/catdist.h \
 	lib/catdist1.c \
 	lib/catdist1.h \
+	lib/linesearch.h \
 	lib/logsumexp.c \
 	lib/logsumexp.h \
 	lib/mlogit.c \
@@ -120,12 +119,9 @@ libcore_a_SOURCES = \
 	lib/linalg/src/matrixutil.c \
 	lib/linalg/src/matrixutil.h \
 	lib/linalg/src/sblas.c \
-	lib/linalg/src/sblas.h \
-	src/core/linesearch.c \
-	src/core/linesearch.h
+	lib/linalg/src/sblas.h
 
 libcore_a_LIBADD = \
-	libminpack.a \
 	$(LIBADD)
 
 
@@ -161,19 +157,6 @@ libdSFMT_a_CPPFLAGS = \
 	-DDSFMT_MEXP=19937 \
 	$(AM_CPPFLAGS)
 
-
-libf2c_a_SOURCES = \
-	lib/libf2c/f2c.h \
-	lib/libf2c/s_cmp.c \
-	lib/libf2c/s_copy.c
-
-libminpack_a_SOURCES = \
-	lib/minpack/dcsrch.c \
-	lib/minpack/dcstep.c
-
-libminpack_a_CPPFLAGS = \
-	-I./lib/libf2c \
-	$(AM_CPPFLAGS)
 
 libyajl_a_SOURCES = \
 	lib/yajl/src/api/yajl_common.h \

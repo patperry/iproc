@@ -104,7 +104,7 @@ struct recv_fit {
 	struct recv_fit_rgrad rgrad;
 
 	/* additional workspace */
-	struct linesearch ls;
+	//struct linesearch ls;
 	enum recv_fit_task task;
 	double step;
 };
