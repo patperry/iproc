@@ -8,7 +8,7 @@ echo "END = ${END}"
 
 for i in $(eval echo {$START..$END})
 do
-    CMD="./tests/enronfit --start=output/fit-dynamic.json --boot=$i > ./output/boot-dynamic/fit$i.json 2> ./output/boot-dynamic/fit$i.err"
+    CMD="./tests/enronfit --start=output.h5 --boot=$i --output=./output/boot/fit$i.h5 > ./output/boot/fit$i.out 2> ./output/boot/fit$i.err"
     echo $CMD
     eval $CMD
 done
