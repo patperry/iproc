@@ -83,6 +83,7 @@ struct coefs2 {
 	double *traits;
 	double *tvars;
 	size_t dim;
+	int owner;
 };
 
 
@@ -154,6 +155,7 @@ static inline void design2_get_cohorts(const struct design2 *d,
 
 /* coefs2 */
 void coefs2_init(struct coefs2 *c, const struct design2 *d);
+void coefs2_init_view(struct coefs2 *c, const struct design2 *d, const double *data);
 void coefs2_deinit(struct coefs2 *c);
 
 void design2_mul(double alpha, const struct design2 *d, size_t i,

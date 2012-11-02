@@ -22,6 +22,7 @@ struct recv_coefs {
 	size_t dim;
 	struct coefs recv;
 	struct coefs2 dyad;
+	int owner;
 };
 
 struct recv_model_cohort {
@@ -43,8 +44,9 @@ struct recv_model {
 	int moments;
 };
 
-
+size_t recv_coefs_dim(const struct frame *f);
 void recv_coefs_init(struct recv_coefs *c, const struct frame *f);
+void recv_coefs_init_view(struct recv_coefs *c, const struct frame *f, const double *data);
 void recv_coefs_deinit(struct recv_coefs *c);
 
 void recv_model_init(struct recv_model *model,

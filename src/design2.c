@@ -779,20 +779,31 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 
 void coefs2_init(struct coefs2 *c, const struct design2 *d)
 {
+	size_t dim = design2_dim(d);
+	double *data = xmalloc(dim * sizeof(data[0]));
+	coefs2_init_view(c, d, data);
+	c->owner = 1;
+}
+
+
+void coefs2_init_view(struct coefs2 *c, const struct design2 *d, const double *data)
+{
 	size_t dim0 = design2_trait_dim(d);
 	size_t dim1 = design2_tvar_dim(d);
 	size_t dim = dim0 + dim1;
-	
-	c->all = xmalloc(dim * sizeof(*c->all));
+
+	c->all = (double *)data;
 	c->traits = c->all;
 	c->tvars = c->all + dim0;
 	c->dim = dim;
+	c->owner = 0;
 }
 
 
 void coefs2_deinit(struct coefs2 *c)
 {
-	free(c->all);
+	if (c->owner)
+		free(c->all);
 }
 
 

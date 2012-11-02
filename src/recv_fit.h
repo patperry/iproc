@@ -53,6 +53,7 @@ struct recv_fit_params {
 	size_t dim;
 	struct recv_coefs coefs;
 	double *duals;
+	int owner;
 };
 
 struct recv_fit_resid {

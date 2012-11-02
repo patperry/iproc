@@ -15,39 +15,47 @@
 #include "recv_model.h"
 
 
-void recv_coefs_init(struct recv_coefs *c, const struct frame *f)
+size_t recv_coefs_dim(const struct frame *f)
 {
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
-	size_t dimr0 = design_trait_dim(r);
-	size_t dimr1 = design_tvar_dim(r);
-	size_t dimr = dimr0 + dimr1;	
-	size_t dimd0 = design2_trait_dim(d);
-	size_t dimd1 = design2_tvar_dim(d);
-	size_t dimd = dimd0 + dimd1;
+	size_t dimr = design_dim(r);
+	size_t dimd = design2_dim(d);
 	size_t dim = dimr + dimd;
-	double *all = xmalloc(dim * sizeof(*all));
-	double *allr = all;
-	double *alld = allr + dimr;
+	return dim;
+}
+
+
+void recv_coefs_init(struct recv_coefs *c, const struct frame *f)
+{
+	size_t dim = recv_coefs_dim(f);
+	double *data = xmalloc(dim * sizeof(data[0]));
+	recv_coefs_init_view(c, f, data);
+	c->owner = 1;
+}
+
+void recv_coefs_init_view(struct recv_coefs *c, const struct frame *f, const double *data)
+{
+	const struct design *r = frame_recv_design(f);
+	const struct design2 *d = frame_dyad_design(f);
+
+	c->all = (double *)data;
+	c->dim = 0;
+
+	coefs_init_view(&c->recv, r, c->all + c->dim);
+	c->dim += c->recv.dim;
+
+	coefs2_init_view(&c->dyad, d, c->all + c->dim);
+	c->dim += c->dyad.dim;
 	
-	c->all = all;
-	c->dim = dim;
-	
-	c->recv.all = allr;
-	c->recv.dim = dimr;
-	c->recv.traits = allr;
-	c->recv.tvars = allr + dimr0;
-	
-	c->dyad.all = alld;
-	c->dyad.dim = dimd;
-	c->dyad.traits = alld;
-	c->dyad.tvars = alld + dimd0;
+	c->owner = 0;
 }
 
 
 void recv_coefs_deinit(struct recv_coefs *c)
 {
-	free(c->all);
+	if (c->owner)
+		free(c->all);
 }
 
 

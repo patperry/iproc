@@ -18,69 +18,47 @@
 #include "recv_fit.h"
 
 static void params_init(struct recv_fit_params *x, const struct frame *f, size_t ne);
-static void params_setup(struct recv_fit_params *x, const struct frame *f, size_t ne);
+static void params_init_view(struct recv_fit_params *x, const struct frame *f, size_t ne, const double *data);
+static void params_reinit(struct recv_fit_params *x, const struct frame *f, size_t ne);
 static void params_clear(struct recv_fit_params *x);
 static void params_deinit(struct recv_fit_params *x);
 
 static void params_init(struct recv_fit_params *x, const struct frame *f, size_t ne)
 {
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
-	size_t dimr0 = design_trait_dim(r);
-	size_t dimr1 = design_tvar_dim(r);
-	size_t dimr = dimr0 + dimr1;
-	size_t dimd0 = design2_trait_dim(d);
-	size_t dimd1 = design2_tvar_dim(d);
-	size_t dimd = dimd0 + dimd1;
-	size_t coefs_dim = dimr + dimd;
+	size_t coefs_dim = recv_coefs_dim(f);
 	size_t dim = coefs_dim + ne;
-
-	x->all = xmalloc(dim * sizeof(*x->all));
-	params_setup(x, f, ne);
+	double *data = xmalloc(dim * sizeof(data[0]));
+	params_init_view(x, f, ne, data);
+	x->owner = 1;
 	params_clear(x);
 }
 
-
-static void params_setup(struct recv_fit_params *x, const struct frame *f, size_t ne)
+static void params_init_view(struct recv_fit_params *x, const struct frame *f, size_t ne, const double *data)
 {
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
-	size_t dimr0 = design_trait_dim(r);
-	size_t dimr1 = design_tvar_dim(r);
-	size_t dimr = dimr0 + dimr1;
-	size_t dimd0 = design2_trait_dim(d);
-	size_t dimd1 = design2_tvar_dim(d);
-	size_t dimd = dimd0 + dimd1;
-	size_t coefs_dim = dimr + dimd;
-	size_t dim = coefs_dim + ne;
+	x->all = (double *)data;
+	x->dim = 0;
 
-	x->dim = dim;
+	recv_coefs_init_view(&x->coefs, f, x->all + x->dim);
+	x->dim += x->coefs.dim;
 
-	x->coefs.all = x->all;
-	x->coefs.dim = coefs_dim;
+	x->duals = x->all + x->dim;
+	x->dim += ne;
 
-	x->coefs.recv.all = x->all;
-	x->coefs.recv.traits = x->all;
-	x->coefs.recv.tvars = x->all + dimr0;
-	x->coefs.recv.dim = dimr;
-
-	x->coefs.dyad.all = x->all + dimr;
-	x->coefs.dyad.traits = x->all + dimr;
-	x->coefs.dyad.tvars = x->all + dimr + dimd0;
-	x->coefs.dyad.dim = dimd;
-
-	x->duals = x->all + coefs_dim;
+	x->owner = 0;
 }
 
 
 static void params_reinit(struct recv_fit_params *x, const struct frame *f, size_t ne)
 {
+	assert(x->owner);
+
 	size_t dim0 = x->coefs.dim;
 	size_t ne0 = x->dim - dim0;
 	size_t dim = dim0 + ne;
 
-	x->all = xrealloc(x->all, dim * sizeof(*x->all));
-	params_setup(x, f, ne);
+	double *data = xrealloc(x->all, dim * sizeof(data[0]));
+	params_init_view(x, f, ne, data);
+	x->owner = 1;
 
 	if (ne > ne0) {
 		memset(x->duals + ne0, 0, (ne - ne0) * sizeof(*x->duals));
@@ -96,7 +74,8 @@ static void params_clear(struct recv_fit_params *x)
 
 static void params_deinit(struct recv_fit_params *x)
 {
-	free(x->all);
+	if (x->owner)
+		free(x->all);
 }
 
 

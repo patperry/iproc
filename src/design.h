@@ -77,6 +77,7 @@ struct coefs {
 	double *traits; /* points into all */
 	double *tvars;  /* points into all */
 	size_t dim;
+	int owner;
 };
 
 static inline const char *var_name(const struct var *v)
@@ -149,6 +150,7 @@ const struct var *design_add_prod(struct design *d, const char *name, const stru
 
 /* coefs */
 void coefs_init(struct coefs *c, const struct design *d);
+void coefs_init_view(struct coefs *c, const struct design *d, const double *data);
 void coefs_deinit(struct coefs *c);
 
 void design_mul(double alpha, const struct design *d,
