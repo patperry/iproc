@@ -137,11 +137,15 @@ libdSFMT_a_SOURCES = \
 	lib/dSFMT/dSFMT.c \
 	lib/dSFMT/dSFMT.h
 
-libdSFMT_a_CPPFLAGS = \
+libdSFMT_a_CFLAGS = \
 	-Wmissing-prototypes -Wall \
-	-O3 -finline-functions -fomit-frame-pointer -DNDEBUG \
+	-O3 -finline-functions -fomit-frame-pointer \
 	-fno-strict-aliasing --param max-inline-insns-single=1800 \
 	-std=c99 \
+	$(AM_CFLAGS)
+
+libdSFMT_a_CPPFLAGS = \
+	-DNDEBUG \
 	-DDSFMT_MEXP=19937 \
 	$(AM_CPPFLAGS)
 
@@ -165,6 +169,10 @@ libyajl_a_SOURCES = \
 	lib/yajl/src/yajl_parser.c \
 	lib/yajl/src/yajl_parser.h \
 	lib/yajl/src/yajl_tree.c
+
+libyajl_a_CFLAGS = \
+	-Wno-sign-compare \
+	$(AM_CFLAGS)
 
 libyajl_a_CPPFLAGS = \
 	-I./lib/yajl/src \
