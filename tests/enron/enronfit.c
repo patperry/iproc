@@ -146,23 +146,30 @@ static void setup_frame(void) {
 	//dyad_design_add_interact(d, design_ix(s, "Legal"), design_ix(r, "Legal"));
 }
 
-static void setup_constr(const struct frame *f)
-{
-	size_t dim = recv_coefs_dim(f);
-	constr_init(&constr, dim);
-	
-
-	/* add constraints to make the model identifiable */
-	size_t nadd = 0; // recv_fit_add_constr_identify(fit);
-	if (nadd > 0)
-		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n", nadd, nadd == 1 ? "constraint" : "constraints");
-}
-
 static void teardown_frame(void)
 {
 	frame_deinit(&frame);
 	free(traits);
 }
+
+static void setup_constr(struct frame *f, const struct messages *xmsgs,
+			 const struct messages *ymsgs)
+{
+	size_t dim = recv_coefs_dim(f);
+	constr_init(&constr, dim);
+
+	/* add constraints to make the model identifiable */
+	size_t nadd = constr_add_identify_recv_fit(&constr, f, xmsgs, ymsgs);
+	if (nadd > 0)
+		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n",
+			nadd, nadd == 1 ? "constraint" : "constraints");
+}
+
+static void teardown_constr(void)
+{
+	constr_deinit(&constr);
+}
+
 
 
 #define INTERVALS		"intervals"
@@ -686,13 +693,16 @@ int main(int argc, char **argv)
 
 	// setup frame
 	setup_frame();
-	setup_constr(&frame);
 
 	// setup messages
 	struct messages enron_messages;
 	struct messages *xmsgs = &enron_messages;
 	struct messages *ymsgs = &enron_messages;
 	enron_messages_init(&enron_messages, 5);
+
+	// setup constraints; only depends on times of ymsgs,
+	// so same for boot and non-boot runs.
+	setup_constr(&frame, xmsgs, ymsgs);
 
 	// setup initial parameters
 	struct recv_params params0;
@@ -731,6 +741,7 @@ int main(int argc, char **argv)
 		recv_params_deinit(&params0);
 	recv_fit_deinit(&fit);
 	messages_deinit(&enron_messages);
+	teardown_constr();
 	teardown_frame();
 
 	return err;

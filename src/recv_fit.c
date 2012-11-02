@@ -513,21 +513,30 @@ void recv_fit_deinit(struct recv_fit *fit)
 }
 
 
-/*
-size_t recv_fit_add_constr_identify(struct recv_fit *fit)
+size_t constr_add_identify_recv_fit(struct constr *c, struct frame *f,
+				    const struct messages *xmsgs,
+				    const struct messages *ymsgs)
 {
-	const struct recv_loglik *ll = &fit->cur->loglik;
-	const struct recv_model *m = recv_loglik_model(ll);
-	size_t n = recv_model_dim(m);
-	double *imatp = xmalloc(n * (n + 1) / 2 * sizeof(imatp[0]));
-	memset(imatp, 0, n * (n + 1) / 2 * sizeof(imatp[0]));
-	recv_loglik_axpy_imat(1.0, ll, imatp);
+	struct recv_model model;
+	struct recv_fit_eval eval;
 
-	size_t nadd = constr_add_identify(fit->constr, imatp, RECV_LOGLIK_UPLO);
+	recv_model_init(&model, f, NULL);
+	eval_init(&eval, &model, c);
+	eval_set(&eval, NULL, xmsgs, ymsgs, f, &model, 2);
+
+	size_t n = recv_coefs_dim(f);
+	double *imatp = xcalloc(n * (n + 1) / 2, sizeof(double));
+
+	recv_loglik_axpy_imat(1.0, &eval.loglik, imatp);
+
+	size_t nadd = constr_add_identify(c, imatp, RECV_LOGLIK_UPLO);
+
 	free(imatp);
+	eval_deinit(&eval);
+	recv_model_deinit(&model);
+
 	return nadd;
 }
-*/
 
 
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit)

@@ -104,6 +104,9 @@ void recv_params_init_view(struct recv_params *params, const struct frame *f,
 			   const struct constr *c, const double *data);
 void recv_params_deinit(struct recv_params *params);
 
+size_t constr_add_identify_recv_fit(struct constr *c, struct frame *f,
+				    const struct messages *xmsgs,
+				    const struct messages *ymsgs);
 
 void recv_fit_init(struct recv_fit *fit,
 		   struct frame *f,
