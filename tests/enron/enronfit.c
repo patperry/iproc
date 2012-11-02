@@ -14,7 +14,6 @@
 #include "dSFMT/dSFMT.h"
 
 #include "ieee754.h"
-#include "json.h"
 #include "enron.h"
 #include "messages.h"
 #include "design.h"

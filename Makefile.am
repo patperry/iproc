@@ -6,8 +6,6 @@ AM_CPPFLAGS = \
 	-Ilib/linalg/src \
 	-Ilib/include \
 	-Ilib \
-	-Isrc/core \
-	-Isrc/json \
 	-Isrc
 
 LIBADD = \
@@ -24,7 +22,6 @@ noinst_LIBRARIES = \
 	libcore.a \
 	libdSFMT.a \
 	libiproc.a \
-	libjson.a \
 	libyajl.a
 
 
@@ -122,15 +119,6 @@ libcore_a_SOURCES = \
 	lib/linalg/src/sblas.h
 
 libcore_a_LIBADD = \
-	$(LIBADD)
-
-
-libjson_a_SOURCES = \
-	src/json/json.c \
-	src/json/json.h
-
-libjson_a_LIBADD = \
-	libcore.a \
 	$(LIBADD)
 
 
