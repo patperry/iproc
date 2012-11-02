@@ -12,7 +12,6 @@
 #include "recv_model.h"
 
 struct recv_boot {
-	struct frame frame;
 	struct recv_model model;
 	struct messages messages;
 };

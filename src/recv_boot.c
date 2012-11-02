@@ -79,7 +79,7 @@ void recv_boot_init(struct recv_boot *boot,
 	messages_init(&boot->messages);
 	recv_model_init(&boot->model, f, coefs);
 
-	struct history *h = frame_history(&boot->frame);
+	struct history *h = frame_history(f);
 	size_t nrecv = frame_recv_count(f);
 	size_t max_nto = messages_max_nto(msgs);
 	size_t *to = xcalloc(max_nto, sizeof(to[0]));
@@ -91,6 +91,8 @@ void recv_boot_init(struct recv_boot *boot,
 	double t;
 	size_t i, n;
 	size_t from, nto;
+
+	history_clear(h);
 
 	MESSAGES_FOREACH(it, msgs) {
 		t = MESSAGES_TIME(it);
@@ -138,6 +140,5 @@ void recv_boot_init(struct recv_boot *boot,
 void recv_boot_deinit(struct recv_boot *boot)
 {
 	recv_model_deinit(&boot->model);
-	frame_deinit(&boot->frame);
 	messages_deinit(&boot->messages);
 }
