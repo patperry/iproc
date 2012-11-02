@@ -98,6 +98,13 @@ struct recv_fit {
 	double step;
 };
 
+void recv_params_init(struct recv_params *params, const struct frame *f,
+		      const struct constr *c);
+void recv_params_init_view(struct recv_params *params, const struct frame *f,
+			   const struct constr *c, const double *data);
+void recv_params_deinit(struct recv_params *params);
+
+
 void recv_fit_init(struct recv_fit *fit,
 		   struct frame *f,
 		   struct constr *c,
@@ -106,12 +113,6 @@ void recv_fit_init(struct recv_fit *fit,
 		   const struct recv_fit_ctrl *ctrl);
 void recv_fit_deinit(struct recv_fit *fit);
 
-
-void recv_params_init(struct recv_params *params, const struct frame *f,
-		      const struct constr *c);
-void recv_params_init_view(struct recv_params *params, const struct frame *f,
-			   const struct constr *c, const double *data);
-void recv_params_deinit(struct recv_params *params);
 
 
 /* fitting */
