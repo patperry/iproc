@@ -131,7 +131,7 @@ static void setup_frame(void) {
 		const struct var *vi = design_trait_var(s, i);
 		for (j = 0; j < design_trait_count(r); j++) {
 			const struct var *vj = design_trait_var(r, j);
-			sprintf(namebuf, "%s*%s", var_name(vi), var_name(vj));
+			sprintf(namebuf, "%s*%s", vi->meta.name, vj->meta.name);
 			design2_add_kron(d, namebuf, vi, vj);
 		}
 	}
@@ -259,13 +259,13 @@ static const char **alloc_varnames(const struct frame *f, size_t *pn)
 	n = design_trait_count(r);
 	for (k = 0; k < n; k++) {
 		const struct var *v = design_trait_var(r, k);
-		size_t prefix = strlen(v->name);
-		memcpy(namebuf, v->name, prefix);
+		size_t prefix = strlen(v->meta.name);
+		memcpy(namebuf, v->meta.name, prefix);
 
-		indices_clear(indices, v->rank);
-		for (i = 0; i < v->size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
-			indices_advance(indices, v->dims, v->rank);
+		indices_clear(indices, v->meta.rank);
+		for (i = 0; i < v->meta.size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
+			indices_advance(indices, v->meta.dims, v->meta.rank);
 			res[index++] = xstrdup(namebuf);
 		}
 	}
@@ -273,13 +273,13 @@ static const char **alloc_varnames(const struct frame *f, size_t *pn)
 	n = design_tvar_count(r);
 	for (k = 0; k < n; k++) {
 		const struct var *v = design_tvar_var(r, k);
-		size_t prefix = strlen(v->name);
-		memcpy(namebuf, v->name, prefix);
+		size_t prefix = strlen(v->meta.name);
+		memcpy(namebuf, v->meta.name, prefix);
 
-		indices_clear(indices, v->rank);
-		for (i = 0; i < v->size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
-			indices_advance(indices, v->dims, v->rank);
+		indices_clear(indices, v->meta.rank);
+		for (i = 0; i < v->meta.size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
+			indices_advance(indices, v->meta.dims, v->meta.rank);
 			res[index++] = xstrdup(namebuf);
 		}
 	}
@@ -287,13 +287,13 @@ static const char **alloc_varnames(const struct frame *f, size_t *pn)
 	n = design2_trait_count(d);
 	for (k = 0; k < n; k++) {
 		const struct var2 *v = design2_trait_var(d, k);
-		size_t prefix = strlen(v->name);
-		memcpy(namebuf, v->name, prefix);
+		size_t prefix = strlen(v->meta.name);
+		memcpy(namebuf, v->meta.name, prefix);
 
-		indices_clear(indices, v->rank);
-		for (i = 0; i < v->size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
-			indices_advance(indices, v->dims, v->rank);
+		indices_clear(indices, v->meta.rank);
+		for (i = 0; i < v->meta.size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
+			indices_advance(indices, v->meta.dims, v->meta.rank);
 			res[index++] = xstrdup(namebuf);
 		}
 	}
@@ -301,13 +301,13 @@ static const char **alloc_varnames(const struct frame *f, size_t *pn)
 	n = design2_tvar_count(d);
 	for (k = 0; k < n; k++) {
 		const struct var2 *v = design2_tvar_var(d, k);
-		size_t prefix = strlen(v->name);
-		memcpy(namebuf, v->name, prefix);
+		size_t prefix = strlen(v->meta.name);
+		memcpy(namebuf, v->meta.name, prefix);
 
-		indices_clear(indices, v->rank);
-		for (i = 0; i < v->size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->rank);
-			indices_advance(indices, v->dims, v->rank);
+		indices_clear(indices, v->meta.rank);
+		for (i = 0; i < v->meta.size; i++) {
+			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
+			indices_advance(indices, v->meta.dims, v->meta.rank);
 			res[index++] = xstrdup(namebuf);
 		}
 	}

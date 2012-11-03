@@ -2,11 +2,11 @@
 #define DESIGN_H
 
 #include "history.h"
+#include "var.h"
 #include "blas.h"
 #include "sblas.h"
 #include <stdarg.h>
 
-#define VAR_RANK_MAX 8
 
 struct design {
 	struct history *history;
@@ -33,32 +33,6 @@ struct design {
 	size_t nobs, nobs_max;
 };
 
-enum var_type {
-	VAR_TYPE_TRAIT,
-	VAR_TYPE_TVAR
-};
-
-struct var {
-	struct design *design;
-	enum var_type type;
-	const char *name;
-	size_t dims[VAR_RANK_MAX];
-	size_t rank;
-	size_t size;
-	size_t index;
-};
-
-struct tvar {
-	struct var var;
-	const struct tvar_type *type;
-	void *udata;
-};
-
-struct tvar_type {
-	void (*init) (struct tvar *tv, struct history *h, va_list ap);
-	void (*deinit) (struct tvar * tv, struct history *h);
-};
-
 struct design_callbacks {
 	void (*update) (void *udata, struct design *d, size_t i,
 			const double *delta, const size_t *ind, size_t nz);
@@ -80,10 +54,6 @@ struct coefs {
 	int owner;
 };
 
-static inline const char *var_name(const struct var *v)
-{
-	return v->name;
-}
 
 void design_init(struct design *d, struct history *h, size_t count);
 void design_deinit(struct design *d);
@@ -245,7 +215,7 @@ const double *design_traits(const struct design *d, size_t i)
 const double *design_trait(const struct design *d, const struct var *v, size_t i)
 {
 	assert(v->design == d);
-	assert(v->type == VAR_TYPE_TRAIT);
+	assert(v->meta.type == VAR_TYPE_TRAIT);
 	const double *x = design_traits(d, i);
 	size_t off = v->index;
 	return x + off;
@@ -270,7 +240,7 @@ const struct var * design_tvar_var(const struct design *d, size_t k)
 const double *design_tvar(const struct design *d, const struct var *v, size_t i)
 {
 	assert(v->design == d);
-	assert(v->type == VAR_TYPE_TVAR);
+	assert(v->meta.type == VAR_TYPE_TVAR);
 	const double *dx = design_tvars(d, i);
 	if (!dx)
 		return NULL;

@@ -178,15 +178,14 @@ static struct history_callbacks nrecv2_history_callbacks = {
 };
 
 
-static void nrecv2_init(struct tvar2 *tv, struct history *h, va_list ap)
+static void nrecv2_init(struct tvar2 *tv, const char *name, struct history *h, va_list ap)
 {
 	(void)ap;		// unused;
 
 	size_t n = history_interval_count(h);
-
-	tv->var.rank = 2;
-	tv->var.dims[0] = n;
-	tv->var.dims[1] = n;
+	size_t rank = 2;
+	size_t dims[2] = { n, n };
+	var_meta_init(&tv->var.meta, name, VAR_TYPE_TVAR, dims, rank);
 	tv->udata = NULL;
 
 	history_add_observer(h, tv, &nrecv2_history_callbacks);
@@ -196,6 +195,7 @@ static void nrecv2_init(struct tvar2 *tv, struct history *h, va_list ap)
 static void nrecv2_deinit(struct tvar2 *tv, struct history *h)
 {
 	history_remove_observer(h, tv);
+	var_meta_deinit(&tv->var.meta);
 }
 
 

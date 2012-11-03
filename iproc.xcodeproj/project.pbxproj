@@ -101,6 +101,8 @@
 		2285AD1A13B147E900C46E8B /* enronfit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2285AD1913B147E900C46E8B /* enronfit.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include"; }; };
 		2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		2285AD1C13B147F300C46E8B /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		22886B0516457D3700CE17E9 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = 22886B0316457D3700CE17E9 /* var.c */; };
+		22886B0616457D3700CE17E9 /* var.h in Headers */ = {isa = PBXBuildFile; fileRef = 22886B0416457D3700CE17E9 /* var.h */; };
 		2288809713A9327E00D673A6 /* model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2288809613A9327E00D673A6 /* model_test.c */; };
 		2288809813A932A500D673A6 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2288809913A932A500D673A6 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -583,6 +585,8 @@
 		227870A715B0A68C004B170B /* design2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design2.h; path = src/design2.h; sourceTree = "<group>"; };
 		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
 		2285AD1913B147E900C46E8B /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enron/enronfit.c; sourceTree = "<group>"; };
+		22886B0316457D3700CE17E9 /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
+		22886B0416457D3700CE17E9 /* var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = var.h; path = src/var.h; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model_test.c; path = tests/model_test.c; sourceTree = "<group>"; };
 		228B127F15E60579000DC495 /* catdist_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = catdist_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -863,6 +867,8 @@
 				22A64C6015F8E863005C7DE4 /* v2-nsend.c */,
 				22A64C6115F8E863005C7DE4 /* v2-nsend2.c */,
 				22A64C6215F8E863005C7DE4 /* v2-nsib.c */,
+				22886B0316457D3700CE17E9 /* var.c */,
+				22886B0416457D3700CE17E9 /* var.h */,
 				223BFE4613AA98F200835B8F /* vars.h */,
 				22749E5C1402E2EB00C5A955 /* vars.c */,
 			);
@@ -1082,6 +1088,7 @@
 				223E4117164060C100FAB1C7 /* strata.h in Headers */,
 				228E8458164342B900A189E5 /* logsumexp.h in Headers */,
 				228E845C1643467800A189E5 /* ieee754.h in Headers */,
+				22886B0616457D3700CE17E9 /* var.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1519,6 +1526,7 @@
 				222EF69716125EEA005CA886 /* v-isendtot.c in Sources */,
 				223E4116164060C100FAB1C7 /* strata.c in Sources */,
 				228E8457164342B900A189E5 /* logsumexp.c in Sources */,
+				22886B0516457D3700CE17E9 /* var.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

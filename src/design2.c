@@ -16,9 +16,8 @@
 #include "vars.h"
 #include "design2.h"
 
-static size_t compute_size(const size_t *dims, size_t rank);
 
-static void prod2_init(struct tvar2 *tv, struct history *h, va_list ap);
+static void prod2_init(struct tvar2 *tv, const char *name, struct history *h, va_list ap);
 static void prod2_deinit(struct tvar2 *tv, struct history *h);
 static void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size_t i,
 			    size_t j, const double *delta, const size_t *ind, size_t nz);
@@ -377,25 +376,24 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 {
 	assert(design_count(i->design) == d->count1);
 	assert(design_count(j->design) == d->count2);
-	assert(i->type == VAR_TYPE_TRAIT); // other types not implemented
-	assert(j->type == VAR_TYPE_TRAIT); // ditto
-
+	assert(i->meta.type == VAR_TYPE_TRAIT); // other types not implemented
+	assert(j->meta.type == VAR_TYPE_TRAIT); // ditto
+	
 	size_t m = d->count1;
 	size_t n = d->count2;
-	size_t sizei = i->size;
-	size_t sizej = j->size;
+	size_t sizei = i->meta.size;
+	size_t sizej = j->meta.size;
 	struct kvar2 *kv = xmalloc(sizeof(*kv));
 	struct var2 *v = &kv->var;
+	size_t rank = i->meta.rank + j->meta.rank;
+	size_t dims[VAR_RANK_MAX];
+	memcpy(dims, i->meta.dims, i->meta.rank * sizeof(dims[0]));
+	memcpy(dims + i->meta.rank, j->meta.dims, j->meta.rank * sizeof(dims[0]));
 
+	var_meta_init(&v->meta, name, VAR_TYPE_TRAIT, dims, rank);
+	assert(v->meta.size == sizei * sizej);
 	v->design = d;
-	v->type = VAR_TYPE_TRAIT;
-	v->name = xstrdup(name);
-	v->rank = i->rank + j->rank;
-	memcpy(v->dims, i->dims, i->rank * sizeof(v->dims[0]));
-	memcpy(v->dims + i->rank, j->dims, j->rank * sizeof(v->dims[0]));
-	v->size = sizei * sizej;
 	v->index = d->kvar_dim;
-
 
 	kv->dimi = sizei;
 	kv->xi = xmalloc(sizei * m * sizeof(*kv->xi));
@@ -416,8 +414,7 @@ const struct var2 *design2_add_kron(struct design2 *d, const char *name,
 	design2_grow_kvars(d, 1);
 	d->kvars[index] = kv;
 	d->nkvar++;
-	d->kvar_dim += v->size;
-
+	d->kvar_dim += v->meta.size;
 
 	recompute_traits(d);
 
@@ -449,7 +446,7 @@ const double *design2_traits(const struct design2 *d, size_t i, size_t j)
 const double *design2_trait(const struct design2 *d, const struct var2 *v, size_t i, size_t j)
 {
 	assert(v->design == d);
-	assert(v->type == VAR_TYPE_TRAIT);
+	assert(v->meta.type == VAR_TYPE_TRAIT);
 	const double *x = design2_traits(d, i, j);
 	return x + v->index;
 }
@@ -465,10 +462,10 @@ const char *design2_tvar_name(const struct design2 *d, size_t j)
 		const struct tvar2 *tv = d->tvars[i];
 		const struct var2 *v = &tv->var;
 		
-		if (j < v->size)
-			return v->name;
+		if (j < v->meta.size)
+			return v->meta.name;
 		
-		j -= v->size;
+		j -= v->meta.size;
 	}
 	
 	assert(0);
@@ -496,27 +493,18 @@ const struct var2 *design2_add_tvar(struct design2 *d, const char *name, const s
 	struct var2 *v = &tv->var;
 	va_list ap;
 
-	v->design = d;
-	v->type = VAR_TYPE_TVAR;
-	v->name = xstrdup(name);
-	v->index = d->tvar_dim;
-	v->size = 0;
-	tv->type = type;
-	tv->udata = NULL;
-
 	va_start(ap, type);
-	type->init(tv, h, ap);
+	type->init(tv, name, h, ap);
 	va_end(ap);
 
-	assert(tv->type == type);
-	assert(v->size == 0);
-	assert(v->index == d->tvar_dim);
-	v->size = compute_size(v->dims, v->rank);
-	
+	v->design = d;
+	v->index = d->tvar_dim;
+	tv->type = type;
+
 	size_t index = d->ntvar;
 	design2_grow_tvars(d, 1);
 	d->tvars[index] = tv;
-	d->tvar_dim += v->size;
+	d->tvar_dim += v->meta.size;
 	d->ind_buf = xrealloc(d->ind_buf, d->tvar_dim * sizeof(*d->ind_buf));
 	d->ntvar = index + 1;
 	
@@ -542,7 +530,7 @@ const struct var2 *design2_var(const struct design2 *d, const char *name)
 	n = d->nkvar;
 	for (i = 0; i < n; i++) {
 		v = &(d->kvars[i]->var);
-		if (strcmp(v->name, name) == 0) {
+		if (strcmp(v->meta.name, name) == 0) {
 			return v;
 		}
 	}
@@ -550,7 +538,7 @@ const struct var2 *design2_var(const struct design2 *d, const char *name)
 	n = d->ntvar;
 	for (i = 0; i < n; i++) {
 		v = &(d->tvars[i]->var);
-		if (strcmp(v->name, name) == 0) {
+		if (strcmp(v->meta.name, name) == 0) {
 			return v;
 		}
 	}
@@ -728,8 +716,8 @@ static void design2_notify_update(struct design2 *d, const struct var2 *v,
 			d->ind_buf[iz] = ind[iz] + index;
 		}
 	} else {
-		assert(nz == v->size);
-		for (iz = 0; iz < v->size; iz++) {
+		assert(nz == v->meta.size);
+		for (iz = 0; iz < v->meta.size; iz++) {
 			d->ind_buf[iz] = iz + index;
 		}
 	}
@@ -750,7 +738,7 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 		   const size_t *ind, size_t nz)
 {
 	assert(v->design == d);
-	assert(v->type == VAR_TYPE_TVAR);
+	assert(v->meta.type == VAR_TYPE_TVAR);
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 	
@@ -760,8 +748,8 @@ void design2_update(struct design2 *d, const struct var2 *v, size_t i, size_t j,
 	if (ind) {
 		sblas_daxpyi(nz, 1.0, delta, ind, dx);
 	} else {
-		assert(nz == v->size);
-		blas_daxpy(v->size, 1.0, delta, 1, dx, 1);
+		assert(nz == v->meta.size);
+		blas_daxpy(v->meta.size, 1.0, delta, 1, dx, 1);
 	}
 	
 	size_t io, no = d->nobs;
@@ -834,12 +822,12 @@ const struct var2 *design2_add_prod(struct design2 *d, const char *name, const s
 {
 	assert(u->design == d);
 	assert(v->design == d);
-	assert(u->size > 0);
-	assert(v->size > 0);
+	assert(u->meta.size > 0);
+	assert(v->meta.size > 0);
 
 	const struct var2 *res = NULL;
 
-	if (u->type == VAR_TYPE_TRAIT && v->type == VAR_TYPE_TRAIT) {
+	if (u->meta.type == VAR_TYPE_TRAIT && v->meta.type == VAR_TYPE_TRAIT) {
 		assert(0 && "Not Implemented");
 	} else {
 		res = design2_add_tvar(d, name, VAR2_PROD2, d, u, v);
@@ -857,23 +845,25 @@ struct prod2_udata {
 	size_t *ind;
 };
 
-void prod2_init(struct tvar2 *tv, struct history *h, va_list ap)
+void prod2_init(struct tvar2 *tv, const char *name, struct history *h, va_list ap)
 {
 	struct design2 *d = va_arg(ap, struct design2*);
 	const struct var2 *u = va_arg(ap, const struct var2*);
 	const struct var2 *v = va_arg(ap, const struct var2*);
-	size_t size = u->size * v->size;
 
-	tv->var.rank = u->rank + v->rank;
-	memcpy(tv->var.dims, u->dims, u->rank * sizeof(tv->var.dims[0]));
-	memcpy(tv->var.dims + u->rank, v->dims, v->rank * sizeof(tv->var.dims[0]));
+	size_t rank = u->meta.rank + v->meta.rank;
+	size_t dims[VAR_RANK_MAX];
+	memcpy(dims, u->meta.dims, u->meta.rank * sizeof(dims[0]));
+	memcpy(dims + u->meta.rank, v->meta.dims, v->meta.rank * sizeof(dims[0]));
+	var_meta_init(&tv->var.meta, name, VAR_TYPE_TVAR, dims, rank);
+	assert(tv->var.meta.size == u->meta.size * v->meta.size);
 
 	struct prod2_udata *udata = xmalloc(sizeof(*udata));
 	udata->design = d;
 	udata->u = u;
 	udata->v = v;
-	udata->delta = xmalloc(size * sizeof(*udata->delta));
-	udata->ind = xmalloc(size * sizeof(*udata->ind));
+	udata->delta = xmalloc(v->meta.size * sizeof(*udata->delta));
+	udata->ind = xmalloc(v->meta.size * sizeof(*udata->ind));
 	tv->udata = udata;
 
 	design2_add_observer(d, tv, &prod2_design_callbacks);
@@ -898,7 +888,7 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 		      size_t j, const double *delta, const size_t *ind, size_t nz)
 {
 	assert(ind || !nz);
-	assert(nz <= v->size);
+	assert(nz <= v->meta.size);
 
 	const struct tvar2 *tv = udata;
 	const struct prod2_udata *udata0 = tv->udata;
@@ -914,13 +904,13 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 		const double *dx = delta;
 		const double *y;
 
-		if (udata0->v->type == VAR_TYPE_TRAIT) {
+		if (udata0->v->meta.type == VAR_TYPE_TRAIT) {
 			y = design2_trait(d, udata0->v, i, j);
 		} else {
 			y = design2_tvar(d, udata0->v, i, j);
 		}
 
-		size_t iy, ny = udata0->v->size;
+		size_t iy, ny = udata0->v->meta.size;
 
 		if (!y || !ny)
 			return;
@@ -941,14 +931,14 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 		const double *dy = delta;
 		const double *x;
 
-		if (udata0->u->type == VAR_TYPE_TRAIT) {
+		if (udata0->u->meta.type == VAR_TYPE_TRAIT) {
 			x = design2_trait(d, udata0->u, i, j);
 		} else {
 			x = design2_tvar(d, udata0->u, i, j);
 		}
 
-		size_t ix, nx = udata0->u->size;
-		size_t ny = udata0->v->size;
+		size_t ix, nx = udata0->u->meta.size;
+		size_t ny = udata0->v->meta.size;
 
 		if (!x || !nx)
 			return;
@@ -969,16 +959,4 @@ void prod2_update_var(void *udata, struct design2 *d, const struct var2 *v, size
 	}
 
 	design2_update(d, &tv->var, i, j, vdelta, vind, vnz);
-}
-
-size_t compute_size(const size_t *dims, size_t rank)
-{
-	size_t size = 1;
-	size_t i;
-
-	for (i = 0; i < rank; i++) {
-		size *= dims[i];
-	}
-
-	return size;
 }

@@ -61,11 +61,11 @@ static struct history_callbacks icosib_history_callbacks = {
 	NULL
 };
 
-static void icosib_init(struct tvar2 *tv, struct history *h, va_list ap)
+static void icosib_init(struct tvar2 *tv, const char *name, struct history *h, va_list ap)
 {
 	(void)ap; // unused
 
-	tv->var.rank = 0;
+	var_meta_init(&tv->var.meta, name, VAR_TYPE_TVAR, NULL, 0);
 	tv->udata = NULL;
 
 	history_add_observer(h, tv, &icosib_history_callbacks);
@@ -74,6 +74,7 @@ static void icosib_init(struct tvar2 *tv, struct history *h, va_list ap)
 static void icosib_deinit(struct tvar2 *tv, struct history *h)
 {
 	history_remove_observer(h, tv);
+	var_meta_deinit(&tv->var.meta);
 }
 
 

@@ -5,6 +5,7 @@
 #include "history.h"
 #include "blas.h"
 #include "sblas.h"
+#include "var.h"
 #include <stdarg.h>
 
 
@@ -36,33 +37,6 @@ struct design2 {
 	
 	struct design2_observer *observers;
 	size_t nobs, nobs_max;
-};
-
-struct var2 {
-	struct design2 *design;
-	enum var_type type;
-	const char *name;
-	size_t dims[VAR_RANK_MAX];
-	size_t rank;
-	size_t size;
-	size_t index;
-};
-
-struct kvar2 {
-	struct var2 var;
-	double *xi, *xj;
-	size_t dimi, dimj;
-};
-
-struct tvar2 {
-	struct var2 var;
-	const struct tvar2_type *type;
-	void *udata;
-};
-
-struct tvar2_type {
-	void (*init) (struct tvar2 *tv, struct history *h, va_list ap);
-	void (*deinit) (struct tvar2 * tv, struct history *h);
 };
 
 struct design2_callbacks {
@@ -230,7 +204,7 @@ const double *design2_tvar(const struct design2 *d, const struct var2 *v, size_t
 	assert(v->design == d);
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
-	assert(v->type == VAR_TYPE_TVAR);
+	assert(v->meta.type == VAR_TYPE_TVAR);
 	
 	const double *dx = design2_tvars(d, i, j);
 	if (!dx)

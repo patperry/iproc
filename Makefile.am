@@ -62,6 +62,8 @@ libiproc_a_SOURCES = \
 	src/v2-nsend.c \
 	src/v2-nsend2.c \
 	src/v2-nsib.c \
+	src/var.c \
+	src/var.h \
 	src/vars.c \
 	src/vars.h
 
