@@ -99,9 +99,9 @@ static void setup_frame(void) {
 	//design_add_prod(r, "Trad:Jun:Fem", design_var(r, "Trad:Jun"), design_var(r, "Fem"));
 
 
-	design_add_tvar(r, "ISendTot", VAR_ISENDTOT);
-	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT);
-	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
+	//design_add_tvar(r, "ISendTot", VAR_ISENDTOT);
+	//design_add_tvar(r, "IRecvTot", VAR_IRECVTOT);
+	//design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
 	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
 	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
@@ -111,20 +111,20 @@ static void setup_frame(void) {
 
 	design2_add_tvar(d, "ISend", VAR2_ISEND);
 	design2_add_tvar(d, "IRecv", VAR2_IRECV);
-	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
+	//design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	//design2_add_tvar(d, "NSend", VAR2_NSEND);
-	//design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	design2_add_tvar(d, "NSend", VAR2_NSEND);
+	design2_add_tvar(d, "NRecv", VAR2_NRECV);
 
-	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
-	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
-	//design2_add_tvar(d, "ISib", VAR2_ISIB);
-	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
+	design2_add_tvar(d, "ISend2", VAR2_ISEND2);
+	design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
+	design2_add_tvar(d, "ISib", VAR2_ISIB);
+	design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
 
-	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
-	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
-	//design2_add_tvar(d, "NSib", VAR2_NSIB);
-	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
+	design2_add_tvar(d, "NSend2", VAR2_NSEND2);
+	design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
+	design2_add_tvar(d, "NSib", VAR2_NSIB);
+	design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
 
 
 	for (i = 0; i < design_trait_count(s); i++) {
@@ -159,10 +159,10 @@ static void setup_constr(struct frame *f, const struct messages *xmsgs,
 	constr_init(&constr, dim);
 
 	/* add constraints to make the model identifiable */
-	size_t nadd = constr_add_identify_recv_fit(&constr, f, xmsgs, ymsgs);
-	if (nadd > 0)
-		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n",
-			nadd, nadd == 1 ? "constraint" : "constraints");
+	//size_t nadd = constr_add_identify_recv_fit(&constr, f, xmsgs, ymsgs);
+	//if (nadd > 0)
+	//	fprintf(stderr, "Adding %zd %s to make parameters identifiable\n",
+	//		nadd, nadd == 1 ? "constraint" : "constraints");
 }
 
 static void teardown_constr(void)
