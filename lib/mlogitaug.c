@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "coreutil.h"
+#include "matrixutil.h"
 #include "sblas.h"
 #include "xalloc.h"
 #include "mlogitaug.h"
@@ -399,29 +400,6 @@ double *mlogitaug_base_mean(const struct mlogitaug *m1)
 }
 
 
-static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo)
-{
-
-	size_t i;
-
-	if (uplo == BLAS_UPPER) {
-		for (i = 0; i < dim; i++) {
-			size_t rowlen = dim - i;
-			memcpy(dst, src + i, rowlen * sizeof(*dst));
-			dst += rowlen;
-			src += dim;
-		}
-	} else {
-		for (i = 0; i < dim; i++) {
-			size_t rowlen = i + 1;
-			memcpy(dst, src, rowlen * sizeof(*dst));
-			dst += rowlen;
-			src += dim;
-		}
-	}
-}
-
-
 void recompute_cov(struct mlogitaug *m1)
 {
 	if (mlogitaug_moments(m1) < 2)
@@ -472,7 +450,7 @@ void recompute_cov(struct mlogitaug *m1)
 	}
 	blas_dsyrk(F77_COV_UPLO, BLAS_NOTRANS, dim, nk, 1.0, diff, dim, 1.0, cov, dim);
 
-	copy_packed(m1->cov, cov, dim, MLOGIT_COV_UPLO);
+	packed_dgthr(F77_COV_UPLO, dim, cov, dim, m1->cov);
 }
 
 
@@ -582,7 +560,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 
 	// note: nz = 0 implies dmean = 0; no need to call dsyrk
 
-	copy_packed(m1->base_cov, cov, dim, MLOGIT_COV_UPLO);
+	packed_dgthr(F77_COV_UPLO, dim, cov, dim, m1->base_cov);
 
 	if (isfinite(W))
 		blas_daxpy(cov_dim, 1.0, cov0, 1, m1->base_cov, 1);

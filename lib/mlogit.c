@@ -8,6 +8,7 @@
 #include "coreutil.h"
 #include "ieee754.h"		// double_eqrel
 #include "lapack.h"
+#include "matrixutil.h"
 #include "sblas.h"
 #include "xalloc.h"		// xcalloc
 #include "mlogit.h"
@@ -41,7 +42,6 @@ static void update_mean(struct mlogit *m);
 static void update_cov(struct mlogit *m);
 static void compute_cov_diff(struct mlogit *m);
 
-static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo);
 static void grow_ind_array(struct mlogit *m, size_t delta);
 static size_t search_ind(struct mlogit *m, size_t i);
 
@@ -530,30 +530,7 @@ void compute_cov_diff(struct mlogit *m)
 	}
 	// note: nz = 0 implies dmean = 0; no need to call dsyrk
 
-	copy_packed(m->work->cov_diff, dcov, dim, MLOGIT_COV_UPLO);
-}
-
-
-static void copy_packed(double *dst, const double *src, size_t dim, enum blas_uplo uplo)
-{
-
-	size_t i;
-
-	if (uplo == BLAS_UPPER) {
-		for (i = 0; i < dim; i++) {
-			size_t rowlen = dim - i;
-			memcpy(dst, src + i, rowlen * sizeof(*dst));
-			dst += rowlen;
-			src += dim;
-		}
-	} else {
-		for (i = 0; i < dim; i++) {
-			size_t rowlen = i + 1;
-			memcpy(dst, src, rowlen * sizeof(*dst));
-			dst += rowlen;
-			src += dim;
-		}
-	}
+	packed_dgthr(F77_COV_UPLO, dim, dcov, dim, m->work->cov_diff);
 }
 
 void recompute_all(struct mlogit *m)
@@ -649,7 +626,7 @@ void recompute_cov(struct mlogit *m)
 	assert(nk == 0);
 	assert(diff_i == diff);
 
-	copy_packed(cov, cov_full, dim, MLOGIT_COV_UPLO);
+	packed_dgthr(F77_COV_UPLO, dim, cov_full, dim, cov);
 
 	m->log_cov_scale_ = log(ptot);
 	m->cov_err = 0.0;
