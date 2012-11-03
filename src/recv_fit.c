@@ -424,6 +424,23 @@ domain_error_f:
 	}
 }
 
+static void set_dev0(struct recv_fit *fit)
+{
+	const struct frame *f = fit->frame;
+	size_t nrecv = frame_recv_count(f);
+
+	if (!frame_has_loops(f)) {
+		assert(nrecv > 0);
+		nrecv--;
+	}
+
+	fit->dev0 = 2 * messages_recv_count(fit->ymsgs) * log(nrecv);
+
+	//eval_set(fit->cur, NULL, fit->xmsgs, fit->ymsgs, fit->frame,
+	//	   &fit->model, 2);
+	//fit->dev0 = recv_fit_dev(fit);
+}
+
 void recv_fit_init(struct recv_fit *fit,
 		   struct frame *f,
 		   struct constr *c,
@@ -464,22 +481,17 @@ void recv_fit_init(struct recv_fit *fit,
 	search_init(&fit->search, f, c);
 	rgrad_init(&fit->rgrad, f, c);
 
-	// evaluate the model at zero
-	eval_set(fit->cur, NULL, fit->xmsgs, fit->ymsgs, fit->frame, &fit->model, 2);
-
-	fit->dev0 = recv_fit_dev(fit);
+	set_dev0(fit);
 }
 
 
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 				  const struct recv_params *params0)
 {
-	if (params0 != NULL) {
-		eval_set(fit->cur, params0, fit->xmsgs, fit->ymsgs, fit->frame,
-			 &fit->model, 2);
-	}
-
-	resid_set(&fit->cur->resid, &fit->cur->loglik, fit->constr, &fit->cur->params);
+	eval_set(fit->cur, params0, fit->xmsgs, fit->ymsgs, fit->frame,
+		 &fit->model, 2);
+	resid_set(&fit->cur->resid, &fit->cur->loglik, fit->constr,
+		  &fit->cur->params);
 	kkt_set(&fit->kkt, &fit->cur->loglik, fit->constr);
 	fit->step = NAN;
 
