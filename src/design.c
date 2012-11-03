@@ -352,22 +352,6 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 }
 
 
-void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip)
-{
-	size_t ix = vpattern_lb(&d->active, i);
-	*dxp = d->dx + ix * d->tvar_dim;
-	*ip = d->active.indx + ix;
-}
-
-
-void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip)
-{
-	size_t ix = vpattern_ub(&d->active, i);
-	*dxp = d->dx + ix * d->tvar_dim;
-	*ip = d->active.indx + ix;
-}
-
-
 const struct var *design_var(const struct design *d, const char *name)
 {
 	assert(name);

@@ -135,8 +135,7 @@ static inline const double *design_tvars(const struct design *d, size_t i);
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
 static inline void design_tvars_get_all(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
-void design_tvar_get_lb(const struct design *d, size_t i, const double **dxp, const size_t **ip);
-void design_tvar_get_ub(const struct design *d, size_t i, const double **dxp, const size_t **ip);
+
 
 void design_tvars_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y);
