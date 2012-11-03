@@ -2,8 +2,9 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "frame.h"
-#include "vars.h"
+#include "design2.h"
+#include "var.h"
+
 
 /*
  *     I1

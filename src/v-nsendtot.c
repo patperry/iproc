@@ -1,8 +1,9 @@
 #include "port.h"
 #include <assert.h>
 #include <string.h>
-#include "frame.h"
-#include "vars.h"
+#include "design.h"
+#include "var.h"
+
 
 static void nsendtot_message_add(void *udata, struct history *h,
 				 const struct message *msg)

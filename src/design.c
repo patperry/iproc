@@ -13,7 +13,6 @@
 #include "util.h"
 #include "xalloc.h"
 
-#include "vars.h"
 #include "design.h"
 
 

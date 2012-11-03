@@ -1,8 +1,8 @@
 #include "port.h"
 #include <assert.h>
 #include <string.h>
-#include "frame.h"
-#include "vars.h"
+#include "design2.h"
+#include "var.h"
 
 
 static void nsend_message_add(void *udata, struct history *h,

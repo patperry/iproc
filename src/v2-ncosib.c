@@ -1,8 +1,8 @@
 #include "port.h"
 #include <assert.h>
 #include <string.h>
-#include "frame.h"
-#include "vars.h"
+#include "design2.h"
+#include "var.h"
 
 /*
  *    I1

@@ -20,7 +20,7 @@
 #include "enron.h"
 #include "messages.h"
 #include "design.h"
-#include "vars.h"
+#include "var.h"
 #include "frame.h"
 #include "recv_model.h"
 #include "recv_loglik.h"
