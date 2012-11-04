@@ -31,6 +31,7 @@ static void nrecv_message_add(void *udata, struct history *h,
 static void nrecv_message_advance(void *udata, struct history *h,
 				  const struct message *msg, size_t intvl)
 {
+	size_t nintvl = history_interval_count(h);
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = v->design;
@@ -38,7 +39,7 @@ static void nrecv_message_advance(void *udata, struct history *h,
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2];
-	size_t nz = 2;
+	size_t nz = (intvl < nintvl) ? 2 : 1;
 	
 	size_t ito, nto = msg->nto;
 	for (ito = 0; ito < nto; ito++) {

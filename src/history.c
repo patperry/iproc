@@ -4,27 +4,103 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sblas.h"
 #include "coreutil.h"
 #include "xalloc.h"
 #include "ieee754.h"
 #include "history.h"
 
+
+static void grow_ind_array(struct history_actor *a, size_t nintvl, size_t delta);
+static size_t search_ind(struct history_actor *a, size_t nintvl, size_t i);
+static size_t find_ind(const struct history_actor *a, size_t i);
+
+
+void grow_ind_array(struct history_actor *a, size_t nintvl, size_t delta)
+{
+	size_t nz = a->nz;
+	size_t nz1 = nz + delta;
+	size_t nzmax = a->nzmax;
+
+	if (nz1 <= nzmax)
+		return;
+
+	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
+	assert(nzmax1 >= nz1);
+
+	a->ind = xrealloc(a->ind, nzmax1 * sizeof(a->ind[0]));
+	a->nmsg = xrealloc(a->nmsg, nzmax1 * nintvl * sizeof(a->nmsg[0]));
+	a->nzmax = nzmax1;
+}
+
+
+size_t search_ind(struct history_actor *a, size_t nintvl, size_t i)
+{
+	const size_t *base = a->ind, *ptr;
+	size_t nz;
+
+	for (nz = a->nz; nz != 0; nz >>= 1) {
+		ptr = base + (nz >> 1);
+		if (i == *ptr) {
+			return ptr - a->ind;
+		}
+		if (i > *ptr) {
+			base = ptr + 1;
+			nz--;
+		}
+	}
+
+	/* not found */
+	size_t iz = base - a->ind;
+	size_t ntail = a->nz - iz;
+
+	grow_ind_array(a, nintvl, 1);
+	memmove(a->ind + iz + 1, a->ind + iz, ntail * sizeof(a->ind[0]));
+	memmove(a->nmsg + (iz + 1) * nintvl, a->nmsg + iz * nintvl,
+		ntail * nintvl * sizeof(a->nmsg[0]));
+
+	a->ind[iz] = i;
+	memset(a->nmsg + iz * nintvl, 0, nintvl * sizeof(a->nmsg[0]));
+	a->nz++;
+
+	return iz;
+}
+
+size_t find_ind(const struct history_actor *a, size_t i)
+{
+	const size_t *base = a->ind, *ptr;
+	size_t nz;
+
+	for (nz = a->nz; nz != 0; nz >>= 1) {
+		ptr = base + (nz >> 1);
+		if (i == *ptr) {
+			return ptr - a->ind;
+		}
+		if (i > *ptr) {
+			base = ptr + 1;
+			nz--;
+		}
+	}
+
+	/* not found */
+	return a->nz;
+}
+
+
 static void history_actor_init(struct history_actor *actr)
 {
-	assert(actr);
 	actr->message_ixs = NULL;
 	actr->nix = 0;
 	actr->nix_max = 0;
 	actr->nmsg = NULL;
-	vpattern_init(&actr->active);
+	actr->ind = NULL;
+	actr->nz = 0;
+	actr->nzmax = 0;
 }
 
 static void history_actor_clear(struct history_actor *actr)
 {
-	assert(actr);
 	actr->nix = 0;
-	vpattern_clear(&actr->active);
+	actr->nz = 0;
 }
 
 static void history_actor_grow_ixs(struct history_actor *actr, size_t delta)
@@ -40,27 +116,10 @@ static void history_actor_deinit(struct history_actor *actr)
 {
 	assert(actr);
 	free(actr->nmsg);
-	vpattern_deinit(&actr->active);
+	free(actr->ind);
 	free(actr->message_ixs);
 }
-static size_t history_actor_search(struct history_actor *actr, size_t nintvl, size_t i)
-{
-	int ins;
-	size_t nzmax = actr->active.nzmax;
-	size_t ix = vpattern_search(&actr->active, i, &ins);
 
-	if (ins) {
-		if (nzmax != actr->active.nzmax) {
-			nzmax = actr->active.nzmax;
-			actr->nmsg = xrealloc(actr->nmsg, nzmax * nintvl * sizeof(actr->nmsg[0]));
-		}
-		memmove(actr->nmsg + (ix + 1) * nintvl, actr->nmsg + ix * nintvl,
-			(actr->active.nz - 1 - ix) * nintvl * sizeof(actr->nmsg[0]));
-		memset(actr->nmsg + ix * nintvl, 0, nintvl * sizeof(actr->nmsg[0]));
-	}
-
-	return ix;
-}
 
 static void history_actors_init(struct history_actor **actrsp, size_t n)
 {
@@ -108,9 +167,8 @@ void history_init(struct history *h, size_t nsend, size_t nrecv, const double *i
 	assert(intvls || !nintvl);
 #ifndef NDEBUG
 	{
-		if (nintvl) {
+		if (nintvl)
 			assert(0 < intvls[0]);
-		}
 
 		size_t i;
 		for (i = 1; i < nintvl; i++) {
@@ -127,9 +185,11 @@ void history_init(struct history *h, size_t nsend, size_t nrecv, const double *i
 	h->observers = NULL;
 	h->nobs = 0;
 	h->nobs_max = 0;
+
 	h->msgs = NULL;
 	h->nmsg = 0;
 	h->nmsg_max = 0;
+
 	history_actors_init(&h->senders, nsend);
 	history_actors_init(&h->receivers, nrecv);
 	h->cur_msg = 0;
@@ -272,9 +332,10 @@ static void process_current_messages(struct history *h)
 		actr->message_ixs[actr->nix++] = imsg;
 
 		for (ito = 0; ito < nto; ito++) {
-			size_t ix = history_actor_search(actr, nintvl, msg->to[ito]);
+			size_t ix = search_ind(actr, nintvl, msg->to[ito]);
 			size_t *ptr = actr->nmsg + ix * nintvl;
-			ptr[0]++;
+			if (nintvl)
+				ptr[0]++;
 		}
 
 		// add the message to the receiver histories
@@ -282,9 +343,10 @@ static void process_current_messages(struct history *h)
 			actr = &h->receivers[msg->to[ito]];
 			history_actor_grow_ixs(actr, 1);
 			actr->message_ixs[actr->nix++] = imsg;
-			size_t ix = history_actor_search(actr, nintvl, msg->from);
+			size_t ix = search_ind(actr, nintvl, msg->from);
 			size_t *ptr = actr->nmsg + ix * nintvl;
-			ptr[0]++;
+			if (nintvl)
+				ptr[0]++;
 		}
 
 		// create an advance event (if necessary)
@@ -362,20 +424,28 @@ static void process_event(struct history *h)
 
 	actr = &h->senders[msg->from];
 	for (ito = 0; ito < nto; ito++) {
-		size_t ix = history_actor_search(actr, nintvl, msg->to[ito]);
+		size_t ix = find_ind(actr, msg->to[ito]);
+		assert(ix < actr->nz);
 		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl;
+		
 		assert(ptr[0]);
 		ptr[0]--;
-		ptr[1]++;
+
+		if (intvl < nintvl)
+			ptr[1]++;
 	}
 
 	for (ito = 0; ito < nto; ito++) {
 		actr = &h->receivers[msg->to[ito]];
-		size_t ix = history_actor_search(actr, nintvl, msg->from);
+		size_t ix = find_ind(actr, msg->from);
+		assert(ix < actr->nz);
 		size_t *ptr = actr->nmsg + intvl0 + ix * nintvl;
+		
 		assert(ptr[0]);
 		ptr[0]--;
-		ptr[1]++;
+
+		if (intvl < nintvl)
+			ptr[1]++;
 	}
 
 #ifndef NDEBUG

@@ -1,9 +1,8 @@
-#ifndef _HISTORY_H
-#define _HISTORY_H
+#ifndef HISTORY_H
+#define HISTORY_H
 
 #include <assert.h>
 #include <math.h>
-#include "sblas.h"
 #include "messages.h"
 #include "pqueue.h"
 
@@ -46,7 +45,8 @@ struct history_actor {
 	size_t *message_ixs;
 	size_t nix, nix_max;
 	size_t *nmsg;
-	struct vpattern active;
+	size_t *ind;
+	size_t nz, nzmax;
 };
 
 struct history_observer {
@@ -171,8 +171,8 @@ void history_get_send_active(const struct history *h, size_t isend, const size_t
 			     size_t *nrecv)
 {
 	const struct history_actor *a = &h->senders[isend];
-	*jrecv = a->active.indx;
-	*nrecv = a->active.nz;
+	*jrecv = a->ind;
+	*nrecv = a->nz;
 }
 
 const size_t *history_send_counts(const struct history *h, size_t isend)
@@ -200,8 +200,8 @@ void history_get_recv_active(const struct history *h, size_t jrecv, const size_t
 			     size_t *nsend)
 {
 	const struct history_actor *a = &h->receivers[jrecv];
-	*isend = a->active.indx;
-	*nsend = a->active.nz;
+	*isend = a->ind;
+	*nsend = a->nz;
 }
 
 const size_t *history_recv_counts(const struct history *h, size_t jrecv)
@@ -212,4 +212,4 @@ const size_t *history_recv_counts(const struct history *h, size_t jrecv)
 	return a->nmsg;
 }
 
-#endif /* _HISTORY_H */
+#endif /* HISTORY_H */
