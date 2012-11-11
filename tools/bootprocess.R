@@ -1,29 +1,28 @@
 # tools/bootprocess.R
 # -------------------
 
-source("tools/process.R")
+source("tools/utils.R")
 
-pdffile <- "figures/boot-resid.pdf"
+pdffile <- "boot-resid.pdf"
 pdfout <- TRUE
 
-fit0 <- fromJSON("output/fit-dynamic.json")
-coefs0 <- get.coefs(fit0)
-nobs0 <- jmat(fit0$observed)
-nexp0 <- jmat(fit0$expected)
+fit0 <- read.h5out("output/full/full.h5")
+coefs0 <- fit0$coefficients
+nobs0 <- fit0$observed.counts
+nexp0 <- fit0$fitted.counts
 
-nreps <- length(list.files("output/boot-dynamic", "*.json"))
+nreps <- length(list.files("output/full", "fit.+[.]h5"))
 coefs <- array(NA, c(dim(coefs0), nreps))
 nobs <- array(NA, c(dim(nobs0), nreps))
 nexp <- array(NA, c(dim(nexp0), nreps))
 
-dimnames(coefs) <- c(dimnames(coefs0), NULL)
 
 for (r in seq_len(nreps)) {
-    fn <- paste("output/boot-dynamic/fit", r, ".json", sep='')
-    fit <- fromJSON(fn)
-    coefs[,,r] <- get.coefs(fit)
-    nobs[,,r] <- jmat(fit$observed)
-    nexp[,,r] <- jmat(fit$expected)
+    fn <- paste("output/full/fit", r, ".h5", sep='')
+    fit <- read.h5out(fn)
+    coefs[,r] <- fit$coefficients
+    #nobs[,,r] <- fit$observed.counts
+    #nexp[,,r] <- fit$fitted.counts
     cat('.')
 }
 
@@ -31,41 +30,21 @@ resid <- (nobs - nexp) / sqrt(nexp)
 resid[nobs == 0 & nexp == 0] <- 0
 x2 <- apply(resid^2, 3, sum)
 resid0 <- (nobs0 - nexp0) / sqrt(nexp0)
-resid0[nobs == 0 & nexp0 == 0] <- 0
+resid0[nobs0 == 0 & nexp0 == 0] <- 0
 x20 <- sum(resid0^2)
 
 
-tx <- get.transform()
-tcoefs0 <- coefs0 %*% tx
 
-tcoefs <- array(NA, dim(coefs))
+bias <- array(NA, dim(coefs))
 for (r in seq_len(nreps)) {
-    tcoefs[,,r] <- coefs[,,r] %*% tx
-}
-
-tix0 <- rep(1:9, 10) + rep((1:10 - 1) * nrow(tcoefs0), each=9)
-tix1 <- 12:nrow(tcoefs0)
-tix <- c(tix0, tix1)
-
-bias <- array(NA, dim(tcoefs))
-for (r in seq_len(nreps)) {
-    bias[,,r] <- tcoefs[,,r] - tcoefs0
+    bias[,r] <- coefs[,r] - coefs0
 }
 
 cov <- get.cov(fit0)
-vtx <- get.transform(TRUE)
+se <- sqrt(pmax(0, diag(cov)))
 
-ix0 <- rep(1:11, 12) + rep((1:12 - 1) * nrow(coefs0), each=11)
-
-cov0 <- cov[ix0, ix0]
-tcov0 <- vtx %*% cov0 %*% t(vtx)
-cov1 <- cov[12:(nrow(cov)/12), 12:(nrow(cov)/12)]
-se0 <- as.vector(matrix(sqrt(pmax(0, diag(tcov0))), 11, 12)[1:9, 1:10])
-se1 <- sqrt(pmax(0, diag(cov1)))
-se <- c(se0, se1)
-
-bias.mean <- apply(bias, c(1,2), mean)[tix]
-bias.sd <- apply(bias, c(1,2), sd)[tix]
+bias.mean <- apply(bias, 1, mean)
+bias.sd <- apply(bias, 1, sd)
 
 save(bias.mean, bias.sd, se, bias, file="boot.rda")
 
@@ -73,14 +52,22 @@ save(bias.mean, bias.sd, se, bias, file="boot.rda")
 par(las = 1)
 
 ix <- seq_along(bias.mean)
-ix.stat <- 1:90
-ix.recv <- 79 + match("IRecv", rownames(coefs0)) + 0:7
-ix.send <- 79 + match("ISend", rownames(coefs0)) + 0:7
-ix.recv2 <- 79 + match("IRecv2", rownames(coefs0)) + 0:49
-ix.send2 <- 79 + match("ISend2", rownames(coefs0)) + 0:49
-ix.sib <- 79 + match("ISib", rownames(coefs0)) + 0:49
-ix.cosib <- 79 + match("ICosib", rownames(coefs0)) + 0:49
-ix <- c(ix.stat, ix.send, ix.recv, ix.send2, ix.recv2, ix.sib, ix.cosib)
+
+nm <- names(coefs0)
+ni <- length(fit0$intervals)
+i1 <- seq(from=0, by = 1, length.out = ni)
+i2 <- seq(from=0, by = 1, length.out = ni^2)
+
+ix.recv <- c(match("IRecv", nm), match("NRecv[1]", nm) + i1)
+ix.send <- c(match("ISend", nm), match("NSend[1]", nm) + i1)
+ix.recv2 <- c(match("IRecv2", nm), match("NRecv2[1,1]", nm) + i2)
+ix.send2 <- c(match("ISend2", nm), match("NSend2[1,1]", nm) + i2)
+ix.sib <- c(match("ISib", nm), match("NSib[1,1]", nm) + i2)
+ix.cosib <- c(match("ICosib", nm), match("NCosib[1,1]", nm) + i2)
+ix <- c(ix.send, ix.recv, ix.send2, ix.recv2, ix.sib, ix.cosib)
+ix.stat <- setdiff(seq_along(nm), ix)
+ix <- c(ix.stat, ix)
+
 sz <- c(length(ix.stat),
         length(ix.send), length(ix.recv),
         length(ix.send2), length(ix.recv2), length(ix.sib), length(ix.cosib))
@@ -111,11 +98,11 @@ par(plt = c(c(margin, margin + width)/fin[1],
 
 plot(range(ix),
      c(min((bias.mean - bias.sd) / se),
-       max((bias.mean + bias.sd) / se)), 
+       max((bias.mean + bias.sd) / se)),
      xlim=c(0.5, length(ix) + 0.5),
      t = "n", axes = FALSE,
      xlab = "Term",
-     ylab = "Normalized Residual") 
+     ylab = "Normalized Residual")
 xtick <- c(0, cumsum(sz)) + 0.5
 abline(v = xtick, lty = 1, col = "gray")
 axis(1, at = xtick, labels = FALSE)
