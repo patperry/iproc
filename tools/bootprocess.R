@@ -21,17 +21,17 @@ for (r in seq_len(nreps)) {
     fn <- paste("output/full/fit", r, ".h5", sep='')
     fit <- read.h5out(fn)
     coefs[,r] <- fit$coefficients
-    #nobs[,,r] <- fit$observed.counts
-    #nexp[,,r] <- fit$fitted.counts
+    nobs[,,r] <- fit$observed.counts
+    nexp[,,r] <- fit$fitted.counts
     cat('.')
 }
 
 resid <- (nobs - nexp) / sqrt(nexp)
 resid[nobs == 0 & nexp == 0] <- 0
-x2 <- apply(resid^2, 3, sum)
+X2 <- apply(resid^2, 3, sum)
 resid0 <- (nobs0 - nexp0) / sqrt(nexp0)
 resid0[nobs0 == 0 & nexp0 == 0] <- 0
-x20 <- sum(resid0^2)
+X20 <- sum(resid0^2)
 
 
 
@@ -46,7 +46,7 @@ se <- sqrt(pmax(0, diag(cov)))
 bias.mean <- apply(bias, 1, mean)
 bias.sd <- apply(bias, 1, sd)
 
-save(bias.mean, bias.sd, se, bias, file="boot.rda")
+save(bias.mean, bias.sd, se, bias, X2, X20, file="boot.rda")
 
 
 par(las = 1)
