@@ -14,6 +14,10 @@
 #include "sblas.h"
 #include "recv_model.h"
 
+static void cohort_clear(struct recv_model_cohort *cm, size_t c,
+			 const struct frame *f);
+
+
 
 size_t recv_coefs_dim(const struct frame *f)
 {
@@ -63,6 +67,16 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 		       const struct frame *f,
 		       const struct recv_coefs *coefs)
 {
+	cohort_clear(cm, c, f);
+	mlogit_set_all_offset(&cm->mlogit, NULL);
+	mlogit_set_coefs(&cm->mlogit, coefs->all);
+	//mlogit_check(&cm->mlogit);
+}
+
+
+static void cohort_clear(struct recv_model_cohort *cm, size_t c,
+			 const struct frame *f)
+{
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
 	size_t isend = design2_cohort_rep(d, c);
@@ -73,7 +87,6 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 	size_t dim = dimr + dimd0;
 	const double *xr = design_all_traits(r);
 	const double *xd = design2_all_traits(d, isend);
-
 	double *x = xcalloc(nrecv * dim, sizeof(*x));
 
 	if (dimr0 > 0) {
@@ -86,17 +99,8 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 		lapack_dlacpy(LA_COPY_ALL, dimd0, nrecv, xd, dimd0, x + dimr, dim);
 	}
 
-	mlogit_set_all_offset(&cm->mlogit, NULL);
-	mlogit_set_coefs(&cm->mlogit, coefs->all);
 	mlogit_set_all_x(&cm->mlogit, x);
 	free(x);
-	//mlogit_check(&cm->mlogit);
-}
-
-
-static void cohort_clear(struct recv_model_cohort *cm)
-{
-	mlogit_set_all_x(&cm->mlogit, NULL);
 }
 
 
@@ -255,11 +259,12 @@ static void recv_model_dyad_clear(void *udata, struct design2 *d)
 static void recv_model_recv_clear(void *udata, struct design *d)
 {
 	struct recv_model *m = udata;
+	struct frame *f = m->frame;
 	struct recv_model_cohort *cms = m->cohort_models;
 	size_t ic, nc = recv_model_cohort_count(m);
 
 	for (ic = 0; ic < nc; ic++) {
-		cohort_clear(&cms[ic]);
+		cohort_clear(&cms[ic], ic, f);
 	}
 
 	(void)d;
@@ -414,7 +419,7 @@ size_t recv_model_dim(const struct recv_model *m)
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend)
 {
 	assert(isend < recv_model_send_count(m));
-	const struct mlogitaug *mlogitaug = recv_model_mlogit(m, isend);
+	struct mlogitaug *mlogitaug = recv_model_mlogit(m, isend);
 	struct catdist1 *dist = mlogitaug_cached_dist(mlogitaug);
 	return dist;
 }
