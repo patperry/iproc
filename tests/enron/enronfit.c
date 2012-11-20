@@ -191,124 +191,46 @@ static void teardown_constr(void)
 #define OBSERVED_COUNTS		"observed_counts"
 
 
-static void indices_clear(size_t *indices, size_t rank)
-{
-	memset(indices, 0, rank * sizeof(indices[0]));
-}
-
-static int indices_advance(size_t *indices, const  size_t *dims, size_t rank)
-{
-	if (!rank)
-		return 0;
-
-	size_t r = rank;
-
-	indices[r - 1]++;
-	while (indices[r - 1] == dims[r-1]) {
-		indices[r - 1] = 0;
-		r--;
-
-		if (r > 0) {
-			indices[r - 1]++;
-		} else {
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-static int indices_sprintf(char *str, const char *fmt, const size_t *indices, size_t rank)
-{
-	int len = 0;
-	size_t k;
-
-	if (rank > 0) {
-		str[len++] = '[';
-		len += sprintf(str + len, fmt, indices[0] + 1);
-	}
-
-	for (k = 1; k < rank; k++) {
-		str[len++] = ',';
-		len += sprintf(str + len, fmt, indices[k] + 1);
-	}
-
-	if (rank > 0) {
-		str[len++] = ']';
-	}
-
-	str[len] = '\0';
-	return len;
-}
-
 
 static const char **alloc_varnames(const struct frame *f, size_t *pn)
 {
-	char namebuf[2048];
-	size_t indices[VAR_RANK_MAX];
+	const struct var_name_fmt fmt = VAR_NAME_FMT0;
 	const struct design *r = frame_recv_design(f);
 	const struct design2 *d = frame_dyad_design(f);
-	size_t dimr = design_dim(r);
-	size_t dimd = design2_dim(d);
-	size_t index = 0, dim = dimr + dimd;
-	size_t k, n;
-	size_t i;
+	size_t index = 0, dim = recv_coefs_dim(f);
+	size_t k, n, i;
 
 	const char **res = xmalloc(dim * sizeof(*res));
 
 	n = design_trait_count(r);
 	for (k = 0; k < n; k++) {
-		const struct var *v = design_trait_var(r, k);
-		size_t prefix = strlen(v->meta.name);
-		memcpy(namebuf, v->meta.name, prefix);
-
-		indices_clear(indices, v->meta.rank);
-		for (i = 0; i < v->meta.size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
-			indices_advance(indices, v->meta.dims, v->meta.rank);
-			res[index++] = xstrdup(namebuf);
+		const struct var_meta *v = &(design_trait_var(r, k))->meta;
+		for (i = 0; i < v->size; i++) {
+			res[index++] = alloc_var_name(&fmt, v, i);
 		}
 	}
 
 	n = design_tvar_count(r);
 	for (k = 0; k < n; k++) {
-		const struct var *v = design_tvar_var(r, k);
-		size_t prefix = strlen(v->meta.name);
-		memcpy(namebuf, v->meta.name, prefix);
-
-		indices_clear(indices, v->meta.rank);
-		for (i = 0; i < v->meta.size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
-			indices_advance(indices, v->meta.dims, v->meta.rank);
-			res[index++] = xstrdup(namebuf);
+		const struct var_meta *v = &(design_tvar_var(r, k))->meta;
+		for (i = 0; i < v->size; i++) {
+			res[index++] = alloc_var_name(&fmt, v, i);
 		}
 	}
 
 	n = design2_trait_count(d);
 	for (k = 0; k < n; k++) {
-		const struct var2 *v = design2_trait_var(d, k);
-		size_t prefix = strlen(v->meta.name);
-		memcpy(namebuf, v->meta.name, prefix);
-
-		indices_clear(indices, v->meta.rank);
-		for (i = 0; i < v->meta.size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
-			indices_advance(indices, v->meta.dims, v->meta.rank);
-			res[index++] = xstrdup(namebuf);
+		const struct var_meta *v = &(design2_trait_var(d, k))->meta;
+		for (i = 0; i < v->size; i++) {
+			res[index++] = alloc_var_name(&fmt, v, i);
 		}
 	}
 
 	n = design2_tvar_count(d);
 	for (k = 0; k < n; k++) {
-		const struct var2 *v = design2_tvar_var(d, k);
-		size_t prefix = strlen(v->meta.name);
-		memcpy(namebuf, v->meta.name, prefix);
-
-		indices_clear(indices, v->meta.rank);
-		for (i = 0; i < v->meta.size; i++) {
-			indices_sprintf(namebuf + prefix, "%zd", indices, v->meta.rank);
-			indices_advance(indices, v->meta.dims, v->meta.rank);
-			res[index++] = xstrdup(namebuf);
+		const struct var_meta *v = &(design2_tvar_var(d, k))->meta;
+		for (i = 0; i < v->size; i++) {
+			res[index++] = alloc_var_name(&fmt, v, i);
 		}
 	}
 	assert(index == dim);

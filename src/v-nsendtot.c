@@ -28,6 +28,7 @@ static void nsendtot_message_add(void *udata, struct history *h,
 static void nsendtot_message_advance(void *udata, struct history *h,
 				     const struct message *msg, size_t intvl)
 {
+	size_t nintvl = history_interval_count(h);
 	const struct tvar *tv = udata;
 	const struct var *v = &tv->var;
 	struct design *d = v->design;
@@ -36,7 +37,7 @@ static void nsendtot_message_advance(void *udata, struct history *h,
 	double nto = (double)(msg->nto);
 	double dx_data[2] = { -nto, +nto };
 	size_t dx_index[2];
-	size_t nz = 2;
+	size_t nz = (intvl < nintvl) ? 2 : 1;
 	
 	size_t ix1 = intvl;
 	size_t ix0 = ix1 - 1;

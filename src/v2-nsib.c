@@ -93,15 +93,15 @@ static void nsib_message_add(void *udata, struct history *h,
 static void nsib_message_advance(void *udata, struct history *h,
 				 const struct message *msg, size_t intvl)
 {
+	size_t iintvl, nintvl = history_interval_count(h);
 	const struct tvar2 *tv = udata;
 	const struct var2 *v = &tv->var;
 	struct design2 *d = v->design;
 
 	double dx_data[2] = { -1.0, +1.0 };
 	size_t dx_index[2];
-	size_t dx_nz = 2;
+	size_t dx_nz = (intvl < nintvl) ? 2 : 1;
 
-	size_t iintvl, nintvl = history_interval_count(h);
 	size_t hsend = msg->from;
 	size_t ito, nto = msg->nto;
 
