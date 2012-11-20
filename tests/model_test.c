@@ -187,18 +187,18 @@ static void test_probs()
 			vector_exp(nrecv, probs);
 
 			struct catdist1 *dist = recv_model_dist(&model, isend);
-			double psi = catdist1_cached_psi(dist);
+			double psi = catdist1_psi(dist);
 
 			assert(double_eqrel(log_W + max_eta, psi) >= 36);
 			assert_in_range(double_eqrel(log_W + max_eta, psi), 36, DBL_MANT_DIG);
 			
 			for (jrecv = 0; jrecv < nrecv; jrecv++) {
 				double lp0 = logprobs[jrecv];
-				double lp1 = catdist1_cached_lprob(dist, jrecv);
+				double lp1 = catdist1_lprob(dist, jrecv);
 				assert_real_approx(lp0, lp1);
 
 				double p0 = probs[jrecv];
-				double p1 = catdist1_cached_prob(dist, jrecv);
+				double p1 = catdist1_prob(dist, jrecv);
 				assert_real_approx(p0, p1);
 			}
 		}

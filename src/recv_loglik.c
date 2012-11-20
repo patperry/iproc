@@ -143,7 +143,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 		memset(last->score.all, 0, dim * sizeof(*last->score.all));
 	}
 	for (ito = 0; ito < nto; ito++) {
-		double lp = catdist1_cached_lprob(dist, jrecv[ito]);
+		double lp = catdist1_lprob(dist, jrecv[ito]);
 		dev += -2 * lp;
 		if (moments >= 1) {
 			design_axpy(1.0, r, jrecv[ito], &last->score.recv);

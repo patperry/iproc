@@ -156,7 +156,7 @@ static void test_eta()
 	}
 
 	for (i = 0; i < n; i++) {
-		//assert(catdist1_eta(&CATDIST1, i) == eta[i]);
+		assert(catdist1_eta(&CATDIST1, i) == eta[i]);
 		assert_real_identical(catdist1_eta(&CATDIST1, i), eta[i]);
 	}
 

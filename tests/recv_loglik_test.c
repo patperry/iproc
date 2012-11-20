@@ -289,7 +289,7 @@ static void test_mean()
 
 			dist = recv_model_dist(&model, msg->from);
 			for (i = 0; i < nrecv; i++) {
-				probs[i] = catdist1_cached_prob(dist, i);
+				probs[i] = catdist1_prob(dist, i);
 			}
 			design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
 			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
@@ -454,7 +454,7 @@ static void test_imat()
 				design_axpy(-1.0, r, i, &diff.recv);
 				design2_axpy(-1.0, d, msg->from, i, &diff.dyad);
 
-				double w = catdist1_cached_prob(dist, i);
+				double w = catdist1_prob(dist, i);
 				blas_dspr(fuplo, dim, w, diff.all, 1, last_cov0);
 			}
 			blas_dscal(cov_dim, msg->nto, last_cov0, 1);

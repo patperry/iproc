@@ -41,7 +41,7 @@ static void axpy_probs(double alpha, const struct recv_model *m, size_t isend,
 	size_t j, n = frame_recv_count(f);
 
 	for (j = 0; j < n; j++) {
-		double p = catdist1_cached_prob(dist, j);
+		double p = catdist1_prob(dist, j);
 		y[j] += alpha * p;
 	}
 }

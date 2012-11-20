@@ -268,7 +268,6 @@ void recompute_dist(struct mlogitaug *m1)
 		blas_dgemv(BLAS_TRANS, dim, nz, 1.0, x, dim, beta, 1, 1.0, deta, 1);
 
 	catdist1_set_all_deta(&m1->dist, m1->ind, m1->deta, m1->nz);
-	catdist1_update_cache(&m1->dist);
 }
 
 
@@ -300,7 +299,7 @@ void recompute_mean(struct mlogitaug *m1)
 	size_t nk = 0;
 
 	for (iz = 0; iz < nz; iz++) {
-		double w = catdist1_cached_prob(dist, m1->ind[iz]);
+		double w = catdist1_prob(dist, m1->ind[iz]);
 
 		if (w > 0) {
 			prob[nk] = w;
@@ -345,7 +344,7 @@ void recompute_base_mean(struct mlogitaug *m1)
 	double *diff = m1->work->xbuf;
 	double *dw = m1->work->cov_full;
 
-	double psi = catdist1_cached_psi(dist);
+	double psi = catdist1_psi(dist);
 	const double *x = mlogit_x(m1->base);
 	const double *mean0 = mlogit_mean(m1->base);
 
@@ -360,7 +359,7 @@ void recompute_base_mean(struct mlogitaug *m1)
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
-		double w = catdist1_cached_prob(dist, i);
+		double w = catdist1_prob(dist, i);
 		double dw_i = w - w0;
 
 		if (dw_i != 0) {
@@ -422,7 +421,7 @@ void recompute_cov(struct mlogitaug *m1)
 	double *diff_i = diff;
 
 	for (iz = 0; iz < nz; iz++) {
-		w = catdist1_cached_prob(dist, m1->ind[iz]);
+		w = catdist1_prob(dist, m1->ind[iz]);
 
 		if (w != 0) {
 			blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
@@ -479,7 +478,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	double *cov = m1->work->cov_full;
 
 	double psi0 = catdist_psi(dist0);
-	double psi = catdist1_cached_psi(dist);
+	double psi = catdist1_psi(dist);
 	double dpsi = psi - psi0;
 	const double *x = mlogit_x(m1->base);
 	const double *mean0 = mlogit_mean(m1->base);
@@ -506,7 +505,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
-		double w = catdist1_cached_prob(dist, i);
+		double w = catdist1_prob(dist, i);
 		double dw = w - w0;
 
 		if (dw > 0) {
@@ -538,7 +537,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 		size_t i = m1->ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
-		double w = catdist1_cached_prob(dist, i);
+		double w = catdist1_prob(dist, i);
 		double dw = w - w0;
 
 		if (dw < 0) {
@@ -604,7 +603,7 @@ void recompute_cross_cov(struct mlogitaug *m1)
 
 	for (iz = 0; iz < nz; iz++) {
 		size_t i = m1->ind[iz];
-		double w = catdist1_cached_prob(dist, i);
+		double w = catdist1_prob(dist, i);
 
 		if (w != 0) {
 			blas_dcopy(base_dim, base_x + i * base_dim, 1, diff_i, 1);
