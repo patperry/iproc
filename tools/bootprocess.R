@@ -6,19 +6,19 @@ source("tools/utils.R")
 pdffile <- "boot-resid.pdf"
 pdfout <- TRUE
 
-fit0 <- read.h5out("output/full/full.h5")
+fit0 <- read.h5out("output/main/output.h5")
 coefs0 <- fit0$coefficients
 nobs0 <- fit0$observed.counts
 nexp0 <- fit0$fitted.counts
 
-nreps <- length(list.files("output/full", "fit.+[.]h5"))
+nreps <- length(list.files("output/main", "fit.+[.]h5"))
 coefs <- array(NA, c(dim(coefs0), nreps))
 nobs <- array(NA, c(dim(nobs0), nreps))
 nexp <- array(NA, c(dim(nexp0), nreps))
 
 
 for (r in seq_len(nreps)) {
-    fn <- paste("output/full/fit", r, ".h5", sep='')
+    fn <- paste("output/main/fit", r, ".h5", sep='')
     fit <- read.h5out(fn)
     coefs[,r] <- fit$coefficients
     nobs[,,r] <- fit$observed.counts
@@ -107,13 +107,13 @@ xtick <- c(0, cumsum(sz)) + 0.5
 abline(v = xtick, lty = 1, col = "gray")
 axis(1, at = xtick, labels = FALSE)
 #axis(3, at = xaxis.at, labels = FALSE)
-mtext("Static", 1, line=0.25, at=mean(xtick[1 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("Send", 1, line=0.25, at=mean(xtick[2 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("Receive", 1, line=0.25, at=mean(xtick[3 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("2-Send", 1, line=0.25, at=mean(xtick[4 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("2-Receive", 1, line=0.25, at=mean(xtick[5 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("Sibling", 1, line=0.25, at=mean(xtick[6 + 0:1]), adj=1, las=2, cex=0.75)
-mtext("Cosibling", 1, line=0.25, at=mean(xtick[7 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("Static", 1, line=0.15, at=mean(xtick[1 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("Send", 1, line=0.15, at=mean(xtick[2 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("Receive", 1, line=0.15, at=mean(xtick[3 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("2-Send", 1, line=0.15, at=mean(xtick[4 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("2-Receive", 1, line=0.15, at=mean(xtick[5 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("Sibling", 1, line=0.15, at=mean(xtick[6 + 0:1]), adj=1, las=2, cex=0.75)
+mtext("Cosibling", 1, line=0.15, at=mean(xtick[7 + 0:1]), adj=1, las=2, cex=0.75)
 
 axis(2, labels = TRUE)
 axis(4, labels = FALSE)
