@@ -13,7 +13,8 @@ struct mlogitaug_work {
 };
 
 struct mlogitaug {
-	const struct mlogit *base;
+	struct mlogit *base;
+	struct mlogit_event base_event;
 	struct catdist1 dist;
 
 	double *beta;
@@ -44,7 +45,7 @@ void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
 void mlogitaug_work_deinit(struct mlogitaug_work *work);
 
 
-void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
+void mlogitaug_init(struct mlogitaug *m1, struct mlogit *base,
 		    size_t dim, struct mlogitaug_work *work);
 void mlogitaug_deinit(struct mlogitaug *m1);
 

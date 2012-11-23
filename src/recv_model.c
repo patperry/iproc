@@ -173,7 +173,7 @@ static void sender_set(struct recv_model_sender *sm,
 
 static void sender_init(struct recv_model_sender *sm, size_t isend,
 			const struct frame *f, const struct recv_coefs *coefs,
-			const struct recv_model_cohort *cm,
+			struct recv_model_cohort *cm,
 			struct mlogitaug_work *work)
 {
 	assert(isend < frame_send_count(f));
@@ -323,7 +323,7 @@ void recv_model_init(struct recv_model *model,
 	struct recv_model_sender *sms = xcalloc(nsend, sizeof(*sms));
 	for (isend = 0; isend < nsend; isend++) {
 		size_t c = recv_model_cohort(model, isend);
-		const struct recv_model_cohort *cm = &cms[c];
+		struct recv_model_cohort *cm = &cms[c];
 		sender_init(&sms[isend], isend, f, &model->coefs, cm, &model->augwork);
 	}
 	model->sender_models = sms;

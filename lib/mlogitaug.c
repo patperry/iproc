@@ -24,6 +24,7 @@
 static int mlogitaug_moments(const struct mlogitaug *m1);
 static void mlogitaug_update_cache(struct mlogitaug *m1);
 
+static int needs_update(const struct mlogitaug *m1);
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
@@ -55,7 +56,7 @@ void mlogitaug_work_deinit(struct mlogitaug_work *work)
 }
 
 
-void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
+void mlogitaug_init(struct mlogitaug *m1, struct mlogit *base,
 		size_t dim, struct mlogitaug_work *work)
 {
 	size_t base_dim = mlogit_dim(base);
@@ -94,6 +95,8 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 
 	clear(m1);
 	m1->cached = 0;
+
+	mlogit_add_observer(m1->base, &m1->base_event);
 }
 
 
@@ -108,6 +111,8 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
+	mlogit_remove_observer(m1->base, &m1->base_event);
+	
 	if (m1->free_work) {
 		mlogitaug_work_deinit(m1->work);
 		free(m1->work);
@@ -282,9 +287,14 @@ void recompute_dist(struct mlogitaug *m1)
 }
 
 
+int needs_update(const struct mlogitaug *m1)
+{
+	return !m1->cached || m1->base_event.changed;
+}
+
 struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 {
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return &((struct mlogitaug *)m1)->dist;
 }
@@ -332,7 +342,7 @@ void recompute_mean(struct mlogitaug *m1)
 double *mlogitaug_mean(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 1);
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->mean;
 }
@@ -405,7 +415,7 @@ int mlogitaug_moments(const struct mlogitaug *m1)
 double *mlogitaug_base_mean(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 1);
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->base_mean;
 }
@@ -468,7 +478,7 @@ void recompute_cov(struct mlogitaug *m1)
 double *mlogitaug_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->cov;
 }
@@ -582,7 +592,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 double *mlogitaug_base_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->base_cov;
 }
@@ -646,7 +656,7 @@ void recompute_cross_cov(struct mlogitaug *m1)
 double *mlogitaug_cross_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	if (!m1->cached)
+	if (needs_update(m1))
 		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->cross_cov;
 }
@@ -661,6 +671,7 @@ void mlogitaug_update_cache(struct mlogitaug *m1)
 	recompute_base_cov((struct mlogitaug *)m1);
 	recompute_cross_cov((struct mlogitaug *)m1);
 	m1->cached = 1;
+	m1->base_event.changed = 0;
 }
 
 int mlogitaug_check(const struct mlogitaug *m1)

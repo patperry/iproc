@@ -114,6 +114,10 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *
 	m->nz = 0;
 	m->nzmax = 0;
 
+	m->obs = NULL;
+	m->nobs = 0;
+	m->nobsmax = 0;
+
 	if (work) {
 		m->free_work = 0;
 	} else {
@@ -133,6 +137,7 @@ void mlogit_deinit(struct mlogit *m)
 		mlogit_work_deinit(m->work);
 		free(m->work);
 	}
+	free(m->obs);
 	free(m->dx);
 	free(m->ind);
 	free(m->cov_);
@@ -141,6 +146,33 @@ void mlogit_deinit(struct mlogit *m)
 	free(m->beta);
 	free(m->x_);
 	catdist_deinit(&m->dist_);
+}
+
+static void notify_observers(struct mlogit *m)
+{
+	size_t i, n = m->nobs;
+	for (i = 0; i < n; i++) {
+		m->obs[i]->changed = 1;
+	}
+}
+
+void mlogit_add_observer(struct mlogit *m, struct mlogit_event *e)
+{
+	if (needs_grow(m->nobs + 1, &m->nobsmax)) {
+		m->obs = xrealloc(m->obs, m->nobsmax * sizeof(m->obs[0]));
+	}
+	m->obs[m->nobs++] = e;
+	e->changed = 0;
+}
+
+void mlogit_remove_observer(struct mlogit *m, struct mlogit_event *e)
+{
+	size_t i, n = m->nobs;
+	for (i = n; i > 0; i--) {
+		if (m->obs[i - 1] == e) {
+			memmove(m->obs + i - 1, m->obs + i, (n - i) * sizeof(m->obs[0]));
+		}
+	}
 }
 
 
@@ -240,6 +272,8 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 		assert(ndx == mlogit_dim(m));
 		blas_daxpy(dim, 1.0, dx, 1, dst, 1);
 	}
+
+	notify_observers(m);
 }
 
 
@@ -538,6 +572,7 @@ void recompute_all(struct mlogit *m)
 	recompute_dist(m);
 	recompute_mean(m);
 	recompute_cov(m);
+	notify_observers(m);
 }
 
 void recompute_dist(struct mlogit *m)
@@ -647,6 +682,8 @@ void mlogit_set_moments(struct mlogit *m, int k)
 		if (k0 <= 1)
 			recompute_cov(m);
 	}
+
+	notify_observers(m);
 }
 
 

@@ -28,6 +28,10 @@ struct mlogit_work {
 	double *xbuf2;
 };
 
+struct mlogit_event {
+	int changed;
+};
+
 struct mlogit {
 	struct catdist dist_;
 	double *x_;
@@ -46,6 +50,9 @@ struct mlogit {
 	double *dx;
 	size_t nz, nzmax;
 
+	struct mlogit_event **obs;
+	size_t nobs, nobsmax;
+
 	int moments;
 
 	struct mlogit_work *work;
@@ -55,6 +62,9 @@ struct mlogit {
 
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim);
 void mlogit_work_deinit(struct mlogit_work *work);
+
+void mlogit_add_observer(struct mlogit *m, struct mlogit_event *e);
+void mlogit_remove_observer(struct mlogit *m, struct mlogit_event *e);
 
 
 void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *work);
