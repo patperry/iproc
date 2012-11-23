@@ -22,6 +22,8 @@
 #define BLOCK_SIZE	64
 
 static int mlogitaug_moments(const struct mlogitaug *m1);
+static void mlogitaug_update_cache(struct mlogitaug *m1);
+
 static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
@@ -33,7 +35,7 @@ static void recompute_base_cov(struct mlogitaug *m1);
 static void recompute_cross_cov(struct mlogitaug *m1);
 static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
 static void grow_ind_array(struct mlogitaug *m1, size_t delta);
-static size_t find_ind(const struct mlogitaug *m1, size_t i);
+static ptrdiff_t find_ind(const struct mlogitaug *m1, size_t i);
 static size_t search_ind(struct mlogitaug *m1, size_t i);
 
 
@@ -91,6 +93,7 @@ void mlogitaug_init(struct mlogitaug *m1, const struct mlogit *base,
 	m1->work = work;
 
 	clear(m1);
+	m1->cached = 0;
 }
 
 
@@ -132,8 +135,8 @@ double *mlogitaug_coefs(const struct mlogitaug *m1)
 
 double mlogitaug_offset(const struct mlogitaug *m1, size_t i)
 {
-	size_t iz = find_ind(m1, i);
-	if (iz == m1->nz)
+	ptrdiff_t iz = find_ind(m1, i);
+	if (iz < 0)
 		return 0.0;
 
 	return m1->offset[iz];
@@ -142,8 +145,8 @@ double mlogitaug_offset(const struct mlogitaug *m1, size_t i)
 
 double *mlogitaug_x(const struct mlogitaug *m1, size_t i)
 {
-	size_t iz = find_ind(m1, i);
-	if (iz == m1->nz)
+	ptrdiff_t iz = find_ind(m1, i);
+	if (iz < 0)
 		return NULL;
 
 	return m1->x + iz * m1->dim;
@@ -159,6 +162,7 @@ void mlogitaug_set_coefs(struct mlogitaug *m1, const double *beta)
 	} else {
 		memcpy(m1->beta, beta, len);
 	}
+	m1->cached = 0;
 }
 
 
@@ -166,6 +170,7 @@ void mlogitaug_set_offset(struct mlogitaug *m1, size_t i, double offset)
 {
 	size_t iz = search_ind(m1, i);
 	m1->offset[iz] = offset;
+	m1->cached = 0;
 }
 
 
@@ -176,6 +181,7 @@ void mlogitaug_set_all_offset(struct mlogitaug *m1, const size_t *i, const doubl
 	for (iz = 0; iz < nz; iz++) {
 		mlogitaug_set_offset(m1, i[iz], offset[iz]);
 	}
+	m1->cached = 0;
 }
 
 
@@ -198,6 +204,7 @@ void mlogitaug_set_x(struct mlogitaug *m1, size_t i, const double *x)
 {
 	size_t iz = search_ind(m1, i);
 	set_x_iz(m1, iz, x);
+	m1->cached = 0;
 }
 
 
@@ -216,6 +223,8 @@ void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 		assert(ndx == dim);
 		blas_daxpy(dim, 1.0, dx, 1, x, 1);
 	}
+
+	m1->cached = 0;
 }
 
 
@@ -249,6 +258,8 @@ void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x,
 	for (iz = 0; iz < nz; iz++) {
 		mlogitaug_set_x(m1, i[iz], x + iz * dim);
 	}
+
+	m1->cached = 0;
 }
 
 
@@ -273,7 +284,8 @@ void recompute_dist(struct mlogitaug *m1)
 
 struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
 {
-	recompute_dist((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return &((struct mlogitaug *)m1)->dist;
 }
 
@@ -320,8 +332,8 @@ void recompute_mean(struct mlogitaug *m1)
 double *mlogitaug_mean(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 1);
-	recompute_dist((struct mlogitaug *)m1);
-	recompute_mean((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->mean;
 }
 
@@ -393,8 +405,8 @@ int mlogitaug_moments(const struct mlogitaug *m1)
 double *mlogitaug_base_mean(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 1);
-	recompute_dist((struct mlogitaug *)m1);
-	recompute_base_mean((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->base_mean;
 }
 
@@ -456,9 +468,8 @@ void recompute_cov(struct mlogitaug *m1)
 double *mlogitaug_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	recompute_dist((struct mlogitaug *)m1);
-	recompute_mean((struct mlogitaug *)m1);
-	recompute_cov((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->cov;
 }
 
@@ -571,9 +582,8 @@ static void recompute_base_cov(struct mlogitaug *m1)
 double *mlogitaug_base_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	recompute_dist((struct mlogitaug *)m1);
-	recompute_base_mean((struct mlogitaug *)m1);
-	recompute_base_cov((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->base_cov;
 }
 
@@ -636,8 +646,8 @@ void recompute_cross_cov(struct mlogitaug *m1)
 double *mlogitaug_cross_cov(const struct mlogitaug *m1)
 {
 	assert(mlogitaug_moments(m1) >= 2);
-	recompute_dist((struct mlogitaug *)m1);
-	recompute_base_mean((struct mlogitaug *)m1);
+	if (!m1->cached)
+		mlogitaug_update_cache((struct mlogitaug *)m1);
 	return m1->cross_cov;
 }
 
@@ -650,41 +660,7 @@ void mlogitaug_update_cache(struct mlogitaug *m1)
 	recompute_cov((struct mlogitaug *)m1);
 	recompute_base_cov((struct mlogitaug *)m1);
 	recompute_cross_cov((struct mlogitaug *)m1);
-}
-
-struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1)
-{
-	return &((struct mlogitaug *)m1)->dist;
-}
-
-double *mlogitaug_cached_mean(const struct mlogitaug *m1)
-{
-	assert(mlogitaug_moments(m1) >= 1);
-	return ((struct mlogitaug *)m1)->mean;
-}
-
-double *mlogitaug_cached_base_mean(const struct mlogitaug *m1)
-{
-	assert(mlogitaug_moments(m1) >= 1);
-	return ((struct mlogitaug *)m1)->base_mean;
-}
-
-double *mlogitaug_cached_cov(const struct mlogitaug *m1)
-{
-	assert(mlogitaug_moments(m1) >= 2);
-	return ((struct mlogitaug *)m1)->cov;
-}
-
-double *mlogitaug_cached_base_cov(const struct mlogitaug *m1)
-{
-	assert(mlogitaug_moments(m1) >= 2);
-	return ((struct mlogitaug *)m1)->base_cov;
-}
-
-double *mlogitaug_cached_cross_cov(const struct mlogitaug *m1)
-{
-	assert(mlogitaug_moments(m1) >= 2);
-	return ((struct mlogitaug *)m1)->cross_cov;
+	m1->cached = 1;
 }
 
 int mlogitaug_check(const struct mlogitaug *m1)
@@ -716,22 +692,13 @@ void grow_ind_array(struct mlogitaug *m1, size_t delta)
 
 size_t search_ind(struct mlogitaug *m1, size_t i)
 {
-	const size_t *base = m1->ind, *ptr;
-	size_t nz;
+	ptrdiff_t siz = find_ind(m1, i);
 
-	for (nz = m1->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - m1->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
-	}
+	if (siz >= 0)
+		return (size_t)(siz);
 
 	/* not found */
-	size_t iz = base - m1->ind;
+	size_t iz = ~siz;
 	size_t ntail = m1->nz - iz;
 	size_t dim = m1->dim;
 
@@ -751,22 +718,7 @@ size_t search_ind(struct mlogitaug *m1, size_t i)
 }
 
 
-size_t find_ind(const struct mlogitaug *m1, size_t i)
+ptrdiff_t find_ind(const struct mlogitaug *m1, size_t i)
 {
-	const size_t *base = m1->ind, *ptr;
-	size_t nz;
-
-	for (nz = m1->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - m1->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
-	}
-
-	/* not found */
-	return m1->nz;
+	return find_index(i, m1->ind, m1->nz);
 }

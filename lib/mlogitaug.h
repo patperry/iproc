@@ -36,6 +36,7 @@ struct mlogitaug {
 
 	struct mlogitaug_work *work;
 	int free_work;
+	int cached;
 };
 
 void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
@@ -74,13 +75,6 @@ double *mlogitaug_base_cov(const struct mlogitaug *m1);
 double *mlogitaug_cross_cov(const struct mlogitaug *m1);
 
 
-void mlogitaug_update_cache(struct mlogitaug *m1);
-struct catdist1 *mlogitaug_cached_dist(const struct mlogitaug *m1);
-double *mlogitaug_cached_mean(const struct mlogitaug *m1);
-double *mlogitaug_cached_base_mean(const struct mlogitaug *m1);
-double *mlogitaug_cached_cov(const struct mlogitaug *m1);
-double *mlogitaug_cached_base_cov(const struct mlogitaug *m1);
-double *mlogitaug_cached_cross_cov(const struct mlogitaug *m1);
 
 int mlogitaug_check(const struct mlogitaug *m1);
 

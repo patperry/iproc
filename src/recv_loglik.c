@@ -83,9 +83,9 @@ static void copy_cov(const struct mlogitaug *m1, double *dst)
 	//size_t dim = base_dim + aug_dim;
 	size_t base_cov_dim = base_dim * (base_dim + 1) / 2;
 	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
-	const double *base_cov = mlogitaug_cached_base_cov(m1);
-	const double *cross_cov = mlogitaug_cached_cross_cov(m1);
-	const double *aug_cov = mlogitaug_cached_cov(m1);
+	const double *base_cov = mlogitaug_base_cov(m1);
+	const double *cross_cov = mlogitaug_cross_cov(m1);
+	const double *aug_cov = mlogitaug_cov(m1);
 	size_t i;
 
 	assert(RECV_LOGLIK_UPLO == MLOGIT_COV_UPLO);
@@ -132,7 +132,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 	size_t dim = base_dim + aug_dim;
 	size_t cov_dim = dim * (dim + 1) / 2;
 
-	const struct catdist1 *dist = mlogitaug_cached_dist(m1);
+	const struct catdist1 *dist = mlogitaug_dist(m1);
 
 	double dev = 0.0;
 	size_t count = nto;
@@ -162,8 +162,8 @@ void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 		return;
 
 	/* compute mean */
-	const double *base_mean = mlogitaug_cached_base_mean(m1);
-	const double *mean = mlogitaug_cached_mean(m1);
+	const double *base_mean = mlogitaug_base_mean(m1);
+	const double *mean = mlogitaug_mean(m1);
 	blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
 	blas_dcopy(aug_dim, mean, 1, last->mean.all + base_dim, 1);
 
