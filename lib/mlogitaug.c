@@ -700,20 +700,17 @@ void grow_ind_array(struct mlogitaug *m1, size_t delta)
 {
 	size_t nz = m1->nz;
 	size_t nz1 = nz + delta;
-	size_t nzmax = m1->nzmax;
 
-	if (nz1 <= nzmax)
-		return;
+	if (needs_grow(nz1, &m1->nzmax)) {
+		size_t nzmax = m1->nzmax;
+		size_t dim = m1->dim;
 
-	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
-	size_t dim = m1->dim;
-	assert(nzmax1 >= nz1);
-
-	m1->ind = xrealloc(m1->ind, nzmax1 * sizeof(*m1->ind));
-	m1->offset = xrealloc(m1->offset, nzmax1 * sizeof(*m1->offset));
-	m1->x = xrealloc(m1->x, nzmax1 * sizeof(*m1->x) * dim);
-	m1->deta = xrealloc(m1->deta, nzmax1 * sizeof(*m1->deta));
-	m1->nzmax = nzmax1;
+		m1->ind = xrealloc(m1->ind, nzmax * sizeof(*m1->ind));
+		m1->offset = xrealloc(m1->offset, nzmax * sizeof(*m1->offset));
+		m1->x = xrealloc(m1->x, nzmax * sizeof(*m1->x) * dim);
+		m1->deta = xrealloc(m1->deta, nzmax * sizeof(*m1->deta));
+		m1->nzmax = nzmax;
+	}
 }
 
 

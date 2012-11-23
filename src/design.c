@@ -139,10 +139,8 @@ void design_deinit(struct design *d)
 
 static void design_observers_grow(struct design *d, size_t delta)
 {
-	size_t nmax = array_grow(d->nobs, d->nobs_max, delta, SIZE_MAX);
-	if (nmax > d->nobs_max) {
-		d->observers = xrealloc(d->observers, nmax * sizeof(d->observers[0]));
-		d->nobs_max = nmax;
+	if (needs_grow(d->nobs + delta, &d->nobs_max)) {
+		d->observers = xrealloc(d->observers, d->nobs_max * sizeof(d->observers[0]));
 	}
 }
 
@@ -300,10 +298,8 @@ void design_add_traits(struct design *d, const char * const *names, const double
 
 static void design_grow_tvars(struct design *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntvar, d->ntvar_max, delta, SIZE_MAX);
-	if (nmax > d->ntvar_max) {
-		d->tvars = xrealloc(d->tvars, nmax * sizeof(*d->tvars));
-		d->ntvar_max = nmax;
+	if (needs_grow(d->ntvar + delta, &d->ntvar_max)) {
+		d->tvars = xrealloc(d->tvars, d->ntvar_max * sizeof(*d->tvars));
 	}
 }
 

@@ -13,19 +13,15 @@
 
 static void messages_grow_reps(struct messages *msgs, size_t delta)
 {
-	size_t nmax = array_grow(msgs->nsend, msgs->nsend_max, delta, SIZE_MAX);
-	if (nmax > msgs->nsend_max) {
-		msgs->reps = xrealloc(msgs->reps, nmax * sizeof(msgs->reps[0]));
-		msgs->nsend_max = nmax;
+	if (needs_grow(msgs->nsend + delta, &msgs->nsend_max)) {
+		msgs->reps = xrealloc(msgs->reps, msgs->nsend_max * sizeof(msgs->reps[0]));
 	}
 }
 
 static void messages_grow_recv(struct messages *msgs, size_t delta)
 {
-	size_t nmax = array_grow(msgs->nrecv, msgs->nrecv_max, delta, SIZE_MAX);
-	if (nmax > msgs->nrecv_max) {
-		msgs->recv = xrealloc(msgs->recv, nmax * sizeof(msgs->recv[0]));
-		msgs->nrecv_max = nmax;
+	if (needs_grow(msgs->nrecv + delta, &msgs->nrecv_max)) {
+		msgs->recv = xrealloc(msgs->recv, msgs->nrecv_max * sizeof(msgs->recv[0]));
 	}
 }
 

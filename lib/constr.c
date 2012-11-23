@@ -231,13 +231,10 @@ int constr_add_check(struct constr *c)
 
 void constr_grow(struct constr *c, size_t delta)
 {
-	size_t dim = c->dim;
-	size_t nmax = array_grow(c->n, c->nmax, delta, SIZE_MAX);
-
-	if (nmax > c->nmax) {
-		c->wts = xrealloc(c->wts, nmax * dim * sizeof(*c->wts));
-		c->vals = xrealloc(c->vals, nmax * sizeof(*c->vals));
-		c->nmax = nmax;
+	if (needs_grow(c->n + delta, &c->nmax)) {
+		size_t dim = c->dim;
+		c->wts = xrealloc(c->wts, c->nmax * dim * sizeof(*c->wts));
+		c->vals = xrealloc(c->vals, c->nmax * sizeof(*c->vals));
 	}
 }
 

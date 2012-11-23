@@ -19,17 +19,11 @@ void grow_ind_array(struct history_actor *a, size_t nintvl, size_t delta)
 {
 	size_t nz = a->nz;
 	size_t nz1 = nz + delta;
-	size_t nzmax = a->nzmax;
 
-	if (nz1 <= nzmax)
-		return;
-
-	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
-	assert(nzmax1 >= nz1);
-
-	a->ind = xrealloc(a->ind, nzmax1 * sizeof(a->ind[0]));
-	a->nmsg = xrealloc(a->nmsg, nzmax1 * nintvl * sizeof(a->nmsg[0]));
-	a->nzmax = nzmax1;
+	if (needs_grow(nz1, &a->nzmax)) {
+		a->ind = xrealloc(a->ind, a->nzmax * sizeof(a->ind[0]));
+		a->nmsg = xrealloc(a->nmsg, a->nzmax * nintvl * sizeof(a->nmsg[0]));
+	}
 }
 
 
@@ -105,10 +99,8 @@ static void history_actor_clear(struct history_actor *actr)
 
 static void history_actor_grow_ixs(struct history_actor *actr, size_t delta)
 {
-	size_t nmax = array_grow(actr->nix, actr->nix_max, delta, SIZE_MAX);
-	if (nmax > actr->nix_max) {
-		actr->message_ixs = xrealloc(actr->message_ixs, nmax * sizeof(actr->message_ixs[0]));
-		actr->nix_max = nmax;
+	if (needs_grow(actr->nix + delta, &actr->nix_max)) {
+		actr->message_ixs = xrealloc(actr->message_ixs, actr->nix_max * sizeof(actr->message_ixs[0]));
 	}
 }
 
@@ -239,10 +231,8 @@ void history_clear(struct history *h)
 
 static void history_observers_grow(struct history *h, size_t delta)
 {
-	size_t nmax = array_grow(h->nobs, h->nobs_max, delta, SIZE_MAX);
-	if (nmax > h->nobs_max) {
-		h->observers = xrealloc(h->observers, nmax * sizeof(h->observers[0]));
-		h->nobs_max = nmax;
+	if (needs_grow(h->nobs + delta, &h->nobs_max)) {
+		h->observers = xrealloc(h->observers, h->nobs_max * sizeof(h->observers[0]));
 	}
 }
 
@@ -277,10 +267,8 @@ void history_remove_observer(struct history *h, void *udata)
 
 static void history_messages_grow(struct history *h, size_t delta)
 {
-	size_t nmax = array_grow(h->nmsg, h->nmsg_max, delta, SIZE_MAX);
-	if (nmax > h->nmsg_max) {
-		h->msgs = xrealloc(h->msgs, nmax * sizeof(h->msgs[0]));
-		h->nmsg_max = nmax;
+	if (needs_grow(h->nmsg + delta, &h->nmsg_max)) {
+		h->msgs = xrealloc(h->msgs, h->nmsg_max * sizeof(h->msgs[0]));
 	}
 }
 

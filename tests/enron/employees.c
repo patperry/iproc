@@ -147,13 +147,11 @@ static int parse_end_map(void *ctx)
 {
 	struct employee_parse *parse = ctx;
 
-	if (parse->nactor == parse->nactor_max) {
-		size_t nactor_max = ARRAY_GROW1(parse->nactor_max, SIZE_MAX); 
+	if (needs_grow(parse->nactor + 1, &parse->nactor_max)) {
 		parse->traits = xrealloc(parse->traits,
-					  nactor_max
+					  parse->nactor_max
 					  * parse->dim
-					  * sizeof(*parse->traits));
-		parse->nactor_max = nactor_max;
+					  * sizeof(parse->traits[0]));
 	}
 
 	size_t id = parse->nactor;

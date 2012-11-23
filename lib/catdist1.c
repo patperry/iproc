@@ -28,7 +28,7 @@ static void diff_deinit(struct catdist1_diff *diff);
 static void diff_clear(struct catdist1_diff *diff);
 static void diff_set(struct catdist1_diff *diff, size_t i, double deta);
 static void diff_set_all(struct catdist1_diff *diff, const size_t *ind, const double *deta, size_t nz);
-static size_t diff_find(const struct catdist1_diff *diff, size_t i);
+static ptrdiff_t diff_find(const struct catdist1_diff *diff, size_t i);
 static size_t diff_search(struct catdist1_diff *diff, size_t i);
 static void diff_grow(struct catdist1_diff *diff, size_t delta);
 
@@ -94,9 +94,9 @@ double catdist1_deta(const struct catdist1 *c1, size_t i)
 	catdist1_update_((struct catdist1 *)c1);
 
 	double deta = 0.0;
-	size_t iz = diff_find(&c1->diff, i);
+	ptrdiff_t iz = diff_find(&c1->diff, i);
 
-	if (iz != c1->diff.nz) {
+	if (iz >= 0) {
 		deta = c1->diff.deta[iz];
 	}
 
@@ -402,54 +402,32 @@ void diff_set_all(struct catdist1_diff *diff, const size_t *ind, const double *d
 
 size_t diff_search(struct catdist1_diff *diff, size_t i)
 {
-	const size_t *base = diff->ind, *ptr;
-	size_t nz;
-
-	for (nz = diff->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - diff->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
-	}
+	ptrdiff_t siz = find_index(i, diff->ind, diff->nz);
+	size_t iz;
 
 	/* not found */
-	size_t iz = base - diff->ind;
-	size_t ntail = diff->nz - iz;
+	if (siz < 0) {
+		iz = ~siz;
+		size_t ntail = diff->nz - iz;
 
-	diff_grow(diff, 1);
-	memmove(diff->ind + iz + 1, diff->ind + iz, ntail * sizeof(*diff->ind));
-	memmove(diff->deta + iz + 1, diff->deta + iz, ntail * sizeof(*diff->deta));
+		diff_grow(diff, 1);
+		memmove(diff->ind + iz + 1, diff->ind + iz, ntail * sizeof(*diff->ind));
+		memmove(diff->deta + iz + 1, diff->deta + iz, ntail * sizeof(*diff->deta));
 
-	diff->ind[iz] = i;
-	diff->deta[iz] = 0.0;
-	diff->nz++;
+		diff->ind[iz] = i;
+		diff->deta[iz] = 0.0;
+		diff->nz++;
+	} else {
+		iz = siz;
+	}
 
 	return iz;
 }
 
 
-size_t diff_find(const struct catdist1_diff *diff, size_t i)
+ptrdiff_t diff_find(const struct catdist1_diff *diff, size_t i)
 {
-	const size_t *base = diff->ind, *ptr;
-	size_t nz;
-
-	for (nz = diff->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - diff->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
-	}
-
-	/* not found */
-	return diff->nz;
+	return find_index(i, diff->ind, diff->nz);
 }
 
 
@@ -457,17 +435,11 @@ void diff_grow(struct catdist1_diff *diff, size_t delta)
 {
 	size_t nz = diff->nz;
 	size_t nz1 = nz + delta;
-	size_t nzmax = diff->nzmax;
 
-	if (nz1 <= nzmax)
-		return;
-
-	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
-	assert(nzmax1 >= nz1);
-
-	diff->ind = xrealloc(diff->ind, nzmax1 * sizeof(*diff->ind));
-	diff->deta = xrealloc(diff->deta, nzmax1 * sizeof(*diff->deta));
-	diff->nzmax = nzmax1;
+	if (needs_grow(nz1, &diff->nzmax)) {
+		diff->ind = xrealloc(diff->ind, diff->nzmax * sizeof(diff->ind[0]));
+		diff->deta = xrealloc(diff->deta, diff->nzmax * sizeof(diff->deta[0]));
+	}
 }
 
 

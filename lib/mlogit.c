@@ -788,20 +788,14 @@ out:
 
 void grow_ind_array(struct mlogit *m, size_t delta)
 {
+	size_t dim = m->dim;
 	size_t nz = m->nz;
 	size_t nz1 = nz + delta;
-	size_t nzmax = m->nzmax;
 
-	if (nz1 <= nzmax)
-		return;
-
-	size_t nzmax1 = array_grow(nz, nzmax, delta, SIZE_MAX);
-	size_t dim = m->dim;
-	assert(nzmax1 >= nz1);
-
-	m->ind = xrealloc(m->ind, nzmax1 * sizeof(*m->ind));
-	m->dx = xrealloc(m->dx, nzmax1 * sizeof(*m->dx) * dim);
-	m->nzmax = nzmax1;
+	if (needs_grow(nz1, &m->nzmax)) {
+		m->ind = xrealloc(m->ind, m->nzmax * sizeof(m->ind[0]));
+		m->dx = xrealloc(m->dx, m->nzmax * dim * sizeof(m->dx[0]));
+	}
 }
 
 

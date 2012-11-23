@@ -53,10 +53,8 @@ static void message_parse_init(struct message_parse *parse, struct messages *mes
 
 static void message_parse_grow_recv(struct message_parse *parse, size_t delta)
 {
-	size_t nmax = array_grow(parse->nrecv, parse->nrecv_max, delta, SIZE_MAX);
-	if (nmax > parse->nrecv_max) {
-		parse->receiver = xrealloc(parse->receiver, nmax * sizeof(parse->receiver[0]));
-		parse->nrecv_max = nmax;
+	if (needs_grow(parse->nrecv + delta, &parse->nrecv_max)) {
+		parse->receiver = xrealloc(parse->receiver, parse->nrecv_max * sizeof(parse->receiver[0]));
 	}
 }
 

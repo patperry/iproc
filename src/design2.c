@@ -242,10 +242,8 @@ void design2_deinit(struct design2 *d)
 
 static void design2_observers_grow(struct design2 *d, size_t delta)
 {
-	size_t nmax = array_grow(d->nobs, d->nobs_max, delta, SIZE_MAX);
-	if (nmax > d->nobs_max) {
-		d->observers = xrealloc(d->observers, nmax * sizeof(d->observers[0]));
-		d->nobs_max = nmax;
+	if (needs_grow(d->nobs + delta, &d->nobs_max)) {
+		d->observers = xrealloc(d->observers, d->nobs_max * sizeof(d->observers[0]));
 	}
 }
 
@@ -363,10 +361,8 @@ void design2_add_traits(struct design2 *d, const char * const *names, const doub
 
 static void design2_grow_kvars(struct design2 *d, size_t delta)
 {
-	size_t nmax = array_grow(d->nkvar, d->nkvar_max, delta, SIZE_MAX);
-	if (nmax > d->nkvar_max) {
-		d->kvars = xrealloc(d->kvars, nmax * sizeof(*d->kvars));
-		d->nkvar_max = nmax;
+	if (needs_grow(d->nkvar + delta, &d->nkvar_max)) {
+		d->kvars = xrealloc(d->kvars, d->nkvar_max * sizeof(*d->kvars));
 	}
 }
 
@@ -474,10 +470,8 @@ const char *design2_tvar_name(const struct design2 *d, size_t j)
 
 static void design2_grow_tvars(struct design2 *d, size_t delta)
 {
-	size_t nmax = array_grow(d->ntvar, d->ntvar_max, delta, SIZE_MAX);
-	if (nmax > d->ntvar_max) {
-		d->tvars = xrealloc(d->tvars, nmax * sizeof(*d->tvars));
-		d->ntvar_max = nmax;
+	if (needs_grow(d->ntvar + delta, &d->ntvar_max)) {
+		d->tvars = xrealloc(d->tvars, d->ntvar_max * sizeof(d->tvars[0]));
 	}
 }
 
@@ -670,13 +664,10 @@ static double *design2_dx(struct design2 *d, size_t i, size_t j)
 	if (ix < 0) {
 		ix = ~ix;
 		
-		if (d->nnz == d->nnz_max) {
-			d->nnz_max = array_grow(d->nnz, d->nnz_max, 1, SIZE_MAX);
-			d->jc = xrealloc(d->jc, d->nnz_max * sizeof(*d->jc));
-			d->dx = xrealloc(d->dx, d->nnz_max * dim * sizeof(*d->dx));
+		if (needs_grow(d->nnz + 1, &d->nnz_max)) {
+			d->jc = xrealloc(d->jc, d->nnz_max * sizeof(d->jc[0]));
+			d->dx = xrealloc(d->dx, d->nnz_max * dim * sizeof(d->dx[0]));
 		}
-		
-		assert(d->nnz < d->nnz_max);
 
 		memmove(d->jc + (ir0 + ix + 1),
 			d->jc + (ir0 + ix),
