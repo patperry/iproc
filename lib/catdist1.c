@@ -42,7 +42,7 @@ static double get_dpsi_safer(const struct catdist1 *c1);
 
 
 
-void catdist1_init(struct catdist1 *c1, const struct catdist *parent)
+void catdist1_init(struct catdist1 *c1, struct catdist *parent)
 {
 	assert(parent);
 	c1->parent = parent;
@@ -50,11 +50,13 @@ void catdist1_init(struct catdist1 *c1, const struct catdist *parent)
 	diff_init(&c1->pending);
 	c1->cached_dpsi = 0;
 	c1->cleared = 0;
+	catdist_add_checkpoint(c1->parent, &c1->parent_cp);
 }
 
 
 void catdist1_deinit(struct catdist1 *c1)
 {
+	catdist_remove_checkpoint(c1->parent, &c1->parent_cp);
 	diff_deinit(&c1->pending);
 	diff_deinit(&c1->diff);
 }
@@ -62,9 +64,12 @@ void catdist1_deinit(struct catdist1 *c1)
 
 void catdist1_update_(struct catdist1 *c1)
 {
-	if (c1->cleared || c1->pending.nz) {
+	if (c1->cleared
+	    || c1->pending.nz
+	    || catdist_checkpoint_passed(&c1->parent_cp, c1->parent)) {
 		update_diff(c1);
 		update_dpsi(c1);
+		catdist_checkpoint_set(&c1->parent_cp, c1->parent);
 	}
 }
 
@@ -290,7 +295,6 @@ void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta)
 	assert(i < catdist1_ncat(c1));
 	assert(deta < INFINITY);
 	diff_set(&c1->pending, i, deta);
-
 }
 
 void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double *deta, size_t nz)

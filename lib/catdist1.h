@@ -12,14 +12,15 @@ struct catdist1_diff {
 };
 
 struct catdist1 {
-	const struct catdist *parent;
+	struct catdist *parent;
+	struct catdist_checkpoint parent_cp;
 	struct catdist1_diff diff;
 	struct catdist1_diff pending;
 	double cached_dpsi;
 	int cleared;
 };
 
-void catdist1_init(struct catdist1 *c1, const struct catdist *parent);
+void catdist1_init(struct catdist1 *c1, struct catdist *parent);
 void catdist1_deinit(struct catdist1 *c1);
 
 static inline size_t catdist1_ncat(const struct catdist1 *c1);

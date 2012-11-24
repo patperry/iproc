@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include "coreutil.h"
 #include "ieee754.h"		// double_rcompare
 #include "timsort.h"
 #include "xalloc.h"
@@ -49,6 +50,7 @@ static struct valerr_t compute_eta_tail(const struct catdist *c);
 static void replace_eta(struct catdist *c, size_t i, double eta1);
 static void sort_eta(struct catdist *c);
 static void set_eta_tail(struct catdist *c);
+static void update_version(struct catdist *c);
 
 void catdist_init(struct catdist *c, size_t ncat)
 {
@@ -58,6 +60,10 @@ void catdist_init(struct catdist *c, size_t ncat)
 	c->eta_order = xmalloc(ncat * sizeof(*c->eta_order));
 	c->eta_rank = xmalloc(ncat * sizeof(*c->eta_rank));
 	c->tol = sqrt(EPS) * sqrt(sqrt(EPS));
+	c->version = 0;
+	c->cp = NULL;
+	c->ncp = 0;
+	c->ncpmax = 0;
 
 	clear(c);
 }
@@ -85,6 +91,58 @@ void catdist_deinit(struct catdist *c)
 	free(c->eta);
 }
 
+
+void update_version(struct catdist *c)
+{
+	if (c->version == SIZE_MAX) {
+		size_t i, n = c->ncp;
+		for (i = 0; i < n; i++) {
+			c->cp[i]->version = 0;
+		}
+		c->version = 0;
+	}
+
+	c->version++;
+}
+
+
+
+
+void catdist_add_checkpoint(struct catdist *c, struct catdist_checkpoint *cp)
+{
+	assert(cp);
+
+	if (needs_grow(c->ncp + 1, &c->ncpmax)) {
+		c->cp = xrealloc(c->cp, c->ncpmax * sizeof(c->cp[0]));
+	}
+	c->cp[c->ncp++] = cp;
+}
+
+
+void catdist_remove_checkpoint(struct catdist *c, struct catdist_checkpoint *cp)
+{
+	size_t i, n = c->ncp;
+	for (i = n; i > 0; i--) {
+		if (c->cp[i - 1] == cp) {
+			memmove(c->cp + i - 1, c->cp + i, (n - i) * sizeof(c->cp[0]));
+			break;
+		}
+	}
+}
+
+
+int catdist_checkpoint_passed(const struct catdist_checkpoint *cp, const struct catdist *c)
+{
+	return cp->version < c->version;
+}
+
+
+void catdist_checkpoint_set(struct catdist_checkpoint *cp, const struct catdist *c)
+{
+	cp->version = c->version;
+}
+
+
 void catdist_set_all_eta(struct catdist *c, const double *eta)
 {
 	if (!eta) {
@@ -106,6 +164,7 @@ void catdist_set_all_eta(struct catdist *c, const double *eta)
 	sort_eta(c);
 	set_eta_tail(c);
 	c->psi_shift = log1p(c->eta_tail);
+	update_version(c);
 }
 
 #define IS_ROOT(i) (rank[i] == 0)
@@ -225,6 +284,7 @@ void catdist_set_eta(struct catdist *c, size_t i, double eta1)
 	//printf("\neta_tail = %.10e +/- %.10e ", c->eta_tail, c->eta_tail_err);
 	assert(c->eta_tail >= 0);
 	c->psi_shift = log1p(c->eta_tail);
+	update_version(c);
 }
 
 int pdouble_rcompar(const void *x, const void *y)

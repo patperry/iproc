@@ -5,6 +5,7 @@
 #include <math.h>		// exp, isnan
 #include <stddef.h>		// size_t
 
+
 /* A categorical distribution, using the natural exponential family
  * parametrization.
  */
@@ -20,10 +21,23 @@ struct catdist {
 	double eta_tail_err;
 	double psi_shift;	/* shifted CGF: log[ \sum_i exp{ eta(i) - eta_max } ] */
 	double tol;
+
+	size_t version;
+	struct catdist_checkpoint **cp;
+	size_t ncp, ncpmax;
+};
+
+struct catdist_checkpoint {
+	size_t version;
 };
 
 void catdist_init(struct catdist *c, size_t ncat);
 void catdist_deinit(struct catdist *c);
+
+void catdist_add_checkpoint(struct catdist *c, struct catdist_checkpoint *cp);
+void catdist_remove_checkpoint(struct catdist *c, struct catdist_checkpoint *cp);
+int catdist_checkpoint_passed(const struct catdist_checkpoint *cp, const struct catdist *c);
+void catdist_checkpoint_set(struct catdist_checkpoint *cp, const struct catdist *c);
 
 static inline size_t catdist_ncat(const struct catdist *c);
 

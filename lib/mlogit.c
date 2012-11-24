@@ -181,6 +181,7 @@ void mlogit_remove_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp)
 	for (i = n; i > 0; i--) {
 		if (m->cp[i - 1] == cp) {
 			memmove(m->cp + i - 1, m->cp + i, (n - i) * sizeof(m->cp[0]));
+			break;
 		}
 	}
 }
