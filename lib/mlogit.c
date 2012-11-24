@@ -36,6 +36,7 @@ static void recompute_dist(struct mlogit *m);
 static void recompute_mean(struct mlogit *m);
 static void recompute_cov(struct mlogit *m);
 static void update(struct mlogit *m);
+static void update_version(struct mlogit *m);
 static void update_x(struct mlogit *m);
 static void update_dist(struct mlogit *m);
 static void update_mean(struct mlogit *m);
@@ -114,9 +115,10 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *
 	m->nz = 0;
 	m->nzmax = 0;
 
-	m->obs = NULL;
-	m->nobs = 0;
-	m->nobsmax = 0;
+	m->version = 0;
+	m->cp = NULL;
+	m->ncp = 0;
+	m->ncpmax = 0;
 
 	if (work) {
 		m->free_work = 0;
@@ -137,7 +139,7 @@ void mlogit_deinit(struct mlogit *m)
 		mlogit_work_deinit(m->work);
 		free(m->work);
 	}
-	free(m->obs);
+	free(m->cp);
 	free(m->dx);
 	free(m->ind);
 	free(m->cov_);
@@ -148,32 +150,51 @@ void mlogit_deinit(struct mlogit *m)
 	catdist_deinit(&m->dist_);
 }
 
-static void notify_observers(struct mlogit *m)
+void update_version(struct mlogit *m)
 {
-	size_t i, n = m->nobs;
-	for (i = 0; i < n; i++) {
-		m->obs[i]->changed = 1;
+	if (m->version == SIZE_MAX) {
+		size_t i, n = m->ncp;
+		for (i = 0; i < n; i++) {
+			m->cp[i]->version = 0;
+		}
+		m->version = 0;
 	}
+
+	m->version++;
 }
 
-void mlogit_add_observer(struct mlogit *m, struct mlogit_event *e)
+
+
+
+void mlogit_add_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp)
 {
-	if (needs_grow(m->nobs + 1, &m->nobsmax)) {
-		m->obs = xrealloc(m->obs, m->nobsmax * sizeof(m->obs[0]));
+	if (needs_grow(m->ncp + 1, &m->ncpmax)) {
+		m->cp = xrealloc(m->cp, m->ncpmax * sizeof(m->cp[0]));
 	}
-	m->obs[m->nobs++] = e;
-	e->changed = 0;
+	m->cp[m->ncp++] = cp;
+	cp->version = m->version;
 }
 
-void mlogit_remove_observer(struct mlogit *m, struct mlogit_event *e)
+void mlogit_remove_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp)
 {
-	size_t i, n = m->nobs;
+	size_t i, n = m->ncp;
 	for (i = n; i > 0; i--) {
-		if (m->obs[i - 1] == e) {
-			memmove(m->obs + i - 1, m->obs + i, (n - i) * sizeof(m->obs[0]));
+		if (m->cp[i - 1] == cp) {
+			memmove(m->cp + i - 1, m->cp + i, (n - i) * sizeof(m->cp[0]));
 		}
 	}
 }
+
+int mlogit_checkpoint_passed(const struct mlogit_checkpoint *cp, const struct mlogit *m)
+{
+	return cp->version < m->version;
+}
+
+void mlogit_checkpoint_set(struct mlogit_checkpoint *cp, const struct mlogit *m)
+{
+	cp->version = m->version;
+}
+
 
 
 void clear(struct mlogit *m)
@@ -206,6 +227,7 @@ void mlogit_set_coefs(struct mlogit *m, const double *beta)
 	}
 
 	recompute_all(m);
+	update_version(m);
 }
 
 void mlogit_set_all_offset(struct mlogit *m, const double *offset)
@@ -218,6 +240,7 @@ void mlogit_set_all_offset(struct mlogit *m, const double *offset)
 	}
 
 	recompute_all(m);
+	update_version(m);
 }
 
 void mlogit_set_all_x(struct mlogit *m, const double *x)
@@ -231,6 +254,7 @@ void mlogit_set_all_x(struct mlogit *m, const double *x)
 	m->nz = 0;
 
 	recompute_all(m);
+	update_version(m);
 }
 
 
@@ -247,6 +271,7 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 		m->nz = 0;
 	}
 	recompute_all(m);
+	update_version(m);
 }
 
 
@@ -273,7 +298,7 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 		blas_daxpy(dim, 1.0, dx, 1, dst, 1);
 	}
 
-	notify_observers(m);
+	update_version(m);
 }
 
 
@@ -572,7 +597,6 @@ void recompute_all(struct mlogit *m)
 	recompute_dist(m);
 	recompute_mean(m);
 	recompute_cov(m);
-	notify_observers(m);
 }
 
 void recompute_dist(struct mlogit *m)
@@ -683,7 +707,7 @@ void mlogit_set_moments(struct mlogit *m, int k)
 			recompute_cov(m);
 	}
 
-	notify_observers(m);
+	update_version(m);
 }
 
 

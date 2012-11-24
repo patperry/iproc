@@ -96,7 +96,7 @@ void mlogitaug_init(struct mlogitaug *m1, struct mlogit *base,
 	clear(m1);
 	m1->cached = 0;
 
-	mlogit_add_observer(m1->base, &m1->base_event);
+	mlogit_add_checkpoint(m1->base, &m1->base_cp);
 }
 
 
@@ -111,7 +111,7 @@ void clear(struct mlogitaug *m1)
 
 void mlogitaug_deinit(struct mlogitaug *m1)
 {
-	mlogit_remove_observer(m1->base, &m1->base_event);
+	mlogit_remove_checkpoint(m1->base, &m1->base_cp);
 	
 	if (m1->free_work) {
 		mlogitaug_work_deinit(m1->work);
@@ -289,7 +289,7 @@ void recompute_dist(struct mlogitaug *m1)
 
 int needs_update(const struct mlogitaug *m1)
 {
-	return !m1->cached || m1->base_event.changed;
+	return !m1->cached || mlogit_checkpoint_passed(&m1->base_cp, m1->base);
 }
 
 struct catdist1 *mlogitaug_dist(const struct mlogitaug *m1)
@@ -671,7 +671,7 @@ void mlogitaug_update_cache(struct mlogitaug *m1)
 	recompute_base_cov((struct mlogitaug *)m1);
 	recompute_cross_cov((struct mlogitaug *)m1);
 	m1->cached = 1;
-	m1->base_event.changed = 0;
+	mlogit_checkpoint_set(&m1->base_cp, m1->base);
 }
 
 int mlogitaug_check(const struct mlogitaug *m1)

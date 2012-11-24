@@ -28,8 +28,8 @@ struct mlogit_work {
 	double *xbuf2;
 };
 
-struct mlogit_event {
-	int changed;
+struct mlogit_checkpoint {
+	size_t version;
 };
 
 struct mlogit {
@@ -50,8 +50,9 @@ struct mlogit {
 	double *dx;
 	size_t nz, nzmax;
 
-	struct mlogit_event **obs;
-	size_t nobs, nobsmax;
+	size_t version;
+	struct mlogit_checkpoint **cp;
+	size_t ncp, ncpmax;
 
 	int moments;
 
@@ -60,11 +61,16 @@ struct mlogit {
 
 };
 
+
+
+
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim);
 void mlogit_work_deinit(struct mlogit_work *work);
 
-void mlogit_add_observer(struct mlogit *m, struct mlogit_event *e);
-void mlogit_remove_observer(struct mlogit *m, struct mlogit_event *e);
+void mlogit_add_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp);
+void mlogit_remove_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp);
+int mlogit_checkpoint_passed(const struct mlogit_checkpoint *cp, const struct mlogit *m);
+void mlogit_checkpoint_set(struct mlogit_checkpoint *cp, const struct mlogit *m);
 
 
 void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *work);
