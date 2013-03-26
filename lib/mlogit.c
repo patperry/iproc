@@ -863,33 +863,26 @@ void grow_ind_array(struct mlogit *m, size_t delta)
 
 size_t search_ind(struct mlogit *m, size_t i)
 {
-	const size_t *base = m->ind, *ptr;
-	size_t nz;
+	ptrdiff_t siz = find_index(i, m->ind, m->nz);
+	size_t iz;
 
-	for (nz = m->nz; nz != 0; nz >>= 1) {
-		ptr = base + (nz >> 1);
-		if (i == *ptr) {
-			return ptr - m->ind;
-		}
-		if (i > *ptr) {
-			base = ptr + 1;
-			nz--;
-		}
+	if (siz < 0) {
+		iz = ~siz;
+		
+		size_t ntail = m->nz - iz;
+		size_t dim = m->dim;
+
+		grow_ind_array(m, 1);
+		memmove(m->ind + iz + 1, m->ind + iz, ntail * sizeof(*m->ind));
+		memmove(m->dx + (iz + 1) * dim, m->dx + iz * dim, ntail * sizeof(*m->dx) * dim);
+
+		m->ind[iz] = i;
+		m->offset[iz] = 0.0;
+		memset(m->dx + iz * dim, 0, sizeof(*m->dx) * dim);
+		m->nz++;
+	} else {
+		iz = siz;
 	}
-
-	/* not found */
-	size_t iz = base - m->ind;
-	size_t ntail = m->nz - iz;
-	size_t dim = m->dim;
-
-	grow_ind_array(m, 1);
-	memmove(m->ind + iz + 1, m->ind + iz, ntail * sizeof(*m->ind));
-	memmove(m->dx + (iz + 1) * dim, m->dx + iz * dim, ntail * sizeof(*m->dx) * dim);
-
-	m->ind[iz] = i;
-	m->offset[iz] = 0.0;
-	memset(m->dx + iz * dim, 0, sizeof(*m->dx) * dim);
-	m->nz++;
 
 	return iz;
 }
