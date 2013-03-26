@@ -8,6 +8,13 @@
 #include <stdarg.h>
 
 
+struct design_delta {
+	int cleared;
+	size_t *ind;
+	double *dx;
+	size_t nz, nzmax;
+};
+
 struct design {
 	struct history *history;
 	size_t count;
@@ -28,10 +35,18 @@ struct design {
 	
 	struct vpattern active;
 	double *dx;	// dX[t]
-	
+
+	struct design_delta **deltas;
+	size_t ndelta, ndelta_max;
+
 	struct design_observer *observers;
 	size_t nobs, nobs_max;
 };
+
+void design_delta_init(struct design *d, struct design_delta *delta);
+void design_delta_deinit(struct design *d, struct design_delta *delta);
+void design_delta_clear(struct design *d, struct design_delta *delta);
+
 
 struct design_callbacks {
 	void (*update) (void *udata, struct design *d, size_t i,

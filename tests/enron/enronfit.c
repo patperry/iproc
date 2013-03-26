@@ -105,6 +105,7 @@ static void setup_frame(void) {
 
 	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
 	design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
+	design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
 
 	/* dyad design */
 	struct design2 *d = frame_dyad_design(&frame);
