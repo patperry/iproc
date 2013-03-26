@@ -17,7 +17,7 @@ struct mlogit_work {
 	double *dim_buf1;
 	double *dim_buf2;
 
-	double *x0;
+	double *dx;
 	double dpsi;
 	double *one;
 	double *w0;
@@ -34,7 +34,7 @@ struct mlogit_checkpoint {
 
 struct mlogit {
 	struct catdist dist_;
-	double *x_;
+	double *x;
 	double *beta;
 	double *offset;
 	double *mean_;
@@ -47,7 +47,7 @@ struct mlogit {
 	double log_cov_scale_err;
 
 	size_t *ind;
-	double *dx;
+	double *x0;
 	size_t nz, nzmax;
 
 	size_t version;
@@ -95,8 +95,11 @@ void mlogit_set_coefs(struct mlogit *m, const double *beta);
 void mlogit_set_all_offset(struct mlogit *m, const double *offset);
 void mlogit_set_offset(struct mlogit *m, size_t i, double offset);
 void mlogit_set_all_x(struct mlogit *m, const double *x);
+void mlogit_set_x(struct mlogit *m, size_t i, const size_t *jx,
+		  const double *x, size_t nx);
 void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 		  const double *dx, size_t ndx);
+
 
 int mlogit_check(const struct mlogit *m);
 
