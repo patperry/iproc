@@ -77,10 +77,15 @@ static void nsendtot_deinit(struct tvar *tv, struct history *h)
 }
 
 
+static void nsendtot_update(struct tvar *tv)
+{
+}
+
+
 static struct tvar_type VAR_NSENDTOT_REP = {
 	nsendtot_init,
 	nsendtot_deinit,
-	
+	nsendtot_update
 };
 
 

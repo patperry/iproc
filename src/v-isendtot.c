@@ -47,9 +47,15 @@ static void isendtot_deinit(struct tvar *tv, struct history *h)
 }
 
 
+static void isendtot_update(struct tvar *tv)
+{
+}
+
+
 static struct tvar_type VAR_ISENDTOT_REP = {
 	isendtot_init,
-	isendtot_deinit
+	isendtot_deinit,
+	isendtot_update
 };
 
 

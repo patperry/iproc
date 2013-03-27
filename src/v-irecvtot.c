@@ -50,9 +50,15 @@ static void irecvtot_deinit(struct tvar *tv, struct history *h)
 }
 
 
+static void irecvtot_update(struct tvar *tv)
+{
+}
+
+
 static struct tvar_type VAR_IRECVTOT_REP = {
 	irecvtot_init,
-	irecvtot_deinit
+	irecvtot_deinit,
+	irecvtot_update
 };
 
 

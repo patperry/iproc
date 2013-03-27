@@ -81,10 +81,15 @@ static void nrecvtot_deinit(struct tvar *tv, struct history *h)
 }
 
 
+static void nrecvtot_update(struct tvar *tv)
+{
+}
+
+
 static struct tvar_type VAR_NRECVTOT_REP = {
 	nrecvtot_init,
 	nrecvtot_deinit,
-	
+	nrecvtot_update
 };
 
 

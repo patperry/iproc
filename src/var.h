@@ -68,6 +68,7 @@ struct tvar {
 struct tvar_type {
 	void (*init) (struct tvar *tv, const char *name, struct history *h, va_list ap);
 	void (*deinit) (struct tvar * tv, struct history *h);
+	void (*update) (struct tvar *tv);
 };
 
 

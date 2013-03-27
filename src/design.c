@@ -16,84 +16,21 @@
 #include "design.h"
 
 
-static void delta_init(struct design_delta *delta, size_t count)
-{
-	delta->cleared = 0;
-	delta->ind = NULL;
-	delta->dx = NULL;
-	delta->nz = 0;
-	delta->nzmax = 0;
-}
+static void delta_init(struct design_delta *delta, size_t count);
+static void delta_deinit(struct design_delta *delta);
+static void delta_clear(struct design_delta *delta);
+static void delta_set_cleared(struct design_delta *delta);
+static void delta_update(struct design_delta *delta, const struct var *v, size_t i,
+			 const double *dx, const size_t *ind, size_t nz, size_t dim);
+static void delta_grow(struct design_delta *delta, size_t n, size_t dim);
+static size_t delta_search(struct design_delta *delta, size_t i, size_t dim);
 
-static void delta_deinit(struct design_delta *delta)
-{
-	free(delta->dx);
-	free(delta->ind);
-}
-
-void delta_clear(struct design_delta *delta)
-{
-	delta->nz = 0;
-	delta->cleared = 0;
-}
-
-static void delta_set_cleared(struct design_delta *delta)
-{
-	delta->nz = 0;
-	delta->cleared = 1;
-}
-
-static void delta_grow(struct design_delta *delta, size_t n, size_t dim)
-{
-	size_t nz1 = delta->nz + n;
-	if (needs_grow(nz1, &delta->nzmax)) {
-		delta->ind = xrealloc(delta->ind, delta->nzmax * sizeof(*delta->ind));
-		delta->dx = xrealloc(delta->dx, delta->nzmax * dim * sizeof(*delta->dx));
-	}
-}
-
-static size_t delta_search(struct design_delta *delta, size_t i, size_t dim)
-{
-	ptrdiff_t siz = find_index(i, delta->ind, delta->nz);
-	size_t iz;
-
-	/* not found */
-	if (siz < 0) {
-		iz = ~siz;
-		size_t ntail = delta->nz - iz;
-
-		delta_grow(delta, 1, dim);
-		memmove(delta->ind + iz + 1, delta->ind + iz, ntail * sizeof(*delta->ind));
-		memmove(delta->dx + (iz + 1) * dim, delta->dx + iz * dim, ntail * dim * sizeof(*delta->dx));
-
-		delta->ind[iz] = i;
-		memset(delta->dx + iz * dim, 0, dim * sizeof(*delta->dx));
-		delta->nz++;
-	} else {
-		iz = siz;
-	}
-
-	return iz;
-}
-
-static void delta_update(struct design_delta *delta, const struct var *v, size_t i, const double *dx, const size_t *ind, size_t nz, size_t dim)
-{
-	size_t iz = delta_search(delta, i, dim);
-	size_t index = v->index;
-	double *dx_dst = delta->dx + iz * dim + index;
-
-	if (ind) {
-		sblas_daxpyi(nz, 1.0, dx, ind, dx_dst);
-	} else {
-		assert(nz == v->meta.size);
-		blas_daxpy(v->meta.size, 1.0, dx, 1, dx_dst, 1);
-	}
-}
 
 
 
 static void prod_init(struct tvar *tv, const char *name, struct history *h, va_list ap);
 static void prod_deinit(struct tvar *tv, struct history *h);
+static void prod_update(struct tvar *tv);
 static void prod_update_var(void *udata, struct design *d, const struct var *v, size_t i,
 				  const double *delta, const size_t *ind, size_t nz);
 
@@ -105,7 +42,8 @@ static struct design_callbacks prod_design_callbacks = {
 
 static struct tvar_type VAR_PROD_REP = {
 	prod_init,
-	prod_deinit
+	prod_deinit,
+	prod_update
 };
 
 static const struct tvar_type *VAR_PROD = &VAR_PROD_REP;
@@ -262,44 +200,6 @@ void design_remove_observer(struct design *d, void *udata)
 }
 
 
-static void design_deltas_grow(struct design *d, size_t n)
-{
-	if (needs_grow(d->ndelta + n, &d->ndelta_max)) {
-		d->deltas = xrealloc(d->deltas, d->ndelta_max * sizeof(d->deltas[0]));
-	}
-}
-
-
-void design_delta_init(struct design *d, struct design_delta *delta)
-{
-
-	delta_init(delta, design_count(d));
-
-	design_deltas_grow(d, 1);
-	d->deltas[d->ndelta++] = delta;
-}
-
-
-void design_delta_deinit(struct design *d, struct design_delta *delta)
-{
-	size_t i, n = d->ndelta;
-	for (i = n; i > 0; i--) {
-		if (d->deltas[i-1] == delta) {
-			memmove(d->deltas + i - 1, d->deltas + i,
-				(n - i) * sizeof(d->deltas[0]));
-			d->ndelta = n - 1;
-			break;
-		}
-	}
-
-	delta_deinit(delta);
-}
-
-
-void design_delta_clear(struct design *d, struct design_delta *delta)
-{
-	delta_clear(delta);
-}
 
 
 static void design_traits_grow(struct design *d, size_t dntrait, size_t ddim)
@@ -806,6 +706,11 @@ void prod_deinit(struct tvar *tv, struct history *h)
 }
 
 
+void prod_update(struct tvar *tv)
+{
+}
+
+
 void prod_update_var(void *udata, struct design *d, const struct var *v, size_t i,
 		     const double *delta, const size_t *ind, size_t nz)
 {
@@ -882,3 +787,118 @@ void prod_update_var(void *udata, struct design *d, const struct var *v, size_t 
 
 	design_update(d, &tv->var, i, vdelta, vind, vnz);
 }
+
+
+/* design_delta public */
+
+void design_delta_init(struct design *d, struct design_delta *delta)
+{
+
+	delta_init(delta, design_count(d));
+
+	if (needs_grow(d->ndelta + 1, &d->ndelta_max)) {
+		d->deltas = xrealloc(d->deltas, d->ndelta_max * sizeof(d->deltas[0]));
+	}
+	d->deltas[d->ndelta++] = delta;
+}
+
+
+void design_delta_deinit(struct design *d, struct design_delta *delta)
+{
+	size_t i, n = d->ndelta;
+	for (i = n; i > 0; i--) {
+		if (d->deltas[i-1] == delta) {
+			memmove(d->deltas + i - 1, d->deltas + i,
+				(n - i) * sizeof(d->deltas[0]));
+			d->ndelta = n - 1;
+			break;
+		}
+	}
+
+	delta_deinit(delta);
+}
+
+
+void design_delta_clear(struct design *d, struct design_delta *delta)
+{
+	delta_clear(delta);
+}
+
+
+/* design_delta private */
+
+static void delta_init(struct design_delta *delta, size_t count)
+{
+	delta->cleared = 0;
+	delta->ind = NULL;
+	delta->dx = NULL;
+	delta->nz = 0;
+	delta->nzmax = 0;
+}
+
+static void delta_deinit(struct design_delta *delta)
+{
+	free(delta->dx);
+	free(delta->ind);
+}
+
+static void delta_clear(struct design_delta *delta)
+{
+	delta->nz = 0;
+	delta->cleared = 0;
+}
+
+static void delta_set_cleared(struct design_delta *delta)
+{
+	delta->nz = 0;
+	delta->cleared = 1;
+}
+
+static void delta_grow(struct design_delta *delta, size_t n, size_t dim)
+{
+	size_t nz1 = delta->nz + n;
+	if (needs_grow(nz1, &delta->nzmax)) {
+		delta->ind = xrealloc(delta->ind, delta->nzmax * sizeof(*delta->ind));
+		delta->dx = xrealloc(delta->dx, delta->nzmax * dim * sizeof(*delta->dx));
+	}
+}
+
+static size_t delta_search(struct design_delta *delta, size_t i, size_t dim)
+{
+	ptrdiff_t siz = find_index(i, delta->ind, delta->nz);
+	size_t iz;
+
+	/* not found */
+	if (siz < 0) {
+		iz = ~siz;
+		size_t ntail = delta->nz - iz;
+
+		delta_grow(delta, 1, dim);
+		memmove(delta->ind + iz + 1, delta->ind + iz, ntail * sizeof(*delta->ind));
+		memmove(delta->dx + (iz + 1) * dim, delta->dx + iz * dim, ntail * dim * sizeof(*delta->dx));
+
+		delta->ind[iz] = i;
+		memset(delta->dx + iz * dim, 0, dim * sizeof(*delta->dx));
+		delta->nz++;
+	} else {
+		iz = siz;
+	}
+
+	return iz;
+}
+
+static void delta_update(struct design_delta *delta, const struct var *v, size_t i,
+			 const double *dx, const size_t *ind, size_t nz, size_t dim)
+{
+	size_t iz = delta_search(delta, i, dim);
+	size_t index = v->index;
+	double *dx_dst = delta->dx + iz * dim + index;
+
+	if (ind) {
+		sblas_daxpyi(nz, 1.0, dx, ind, dx_dst);
+	} else {
+		assert(nz == v->meta.size);
+		blas_daxpy(v->meta.size, 1.0, dx, 1, dx_dst, 1);
+	}
+}
+
