@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include "uintset.h"
 #include "catdist.h"
 #include "catdist1.h"
 #include "mlogit.h"
@@ -20,11 +21,11 @@ struct mlogitaug {
 	double *beta;
 	size_t dim;
 
-	size_t *ind;
+	struct uintset ind;
 	double *offset;
 	double *x;
 	double *deta;
-	size_t nz, nzmax;
+	size_t nzmax;
 
 	double *mean;
 	double *cov;

@@ -24,20 +24,18 @@
 static int mlogitaug_moments(const struct mlogitaug *m1);
 static void mlogitaug_update_cache(struct mlogitaug *m1);
 
-static int needs_update(const struct mlogitaug *m1);
-static void clear(struct mlogitaug *m1);
 static void clear_x(struct mlogitaug *m1);
 static void clear_offset(struct mlogitaug *m1);
+static int needs_update(const struct mlogitaug *m1);
 static void recompute_dist(struct mlogitaug *m1);
 static void recompute_mean(struct mlogitaug *m1);
 static void recompute_base_mean(struct mlogitaug *m1);
 static void recompute_cov(struct mlogitaug *m1);
 static void recompute_base_cov(struct mlogitaug *m1);
 static void recompute_cross_cov(struct mlogitaug *m1);
-static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
-static void grow_ind_array(struct mlogitaug *m1, size_t delta);
-static ptrdiff_t find_ind(const struct mlogitaug *m1, size_t i);
 static size_t search_ind(struct mlogitaug *m1, size_t i);
+static void set_x_iz(struct mlogitaug *m1, size_t iz, const double *x);
+static void update_nzmax(struct mlogitaug *m1);
 
 
 void mlogitaug_work_init(struct mlogitaug_work *work, size_t base_dim,
@@ -66,14 +64,13 @@ void mlogitaug_init(struct mlogitaug *m1, struct mlogit *base,
 	m1->base = base;
 	catdist1_init(&m1->dist, mlogit_dist(base));
 
-	m1->beta = xmalloc(dim * sizeof(*m1->beta));
+	m1->beta = xcalloc(dim, sizeof(*m1->beta));
 	m1->dim = dim;
 
-	m1->ind = NULL;
+	uintset_init(&m1->ind);
 	m1->offset = NULL;
 	m1->x = NULL;
 	m1->deta = NULL;
-	m1->nz = 0;
 	m1->nzmax = 0;
 	m1->mean = xmalloc(dim * sizeof(*m1->mean));
 	m1->cov = xmalloc(cov_dim * sizeof(*m1->cov));
@@ -93,19 +90,9 @@ void mlogitaug_init(struct mlogitaug *m1, struct mlogit *base,
 	}
 	m1->work = work;
 
-	clear(m1);
 	m1->cached = 0;
 
 	mlogit_add_checkpoint(m1->base, &m1->base_cp);
-}
-
-
-void clear(struct mlogitaug *m1)
-{
-	size_t dim = m1->dim;
-	catdist1_set_all_deta(&m1->dist, NULL, NULL, 0);
-	memset(m1->beta, 0, dim * sizeof(*m1->beta));
-	m1->nz = 0;
 }
 
 
@@ -126,7 +113,7 @@ void mlogitaug_deinit(struct mlogitaug *m1)
 	free(m1->deta);
 	free(m1->x);
 	free(m1->offset);
-	free(m1->ind);
+	uintset_deinit(&m1->ind);
 	free(m1->beta);
 	catdist1_deinit(&m1->dist);
 }
@@ -140,21 +127,27 @@ double *mlogitaug_coefs(const struct mlogitaug *m1)
 
 double mlogitaug_offset(const struct mlogitaug *m1, size_t i)
 {
-	ptrdiff_t iz = find_ind(m1, i);
-	if (iz < 0)
-		return 0.0;
+	double val = 0.0;
+	size_t iz;
 
-	return m1->offset[iz];
+	if (uintset_find(&m1->ind, i, &iz)) {
+		val = m1->offset[iz];
+	}
+
+	return val;
 }
 
 
 double *mlogitaug_x(const struct mlogitaug *m1, size_t i)
 {
-	ptrdiff_t iz = find_ind(m1, i);
-	if (iz < 0)
-		return NULL;
+	double *val = NULL;
+	size_t iz;
 
-	return m1->x + iz * m1->dim;
+	if (uintset_find(&m1->ind, i, &iz)) {
+		val = m1->x + iz * m1->dim;
+	}
+
+	return val;
 }
 
 
@@ -240,7 +233,7 @@ void mlogitaug_inc_x(struct mlogitaug *m1, size_t i, const size_t *jdx,
 void clear_x(struct mlogitaug *m1)
 {
 	size_t dim = m1->dim;
-	size_t nz = m1->nz;
+	size_t nz = uintset_count(&m1->ind);
 
 	memset(m1->x, 0, dim * nz * sizeof(*m1->x));
 }
@@ -248,7 +241,7 @@ void clear_x(struct mlogitaug *m1)
 /* Note from clear_x applies here */
 void clear_offset(struct mlogitaug *m1)
 {
-	size_t nz = m1->nz;
+	size_t nz = uintset_count(&m1->ind);
 	memset(m1->offset, 0, nz * sizeof(*m1->offset));
 }
 
@@ -270,7 +263,8 @@ void mlogitaug_set_all_x(struct mlogitaug *m1, const size_t *i, const double *x,
 
 void recompute_dist(struct mlogitaug *m1)
 {
-	size_t nz = m1->nz;
+	const size_t *ind;
+	size_t nz;
 	size_t dim = m1->dim;
 	const double *beta = m1->beta;
 	const double *offset = m1->offset;
@@ -279,11 +273,13 @@ void recompute_dist(struct mlogitaug *m1)
 
 	(void)mlogit_dist(m1->base); // update pareent dist;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	blas_dcopy(nz, offset, 1, deta, 1);
 	if (dim)
 		blas_dgemv(BLAS_TRANS, dim, nz, 1.0, x, dim, beta, 1, 1.0, deta, 1);
 
-	catdist1_set_all_deta(&m1->dist, m1->ind, m1->deta, m1->nz);
+	catdist1_set_all_deta(&m1->dist, ind, m1->deta, nz);
 }
 
 
@@ -316,12 +312,15 @@ void recompute_mean(struct mlogitaug *m1)
 
 	memset(mean, 0, dim * sizeof(*mean));
 
-	size_t iz, nz = m1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	double *diff_i = diff;
 	size_t nk = 0;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		double w = catdist1_prob(dist, m1->ind[iz]);
+		double w = catdist1_prob(dist, ind[iz]);
 
 		if (w > 0) {
 			prob[nk] = w;
@@ -373,12 +372,15 @@ void recompute_base_mean(struct mlogitaug *m1)
 
 	memset(dmean, 0, dim * sizeof(*dmean));
 
-	size_t iz, nz = m1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	double *diff_i = diff;
 	size_t nk = 0;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m1->ind[iz];
+		size_t i = ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
 		double w = catdist1_prob(dist, i);
@@ -438,12 +440,15 @@ void recompute_cov(struct mlogitaug *m1)
 
 	memset(cov, 0, dim * dim * sizeof(*cov));
 
-	size_t iz, nz = m1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	size_t nk = 0;
 	double *diff_i = diff;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		w = catdist1_prob(dist, m1->ind[iz]);
+		w = catdist1_prob(dist, ind[iz]);
 
 		if (w != 0) {
 			blas_dcopy(dim, m1->x + iz * dim, 1, diff_i, 1);
@@ -517,13 +522,16 @@ static void recompute_base_cov(struct mlogitaug *m1)
 
 	memset(cov, 0, dim * dim * sizeof(*cov));
 
-	size_t iz, nz = m1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	size_t nk = 0;
 	double *diff_i = diff;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	// handle positive dw
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m1->ind[iz];
+		size_t i = ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
 		double w = catdist1_prob(dist, i);
@@ -555,7 +563,7 @@ static void recompute_base_cov(struct mlogitaug *m1)
 	nk++;
 
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m1->ind[iz];
+		size_t i = ind[iz];
 		double eta0 = catdist_eta(dist0, i);
 		double w0 = exp(eta0 - psi);
 		double w = catdist1_prob(dist, i);
@@ -617,12 +625,15 @@ void recompute_cross_cov(struct mlogitaug *m1)
 
 	memset(cov, 0, dim * base_dim * sizeof(*cov));
 
-	size_t iz, nz = m1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	size_t nk = 0;
 	double *diff_i = diff;
 
+	uintset_get_vals(&m1->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m1->ind[iz];
+		size_t i = ind[iz];
 		double w = catdist1_prob(dist, i);
 
 		if (w != 0) {
@@ -683,18 +694,15 @@ out:
 }
 
 
-void grow_ind_array(struct mlogitaug *m1, size_t delta)
+void update_nzmax(struct mlogitaug *m1)
 {
-	size_t nz = m1->nz;
-	size_t nz1 = nz + delta;
+	size_t nzmax = uintset_capacity(&m1->ind);
 
-	if (needs_grow(nz1, &m1->nzmax)) {
-		size_t nzmax = m1->nzmax;
+	if (m1->nzmax != nzmax) {
 		size_t dim = m1->dim;
 
-		m1->ind = xrealloc(m1->ind, nzmax * sizeof(*m1->ind));
 		m1->offset = xrealloc(m1->offset, nzmax * sizeof(*m1->offset));
-		m1->x = xrealloc(m1->x, nzmax * sizeof(*m1->x) * dim);
+		m1->x = xrealloc(m1->x, nzmax * dim * sizeof(*m1->x));
 		m1->deta = xrealloc(m1->deta, nzmax * sizeof(*m1->deta));
 		m1->nzmax = nzmax;
 	}
@@ -703,33 +711,21 @@ void grow_ind_array(struct mlogitaug *m1, size_t delta)
 
 size_t search_ind(struct mlogitaug *m1, size_t i)
 {
-	ptrdiff_t siz = find_ind(m1, i);
+	size_t iz;
 
-	if (siz >= 0)
-		return (size_t)(siz);
+	if (!uintset_find(&m1->ind, i, &iz)) {
+		size_t ntail = uintset_insert(&m1->ind, iz, i);
+		size_t dim = m1->dim;
 
-	/* not found */
-	size_t iz = ~siz;
-	size_t ntail = m1->nz - iz;
-	size_t dim = m1->dim;
+		update_nzmax(m1);
+		memmove(m1->offset + iz + 1, m1->offset + iz, ntail * sizeof(*m1->offset));
+		memmove(m1->x + (iz + 1) * dim, m1->x + iz * dim, ntail * dim * sizeof(*m1->x));
+		memmove(m1->deta + iz + 1, m1->deta + iz, ntail * sizeof(*m1->deta));
 
-	grow_ind_array(m1, 1);
-	memmove(m1->ind + iz + 1, m1->ind + iz, ntail * sizeof(*m1->ind));
-	memmove(m1->offset + iz + 1, m1->offset + iz, ntail * sizeof(*m1->offset));
-	memmove(m1->x + (iz + 1) * dim, m1->x + iz * dim, ntail * sizeof(*m1->x) * dim);
-	memmove(m1->deta + iz + 1, m1->deta + iz, ntail * sizeof(*m1->deta));
-
-	m1->ind[iz] = i;
-	m1->offset[iz] = 0.0;
-	memset(m1->x + iz * dim, 0, sizeof(*m1->x) * dim);
-	m1->deta[iz] = 0.0;
-	m1->nz++;
+		m1->offset[iz] = 0.0;
+		memset(m1->x + iz * dim, 0, dim * sizeof(*m1->x));
+		m1->deta[iz] = 0.0;
+	}
 
 	return iz;
-}
-
-
-ptrdiff_t find_ind(const struct mlogitaug *m1, size_t i)
-{
-	return find_index(i, m1->ind, m1->nz);
 }
