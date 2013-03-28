@@ -921,6 +921,5 @@ void store_x0(struct mlogit *m, size_t i)
 		update_nzmax(m);
 		memmove(m->x0 + (iz + 1) * dim, m->x0 + iz * dim, ntail * dim * sizeof(*m->x0));
 		memcpy(m->x0 + iz * dim, m->x + i * dim, dim * sizeof(*m->x0));
-		m->offset[iz] = 0.0;
 	}
 }
