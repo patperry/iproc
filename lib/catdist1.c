@@ -23,24 +23,24 @@
 	CHECK(double_eqrel((x), (y)) >= DBL_MANT_DIG / 2 \
 	      || (fabs(x) <= ROOT3_DBL_EPSILON && fabs(y) <= ROOT3_DBL_EPSILON))
 
+
 static int needs_update(const struct catdist1 *c1);
 static void update_cache(struct catdist1 *c1);
+
+static void update_nzmax(struct catdist1 *c1);
 
 static double get_dpsi(const struct catdist1 *c1);
 static double get_dpsi_safe(const struct catdist1 *c1);
 static double get_dpsi_safer(const struct catdist1 *c1);
-static void grow_ind_array(struct catdist1 *c1, size_t delta);
-static ptrdiff_t find_ind(const struct catdist1 *c1, size_t i);
-static size_t search_ind(struct catdist1 *c1, size_t i);
+
 
 void catdist1_init(struct catdist1 *c1, struct catdist *parent)
 {
 	assert(parent);
 
 	c1->parent = parent;
+	uintset_init(&c1->ind);
 	c1->deta = NULL;
-	c1->ind = NULL;
-	c1->nz = 0;
 	c1->nzmax = 0;
 	c1->dpsi = 0.0;
 	c1->cached = 1;
@@ -50,8 +50,8 @@ void catdist1_init(struct catdist1 *c1, struct catdist *parent)
 void catdist1_deinit(struct catdist1 *c1)
 {
 	catdist_remove_checkpoint(c1->parent, &c1->parent_cp);
-	free(c1->ind);
 	free(c1->deta);
+	uintset_deinit(&c1->ind);
 }
 
 double catdist1_deta(const struct catdist1 *c1, size_t i)
@@ -59,9 +59,9 @@ double catdist1_deta(const struct catdist1 *c1, size_t i)
 	assert(i < catdist1_ncat(c1));
 
 	double deta = 0.0;
-	ptrdiff_t iz = find_ind(c1, i);
+	size_t iz;
 
-	if (iz >= 0) {
+	if (uintset_find(&c1->ind, i, &iz)) {
 		deta = c1->deta[iz];
 	}
 
@@ -98,12 +98,15 @@ double catdist1_lprob(const struct catdist1 *c1, size_t i)
 
 double get_dpsi(const struct catdist1 *c1)
 {
-	size_t iz, nz = c1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	double sum = 0.0;
 	double sum1 = 0.0;
 
+	uintset_get_vals(&c1->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		double eta = catdist_lprob(c1->parent, c1->ind[iz]);
+		double eta = catdist_lprob(c1->parent, ind[iz]);
 		double deta = c1->deta[iz];
 		double eta1 = eta + deta;
 		double w1 = exp(eta1);
@@ -138,20 +141,22 @@ void update_cache(struct catdist1 *c1)
 
 double get_dpsi_safe(const struct catdist1 *c1)
 {
-	size_t nz = c1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	double dpsi = NAN;
+
+	uintset_get_vals(&c1->ind, &ind, &nz);
 
 	if (!nz)
 		return 0.0;
 
-	size_t iz;
 	double max = -INFINITY;
 	double max1 = -INFINITY;
 	double suc1 = 0.0;
 	double sum = 0.0;
 
 	for (iz = 0; iz < nz; iz++) {
-		double eta = catdist_lprob(c1->parent, c1->ind[iz]);
+		double eta = catdist_lprob(c1->parent, ind[iz]);
 		double deta = c1->deta[iz];
 		double eta1 = eta + deta;
 
@@ -162,7 +167,7 @@ double get_dpsi_safe(const struct catdist1 *c1)
 	double shift = MIN(max, max1);
 
 	for (iz = 0; iz < nz; iz++) {
-		double eta = catdist_lprob(c1->parent, c1->ind[iz]);
+		double eta = catdist_lprob(c1->parent, ind[iz]);
 		double deta = c1->deta[iz];
 		double eta1 = eta + deta;
 
@@ -180,8 +185,11 @@ double get_dpsi_safe(const struct catdist1 *c1)
 
 double get_dpsi_safer(const struct catdist1 *c1)
 {
-	size_t iz, nz = c1->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	size_t i, n = catdist1_ncat(c1);
+
+	uintset_get_vals(&c1->ind, &ind, &nz);
 
 	if (!nz || !n)
 		return 0.0;
@@ -192,7 +200,7 @@ double get_dpsi_safer(const struct catdist1 *c1)
 	for (i = 0, iz = 0; i < n; i++) {
 		double eta = catdist_eta(c1->parent, i);
 
-		if (iz < nz && c1->ind[iz] == i) {
+		if (iz < nz && ind[iz] == i) {
 			eta += c1->deta[iz];
 			iz++;
 		}
@@ -208,7 +216,7 @@ double get_dpsi_safer(const struct catdist1 *c1)
 	for (i = 0, iz = 0; i < n; i++) {
 		double eta = catdist_eta(c1->parent, i);
 
-		if (iz < nz && c1->ind[iz] == i) {
+		if (iz < nz && ind[iz] == i) {
 			eta += c1->deta[iz];
 			iz++;
 		}
@@ -251,7 +259,16 @@ void catdist1_set_deta(struct catdist1 *c1, size_t i, double deta)
 	assert(i < catdist1_ncat(c1));
 	assert(deta < INFINITY);
 
-	size_t iz = search_ind(c1, i);
+	struct uintset *ind = &c1->ind;
+	size_t iz;
+
+	if (!uintset_find(ind, i, &iz)) {
+		size_t ntail = uintset_insert(ind, iz, i);
+
+		update_nzmax(c1);
+		memmove(c1->deta + iz + 1, c1->deta + iz, ntail * sizeof(double));
+	}
+
 	c1->deta[iz] = deta;
 	c1->cached = 0;
 }
@@ -266,12 +283,10 @@ void catdist1_set_all_deta(struct catdist1 *c1, const size_t *ind, const double 
 		assert(deta[iz] < INFINITY);
 	}
 #endif
-	c1->nz = 0;
-	grow_ind_array(c1, nz);
+	uintset_assign_array(&c1->ind, ind, nz, 1);
+	update_nzmax(c1);
+	memcpy(c1->deta, deta, nz * sizeof(double));
 
-	memcpy(c1->ind, ind, nz * sizeof(*c1->ind));
-	memcpy(c1->deta, deta, nz * sizeof(*c1->deta));
-	c1->nz = nz;
 	c1->cached = 0;
 }
 
@@ -279,9 +294,11 @@ int catdist1_check(const struct catdist1 *c1)
 {
 	int fail = 0;
 	size_t i, n = catdist1_ncat(c1);
-	size_t iz, nz = c1->nz;
-	const size_t *ind = c1->ind;
+	size_t iz, nz;
+	const size_t *ind;
 	double *eta = xmalloc(n * sizeof(*eta));
+
+	uintset_get_vals(&c1->ind, &ind, &nz);
 
 	for (iz = 1; iz < nz; iz++) {
 		CHECK(ind[iz - 1] < ind[iz]);
@@ -330,44 +347,12 @@ out:
 	return fail;
 }
 
-void grow_ind_array(struct catdist1 *c1, size_t delta)
-{
-	size_t nz = c1->nz;
-	size_t nz1 = nz + delta;
 
-	if (needs_grow(nz1, &c1->nzmax)) {
-		c1->ind = xrealloc(c1->ind, c1->nzmax * sizeof(*c1->ind));
-		c1->deta = xrealloc(c1->deta, c1->nzmax * sizeof(*c1->deta));
+void update_nzmax(struct catdist1 *c1)
+{
+	size_t nzmax = uintset_capacity(&c1->ind);
+	if (c1->nzmax != nzmax) {
+		c1->nzmax = nzmax;
+		c1->deta = xrealloc(c1->deta, nzmax * sizeof(double));
 	}
-}
-
-
-size_t search_ind(struct catdist1 *c1, size_t i)
-{
-	ptrdiff_t siz = find_index(i, c1->ind, c1->nz);
-	size_t iz;
-
-	/* not found */
-	if (siz < 0) {
-		iz = ~siz;
-		size_t ntail = c1->nz - iz;
-
-		grow_ind_array(c1, 1);
-		memmove(c1->ind + iz + 1, c1->ind + iz, ntail * sizeof(*c1->ind));
-		memmove(c1->deta + iz + 1, c1->deta + iz, ntail * sizeof(*c1->deta));
-
-		c1->ind[iz] = i;
-		c1->deta[iz] = 0.0;
-		c1->nz++;
-	} else {
-		iz = siz;
-	}
-
-	return iz;
-}
-
-
-ptrdiff_t find_ind(const struct catdist1 *c1, size_t i)
-{
-	return find_index(i, c1->ind, c1->nz);
 }

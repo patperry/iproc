@@ -3,15 +3,17 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include "uintset.h"
 #include "catdist.h"
+
 
 struct catdist1 {
 	struct catdist *parent;
 	struct catdist_checkpoint parent_cp;
 
-	size_t *ind;
+	struct uintset ind;
 	double *deta;
-	size_t nz, nzmax;
+	size_t nzmax;
 
 	double dpsi;
 	int cached;
@@ -56,9 +58,8 @@ void catdist1_get_deta(const struct catdist1 *c1,
 		      const double **deta,
 		      size_t *nz)
 {
-	*ind = c1->ind;
+	uintset_get_vals(&c1->ind, ind, nz);
 	*deta = c1->deta;
-	*nz = c1->nz;
 }
 
 #endif /* CATDIST1_H */
