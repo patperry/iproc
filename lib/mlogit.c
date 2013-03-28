@@ -43,8 +43,8 @@ static void update_mean(struct mlogit *m);
 static void update_cov(struct mlogit *m);
 static void compute_cov_diff(struct mlogit *m);
 
-static void grow_ind_array(struct mlogit *m, size_t delta);
-static size_t search_ind(struct mlogit *m, size_t i);
+static void store_x0(struct mlogit *m, size_t i);
+static void update_nzmax(struct mlogit *m);
 
 
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim)
@@ -110,9 +110,8 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *
 	m->dim = dim;
 	m->moments = 2;
 
-	m->ind = NULL;
+	uintset_init(&m->ind);
 	m->x0 = NULL;
-	m->nz = 0;
 	m->nzmax = 0;
 
 	m->version = 0;
@@ -141,7 +140,7 @@ void mlogit_deinit(struct mlogit *m)
 	}
 	free(m->cp);
 	free(m->x0);
-	free(m->ind);
+	uintset_deinit(&m->ind);
 	free(m->cov_);
 	free(m->mean_);
 	free(m->offset);
@@ -214,7 +213,7 @@ void clear(struct mlogit *m)
 	m->mean_err = 0.0;
 	m->cov_err = 0.0;
 	m->log_cov_scale_err = 0.0;
-	m->nz = 0;
+	uintset_clear(&m->ind);
 }
 
 
@@ -252,7 +251,7 @@ void mlogit_set_all_x(struct mlogit *m, const double *x)
 	} else {
 		memset(m->x, 0, len);
 	}
-	m->nz = 0;
+	uintset_clear(&m->ind);
 
 	recompute_all(m);
 	update_version(m);
@@ -267,10 +266,10 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 	// offset[i] := offset
 	m->offset[i] = offset;
 
-	if (m->nz) {
+	if (uintset_count(&m->ind)) {
 		/* can't handle updates to both offset and x at same time;
 		 * flush updates to x right now */
-		m->nz = 0;
+		uintset_clear(&m->ind);
 	}
 
 	recompute_all(m);
@@ -285,8 +284,9 @@ void mlogit_set_x(struct mlogit *m, size_t i, const size_t *jx,
 	assert(x || nx == 0);
 
 	size_t dim = mlogit_dim(m);
-	search_ind(m, i); /* store x0[i] if not already present */
 	double *dst = m->x + i * dim;
+
+	store_x0(m, i); /* store x0[i] if not already present */
 
 	if (jx) {
 #ifndef NDEBUG
@@ -340,12 +340,12 @@ void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 
 void update(struct mlogit *m)
 {
-	if (m->nz) {
+	if (uintset_count(&m->ind)) {
 		update_dx(m);
 		update_dist(m);
 		update_mean(m);
 		update_cov(m);
-		m->nz = 0;
+		uintset_clear(&m->ind);
 	}
 }
 
@@ -359,9 +359,12 @@ void update_dx(struct mlogit *m)
 	double *dx = m->work->dx;
 
 	// compute dx
-	size_t iz, nz = m->nz;
+	const size_t *ind;
+	size_t iz, nz;
+
+	uintset_get_vals(&m->ind, &ind, &nz);
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m->ind[iz];
+		size_t i = ind[iz];
 		const double *x0_i = m->x0 + iz * dim;
 		const double *x_i = m->x + i * dim;
 
@@ -381,10 +384,12 @@ void update_dist(struct mlogit *m)
 	if (!mlogit_dim(m))
 		return;
 
-	if (m->nz >= 0 * mlogit_ncat(m) / 2) {
+	/*
+	if (uintset_count(&m->ind) >= mlogit_ncat(m) / 2) {
 		recompute_dist(m);
 		return;
 	}
+	*/
 
 	const size_t dim = mlogit_dim(m);
 	const double psi = catdist_psi(&m->dist_);
@@ -393,16 +398,19 @@ void update_dist(struct mlogit *m)
 	double *eta1 = m->work->dw;
 
 	// copy old values of eta and compute new eta values
-	size_t iz, nz = m->nz;
+	const size_t *ind;
+	size_t iz, nz;
+
+	uintset_get_vals(&m->ind, &ind, &nz);
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m->ind[iz];
+		size_t i = ind[iz];
 		eta[iz] = catdist_eta(&m->dist_, i);
 		eta1[iz] = blas_ddot(dim, m->beta, 1, x + i * dim, 1);
 	}
 
 	// update dist
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m->ind[iz];
+		size_t i = ind[iz];
 		catdist_set_eta(&m->dist_, i, eta1[iz]);
 	}
 
@@ -431,10 +439,12 @@ void update_mean(struct mlogit *m)
 	if (mlogit_moments(m) < 1 || !mlogit_dim(m))
 		return;
 
-	if (m->nz >= 0 * mlogit_ncat(m) / 2) {
+	/*
+	if (uintset_count(&m->ind) >= mlogit_ncat(m) / 2) {
 		recompute_mean(m);
 		return;
 	}
+	 */
 
 	size_t dim = mlogit_dim(m);
 
@@ -448,12 +458,15 @@ void update_mean(struct mlogit *m)
 
 	memset(dmean, 0, dim * sizeof(*dmean));
 
-	size_t iz, nz = m->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	double *xresid_i = xresid;
 	size_t nk = 0;
 
+	uintset_get_vals(&m->ind, &ind, &nz);
+
 	for (iz = 0; iz < nz; iz++) {
-		size_t i = m->ind[iz];
+		size_t i = ind[iz];
 		double dw_i = dw[iz];
 		double w0_i = w0[iz];
 		const double *x_i = m->x + i * dim;
@@ -504,12 +517,14 @@ void update_cov(struct mlogit *m)
 	if (mlogit_moments(m) < 2 || !mlogit_dim(m))
 		return;
 
-	if (m->nz >= 0 * mlogit_ncat(m) / 2) {
+	/*
+	if (uintset_count(&m->ind) >= mlogit_ncat(m) / 2) {
 		if (!(m->mean_err == 0.0))
 			recompute_mean(m);
 		recompute_cov(m);
 		return;
 	}
+	*/
 
 	size_t dim = mlogit_dim(m);
 	size_t cov_dim = dim * (dim + 1) / 2;
@@ -559,17 +574,19 @@ void compute_cov_diff(struct mlogit *m)
 	double *dcov = m->work->cov_diff_full;
 	double *diff = m->work->xbuf1;
 
-	size_t iz, nz = m->nz;
+	const size_t *ind;
+	size_t iz, nz;
 	size_t nk = 0;
 	double *diff_i = diff;
 
-	assert(dim > 0);
+	uintset_get_vals(&m->ind, &ind, &nz);
 
+	assert(dim > 0);
 	memset(dcov, 0, dim * dim * sizeof(*dcov));
 
 	// handle positive terms
 	for (iz = 0; iz < nz; iz++) {
-		const size_t i = m->ind[iz];
+		const size_t i = ind[iz];
 		const double *x1_i = x1 + i * dim;
 		const double w1_i = catdist_prob(&m->dist_, i);
 
@@ -881,44 +898,29 @@ out:
 	return fail;
 }
 
-void grow_ind_array(struct mlogit *m, size_t delta)
+void update_nzmax(struct mlogit *m)
 {
 	size_t dim = m->dim;
-	size_t nz = m->nz;
-	size_t nz1 = nz + delta;
+	size_t nzmax = uintset_capacity(&m->ind);
 
-	if (needs_grow(nz1, &m->nzmax)) {
-		m->ind = xrealloc(m->ind, m->nzmax * sizeof(m->ind[0]));
-		m->x0 = xrealloc(m->x0, m->nzmax * dim * sizeof(m->x0[0]));
+	if (m->nzmax != nzmax) {
+		m->x0 = xrealloc(m->x0, nzmax * dim * sizeof(m->x0[0]));
+		m->nzmax = nzmax;
 	}
 }
 
 
-size_t search_ind(struct mlogit *m, size_t i)
+void store_x0(struct mlogit *m, size_t i)
 {
-	ptrdiff_t siz = find_index(i, m->ind, m->nz);
 	size_t iz;
 
-	if (siz < 0) {
-		iz = ~siz;
-		
-		size_t ntail = m->nz - iz;
+	if (!uintset_find(&m->ind, i, &iz)) {
+		size_t ntail = uintset_insert(&m->ind, iz, i);
 		size_t dim = m->dim;
 
-		grow_ind_array(m, 1);
-		memmove(m->ind + iz + 1, m->ind + iz, ntail * sizeof(*m->ind));
-		memmove(m->x0 + (iz + 1) * dim, m->x0 + iz * dim, ntail * sizeof(*m->x0) * dim);
-
-
-		m->ind[iz] = i;
-		m->offset[iz] = 0.0;
-
-		/* store the initial value of x in x0 */
+		update_nzmax(m);
+		memmove(m->x0 + (iz + 1) * dim, m->x0 + iz * dim, ntail * dim * sizeof(*m->x0));
 		memcpy(m->x0 + iz * dim, m->x + i * dim, dim * sizeof(*m->x0));
-		m->nz++;
-	} else {
-		iz = siz;
+		m->offset[iz] = 0.0;
 	}
-
-	return iz;
 }

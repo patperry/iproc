@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stddef.h>
 #include "blas.h"
+#include "uintset.h"
 #include "catdist.h"
 
 #define MLOGIT_COV_UPLO	BLAS_UPPER
@@ -46,9 +47,9 @@ struct mlogit {
 	double cov_err;
 	double log_cov_scale_err;
 
-	size_t *ind;
+	struct uintset ind;
 	double *x0;
-	size_t nz, nzmax;
+	size_t nzmax;
 
 	size_t version;
 	struct mlogit_checkpoint **cp;
