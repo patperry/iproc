@@ -105,6 +105,8 @@
 		2288809813A932A500D673A6 /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		2288809913A932A500D673A6 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		2288809A13A932A500D673A6 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		2289D5391703F528000182EE /* uintset.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289D5371703F528000182EE /* uintset.c */; };
+		2289D53A1703F528000182EE /* uintset.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289D5381703F528000182EE /* uintset.h */; };
 		228B128B15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128C15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128D15E605A9000DC495 /* catdist.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B128A15E605A9000DC495 /* catdist.h */; };
@@ -148,6 +150,8 @@
 		22A64C6C15F8E863005C7DE4 /* v2-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6015F8E863005C7DE4 /* v2-nsend.c */; };
 		22A64C6D15F8E863005C7DE4 /* v2-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6115F8E863005C7DE4 /* v2-nsend2.c */; };
 		22A64C6E15F8E863005C7DE4 /* v2-nsib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C6215F8E863005C7DE4 /* v2-nsib.c */; };
+		22AB5EE0170397C2008F7B52 /* intset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AB5EDE170397C2008F7B52 /* intset.c */; };
+		22AB5EE1170397C2008F7B52 /* intset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22AB5EDF170397C2008F7B52 /* intset.h */; };
 		22B7E92B15D46A70009978F8 /* testutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B7E92915D46A70009978F8 /* testutil.c */; };
 		22B7E92C15D46A70009978F8 /* testutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B7E92A15D46A70009978F8 /* testutil.h */; };
 		22B7E92E15D46AD0009978F8 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
@@ -585,6 +589,8 @@
 		22886B0416457D3700CE17E9 /* var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = var.h; path = src/var.h; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = model_test.c; path = tests/model_test.c; sourceTree = "<group>"; };
+		2289D5371703F528000182EE /* uintset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uintset.c; path = lib/core/src/uintset.c; sourceTree = "<group>"; };
+		2289D5381703F528000182EE /* uintset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uintset.h; path = lib/core/src/uintset.h; sourceTree = "<group>"; };
 		228B127F15E60579000DC495 /* catdist_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = catdist_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		228B128915E605A9000DC495 /* catdist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = catdist.c; path = lib/catdist.c; sourceTree = "<group>"; };
 		228B128A15E605A9000DC495 /* catdist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = catdist.h; path = lib/catdist.h; sourceTree = "<group>"; };
@@ -620,6 +626,8 @@
 		22A64C6015F8E863005C7DE4 /* v2-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend.c"; path = "src/v2-nsend.c"; sourceTree = "<group>"; };
 		22A64C6115F8E863005C7DE4 /* v2-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend2.c"; path = "src/v2-nsend2.c"; sourceTree = "<group>"; };
 		22A64C6215F8E863005C7DE4 /* v2-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsib.c"; path = "src/v2-nsib.c"; sourceTree = "<group>"; };
+		22AB5EDE170397C2008F7B52 /* intset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intset.c; path = lib/core/src/intset.c; sourceTree = "<group>"; };
+		22AB5EDF170397C2008F7B52 /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = lib/core/src/intset.h; sourceTree = "<group>"; };
 		22B7E92915D46A70009978F8 /* testutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testutil.c; path = tests/testutil.c; sourceTree = "<group>"; };
 		22B7E92A15D46A70009978F8 /* testutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = testutil.h; path = tests/testutil.h; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
@@ -792,11 +800,15 @@
 				22234195144F368800D99D8E /* hashset.h */,
 				228E84591643467800A189E5 /* ieee754.c */,
 				228E845A1643467800A189E5 /* ieee754.h */,
+				22AB5EDE170397C2008F7B52 /* intset.c */,
+				22AB5EDF170397C2008F7B52 /* intset.h */,
 				22234196144F368800D99D8E /* pqueue.c */,
 				22234197144F368800D99D8E /* pqueue.h */,
 				22234198144F368800D99D8E /* timsort-impl.h */,
 				22234199144F368800D99D8E /* timsort.c */,
 				2223419A144F368800D99D8E /* timsort.h */,
+				2289D5371703F528000182EE /* uintset.c */,
+				2289D5381703F528000182EE /* uintset.h */,
 				2223419B144F368800D99D8E /* xalloc-die.c */,
 				2223419C144F368800D99D8E /* xalloc.c */,
 				2223419D144F368800D99D8E /* xalloc.h */,
@@ -1057,6 +1069,8 @@
 				222341C3144F36CB00D99D8E /* f77lapack.h in Headers */,
 				228E845F1643598C00A189E5 /* linesearch.h in Headers */,
 				228E846716444C6600A189E5 /* constr.h in Headers */,
+				22AB5EE1170397C2008F7B52 /* intset.h in Headers */,
+				2289D53A1703F528000182EE /* uintset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1477,6 +1491,8 @@
 				222341C0144F36CB00D99D8E /* f77.c in Sources */,
 				222341C4144F36CB00D99D8E /* xerbla.c in Sources */,
 				228E846616444C6600A189E5 /* constr.c in Sources */,
+				22AB5EE0170397C2008F7B52 /* intset.c in Sources */,
+				2289D5391703F528000182EE /* uintset.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

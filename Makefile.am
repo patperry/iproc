@@ -96,6 +96,8 @@ libcore_a_SOURCES = \
 	lib/core/src/hash.h \
 	lib/core/src/hashset.c \
 	lib/core/src/hashset.h \
+	lib/core/src/intset.c \
+	lib/core/src/intset.h \
 	lib/core/src/ieee754.c \
 	lib/core/src/ieee754.h \
 	lib/core/src/pqueue.c \
@@ -103,6 +105,8 @@ libcore_a_SOURCES = \
 	lib/core/src/timsort-impl.h \
 	lib/core/src/timsort.c \
 	lib/core/src/timsort.h \
+	lib/core/src/uintset.c \
+	lib/core/src/uintset.h \
 	lib/core/src/xalloc-die.c \
 	lib/core/src/xalloc.c \
 	lib/core/src/xalloc.h \
