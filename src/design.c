@@ -9,6 +9,7 @@
 
 #include "coreutil.h"
 #include "lapack.h"
+#include "sblas.h"
 #include "strata.h"
 #include "util.h"
 #include "xalloc.h"
@@ -54,7 +55,7 @@ static void design_clear_range(struct design *d, size_t joff, size_t len)
 {
 	assert(joff + len <= design_tvar_dim(d));
 	
-	size_t i, n = d->active.nz;
+	size_t i, n = uintset_count(&d->active);
 	size_t dim = design_tvar_dim(d);
 	double *ptr = d->dx + joff;
 	
@@ -114,7 +115,7 @@ void design_init(struct design *d, struct history *h, size_t count)
 	d->ntvar_max = 0;
 	d->ind_buf = NULL;
 	
-	vpattern_init(&d->active);
+	uintset_init(&d->active);
 	d->dx = NULL;
 
 	d->deltas = NULL;
@@ -150,7 +151,7 @@ void design_deinit(struct design *d)
 	free(d->observers);
 	free(d->deltas);
 	free(d->dx);
-	vpattern_deinit(&d->active);
+	uintset_deinit(&d->active);
 	free(d->ind_buf);
 	tvars_deinit(d->tvars, d->ntvar, d);
 	free2((void **)d->tvars, d->ntvar);
@@ -486,24 +487,25 @@ void design_tvars_axpy(double alpha, const struct design *d, size_t i, double *y
 
 static double *design_dx(struct design *d, size_t i)
 {
-	int ins;
 	size_t dim = d->tvar_dim;
-	size_t nzmax = d->active.nzmax;
-	size_t ix = vpattern_search(&d->active, i, &ins);
-	
-	if (ins) {
-		if (nzmax != d->active.nzmax) {
-			nzmax = d->active.nzmax;
+	size_t iz;
+
+	if (!uintset_find(&d->active, i, &iz)) {
+		size_t nzmax0 = uintset_capacity(&d->active);
+		size_t ntail = uintset_insert(&d->active, iz, i);
+		size_t nzmax = uintset_capacity(&d->active);
+
+		if (nzmax != nzmax0) {
 			d->dx = xrealloc(d->dx, nzmax * dim * sizeof(*d->dx));
 		}
-		
-		memmove(d->dx + (ix + 1) * dim,
-			d->dx + ix * dim,
-			(d->active.nz - 1 - ix) * dim * sizeof(*d->dx));
-		memset(d->dx + ix * dim, 0, dim * sizeof(*d->dx));
+
+		memmove(d->dx + (iz + 1) * dim,
+			d->dx + iz * dim,
+			ntail * dim * sizeof(*d->dx));
+		memset(d->dx + iz * dim, 0, dim * sizeof(*d->dx));
 	}
-	
-	return d->dx + ix * dim;
+
+	return d->dx + iz * dim;
 }
 
 

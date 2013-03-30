@@ -4,7 +4,7 @@
 #include "history.h"
 #include "var.h"
 #include "blas.h"
-#include "sblas.h"
+#include "uintset.h"
 #include <stdarg.h>
 
 
@@ -33,7 +33,7 @@ struct design {
 	size_t ntvar, ntvar_max;
 	size_t *ind_buf;
 	
-	struct vpattern active;
+	struct uintset active;
 	double *dx;	// dX[t]
 
 	struct design_delta **deltas;
@@ -267,20 +267,21 @@ const double *design_tvar(const struct design *d, const struct var *v, size_t i)
 const double *design_tvars(const struct design *d, size_t i)
 {
 	assert(i < design_count(d));
-	ptrdiff_t ix = vpattern_find(&d->active, i);
 
-	if (ix < 0)
-		return NULL;
+	const double *dx = NULL;
+	size_t iz;
 
-	const double *dx = d->dx + ix * d->tvar_dim;
+	if (uintset_find(&d->active, i, &iz)) {
+		dx = d->dx + iz * d->tvar_dim;
+	}
+
 	return dx;
 }
 
 void design_tvars_get_all(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp)
 {
 	*dxp = d->dx;
-	*ip = d->active.indx;
-	*nzp = d->active.nz;
+	uintset_get_vals(&d->active, ip, nzp);
 }
 
 
