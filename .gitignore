@@ -1,4 +1,5 @@
 *.a
+*.h5
 *.la
 *.lo
 *.o
@@ -19,6 +20,7 @@
 /config.status
 /configure
 /libtool
+/output
 /stamp-h1
 /interfaces/R/DESCRIPTION
 /interfaces/R/src/*.c
