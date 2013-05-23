@@ -17,14 +17,11 @@
 #include "design.h"
 
 
-static void delta_init(struct design_delta *delta, size_t count);
+static void delta_init(struct design_delta *delta);
 static void delta_deinit(struct design_delta *delta);
 static void delta_clear(struct design_delta *delta);
 static void delta_set_cleared(struct design_delta *delta);
-static void delta_update(struct design_delta *delta, const struct var *v, size_t i,
-			 const double *dx, const size_t *ind, size_t nz, size_t dim);
-static void delta_grow(struct design_delta *delta, size_t n, size_t dim);
-static size_t delta_search(struct design_delta *delta, size_t i, size_t dim);
+static void delta_update(struct design_delta *delta, size_t i);
 
 
 
@@ -70,10 +67,7 @@ static void design_history_clear(void *udata, struct history *h)
 	struct design *d = udata;
 	design_clear_range(d, 0, design_tvar_dim(d));
 
-	size_t id, nd = d->ndelta;
-	for (id = 0; id < nd; id++) {
-		delta_set_cleared(d->deltas[id]);
-	}
+	delta_set_cleared(&d->delta);
 
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
@@ -118,9 +112,7 @@ void design_init(struct design *d, struct history *h, size_t count)
 	uintset_init(&d->active);
 	d->dx = NULL;
 
-	d->deltas = NULL;
-	d->ndelta = 0;
-	d->ndelta_max = 0;
+	delta_init(&d->delta);
 
 	d->observers = NULL;
 	d->nobs = 0;
@@ -149,7 +141,7 @@ void design_deinit(struct design *d)
 {
 	history_remove_observer(d->history, d);
 	free(d->observers);
-	free(d->deltas);
+	delta_deinit(&d->delta);
 	free(d->dx);
 	uintset_deinit(&d->active);
 	free(d->ind_buf);
@@ -430,6 +422,24 @@ void design_traits_axpy(double alpha, const struct design *d, size_t i, double *
 }
 
 
+void design_tvars_update(struct design *d)
+{
+	size_t i, n = d->ntvar;
+	struct tvar **tvars = d->tvars;
+
+	for (i = 0; i < n; i++) {
+		uintset_clear(&tvars[i]->var.meta.changed);
+	}
+
+
+	for (i = 0; i < n; i++) {
+		if (tvars[i]->type->update) {
+			tvars[i]->type->update(tvars[i]);
+		}
+	}
+}
+
+
 void design_tvars_mul(double alpha, const struct design *d,
 		      const double *x, double beta, double *y)
 {	
@@ -541,7 +551,7 @@ static void design_notify_update(struct design *d, const struct var *v,
 }
 
 
-void design_update(struct design *d, const struct var *v, size_t i, const double *delta,
+void design_update(struct design *d, struct var *v, size_t i, const double *delta,
 		   const size_t *ind, size_t nz)
 {
 	assert(v->design == d);
@@ -558,11 +568,8 @@ void design_update(struct design *d, const struct var *v, size_t i, const double
 		blas_daxpy(v->meta.size, 1.0, delta, 1, dx, 1);
 	}
 
-	size_t id, nd = d->ndelta;
-	size_t dim = design_dim(d);
-	for (id = 0; id < nd; id++) {
-		delta_update(d->deltas[id], v, i, delta, ind, nz, dim);
-	}
+	var_change(v, i);
+	delta_update(&d->delta, i);
 
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
@@ -719,7 +726,7 @@ void prod_update_var(void *udata, struct design *d, const struct var *v, size_t 
 	assert(ind || !nz);
 	assert(nz <= v->meta.size);
 
-	const struct tvar *tv = udata;
+	struct tvar *tv = udata;
 	const struct prod_udata *udata0 = tv->udata;
 	double *vdelta = udata0->delta;
 	size_t *vind = udata0->ind;
@@ -791,116 +798,33 @@ void prod_update_var(void *udata, struct design *d, const struct var *v, size_t 
 }
 
 
-/* design_delta public */
-
-void design_delta_init(struct design *d, struct design_delta *delta)
-{
-
-	delta_init(delta, design_count(d));
-
-	if (needs_grow(d->ndelta + 1, &d->ndelta_max)) {
-		d->deltas = xrealloc(d->deltas, d->ndelta_max * sizeof(d->deltas[0]));
-	}
-	d->deltas[d->ndelta++] = delta;
-}
-
-
-void design_delta_deinit(struct design *d, struct design_delta *delta)
-{
-	size_t i, n = d->ndelta;
-	for (i = n; i > 0; i--) {
-		if (d->deltas[i-1] == delta) {
-			memmove(d->deltas + i - 1, d->deltas + i,
-				(n - i) * sizeof(d->deltas[0]));
-			d->ndelta = n - 1;
-			break;
-		}
-	}
-
-	delta_deinit(delta);
-}
-
-
-void design_delta_clear(struct design *d, struct design_delta *delta)
-{
-	delta_clear(delta);
-}
-
-
 /* design_delta private */
 
-static void delta_init(struct design_delta *delta, size_t count)
+static void delta_init(struct design_delta *delta)
 {
+	uintset_init(&delta->changed);
 	delta->cleared = 0;
-	delta->ind = NULL;
-	delta->dx = NULL;
-	delta->nz = 0;
-	delta->nzmax = 0;
 }
 
 static void delta_deinit(struct design_delta *delta)
 {
-	free(delta->dx);
-	free(delta->ind);
+	uintset_deinit(&delta->changed);
 }
 
 static void delta_clear(struct design_delta *delta)
 {
-	delta->nz = 0;
+	uintset_clear(&delta->changed);
 	delta->cleared = 0;
 }
 
 static void delta_set_cleared(struct design_delta *delta)
 {
-	delta->nz = 0;
+	uintset_clear(&delta->changed);
 	delta->cleared = 1;
 }
 
-static void delta_grow(struct design_delta *delta, size_t n, size_t dim)
+static void delta_update(struct design_delta *delta, size_t i)
 {
-	size_t nz1 = delta->nz + n;
-	if (needs_grow(nz1, &delta->nzmax)) {
-		delta->ind = xrealloc(delta->ind, delta->nzmax * sizeof(*delta->ind));
-		delta->dx = xrealloc(delta->dx, delta->nzmax * dim * sizeof(*delta->dx));
-	}
-}
-
-static size_t delta_search(struct design_delta *delta, size_t i, size_t dim)
-{
-	ptrdiff_t siz = find_index(i, delta->ind, delta->nz);
-	size_t iz;
-
-	/* not found */
-	if (siz < 0) {
-		iz = ~siz;
-		size_t ntail = delta->nz - iz;
-
-		delta_grow(delta, 1, dim);
-		memmove(delta->ind + iz + 1, delta->ind + iz, ntail * sizeof(*delta->ind));
-		memmove(delta->dx + (iz + 1) * dim, delta->dx + iz * dim, ntail * dim * sizeof(*delta->dx));
-
-		delta->ind[iz] = i;
-		memset(delta->dx + iz * dim, 0, dim * sizeof(*delta->dx));
-		delta->nz++;
-	} else {
-		iz = siz;
-	}
-
-	return iz;
-}
-
-static void delta_update(struct design_delta *delta, const struct var *v, size_t i,
-			 const double *dx, const size_t *ind, size_t nz, size_t dim)
-{
-	size_t iz = delta_search(delta, i, dim);
-	size_t index = v->index;
-	double *dx_dst = delta->dx + iz * dim + index;
-
-	if (ind) {
-		sblas_daxpyi(nz, 1.0, dx, ind, dx_dst);
-	} else {
-		assert(nz == v->meta.size);
-		blas_daxpy(v->meta.size, 1.0, dx, 1, dx_dst, 1);
-	}
+	uintset_add(&delta->changed, i);
 }
 

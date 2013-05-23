@@ -8,8 +8,8 @@
 static void irecvtot_message_add(void *udata, struct history *h,
 			      const struct message *msg)
 {
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
+	struct tvar *tv = udata;
+	struct var *v = &tv->var;
 	struct design *d = v->design;
 	const double one = 1.0;	
 	const size_t izero = 0;	
