@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include "uintset.h"
 #include "history.h"
 
 
@@ -14,13 +15,15 @@ enum var_type {
 	VAR_TYPE_TVAR
 };
 
-
 struct var_meta {
 	const char *name;
 	enum var_type type;
 	size_t dims[VAR_RANK_MAX];
 	size_t rank;
 	size_t size;
+
+	struct uintset changed;
+	int cleared;
 };
 
 
@@ -64,6 +67,11 @@ struct tvar {
 	const struct tvar_type *type;
 	void *udata;
 };
+
+void var_change(struct var *v, size_t i);
+void var_clear(struct var *v);
+void var_delta_clear(struct var *v);
+
 
 struct tvar_type {
 	void (*init) (struct tvar *tv, const char *name, struct history *h, va_list ap);

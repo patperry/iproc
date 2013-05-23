@@ -11,8 +11,8 @@ static void nsendtot_message_add(void *udata, struct history *h,
 	if (!history_interval_count(h))
 		return;
 
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
+	struct tvar *tv = udata;
+	struct var *v = &tv->var;
 	struct design *d = v->design;
 
 	size_t isend = msg->from;
@@ -29,8 +29,8 @@ static void nsendtot_message_advance(void *udata, struct history *h,
 				     const struct message *msg, size_t intvl)
 {
 	size_t nintvl = history_interval_count(h);
-	const struct tvar *tv = udata;
-	const struct var *v = &tv->var;
+	struct tvar *tv = udata;
+	struct var *v = &tv->var;
 	struct design *d = v->design;
 
 	size_t isend = msg->from;
