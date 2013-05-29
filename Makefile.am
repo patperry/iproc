@@ -26,44 +26,8 @@ noinst_LIBRARIES = \
 
 
 libiproc_a_SOURCES = \
-	src/design.c \
-	src/design.h \
-	src/design2.c \
-	src/design2.h \
-	src/frame.c \
-	src/frame.h \
 	src/history.c \
-	src/history.h \
-	src/messages.c \
-	src/messages.h \
-	src/recv_boot.c \
-	src/recv_boot.h \
-	src/recv_fit.c \
-	src/recv_fit.h \
-	src/recv_loglik.c \
-	src/recv_loglik.h \
-	src/recv_model.c \
-	src/recv_model.h \
-	src/recv_resid.c \
-	src/recv_resid.h \
-	src/v-irecvtot.c \
-	src/v-isendtot.c \
-	src/v-nrecvtot.c \
-	src/v-nsendtot.c \
-	src/v2-icosib.c \
-	src/v2-irecv.c \
-	src/v2-irecv2.c \
-	src/v2-isend.c \
-	src/v2-isend2.c \
-	src/v2-isib.c \
-	src/v2-ncosib.c \
-	src/v2-nrecv.c \
-	src/v2-nrecv2.c \
-	src/v2-nsend.c \
-	src/v2-nsend2.c \
-	src/v2-nsib.c \
-	src/var.c \
-	src/var.h
+	src/history.h
 
 
 libiproc_a_LIBADD = \
@@ -238,8 +202,8 @@ libyajl_a_CPPFLAGS = \
 ##	R CMD build interfaces/R
 
 check_LIBRARIES = \
-	tests/libcmockery.a \
-	tests/libenron.a
+	tests/libcmockery.a
+#	tests/libenron.a
 
 tests_libcmockery_a_SOURCES = \
 	tests/cmockery/cmockery.c \
@@ -254,13 +218,13 @@ tests_libcmockery_a_CPPFLAGS = \
 	-I./tests/cmockery \
 	$(AM_CPPFLAGS)
 
-tests_libenron_a_SOURCES = \
-	tests/enron/employees.c \
-	tests/enron/enron.h \
-	tests/enron/messages.c
+#tests_libenron_a_SOURCES = \
+#	tests/enron/employees.c \
+#	tests/enron/enron.h \
+#	tests/enron/messages.c
 
-tests_libenron_a_LIBADD = \
-	libiproc.a
+#tests_libenron_a_LIBADD = \
+#	libiproc.a
 
 
 check_LDADD = \
@@ -275,13 +239,13 @@ check_CPPFLAGS = \
 
 check_PROGRAMS = # empty
 
-check_PROGRAMS += tests/design_test
-tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_design_test_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/design_test
+#tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_design_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/frame_test
-tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_frame_test_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/frame_test
+#tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_frame_test_LDADD    = $(check_LDADD)
 
 check_PROGRAMS += tests/catdist_test
 tests_catdist_test_CPPFLAGS = $(check_CPPFLAGS)
@@ -295,18 +259,18 @@ check_PROGRAMS += tests/mlogit_test
 tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_mlogit_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/model_test
-tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_model_test_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/model_test
+#tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_model_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/recv_loglik_test
-tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
-tests_recv_loglik_test_LDADD    = $(check_LDADD)
+#check_PROGRAMS += tests/recv_loglik_test
+#tests_recv_loglik_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_recv_loglik_test_LDADD    = $(check_LDADD)
 
-check_PROGRAMS += tests/enronfit
-tests_enronfit_SOURCES  = tests/enron/enronfit.c
-tests_enronfit_CPPFLAGS = $(check_CPPFLAGS) $(HDF5_CPPFLAGS)
-tests_enronfit_LDADD    = $(check_LDADD) $(HDF5_LDFLAGS)
+#check_PROGRAMS += tests/enronfit
+#tests_enronfit_SOURCES  = tests/enron/enronfit.c
+#tests_enronfit_CPPFLAGS = $(check_CPPFLAGS) $(HDF5_CPPFLAGS)
+#tests_enronfit_LDADD    = $(check_LDADD) $(HDF5_LDFLAGS)
 
 TESTS = \
 	$(check_PROGRAMS)
