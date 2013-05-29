@@ -17,15 +17,6 @@
 #include "design.h"
 
 
-static void delta_init(struct design_delta *delta);
-static void delta_deinit(struct design_delta *delta);
-static void delta_clear(struct design_delta *delta);
-static void delta_set_cleared(struct design_delta *delta);
-static void delta_update(struct design_delta *delta, size_t i);
-
-
-
-
 static void prod_init(struct tvar *tv, const char *name, struct history *h, va_list ap);
 static void prod_deinit(struct tvar *tv, struct history *h);
 static void prod_update(struct tvar *tv);
@@ -79,7 +70,7 @@ static void design_history_clear(void *udata, struct history *h)
 	design_clear_range(d, 0, design_tvar_dim(d));
 	design_clear_tvars(d);
 
-	delta_set_cleared(&d->delta);
+	deltaset_clear(&d->deltaset);
 
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
@@ -104,7 +95,7 @@ static struct history_callbacks design_history_callbacks = {
 void design_init(struct design *d, struct history *h, size_t count)
 {
 	d->history = h;
-	d->count= count;
+	d->count = count;
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
 	d->cohort_reps = xcalloc(1, sizeof(*d->cohort_reps));
@@ -124,7 +115,7 @@ void design_init(struct design *d, struct history *h, size_t count)
 	uintset_init(&d->active);
 	d->dx = NULL;
 
-	delta_init(&d->delta);
+	deltaset_init(&d->deltaset, count);
 
 	d->observers = NULL;
 	d->nobs = 0;
@@ -154,7 +145,7 @@ void design_deinit(struct design *d)
 {
 	history_remove_observer(d->history, d);
 	free(d->observers);
-	delta_deinit(&d->delta);
+	deltaset_deinit(&d->deltaset);
 	free(d->dx);
 	uintset_deinit(&d->active);
 	free(d->ind_buf);
@@ -580,7 +571,7 @@ void design_update(struct design *d, struct var *v, size_t i, const double *delt
 
 	double t = history_time(d->history);
 	var_change(v, i, t);
-	delta_update(&d->delta, i);
+	deltaset_update(&d->deltaset, i, t);
 
 	size_t io, no = d->nobs;
 	const struct design_observer *obs;
@@ -806,36 +797,5 @@ void prod_update_var(void *udata, struct design *d, const struct var *v, size_t 
 	}
 
 	design_update(d, &tv->var, i, vdelta, vind, vnz);
-}
-
-
-/* design_delta private */
-
-static void delta_init(struct design_delta *delta)
-{
-	uintset_init(&delta->changed);
-	delta->cleared = 0;
-}
-
-static void delta_deinit(struct design_delta *delta)
-{
-	uintset_deinit(&delta->changed);
-}
-
-static void delta_clear(struct design_delta *delta)
-{
-	uintset_clear(&delta->changed);
-	delta->cleared = 0;
-}
-
-static void delta_set_cleared(struct design_delta *delta)
-{
-	uintset_clear(&delta->changed);
-	delta->cleared = 1;
-}
-
-static void delta_update(struct design_delta *delta, size_t i)
-{
-	uintset_add(&delta->changed, i);
 }
 

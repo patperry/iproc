@@ -4,6 +4,7 @@
 #include "history.h"
 #include "var.h"
 #include "blas.h"
+#include "deltaset.h"
 #include "uintset.h"
 #include <stdarg.h>
 
@@ -34,7 +35,7 @@ struct design {
 	struct uintset active;
 	double *dx;	// dX[t]
 
-	struct design_delta delta;
+	struct deltaset deltaset;
 
 	struct design_observer *observers;
 	size_t nobs, nobs_max;
