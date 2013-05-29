@@ -205,6 +205,7 @@ void history_add(struct history *h, size_t from, size_t *to, size_t nto,
 	/* insert the new message */
 	msg = h->msgs + h->ncur;
 	memmove(msg + 1, msg, (h->nmsg - h->ncur) * sizeof(struct message));
+	msg->time = h->tcur;
 	msg->from = from;
 	msg->to = to_buf;
 	msg->nto = nto;

@@ -1,8 +1,8 @@
-#ifndef _ENRON_H
-#define _ENRON_H
+#ifndef ENRON_H
+#define ENRON_H
 
+#include <stddef.h>
 #include <stdio.h>
-#include "messages.h"
 
 #define PARENT_DIR "/Users/patperry/Projects/iproc/"
 #define ENRON_EMPLOYEES_FILE PARENT_DIR"tests/enron/employees.json"
@@ -34,7 +34,11 @@ int enron_employees_init_fread(size_t *nactorp,
 			       const char * const **trait_namesp,
 			       size_t terms, FILE *stream);
 
-int enron_messages_init(struct messages *messages, size_t maxrecip);
-int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream);
+int enron_messages_init(size_t *nsend, size_t *nrecv, double **time,
+			size_t **from, size_t ***to, size_t **nto,
+			intptr_t **attr, size_t *nmsg, size_t maxrecip);
+int enron_messages_init_fread(size_t *nsend, size_t *nrecv, double **time,
+			      size_t **from, size_t ***to, size_t **nto,
+			      intptr_t **attr, size_t *nmsg, size_t maxrecip, FILE *stream);
 
-#endif /* _ENRON_H */
+#endif /* ENRON_H */

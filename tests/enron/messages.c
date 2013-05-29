@@ -1,6 +1,7 @@
 #include "port.h"
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <yajl/yajl_parse.h>
@@ -18,49 +19,74 @@ enum message_map_key {
 };
 
 struct message_parse {
+	/* parse parameters */
 	size_t maxrecip;
-	struct messages *messages;
-	size_t id;
-	double time;
-	size_t sender;
-	size_t *receiver;
-	size_t nrecv, nrecv_max;
-	intptr_t attr;
+
+	/* total number of senders and receivers */
+	size_t nsend;
+	size_t nrecv;
+
+	/* all message data */
+	double *time;
+	size_t *from;
+	size_t **to;
+	size_t *nto;
+	intptr_t *attr;
+	size_t nmsg, nmsg_max;
+
+	/* current message data */
+	size_t cur_id;
+	double cur_time;
+	size_t cur_from;
+	size_t *cur_to;
+	size_t cur_nto, cur_nto_max;
+	intptr_t cur_attr;
+
+	/* parse internals */
 	enum message_map_key map_key;
 	size_t map_depth, arr_depth;
 };
 
 static void message_parse_clear(struct message_parse *parse)
 {
-	parse->nrecv = 0;
-	parse->id = SIZE_MAX;
-	parse->sender = SIZE_MAX;
-	parse->attr = 0;
-	parse->time = NAN;
+	parse->cur_id = SIZE_MAX;
+	parse->cur_time = NAN;
+	parse->cur_from = SIZE_MAX;
+	parse->cur_nto = 0;
+	parse->cur_attr = 0;
 }
 
-static void message_parse_init(struct message_parse *parse, struct messages *messages, size_t maxrecip)
+static void message_parse_init(struct message_parse *parse, size_t maxrecip)
 {
-	parse->receiver = NULL;
-	parse->nrecv_max = 0;
-	parse->messages = messages;
+	size_t nmax = 65535;
+	size_t nrecv_max = 255;
+
 	parse->maxrecip = maxrecip;
+
+	parse->nsend = 156;
+	parse->nrecv = 156;
+
+	parse->time = xmalloc(nmax * sizeof(double));
+	parse->from = xmalloc(nmax * sizeof(size_t));
+	parse->to = xmalloc(nmax * sizeof(size_t *));
+	parse->nto = xmalloc(nmax * sizeof(size_t));
+	parse->attr = xmalloc(nmax * sizeof(intptr_t));
+	parse->nmsg = 0;
+	parse->nmsg_max = nmax;
+	
+	parse->cur_to = xmalloc(nrecv_max * sizeof(size_t));
+	parse->cur_nto_max = nrecv_max;
+
 	parse->map_key = MAP_KEY_NONE;
 	parse->map_depth = 0;
 	parse->arr_depth = 0;
-	message_parse_clear(parse);
-}
 
-static void message_parse_grow_recv(struct message_parse *parse, size_t delta)
-{
-	if (needs_grow(parse->nrecv + delta, &parse->nrecv_max)) {
-		parse->receiver = xrealloc(parse->receiver, parse->nrecv_max * sizeof(parse->receiver[0]));
-	}
+	message_parse_clear(parse);
 }
 
 static void message_parse_deinit(struct message_parse *parse)
 {
-	free(parse->receiver);
+	free(parse->cur_to);
 }
 
 static int parse_integer(void *ctx, long long integerVal)
@@ -76,26 +102,29 @@ static int parse_integer(void *ctx, long long integerVal)
 				fprintf(stderr, "non-positive message id: '%lld'\n", integerVal);
 				return 0;
 			}
-			parse->id = (size_t)(integerVal - 1);
+			parse->cur_id = (size_t)(integerVal - 1);
 			break;
 		case MAP_KEY_TIME:
-			parse->time = (double)(integerVal);
+			parse->cur_time = (double)(integerVal);
 			break;
 		case MAP_KEY_SENDER:
 			if (integerVal <= 0) {
 				fprintf(stderr, "non-positive sender: '%lld'\n", integerVal);
 				return 0;
 			}
-			parse->sender = (size_t)(integerVal - 1);
+			parse->cur_from = (size_t)(integerVal - 1);
 			break;
 		case MAP_KEY_RECEIVER:
 			if (integerVal <= 0) {
 				fprintf(stderr, "non-positive receiver: '%lld'\n", integerVal);
 				return 0;
+			} else if (parse->cur_nto == parse->cur_nto_max) {
+				fprintf(stderr, "number of message recipients exceeded maximum ('%zd')\b",
+					parse->cur_nto_max);
+				return 0;
 			}
 
-			message_parse_grow_recv(parse, 1);
-			parse->receiver[parse->nrecv++] = (size_t)(integerVal - 1);
+			parse->cur_to[parse->cur_nto++] = (size_t)(integerVal - 1);
 			break;
 		case MAP_KEY_OTHER:
 			break;
@@ -118,7 +147,7 @@ static int parse_double(void *ctx, double doubleVal)
 			fprintf(stderr, "non-integer message id: '%g'\n", doubleVal);
 			return 0;
 		case MAP_KEY_TIME:
-			parse->time = doubleVal;
+			parse->cur_time = doubleVal;
 			break;
 		case MAP_KEY_SENDER:
 			fprintf(stderr, "non-integer sender: '%g'\n", doubleVal);
@@ -195,38 +224,41 @@ static int parse_end_map(void *ctx)
 	if (parse->arr_depth != 1 || parse->map_depth != 0)
 		return 1;
 
-	if (parse->id == SIZE_MAX) {
+	if (parse->cur_id == SIZE_MAX) {
 		fprintf(stderr, "missing message id\n");
 		return 0;
 	}
 
-	if (isnan(parse->time)) {
-		fprintf(stderr, "missing time for message '%zu'\n", parse->id);
+	if (isnan(parse->cur_time)) {
+		fprintf(stderr, "missing time for message '%zu'\n", parse->cur_id);
 		return 0;
 	}
 
-	if (parse->sender == SIZE_MAX) {
-		fprintf(stderr, "missing sender for message '%zu'\n", parse->id);
+	if (parse->cur_from == SIZE_MAX) {
+		fprintf(stderr, "missing sender for message '%zu'\n", parse->cur_id);
 		return 0;
 	}
 
-	if (!parse->nrecv) {
-		fprintf(stderr, "missing receiver for message '%zu'\n", parse->id);
+	if (!parse->cur_nto) {
+		fprintf(stderr, "missing receiver for message '%zu'\n", parse->cur_id);
 		return 0;
 	}
 
-	if (!(parse->time >= messages_tlast(parse->messages))) {
-		fprintf(stderr, "message '%zu' time not in sorted order\n", parse->id);
+	if (!(!parse->nmsg || parse->cur_time >= parse->time[parse->nmsg])) {
+		fprintf(stderr, "message '%zu' time not in sorted order\n", parse->cur_id);
 		return 0;
 	}
 
-	if (parse->nrecv <= parse->maxrecip || !parse->maxrecip) {
-		messages_add(parse->messages,
-			     parse->time,
-			     parse->sender,
-			     parse->receiver,
-			     parse->nrecv,
-			     parse->attr);
+	if (parse->cur_nto <= parse->maxrecip || !parse->maxrecip) {
+		assert(parse->nmsg < parse->nmsg_max);
+
+		parse->time[parse->nmsg] = parse->cur_time;
+		parse->from[parse->nmsg] = parse->cur_from;
+		parse->to[parse->nmsg] = xmalloc(parse->cur_nto * sizeof(size_t));
+		memcpy(parse->to[parse->nmsg], parse->cur_to, parse->cur_nto * sizeof(size_t));
+		parse->nto[parse->nmsg] = parse->cur_nto;
+		parse->attr[parse->nmsg] = parse->cur_attr;
+		parse->nmsg++;
 	}
 
 	message_parse_clear(parse);
@@ -280,7 +312,9 @@ static yajl_callbacks parse_callbacks = {
 	parse_end_array
 };
 
-int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *stream)
+int enron_messages_init_fread(size_t *nsend, size_t *nrecv, double **time,
+			      size_t **from, size_t ***to, size_t **nto,
+			      intptr_t **attr, size_t *nmsg, size_t maxrecip, FILE *stream)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -289,8 +323,7 @@ int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *
 
 	struct message_parse parse;
 
-	messages_init(messages);
-	message_parse_init(&parse, messages, maxrecip);
+	message_parse_init(&parse, maxrecip);
 
 	yajl_handle hand = yajl_alloc(&parse_callbacks, NULL, (void *) &parse);
 	yajl_config(hand, yajl_allow_comments, 1);
@@ -325,13 +358,32 @@ int enron_messages_init_fread(struct messages *messages, size_t maxrecip, FILE *
 	message_parse_deinit(&parse);
 
 	if (!parse_ok) {
-		messages_deinit(messages);
+		size_t i, n = parse.nmsg;
+		for (i = 0; i < n; i++) {
+			free(parse.to[i]);
+		}
+		free(parse.attr);
+		free(parse.nto);
+		free(parse.to);
+		free(parse.from);
+		free(parse.time);
 	}
+
+	*nsend = parse.nsend;
+	*nrecv = parse.nrecv;
+	*time = parse.time;
+	*from = parse.from;
+	*to = parse.to;
+	*nto = parse.nto;
+	*attr = parse.attr;
+	*nmsg = parse.nmsg;
 
 	return parse_ok;
 }
 
-int enron_messages_init(struct messages *messages, size_t maxrecip)
+int enron_messages_init(size_t *nsend, size_t *nrecv, double **time,
+			size_t **from, size_t ***to, size_t **nto,
+			intptr_t **attr, size_t *nmsg, size_t maxrecip)
 {
 	FILE *f = fopen(ENRON_MESSAGES_FILE, "r");
 
@@ -341,7 +393,7 @@ int enron_messages_init(struct messages *messages, size_t maxrecip)
 		return 0;
 	}
 
-	if (!enron_messages_init_fread(messages, maxrecip, f)) {
+	if (!enron_messages_init_fread(nsend, nrecv, time, from, to, nto, attr, nmsg, maxrecip, f)) {
 		fprintf(stderr, "Couldn't parse messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
 		fclose(f);

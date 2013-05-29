@@ -202,8 +202,8 @@ libyajl_a_CPPFLAGS = \
 ##	R CMD build interfaces/R
 
 check_LIBRARIES = \
-	tests/libcmockery.a
-#	tests/libenron.a
+	tests/libcmockery.a \
+	tests/libenron.a
 
 tests_libcmockery_a_SOURCES = \
 	tests/cmockery/cmockery.c \
@@ -218,13 +218,13 @@ tests_libcmockery_a_CPPFLAGS = \
 	-I./tests/cmockery \
 	$(AM_CPPFLAGS)
 
-#tests_libenron_a_SOURCES = \
-#	tests/enron/employees.c \
-#	tests/enron/enron.h \
-#	tests/enron/messages.c
+tests_libenron_a_SOURCES = \
+	tests/enron/employees.c \
+	tests/enron/enron.h \
+	tests/enron/messages.c
 
-#tests_libenron_a_LIBADD = \
-#	libiproc.a
+tests_libenron_a_LIBADD = \
+	libiproc.a
 
 
 check_LDADD = \
@@ -258,6 +258,10 @@ tests_catdist1_test_LDADD    = $(check_LDADD)
 check_PROGRAMS += tests/mlogit_test
 tests_mlogit_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_mlogit_test_LDADD    = $(check_LDADD)
+
+check_PROGRAMS += tests/history_test
+tests_history_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_history_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/model_test
 #tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
