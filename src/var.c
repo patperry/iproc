@@ -18,14 +18,11 @@ void var_meta_init(struct var_meta *meta, const char *name, enum var_type type,
 	meta->rank = rank;
 	memcpy(meta->dims, dims, meta->rank * sizeof(size_t));
 	meta->size = compute_size(meta->dims, meta->rank);
-	meta->cleared = 0;
-	uintset_init(&meta->changed);
 }
 
 
 void var_meta_deinit(struct var_meta *meta)
 {
-	uintset_deinit(&meta->changed);
 	free((void*)(meta->name));
 }
 
@@ -101,32 +98,22 @@ int snprint_var_name(char *str, size_t size, const struct var_name_fmt *fmt,
 #undef PRINT
 
 
-void var_change(struct var *v, size_t i)
+void var_change(struct var *v, size_t i, double t)
 {
+	//printf("var_change(%p, %zd, %zd)\n", v, i, (size_t)t);
 	assert(v->meta.type == VAR_TYPE_TVAR);
-
-	struct var_meta *meta = &v->meta;
-	uintset_add(&meta->changed, i);
+	struct tvar *tv = container_of(v, struct tvar, var);
+	deltaset_update(&tv->deltaset, i, t);
 }
 
 
 void var_clear(struct var *v)
 {
+	//printf("var_clear(%p)\n", v);
 	assert(v->meta.type == VAR_TYPE_TVAR);
-
-	struct var_meta *meta = &v->meta;
-	meta->cleared = 1;
-	uintset_clear(&meta->changed);
-}
-
-
-void var_delta_clear(struct var *v)
-{
-	assert(v->meta.type == VAR_TYPE_TVAR);
-
-	struct var_meta *meta = &v->meta;
-	meta->cleared = 0;
-	uintset_clear(&meta->changed);
+	struct tvar *tv = container_of(v, struct tvar, var);
+	deltaset_clear(&tv->deltaset);
+	tv->tcur = -INFINITY;
 }
 
 

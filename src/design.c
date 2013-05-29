@@ -62,10 +62,22 @@ static void design_clear_range(struct design *d, size_t joff, size_t len)
 	}
 }
 
+
+static void design_clear_tvars(struct design *d)
+{
+	size_t i, n = d->ntvar;
+	for (i = 0; i < n; i++) {
+		deltaset_clear(&d->tvars[i]->deltaset);
+		d->tvars[i]->tcur = -INFINITY;
+	}
+}
+
+
 static void design_history_clear(void *udata, struct history *h)
 {
 	struct design *d = udata;
 	design_clear_range(d, 0, design_tvar_dim(d));
+	design_clear_tvars(d);
 
 	delta_set_cleared(&d->delta);
 
@@ -108,7 +120,7 @@ void design_init(struct design *d, struct history *h, size_t count)
 	d->ntvar = 0;
 	d->ntvar_max = 0;
 	d->ind_buf = NULL;
-	
+
 	uintset_init(&d->active);
 	d->dx = NULL;
 
@@ -130,6 +142,7 @@ static void tvars_deinit(struct tvar **tvars, size_t len, struct design *d)
 
 	for (i = len; i > 0; i--) {
 		v = tvars[i - 1];
+		deltaset_deinit(&v->deltaset);
 		if (v->type->deinit) {
 			v->type->deinit(v, h);
 		}
@@ -341,6 +354,8 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	v->design = d;
 	v->index = d->tvar_dim;
 	tv->type = type;
+	deltaset_init(&tv->deltaset, design_count(d));
+	tv->tcur = -INFINITY;
 
 	size_t index = d->ntvar;
 	design_grow_tvars(d, 1);
@@ -426,11 +441,6 @@ void design_tvars_update(struct design *d)
 {
 	size_t i, n = d->ntvar;
 	struct tvar **tvars = d->tvars;
-
-	for (i = 0; i < n; i++) {
-		uintset_clear(&tvars[i]->var.meta.changed);
-	}
-
 
 	for (i = 0; i < n; i++) {
 		if (tvars[i]->type->update) {
@@ -568,7 +578,8 @@ void design_update(struct design *d, struct var *v, size_t i, const double *delt
 		blas_daxpy(v->meta.size, 1.0, delta, 1, dx, 1);
 	}
 
-	var_change(v, i);
+	double t = history_time(d->history);
+	var_change(v, i, t);
 	delta_update(&d->delta, i);
 
 	size_t io, no = d->nobs;

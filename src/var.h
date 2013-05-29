@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include "deltaset.h"
 #include "uintset.h"
 #include "history.h"
 
@@ -21,9 +22,6 @@ struct var_meta {
 	size_t dims[VAR_RANK_MAX];
 	size_t rank;
 	size_t size;
-
-	struct uintset changed;
-	int cleared;
 };
 
 
@@ -65,12 +63,13 @@ struct var {
 struct tvar {
 	struct var var;
 	const struct tvar_type *type;
+	struct deltaset deltaset;
+	double tcur;
 	void *udata;
 };
 
-void var_change(struct var *v, size_t i);
+void var_change(struct var *v, size_t i, double t);
 void var_clear(struct var *v);
-void var_delta_clear(struct var *v);
 
 
 struct tvar_type {

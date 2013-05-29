@@ -138,6 +138,8 @@
 		228E845F1643598C00A189E5 /* linesearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E845E1643598C00A189E5 /* linesearch.h */; };
 		228E846616444C6600A189E5 /* constr.c in Sources */ = {isa = PBXBuildFile; fileRef = 228E846416444C6500A189E5 /* constr.c */; };
 		228E846716444C6600A189E5 /* constr.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E846516444C6500A189E5 /* constr.h */; };
+		229AC2C0174FC29C0085D43C /* deltaset.c in Sources */ = {isa = PBXBuildFile; fileRef = 229AC2BE174FC29C0085D43C /* deltaset.c */; };
+		229AC2C1174FC29C0085D43C /* deltaset.h in Headers */ = {isa = PBXBuildFile; fileRef = 229AC2BF174FC29C0085D43C /* deltaset.h */; };
 		22A64C6315F8E863005C7DE4 /* v2-icosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5715F8E863005C7DE4 /* v2-icosib.c */; };
 		22A64C6415F8E863005C7DE4 /* v2-irecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5815F8E863005C7DE4 /* v2-irecv.c */; };
 		22A64C6515F8E863005C7DE4 /* v2-irecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A64C5915F8E863005C7DE4 /* v2-irecv2.c */; };
@@ -614,6 +616,8 @@
 		228E845E1643598C00A189E5 /* linesearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = linesearch.h; path = lib/linesearch.h; sourceTree = "<group>"; };
 		228E846416444C6500A189E5 /* constr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = constr.c; path = lib/constr.c; sourceTree = "<group>"; };
 		228E846516444C6500A189E5 /* constr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constr.h; path = lib/constr.h; sourceTree = "<group>"; };
+		229AC2BE174FC29C0085D43C /* deltaset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = deltaset.c; path = lib/deltaset.c; sourceTree = "<group>"; };
+		229AC2BF174FC29C0085D43C /* deltaset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = deltaset.h; path = lib/deltaset.h; sourceTree = "<group>"; };
 		22A64C5715F8E863005C7DE4 /* v2-icosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-icosib.c"; path = "src/v2-icosib.c"; sourceTree = "<group>"; };
 		22A64C5815F8E863005C7DE4 /* v2-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv.c"; path = "src/v2-irecv.c"; sourceTree = "<group>"; };
 		22A64C5915F8E863005C7DE4 /* v2-irecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv2.c"; path = "src/v2-irecv2.c"; sourceTree = "<group>"; };
@@ -1020,6 +1024,8 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
+				229AC2BE174FC29C0085D43C /* deltaset.c */,
+				229AC2BF174FC29C0085D43C /* deltaset.h */,
 				228B128915E605A9000DC495 /* catdist.c */,
 				228B128A15E605A9000DC495 /* catdist.h */,
 				228B12A415E66568000DC495 /* catdist1.c */,
@@ -1096,6 +1102,7 @@
 				228E8458164342B900A189E5 /* logsumexp.h in Headers */,
 				228E845C1643467800A189E5 /* ieee754.h in Headers */,
 				22886B0616457D3700CE17E9 /* var.h in Headers */,
+				229AC2C1174FC29C0085D43C /* deltaset.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1535,6 +1542,7 @@
 				223E4116164060C100FAB1C7 /* strata.c in Sources */,
 				228E8457164342B900A189E5 /* logsumexp.c in Sources */,
 				22886B0516457D3700CE17E9 /* var.c in Sources */,
+				229AC2C0174FC29C0085D43C /* deltaset.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
