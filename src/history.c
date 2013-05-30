@@ -148,7 +148,7 @@ void history_advance(struct history *h, double time)
 	assert(time >= history_time(h));
 
 	for (imsg = h->ncur, msg = &msgs[imsg];
-			imsg < nmsg && msg->time <= time; imsg++, msg++) {
+			imsg < nmsg && msg->time < time; imsg++, msg++) {
 		nto = msg->nto;
 		wt = 1 / (double)nto;
 		from = msg->from;
@@ -175,6 +175,9 @@ void history_add(struct history *h, size_t from, size_t *to, size_t nto,
 	size_t imsg;
 	size_t *to_buf;
 	struct message *msg;
+	double time = h->tcur;
+
+	assert(history_time(h) < INFINITY);
 
 	/* make space for the new message */
 	if (needs_grow(h->nmsg + 1, &h->nmsg_max)) {
@@ -202,15 +205,20 @@ void history_add(struct history *h, size_t from, size_t *to, size_t nto,
 		}
 	}
 
+	/* find a space for the new message, update to_buf for current messages */
+	for (imsg = h->ncur; imsg < h->nmsg && h->msgs[imsg].time == time; imsg++) {
+		h->msgs[imsg].to = to_buf;
+		to_buf += h->msgs[imsg].nto;
+	}
+
 	/* insert the new message */
-	msg = h->msgs + h->ncur;
-	memmove(msg + 1, msg, (h->nmsg - h->ncur) * sizeof(struct message));
-	msg->time = h->tcur;
+	msg = h->msgs + imsg;
+	memmove(msg + 1, msg, (h->nmsg - imsg) * sizeof(struct message));
+	msg->time = time;
 	msg->from = from;
 	msg->to = to_buf;
 	msg->nto = nto;
 	msg->attr = attr;
-	h->ncur++;
 	h->nmsg++;
 
 	/* insert the new 'to' field */
@@ -221,7 +229,7 @@ void history_add(struct history *h, size_t from, size_t *to, size_t nto,
 	h->nto += nto;
 
 	/* update the pointers for the subsequent 'to' fields */
-	for (imsg = h->ncur; imsg < h->nmsg; imsg++) {
+	for (imsg++; imsg < h->nmsg; imsg++) {
 		h->msgs[imsg].to = to_buf;
 		to_buf += h->msgs[imsg].nto;
 	}

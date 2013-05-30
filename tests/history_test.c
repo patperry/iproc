@@ -92,10 +92,9 @@ static void test_messages()
 
 }
 
-static void test_advance_before_tfirst()
+static void test_advance_tfirst()
 {
-	double t0 = TIME[0];
-	double t = double_nextdown(t0);
+	double t = TIME[0];
 	const size_t *ind;
 	const double *wts;
 	size_t i, j, len;
@@ -124,9 +123,9 @@ static void test_advance_before_tfirst()
 	}
 }
 
-static void test_advance_tfirst()
+static void test_advance_after_tfirst()
 {
-	double t = TIME[0];
+	double t = double_nextup(TIME[0]);
 	const size_t *ind, *mind;
 	const double *wts;
 	size_t i, j, len, mlen;
@@ -187,8 +186,8 @@ int main()
 		unit_test_setup(enron_suite, enron_setup_fixture),
 		unit_test_setup_teardown(test_sizes, enron_setup, enron_teardown),
 		unit_test_setup_teardown(test_messages, enron_setup, enron_teardown),
-		unit_test_setup_teardown(test_advance_before_tfirst, enron_setup, enron_teardown),
 		unit_test_setup_teardown(test_advance_tfirst, enron_setup, enron_teardown),
+		unit_test_setup_teardown(test_advance_after_tfirst, enron_setup, enron_teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 	};
 	return run_tests(tests);
