@@ -99,11 +99,9 @@ static void design_prod_update(struct design *d, struct tvar *prod_var, size_t i
 }
 
 
-static void prod_update(struct tvar *prod_var, const struct history *h)
+static void prod_update(struct tvar *prod_var, double t0, const struct history *h)
 {
 	struct design *d = prod_var->var.design;
-	double t0 = d->tcur;
-
 	struct prod_thunk *prod = (struct prod_thunk *)prod_var->thunk;
 	struct delta *delta;
 

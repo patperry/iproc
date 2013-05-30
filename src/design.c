@@ -108,6 +108,7 @@ static void design_clear(struct design *d)
 
 static void design_tvars_update(struct design *d)
 {
+	double t0 = d->tcur;
 	const struct history *h = design_history(d);
 
 	if (history_time(h) < d->tcur) {
@@ -119,7 +120,7 @@ static void design_tvars_update(struct design *d)
 
 	for (i = 0; i < n; i++) {
 		if (tvars[i]->type->update) {
-			tvars[i]->type->update(tvars[i], h);
+			tvars[i]->type->update(tvars[i], t0, h);
 		}
 	}
 

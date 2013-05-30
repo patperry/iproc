@@ -33,7 +33,7 @@ struct tvar {
 struct tvar_type {
 	void (*init) (struct var_meta *meta, void **thunk, const char *name, struct design *d, va_list ap);
 	void (*deinit) (struct var_meta *meta, void *thunk, struct design *d);
-	void (*update) (struct tvar *tv, const struct history *h);
+	void (*update) (struct tvar *tv, double t0, const struct history *h);
 };
 
 
