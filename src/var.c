@@ -1,20 +1,23 @@
 #include "port.h"
 #include "coreutil.h"
 #include "xalloc.h"
+#include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "var.h"
 
+
 static size_t compute_size(const size_t *dims, size_t rank);
 static void get_indices(const size_t *dims, size_t rank, size_t i, size_t *ix);
 
 
-void var_meta_init(struct var_meta *meta, const char *name, enum var_type type,
+void var_meta_init(struct var_meta *meta, enum var_type type, const char *name,
 		   const size_t *dims, size_t rank)
 {
-	meta->name = xstrdup(name);
 	meta->type = type;
+	meta->name = xstrdup(name);
 	meta->rank = rank;
 	memcpy(meta->dims, dims, meta->rank * sizeof(size_t));
 	meta->size = compute_size(meta->dims, meta->rank);
@@ -96,25 +99,6 @@ int snprint_var_name(char *str, size_t size, const struct var_name_fmt *fmt,
 }
 
 #undef PRINT
-
-
-void var_change(struct var *v, size_t i, double t)
-{
-	//printf("var_change(%p, %zd, %zd)\n", v, i, (size_t)t);
-	assert(v->meta.type == VAR_TYPE_TVAR);
-	struct tvar *tv = container_of(v, struct tvar, var);
-	deltaset_update(&tv->deltaset, i, t);
-}
-
-
-void var_clear(struct var *v)
-{
-	//printf("var_clear(%p)\n", v);
-	assert(v->meta.type == VAR_TYPE_TVAR);
-	struct tvar *tv = container_of(v, struct tvar, var);
-	deltaset_clear(&tv->deltaset);
-	tv->tcur = -INFINITY;
-}
 
 
 size_t compute_size(const size_t *dims, size_t rank)

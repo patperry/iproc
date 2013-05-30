@@ -26,8 +26,14 @@ noinst_LIBRARIES = \
 
 
 libiproc_a_SOURCES = \
+	src/design.c \
+	src/design_alg.c \
+	src/design_prod.c \
+	src/design.h \
 	src/history.c \
-	src/history.h
+	src/history.h \
+	src/var.c \
+	src/var.h
 
 
 libiproc_a_LIBADD = \

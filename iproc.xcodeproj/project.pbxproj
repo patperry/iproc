@@ -131,6 +131,12 @@
 		22AEA4561756455600780475 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		22AEA4571756455600780475 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22AEA4581756455600780475 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
+		22AEA45B1756525F00780475 /* var.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA4591756525F00780475 /* var.c */; };
+		22AEA45C1756525F00780475 /* var.h in Headers */ = {isa = PBXBuildFile; fileRef = 22AEA45A1756525F00780475 /* var.h */; };
+		22AEA45F1756530000780475 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA45D1756530000780475 /* design.c */; };
+		22AEA4601756530000780475 /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22AEA45E1756530000780475 /* design.h */; };
+		22AEA46417565E0800780475 /* design_alg.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA46317565E0800780475 /* design_alg.c */; };
+		22AEA4661756B12900780475 /* design_prod.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA4651756B12900780475 /* design_prod.c */; };
 		22B7E92B15D46A70009978F8 /* testutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B7E92915D46A70009978F8 /* testutil.c */; };
 		22B7E92C15D46A70009978F8 /* testutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B7E92A15D46A70009978F8 /* testutil.h */; };
 		22B7E92E15D46AD0009978F8 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
@@ -612,6 +618,12 @@
 		22AB5EDF170397C2008F7B52 /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = lib/core/src/intset.h; sourceTree = "<group>"; };
 		22AEA4421756450700780475 /* history_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = history_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		22AEA44B1756453200780475 /* history_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history_test.c; path = tests/history_test.c; sourceTree = "<group>"; };
+		22AEA4591756525F00780475 /* var.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = var.c; path = src/var.c; sourceTree = "<group>"; };
+		22AEA45A1756525F00780475 /* var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = var.h; path = src/var.h; sourceTree = "<group>"; };
+		22AEA45D1756530000780475 /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = src/design.c; sourceTree = "<group>"; };
+		22AEA45E1756530000780475 /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; };
+		22AEA46317565E0800780475 /* design_alg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_alg.c; path = src/design_alg.c; sourceTree = "<group>"; };
+		22AEA4651756B12900780475 /* design_prod.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_prod.c; path = src/design_prod.c; sourceTree = "<group>"; };
 		22B7E92915D46A70009978F8 /* testutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testutil.c; path = tests/testutil.c; sourceTree = "<group>"; };
 		22B7E92A15D46A70009978F8 /* testutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = testutil.h; path = tests/testutil.h; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
@@ -828,8 +840,14 @@
 		22597404133D0ABE0022B52E /* IProc */ = {
 			isa = PBXGroup;
 			children = (
+				22AEA45D1756530000780475 /* design.c */,
+				22AEA46317565E0800780475 /* design_alg.c */,
+				22AEA4651756B12900780475 /* design_prod.c */,
+				22AEA45E1756530000780475 /* design.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
+				22AEA4591756525F00780475 /* var.c */,
+				22AEA45A1756525F00780475 /* var.h */,
 			);
 			name = IProc;
 			sourceTree = "<group>";
@@ -1046,6 +1064,8 @@
 				228E8458164342B900A189E5 /* logsumexp.h in Headers */,
 				228E845C1643467800A189E5 /* ieee754.h in Headers */,
 				229AC2C1174FC29C0085D43C /* deltaset.h in Headers */,
+				22AEA45C1756525F00780475 /* var.h in Headers */,
+				22AEA4601756530000780475 /* design.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1482,6 +1502,10 @@
 				223E4116164060C100FAB1C7 /* strata.c in Sources */,
 				228E8457164342B900A189E5 /* logsumexp.c in Sources */,
 				229AC2C0174FC29C0085D43C /* deltaset.c in Sources */,
+				22AEA45B1756525F00780475 /* var.c in Sources */,
+				22AEA45F1756530000780475 /* design.c in Sources */,
+				22AEA46417565E0800780475 /* design_alg.c in Sources */,
+				22AEA4661756B12900780475 /* design_prod.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
