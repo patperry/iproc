@@ -94,7 +94,7 @@
 		2289D5391703F528000182EE /* uintset.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289D5371703F528000182EE /* uintset.c */; };
 		2289D53A1703F528000182EE /* uintset.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289D5381703F528000182EE /* uintset.h */; };
 		2289E6F71758079900811E37 /* v-irecvtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E6F61758079900811E37 /* v-irecvtot.c */; };
-		2289E6FA17583CEE00811E37 /* employees.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6F817583CEE00811E37 /* employees.h */; };
+		2289E6FA17583CEE00811E37 /* actors.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6F817583CEE00811E37 /* actors.h */; };
 		2289E6FB17583CEE00811E37 /* messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6F917583CEE00811E37 /* messages.h */; };
 		2289E71B1758566100811E37 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E7191758566100811E37 /* history.c */; };
 		2289E71C1758566100811E37 /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E71A1758566100811E37 /* history.h */; };
@@ -102,6 +102,9 @@
 		2289E71E1758567A00811E37 /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		2289E71F1758567A00811E37 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		2289E7221758584C00811E37 /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
+		2289E7251758590F00811E37 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E7231758590F00811E37 /* design.c */; };
+		2289E7261758590F00811E37 /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E7241758590F00811E37 /* design.h */; };
+		2289E7291758724200811E37 /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
 		228B128B15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128C15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128D15E605A9000DC495 /* catdist.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B128A15E605A9000DC495 /* catdist.h */; };
@@ -150,10 +153,10 @@
 		22B7E92E15D46AD0009978F8 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		22BECEBF15AA05BD00F630C4 /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 22BECEBD15AA05BD00F630C4 /* util.c */; };
 		22BECEC015AA05BD00F630C4 /* util.h in Headers */ = {isa = PBXBuildFile; fileRef = 22BECEBE15AA05BD00F630C4 /* util.h */; };
-		22D2DDBB136A5E760048244C /* employees.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DDAB136A58010048244C /* employees.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
+		22D2DDBB136A5E760048244C /* actors.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D2DDAB136A58010048244C /* actors.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
 		22D2DDBC136A5E810048244C /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22D2DDBD136A5E810048244C /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
-		22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAD136A58230048244C /* employees.json */; };
+		22D2DDBF136A5EB90048244C /* actors.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 22D2DDAD136A58230048244C /* actors.json */; };
 		22D4788913AC4C0F00FF46CD /* recv_loglik_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */; };
 		22D4788A13AC4C2400FF46CD /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
 		22D4788B13AC4C2400FF46CD /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
@@ -162,7 +165,6 @@
 		22E9214A14083CEA008115DE /* libdSFMT.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22749E3E1402A94A00C5A955 /* libdSFMT.dylib */; };
 		22EA3327136B29CE00C5627F /* design_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3325136B29AE00C5627F /* design_test.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/tests/cmockery"; }; };
 		22EA332E136B29E700C5627F /* libcmockery.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22678906134CD584001309F5 /* libcmockery.dylib */; };
-		22EA332F136B29E700C5627F /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		22EA3330136B29E700C5627F /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		22EA3338136B4CEC00C5627F /* messages.c in Sources */ = {isa = PBXBuildFile; fileRef = 22EA3337136B4CEC00C5627F /* messages.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include -I$(SRCROOT)/src/core"; }; };
 		22EB6B6915E43BDE00762290 /* coreutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 2210A3FC146ADE9F00C42B90 /* coreutil.c */; };
@@ -311,6 +313,13 @@
 			remoteGlobalIDString = 2289E70E1758562C00811E37;
 			remoteInfo = testfixtures;
 		};
+		2289E7271758723600811E37 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2289E70E1758562C00811E37;
+			remoteInfo = testfixtures;
+		};
 		228B129015E605D8000DC495 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
@@ -430,13 +439,6 @@
 			remoteGlobalIDString = 22678905134CD584001309F5;
 			remoteInfo = cmockery;
 		};
-		22EA332A136B29D800C5627F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 22D2DDB2136A5E5B0048244C;
-			remoteInfo = enron;
-		};
 		22EA332C136B29D800C5627F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 2275BB86132EAC9D002D8876 /* Project object */;
@@ -517,7 +519,7 @@
 			dstSubfolderSpec = 16;
 			files = (
 				22221827136F1AEC00F0C7D2 /* messages.json in CopyFiles */,
-				22D2DDBF136A5EB90048244C /* employees.json in CopyFiles */,
+				22D2DDBF136A5EB90048244C /* actors.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -621,11 +623,13 @@
 		2289D5371703F528000182EE /* uintset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uintset.c; path = lib/core/src/uintset.c; sourceTree = "<group>"; };
 		2289D5381703F528000182EE /* uintset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uintset.h; path = lib/core/src/uintset.h; sourceTree = "<group>"; };
 		2289E6F61758079900811E37 /* v-irecvtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-irecvtot.c"; path = "src/v-irecvtot.c"; sourceTree = "<group>"; };
-		2289E6F817583CEE00811E37 /* employees.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = employees.h; path = tests/enron/employees.h; sourceTree = "<group>"; };
+		2289E6F817583CEE00811E37 /* actors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = actors.h; path = tests/enron/actors.h; sourceTree = "<group>"; };
 		2289E6F917583CEE00811E37 /* messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = messages.h; path = tests/enron/messages.h; sourceTree = "<group>"; };
 		2289E70F1758562C00811E37 /* libtestfixtures.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libtestfixtures.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2289E7191758566100811E37 /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = tests/fixtures/history.c; sourceTree = "<group>"; };
 		2289E71A1758566100811E37 /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = tests/fixtures/history.h; sourceTree = "<group>"; };
+		2289E7231758590F00811E37 /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = tests/fixtures/design.c; sourceTree = "<group>"; };
+		2289E7241758590F00811E37 /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = tests/fixtures/design.h; sourceTree = "<group>"; };
 		228B127F15E60579000DC495 /* catdist_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = catdist_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		228B128915E605A9000DC495 /* catdist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = catdist.c; path = lib/catdist.c; sourceTree = "<group>"; };
 		228B128A15E605A9000DC495 /* catdist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = catdist.h; path = lib/catdist.h; sourceTree = "<group>"; };
@@ -664,9 +668,9 @@
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
 		22BECEBE15AA05BD00F630C4 /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = util.h; path = lib/util.h; sourceTree = "<group>"; };
 		22D2DD52136928DE0048244C /* libyajl.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libyajl.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		22D2DDAB136A58010048244C /* employees.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = employees.c; path = tests/enron/employees.c; sourceTree = "<group>"; };
+		22D2DDAB136A58010048244C /* actors.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = actors.c; path = tests/enron/actors.c; sourceTree = "<group>"; };
 		22D2DDAC136A58010048244C /* paths.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = paths.h; path = tests/enron/paths.h; sourceTree = "<group>"; };
-		22D2DDAD136A58230048244C /* employees.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = employees.json; path = tests/enron/employees.json; sourceTree = "<group>"; };
+		22D2DDAD136A58230048244C /* actors.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = actors.json; path = tests/enron/actors.json; sourceTree = "<group>"; };
 		22D2DDAE136A58230048244C /* messages.json */ = {isa = PBXFileReference; lastKnownFileType = text; name = messages.json; path = tests/enron/messages.json; sourceTree = "<group>"; };
 		22D2DDB3136A5E5B0048244C /* libenron.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libenron.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22D4787E13AC4BF600FF46CD /* recv_loglik_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = recv_loglik_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -826,9 +830,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2289E7291758724200811E37 /* libtestfixtures.dylib in Frameworks */,
 				222341FA144F3DEA00D99D8E /* libcore.dylib in Frameworks */,
 				22EA332E136B29E700C5627F /* libcmockery.dylib in Frameworks */,
-				22EA332F136B29E700C5627F /* libenron.dylib in Frameworks */,
 				22EA3330136B29E700C5627F /* libiproc.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -987,6 +991,8 @@
 		2289E7021758556F00811E37 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				2289E7231758590F00811E37 /* design.c */,
+				2289E7241758590F00811E37 /* design.h */,
 				2289E7191758566100811E37 /* history.c */,
 				2289E71A1758566100811E37 /* history.h */,
 			);
@@ -1028,13 +1034,13 @@
 		22D2DDAA136A57DD0048244C /* Enron */ = {
 			isa = PBXGroup;
 			children = (
-				22D2DDAB136A58010048244C /* employees.c */,
-				2289E6F817583CEE00811E37 /* employees.h */,
+				22D2DDAB136A58010048244C /* actors.c */,
+				2289E6F817583CEE00811E37 /* actors.h */,
 				22EA3337136B4CEC00C5627F /* messages.c */,
 				2289E6F917583CEE00811E37 /* messages.h */,
 				22D2DDAC136A58010048244C /* paths.h */,
 				2285AD1913B147E900C46E8B /* enronfit.c */,
-				22D2DDAD136A58230048244C /* employees.json */,
+				22D2DDAD136A58230048244C /* actors.json */,
 				22D2DDAE136A58230048244C /* messages.json */,
 			);
 			name = Enron;
@@ -1161,6 +1167,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2289E71C1758566100811E37 /* history.h in Headers */,
+				2289E7261758590F00811E37 /* design.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1185,7 +1192,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2289E6FA17583CEE00811E37 /* employees.h in Headers */,
+				2289E6FA17583CEE00811E37 /* actors.h in Headers */,
 				2289E6FB17583CEE00811E37 /* messages.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1495,9 +1502,9 @@
 			buildRules = (
 			);
 			dependencies = (
+				2289E7281758723600811E37 /* PBXTargetDependency */,
 				222341F9144F3DE500D99D8E /* PBXTargetDependency */,
 				22EA3329136B29D800C5627F /* PBXTargetDependency */,
-				22EA332B136B29D800C5627F /* PBXTargetDependency */,
 				22EA332D136B29D800C5627F /* PBXTargetDependency */,
 			);
 			name = design_test;
@@ -1638,6 +1645,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2289E71B1758566100811E37 /* history.c in Sources */,
+				2289E7251758590F00811E37 /* design.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1697,7 +1705,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				22D2DDBB136A5E760048244C /* employees.c in Sources */,
+				22D2DDBB136A5E760048244C /* actors.c in Sources */,
 				22EA3338136B4CEC00C5627F /* messages.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1821,6 +1829,11 @@
 			target = 2289E70E1758562C00811E37 /* testfixtures */;
 			targetProxy = 2289E7201758584200811E37 /* PBXContainerItemProxy */;
 		};
+		2289E7281758723600811E37 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2289E70E1758562C00811E37 /* testfixtures */;
+			targetProxy = 2289E7271758723600811E37 /* PBXContainerItemProxy */;
+		};
 		228B129115E605D8000DC495 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 22678905134CD584001309F5 /* cmockery */;
@@ -1905,11 +1918,6 @@
 			isa = PBXTargetDependency;
 			target = 22678905134CD584001309F5 /* cmockery */;
 			targetProxy = 22EA3328136B29D800C5627F /* PBXContainerItemProxy */;
-		};
-		22EA332B136B29D800C5627F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 22D2DDB2136A5E5B0048244C /* enron */;
-			targetProxy = 22EA332A136B29D800C5627F /* PBXContainerItemProxy */;
 		};
 		22EA332D136B29D800C5627F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2468,7 +2476,10 @@
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/tests/cmockery";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/tests/cmockery",
+					"$(SRCROOT)/src",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -2480,7 +2491,10 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/tests/cmockery";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/tests/cmockery",
+					"$(SRCROOT)/src",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

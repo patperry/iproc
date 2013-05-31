@@ -58,7 +58,7 @@ static void setup()
 
 static void teardown()
 {
-	history_test_teardown(&test.h, &ctx.h);
+	history_test_teardown(&test.h);
 }
 
 static void test_sizes()

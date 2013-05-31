@@ -8,6 +8,7 @@
 #include "coreutil.h"
 #include "xalloc.h"
 #include "enron/paths.h"
+#include "enron/actors.h"
 #include "enron/messages.h"
 
 enum message_map_key {
@@ -63,9 +64,6 @@ static void message_parse_init(struct message_parse *parse, size_t maxrecip)
 	size_t nrecv_max = 255;
 
 	parse->maxrecip = maxrecip;
-
-	parse->nsend = 156;
-	parse->nrecv = 156;
 
 	parse->time = xmalloc(nmax * sizeof(double));
 	parse->from = xmalloc(nmax * sizeof(size_t));
@@ -313,9 +311,9 @@ static yajl_callbacks parse_callbacks = {
 	parse_end_array
 };
 
-int enron_messages_init_fread(size_t *nsend, size_t *nrecv, double **time,
+int enron_messages_init_fread(FILE *stream, size_t maxrecip, double **time,
 			      size_t **from, size_t ***to, size_t **nto,
-			      intptr_t **attr, size_t *nmsg, size_t maxrecip, FILE *stream)
+			      intptr_t **attr, size_t *nmsg)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -370,8 +368,6 @@ int enron_messages_init_fread(size_t *nsend, size_t *nrecv, double **time,
 		free(parse.time);
 	}
 
-	*nsend = parse.nsend;
-	*nrecv = parse.nrecv;
 	*time = parse.time;
 	*from = parse.from;
 	*to = parse.to;
@@ -382,9 +378,9 @@ int enron_messages_init_fread(size_t *nsend, size_t *nrecv, double **time,
 	return parse_ok;
 }
 
-int enron_messages_init(size_t *nsend, size_t *nrecv, double **time,
-			size_t **from, size_t ***to, size_t **nto,
-			intptr_t **attr, size_t *nmsg, size_t maxrecip)
+int enron_messages_init(size_t maxrecip,
+			double **time, size_t **from, size_t ***to, size_t **nto,
+			intptr_t **attr, size_t *nmsg)
 {
 	FILE *f = fopen(ENRON_MESSAGES_FILE, "r");
 
@@ -394,7 +390,7 @@ int enron_messages_init(size_t *nsend, size_t *nrecv, double **time,
 		return 0;
 	}
 
-	if (!enron_messages_init_fread(nsend, nrecv, time, from, to, nto, attr, nmsg, maxrecip, f)) {
+	if (!enron_messages_init_fread(f, maxrecip, time, from, to, nto, attr, nmsg)) {
 		fprintf(stderr, "Couldn't parse messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
 		fclose(f);

@@ -169,7 +169,7 @@ void history_advance(struct history *h, double time)
 }
 
 
-void history_add(struct history *h, size_t from, size_t *to, size_t nto,
+void history_add(struct history *h, size_t from, const size_t *to, size_t nto,
 		 intptr_t attr)
 {
 	size_t imsg;

@@ -227,8 +227,8 @@ tests_libcmockery_a_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 tests_libenron_a_SOURCES = \
-	tests/enron/employees.c \
-	tests/enron/employees.h \
+	tests/enron/actors.c \
+	tests/enron/actors.h \
 	tests/enron/messages.c \
 	tests/enron/messages.h \
 	tests/enron/paths.h
@@ -238,6 +238,8 @@ tests_libenron_a_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 tests_libfixtures_a_SOURCES = \
+	tests/fixtures/design.c \
+	tests/fixtures/design.h \
 	tests/fixtures/history.c \
 	tests/fixtures/history.h
 

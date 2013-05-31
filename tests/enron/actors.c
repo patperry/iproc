@@ -8,7 +8,7 @@
 #include "matrixutil.h"
 #include "xalloc.h"
 #include "enron/paths.h"
-#include "enron/employees.h"
+#include "enron/actors.h"
 
 
 static const size_t ENRON_NTRAIT[ENRON_TERMS_MAX + 1] = { 0, 4, 9, 11 };
@@ -240,11 +240,10 @@ static yajl_callbacks parse_callbacks = {
 	NULL
 };
 
-int enron_employees_init_fread(size_t *nactorp,
-			       double **traitsp, size_t *ntraitp,
-			       const char * const **trait_namesp,
-			       size_t terms,
-			       FILE *stream)
+
+int enron_actors_init_fread(FILE *stream, size_t terms,
+			    size_t *count, double **trait_x,
+			    const char * const **trait_names, size_t *trait_dim)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -294,38 +293,36 @@ int enron_employees_init_fread(size_t *nactorp,
 	yajl_free(hand);
 
 	if (!parse_ok) {
-		*nactorp = 0;
-		*traitsp = NULL;
+		*count = 0;
+		*trait_x = NULL;
 		free(parse.traits);
-		*ntraitp = 0;
-		*trait_namesp = NULL;
+		*trait_dim = 0;
+		*trait_names = NULL;
 	} else {
-		*nactorp = parse.nactor;
-		*traitsp = parse.traits;
-		*ntraitp = parse.dim;
-		*trait_namesp = ENRON_TRAIT_NAMES;
+		*count = parse.nactor;
+		*trait_x = parse.traits;
+		*trait_dim = parse.dim;
+		*trait_names = ENRON_TRAIT_NAMES;
 	}
 
 	return parse_ok;
 }
 
-int enron_employees_init(size_t *nactorp,
-			 double **traitsp, size_t *ntraitsp,
-			 const char * const **trait_namesp,
-			 size_t terms)
+
+int enron_actors_init(size_t terms, size_t *count, double **trait_x,
+		      const char * const **trait_names, size_t *trait_dim)
 {
-	FILE *f = fopen(ENRON_EMPLOYEES_FILE, "r");
+	FILE *f = fopen(ENRON_ACTORS_FILE, "r");
 
 	if (!f) {
 		fprintf(stderr, "Couldn't open employees file '%s'\n",
-			ENRON_EMPLOYEES_FILE);
+			ENRON_ACTORS_FILE);
 		return errno;
 	}
 
-	if (!enron_employees_init_fread(nactorp, traitsp, ntraitsp,
-				trait_namesp, terms, f)) {
+	if (!enron_actors_init_fread(f, terms, count, trait_x, trait_names, trait_dim)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
-			ENRON_EMPLOYEES_FILE);
+			ENRON_ACTORS_FILE);
 		fclose(f);
 		return EINVAL;
 	}
@@ -333,3 +330,4 @@ int enron_employees_init(size_t *nactorp,
 	fclose(f);
 	return 0;
 }
+
