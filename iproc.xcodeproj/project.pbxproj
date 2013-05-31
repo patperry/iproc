@@ -69,6 +69,7 @@
 		223E4117164060C100FAB1C7 /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 223E4115164060C100FAB1C7 /* strata.h */; };
 		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
 		226216C415F1BA50000C83C4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226216C315F1BA50000C83C4 /* Accelerate.framework */; };
+		2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 2264EE8917595E6400C1AB5D /* v-ntot-source.h */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
 		2267890E134CD5B3001309F5 /* cmockery.h in Headers */ = {isa = PBXBuildFile; fileRef = 2267890C134CD5B3001309F5 /* cmockery.h */; };
 		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
@@ -602,6 +603,7 @@
 		223E4115164060C100FAB1C7 /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = lib/strata.h; sourceTree = "<group>"; };
 		22602687146B38EE00BA6347 /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = lib/port.h; sourceTree = "<group>"; };
 		226216C315F1BA50000C83C4 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		2264EE8917595E6400C1AB5D /* v-ntot-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "v-ntot-source.h"; path = "src/v-ntot-source.h"; sourceTree = "<group>"; };
 		22678906134CD584001309F5 /* libcmockery.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcmockery.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267890B134CD5B3001309F5 /* cmockery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmockery.c; path = tests/cmockery/cmockery.c; sourceTree = "<group>"; };
 		2267890C134CD5B3001309F5 /* cmockery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmockery.h; path = tests/cmockery/cmockery.h; sourceTree = "<group>"; };
@@ -905,6 +907,7 @@
 				2289E72A1758F66C00811E37 /* v-isendtot.c */,
 				2289E72E17594DD400811E37 /* v-itot-source.h */,
 				2289E72C17591DCB00811E37 /* v-nsendtot.c */,
+				2264EE8917595E6400C1AB5D /* v-ntot-source.h */,
 				22AEA4591756525F00780475 /* var.c */,
 				22AEA45A1756525F00780475 /* var.h */,
 			);
@@ -1141,6 +1144,7 @@
 				22AEA45C1756525F00780475 /* var.h in Headers */,
 				22AEA4601756530000780475 /* design.h in Headers */,
 				2289E72F17594DD400811E37 /* v-itot-source.h in Headers */,
+				2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2593,6 +2597,7 @@
 				2289E7121758562C00811E37 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		228B128615E60579000DC495 /* Build configuration list for PBXNativeTarget "catdist_test" */ = {
 			isa = XCConfigurationList;

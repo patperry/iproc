@@ -36,6 +36,7 @@ libiproc_a_SOURCES = \
 	src/v-isendtot.c \
 	src/v-itot-source.h \
 	src/v-nsendtot.c \
+	src/v-ntot-source.h \
 	src/var.c \
 	src/var.h
 
