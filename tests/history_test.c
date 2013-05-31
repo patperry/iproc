@@ -13,7 +13,7 @@
 #include "ieee754.h"
 #include "testutil.h"
 
-#include "enron/history.h"
+#include "fixtures/history.h"
 
 
 struct fixture {

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "../../src/history.h"
 #include "enron/messages.h"
-#include "enron/history.h"
+#include "history.h"
 
 void history_fixture_setup_enron(struct history_fixture *f)
 {

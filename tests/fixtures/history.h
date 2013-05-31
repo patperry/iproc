@@ -1,5 +1,5 @@
-#ifndef ENRON_HISTORY_H
-#define ENRON_HISTORY_H
+#ifndef FIXTURES_HISTORY_H
+#define FIXTURES_HISTORY_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -23,4 +23,4 @@ void history_test_setup(struct history *h, const struct history_fixture *f);
 void history_test_teardown(struct history *h, const struct history_fixture *f);
 
 
-#endif /* ENRON_HISTORY_H */
+#endif /* FIXTURES_HISTORY_H */
