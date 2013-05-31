@@ -33,6 +33,7 @@ libiproc_a_SOURCES = \
 	src/history.c \
 	src/history.h \
 	src/v-irecvtot.c \
+	src/v-isendtot.c \
 	src/var.c \
 	src/var.h
 

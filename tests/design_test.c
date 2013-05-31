@@ -11,6 +11,7 @@
 #include "coreutil.h"
 #include "testutil.h"
 #include "cmockery.h"
+#include "ieee754.h"
 #include "lapack.h"
 #include "matrixutil.h"
 #include "sblas.h"
@@ -316,8 +317,13 @@ static void test_muls0()
 
 static void test_irecvtot()
 {
-	double window = 2000;
+	double window = 7 * 24 * 60 * 60;
 	const struct var *v = design_add_tvar(DESIGN, "IRecvTot", VAR_IRECVTOT, window);
+	struct uintset active;
+
+	uintset_init(&active);
+
+	assert_true(v);
 
 	history_advance(HISTORY, 988116420);
 
@@ -331,14 +337,63 @@ static void test_irecvtot()
 		size_t ito, nto = msg->nto;
 		for (ito = 0; ito < nto; ito++) {
 			size_t to = msg->to[ito];
-			const double *x = design_tvar(DESIGN, v, to);
-			assert_true(x);
-			assert_real_identical(x[0], 1.0);
+			uintset_add(&active, to);
 		}
 	}
 
-	assert_true(v);
+	size_t i, n = design_count(DESIGN);
+	for (i = 0; i < n; i++) {
+		const double *x = design_tvar(DESIGN, v, i);
+
+		if (uintset_contains(&active, i)) {
+			assert_true(x);
+			assert_real_identical(x[0], 1.0);
+		} else if (x) {
+			assert_real_identical(x[0], 0.0);
+		}
+	}
+
+	uintset_deinit(&active);
 }
+
+
+static void test_isendtot()
+{
+	double window = 1000;
+	const struct var *v = design_add_tvar(DESIGN, "ISendTot", VAR_ISENDTOT, window);
+	double t0 = 910930020;
+	const double *x;
+	const size_t *ind;
+	size_t nz;
+
+	assert_true(v);
+
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 0);
+
+	history_advance(HISTORY, t0); /* t */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 0);
+
+	history_advance(HISTORY, double_nextup(t0)); /* (t)+ */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 1.0);
+
+	history_advance(HISTORY, t0 + window); /* t + w */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 1.0);
+
+	history_advance(HISTORY, double_nextup(t0 + window)); /* (t + w)+ */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 0.0);
+}
+
 
 
 int main()
@@ -348,7 +403,8 @@ int main()
 		unit_test_setup_teardown(test_mul0, setup, teardown),		
 		unit_test_setup_teardown(test_tmul0, setup, teardown),
 		//unit_test_setup_teardown(test_muls0, setup, teardown),
-		//unit_test_setup_teardown(test_tmuls0, setup, teardown),
+		//unit_test_setup_teardown(test_tmuls0, setup, teardown)
+		unit_test_setup_teardown(test_isendtot, setup, teardown),
 		unit_test_setup_teardown(test_irecvtot, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 	};

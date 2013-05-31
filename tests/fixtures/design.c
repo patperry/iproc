@@ -41,12 +41,23 @@ void design_fixture_add_irecvtot(struct design_fixture *f, double window)
 	f->irecvtot.window = window;
 }
 
+
+void design_fixture_add_isendtot(struct design_fixture *f, double window)
+{
+	f->isendtot.exists = 1;
+	f->isendtot.name = "ISendTot";
+	f->isendtot.window = window;
+}
+
+
 void design_test_setup(struct design *d, struct history *h, const struct design_fixture *f)
 {
 	design_init(d, h, f->count);
 	design_add_traits(d, f->trait_names, f->trait_x, f->trait_dim);
 	if (f->irecvtot.exists)
 		design_add_tvar(d, f->irecvtot.name, VAR_IRECVTOT, f->irecvtot.window);
+	if (f->isendtot.exists)
+		design_add_tvar(d, f->isendtot.name, VAR_ISENDTOT, f->isendtot.window);
 }
 
 void design_test_teardown(struct design *d)

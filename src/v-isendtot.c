@@ -20,33 +20,33 @@ static int update_rcompare(const struct pqueue *q, const void *x1, const void *x
 	return double_rcompare(&u1->t, &u2->t);
 }
 
-struct irecvtot_thunk {
+struct isendtot_thunk {
 	struct pqueue updates;
 	double window;
 };
 
 
-static void irecvtot_init(struct var_meta *meta, void **thunk, const char *name,
+static void isendtot_init(struct var_meta *meta, void **thunk, const char *name,
 			  struct design *d, va_list ap)
 {
 	double window = va_arg(ap, double);
-	struct irecvtot_thunk *irecvtot = xmalloc(sizeof(*irecvtot));
+	struct isendtot_thunk *isendtot = xmalloc(sizeof(*isendtot));
 
 	assert(window > 0);
 
 	var_meta_init(meta, VAR_TYPE_TVAR, name, NULL, 0);
-	pqueue_init(&irecvtot->updates, sizeof(struct update), update_rcompare);
-	irecvtot->window = window;
-	*thunk = irecvtot;
+	pqueue_init(&isendtot->updates, sizeof(struct update), update_rcompare);
+	isendtot->window = window;
+	*thunk = isendtot;
 }
 
 
-static void irecvtot_deinit(struct var_meta *meta, void *thunk,
+static void isendtot_deinit(struct var_meta *meta, void *thunk,
 			    struct design *d)
 {
-	struct irecvtot_thunk *irecvtot = (struct irecvtot_thunk *)thunk;
-	pqueue_deinit(&irecvtot->updates);
-	free(irecvtot);
+	struct isendtot_thunk *isendtot = (struct isendtot_thunk *)thunk;
+	pqueue_deinit(&isendtot->updates);
+	free(isendtot);
 	var_meta_deinit(meta);
 }
 
@@ -54,8 +54,8 @@ static void irecvtot_deinit(struct var_meta *meta, void *thunk,
 static void process_updates(struct tvar *tv, double t0, double t)
 {
 	struct design *d = tv->var.design;
-	struct irecvtot_thunk *irecvtot = (struct irecvtot_thunk *)tv->thunk;
-	struct pqueue *updates = &irecvtot->updates;
+	struct isendtot_thunk *isendtot = (struct isendtot_thunk *)tv->thunk;
+	struct pqueue *updates = &isendtot->updates;
 	struct update *u;
 	double *x;
 
@@ -76,24 +76,23 @@ static void process_updates(struct tvar *tv, double t0, double t)
 	}
 }
 
-static void irecvtot_update(struct tvar *tv, double t0, const struct history *h)
+static void isendtot_update(struct tvar *tv, double t0, const struct history *h)
 {
 	struct design *d = tv->var.design;
-	struct irecvtot_thunk *irecvtot = (struct irecvtot_thunk *)tv->thunk;
-	struct pqueue *updates = &irecvtot->updates;
+	struct isendtot_thunk *isendtot = (struct isendtot_thunk *)tv->thunk;
+	struct pqueue *updates = &isendtot->updates;
 	struct update u;
 	double t = history_time(h);
-	double w = irecvtot->window;
-	double tmin = t - irecvtot->window;
+	double w = isendtot->window;
+	double tmin = t - isendtot->window;
 	double *x;
 
-	
 	process_updates(tv, t0, t);
 
 	/* process all recent messages */
 	size_t imsg, nmsg = history_count(h);
-	size_t ito, nto;
 	const struct message *msg;
+	size_t i;
 
 	for (imsg = nmsg; imsg > 0; imsg--) {
 		msg = history_item(h, imsg - 1);
@@ -101,27 +100,24 @@ static void irecvtot_update(struct tvar *tv, double t0, const struct history *h)
 		if (msg->time < tmin)
 			break;
 
-		nto = msg->nto;
-		for (ito = 0; ito < nto; ito++) {
-			size_t i = msg->to[ito];
-			x = design_make_active(d, tv, i);
-			if (x[0] == 0.0) {
-				x[0] = 1.0;
-				u.t = msg->time + w;
-				u.i = i;
-				design_update(d, tv, i, msg->time);
-				pqueue_push(updates, &u);
-			}
+		i = msg->from;
+		x = design_make_active(d, tv, i);
+		if (x[0] == 0.0) {
+			x[0] = 1.0;
+			u.t = msg->time + w;
+			u.i = i;
+			design_update(d, tv, i, msg->time);
+			pqueue_push(updates, &u);
 		}
 	}
 }
 
 
-static struct tvar_type VAR_IRECVTOT_REP = {
-	irecvtot_init,
-	irecvtot_deinit,
-	irecvtot_update
+static struct tvar_type VAR_ISENDTOT_REP = {
+	isendtot_init,
+	isendtot_deinit,
+	isendtot_update
 };
 
 
-const struct tvar_type *VAR_IRECVTOT = &VAR_IRECVTOT_REP;
+const struct tvar_type *VAR_ISENDTOT = &VAR_ISENDTOT_REP;

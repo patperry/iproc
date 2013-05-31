@@ -105,6 +105,7 @@
 		2289E7251758590F00811E37 /* design.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E7231758590F00811E37 /* design.c */; };
 		2289E7261758590F00811E37 /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E7241758590F00811E37 /* design.h */; };
 		2289E7291758724200811E37 /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
+		2289E72B1758F66C00811E37 /* v-isendtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E72A1758F66C00811E37 /* v-isendtot.c */; };
 		228B128B15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128C15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128D15E605A9000DC495 /* catdist.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B128A15E605A9000DC495 /* catdist.h */; };
@@ -630,6 +631,7 @@
 		2289E71A1758566100811E37 /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = tests/fixtures/history.h; sourceTree = "<group>"; };
 		2289E7231758590F00811E37 /* design.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design.c; path = tests/fixtures/design.c; sourceTree = "<group>"; };
 		2289E7241758590F00811E37 /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = tests/fixtures/design.h; sourceTree = "<group>"; };
+		2289E72A1758F66C00811E37 /* v-isendtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-isendtot.c"; path = "src/v-isendtot.c"; sourceTree = "<group>"; };
 		228B127F15E60579000DC495 /* catdist_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = catdist_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		228B128915E605A9000DC495 /* catdist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = catdist.c; path = lib/catdist.c; sourceTree = "<group>"; };
 		228B128A15E605A9000DC495 /* catdist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = catdist.h; path = lib/catdist.h; sourceTree = "<group>"; };
@@ -896,6 +898,7 @@
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
 				2289E6F61758079900811E37 /* v-irecvtot.c */,
+				2289E72A1758F66C00811E37 /* v-isendtot.c */,
 				22AEA4591756525F00780475 /* var.c */,
 				22AEA45A1756525F00780475 /* var.h */,
 			);
@@ -1604,6 +1607,7 @@
 				22AEA46417565E0800780475 /* design_alg.c in Sources */,
 				22AEA4661756B12900780475 /* design_prod.c in Sources */,
 				2289E6F71758079900811E37 /* v-irecvtot.c in Sources */,
+				2289E72B1758F66C00811E37 /* v-isendtot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

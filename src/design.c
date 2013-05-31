@@ -381,11 +381,11 @@ const double *design_tvars(const struct design *d, size_t i)
 }
 
 
-void design_get_tvar_matrix(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp)
+void design_get_tvar_matrix(const struct design *d, const double **x, const size_t **ind, size_t *nz)
 {
 	design_tvars_update((struct design *)d);
-	*dxp = d->tvar_x;
-	uintset_get_vals(&d->active, ip, nzp);
+	*x = d->tvar_x;
+	uintset_get_vals(&d->active, ind, nz);
 }
 
 

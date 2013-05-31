@@ -37,7 +37,7 @@ struct tvar_type {
 };
 
 extern const struct tvar_type *VAR_IRECVTOT;
-
+extern const struct tvar_type *VAR_ISENDTOT;
 
 
 struct design {
@@ -79,15 +79,15 @@ void design_deinit(struct design *d);
 
 
 /* properties */
-#define design_history(d) ((d)->history)
-#define design_count(d) ((d)->count)
-#define design_dim(d) ((d)->trait_dim + (d)->tvar_dim)
+static inline struct history *design_history(const struct design *d) { return d->history; }
+static inline size_t design_count(const struct design *d) { return d->count; }
+static inline size_t design_dim(const struct design *d) { return d->trait_dim + d->tvar_dim; }
 
 const struct var *design_var(const struct design *d, const char *name);
 
 
 /* cohorts */
-#define design_cohort_count(d) ((d)->ncohort)
+static inline size_t design_cohort_count(const struct design *d) { return d->ncohort; }
 
 static inline size_t design_cohort(const struct design *d, size_t i)
 {
@@ -111,8 +111,8 @@ static inline void design_get_cohorts(const struct design *d, const size_t **coh
 
 
 /* traits */
-#define design_trait_count(d) ((d)->ntrait)
-#define design_trait_dim(d) ((d)->trait_dim)
+static inline size_t design_trait_count(const struct design *d) { return d->ntrait; }
+static inline size_t design_trait_dim(const struct design *d) { return d->trait_dim; }
 
 static inline const struct var *design_trait_item(const struct design *d, size_t k)
 {
@@ -149,8 +149,8 @@ static inline const double *design_trait(const struct design *d, const struct va
 
 
 /* tvars */
-#define design_tvar_count(d) ((d)->ntvar)
-#define design_tvar_dim(d) ((d)->tvar_dim)
+static inline size_t design_tvar_count(const struct design *d) { return d->ntvar; }
+static inline size_t design_tvar_dim(const struct design *d) { return d->tvar_dim; }
 
 static inline const struct var * design_tvar_item(const struct design *d, size_t k)
 {
@@ -160,7 +160,7 @@ static inline const struct var * design_tvar_item(const struct design *d, size_t
 
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
-void design_get_tvar_matrix(const struct design *d, const double **dxp, const size_t **ip, size_t *nzp);
+void design_get_tvar_matrix(const struct design *d, const double **x, const size_t **ind, size_t *nz);
 const double *design_tvars(const struct design *d, size_t i);
 const double *design_tvar(const struct design *d, const struct var *v, size_t i);
 
@@ -201,7 +201,7 @@ static inline void design_update(struct design *d, struct tvar *v, size_t i, dou
 {
 	assert(v->var.design == d);
 	assert(i < design_count(d));
-	assert(t > d->tcur);
+	assert(t >= d->tcur);
 
 	deltaset_update(&v->deltaset, i, t);
 	deltaset_update(&d->deltaset, i, t);

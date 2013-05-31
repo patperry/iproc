@@ -15,6 +15,7 @@ struct design_fixture {
 	size_t trait_dim;
 
 	struct { int exists; const char *name; double window; } irecvtot;
+	struct { int exists; const char *name; double window; } isendtot;
 };
 
 
@@ -22,6 +23,7 @@ void design_fixture_setup(struct design_fixture *f, size_t count);
 void design_fixture_setup_enron(struct design_fixture *f);
 void design_fixture_add_traits_enron(struct design_fixture *f);
 void design_fixture_add_irecvtot(struct design_fixture *f, double window);
+void design_fixture_add_isendtot(struct design_fixture *f, double window);
 void design_fixture_teardown(struct design_fixture *f);
 
 void design_test_setup(struct design *d, struct history *h, const struct design_fixture *f);

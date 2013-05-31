@@ -41,11 +41,12 @@ void history_deinit(struct history *h);
 void history_clear(struct history *h); // delete all messages, reset time
 
 /* properties */
-#define history_nsend(h) ((h)->nsend)
-#define history_nrecv(h) ((h)->nrecv)
+static inline size_t history_nsend(const struct history *h) { return h->nsend; }
+static inline size_t history_nrecv(const struct history *h) { return h->nrecv; }
 
 /* access past messages */
-#define history_count(h) ((h)->ncur)
+static inline size_t history_count(const struct history *h) { return h->ncur; }
+
 
 static inline struct message *history_item(const struct history *h, size_t i)
 {
@@ -55,7 +56,7 @@ static inline struct message *history_item(const struct history *h, size_t i)
 }
 
 /* modify time */
-#define history_time(h) ((h)->tcur)
+static inline double history_time(const struct history *h) { return h->tcur; }
 void history_reset(struct history *h); // reset time to -INFINITY
 void history_advance(struct history *h, double time);	// advance time
 
