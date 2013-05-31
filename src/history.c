@@ -163,7 +163,7 @@ void history_advance(struct history *h, double time)
 			actor_add_alter(s, to, wt);
 		}
 	}
-	assert(imsg == msg - msgs);
+	assert((ptrdiff_t)imsg == msg - msgs);
 	h->ncur = imsg;
 	h->tcur = time;
 }

@@ -7,7 +7,8 @@
 #include "coreutil.h"
 #include "matrixutil.h"
 #include "xalloc.h"
-#include "enron.h"
+#include "enron/paths.h"
+#include "enron/employees.h"
 
 
 static const size_t ENRON_NTRAIT[ENRON_TERMS_MAX + 1] = { 0, 4, 9, 11 };

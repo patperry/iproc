@@ -36,6 +36,9 @@ struct tvar_type {
 	void (*update) (struct tvar *tv, double t0, const struct history *h);
 };
 
+extern const struct tvar_type *VAR_IRECVTOT;
+
+
 
 struct design {
 	struct history *history;

@@ -32,6 +32,7 @@ libiproc_a_SOURCES = \
 	src/design.h \
 	src/history.c \
 	src/history.h \
+	src/v-irecvtot.c \
 	src/var.c \
 	src/var.h
 
@@ -221,16 +222,22 @@ tests_libcmockery_a_LIBADD = \
 	libcore.a
 
 tests_libcmockery_a_CPPFLAGS = \
-	-I./tests/cmockery \
+	-Itests/cmockery \
 	$(AM_CPPFLAGS)
 
 tests_libenron_a_SOURCES = \
 	tests/enron/employees.c \
-	tests/enron/enron.h \
-	tests/enron/messages.c
+	tests/enron/employees.h \
+	tests/enron/messages.c \
+	tests/enron/messages.h \
+	tests/enron/paths.h
 
 tests_libenron_a_LIBADD = \
 	libiproc.a
+
+tests_libenron_a_CPPFLAGS = \
+	-Itests \
+	$(AM_CPPFLAGS)
 
 
 check_LDADD = \
@@ -239,15 +246,11 @@ check_LDADD = \
 	$(LDADD)
 
 check_CPPFLAGS = \
-	-Itests/enron \
+	-Itests \
 	-Itests/cmockery \
 	$(AM_CPPFLAGS)
 
 check_PROGRAMS = # empty
-
-#check_PROGRAMS += tests/design_test
-#tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
-#tests_design_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/frame_test
 #tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
@@ -268,6 +271,10 @@ tests_mlogit_test_LDADD    = $(check_LDADD)
 check_PROGRAMS += tests/history_test
 tests_history_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_history_test_LDADD    = $(check_LDADD)
+
+check_PROGRAMS += tests/design_test
+tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_design_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/model_test
 #tests_model_test_CPPFLAGS = $(check_CPPFLAGS)

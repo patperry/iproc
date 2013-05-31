@@ -33,11 +33,13 @@ static void trait_deinit(struct trait *v)
 
 
 static void tvar_init(struct tvar *tv, const struct tvar_type *type,
-		      const char *name, struct design *d, va_list ap)
+		      const char *name, struct design *design, size_t index, va_list ap)
 {
-	type->init(&tv->var.meta, &tv->thunk, name, d, ap);
+	type->init(&tv->var.meta, &tv->thunk, name, design, ap);
+	tv->var.design = design;
+	tv->var.index = index;
 	tv->type = type;
-	deltaset_init(&tv->deltaset, design_count(d));
+	deltaset_init(&tv->deltaset, design_count(design));
 	tv->tcur = -INFINITY;
 }
 
@@ -308,7 +310,7 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	va_list ap;
 
 	va_start(ap, type);
-	tvar_init(tv, type, name, d, ap);
+	tvar_init(tv, type, name, d, d->tvar_dim, ap);
 	va_end(ap);
 
 	size_t index = d->ntvar;

@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdint.h>
 #include "uintset.h"
 
 
@@ -49,6 +50,7 @@ void history_clear(struct history *h); // delete all messages, reset time
 static inline struct message *history_item(const struct history *h, size_t i)
 {
 	assert(i < history_count(h));
+	assert(h->msgs[i].time < h->tcur);
 	return &h->msgs[i];
 }
 

@@ -9,7 +9,7 @@
 #include "cmockery.h"
 
 #include "ieee754.h"
-#include "enron.h"
+#include "enron/messages.h"
 #include "testutil.h"
 #include "history.h"
 

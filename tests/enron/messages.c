@@ -7,7 +7,8 @@
 #include <yajl/yajl_parse.h>
 #include "coreutil.h"
 #include "xalloc.h"
-#include "enron.h"
+#include "enron/paths.h"
+#include "enron/messages.h"
 
 enum message_map_key {
 	MAP_KEY_NONE = -1,

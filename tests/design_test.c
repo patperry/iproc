@@ -5,15 +5,15 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include "coreutil.h"
+#include "testutil.h"
 #include "cmockery.h"
 #include "lapack.h"
 #include "matrixutil.h"
 #include "sblas.h"
 #include "xalloc.h"
 
-#include "enron.h"
+#include "enron/employees.h"
 #include "design.h"
-#include "frame.h"
 
 
 static size_t enron_nactor;
@@ -21,10 +21,9 @@ static size_t enron_ntrait;
 static double *enron_traits;
 static const char * const *enron_trait_names;
 
-static struct frame frame;
-static struct design *design;
+static struct history history;
+static struct design design;
 
-static size_t nsend, nrecv;
 static int has_loops;
 static double *traits;
 
@@ -66,27 +65,27 @@ static void enron_teardown_fixture()
 
 static void enron_setup()
 {
-	nsend = enron_nactor;
-	nrecv = enron_nactor;
+	size_t nsend = enron_nactor;
+	size_t nrecv = enron_nactor;
 	has_loops = 0;
 	traits = enron_traits;
 	ntrait = enron_ntrait;
 	trait_names = enron_trait_names;
 	dim = enron_ntrait;
 	has_effects = 0;
-	has_loops = 0;
 	intvls = NULL;
 	nintvl = 0;
 
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
-	design = frame_recv_design(&frame);
+	history_init(&history, nsend, nrecv);
+	design_init(&design, &history, nrecv);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, trait_names, traits, ntrait);
+	design_add_traits(&design, trait_names, traits, ntrait);
 }
 
 static void enron_teardown()
 {
-	frame_deinit(&frame);
+	design_deinit(&design);
+	history_deinit(&history);
 	free(intvls);
 }
 
@@ -106,8 +105,8 @@ static void enron_reff_teardown_fixture()
 
 static void enron_reff_setup()
 {
-	nsend = enron_nactor;
-	nrecv = enron_nactor;
+	size_t nsend = enron_nactor;
+	size_t nrecv = enron_nactor;
 	has_loops = 0;
 	traits = enron_traits;
 	ntrait = enron_ntrait;
@@ -118,15 +117,16 @@ static void enron_reff_setup()
 	intvls = NULL;
 	nintvl = 0;
 	
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvl);
-	design = frame_recv_design(&frame);
+	history_init(&history, nsend, nrecv);
+	design_init(&design, &history, nrecv);
 	//design_set_has_effects(design, has_effects);
-	design_add_traits(design, trait_names, traits, ntrait);
+	design_add_traits(&design, trait_names, traits, ntrait);
 }
 
 static void enron_reff_teardown()
 {
-	frame_deinit(&frame);
+	design_deinit(&design);
+	history_deinit(&history);
 	free(intvls);
 }
 
@@ -148,7 +148,7 @@ static void matrix_assign_reffects(double *x, size_t tdx,
 
 static void matrix_init_design0(double **px, const struct design *d)
 {
-	const double *traits = design_all_traits(d);
+	const double *traits = design_trait_matrix(d);
 	//int has_reffects = design_has_effects(d);
 	int has_reffects = 0;
 	
@@ -178,33 +178,33 @@ static void test_mul0()
 	double *x, *y, *y1;	
 	size_t i, n, p;
 	
-	n = design_count(design);
-	p = design_trait_dim(design);
+	n = design_count(&design);
+	p = design_trait_dim(&design);
 	
 	x = xmalloc(p * sizeof(double));
 	y = xmalloc(n * sizeof(double));
 	y1 = xmalloc(n * sizeof(double));
 	
-	matrix_init_design0(&a, design);
+	matrix_init_design0(&a, &design);
 	tda = MAX(1, p);
 	
 	for (i = 0; i < p; i++) {
 		x[i] =  (7 * i) % 5 - 2.0;
 	}
 		
-	design_traits_mul(1.0, design, x, 0.0, y);
+	design_traits_mul(1.0, &design, x, 0.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
-	design_traits_mul(1.0, design, x, 1.0, y);
+	design_traits_mul(1.0, &design, x, 1.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(n, y, y1) == 0.0);
 		
-	design_traits_mul(1.0, design, x, -1.0, y);
+	design_traits_mul(1.0, &design, x, -1.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
-	design_traits_mul(2.0, design, x, 2.0, y);
+	design_traits_mul(2.0, &design, x, 2.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);	
 	assert_true(vector_dist(n, y, y1) == 0.0);		
 		
@@ -223,32 +223,32 @@ static void test_tmul0()
 	double *x, *y, *y1;	
 	size_t i, n, p;
 	
-	n = design_count(design);
-	p = design_trait_dim(design);
+	n = design_count(&design);
+	p = design_trait_dim(&design);
 	
 	x = xmalloc(n * sizeof(double));
 	y = xmalloc(p * sizeof(double));
 	y1 = xmalloc(p * sizeof(double));
-	matrix_init_design0(&a, design);
+	matrix_init_design0(&a, &design);
 	tda = MAX(1, p);
 		
 	for (i = 0; i < n; i++) {
 		x[i] = (3 * i + 1) % 5 - 2.0;
 	}
 		
-	design_traits_tmul(1.0, design, x, 0.0, y);
+	design_traits_tmul(1.0, &design, x, 0.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);		
 		
-	design_traits_tmul(1.0, design, x, 1.0, y);
+	design_traits_tmul(1.0, &design, x, 1.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
-	design_traits_tmul(1.0, design, x, -1.0, y);
+	design_traits_tmul(1.0, &design, x, -1.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
-	design_traits_tmul(2.0, design, x, 2.0, y);
+	design_traits_tmul(2.0, &design, x, 2.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);
 	assert_true(vector_dist(p, y, y1) == 0.0);
 		
@@ -358,6 +358,32 @@ static void test_muls0()
 }
 */
 
+static void test_irecvtot()
+{
+	double window = 2000;
+	const struct var *v = design_add_tvar(&design, "IRecvTot", VAR_IRECVTOT, window);
+
+	history_advance(&history, 988116420);
+
+	size_t imsgs, nmsgs = history_count(&history);
+	for (imsgs = nmsgs; imsgs > 0; imsgs--) {
+		const struct message *msg = history_item(&history, imsgs - 1);
+
+		if (msg->time < history_time(&history) - window)
+			break;
+
+		size_t ito, nto = msg->nto;
+		for (ito = 0; ito < nto; ito++) {
+			size_t to = msg->to[ito];
+			const double *x = design_tvar(&design, v, to);
+			assert_true(x);
+			assert_real_identical(x[0], 1.0);
+		}
+	}
+
+	assert_true(v);
+}
+
 
 int main()
 {
@@ -366,7 +392,8 @@ int main()
 		unit_test_setup_teardown(test_mul0, enron_setup, enron_teardown),		
 		unit_test_setup_teardown(test_tmul0, enron_setup, enron_teardown),
 		//unit_test_setup_teardown(test_muls0, enron_setup, enron_teardown),
-		//unit_test_setup_teardown(test_tmuls0, enron_setup, enron_teardown),	
+		//unit_test_setup_teardown(test_tmuls0, enron_setup, enron_teardown),
+		unit_test_setup_teardown(test_irecvtot, enron_setup, enron_teardown),
 		unit_test_teardown(enron_suite, enron_teardown_fixture),
 		
 		unit_test_setup(enron_reff_suite, enron_reff_setup_fixture),
