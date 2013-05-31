@@ -45,19 +45,6 @@ struct test test;
 
 
 
-static double vector_dist(size_t n, double *x, double *y)
-{
-	size_t i;
-	double dist = 0;
-
-	for (i = 0; i < n; i++) {
-		double d = x[i] - y[i];
-		dist += d * d;
-	}
-
-	return sqrt(dist);
-}
-
 static void fixture_setup_enron()
 {
 	print_message("Enron employees\n");
@@ -151,19 +138,19 @@ static void test_mul0()
 		
 	design_traits_mul(1.0, DESIGN, x, 0.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
-	assert_true(vector_dist(n, y, y1) == 0.0);		
-		
+	assert_vec_identical(y, y1, n);
+
 	design_traits_mul(1.0, DESIGN, x, 1.0, y);
 	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
-	assert_true(vector_dist(n, y, y1) == 0.0);
-		
+	assert_vec_identical(y, y1, n);
+
 	design_traits_mul(1.0, DESIGN, x, -1.0, y);
-	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
-	assert_true(vector_dist(n, y, y1) == 0.0);		
-		
+	blas_dgemv(BLAS_TRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);
+	assert_vec_identical(y, y1, n);
+
 	design_traits_mul(2.0, DESIGN, x, 2.0, y);
-	blas_dgemv(BLAS_TRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);	
-	assert_true(vector_dist(n, y, y1) == 0.0);		
+	blas_dgemv(BLAS_TRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);
+	assert_vec_identical(y, y1, n);
 		
 	free(a);
 	free(y1);
@@ -195,19 +182,19 @@ static void test_tmul0()
 		
 	design_traits_tmul(1.0, DESIGN, x, 0.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 0.0, y1, 1);
-	assert_true(vector_dist(p, y, y1) == 0.0);		
+	assert_vec_identical(y, y1, p);
 		
 	design_traits_tmul(1.0, DESIGN, x, 1.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, 1.0, y1, 1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
-		
+	assert_vec_identical(y, y1, p);
+
 	design_traits_tmul(1.0, DESIGN, x, -1.0, y);
-	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);	
-	assert_true(vector_dist(p, y, y1) == 0.0);
-		
+	blas_dgemv(BLAS_NOTRANS, p, n, 1.0, a, tda, x, 1, -1.0, y1, 1);
+	assert_vec_identical(y, y1, p);
+
 	design_traits_tmul(2.0, DESIGN, x, 2.0, y);
 	blas_dgemv(BLAS_NOTRANS, p, n, 2.0, a, tda, x, 1, 2.0, y1, 1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
+	assert_vec_identical(y, y1, p);
 		
 	free(a);
 	free(y1);
@@ -243,19 +230,19 @@ static void test_tmuls0()
 
 	design_muls0(1.0, BLAS_TRANS, design, x, &pat, 0.0, y);
 	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, &matrix, x, &pat, 0.0, y1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
+	assert_vec_identical(y, y1, p);
 
 	design_muls0(1.0, BLAS_TRANS, design, x, &pat, 1.0, y);
 	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, &matrix, x, &pat, 1.0, y1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
+	assert_vec_identical(y, y1, p);
 
 	design_muls0(1.0, BLAS_TRANS, design, x, &pat, -1.0, y);
 	sblas_dgemvi(BLAS_TRANS, n, p, 1.0, &matrix, x, &pat, -1.0, y1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
+	assert_vec_identical(y, y1, p);
 
 	design_muls0(2.0, BLAS_TRANS, design, x, &pat, 2.0, y);
 	sblas_dgemvi(BLAS_TRANS, n, p, 2.0, &matrix, x, &pat, 2.0, y1);
-	assert_true(vector_dist(p, y, y1) == 0.0);
+	assert_vec_identical(y, y1, p);
 
 	free(matrix.data);
 	free(y1);
@@ -293,19 +280,20 @@ static void test_muls0()
 
 	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, 0.0, y);
 	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, &matrix, x, &pat, 0.0, y1);
-	assert_true(vector_dist(n, y, y1) == 0.0);
+ 	assert_vec_identical(y, y1, n);
 
 	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, 1.0, y);
 	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, &matrix, x, &pat, 1.0, y1);
-	assert_true(vector_dist(n, y, y1) == 0.0);
+ 	assert_vec_identical(y, y1, n);
 
 	design_muls0(1.0, BLAS_NOTRANS, design, x, &pat, -1.0, y);
 	sblas_dgemvi(BLAS_NOTRANS, n, p, 1.0, &matrix, x, &pat, -1.0, y1);
-	assert_true(vector_dist(n, y, y1) == 0.0);
+ 	assert_vec_identical(y, y1, n);
 
 	design_muls0(2.0, BLAS_NOTRANS, design, x, &pat, 2.0, y);
 	sblas_dgemvi(BLAS_NOTRANS, n, p, 2.0, &matrix, x, &pat, 2.0, y1);
-	assert_true(vector_dist(n, y, y1) == 0.0);
+ 	assert_vec_identical(y, y1, n);
+
 
 	free(matrix.data);
 	free(y1);

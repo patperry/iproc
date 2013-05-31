@@ -84,6 +84,21 @@ static int reals_identical_display_error(const double left, const double right)
 
 }
 
+static int vec_identical(const double *expect, const double *actual, size_t n, size_t *idiff)
+{
+	int identical = 1;
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		if (!double_identical(expect[i], actual[i])) {
+			identical = 0;
+			*idiff = i;
+			break;
+		}
+	}
+	return identical;
+}
+
 
 static int sym_approx(const double *expect, const double *actual,
 		      enum blas_uplo uplo, size_t n)
@@ -161,6 +176,23 @@ static void print_error_vector(const double *x, size_t n)
 }
 
 
+static int vec_identical_display_error(const double *expect, const double *actual, size_t n)
+{
+	size_t i;
+	const int identical = vec_identical(expect, actual, n, &i);
+	if (!identical) {
+		print_error_vector(expect, n);
+		print_error("\n!=\n");
+		print_error_vector(actual, n);
+		print_error("\n(index "LargestIntegralTypePrintfFormat": "
+			    LargestRealTypePrintfFormat" != "LargestRealTypePrintfFormat")\n",
+			    i, expect[i], actual[i]);
+		assert(identical);
+	}
+	return identical;
+}
+
+
 static int sym_approx_display_error(const double *expect, const double *actual,
 				    enum blas_uplo uplo, size_t n)
 {
@@ -194,6 +226,14 @@ void _assert_real_eqrel(int precision, const double a, const double b,
 void _assert_real_identical(const double a, const double b, const char * const file, const int line)
 {
 	if (!reals_identical_display_error(a, b)) {
+		_fail(file, line);
+	}
+}
+
+void _assert_vec_identical(const double *a, const double *b, size_t n,
+			   const char * const file, const int line)
+{
+	if (!vec_identical_display_error(a, b, n)) {
 		_fail(file, line);
 	}
 }
