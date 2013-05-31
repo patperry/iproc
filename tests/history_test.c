@@ -6,71 +6,65 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
+
+#include <history.h>
+
 #include "cmockery.h"
-
 #include "ieee754.h"
-#include "enron/messages.h"
 #include "testutil.h"
-#include "history.h"
 
-static size_t NSEND;
-static size_t NRECV;
-static double *TIME;
-static size_t *FROM;
-static size_t **TO;
-static size_t *NTO;
-static intptr_t *ATTR;
-static size_t NMSG;
-
-static struct history HISTORY;
+#include "enron/history.h"
 
 
-static void enron_setup_fixture()
+struct fixture {
+	struct history_fixture h;
+};
+
+struct fixture ctx;
+
+#define NSEND	ctx.h.nsend
+#define NRECV	ctx.h.nrecv
+#define TIME	ctx.h.time
+#define FROM	ctx.h.from
+#define TO	ctx.h.to
+#define NTO	ctx.h.nto
+#define ATTR	ctx.h.attr
+#define NMSG	ctx.h.count
+
+
+struct test {
+	struct history h;
+};
+
+struct test test;
+
+#define HISTORY	&test.h
+
+
+static void fixture_setup_enron()
 {
-	int ok = enron_messages_init(&NSEND, &NRECV, &TIME, &FROM, &TO, &NTO,
-				     &ATTR, &NMSG, 0);
-	assert(ok);
-
-
+	history_fixture_setup_enron(&ctx.h);
 }
 
-static void enron_teardown_fixture()
+static void fixture_teardown()
 {
-	size_t i;
-
-	for (i = 0; i < NMSG; i++) {
-		free(TO[i]);
-	}
-
-	free(ATTR);
-	free(NTO);
-	free(TO);
-	free(FROM);
-	free(TIME);
+	history_fixture_teardown(&ctx.h);
 }
 
-static void enron_setup()
+static void setup()
 {
-	size_t i, n = NMSG;
-	struct history *h = &HISTORY;
-
-	history_init(h, NSEND, NRECV);
-	for (i = 0; i < n; i++) {
-		history_advance(h, TIME[i]);
-		history_add(h, FROM[i], TO[i], NTO[i], ATTR[i]);
-	}
-	history_reset(h);
+	history_test_setup(&test.h, &ctx.h);
 }
 
-static void enron_teardown()
+static void teardown()
 {
-	history_deinit(&HISTORY);
+	history_test_teardown(&test.h, &ctx.h);
 }
 
 static void test_sizes()
 {
-	assert_int_equal(history_nsend(&HISTORY), NSEND);
-	assert_int_equal(history_nrecv(&HISTORY), NRECV);
+	assert_int_equal(history_nsend(HISTORY), NSEND);
+	assert_int_equal(history_nrecv(HISTORY), NRECV);
 }
 
 static void test_messages()
@@ -78,11 +72,11 @@ static void test_messages()
 	struct message *msg;
 	size_t i;
 
-	history_advance(&HISTORY, INFINITY);
+	history_advance(HISTORY, INFINITY);
 
-	assert_int_equal(history_count(&HISTORY), NMSG);
+	assert_int_equal(history_count(HISTORY), NMSG);
 	for (i = 0; i < NMSG; i++) {
-		msg = history_item(&HISTORY, i);
+		msg = history_item(HISTORY, i);
 		assert_real_identical(msg->time, TIME[i]);
 		assert_int_equal(msg->from, FROM[i]);
 		assert_int_equal(msg->nto, NTO[i]);
@@ -99,13 +93,13 @@ static void test_advance_tfirst()
 	const double *wts;
 	size_t i, j, len;
 
-	history_advance(&HISTORY, t);
+	history_advance(HISTORY, t);
 
-	assert_real_identical(history_time(&HISTORY), t);
-	assert_int_equal(history_count(&HISTORY), 0);
+	assert_real_identical(history_time(HISTORY), t);
+	assert_int_equal(history_count(HISTORY), 0);
 
 	for (i = 0; i < NSEND; i++) {
-		struct history_actor *ha = history_send(&HISTORY, i);
+		struct history_actor *ha = history_send(HISTORY, i);
 		history_actor_get_msgs(ha, &ind, &len);
 		assert_int_equal(len, 0);
 
@@ -114,7 +108,7 @@ static void test_advance_tfirst()
 	}
 
 	for (j = 0; j < NRECV; j++) {
-		struct history_actor *ha = history_recv(&HISTORY, j);
+		struct history_actor *ha = history_recv(HISTORY, j);
 		history_actor_get_msgs(ha, &ind, &len);
 		assert_int_equal(len, 0);
 
@@ -133,13 +127,13 @@ static void test_advance_after_tfirst()
 	assert(TIME[0] != TIME[1]);
 	assert(NTO[0] == 1);
 
-	history_advance(&HISTORY, t);
+	history_advance(HISTORY, t);
 
-	assert_real_identical(history_time(&HISTORY), t);
-	assert_int_equal(history_count(&HISTORY), 1);
+	assert_real_identical(history_time(HISTORY), t);
+	assert_int_equal(history_count(HISTORY), 1);
 
 	for (i = 0; i < NSEND; i++) {
-		struct history_actor *ha = history_send(&HISTORY, i);
+		struct history_actor *ha = history_send(HISTORY, i);
 		history_actor_get_msgs(ha, &mind, &mlen);
 		history_actor_get_alters(ha, &wts, &ind, &len);
 
@@ -157,7 +151,7 @@ static void test_advance_after_tfirst()
 	}
 
 	for (j = 0; j < NRECV; j++) {
-		struct history_actor *ha = history_recv(&HISTORY, j);
+		struct history_actor *ha = history_recv(HISTORY, j);
 		history_actor_get_msgs(ha, &mind, &mlen);
 		history_actor_get_alters(ha, &wts, &ind, &len);
 
@@ -177,18 +171,15 @@ static void test_advance_after_tfirst()
 }
 
 
-
-
-
 int main()
 {
 	UnitTest tests[] = {
-		unit_test_setup(enron_suite, enron_setup_fixture),
-		unit_test_setup_teardown(test_sizes, enron_setup, enron_teardown),
-		unit_test_setup_teardown(test_messages, enron_setup, enron_teardown),
-		unit_test_setup_teardown(test_advance_tfirst, enron_setup, enron_teardown),
-		unit_test_setup_teardown(test_advance_after_tfirst, enron_setup, enron_teardown),
-		unit_test_teardown(enron_suite, enron_teardown_fixture),
+		unit_test_setup(enron_suite, fixture_setup_enron),
+		unit_test_setup_teardown(test_sizes, setup, teardown),
+		unit_test_setup_teardown(test_messages, setup, teardown),
+		unit_test_setup_teardown(test_advance_tfirst, setup, teardown),
+		unit_test_setup_teardown(test_advance_after_tfirst, setup, teardown),
+		unit_test_teardown(enron_suite, fixture_teardown),
 	};
 	return run_tests(tests);
 }

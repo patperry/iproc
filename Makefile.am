@@ -228,6 +228,8 @@ tests_libcmockery_a_CPPFLAGS = \
 tests_libenron_a_SOURCES = \
 	tests/enron/employees.c \
 	tests/enron/employees.h \
+	tests/enron/history.c \
+	tests/enron/history.h \
 	tests/enron/messages.c \
 	tests/enron/messages.h \
 	tests/enron/paths.h
@@ -246,6 +248,7 @@ check_LDADD = \
 	$(LDADD)
 
 check_CPPFLAGS = \
+	-Isrc \
 	-Itests \
 	-Itests/cmockery \
 	$(AM_CPPFLAGS)

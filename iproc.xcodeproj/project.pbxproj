@@ -96,6 +96,8 @@
 		2289E6F71758079900811E37 /* v-irecvtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E6F61758079900811E37 /* v-irecvtot.c */; };
 		2289E6FA17583CEE00811E37 /* employees.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6F817583CEE00811E37 /* employees.h */; };
 		2289E6FB17583CEE00811E37 /* messages.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6F917583CEE00811E37 /* messages.h */; };
+		2289E6FE175844F900811E37 /* history.c in Sources */ = {isa = PBXBuildFile; fileRef = 2289E6FC175844F800811E37 /* history.c */; };
+		2289E6FF175844F900811E37 /* history.h in Headers */ = {isa = PBXBuildFile; fileRef = 2289E6FD175844F800811E37 /* history.h */; };
 		228B128B15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128C15E605A9000DC495 /* catdist.c in Sources */ = {isa = PBXBuildFile; fileRef = 228B128915E605A9000DC495 /* catdist.c */; };
 		228B128D15E605A9000DC495 /* catdist.h in Headers */ = {isa = PBXBuildFile; fileRef = 228B128A15E605A9000DC495 /* catdist.h */; };
@@ -597,6 +599,8 @@
 		2289E6F61758079900811E37 /* v-irecvtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-irecvtot.c"; path = "src/v-irecvtot.c"; sourceTree = "<group>"; };
 		2289E6F817583CEE00811E37 /* employees.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = employees.h; path = tests/enron/employees.h; sourceTree = "<group>"; };
 		2289E6F917583CEE00811E37 /* messages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = messages.h; path = tests/enron/messages.h; sourceTree = "<group>"; };
+		2289E6FC175844F800811E37 /* history.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = history.c; path = tests/enron/history.c; sourceTree = "<group>"; };
+		2289E6FD175844F800811E37 /* history.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = history.h; path = tests/enron/history.h; sourceTree = "<group>"; };
 		228B127F15E60579000DC495 /* catdist_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = catdist_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		228B128915E605A9000DC495 /* catdist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = catdist.c; path = lib/catdist.c; sourceTree = "<group>"; };
 		228B128A15E605A9000DC495 /* catdist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = catdist.h; path = lib/catdist.h; sourceTree = "<group>"; };
@@ -866,10 +870,10 @@
 				22D2DDAA136A57DD0048244C /* enron */,
 				228B12A915E6657D000DC495 /* catdist1_test.c */,
 				228B128E15E605C7000DC495 /* catdist_test.c */,
+				228B12C515E67ED0000DC495 /* mlogit_test.c */,
 				22EA3325136B29AE00C5627F /* design_test.c */,
 				2222181C136F1AAA00F0C7D2 /* frame_test.c */,
 				22AEA44B1756453200780475 /* history_test.c */,
-				228B12C515E67ED0000DC495 /* mlogit_test.c */,
 				2288809613A9327E00D673A6 /* model_test.c */,
 				22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */,
 				22B7E92915D46A70009978F8 /* testutil.c */,
@@ -980,6 +984,8 @@
 			children = (
 				22D2DDAB136A58010048244C /* employees.c */,
 				2289E6F817583CEE00811E37 /* employees.h */,
+				2289E6FC175844F800811E37 /* history.c */,
+				2289E6FD175844F800811E37 /* history.h */,
 				22EA3337136B4CEC00C5627F /* messages.c */,
 				2289E6F917583CEE00811E37 /* messages.h */,
 				22D2DDAC136A58010048244C /* paths.h */,
@@ -1129,6 +1135,7 @@
 			files = (
 				2289E6FA17583CEE00811E37 /* employees.h in Headers */,
 				2289E6FB17583CEE00811E37 /* messages.h in Headers */,
+				2289E6FF175844F900811E37 /* history.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1612,6 +1619,7 @@
 			files = (
 				22D2DDBB136A5E760048244C /* employees.c in Sources */,
 				22EA3338136B4CEC00C5627F /* messages.c in Sources */,
+				2289E6FE175844F900811E37 /* history.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2196,6 +2204,10 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/src",
+					"$(SRCROOT)/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -2212,6 +2224,10 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/src",
+					"$(SRCROOT)/lib",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -2248,15 +2264,16 @@
 		22D2DDB5136A5E5B0048244C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/lib/include",
 					"$(SRCROOT)/tests",
+					"$(SRCROOT)/src",
+					"$(SRCROOT)/lib/include",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -2265,15 +2282,16 @@
 		22D2DDB6136A5E5B0048244C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/lib/include",
 					"$(SRCROOT)/tests",
+					"$(SRCROOT)/src",
+					"$(SRCROOT)/lib/include",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
