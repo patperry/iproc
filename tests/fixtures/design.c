@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "xalloc.h"
 #include "../../src/history.h"
 #include "../../src/design.h"
 #include "enron/actors.h"
@@ -30,6 +31,8 @@ void design_fixture_add_traits_enron(struct design_fixture *f)
 
 void design_fixture_teardown(struct design_fixture *f)
 {
+	if (f->nsendtot.exists)
+		free((void *)f->nsendtot.intvls);
 	free((void *)f->trait_x);
 }
 
@@ -49,6 +52,15 @@ void design_fixture_add_isendtot(struct design_fixture *f, double window)
 	f->isendtot.window = window;
 }
 
+void design_fixture_add_nsendtot(struct design_fixture *f, const double *intvls, size_t nintvl)
+{
+	f->nsendtot.exists = 1;
+	f->nsendtot.name = "NSendTot";
+	f->nsendtot.intvls = xmalloc(nintvl * sizeof(double));
+	memcpy((void *)f->nsendtot.intvls, intvls, nintvl * sizeof(double));
+	f->nsendtot.nintvl = nintvl;
+}
+
 
 void design_test_setup(struct design *d, struct history *h, const struct design_fixture *f)
 {
@@ -58,6 +70,8 @@ void design_test_setup(struct design *d, struct history *h, const struct design_
 		design_add_tvar(d, f->irecvtot.name, VAR_IRECVTOT, f->irecvtot.window);
 	if (f->isendtot.exists)
 		design_add_tvar(d, f->isendtot.name, VAR_ISENDTOT, f->isendtot.window);
+	if (f->nsendtot.exists)
+		design_add_tvar(d, f->nsendtot.name, VAR_NSENDTOT, f->nsendtot.intvls, f->nsendtot.nintvl);
 }
 
 void design_test_teardown(struct design *d)

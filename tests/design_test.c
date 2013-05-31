@@ -356,7 +356,7 @@ static void test_isendtot()
 
 	assert_true(v);
 
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz); /* -inf */
 	assert_int_equal(nz, 0);
 
 	history_advance(HISTORY, t0); /* t */
@@ -383,6 +383,36 @@ static void test_isendtot()
 }
 
 
+static void test_nsendtot()
+{
+	double intvls[] = { 1000, 10000 };
+	size_t nintvl = 2;
+	const struct var *v = design_add_tvar(DESIGN, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
+	double t0 = 910930020;
+	const double *x;
+	const size_t *ind;
+	size_t nz;
+
+	assert_true(v);
+	assert_int_equal(v->meta.rank, 1);
+	assert_int_equal(v->meta.dims[0], nintvl);
+	assert_int_equal(v->meta.size, nintvl);
+
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz); /* -inf */
+	assert_int_equal(nz, 0);
+
+	history_advance(HISTORY, t0); /* t */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 0);
+
+	history_advance(HISTORY, double_nextup(t0)); /* (t)+ */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 1.0);
+}
+
+
 
 int main()
 {
@@ -394,6 +424,7 @@ int main()
 		//unit_test_setup_teardown(test_tmuls0, setup, teardown)
 		unit_test_setup_teardown(test_isendtot, setup, teardown),
 		unit_test_setup_teardown(test_irecvtot, setup, teardown),
+		unit_test_setup_teardown(test_nsendtot, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 	};
 	return run_tests(tests);
