@@ -28,7 +28,6 @@ struct nsendtot_thunk {
 	struct pqueue updates;
 	double *intvls;
 	size_t nintvl;
-	double window;
 };
 
 
@@ -55,8 +54,6 @@ static void nsendtot_init(struct var_meta *meta, void **thunk, const char *name,
 	nsendtot->intvls = xmalloc(nintvl * sizeof(double));
 	memcpy(nsendtot->intvls, intvls, nintvl * sizeof(double));
 	nsendtot->nintvl = nintvl;
-
-	nsendtot->window = nintvl ? intvls[nintvl - 1] : 0;
 
 	*thunk = nsendtot;
 }
