@@ -151,12 +151,15 @@ static void process_messages(struct tvar *tv, double t0, const struct history *h
 	for (imsg = nmsg; imsg > 0; imsg--) {
 		msg = history_item(h, imsg - 1);
 
+		if (msg->time < t0)
+			break;
+
 		k = find_intvl(t - msg->time, intvls, nintvl, 0);
 		if (k == nintvl)
 			break;
 
 		i = msg->from;
-		wt = 1.0 / msg->nto;
+		wt = 1.0;
 		x = design_make_active(d, tv, i);
 		x[k] += wt;
 

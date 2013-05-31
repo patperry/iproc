@@ -85,7 +85,7 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 	// printf("update(%p, %zd, %f)\n", ds, i, t);
 
 	assert(i < deltaset_count(ds));
-	assert(t >= ds->delta[i].t);
+	assert(t >= deltaset_tlast(ds, i));
 	assert(!isnan(t));
 
 	struct delta *cur = &ds->delta[i];

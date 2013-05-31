@@ -204,8 +204,13 @@ static inline void design_update(struct design *d, struct tvar *v, size_t i, dou
 	assert(i < design_count(d));
 	assert(t >= d->tcur);
 
-	deltaset_update(&v->deltaset, i, t);
-	deltaset_update(&d->deltaset, i, t);
+	if (t > deltaset_tlast(&d->deltaset, i)) {
+		deltaset_update(&d->deltaset, i, t);
+
+		if (t > deltaset_tlast(&v->deltaset, i))
+			deltaset_update(&v->deltaset, i, t);
+	}
+
 }
 
 

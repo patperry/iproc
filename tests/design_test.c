@@ -383,7 +383,7 @@ static void test_isendtot()
 }
 
 
-static void test_nsendtot()
+static void test_nsendtot1()
 {
 	double intvls[] = { 1000, 10000 };
 	size_t nintvl = 2;
@@ -410,6 +410,78 @@ static void test_nsendtot()
 	assert_int_equal(nz, 1);
 	assert_int_equal(ind[0], 137);
 	assert_real_identical(x[0], 1.0);
+
+	history_advance(HISTORY, t0 + intvls[0]); /* t + w1 */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 1.0);
+
+	history_advance(HISTORY, double_nextup(t0 + intvls[0])); /* (t + w1)+ */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 0.0);
+	assert_real_identical(x[1], 1.0);
+
+	history_advance(HISTORY, t0 + intvls[1]); /* (t + w2) */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 0.0);
+	assert_real_identical(x[1], 1.0);
+
+	history_advance(HISTORY, double_nextup(t0 + intvls[1])); /* (t + w2)+ */
+	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
+	assert_int_equal(nz, 1);
+	assert_int_equal(ind[0], 137);
+	assert_real_identical(x[0], 0.0);
+	assert_real_identical(x[1], 0.0);
+}
+
+
+
+static void test_nsendtot2()
+{
+	double intvls[] = { 4 * 60 * 60, 7 * 24 * 60 * 60, 4 * 7 * 24 * 60 * 60 };
+	size_t nintvl = 3;
+	double *zero = xcalloc(nintvl, sizeof(double));
+	const struct var *v = design_add_tvar(DESIGN, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
+	double *x = xcalloc(NSEND * nintvl, sizeof(double));
+	double dt;
+	size_t i, k;
+
+	assert_true(v);
+
+	history_advance(HISTORY, 988116420);
+
+	size_t imsgs, nmsgs = history_count(HISTORY);
+	for (imsgs = nmsgs; imsgs > 0; imsgs--) {
+		const struct message *msg = history_item(HISTORY, imsgs - 1);
+		i = msg->from;
+		dt = history_time(HISTORY) - msg->time;
+
+		for (k = 0; k < nintvl; k++) {
+			if (dt <= intvls[k]) {
+				x[i * nintvl + k] += 1.0;
+				break;
+			}
+		}
+	}
+
+	size_t n = design_count(DESIGN);
+	for (i = 0; i < n; i++) {
+		const double *xi = design_tvar(DESIGN, v, i);
+
+		if (xi) {
+			assert_vec_identical(xi, x + i * nintvl, nintvl);
+		} else {
+			assert_vec_identical(zero, x + i * nintvl, nintvl);
+		}
+	}
+
+	free(x);
+	free(zero);
 }
 
 
@@ -424,7 +496,8 @@ int main()
 		//unit_test_setup_teardown(test_tmuls0, setup, teardown)
 		unit_test_setup_teardown(test_isendtot, setup, teardown),
 		unit_test_setup_teardown(test_irecvtot, setup, teardown),
-		unit_test_setup_teardown(test_nsendtot, setup, teardown),
+		unit_test_setup_teardown(test_nsendtot1, setup, teardown),
+		unit_test_setup_teardown(test_nsendtot2, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 	};
 	return run_tests(tests);
