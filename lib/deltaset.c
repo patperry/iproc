@@ -1,14 +1,53 @@
 #include "port.h"
 #include "xalloc.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "deltaset.h"
+
+#ifdef DEBUG_DELTASET
+
+static void deltaset_check(const struct deltaset *ds)
+{
+	const struct delta *prev, *cur, *next;
+
+	size_t i, n = deltaset_count(ds);
+	for (i = 0; i < n; i++) {
+		cur = &ds->delta[i];
+		assert(cur->i == i);
+		prev = cur->prev;
+		next = cur->next;
+
+		if (prev) {
+			assert(prev->next == cur);
+			assert(cur->t >= prev->t);
+		}
+		if (next) {
+			assert(next->prev == cur);
+			assert(cur->t <= next->t);
+		} else {
+			assert(ds->head == cur);
+		}
+	}
+}
+
+#define CHECK(ds) deltaset_check(ds)
+
+#else
+
+#define CHECK(ds) (void)(ds)
+
+#endif
+
+
+
 
 void deltaset_init(struct deltaset *ds, size_t n)
 {
 	ds->n = n;
 	ds->delta = xmalloc(n * sizeof(*ds->delta));
 	deltaset_clear(ds);
+	CHECK(ds);
 }
 
 
@@ -37,11 +76,14 @@ void deltaset_clear(struct deltaset *ds)
 		cur->prev = prev;
 		cur->next = next;
 	}
+	CHECK(ds);
 }
 
 
 void deltaset_update(struct deltaset *ds, size_t i, double t)
 {
+	// printf("update(%p, %zd, %f)\n", ds, i, t);
+
 	assert(i < deltaset_count(ds));
 	assert(t >= ds->delta[i].t);
 	assert(!isnan(t));
@@ -73,9 +115,9 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 		ds->head = cur;
 	} else {
 		next = ds->head;
-		prev = ds->head->next;
+		prev = ds->head->prev;
 		
-		while (prev && prev->t < t) {
+		while (prev && prev->t > t) {
 			assert(t < next->t);
 			next = prev;
 			prev = next->prev;
@@ -94,4 +136,6 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 
 	/* update time */
 	cur->t = t;
+
+	CHECK(ds);
 }
