@@ -6,4 +6,4 @@
 	url = git@github.com:patperry/linalg.git
 [submodule "lib/yajl"]
 	path = lib/yajl
-	url = https://github.com/lloyd/yajl.git
+	url = https://github.com/patperry/yajl.git
