@@ -1,5 +1,6 @@
+
 #define FOREACH_ACTOR(k, i, msg) \
-for ((k) = 0; (k) < (msg)->nto && ((i) = (msg)->to[k], 1); (k)++)
+	for ((k) = 0; (k) < (msg)->nto && ((i) = (msg)->to[k], 1); (k)++)
 
 #define MSG_WEIGHT(msg) (1.0/(msg)->nto)
 
