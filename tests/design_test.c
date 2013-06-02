@@ -485,6 +485,57 @@ static void test_nsendtot2()
 }
 
 
+static void test_nrecvtot()
+{
+	double intvls[] = { 4 * 60 * 60, 7 * 24 * 60 * 60, 4 * 7 * 24 * 60 * 60 };
+	size_t nintvl = 3;
+	double *zero = xcalloc(nintvl, sizeof(double));
+	const struct var *v = design_add_tvar(DESIGN, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
+	double *x = xcalloc(NRECV * nintvl, sizeof(double));
+	double dt;
+	double wt;
+	size_t i, k;
+	size_t ito;
+
+	assert_true(v);
+
+	history_advance(HISTORY, 988116420);
+
+	size_t imsgs, nmsgs = history_count(HISTORY);
+	for (imsgs = nmsgs; imsgs > 0; imsgs--) {
+		const struct message *msg = history_item(HISTORY, imsgs - 1);
+		dt = history_time(HISTORY) - msg->time;
+		wt = 1.0 / msg->nto;
+
+		for (ito = 0; ito < msg->nto; ito++) {
+			i = msg->to[ito];
+
+			for (k = 0; k < nintvl; k++) {
+				if (dt <= intvls[k]) {
+					x[i * nintvl + k] += wt;
+					break;
+				}
+			}
+		}
+	}
+
+	size_t n = design_count(DESIGN);
+	for (i = 0; i < n; i++) {
+		const double *xi = design_tvar(DESIGN, v, i);
+
+		if (xi) {
+			assert_vec_identical(xi, x + i * nintvl, nintvl);
+		} else {
+			assert_vec_identical(zero, x + i * nintvl, nintvl);
+		}
+	}
+
+	free(x);
+	free(zero);
+}
+
+
+
 
 int main()
 {
@@ -496,6 +547,7 @@ int main()
 		//unit_test_setup_teardown(test_tmuls0, setup, teardown)
 		unit_test_setup_teardown(test_isendtot, setup, teardown),
 		unit_test_setup_teardown(test_irecvtot, setup, teardown),
+		unit_test_setup_teardown(test_nrecvtot, setup, teardown),
 		unit_test_setup_teardown(test_nsendtot1, setup, teardown),
 		unit_test_setup_teardown(test_nsendtot2, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),

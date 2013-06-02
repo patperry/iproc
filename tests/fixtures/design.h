@@ -16,6 +16,7 @@ struct design_fixture {
 
 	struct { int exists; const char *name; double window; } irecvtot;
 	struct { int exists; const char *name; double window; } isendtot;
+	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nrecvtot;
 	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nsendtot;
 };
 
@@ -25,6 +26,7 @@ void design_fixture_setup_enron(struct design_fixture *f);
 void design_fixture_add_traits_enron(struct design_fixture *f);
 void design_fixture_add_irecvtot(struct design_fixture *f, double window);
 void design_fixture_add_isendtot(struct design_fixture *f, double window);
+void design_fixture_add_nrecvtot(struct design_fixture *f, const double *intvls, size_t nintvl);
 void design_fixture_add_nsendtot(struct design_fixture *f, const double *intvls, size_t nintvl);
 void design_fixture_teardown(struct design_fixture *f);
 

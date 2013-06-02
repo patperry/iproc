@@ -33,6 +33,8 @@ void design_fixture_teardown(struct design_fixture *f)
 {
 	if (f->nsendtot.exists)
 		free((void *)f->nsendtot.intvls);
+	if (f->nrecvtot.exists)
+		free((void *)f->nrecvtot.intvls);
 	free((void *)f->trait_x);
 }
 
@@ -52,6 +54,17 @@ void design_fixture_add_isendtot(struct design_fixture *f, double window)
 	f->isendtot.window = window;
 }
 
+
+void design_fixture_add_nrecvtot(struct design_fixture *f, const double *intvls, size_t nintvl)
+{
+	f->nrecvtot.exists = 1;
+	f->nrecvtot.name = "NRecvTot";
+	f->nrecvtot.intvls = xmalloc(nintvl * sizeof(double));
+	memcpy((void *)f->nrecvtot.intvls, intvls, nintvl * sizeof(double));
+	f->nrecvtot.nintvl = nintvl;
+}
+
+
 void design_fixture_add_nsendtot(struct design_fixture *f, const double *intvls, size_t nintvl)
 {
 	f->nsendtot.exists = 1;
@@ -70,6 +83,8 @@ void design_test_setup(struct design *d, struct history *h, const struct design_
 		design_add_tvar(d, f->irecvtot.name, VAR_IRECVTOT, f->irecvtot.window);
 	if (f->isendtot.exists)
 		design_add_tvar(d, f->isendtot.name, VAR_ISENDTOT, f->isendtot.window);
+	if (f->nrecvtot.exists)
+		design_add_tvar(d, f->nrecvtot.name, VAR_NRECVTOT, f->nrecvtot.intvls, f->nrecvtot.nintvl);
 	if (f->nsendtot.exists)
 		design_add_tvar(d, f->nsendtot.name, VAR_NSENDTOT, f->nsendtot.intvls, f->nsendtot.nintvl);
 }

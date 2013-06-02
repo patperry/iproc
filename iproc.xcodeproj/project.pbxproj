@@ -140,6 +140,7 @@
 		228E846716444C6600A189E5 /* constr.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E846516444C6500A189E5 /* constr.h */; };
 		229AC2C0174FC29C0085D43C /* deltaset.c in Sources */ = {isa = PBXBuildFile; fileRef = 229AC2BE174FC29C0085D43C /* deltaset.c */; };
 		229AC2C1174FC29C0085D43C /* deltaset.h in Headers */ = {isa = PBXBuildFile; fileRef = 229AC2BF174FC29C0085D43C /* deltaset.h */; };
+		22A1E449175B9C8F006C869C /* v-nrecvtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A1E448175B9C8F006C869C /* v-nrecvtot.c */; };
 		22AB5EE0170397C2008F7B52 /* intset.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AB5EDE170397C2008F7B52 /* intset.c */; };
 		22AB5EE1170397C2008F7B52 /* intset.h in Headers */ = {isa = PBXBuildFile; fileRef = 22AB5EDF170397C2008F7B52 /* intset.h */; };
 		22AEA44C1756453200780475 /* history_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA44B1756453200780475 /* history_test.c */; };
@@ -661,6 +662,7 @@
 		228E846516444C6500A189E5 /* constr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constr.h; path = lib/constr.h; sourceTree = "<group>"; };
 		229AC2BE174FC29C0085D43C /* deltaset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = deltaset.c; path = lib/deltaset.c; sourceTree = "<group>"; };
 		229AC2BF174FC29C0085D43C /* deltaset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = deltaset.h; path = lib/deltaset.h; sourceTree = "<group>"; };
+		22A1E448175B9C8F006C869C /* v-nrecvtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-nrecvtot.c"; path = "src/v-nrecvtot.c"; sourceTree = "<group>"; };
 		22AB5EDE170397C2008F7B52 /* intset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = intset.c; path = lib/core/src/intset.c; sourceTree = "<group>"; };
 		22AB5EDF170397C2008F7B52 /* intset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = intset.h; path = lib/core/src/intset.h; sourceTree = "<group>"; };
 		22AEA4421756450700780475 /* history_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = history_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -906,6 +908,7 @@
 				2289E6F61758079900811E37 /* v-irecvtot.c */,
 				2289E72A1758F66C00811E37 /* v-isendtot.c */,
 				2289E72E17594DD400811E37 /* v-itot-source.h */,
+				22A1E448175B9C8F006C869C /* v-nrecvtot.c */,
 				2289E72C17591DCB00811E37 /* v-nsendtot.c */,
 				2264EE8917595E6400C1AB5D /* v-ntot-source.h */,
 				22AEA4591756525F00780475 /* var.c */,
@@ -1620,6 +1623,7 @@
 				2289E6F71758079900811E37 /* v-irecvtot.c in Sources */,
 				2289E72B1758F66C00811E37 /* v-isendtot.c in Sources */,
 				2289E72D17591DCB00811E37 /* v-nsendtot.c in Sources */,
+				22A1E449175B9C8F006C869C /* v-nrecvtot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
