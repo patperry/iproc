@@ -72,6 +72,8 @@
 		2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 2264EE8917595E6400C1AB5D /* v-ntot-source.h */; };
 		2267890D134CD5B3001309F5 /* cmockery.c in Sources */ = {isa = PBXBuildFile; fileRef = 2267890B134CD5B3001309F5 /* cmockery.c */; };
 		2267890E134CD5B3001309F5 /* cmockery.h in Headers */ = {isa = PBXBuildFile; fileRef = 2267890C134CD5B3001309F5 /* cmockery.h */; };
+		22690556175BC97000C99BC2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 22690555175BC97000C99BC2 /* send_model.h */; };
+		22690558175BD10200C99BC2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 22690557175BD10200C99BC2 /* send_model.c */; };
 		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
 		22749E501402A97000C5A955 /* dSFMT-params521.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E431402A97000C5A955 /* dSFMT-params521.h */; };
 		22749E511402A97000C5A955 /* dSFMT-params1279.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E441402A97000C5A955 /* dSFMT-params1279.h */; };
@@ -608,6 +610,8 @@
 		22678906134CD584001309F5 /* libcmockery.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libcmockery.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267890B134CD5B3001309F5 /* cmockery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmockery.c; path = tests/cmockery/cmockery.c; sourceTree = "<group>"; };
 		2267890C134CD5B3001309F5 /* cmockery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cmockery.h; path = tests/cmockery/cmockery.h; sourceTree = "<group>"; };
+		22690555175BC97000C99BC2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = src/send_model.h; sourceTree = "<group>"; };
+		22690557175BD10200C99BC2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = src/send_model.c; sourceTree = "<group>"; };
 		22749E3E1402A94A00C5A955 /* libdSFMT.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libdSFMT.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22749E421402A97000C5A955 /* dSFMT-params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params.h"; path = "lib/dSFMT/dSFMT-params.h"; sourceTree = "<group>"; };
 		22749E431402A97000C5A955 /* dSFMT-params521.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params521.h"; path = "lib/dSFMT/dSFMT-params521.h"; sourceTree = "<group>"; };
@@ -905,6 +909,8 @@
 				22AEA45E1756530000780475 /* design.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
+				22690557175BD10200C99BC2 /* send_model.c */,
+				22690555175BC97000C99BC2 /* send_model.h */,
 				2289E6F61758079900811E37 /* v-irecvtot.c */,
 				2289E72A1758F66C00811E37 /* v-isendtot.c */,
 				2289E72E17594DD400811E37 /* v-itot-source.h */,
@@ -1148,6 +1154,7 @@
 				22AEA4601756530000780475 /* design.h in Headers */,
 				2289E72F17594DD400811E37 /* v-itot-source.h in Headers */,
 				2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */,
+				22690556175BC97000C99BC2 /* send_model.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1624,6 +1631,7 @@
 				2289E72B1758F66C00811E37 /* v-isendtot.c in Sources */,
 				2289E72D17591DCB00811E37 /* v-nsendtot.c in Sources */,
 				22A1E449175B9C8F006C869C /* v-nrecvtot.c in Sources */,
+				22690558175BD10200C99BC2 /* send_model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
