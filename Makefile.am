@@ -32,6 +32,8 @@ libiproc_a_SOURCES = \
 	src/design.h \
 	src/history.c \
 	src/history.h \
+	src/send_model.c \
+	src/send_model.h \
 	src/v-irecvtot.c \
 	src/v-isendtot.c \
 	src/v-itot-source.h \
