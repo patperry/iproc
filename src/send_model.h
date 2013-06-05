@@ -8,10 +8,7 @@
 
 
 struct send_params {
-	double *all;
-	size_t dim;
 	struct coefs coefs;
-	int owner;
 };
 
 struct send_model {
@@ -24,21 +21,16 @@ struct send_model {
 };
 
 
-size_t send_params_dim(const struct design *d);
-void send_params_init(struct send_params *p, const struct design *d);
-void send_params_init_view(struct send_params *p, const struct design *d,
-			   const double *data);
-void send_params_deinit(struct send_params *p);
 
 
-void send_model_init(struct send_model *m, struct design *d,
-		     const struct send_params *p);
-void send_model_deinit(struct send_model *model);
+void send_model_init(struct send_model *m, const struct send_params *p,
+		     struct design *d);
+void send_model_deinit(struct send_model *m);
 
-struct design *send_model_design(const struct send_model *model);
-const struct send_params *send_model_params(const struct send_model *model);
-size_t send_model_dim(const struct send_model *model);
-size_t send_model_count(const struct send_model *model);
+struct design *send_model_design(const struct send_model *m);
+const struct send_params *send_model_params(const struct send_model *m);
+size_t send_model_dim(const struct send_model *m);
+size_t send_model_count(const struct send_model *m);
 
 
 int send_model_moments(const struct send_model *m);

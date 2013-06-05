@@ -4,8 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "history.h"
-
 
 struct design_fixture {
 	size_t count;
@@ -18,6 +16,7 @@ struct design_fixture {
 	struct { int exists; const char *name; double window; } isendtot;
 	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nrecvtot;
 	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nsendtot;
+	size_t tvar_dim;
 };
 
 

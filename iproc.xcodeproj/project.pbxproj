@@ -67,6 +67,8 @@
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223E4116164060C100FAB1C7 /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 223E4114164060C100FAB1C7 /* strata.c */; };
 		223E4117164060C100FAB1C7 /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 223E4115164060C100FAB1C7 /* strata.h */; };
+		224E8D30175E7C3F00868DF2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D2E175E7C3F00868DF2 /* send_model.c */; };
+		224E8D31175E7C3F00868DF2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224E8D2F175E7C3F00868DF2 /* send_model.h */; };
 		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
 		226216C415F1BA50000C83C4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226216C315F1BA50000C83C4 /* Accelerate.framework */; };
 		2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 2264EE8917595E6400C1AB5D /* v-ntot-source.h */; };
@@ -604,6 +606,8 @@
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		223E4114164060C100FAB1C7 /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = lib/strata.c; sourceTree = "<group>"; };
 		223E4115164060C100FAB1C7 /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = lib/strata.h; sourceTree = "<group>"; };
+		224E8D2E175E7C3F00868DF2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = tests/fixtures/send_model.c; sourceTree = "<group>"; };
+		224E8D2F175E7C3F00868DF2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = tests/fixtures/send_model.h; sourceTree = "<group>"; };
 		22602687146B38EE00BA6347 /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = lib/port.h; sourceTree = "<group>"; };
 		226216C315F1BA50000C83C4 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		2264EE8917595E6400C1AB5D /* v-ntot-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "v-ntot-source.h"; path = "src/v-ntot-source.h"; sourceTree = "<group>"; };
@@ -1012,6 +1016,8 @@
 		2289E7021758556F00811E37 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				224E8D2E175E7C3F00868DF2 /* send_model.c */,
+				224E8D2F175E7C3F00868DF2 /* send_model.h */,
 				2289E7231758590F00811E37 /* design.c */,
 				2289E7241758590F00811E37 /* design.h */,
 				2289E7191758566100811E37 /* history.c */,
@@ -1192,6 +1198,7 @@
 			files = (
 				2289E71C1758566100811E37 /* history.h in Headers */,
 				2289E7261758590F00811E37 /* design.h in Headers */,
+				224E8D31175E7C3F00868DF2 /* send_model.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1674,6 +1681,7 @@
 			files = (
 				2289E71B1758566100811E37 /* history.c in Sources */,
 				2289E7251758590F00811E37 /* design.c in Sources */,
+				224E8D30175E7C3F00868DF2 /* send_model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
