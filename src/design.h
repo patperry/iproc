@@ -67,11 +67,8 @@ struct design {
 
 
 struct coefs {
-	double *all;
-	double *traits; /* points into all */
-	double *tvars;  /* points into all */
-	size_t dim;
-	int owner;
+	double *traits;
+	double *tvars;
 };
 
 
@@ -172,11 +169,6 @@ const double *design_tvar(const struct design *d, const struct var *v, size_t i)
 /* interactions */
 const struct var *design_add_prod(struct design *d, const char *name, const struct var *u,
 				  const struct var *v);
-
-/* coefficients */
-void coefs_init(struct coefs *c, const struct design *d);
-void coefs_init_view(struct coefs *c, const struct design *d, const double *data);
-void coefs_deinit(struct coefs *c);
 
 /* algebra */
 void design_mul(double alpha, const struct design *d,

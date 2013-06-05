@@ -17,37 +17,6 @@
 #include "design.h"
 
 
-void coefs_init(struct coefs *c, const struct design *d)
-{
-	size_t dim = design_dim(d);
-	double *data = xmalloc(dim * sizeof(data[0]));
-	coefs_init_view(c, d, data);
-	c->owner = 1;
-}
-
-
-void coefs_init_view(struct coefs *c, const struct design *d, const double *data)
-{
-	size_t dim0 = design_trait_dim(d);
-	size_t dim1 = design_tvar_dim(d);
-	size_t dim = dim0 + dim1;
-
-	c->all = (double *)data;
-	c->traits = c->all;
-	c->tvars = c->all + dim0;
-	c->dim = dim;
-	c->owner = 0;
-}
-
-
-void coefs_deinit(struct coefs *c)
-{
-	if (c->owner)
-		free(c->all);
-}
-
-
-
 void design_traits_mul(double alpha, const struct design *d,
 		       const double *x, double beta, double *y)
 {
