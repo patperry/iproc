@@ -41,3 +41,4 @@
 /tests/mlogit_test
 /tests/model_test
 /tests/recv_loglik_test
+/tests/send_model_test

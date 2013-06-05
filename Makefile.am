@@ -299,6 +299,10 @@ check_PROGRAMS += tests/design_test
 tests_design_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_design_test_LDADD    = $(check_LDADD)
 
+check_PROGRAMS += tests/send_model_test
+tests_send_model_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_send_model_test_LDADD    = $(check_LDADD)
+
 #check_PROGRAMS += tests/model_test
 #tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
 #tests_model_test_LDADD    = $(check_LDADD)
