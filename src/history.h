@@ -65,6 +65,13 @@ void history_advance(struct history *h, double time);	// advance time
 void history_add(struct history *h, size_t from, const size_t *to, size_t nto,
 		 intptr_t attr);
 
+/* message array access */
+static inline void history_get_messages(const struct history *h, const struct message **msgs, size_t *n)
+{
+	*msgs = h->msgs;
+	*n = h->nmsg;
+}
+
 
 /* actor histories */
 static inline struct history_actor *history_send(const struct history *h, size_t i)

@@ -34,6 +34,7 @@ struct fixture ctx;
 
 #define NRECV	ctx.h.nrecv
 #define NSEND	ctx.h.nsend
+#define PARAMS	(&ctx.m.params)
 
 
 
@@ -45,9 +46,9 @@ struct test {
 
 struct test test;
 
-#define HISTORY	&test.h
-#define DESIGN	&test.d
-#define SEND_MODEL &test.m
+#define HISTORY	(&test.h)
+#define DESIGN	(&test.d)
+#define SEND_MODEL (&test.m)
 
 
 
@@ -56,6 +57,9 @@ static void fixture_setup_enron()
 	double width = 6 * 7 * 24 * 60 * 60;
 	double intvls[] = { 2 * 60 * 60, 32 * 60 * 60, 3 * 7 * 24 * 60 * 60 };
 	size_t nintvl = 3;
+	size_t i;
+
+	srand(0);
 
 	history_fixture_setup_enron(&ctx.h);
 
@@ -66,6 +70,18 @@ static void fixture_setup_enron()
 	design_fixture_add_nsendtot(&ctx.d, intvls, nintvl);
 
 	send_model_fixture_setup(&ctx.m, &ctx.d);
+
+	for (i = 0; i < ctx.d.trait_dim; i++) {
+		int u = rand();
+		double beta = ((double) (u % 21) - 10) / 10;
+		ctx.m.params.coefs.traits[i] = beta;
+	}
+
+	for (i = 0; i < ctx.d.tvar_dim; i++) {
+		int u = rand();
+		double beta = ((double) (u % 21) - 10) / 10;
+		ctx.m.params.coefs.tvars[i] = beta;
+	}
 }
 
 
@@ -92,12 +108,35 @@ static void teardown()
 	history_test_teardown(&test.h);
 }
 
+static void test_probs()
+{
+	const struct message *msgs;
+	size_t imsg, nmsg;
+	size_t i, n = NSEND;
+	struct catdist1 *dist;
+	double *eta = xmalloc(NSEND * sizeof(double));
+
+	history_get_messages(HISTORY, &msgs, &nmsg);
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		history_advance(HISTORY, msgs[imsg].time);
+		design_mul(1.0, DESIGN, &PARAMS->coefs, 0.0, eta);
+		dist = send_model_dist(SEND_MODEL);
+
+		for (i = 0; i < n; i++) {
+			assert_real_identical(eta[i], catdist1_eta(dist, i));
+		}
+	}
+
+	free(eta);
+}
+
 
 
 int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, fixture_setup_enron),
+		unit_test_setup_teardown(test_probs, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 	};
 	return run_tests(tests);

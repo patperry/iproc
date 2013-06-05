@@ -109,6 +109,8 @@ static void process_updates(struct tvar *tv, double t0, double t)
 		x[u->intvl] -= u->wt;
 
 		k = find_intvl(t - u->t0, intvls, nintvl, u->intvl + 1);
+		design_update(d, tv, u->i, u->t0 + intvls[k - 1]);
+
 		if (k < nintvl) {
 			x[k] += u->wt;
 			u->t = u->t0 + intvls[k];
@@ -122,7 +124,6 @@ static void process_updates(struct tvar *tv, double t0, double t)
 		} else {
 			pqueue_pop(updates);
 		}
-		design_update(d, tv, u->i, u->t0 + intvls[k - 1]);
 	}
 }
 

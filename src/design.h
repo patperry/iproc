@@ -195,7 +195,7 @@ static inline void design_update(struct design *d, struct tvar *v, size_t i, dou
 {
 	assert(v->var.design == d);
 	assert(i < design_count(d));
-	assert(t >= d->tcur);
+	assert(t <= d->tcur);
 
 	if (t > deltaset_tlast(&d->deltaset, i)) {
 		deltaset_update(&d->deltaset, i, t);

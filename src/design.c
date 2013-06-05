@@ -116,6 +116,8 @@ static void design_tvars_update(struct design *d)
 	if (history_time(h) < d->tcur) {
 		design_clear(d);
 	}
+	
+	d->tcur = history_time(h);
 
 	size_t i, n = d->ntvar;
 	struct tvar **tvars = d->tvars;
@@ -125,8 +127,6 @@ static void design_tvars_update(struct design *d)
 			tvars[i]->type->update(tvars[i], t0, h);
 		}
 	}
-
-	d->tcur = history_time(h);
 }
 
 

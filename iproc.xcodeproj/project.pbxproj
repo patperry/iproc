@@ -1651,6 +1651,7 @@
 				228B12B515E67E92000DC495 /* mlogit_test */,
 				2288808C13A9325D00D673A6 /* model_test */,
 				22D4787D13AC4BF600FF46CD /* recv_loglik_test */,
+				224E8D36175ED31300868DF2 /* send_model_test */,
 				222FC40C13607C3F00E64FC9 /* iproc */,
 				22D2DDB2136A5E5B0048244C /* enron */,
 				22234164144F363900D99D8E /* core */,
@@ -1658,7 +1659,6 @@
 				22749E3D1402A94A00C5A955 /* dSFMT */,
 				22D2DD51136928DE0048244C /* yajl */,
 				2289E70E1758562C00811E37 /* testfixtures */,
-				224E8D36175ED31300868DF2 /* send_model_test */,
 			);
 		};
 /* End PBXProject section */
@@ -2711,6 +2711,7 @@
 				224E8D40175ED31300868DF2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		22678907134CD584001309F5 /* Build configuration list for PBXNativeTarget "cmockery" */ = {
 			isa = XCConfigurationList;

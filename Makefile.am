@@ -46,7 +46,7 @@ libiproc_a_SOURCES = \
 
 libiproc_a_LIBADD = \
 	libcore.a \
-	libdSFMT.a
+	libdSFMT.a \
 	$(LIBADD)
 
 
