@@ -3,10 +3,13 @@
 
 struct send_model_fixture {
 	struct send_params params;
+	size_t trait_dim;
+	size_t tvar_dim;
 };
 
 void send_model_fixture_setup(struct send_model_fixture	*f,
 			      const struct design_fixture *d);
+void send_model_fixture_set_rand(struct send_model_fixture *f);
 void send_model_fixture_teardown(struct send_model_fixture *f);
 
 void send_model_test_setup(struct send_model *m, struct design *d,

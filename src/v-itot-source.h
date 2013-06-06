@@ -76,7 +76,7 @@ static void process_updates(struct tvar *tv, double t0, double t)
 }
 
 
-static void itot_update(struct tvar *tv, double t0, const struct history *h)
+static void process_messages(struct tvar *tv, double t0, const struct history *h)
 {
 	struct design *d = tv->var.design;
 	struct itot_thunk *itot = (struct itot_thunk *)tv->thunk;
@@ -86,13 +86,10 @@ static void itot_update(struct tvar *tv, double t0, const struct history *h)
 	double w = itot->window;
 	double tmin = t - itot->window;
 	double *x;
-	size_t k, i;
-
-	process_updates(tv, t0, t);
-
-	/* process all recent messages */
 	size_t imsg, nmsg = history_count(h);
 	const struct message *msg;
+	size_t k, i;
+
 
 	for (imsg = nmsg; imsg > 0; imsg--) {
 		msg = history_item(h, imsg - 1);
@@ -111,6 +108,25 @@ static void itot_update(struct tvar *tv, double t0, const struct history *h)
 			}
 		}
 	}
+
+}
+
+
+static double itot_update(struct tvar *tv, double t0, const struct history *h)
+{
+	struct itot_thunk *itot = (struct itot_thunk *)tv->thunk;
+	double t = history_time(h);
+	double tnext = INFINITY;
+
+	process_updates(tv, t0, t);
+	process_messages(tv, t0, h);
+
+	if (pqueue_count(&itot->updates)) {
+		const struct update *u = pqueue_top(&itot->updates);
+		tnext = u->t;
+	}
+
+	return tnext;
 }
 
 

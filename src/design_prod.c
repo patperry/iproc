@@ -95,11 +95,10 @@ static void design_prod_update(struct design *d, struct tvar *prod_var, size_t i
 	}
 
 	design_update(d, prod_var, i, t);
-
 }
 
 
-static void prod_update(struct tvar *prod_var, double t0, const struct history *h)
+static double prod_update(struct tvar *prod_var, double t0, const struct history *h)
 {
 	struct design *d = prod_var->var.design;
 	struct prod_thunk *prod = (struct prod_thunk *)prod_var->thunk;
@@ -130,6 +129,8 @@ static void prod_update(struct tvar *prod_var, double t0, const struct history *
 			design_prod_update(d, prod_var, i, t);
 		}
 	}
+
+	return INFINITY; /* time of next update will be determined by u, v */
 }
 
 

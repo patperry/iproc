@@ -113,7 +113,9 @@ static void design_tvars_update(struct design *d)
 	double t0 = d->tcur;
 	const struct history *h = design_history(d);
 
-	if (history_time(h) < d->tcur) {
+	if (d->tcur == history_time(h)) {
+		return;
+	} else if (d->tcur > history_time(h)) {
 		design_clear(d);
 	}
 	
@@ -121,12 +123,58 @@ static void design_tvars_update(struct design *d)
 
 	size_t i, n = d->ntvar;
 	struct tvar **tvars = d->tvars;
+	double tnext = INFINITY;
+	double t;
 
 	for (i = 0; i < n; i++) {
 		if (tvars[i]->type->update) {
-			tvars[i]->type->update(tvars[i], t0, h);
+			t = tvars[i]->type->update(tvars[i], t0, h);
+			tnext = MIN(tnext, t);
 		}
 	}
+
+	d->tnext = tnext;
+}
+
+
+const struct deltaset *design_changes(const struct design *d)
+{
+	design_tvars_update((struct design *)d);
+	return &d->deltaset;
+}
+
+
+double design_next_time(const struct design *d)
+{
+	const struct history *h = design_history(d);
+	double tnext;
+
+	if (d->tcur < history_time(h)) {
+		tnext = -INFINITY;
+	} else if (d->tcur == history_time(h)) {
+		tnext = d->tnext;
+	} else {
+		tnext = d->tnext;
+
+		/* find most recent message in [tcur, infty) */
+		size_t i, n = history_count(h);
+		const struct message *msg = NULL, *prev;
+		for (i = n; i > 0; i--) {
+			prev = history_item(h, i - 1);
+
+			if (prev->time < d->tcur)
+				break;
+
+			msg = prev;
+		}
+
+		if (msg) {
+			tnext = MIN(d->tcur, msg->time);
+		}
+	}
+	((struct design *)d)->tnext = tnext;
+
+	return d->tnext;
 }
 
 

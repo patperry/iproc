@@ -18,6 +18,7 @@ struct send_model {
 	struct mlogit base;
 	struct mlogitaug_work aug_work;
 	struct mlogitaug aug;
+	double tcur;
 };
 
 

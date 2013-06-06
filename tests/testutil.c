@@ -17,7 +17,7 @@
 
 #define STR(x) #x
 #define STRSTR(x) STR(x)
-#define LargestRealTypePrintfFormat "%." STRSTR(DBL_DIG + 1) "g"
+#define LargestRealTypePrintfFormat "%.16g"
 
 void setup_fixture(const char *name)
 {

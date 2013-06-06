@@ -57,7 +57,6 @@ static void fixture_setup_enron()
 	double width = 6 * 7 * 24 * 60 * 60;
 	double intvls[] = { 2 * 60 * 60, 32 * 60 * 60, 3 * 7 * 24 * 60 * 60 };
 	size_t nintvl = 3;
-	size_t i;
 
 	srand(0);
 
@@ -70,18 +69,7 @@ static void fixture_setup_enron()
 	design_fixture_add_nsendtot(&ctx.d, intvls, nintvl);
 
 	send_model_fixture_setup(&ctx.m, &ctx.d);
-
-	for (i = 0; i < ctx.d.trait_dim; i++) {
-		int u = rand();
-		double beta = ((double) (u % 21) - 10) / 10;
-		ctx.m.params.coefs.traits[i] = beta;
-	}
-
-	for (i = 0; i < ctx.d.tvar_dim; i++) {
-		int u = rand();
-		double beta = ((double) (u % 21) - 10) / 10;
-		ctx.m.params.coefs.tvars[i] = beta;
-	}
+	send_model_fixture_set_rand(&ctx.m);
 }
 
 
@@ -117,13 +105,13 @@ static void test_probs()
 	double *eta = xmalloc(NSEND * sizeof(double));
 
 	history_get_messages(HISTORY, &msgs, &nmsg);
-	for (imsg = 0; imsg < nmsg; imsg++) {
+	for (imsg = 0; imsg < MIN(nmsg, 1000); imsg++) {
 		history_advance(HISTORY, msgs[imsg].time);
 		design_mul(1.0, DESIGN, &PARAMS->coefs, 0.0, eta);
 		dist = send_model_dist(SEND_MODEL);
 
 		for (i = 0; i < n; i++) {
-			assert_real_identical(eta[i], catdist1_eta(dist, i));
+			assert_real_approx(eta[i], catdist1_eta(dist, i));
 		}
 	}
 

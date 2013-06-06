@@ -178,11 +178,21 @@ static void process_messages(struct tvar *tv, double t0, const struct history *h
 }
 
 
-static void ntot_update(struct tvar *tv, double t0, const struct history *h)
+static double ntot_update(struct tvar *tv, double t0, const struct history *h)
 {
+	struct ntot_thunk *ntot = (struct ntot_thunk *)tv->thunk;
 	double t = history_time(h);
+	double tnext = INFINITY;
+
 	process_updates(tv, t0, t);
 	process_messages(tv, t0, h);
+
+	if (pqueue_count(&ntot->updates)) {
+		const struct update *u = pqueue_top(&ntot->updates);
+		tnext = u->t;
+	}
+
+	return tnext;
 }
 
 

@@ -33,7 +33,7 @@ struct tvar {
 struct tvar_type {
 	void (*init) (struct var_meta *meta, void **thunk, const char *name, struct design *d, va_list ap);
 	void (*deinit) (struct var_meta *meta, void *thunk, struct design *d);
-	void (*update) (struct tvar *tv, double t0, const struct history *h);
+	double (*update) (struct tvar *tv, double t0, const struct history *h);
 };
 
 extern const struct tvar_type *VAR_IRECVTOT;
@@ -63,6 +63,7 @@ struct design {
 
 	struct deltaset deltaset;
 	double tcur;
+	double tnext;
 };
 
 
@@ -163,8 +164,10 @@ void design_get_tvar_matrix(const struct design *d, const double **x, const size
 const double *design_tvars(const struct design *d, size_t i);
 const double *design_tvar(const struct design *d, const struct var *v, size_t i);
 
-
-
+/* design may change immediately after `design_next_time`, but no earier,
+   assuming no more messages are added to the history */
+double design_next_time(const struct design *d);
+const struct deltaset *design_changes(const struct design *d);
 
 /* interactions */
 const struct var *design_add_prod(struct design *d, const char *name, const struct var *u,

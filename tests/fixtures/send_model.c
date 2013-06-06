@@ -11,10 +11,33 @@
 void send_model_fixture_setup(struct send_model_fixture	*f,
 			      const struct design_fixture *d)
 {
-	f->params.coefs.traits = xcalloc(d->trait_dim, sizeof(double));
-	f->params.coefs.tvars = xcalloc(d->tvar_dim, sizeof(double));
+	size_t trait_dim = d->trait_dim;
+	size_t tvar_dim = d->tvar_dim;
+	
+	f->params.coefs.traits = xcalloc(trait_dim, sizeof(double));
+	f->params.coefs.tvars = xcalloc(tvar_dim, sizeof(double));
+	f->trait_dim = trait_dim;
+	f->tvar_dim = tvar_dim;
 }
 
+void send_model_fixture_set_rand(struct send_model_fixture *f)
+{
+	size_t i;
+	int u;
+	double x;
+
+	for (i = 0; i < f->trait_dim; i++) {
+		u = rand();
+		x = ((double) (u % 21) - 10) / 10;
+		f->params.coefs.traits[i] = x;
+	}
+
+	for (i = 0; i < f->tvar_dim; i++) {
+		u = rand();
+		x = ((double) (u % 21) - 10) / 10;
+		f->params.coefs.tvars[i] = x;
+	}
+}
 
 void send_model_fixture_teardown(struct send_model_fixture *f)
 {
