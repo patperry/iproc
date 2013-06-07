@@ -4,6 +4,7 @@
 #include <assert.h>		// assert
 #include <math.h>		// exp, isnan
 #include <stddef.h>		// size_t
+#include "version.h"
 
 
 /* A categorical distribution, using the natural exponential family
@@ -22,22 +23,12 @@ struct catdist {
 	double psi_shift;	/* shifted CGF: log[ \sum_i exp{ eta(i) - eta_max } ] */
 	double tol;
 
-	size_t version;
-	struct catdist_checkpoint **cp;
-	size_t ncp, ncpmax;
+	struct version version;
 };
 
-struct catdist_checkpoint {
-	size_t version;
-};
 
 void catdist_init(struct catdist *c, size_t ncat);
 void catdist_deinit(struct catdist *c);
-
-void catdist_add_checkpoint(struct catdist *c, struct catdist_checkpoint *cp);
-void catdist_remove_checkpoint(struct catdist *c, struct catdist_checkpoint *cp);
-int catdist_checkpoint_passed(const struct catdist_checkpoint *cp, const struct catdist *c);
-void catdist_checkpoint_set(struct catdist_checkpoint *cp, const struct catdist *c);
 
 static inline size_t catdist_ncat(const struct catdist *c);
 
@@ -48,6 +39,13 @@ static inline double catdist_psi(const struct catdist *c);
 
 void catdist_set_eta(struct catdist *c, size_t i, double eta);
 void catdist_set_all_eta(struct catdist *c, const double *eta);
+
+static inline struct version *catdist_version(const struct catdist *c)
+{
+	return &((struct catdist *)c)->version;
+}
+
+
 
 int catdist_check(const struct catdist *c);
 

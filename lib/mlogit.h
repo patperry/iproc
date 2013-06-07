@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include "blas.h"
 #include "uintset.h"
+#include "version.h"
 #include "catdist.h"
 
 #define MLOGIT_COV_UPLO	BLAS_UPPER
@@ -29,9 +30,6 @@ struct mlogit_work {
 	double *xbuf2;
 };
 
-struct mlogit_checkpoint {
-	size_t version;
-};
 
 struct mlogit {
 	struct catdist dist_;
@@ -51,9 +49,7 @@ struct mlogit {
 	double *x0;
 	size_t nzmax;
 
-	size_t version;
-	struct mlogit_checkpoint **cp;
-	size_t ncp, ncpmax;
+	struct version version;
 
 	int moments;
 
@@ -63,15 +59,8 @@ struct mlogit {
 };
 
 
-
-
 void mlogit_work_init(struct mlogit_work *work, size_t ncat, size_t dim);
 void mlogit_work_deinit(struct mlogit_work *work);
-
-void mlogit_add_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp);
-void mlogit_remove_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp);
-int mlogit_checkpoint_passed(const struct mlogit_checkpoint *cp, const struct mlogit *m);
-void mlogit_checkpoint_set(struct mlogit_checkpoint *cp, const struct mlogit *m);
 
 
 void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *work);
@@ -100,6 +89,11 @@ void mlogit_set_x(struct mlogit *m, size_t i, const size_t *jx,
 		  const double *x, size_t nx);
 void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
 		  const double *dx, size_t ndx);
+
+static inline struct version * mlogit_version(const struct mlogit *m)
+{
+	return &((struct mlogit *)m)->version;
+}
 
 
 int mlogit_check(const struct mlogit *m);

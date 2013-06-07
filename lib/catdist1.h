@@ -9,7 +9,7 @@
 
 struct catdist1 {
 	struct catdist *parent;
-	struct catdist_checkpoint parent_cp;
+	struct version_watch parent_watch;
 
 	struct uintset ind;
 	double *deta;

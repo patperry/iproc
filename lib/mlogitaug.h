@@ -15,7 +15,7 @@ struct mlogitaug_work {
 
 struct mlogitaug {
 	struct mlogit *base;
-	struct mlogit_checkpoint base_cp;
+	struct version_watch base_version;
 	struct catdist1 dist;
 
 	double *beta;

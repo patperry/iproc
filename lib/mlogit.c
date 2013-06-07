@@ -114,10 +114,7 @@ void mlogit_init(struct mlogit *m, size_t ncat, size_t dim, struct mlogit_work *
 	m->x0 = NULL;
 	m->nzmax = 0;
 
-	m->version = 0;
-	m->cp = NULL;
-	m->ncp = 0;
-	m->ncpmax = 0;
+	version_init(&m->version);
 
 	if (work) {
 		m->free_work = 0;
@@ -138,7 +135,7 @@ void mlogit_deinit(struct mlogit *m)
 		mlogit_work_deinit(m->work);
 		free(m->work);
 	}
-	free(m->cp);
+	version_deinit(&m->version);
 	free(m->x0);
 	uintset_deinit(&m->ind);
 	free(m->cov_);
@@ -149,52 +146,11 @@ void mlogit_deinit(struct mlogit *m)
 	catdist_deinit(&m->dist_);
 }
 
+
 void update_version(struct mlogit *m)
 {
-	if (m->version == SIZE_MAX) {
-		size_t i, n = m->ncp;
-		for (i = 0; i < n; i++) {
-			m->cp[i]->version = 0;
-		}
-		m->version = 0;
-	}
-
-	m->version++;
+	version_update(&m->version);
 }
-
-
-
-
-void mlogit_add_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp)
-{
-	if (needs_grow(m->ncp + 1, &m->ncpmax)) {
-		m->cp = xrealloc(m->cp, m->ncpmax * sizeof(m->cp[0]));
-	}
-	m->cp[m->ncp++] = cp;
-	cp->version = m->version;
-}
-
-void mlogit_remove_checkpoint(struct mlogit *m, struct mlogit_checkpoint *cp)
-{
-	size_t i, n = m->ncp;
-	for (i = n; i > 0; i--) {
-		if (m->cp[i - 1] == cp) {
-			memmove(m->cp + i - 1, m->cp + i, (n - i) * sizeof(m->cp[0]));
-			break;
-		}
-	}
-}
-
-int mlogit_checkpoint_passed(const struct mlogit_checkpoint *cp, const struct mlogit *m)
-{
-	return cp->version < m->version;
-}
-
-void mlogit_checkpoint_set(struct mlogit_checkpoint *cp, const struct mlogit *m)
-{
-	cp->version = m->version;
-}
-
 
 
 void clear(struct mlogit *m)

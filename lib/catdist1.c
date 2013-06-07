@@ -37,6 +37,7 @@ static double get_dpsi_safer(const struct catdist1 *c1);
 void catdist1_init(struct catdist1 *c1, struct catdist *parent)
 {
 	assert(parent);
+	struct version *v = catdist_version(parent);
 
 	c1->parent = parent;
 	uintset_init(&c1->ind);
@@ -44,12 +45,13 @@ void catdist1_init(struct catdist1 *c1, struct catdist *parent)
 	c1->nzmax = 0;
 	c1->dpsi = 0.0;
 	c1->cached = 1;
-	catdist_add_checkpoint(c1->parent, &c1->parent_cp);
+	version_watch_init(&c1->parent_watch, v);
 }
 
 void catdist1_deinit(struct catdist1 *c1)
 {
-	catdist_remove_checkpoint(c1->parent, &c1->parent_cp);
+	struct version *v = catdist_version(c1->parent);
+	version_watch_deinit(&c1->parent_watch, v);
 	free(c1->deta);
 	uintset_deinit(&c1->ind);
 }
@@ -126,16 +128,18 @@ double get_dpsi(const struct catdist1 *c1)
 
 int needs_update(const struct catdist1 *c1)
 {
-	return !c1->cached || catdist_checkpoint_passed(&c1->parent_cp, c1->parent);
+	const struct version *v = catdist_version(c1->parent);
+	return !c1->cached || version_changed(v, &c1->parent_watch);
 }
 
 
 void update_cache(struct catdist1 *c1)
 {
+	const struct version *v = catdist_version(c1->parent);
 	double dpsi = get_dpsi(c1);
 	c1->dpsi = dpsi;
 	c1->cached = 1;
-	catdist_checkpoint_set(&c1->parent_cp, c1->parent);
+	version_watch_set(&c1->parent_watch, v);
 }
 
 

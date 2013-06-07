@@ -60,10 +60,7 @@ void catdist_init(struct catdist *c, size_t ncat)
 	c->eta_order = xmalloc(ncat * sizeof(*c->eta_order));
 	c->eta_rank = xmalloc(ncat * sizeof(*c->eta_rank));
 	c->tol = sqrt(EPS) * sqrt(sqrt(EPS));
-	c->version = 0;
-	c->cp = NULL;
-	c->ncp = 0;
-	c->ncpmax = 0;
+	version_init(&c->version);
 
 	clear(c);
 }
@@ -86,6 +83,7 @@ void clear(struct catdist *c)
 
 void catdist_deinit(struct catdist *c)
 {
+	version_deinit(&c->version);
 	free(c->eta_rank);
 	free(c->eta_order);
 	free(c->eta);
@@ -94,52 +92,7 @@ void catdist_deinit(struct catdist *c)
 
 void update_version(struct catdist *c)
 {
-	if (c->version == SIZE_MAX) {
-		size_t i, n = c->ncp;
-		for (i = 0; i < n; i++) {
-			c->cp[i]->version = 0;
-		}
-		c->version = 0;
-	}
-
-	c->version++;
-}
-
-
-
-
-void catdist_add_checkpoint(struct catdist *c, struct catdist_checkpoint *cp)
-{
-	assert(cp);
-
-	if (needs_grow(c->ncp + 1, &c->ncpmax)) {
-		c->cp = xrealloc(c->cp, c->ncpmax * sizeof(c->cp[0]));
-	}
-	c->cp[c->ncp++] = cp;
-}
-
-
-void catdist_remove_checkpoint(struct catdist *c, struct catdist_checkpoint *cp)
-{
-	size_t i, n = c->ncp;
-	for (i = n; i > 0; i--) {
-		if (c->cp[i - 1] == cp) {
-			memmove(c->cp + i - 1, c->cp + i, (n - i) * sizeof(c->cp[0]));
-			break;
-		}
-	}
-}
-
-
-int catdist_checkpoint_passed(const struct catdist_checkpoint *cp, const struct catdist *c)
-{
-	return cp->version < c->version;
-}
-
-
-void catdist_checkpoint_set(struct catdist_checkpoint *cp, const struct catdist *c)
-{
-	cp->version = c->version;
+	version_update(&c->version);
 }
 
 

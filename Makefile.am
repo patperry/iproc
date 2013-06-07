@@ -71,6 +71,8 @@ libcore_a_SOURCES = \
 	lib/strata.h \
 	lib/util.c \
 	lib/util.h \
+	lib/version.c \
+	lib/version.h \
 	lib/core/src/coreutil.c \
 	lib/core/src/coreutil.h \
 	lib/core/src/hash.h \
