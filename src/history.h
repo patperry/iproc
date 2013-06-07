@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "uintset.h"
+#include "version.h"
 
 
 struct message {
@@ -32,6 +33,7 @@ struct history {
 	struct history_actor *recvs;
 	double tcur;
 	size_t ncur;
+	struct version version;
 };
 
 
@@ -72,6 +74,12 @@ static inline void history_get_messages(const struct history *h, const struct me
 	*n = h->nmsg;
 }
 
+/* version (inremented on history_reset or history_clear) */
+static inline struct version *history_version(const struct history *h)
+{
+	return &((struct history *)h)->version;
+}
+
 
 /* actor histories */
 static inline struct history_actor *history_send(const struct history *h, size_t i)
@@ -99,7 +107,6 @@ static inline void history_actor_get_alters(const struct history_actor *ha,
 	uintset_get_vals(&ha->alters, ind, len);
 	*wts = ha->wts;
 }
-
 
 
 #endif /* HISTORY_H */

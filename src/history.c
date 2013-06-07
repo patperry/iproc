@@ -106,11 +106,13 @@ void history_init(struct history *h, size_t nsend, size_t nrecv)
 	actors_init(&h->recvs, nrecv);
 	h->ncur = 0;
 	h->tcur = -INFINITY;
+	version_init(&h->version);
 }
 
 
 void history_deinit(struct history *h)
 {
+	version_deinit(&h->version);
 	actors_deinit(h->recvs, history_nrecv(h));
 	actors_deinit(h->sends, history_nsend(h));
 	free(h->to);
@@ -132,6 +134,9 @@ void history_reset(struct history *h)
 	actors_clear(h->recvs, history_nrecv(h));
 	h->ncur = 0;
 	h->tcur = -INFINITY;
+
+	/* update the version */
+	version_update(&h->version);
 }
 
 
@@ -235,5 +240,4 @@ void history_add(struct history *h, size_t from, const size_t *to, size_t nto,
 	}
 	assert(to_buf == h->to + h->nto);
 }
-
 

@@ -74,6 +74,7 @@ static void tvar_deinit(struct tvar *tv)
 void design_init(struct design *d, struct history *h, size_t count)
 {
 	d->history = h;
+	version_watch_init(&d->history_version, history_version(h));
 	d->count = count;
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
@@ -110,15 +111,16 @@ static void design_clear(struct design *d)
 
 static void design_tvars_update(struct design *d)
 {
-	double t0 = d->tcur;
 	const struct history *h = design_history(d);
+	const struct version *v = history_version(h);
 
-	if (d->tcur == history_time(h)) {
-		return;
-	} else if (d->tcur > history_time(h)) {
+	if (version_changed(v, &d->history_version)) {
 		design_clear(d);
+	} else if (d->tcur == history_time(h)) {
+		return;
 	}
 	
+	double t0 = d->tcur;
 	d->tcur = history_time(h);
 
 	size_t i, n = d->ntvar;
@@ -216,6 +218,9 @@ void design_deinit(struct design *d)
 
 	free(d->cohort_reps);	
 	free(d->cohorts);
+
+	version_watch_deinit(&d->history_version,
+			     history_version(d->history));
 }
 
 
