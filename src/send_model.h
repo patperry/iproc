@@ -13,6 +13,7 @@ struct send_params {
 
 struct send_model {
 	struct design *design;
+	struct version_watch history_version;
 	struct send_params params;
 	struct mlogit_work base_work;
 	struct mlogit base;

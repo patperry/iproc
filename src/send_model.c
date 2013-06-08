@@ -19,6 +19,7 @@ void send_model_update(struct send_model *m)
 {
 	const struct design *d = send_model_design(m);
 	const struct history *h = design_history(d);
+	const struct version *v = history_version(h);
 	const struct deltaset *ds = design_changes(d);
 	const struct delta *delta;
 	double t0 = m->tcur;
@@ -30,12 +31,13 @@ void send_model_update(struct send_model *m)
 	size_t dim = design_tvar_dim(d);
 	size_t nz;
 	ptrdiff_t iz;
-	
+
 	assert(t0 <= t);
-	if (t0 == t)
+	if (t0 == t && !version_changed(v, &m->history_version))
 		return;
 
 	design_get_tvar_matrix(d, &x, &ind, &nz);
+	version_watch_set(&m->history_version, v);
 
 	for (delta = deltaset_head(ds); delta != NULL; delta = delta->prev) {
 		if (delta->t < t0 || delta->t == -INFINITY)
@@ -64,13 +66,16 @@ void send_model_init(struct send_model *m, const struct send_params *p,
 {
 	assert(design_count(d));
 
+	const struct history *h = design_history(d);
+	struct version *v = history_version(h);
 	size_t count = design_count(d);
 	size_t base_dim = design_trait_dim(d);
 	const double *trait_x = design_trait_matrix(d);
 	size_t aug_dim = design_tvar_dim(d);
 	size_t dim = base_dim + aug_dim;
-	
+
 	m->design = d;
+	version_watch_init(&m->history_version, v);
 
 	m->params.coefs.traits = xcalloc(dim, sizeof(double));
 	m->params.coefs.tvars = m->params.coefs.traits + base_dim;
@@ -97,6 +102,10 @@ void send_model_init(struct send_model *m, const struct send_params *p,
 
 void send_model_deinit(struct send_model *m)
 {
+	const struct design *d = send_model_design(m);
+	const struct history *h = design_history(d);
+	struct version *v = history_version(h);
+
 	assert(m);
 
 	mlogitaug_deinit(&m->aug);
@@ -104,6 +113,7 @@ void send_model_deinit(struct send_model *m)
 	mlogit_deinit(&m->base);
 	mlogit_work_deinit(&m->base_work);
 	free(m->params.coefs.traits);
+	version_watch_deinit(&m->history_version, v);
 }
 
 
