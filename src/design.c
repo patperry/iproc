@@ -100,12 +100,17 @@ void design_init(struct design *d, struct history *h, size_t count)
 
 static void design_clear(struct design *d)
 {
+	const struct history *h = design_history(d);
+	const struct version *v = history_version(h);
+
 	size_t i, n = d->ntvar;
 	for (i = 0; i < n; i++) {
 		tvar_clear(d->tvars[i]);
 	}
 	deltaset_clear(&d->deltaset);
 	d->tcur = -INFINITY;
+
+	version_watch_set(&d->history_version, v);
 }
 
 
@@ -148,34 +153,7 @@ const struct deltaset *design_changes(const struct design *d)
 
 double design_next_time(const struct design *d)
 {
-	const struct history *h = design_history(d);
-	double tnext;
-
-	if (d->tcur < history_time(h)) {
-		tnext = -INFINITY;
-	} else if (d->tcur == history_time(h)) {
-		tnext = d->tnext;
-	} else {
-		tnext = d->tnext;
-
-		/* find most recent message in [tcur, infty) */
-		size_t i, n = history_count(h);
-		const struct message *msg = NULL, *prev;
-		for (i = n; i > 0; i--) {
-			prev = history_item(h, i - 1);
-
-			if (prev->time < d->tcur)
-				break;
-
-			msg = prev;
-		}
-
-		if (msg) {
-			tnext = MIN(d->tcur, msg->time);
-		}
-	}
-	((struct design *)d)->tnext = tnext;
-
+	design_tvars_update((struct design *)d);
 	return d->tnext;
 }
 
