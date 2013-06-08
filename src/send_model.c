@@ -22,8 +22,6 @@ void send_model_update(struct send_model *m)
 	const struct version *v = history_version(h);
 	const struct deltaset *ds = design_changes(d);
 	const struct delta *delta;
-	double t0 = m->tcur;
-	double t = history_time(h);
 	size_t i;
 	const double *xi;
 	const double *x;
@@ -32,12 +30,19 @@ void send_model_update(struct send_model *m)
 	size_t nz;
 	ptrdiff_t iz;
 
-	assert(t0 <= t);
-	if (t0 == t && !version_changed(v, &m->history_version))
+	if (version_changed(v, &m->history_version)) {
+		mlogitaug_set_all_x(&m->aug, NULL, NULL, 0);
+		m->tcur = -INFINITY;
+		version_watch_set(&m->history_version, v);
+	}
+
+	double t0 = m->tcur;
+	double t = history_time(h);
+
+	if (t0 == t)
 		return;
 
 	design_get_tvar_matrix(d, &x, &ind, &nz);
-	version_watch_set(&m->history_version, v);
 
 	for (delta = deltaset_head(ds); delta != NULL; delta = delta->prev) {
 		if (delta->t < t0 || delta->t == -INFINITY)
@@ -53,12 +58,6 @@ void send_model_update(struct send_model *m)
 
 	m->tcur = t;
 }
-
-//static void sender_clear(struct send_model_sender *sm)
-//{
-//	mlogitaug_set_all_x(&sm->mlogitaug, NULL, NULL, 0);
-//}
-
 
 
 void send_model_init(struct send_model *m, const struct send_params *p,
