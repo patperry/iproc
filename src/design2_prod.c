@@ -142,6 +142,16 @@ static struct tvar2_type VAR2_PROD2_REP = {
 const struct tvar2_type *VAR2_PROD2 = &VAR2_PROD2_REP;
 
 
+static const struct var2 *add_trait_prod(struct design2 *d, const char *name,
+					 const struct trait2 *u, const struct trait2 *v)
+{
+	const struct var2 *res = NULL;
+
+	assert(0 && "Not Implemented");
+
+	return res;
+}
+
 
 const struct var2 *design2_add_prod(struct design2 *d, const char *name,
 				    const struct var2 *u, const struct var2 *v)
@@ -152,7 +162,8 @@ const struct var2 *design2_add_prod(struct design2 *d, const char *name,
 	const struct var2 *res = NULL;
 
 	if (u->meta.type == VAR_TYPE_TRAIT && v->meta.type == VAR_TYPE_TRAIT) {
-		assert(0 && "Not Implemented");
+		res = add_trait_prod(d, name, container_of(u, struct trait2, var),
+				     container_of(v, struct trait2, var));
 	} else {
 		res = design2_add_tvar(d, name, VAR2_PROD2, d, u, v);
 	}
