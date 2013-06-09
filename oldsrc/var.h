@@ -8,36 +8,6 @@
 #include "history.h"
 
 
-struct var2 {
-	struct var_meta meta;
-	struct design2 *design;
-	size_t index;
-};
-
-struct kvar2 {
-	struct var2 var;
-	double *xi, *xj;
-	size_t dimi, dimj;
-};
-
-struct tvar2 {
-	struct var2 var;
-	const struct tvar2_type *type;
-	void *udata;
-};
-
-struct tvar2_type {
-	void (*init) (struct tvar2 *tv, const char *name, struct history *h, va_list ap);
-	void (*deinit) (struct tvar2 * tv, struct history *h);
-};
-
-
-extern const struct tvar_type *VAR_IRECVTOT;
-extern const struct tvar_type *VAR_ISENDTOT;
-
-extern const struct tvar_type *VAR_NRECVTOT;
-extern const struct tvar_type *VAR_NSENDTOT;
-
 
 /* Indicator 1{ j -> i in (-Infty, t) } */
 extern const struct tvar2_type *VAR2_IRECV;

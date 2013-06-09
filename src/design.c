@@ -74,7 +74,6 @@ static void tvar_deinit(struct tvar *tv)
 void design_init(struct design *d, struct history *h, size_t count)
 {
 	d->history = h;
-	version_watch_init(&d->history_version, history_version(h));
 	d->count = count;
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
@@ -94,7 +93,9 @@ void design_init(struct design *d, struct history *h, size_t count)
 	d->ntvar_max = 0;
 
 	deltaset_init(&d->deltaset, count);
+	version_watch_init(&d->history_version, history_version(h));
 	d->tcur = -INFINITY;
+	d->tnext = INFINITY;
 }
 
 
@@ -108,9 +109,9 @@ static void design_clear(struct design *d)
 		tvar_clear(d->tvars[i]);
 	}
 	deltaset_clear(&d->deltaset);
-	d->tcur = -INFINITY;
-
 	version_watch_set(&d->history_version, v);
+	d->tcur = -INFINITY;
+	d->tnext = INFINITY;
 }
 
 
@@ -184,7 +185,10 @@ static void tvars_deinit(struct tvar **tvars, size_t len)
 
 void design_deinit(struct design *d)
 {
+	version_watch_deinit(&d->history_version,
+			     history_version(d->history));
 	deltaset_deinit(&d->deltaset);
+
 	tvars_deinit(d->tvars, d->ntvar);
 	free2((void **)d->tvars, d->ntvar);
 	uintset_deinit(&d->active);
@@ -197,8 +201,6 @@ void design_deinit(struct design *d)
 	free(d->cohort_reps);	
 	free(d->cohorts);
 
-	version_watch_deinit(&d->history_version,
-			     history_version(d->history));
 }
 
 

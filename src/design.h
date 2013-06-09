@@ -44,7 +44,6 @@ extern const struct tvar_type *VAR_NSENDTOT;
 
 struct design {
 	struct history *history;
-	struct version_watch history_version;
 	size_t count;
 
 	size_t ncohort;
@@ -63,6 +62,7 @@ struct design {
 	size_t ntvar, ntvar_max;
 
 	struct deltaset deltaset;
+	struct version_watch history_version;
 	double tcur;
 	double tnext;
 };

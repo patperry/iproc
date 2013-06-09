@@ -30,6 +30,9 @@ libiproc_a_SOURCES = \
 	src/design_alg.c \
 	src/design_prod.c \
 	src/design.h \
+	src/design2.c \
+	src/design2_alg.c \
+	src/design2.h \
 	src/history.c \
 	src/history.h \
 	src/send_model.c \
