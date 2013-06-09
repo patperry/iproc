@@ -37,8 +37,8 @@ struct tvar2_type {
 	double (*update) (struct tvar2 *tv, size_t i, double t0, const struct history *h);
 };
 
-
-
+extern const struct tvar2_type *VAR2_IRECV;
+extern const struct tvar2_type *VAR2_ISEND;
 
 
 struct design2 {

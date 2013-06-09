@@ -44,6 +44,7 @@ libiproc_a_SOURCES = \
 	src/v-nrecvtot.c \
 	src/v-nsendtot.c \
 	src/v-ntot-source.h \
+	src/v2-irecv.c \
 	src/v2-isend.c \
 	src/v2-idyad-source.h \
 	src/var.c \
