@@ -86,6 +86,7 @@
 		2269055A1764C14100C99BC2 /* design2.h in Headers */ = {isa = PBXBuildFile; fileRef = 226905591764C14100C99BC2 /* design2.h */; };
 		2269055C1764D25600C99BC2 /* design2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2269055B1764D25600C99BC2 /* design2.c */; };
 		2269055F1764D88C00C99BC2 /* design2_alg.c in Sources */ = {isa = PBXBuildFile; fileRef = 2269055D1764D88C00C99BC2 /* design2_alg.c */; };
+		2269056217651E6100C99BC2 /* design2_prod.c in Sources */ = {isa = PBXBuildFile; fileRef = 2269056117651E6100C99BC2 /* design2_prod.c */; };
 		22749E4F1402A97000C5A955 /* dSFMT-params.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E421402A97000C5A955 /* dSFMT-params.h */; };
 		22749E501402A97000C5A955 /* dSFMT-params521.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E431402A97000C5A955 /* dSFMT-params521.h */; };
 		22749E511402A97000C5A955 /* dSFMT-params1279.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E441402A97000C5A955 /* dSFMT-params1279.h */; };
@@ -670,6 +671,7 @@
 		226905591764C14100C99BC2 /* design2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design2.h; path = src/design2.h; sourceTree = "<group>"; };
 		2269055B1764D25600C99BC2 /* design2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design2.c; path = src/design2.c; sourceTree = "<group>"; };
 		2269055D1764D88C00C99BC2 /* design2_alg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design2_alg.c; path = src/design2_alg.c; sourceTree = "<group>"; };
+		2269056117651E6100C99BC2 /* design2_prod.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design2_prod.c; path = src/design2_prod.c; sourceTree = "<group>"; };
 		22749E3E1402A94A00C5A955 /* libdSFMT.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libdSFMT.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		22749E421402A97000C5A955 /* dSFMT-params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params.h"; path = "lib/dSFMT/dSFMT-params.h"; sourceTree = "<group>"; };
 		22749E431402A97000C5A955 /* dSFMT-params521.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "dSFMT-params521.h"; path = "lib/dSFMT/dSFMT-params521.h"; sourceTree = "<group>"; };
@@ -978,6 +980,7 @@
 				22AEA45E1756530000780475 /* design.h */,
 				2269055B1764D25600C99BC2 /* design2.c */,
 				2269055D1764D88C00C99BC2 /* design2_alg.c */,
+				2269056117651E6100C99BC2 /* design2_prod.c */,
 				226905591764C14100C99BC2 /* design2.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
@@ -1738,6 +1741,7 @@
 				225355DD17625EA200DFF865 /* version.c in Sources */,
 				2269055C1764D25600C99BC2 /* design2.c in Sources */,
 				2269055F1764D88C00C99BC2 /* design2_alg.c in Sources */,
+				2269056217651E6100C99BC2 /* design2_prod.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
