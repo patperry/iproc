@@ -20,39 +20,33 @@
 struct prod_thunk {
 	const struct var *u;
 	const struct var *v;
-	double *delta;
-	size_t *ind;
 };
 
 
-static void prod_init(struct var_meta *meta, void **thunk, const char *name, struct design *d, va_list ap)
+static void prod_init(struct var_meta *meta, void **thunk, const char *name,
+		      struct design *d, va_list ap)
 {
 	const struct var *u = va_arg(ap, const struct var*);
 	const struct var *v = va_arg(ap, const struct var*);
-	size_t size = u->meta.size * v->meta.size;
 	size_t rank = u->meta.rank + v->meta.rank;
 	size_t dims[VAR_RANK_MAX];
 
 	memcpy(dims, u->meta.dims, u->meta.rank * sizeof(size_t));
-	memcpy(dims + u->meta.rank, v->meta.dims, v->meta.rank * sizeof(size_t));
+	memcpy(dims + u->meta.rank, v->meta.dims,
+	       v->meta.rank * sizeof(size_t));
 	var_meta_init(meta, VAR_TYPE_TVAR, name, dims, rank);
 
 	struct prod_thunk *prod = xmalloc(sizeof(*prod));
 	prod->u = u;
 	prod->v = v;
-	prod->delta = xmalloc(size * sizeof(double));
-	prod->ind = xmalloc(size * sizeof(size_t));
 	*thunk = prod;
 }
 
 
 static void prod_deinit(struct var_meta *meta, void *thunk, struct design *d)
 {
-	struct prod_thunk *prod = (struct prod_thunk *)thunk;
-	free(prod->ind);
-	free(prod->delta);
+	struct prod_thunk *prod = thunk;
 	free(prod);
-
 	var_meta_deinit(meta);
 }
 
@@ -78,9 +72,10 @@ static double *get_x(const struct var *v, size_t i)
 }
 
 
-static void design_prod_update(struct design *d, struct tvar *prod_var, size_t i, double t)
+static void design_prod_update(struct design *d, struct tvar *prod_var,
+			       size_t i, double t)
 {
-	struct prod_thunk *prod = (struct prod_thunk *)prod_var->thunk;
+	struct prod_thunk *prod = prod_var->thunk;
 	const double *u = get_x(prod->u, i);
 	const double *v = get_x(prod->v, i);
 	size_t nu = prod->u->meta.size;
@@ -98,10 +93,11 @@ static void design_prod_update(struct design *d, struct tvar *prod_var, size_t i
 }
 
 
-static double prod_update(struct tvar *prod_var, double t0, const struct history *h)
+static double prod_update(struct tvar *prod_var, double t0,
+			  const struct history *h)
 {
 	struct design *d = prod_var->var.design;
-	struct prod_thunk *prod = (struct prod_thunk *)prod_var->thunk;
+	struct prod_thunk *prod = prod_var->thunk;
 	struct delta *delta;
 
 	if (prod->u->meta.type == VAR_TYPE_TVAR) {
@@ -141,33 +137,35 @@ static struct tvar_type VAR_PROD_REP = {
 };
 
 
-static const struct tvar_type *VAR_PROD = &VAR_PROD_REP;
+const struct tvar_type *VAR_PROD = &VAR_PROD_REP;
 
 
-const struct var *design_add_prod(struct design *d, const char *name, const struct var *u,
-				  const struct var *v)
+const struct var *design_add_prod(struct design *d, const char *name,
+				  const struct var *u, const struct var *v)
 {
 	assert(u->design == d);
 	assert(v->design == d);
 
 	const struct var *res = NULL;
-	size_t size = u->meta.size * v->meta.size;
-	size_t rank = u->meta.rank + v->meta.rank;
-	size_t dims[VAR_RANK_MAX];
-	size_t i, n = design_count(d);
-
-	memcpy(dims, u->meta.dims, u->meta.rank * sizeof(size_t));
-	memcpy(dims + u->meta.rank, v->meta.dims, v->meta.rank * sizeof(size_t));
 
 	if (u->meta.type == VAR_TYPE_TRAIT && v->meta.type == VAR_TYPE_TRAIT) {
+		size_t dims[VAR_RANK_MAX];
+		size_t size = u->meta.size * v->meta.size;
+		size_t rank = u->meta.rank + v->meta.rank;
+		size_t i, n = design_count(d);
 		double *x = xcalloc(n * size, sizeof(double));
+
+		memcpy(dims, u->meta.dims, u->meta.rank * sizeof(size_t));
+		memcpy(dims + u->meta.rank, v->meta.dims,
+		       v->meta.rank * sizeof(size_t));
 
 		for (i = 0; i < n; i++) {
 			const double *xu = design_trait(d, u, i);
 			const double *xv = design_trait(d, v, i);
 			if (v->meta.size) {
-				blas_dger(v->meta.size, u->meta.size, 1.0, xv, 1, xu, 1,
-					  x + i * size, v->meta.size);
+				blas_dger(v->meta.size, u->meta.size, 1.0,
+					  xv, 1, xu, 1, x + i * size,
+					  v->meta.size);
 			}
 		}
 
