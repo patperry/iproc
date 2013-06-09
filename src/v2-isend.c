@@ -1,8 +1,10 @@
 
+#define HISTORY_ACTOR(h, i) \
+	history_send((h), (i))
+
 #define FOREACH_ACTOR(it, j, msg) \
 	for ((it) = 0; \
-	     (msg)->from == i \
-	     && (it) < (msg)->nto \
+	     (it) < (msg)->nto \
 	     && ((j) = (msg)->to[it], 1); \
 	     (it)++)
 

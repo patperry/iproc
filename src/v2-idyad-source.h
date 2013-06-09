@@ -96,20 +96,23 @@ static void process_messages(struct tvar2 *tv, size_t i, double t0,
 	double t = history_time(h);
 	double w = idyad->window;
 	double tmin = t - idyad->window;
-	double *x;
-	size_t imsg, nmsg = history_count(h);
-	const struct message *msg;
-	size_t it, j;
 
+	const struct history_actor *ha = HISTORY_ACTOR(h, i);
+	const size_t *ind;
+	size_t iz, nz;
 
-	for (imsg = nmsg; imsg > 0; imsg--) {
-		msg = history_item(h, imsg - 1);
+	history_actor_get_msgs(ha, &ind, &nz);
+
+	for (iz = nz; iz > 0; iz--) {
+		size_t imsg = ind[iz - 1];
+		const struct message *msg = history_item(h, imsg);
+		size_t it, j;
 
 		if (msg->time < tmin)
 			break;
 
 		FOREACH_ACTOR(it, j, msg) {
-			x = design2_make_active(d, tv, i, j);
+			double *x = design2_make_active(d, tv, i, j);
 			if (x[0] == 0.0) {
 				x[0] = 1.0;
 				u.t = msg->time + w;
