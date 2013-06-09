@@ -78,7 +78,7 @@ void design_init(struct design *d, struct history *h, size_t count)
 
 	d->cohorts = xcalloc(count, sizeof(*d->cohorts));
 	d->cohort_reps = xcalloc(1, sizeof(*d->cohort_reps));
-	d->ncohort = 1;	
+	d->ncohort = count ? 1 : 0;
 
 	d->trait_dim = 0;
 	d->trait_x = NULL;
