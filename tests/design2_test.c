@@ -234,6 +234,115 @@ static void test_irecv()
 }
 
 
+static void test_nsend()
+{
+	double intvls[] = { INFINITY };
+	size_t nintvl = 1;
+	const struct var2 *v = design2_add_tvar(DESIGN2, "NSend",
+						VAR2_NSEND, intvls, nintvl);
+	size_t ito;
+	size_t isend, jrecv;
+	const struct message *msgs;
+	size_t imsg, nmsg;
+
+	history_get_messages(HISTORY, &msgs, &nmsg);
+
+	double xn[NSEND][NRECV];
+
+	for (isend = 0; isend < NSEND; isend++) {
+		for (jrecv = 0; jrecv < NRECV; jrecv++) {
+			xn[isend][jrecv] = 0;
+		}
+	}
+
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		const struct message *msg = &msgs[imsg];
+		double t = msg->time;
+		history_advance(HISTORY, t);
+
+		isend = msg->from;
+		for (ito = 0; ito < msg->nto; ito++) {
+			jrecv = msg->to[ito];
+			const double *x = design2_tvar(DESIGN2, v, isend, jrecv);
+			double val = xn[isend][jrecv];
+
+			if (x) {
+				assert_real_identical(val, x[0]);
+			} else {
+				assert_real_identical(val, 0);
+			}
+		}
+
+		if (imsg + 1 < nmsg && msgs[imsg + 1].time != t) {
+			while (msg->time == t) {
+				double wt = 1.0 / msg->nto;
+				for (ito = 0; ito < msg->nto; ito++) {
+					xn[msg->from][msg->to[ito]] += wt;
+				}
+				if (msg == msgs)
+					break;
+				msg--;
+			}
+		}
+	}
+}
+
+
+static void test_nrecv()
+{
+	double intvls[] = { INFINITY };
+	size_t nintvl = 1;
+	const struct var2 *v = design2_add_tvar(DESIGN2, "NRecv",
+						VAR2_NRECV, intvls, nintvl);
+	size_t ito;
+	size_t isend, jrecv;
+	const struct message *msgs;
+	size_t imsg, nmsg;
+
+	history_get_messages(HISTORY, &msgs, &nmsg);
+
+	double xn[NSEND][NRECV];
+
+	for (isend = 0; isend < NSEND; isend++) {
+		for (jrecv = 0; jrecv < NRECV; jrecv++) {
+			xn[isend][jrecv] = 0;
+		}
+	}
+
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		const struct message *msg = &msgs[imsg];
+		double t = msg->time;
+		history_advance(HISTORY, t);
+
+		jrecv = msg->from;
+		for (ito = 0; ito < msg->nto; ito++) {
+			isend = msg->to[ito];
+			const double *x = design2_tvar(DESIGN2, v, isend, jrecv);
+			double val = xn[jrecv][isend];
+
+			if (x) {
+				assert_real_identical(val, x[0]);
+			} else {
+				assert_real_identical(val, 0);
+			}
+		}
+
+		if (imsg + 1 < nmsg && msgs[imsg + 1].time != t) {
+			while (msg->time == t) {
+				double wt = 1.0 / msg->nto;
+				for (ito = 0; ito < msg->nto; ito++) {
+					xn[msg->from][msg->to[ito]] += wt;
+				}
+				if (msg == msgs)
+					break;
+				msg--;
+			}
+		}
+	}
+}
+
+
+
 int main()
 {
 	UnitTest tests[] = {
@@ -241,6 +350,8 @@ int main()
 		unit_test_setup_teardown(test_isend1, setup, teardown),
 		unit_test_setup_teardown(test_isend2, setup, teardown),
 		unit_test_setup_teardown(test_irecv, setup, teardown),
+		unit_test_setup_teardown(test_nsend, setup, teardown),
+		unit_test_setup_teardown(test_nrecv, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 
 	};
