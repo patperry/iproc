@@ -15,59 +15,14 @@
 #include "recv_model.h"
 
 static void cohort_clear(struct recv_model_cohort *cm, size_t c,
-			 const struct frame *f);
-
-
-
-size_t recv_coefs_dim(const struct frame *f)
-{
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
-	size_t dimr = design_dim(r);
-	size_t dimd = design2_dim(d);
-	size_t dim = dimr + dimd;
-	return dim;
-}
-
-
-void recv_coefs_init(struct recv_coefs *c, const struct frame *f)
-{
-	size_t dim = recv_coefs_dim(f);
-	double *data = xmalloc(dim * sizeof(data[0]));
-	recv_coefs_init_view(c, f, data);
-	c->owner = 1;
-}
-
-void recv_coefs_init_view(struct recv_coefs *c, const struct frame *f, const double *data)
-{
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
-
-	c->all = (double *)data;
-	c->dim = 0;
-
-	coefs_init_view(&c->recv, r, c->all + c->dim);
-	c->dim += c->recv.dim;
-
-	coefs2_init_view(&c->dyad, d, c->all + c->dim);
-	c->dim += c->dyad.dim;
-	
-	c->owner = 0;
-}
-
-
-void recv_coefs_deinit(struct recv_coefs *c)
-{
-	if (c->owner)
-		free(c->all);
-}
+			 const struct design *r, const struct design2 *d);
 
 
 static void cohort_set(struct recv_model_cohort *cm, size_t c,
-		       const struct frame *f,
-		       const struct recv_coefs *coefs)
+		       const struct design *r, const struct design2 *d,
+		       const struct recv_params *p)
 {
-	cohort_clear(cm, c, f);
+	cohort_clear(cm, c, r, d);
 	mlogit_set_all_offset(&cm->mlogit, NULL);
 	mlogit_set_coefs(&cm->mlogit, coefs->all);
 	//mlogit_check(&cm->mlogit);
@@ -75,18 +30,16 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 
 
 static void cohort_clear(struct recv_model_cohort *cm, size_t c,
-			 const struct frame *f)
+			 const struct design *r, const struct design2 *d)
 {
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
 	size_t isend = design2_cohort_rep(d, c);
 	size_t nrecv = design_count(r);
 	size_t dimr = design_dim(r);
 	size_t dimr0 = design_trait_dim(r);
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dim = dimr + dimd0;
-	const double *xr = design_all_traits(r);
-	const double *xd = design2_all_traits(d, isend);
+	const double *xr = design_trait_matrix(r);
+	const double *xd = design2_trait_matrix(d, isend);
 	double *x = xcalloc(nrecv * dim, sizeof(*x));
 
 	if (dimr0 > 0) {
@@ -112,19 +65,17 @@ static void cohort_set_moments(struct recv_model_cohort *cm, int k)
 
 static void cohort_init(struct recv_model_cohort *cm,
 			size_t c,
-			const struct frame *f,
-			const struct recv_coefs *coefs,
+			const struct design *r, const struct design2 *d,
+			const struct recv_params *p,
 			struct mlogit_work *work)
 {
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
-	size_t nrecv = frame_recv_count(f);
+	size_t nrecv = design_count(r);
 	size_t dimr = design_dim(r);
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dim = dimr + dimd0;
 
 	mlogit_init(&cm->mlogit, nrecv, dim, work);
-	cohort_set(cm, c, f, coefs);
+	cohort_set(cm, c, r, d, p);
 }
 
 
@@ -136,8 +87,7 @@ static void cohort_deinit(struct recv_model_cohort *cm)
 
 size_t recv_model_cohort(const struct recv_model *m, size_t isend)
 {
-	const struct frame *f = recv_model_frame(m);
-	const struct design2 *d = frame_dyad_design(f);
+	const struct design2 *d = recv_model_design2(m);
 	return design2_cohort(d, isend);
 }
 
@@ -150,9 +100,8 @@ static void sender_clear(struct recv_model_sender *sm)
 
 static void sender_set(struct recv_model_sender *sm,
 		       size_t isend,
-		       const struct frame *f, const struct recv_coefs *coefs)
+		       const struct design2 *d, const struct recv_coefs *coefs)
 {
-	const struct design2 *d = frame_dyad_design(f);
 	const int has_loops = frame_has_loops(f);
 
 	const double *x;
