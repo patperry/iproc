@@ -317,10 +317,6 @@ check_PROGRAMS += tests/design2_test
 tests_design2_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_design2_test_LDADD    = $(check_LDADD)
 
-#check_PROGRAMS += tests/frame_test
-#tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
-#tests_frame_test_LDADD    = $(check_LDADD)
-
 #check_PROGRAMS += tests/model_test
 #tests_model_test_CPPFLAGS = $(check_CPPFLAGS)
 #tests_model_test_LDADD    = $(check_LDADD)
