@@ -177,6 +177,11 @@
 		22AEA4601756530000780475 /* design.h in Headers */ = {isa = PBXBuildFile; fileRef = 22AEA45E1756530000780475 /* design.h */; };
 		22AEA46417565E0800780475 /* design_alg.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA46317565E0800780475 /* design_alg.c */; };
 		22AEA4661756B12900780475 /* design_prod.c in Sources */ = {isa = PBXBuildFile; fileRef = 22AEA4651756B12900780475 /* design_prod.c */; };
+		22B105EF17663FF5002C55F6 /* v2-ncosib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B105EA17663FF5002C55F6 /* v2-ncosib.c */; };
+		22B105F017663FF5002C55F6 /* v2-nrecv2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B105EB17663FF5002C55F6 /* v2-nrecv2.c */; };
+		22B105F117663FF5002C55F6 /* v2-nsend2.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B105EC17663FF5002C55F6 /* v2-nsend2.c */; };
+		22B105F217663FF5002C55F6 /* v2-nsib.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B105ED17663FF5002C55F6 /* v2-nsib.c */; };
+		22B105F317663FF5002C55F6 /* v2-ntriad-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B105EE17663FF5002C55F6 /* v2-ntriad-source.h */; };
 		22B7E92B15D46A70009978F8 /* testutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 22B7E92915D46A70009978F8 /* testutil.c */; };
 		22B7E92C15D46A70009978F8 /* testutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 22B7E92A15D46A70009978F8 /* testutil.h */; };
 		22B7E92E15D46AD0009978F8 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
@@ -755,6 +760,11 @@
 		22AEA45E1756530000780475 /* design.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design.h; path = src/design.h; sourceTree = "<group>"; };
 		22AEA46317565E0800780475 /* design_alg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_alg.c; path = src/design_alg.c; sourceTree = "<group>"; };
 		22AEA4651756B12900780475 /* design_prod.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design_prod.c; path = src/design_prod.c; sourceTree = "<group>"; };
+		22B105EA17663FF5002C55F6 /* v2-ncosib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-ncosib.c"; path = "src/v2-ncosib.c"; sourceTree = "<group>"; };
+		22B105EB17663FF5002C55F6 /* v2-nrecv2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nrecv2.c"; path = "src/v2-nrecv2.c"; sourceTree = "<group>"; };
+		22B105EC17663FF5002C55F6 /* v2-nsend2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend2.c"; path = "src/v2-nsend2.c"; sourceTree = "<group>"; };
+		22B105ED17663FF5002C55F6 /* v2-nsib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsib.c"; path = "src/v2-nsib.c"; sourceTree = "<group>"; };
+		22B105EE17663FF5002C55F6 /* v2-ntriad-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "v2-ntriad-source.h"; path = "src/v2-ntriad-source.h"; sourceTree = "<group>"; };
 		22B7E92915D46A70009978F8 /* testutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testutil.c; path = tests/testutil.c; sourceTree = "<group>"; };
 		22B7E92A15D46A70009978F8 /* testutil.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = testutil.h; path = tests/testutil.h; sourceTree = "<group>"; };
 		22BECEBD15AA05BD00F630C4 /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lib/util.c; sourceTree = "<group>"; };
@@ -1016,6 +1026,11 @@
 				2249777C1765859200819F95 /* v2-ndyad-source.h */,
 				224977801765873300819F95 /* v2-nrecv.c */,
 				2249777D1765859200819F95 /* v2-nsend.c */,
+				22B105EA17663FF5002C55F6 /* v2-ncosib.c */,
+				22B105EB17663FF5002C55F6 /* v2-nrecv2.c */,
+				22B105EC17663FF5002C55F6 /* v2-nsend2.c */,
+				22B105ED17663FF5002C55F6 /* v2-nsib.c */,
+				22B105EE17663FF5002C55F6 /* v2-ntriad-source.h */,
 				2231F0C11765A30300C5CEFA /* v2-triad.c */,
 				22AEA4591756525F00780475 /* var.c */,
 				22AEA45A1756525F00780475 /* var.h */,
@@ -1267,6 +1282,7 @@
 				2269055A1764C14100C99BC2 /* design2.h in Headers */,
 				2269056517652F2100C99BC2 /* v2-idyad-source.h in Headers */,
 				2249777E1765859200819F95 /* v2-ndyad-source.h in Headers */,
+				22B105F317663FF5002C55F6 /* v2-ntriad-source.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1769,6 +1785,10 @@
 				2249777F1765859200819F95 /* v2-nsend.c in Sources */,
 				224977811765873300819F95 /* v2-nrecv.c in Sources */,
 				2231F0C21765A30300C5CEFA /* v2-triad.c in Sources */,
+				22B105EF17663FF5002C55F6 /* v2-ncosib.c in Sources */,
+				22B105F017663FF5002C55F6 /* v2-nrecv2.c in Sources */,
+				22B105F117663FF5002C55F6 /* v2-nsend2.c in Sources */,
+				22B105F217663FF5002C55F6 /* v2-nsib.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
