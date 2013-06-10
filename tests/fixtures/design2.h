@@ -16,6 +16,10 @@ struct design2_fixture {
 	struct { int exists; const char *name; double window; } isend;
 	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nrecv;
 	struct { int exists; const char *name; const double *intvls; size_t nintvl; } nsend;
+	struct { int exists; const char *name; const double *intvls1, *intvls2; size_t nintvl1, nintvl2; } ncosib;
+	struct { int exists; const char *name; const double *intvls1, *intvls2; size_t nintvl1, nintvl2; } nrecv2;
+	struct { int exists; const char *name; const double *intvls1, *intvls2; size_t nintvl1, nintvl2; } nsend2;
+	struct { int exists; const char *name; const double *intvls1, *intvls2; size_t nintvl1, nintvl2; } nsib;
 	size_t tvar_dim;
 };
 
@@ -26,6 +30,10 @@ void design2_fixture_add_irecv(struct design2_fixture *f, double window);
 void design2_fixture_add_isend(struct design2_fixture *f, double window);
 void design2_fixture_add_nrecv(struct design2_fixture *f, const double *intvls, size_t nintvl);
 void design2_fixture_add_nsend(struct design2_fixture *f, const double *intvls, size_t nintvl);
+void design2_fixture_add_ncosib(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2);
+void design2_fixture_add_nrecv2(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2);
+void design2_fixture_add_nsend2(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2);
+void design2_fixture_add_nsib(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2);
 void design2_fixture_teardown(struct design2_fixture *f);
 
 void design2_test_setup(struct design2 *d, struct history *h, const struct design2_fixture *f);

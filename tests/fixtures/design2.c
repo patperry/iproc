@@ -75,6 +75,74 @@ void design2_fixture_add_nsend(struct design2_fixture *f, const double *intvls, 
 }
 
 
+void design2_fixture_add_ncosib(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2)
+{
+	f->ncosib.exists = 1;
+	f->ncosib.name = "NCosib";
+
+	f->ncosib.intvls1 = xmalloc(nintvl1 * sizeof(double));
+	memcpy((void *)f->ncosib.intvls1, intvls1, nintvl1 * sizeof(double));
+	f->ncosib.nintvl1 = nintvl1;
+
+	f->ncosib.intvls2 = xmalloc(nintvl2 * sizeof(double));
+	memcpy((void *)f->ncosib.intvls2, intvls2, nintvl2 * sizeof(double));
+	f->ncosib.nintvl2 = nintvl2;
+
+	f->tvar_dim += nintvl1 * nintvl2;
+}
+
+
+void design2_fixture_add_nrecv2(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2)
+{
+	f->nrecv2.exists = 1;
+	f->nrecv2.name = "NRecv2";
+
+	f->nrecv2.intvls1 = xmalloc(nintvl1 * sizeof(double));
+	memcpy((void *)f->nrecv2.intvls1, intvls1, nintvl1 * sizeof(double));
+	f->nrecv2.nintvl1 = nintvl1;
+
+	f->nrecv2.intvls2 = xmalloc(nintvl2 * sizeof(double));
+	memcpy((void *)f->nrecv2.intvls2, intvls2, nintvl2 * sizeof(double));
+	f->nrecv2.nintvl2 = nintvl2;
+
+	f->tvar_dim += nintvl1 * nintvl2;
+}
+
+
+void design2_fixture_add_nsend2(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2)
+{
+	f->nsend2.exists = 1;
+	f->nsend2.name = "NSend2";
+
+	f->nsend2.intvls1 = xmalloc(nintvl1 * sizeof(double));
+	memcpy((void *)f->nsend2.intvls1, intvls1, nintvl1 * sizeof(double));
+	f->nsend2.nintvl1 = nintvl1;
+
+	f->nsend2.intvls2 = xmalloc(nintvl2 * sizeof(double));
+	memcpy((void *)f->nsend2.intvls2, intvls2, nintvl2 * sizeof(double));
+	f->nsend2.nintvl2 = nintvl2;
+
+	f->tvar_dim += nintvl1 * nintvl2;
+}
+
+
+void design2_fixture_add_nsib(struct design2_fixture *f, const double *intvls1, size_t nintvl1, const double *intvls2, size_t nintvl2)
+{
+	f->nsib.exists = 1;
+	f->nsib.name = "NSib";
+
+	f->nsib.intvls1 = xmalloc(nintvl1 * sizeof(double));
+	memcpy((void *)f->nsib.intvls1, intvls1, nintvl1 * sizeof(double));
+	f->nsib.nintvl1 = nintvl1;
+
+	f->nsib.intvls2 = xmalloc(nintvl2 * sizeof(double));
+	memcpy((void *)f->nsib.intvls2, intvls2, nintvl2 * sizeof(double));
+	f->nsib.nintvl2 = nintvl2;
+
+	f->tvar_dim += nintvl1 * nintvl2;
+}
+
+
 void design2_test_setup(struct design2 *d, struct history *h, const struct design2_fixture *f)
 {
 	design2_init(d, h, f->count1, f->count2);
@@ -86,6 +154,15 @@ void design2_test_setup(struct design2 *d, struct history *h, const struct desig
 		design2_add_tvar(d, f->nrecv.name, VAR2_NRECV, f->nrecv.intvls, f->nrecv.nintvl);
 	if (f->nsend.exists)
 		design2_add_tvar(d, f->nsend.name, VAR2_NSEND, f->nsend.intvls, f->nsend.nintvl);
+	if (f->ncosib.exists)
+		design2_add_tvar(d, f->ncosib.name, VAR2_NCOSIB, f->ncosib.intvls1, f->ncosib.nintvl1, f->ncosib.intvls2, f->ncosib.nintvl2);
+	if (f->nrecv2.exists)
+		design2_add_tvar(d, f->nrecv2.name, VAR2_NRECV2, f->nrecv2.intvls1, f->nrecv2.nintvl1, f->nrecv2.intvls2, f->nrecv2.nintvl2);
+	if (f->nsend2.exists)
+		design2_add_tvar(d, f->nsend2.name, VAR2_NSEND2, f->nsend2.intvls1, f->nsend2.nintvl1, f->nsend2.intvls2, f->nsend2.nintvl2);
+	if (f->nsib.exists)
+		design2_add_tvar(d, f->nsib.name, VAR2_NSIB, f->nsib.intvls1, f->nsib.nintvl1, f->nsib.intvls2, f->nsib.nintvl2);
+
 	assert(design2_tvar_dim(d) == f->tvar_dim);
 }
 
