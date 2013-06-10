@@ -59,7 +59,6 @@
 		222341FE144F3E0C00D99D8E /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		22234203144F3E3200D99D8E /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		22234206144F3E5000D99D8E /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
-		2231F0C21765A30300C5CEFA /* v2-triad.c in Sources */ = {isa = PBXBuildFile; fileRef = 2231F0C11765A30300C5CEFA /* v2-triad.c */; };
 		2235DC0B13C7BBAA00053BAA /* libyajl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DD52136928DE0048244C /* libyajl.dylib */; };
 		223E4116164060C100FAB1C7 /* strata.c in Sources */ = {isa = PBXBuildFile; fileRef = 223E4114164060C100FAB1C7 /* strata.c */; };
 		223E4117164060C100FAB1C7 /* strata.h in Headers */ = {isa = PBXBuildFile; fileRef = 223E4115164060C100FAB1C7 /* strata.h */; };
@@ -664,7 +663,6 @@
 		222341EF144F3BDA00D99D8E /* yajl_parse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_parse.h; path = lib/yajl/src/api/yajl_parse.h; sourceTree = "<group>"; };
 		222341F0144F3BDA00D99D8E /* yajl_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = yajl_tree.h; path = lib/yajl/src/api/yajl_tree.h; sourceTree = "<group>"; };
 		222FC40D13607C3F00E64FC9 /* libiproc.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libiproc.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		2231F0C11765A30300C5CEFA /* v2-triad.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-triad.c"; path = "src/v2-triad.c"; sourceTree = "<group>"; };
 		223E4114164060C100FAB1C7 /* strata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = strata.c; path = lib/strata.c; sourceTree = "<group>"; };
 		223E4115164060C100FAB1C7 /* strata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = strata.h; path = lib/strata.h; sourceTree = "<group>"; };
 		2249775B176544F400819F95 /* v2-irecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-irecv.c"; path = "src/v2-irecv.c"; sourceTree = "<group>"; };
@@ -1031,7 +1029,6 @@
 				22B105EC17663FF5002C55F6 /* v2-nsend2.c */,
 				22B105ED17663FF5002C55F6 /* v2-nsib.c */,
 				22B105EE17663FF5002C55F6 /* v2-ntriad-source.h */,
-				2231F0C11765A30300C5CEFA /* v2-triad.c */,
 				22AEA4591756525F00780475 /* var.c */,
 				22AEA45A1756525F00780475 /* var.h */,
 			);
@@ -1784,7 +1781,6 @@
 				2249775C176544F400819F95 /* v2-irecv.c in Sources */,
 				2249777F1765859200819F95 /* v2-nsend.c in Sources */,
 				224977811765873300819F95 /* v2-nrecv.c in Sources */,
-				2231F0C21765A30300C5CEFA /* v2-triad.c in Sources */,
 				22B105EF17663FF5002C55F6 /* v2-ncosib.c in Sources */,
 				22B105F017663FF5002C55F6 /* v2-nrecv2.c in Sources */,
 				22B105F117663FF5002C55F6 /* v2-nsend2.c in Sources */,

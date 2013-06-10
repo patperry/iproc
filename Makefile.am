@@ -55,7 +55,6 @@ libiproc_a_SOURCES = \
 	src/v2-nsend2.c \
 	src/v2-nsib.c \
 	src/v2-nrecv2.c \
-	src/v2-triad.c \
 	src/var.c \
 	src/var.h
 
