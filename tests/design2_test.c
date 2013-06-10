@@ -362,8 +362,7 @@ static void test_nsend2()
 
 	assert_true(v);
 
-	history_advance(HISTORY, 914997421);
-	//history_advance(HISTORY, 988116420);
+	history_advance(HISTORY, 1003226742);
 
 	size_t m = design2_count1(DESIGN2);
 	size_t n = design2_count2(DESIGN2);
@@ -375,6 +374,8 @@ static void test_nsend2()
 			for (h = 0; h < n; h++) {
 				const double *x1 = design2_tvar(DESIGN2, v1, i, h);
 				const double *x2 = design2_tvar(DESIGN2, v2, h, j);
+				x1 = design2_tvar(DESIGN2, v1, i, h); // second call to design2_tvar may reallocate
+
 				if (x1 && x2) {
 					blas_dger(nintvl2, nintvl1, 1.0, x2, 1, x1, 1, x, nintvl2);
 				}
@@ -382,9 +383,9 @@ static void test_nsend2()
 			const double *xij = design2_tvar(DESIGN2, v, i, j);
 			
 			if (xij) {
-				assert_vec_identical(xij, x, nintvl1 * nintvl2);
+				assert_vec_approx(xij, x, nintvl1 * nintvl2);
 			} else {
-				assert_vec_identical(zero, x, nintvl1 * nintvl2);
+				assert_vec_approx(zero, x, nintvl1 * nintvl2);
 			}
 		}
 	}
@@ -399,11 +400,11 @@ int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, fixture_setup_enron),
-		unit_test_setup_teardown(test_isend1, setup, teardown),
+		/*unit_test_setup_teardown(test_isend1, setup, teardown),
 		unit_test_setup_teardown(test_isend2, setup, teardown),
 		unit_test_setup_teardown(test_irecv, setup, teardown),
 		unit_test_setup_teardown(test_nsend, setup, teardown),
-		unit_test_setup_teardown(test_nrecv, setup, teardown),
+		unit_test_setup_teardown(test_nrecv, setup, teardown),*/
 		unit_test_setup_teardown(test_nsend2, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 

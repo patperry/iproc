@@ -169,7 +169,7 @@ static void process_messages(struct tvar2 *tv, size_t i, double t0,
 	struct design2 *d = tv->var.design;
 	struct ntriad_thunk *ntriad = tv->thunk;
 	const double *intvls1 = ntriad->intvls1;
-	const double *intvls2 = ntriad->intvls1;
+	const double *intvls2 = ntriad->intvls2;
 	size_t nintvl1 = ntriad->nintvl1;
 	size_t nintvl2 = ntriad->nintvl2;
 	struct pqueue *updates = &ntriad->updates[i];
