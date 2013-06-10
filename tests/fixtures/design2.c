@@ -82,10 +82,10 @@ void design2_test_setup(struct design2 *d, struct history *h, const struct desig
 		design2_add_tvar(d, f->irecv.name, VAR2_IRECV, f->irecv.window);
 	if (f->isend.exists)
 		design2_add_tvar(d, f->isend.name, VAR2_ISEND, f->isend.window);
-	//if (f->nrecv.exists)
-	//	design2_add_tvar(d, f->nrecv.name, VAR2_NRECV, f->nrecv.intvls, f->nrecv.nintvl);
-	//if (f->nsend.exists)
-	//	design2_add_tvar(d, f->nsend.name, VAR2_NSEND, f->nsend.intvls, f->nsend.nintvl);
+	if (f->nrecv.exists)
+		design2_add_tvar(d, f->nrecv.name, VAR2_NRECV, f->nrecv.intvls, f->nrecv.nintvl);
+	if (f->nsend.exists)
+		design2_add_tvar(d, f->nsend.name, VAR2_NSEND, f->nsend.intvls, f->nsend.nintvl);
 	assert(design2_tvar_dim(d) == f->tvar_dim);
 }
 

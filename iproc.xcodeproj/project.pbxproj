@@ -75,6 +75,9 @@
 		2249777917656F4700819F95 /* libcore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22234165144F363900D99D8E /* libcore.dylib */; };
 		2249777A17656F4700819F95 /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		2249777B17656F4700819F95 /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
+		2249777E1765859200819F95 /* v2-ndyad-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 2249777C1765859200819F95 /* v2-ndyad-source.h */; };
+		2249777F1765859200819F95 /* v2-nsend.c in Sources */ = {isa = PBXBuildFile; fileRef = 2249777D1765859200819F95 /* v2-nsend.c */; };
+		224977811765873300819F95 /* v2-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 224977801765873300819F95 /* v2-nrecv.c */; };
 		224E8D30175E7C3F00868DF2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D2E175E7C3F00868DF2 /* send_model.c */; };
 		224E8D31175E7C3F00868DF2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224E8D2F175E7C3F00868DF2 /* send_model.h */; };
 		224E8D4A175ED36500868DF2 /* send_model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D49175ED36500868DF2 /* send_model_test.c */; };
@@ -706,6 +709,9 @@
 		2249775E17656A7E00819F95 /* design2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = design2.h; path = tests/fixtures/design2.h; sourceTree = "<group>"; };
 		2249776517656ED400819F95 /* design2_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = design2_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2249776E17656F0400819F95 /* design2_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = design2_test.c; path = tests/design2_test.c; sourceTree = "<group>"; };
+		2249777C1765859200819F95 /* v2-ndyad-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "v2-ndyad-source.h"; path = "src/v2-ndyad-source.h"; sourceTree = "<group>"; };
+		2249777D1765859200819F95 /* v2-nsend.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nsend.c"; path = "src/v2-nsend.c"; sourceTree = "<group>"; };
+		224977801765873300819F95 /* v2-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nrecv.c"; path = "src/v2-nrecv.c"; sourceTree = "<group>"; };
 		224E8D2E175E7C3F00868DF2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = tests/fixtures/send_model.c; sourceTree = "<group>"; };
 		224E8D2F175E7C3F00868DF2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = tests/fixtures/send_model.h; sourceTree = "<group>"; };
 		224E8D37175ED31300868DF2 /* send_model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = send_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1060,6 +1066,9 @@
 				2269056317652F2100C99BC2 /* v2-idyad-source.h */,
 				2249775B176544F400819F95 /* v2-irecv.c */,
 				2269056417652F2100C99BC2 /* v2-isend.c */,
+				2249777C1765859200819F95 /* v2-ndyad-source.h */,
+				224977801765873300819F95 /* v2-nrecv.c */,
+				2249777D1765859200819F95 /* v2-nsend.c */,
 				22AEA4591756525F00780475 /* var.c */,
 				22AEA45A1756525F00780475 /* var.h */,
 			);
@@ -1311,6 +1320,7 @@
 				225355DE17625EA200DFF865 /* version.h in Headers */,
 				2269055A1764C14100C99BC2 /* design2.h in Headers */,
 				2269056517652F2100C99BC2 /* v2-idyad-source.h in Headers */,
+				2249777E1765859200819F95 /* v2-ndyad-source.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1840,6 +1850,8 @@
 				2269056217651E6100C99BC2 /* design2_prod.c in Sources */,
 				2269056617652F2100C99BC2 /* v2-isend.c in Sources */,
 				2249775C176544F400819F95 /* v2-irecv.c in Sources */,
+				2249777F1765859200819F95 /* v2-nsend.c in Sources */,
+				224977811765873300819F95 /* v2-nrecv.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
