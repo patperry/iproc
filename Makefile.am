@@ -256,6 +256,8 @@ tests_libenron_a_CPPFLAGS = \
 tests_libfixtures_a_SOURCES = \
 	tests/fixtures/design.c \
 	tests/fixtures/design.h \
+	tests/fixtures/design2.c \
+	tests/fixtures/design2.h \
 	tests/fixtures/history.c \
 	tests/fixtures/history.h \
 	tests/fixtures/send_model.c \
@@ -284,10 +286,6 @@ check_CPPFLAGS = \
 
 check_PROGRAMS = # empty
 
-#check_PROGRAMS += tests/frame_test
-#tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
-#tests_frame_test_LDADD    = $(check_LDADD)
-
 check_PROGRAMS += tests/catdist_test
 tests_catdist_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_catdist_test_LDADD    = $(check_LDADD)
@@ -311,6 +309,14 @@ tests_design_test_LDADD    = $(check_LDADD)
 check_PROGRAMS += tests/send_model_test
 tests_send_model_test_CPPFLAGS = $(check_CPPFLAGS)
 tests_send_model_test_LDADD    = $(check_LDADD)
+
+check_PROGRAMS += tests/design2_test
+tests_design2_test_CPPFLAGS = $(check_CPPFLAGS)
+tests_design2_test_LDADD    = $(check_LDADD)
+
+#check_PROGRAMS += tests/frame_test
+#tests_frame_test_CPPFLAGS = $(check_CPPFLAGS)
+#tests_frame_test_LDADD    = $(check_LDADD)
 
 #check_PROGRAMS += tests/model_test
 #tests_model_test_CPPFLAGS = $(check_CPPFLAGS)

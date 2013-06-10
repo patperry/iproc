@@ -5,8 +5,7 @@
 #include <setjmp.h>
 #include <stdlib.h>
 
-#include <design.h>
-
+#include "../src/design.h"
 
 #include "coreutil.h"
 #include "testutil.h"

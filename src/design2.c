@@ -516,6 +516,8 @@ const double *design2_tvars(const struct design2 *d, size_t i, size_t j)
 	assert(i < design2_count1(d));
 	assert(j < design2_count2(d));
 
+	design2_tvars_update((struct design2 *)d, i);
+
 	size_t ir0 = d->tvar_ir[i];
 	size_t ir1 = d->tvar_ir[i+1];
 	size_t nz = ir1 - ir0;
@@ -533,6 +535,8 @@ const double *design2_tvars(const struct design2 *d, size_t i, size_t j)
 void design2_get_tvar_matrix(const struct design2 *d, size_t i, const double **x, const size_t **ind, size_t *nz)
 {
 	assert(i < design2_count1(d));
+	
+	design2_tvars_update((struct design2 *)d, i);
 
 	size_t ir0 = d->tvar_ir[i];
 	size_t ir1 = d->tvar_ir[i+1];
