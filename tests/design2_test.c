@@ -400,11 +400,11 @@ int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, fixture_setup_enron),
-		/*unit_test_setup_teardown(test_isend1, setup, teardown),
+		unit_test_setup_teardown(test_isend1, setup, teardown),
 		unit_test_setup_teardown(test_isend2, setup, teardown),
 		unit_test_setup_teardown(test_irecv, setup, teardown),
 		unit_test_setup_teardown(test_nsend, setup, teardown),
-		unit_test_setup_teardown(test_nrecv, setup, teardown),*/
+		unit_test_setup_teardown(test_nrecv, setup, teardown),
 		unit_test_setup_teardown(test_nsend2, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 
