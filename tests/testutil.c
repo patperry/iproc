@@ -42,7 +42,8 @@ double runif(double min, double max)
 	return x;
 }
 
-static int reals_approx_display_error(const double left, const double right)
+
+static int reals_approx(const double left, const double right)
 {
 	const int minprec = DBL_MANT_DIG / 2;
 	const int p = double_eqrel(left, right);
@@ -50,15 +51,25 @@ static int reals_approx_display_error(const double left, const double right)
 	const int abs_approx = (fabs(left) <= ROOT4_DBL_EPSILON
 				&& fabs(right) <= ROOT4_DBL_EPSILON);
 	const int approx = rel_approx || abs_approx;
-	
+
+	return approx;
+}
+
+
+static int reals_approx_display_error(const double left, const double right)
+{
+	const int approx = reals_approx(left, right);
+
 	if (!approx) {
+		const int minprec = DBL_MANT_DIG / 2;
+		const int p = double_eqrel(left, right);
 		print_error(LargestRealTypePrintfFormat  " != "
 			    LargestRealTypePrintfFormat " (%d bits < %d bits)\n",
 			    left, right, p, minprec);
 	}
 	return approx;
-	
 }
+
 
 static int reals_eqrel_display_error(const int precision, const double left, const double right)
 {
@@ -83,6 +94,24 @@ static int reals_identical_display_error(const double left, const double right)
 	return identical;
 
 }
+
+
+static int vec_approx(const double *expect, const double *actual, size_t n, size_t *idiff)
+{
+	int approx = 1;
+	size_t i;
+
+	for (i = 0; i < n; i++) {
+		if (!reals_approx(expect[i], actual[i])) {
+			approx = 0;
+			*idiff = i;
+			break;
+		}
+	}
+
+	return approx;
+}
+
 
 static int vec_identical(const double *expect, const double *actual, size_t n, size_t *idiff)
 {
@@ -176,6 +205,22 @@ static void print_error_vector(const double *x, size_t n)
 }
 
 
+static int vec_approx_display_error(const double *expect, const double *actual, size_t n)
+{
+	size_t i;
+	const int approx = vec_approx(expect, actual, n, &i);
+	if (!approx) {
+		print_error_vector(expect, n);
+		print_error("\n!=\n");
+		print_error_vector(actual, n);
+		print_error("\n(index "LargestIntegralTypePrintfFormat": "
+			    LargestRealTypePrintfFormat" != "LargestRealTypePrintfFormat")\n",
+			    i, expect[i], actual[i]);
+	}
+	return approx;
+}
+
+
 static int vec_identical_display_error(const double *expect, const double *actual, size_t n)
 {
 	size_t i;
@@ -187,7 +232,6 @@ static int vec_identical_display_error(const double *expect, const double *actua
 		print_error("\n(index "LargestIntegralTypePrintfFormat": "
 			    LargestRealTypePrintfFormat" != "LargestRealTypePrintfFormat")\n",
 			    i, expect[i], actual[i]);
-		assert(identical);
 	}
 	return identical;
 }
@@ -225,6 +269,14 @@ void _assert_real_eqrel(int precision, const double a, const double b,
 void _assert_real_identical(const double a, const double b, const char * const file, const int line)
 {
 	if (!reals_identical_display_error(a, b)) {
+		_fail(file, line);
+	}
+}
+
+void _assert_vec_approx(const double *a, const double *b, size_t n,
+			const char * const file, const int line)
+{
+	if (!vec_approx_display_error(a, b, n)) {
 		_fail(file, line);
 	}
 }

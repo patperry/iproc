@@ -36,6 +36,11 @@ double runif(double min, double max);
 	                       (double)(b), \
 	                       __FILE__, __LINE__)
 
+// Assert that the two given real vectors are approximately equal, otherwise fail.
+#define assert_vec_approx(a, b, n) \
+	_assert_vec_approx((a), (b), (n), \
+			   __FILE__, __LINE__)
+
 // Assert that the two given real vectors are identical, otherwise fail.
 #define assert_vec_identical(a, b, n) \
 	_assert_vec_identical((a), (b), (n), \
@@ -56,6 +61,9 @@ void _assert_real_eqrel(int precision, const double a, const double b,
 
 void _assert_real_identical(const double a, const double b,
 			    const char * const file, const int line);
+
+void _assert_vec_approx(const double *a, const double *b, size_t n,
+			const char * const file, const int line);
 
 void _assert_vec_identical(const double *a, const double *b, size_t n,
 			   const char * const file, const int line);
