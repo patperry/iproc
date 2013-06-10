@@ -80,7 +80,7 @@ static void teardown()
 }
 
 
-static void test_isend()
+static void test_isend1()
 {
 	double window = 1000;
 	const struct var2 *v = design2_add_tvar(DESIGN2, "ISend", VAR2_ISEND, window);
@@ -127,12 +127,120 @@ static void test_isend()
 }
 
 
+static void test_isend2()
+{
+	double window = 2 * 7 * 24 * 60 * 60;
+	const struct var2 *v = design2_add_tvar(DESIGN2, "ISend",
+						VAR2_ISEND, window);
+	size_t ito;
+	size_t isend, jrecv;
+	const struct message *msgs;
+	size_t imsg, nmsg;
+
+	history_get_messages(HISTORY, &msgs, &nmsg);
+
+
+	double tlast[NSEND][NRECV];
+
+	for (isend = 0; isend < NSEND; isend++) {
+		for (jrecv = 0; jrecv < NRECV; jrecv++) {
+			tlast[isend][jrecv] = -INFINITY;
+		}
+	}
+
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		const struct message *msg = &msgs[imsg];
+		double t = msg->time;
+		history_advance(HISTORY, t);
+
+		isend = msg->from;
+		for (ito = 0; ito < msg->nto; ito++) {
+			jrecv = msg->to[ito];
+			const double *x = design2_tvar(DESIGN2, v, isend, jrecv);
+			double tmsg = tlast[isend][jrecv];
+
+			if (tmsg + window >= t) {
+				assert_real_identical(x[0], 1.0);
+			} else if (x) {
+				assert_real_identical(x[0], 0.0);
+			}
+		}
+
+		if (imsg + 1 < nmsg && msgs[imsg + 1].time != t) {
+			while (msg->time == t) {
+				for (ito = 0; ito < msg->nto; ito++) {
+					tlast[msg->from][msg->to[ito]] = msg->time;
+				}
+				if (msg == msgs)
+					break;
+				msg--;
+			}
+		}
+	}
+}
+
+
+
+static void test_irecv()
+{
+	double window = 5 * 7 * 24 * 60 * 60;
+	const struct var2 *v = design2_add_tvar(DESIGN2, "IRecv",
+						VAR2_IRECV, window);
+	size_t ito;
+	size_t isend, jrecv;
+	const struct message *msgs;
+	size_t imsg, nmsg;
+
+	history_get_messages(HISTORY, &msgs, &nmsg);
+
+
+	double tlast[NSEND][NRECV];
+
+	for (isend = 0; isend < NSEND; isend++) {
+		for (jrecv = 0; jrecv < NRECV; jrecv++) {
+			tlast[isend][jrecv] = -INFINITY;
+		}
+	}
+
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		const struct message *msg = &msgs[imsg];
+		double t = msg->time;
+		history_advance(HISTORY, t);
+
+		jrecv = msg->from;
+		for (ito = 0; ito < msg->nto; ito++) {
+			isend = msg->to[ito];
+			const double *x = design2_tvar(DESIGN2, v, isend, jrecv);
+			double tmsg = tlast[jrecv][isend];
+
+			if (tmsg + window >= t) {
+				assert_real_identical(x[0], 1.0);
+			} else if (x) {
+				assert_real_identical(x[0], 0.0);
+			}
+		}
+
+		if (imsg + 1 < nmsg && msgs[imsg + 1].time != t) {
+			while (msg->time == t) {
+				for (ito = 0; ito < msg->nto; ito++) {
+					tlast[msg->from][msg->to[ito]] = msg->time;
+				}
+				if (msg == msgs)
+					break;
+				msg--;
+			}
+		}
+	}
+}
+
 
 int main()
 {
 	UnitTest tests[] = {
 		unit_test_setup(enron_suite, fixture_setup_enron),
-		unit_test_setup_teardown(test_isend, setup, teardown),
+		unit_test_setup_teardown(test_isend1, setup, teardown),
+		unit_test_setup_teardown(test_isend2, setup, teardown),
+		unit_test_setup_teardown(test_irecv, setup, teardown),
 		unit_test_teardown(enron_suite, fixture_teardown),
 
 	};
