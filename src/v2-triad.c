@@ -41,11 +41,23 @@ static void triad_deinit(struct var_meta *meta, void *thunk, struct design2 *d)
 
 
 
-static void design2_triad_update(struct design2 *d, struct tvar2 *triad_var,
-				size_t i, size_t j, double t)
+static void design2_triad_recompute(struct design2 *d, struct tvar2 *triad_var,
+				    size_t i)
 {
-	/*
 	struct triad_thunk *triad = triad_var->thunk;
+	
+	assert(triad->u->meta.type == VAR_TYPE_TVAR); // not implemented otherwise
+	assert(triad->v->meta.type == VAR_TYPE_TVAR); // ditto
+
+	const size_t *ind = d->tvar_jc + d->tvar_ir[i];
+	size_t iz, nz = d->tvar_ir[i+1] - d->tvar_ir[i];
+
+	for (iz = 0; iz < nz; iz++) {
+		size_t h = ind[iz];
+		(void)h;
+	}
+
+	/*
 	const double *u = get_x(triad->u, i, j);
 	const double *v = get_x(triad->v, i, j);
 	size_t nu = triad->u->meta.size;
@@ -68,33 +80,33 @@ static double triad_update(struct tvar2 *triad_var, size_t i, double t0, const s
 {
 	struct design2 *d = triad_var->var.design;
 	struct triad_thunk *triad = triad_var->thunk;
-	struct delta *delta;
+	int update = 0;
+
+	if (!design2_count2(d))
+		return INFINITY;
 
 	if (triad->u->meta.type == VAR_TYPE_TVAR) {
 		struct tvar2 *u = container_of(triad->u, struct tvar2, var);
-		DELTASET_FOREACH(delta, &u->deltaset[i]) {
-			double t = DELTA_TIME(delta);
-			size_t j = DELTA_ITEM(delta);
-
-			if (t < t0)
-				break;
-
-			design2_triad_update(d, triad_var, i, j, t);
-		}
+		if (deltaset_thead(&u->deltaset[i]) >= t0)
+			update = 1;
 	}
 
-	if (triad->v->meta.type == VAR_TYPE_TVAR) {
+	if (!update && triad->v->meta.type == VAR_TYPE_TVAR) {
 		struct tvar2 *v = container_of(triad->v, struct tvar2, var);
-		DELTASET_FOREACH(delta, &v->deltaset[i]) {
-			double t = DELTA_TIME(delta);
-			size_t j = DELTA_ITEM(delta);
+		const size_t *ind = d->tvar_jc + d->tvar_ir[i];
+		size_t iz, nz = d->tvar_ir[i+1] - d->tvar_ir[i];
 
-			if (t < t0)
+		for (iz = 0; iz < nz; iz++) {
+			size_t j = ind[iz];
+			if (deltaset_thead(&v->deltaset[j]) >= t0) {
+				update = 1;
 				break;
-
-			design2_triad_update(d, triad_var, i, j, t);
+			}
 		}
 	}
+
+	if (update)
+		design2_triad_recompute(d, triad_var, i);
 
 	return INFINITY; /* time of next update will be determined by u, v */
 }
