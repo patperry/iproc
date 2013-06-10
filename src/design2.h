@@ -42,6 +42,7 @@ extern const struct tvar2_type *VAR2_ISEND;
 extern const struct tvar2_type *VAR2_NRECV;
 extern const struct tvar2_type *VAR2_NSEND;
 
+extern const struct tvar2_type *VAR2_TRIAD;
 
 
 struct design2 {

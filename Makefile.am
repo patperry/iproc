@@ -50,6 +50,7 @@ libiproc_a_SOURCES = \
 	src/v2-ndyad-source.h \
 	src/v2-nrecv.c \
 	src/v2-nsend.c \
+	src/v2-triad.c \
 	src/var.c \
 	src/var.h
 
