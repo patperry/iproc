@@ -85,10 +85,8 @@ void mlogit_set_coefs(struct mlogit *m, const double *beta);
 void mlogit_set_all_offset(struct mlogit *m, const double *offset);
 void mlogit_set_offset(struct mlogit *m, size_t i, double offset);
 void mlogit_set_all_x(struct mlogit *m, const double *x);
-void mlogit_set_x(struct mlogit *m, size_t i, const size_t *jx,
-		  const double *x, size_t nx);
-void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
-		  const double *dx, size_t ndx);
+void mlogit_set_x(struct mlogit *m, size_t i, size_t off, size_t len,
+		  const double *x);
 
 static inline struct version * mlogit_version(const struct mlogit *m)
 {

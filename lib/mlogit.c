@@ -233,63 +233,20 @@ void mlogit_set_offset(struct mlogit *m, size_t i, double offset)
 }
 
 
-void mlogit_set_x(struct mlogit *m, size_t i, const size_t *jx,
-		  const double *x, size_t nx)
+void mlogit_set_x(struct mlogit *m, size_t i, size_t off, size_t len,
+		  const double *x)
 {
 	assert(i < mlogit_ncat(m));
-	assert(x || nx == 0);
+	assert(x || len == 0);
+	assert(off + len <= mlogit_dim(m));
 
 	size_t dim = mlogit_dim(m);
-	double *dst = m->x + i * dim;
+	double *dst = m->x + i * dim + off;
 
 	store_x0(m, i); /* store x0[i] if not already present */
 
-	if (jx) {
-#ifndef NDEBUG
-		size_t k;
-		for (k = 0; k < nx; k++) {
-			assert(jx[k] < dim);
-		}
-#endif
-		sblas_dsctr(nx, x, jx, dst);
-	} else if (nx) {
-		assert(nx == mlogit_dim(m));
-		memcpy(dst, x, dim * sizeof(dst[0]));
-	}
+	memcpy(dst, x, len * sizeof(double));
 
-	update_version(m);
-
-}
-
-
-
-void mlogit_inc_x(struct mlogit *m, size_t i, const size_t *jdx,
-		  const double *dx, size_t ndx)
-{
-	assert(i < mlogit_ncat(m));
-	assert(dx || ndx == 0);
-
-	size_t dim = mlogit_dim(m);
-	double *x = m->x + i * dim;
-	double *x1 = m->work->dim_buf1;
-
-	if (jdx) {
-#ifndef NDEBUG
-		size_t k;
-		for (k = 0; k < ndx; k++) {
-			assert(jdx[k] < dim);
-		}
-#endif
-		sblas_dgthr(ndx, x, x1, jdx);
-		blas_daxpy(ndx, 1.0, dx, 1, x1, 1);
-	} else if (ndx) {
-		assert(ndx == mlogit_dim(m));
-
-		memcpy(x1, x, dim * sizeof(double));
-		blas_daxpy(dim, 1.0, dx, 1, x1, 1);
-	}
-
-	mlogit_set_x(m, i, jdx, x1, ndx);
 	update_version(m);
 }
 

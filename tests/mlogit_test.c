@@ -166,7 +166,7 @@ static void test_inc_x(size_t i, const double *dx, const size_t *jdx, size_t ndx
 	}
 	recompute();
 
-	mlogit_inc_x(&MLOGIT, i, jdx, dx, ndx);
+	mlogit_set_x(&MLOGIT, i, 0, P, X + i * P);
 	//print_error("\tx...");
 	test_x();
 	//print_error("ok\n\tmean...");
