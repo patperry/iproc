@@ -130,8 +130,6 @@ static void cohort_update(struct recv_model_cohort *cm, size_t c,
 }
 
 
-
-
 static void cohort_set_moments(struct recv_model_cohort *cm, int k)
 {
 	mlogit_set_moments(&cm->mlogit, k);
@@ -158,8 +156,9 @@ static void cohort_init(struct recv_model_cohort *cm,
 }
 
 
-static void cohort_deinit(struct recv_model_cohort *cm)
+static void cohort_deinit(struct recv_model_cohort *cm, struct history *h)
 {
+	version_watch_deinit(&cm->version, history_version(h));
 	mlogit_deinit(&cm->mlogit);
 }
 
@@ -341,6 +340,9 @@ void recv_model_deinit(struct recv_model *m)
 {
 	assert(m);
 
+	const struct design *r = recv_model_design(m);
+	struct history *h = design_history(r);
+
 	struct recv_model_sender *sms = m->sender_models;
 	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
@@ -351,7 +353,7 @@ void recv_model_deinit(struct recv_model *m)
 	struct recv_model_cohort *cms = m->cohort_models;
 	size_t ic, nc = cohort_count(m);
 	for (ic = 0; ic < nc; ic++) {
-		cohort_deinit(&cms[ic]);
+		cohort_deinit(&cms[ic], h);
 	}
 	free(cms);
 
