@@ -61,11 +61,10 @@ static int reals_approx_display_error(const double left, const double right)
 	const int approx = reals_approx(left, right);
 
 	if (!approx) {
-		const int minprec = DBL_MANT_DIG / 2;
 		const int p = double_eqrel(left, right);
 		print_error(LargestRealTypePrintfFormat  " != "
-			    LargestRealTypePrintfFormat " (%d bits < %d bits)\n",
-			    left, right, p, minprec);
+			    LargestRealTypePrintfFormat " (%d bits differ)\n",
+			    left, right, DBL_MANT_DIG - p);
 	}
 	return approx;
 }
