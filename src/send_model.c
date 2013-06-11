@@ -15,7 +15,7 @@
 #include "send_model.h"
 
 
-void send_model_update(struct send_model *m)
+static void send_model_update(struct send_model *m)
 {
 	const struct design *d = send_model_design(m);
 	const struct history *h = design_history(d);
