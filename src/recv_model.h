@@ -11,15 +11,19 @@
 struct recv_params {
 	struct coefs recv;
 	struct coefs2 dyad;
-	int has_loops;
+	int exclude_loops;
 };
 
 struct recv_model_cohort {
 	struct mlogit mlogit;
+	struct version_watch version;
+	double tcur;
 };
 
 struct recv_model_sender {
 	struct mlogitaug mlogitaug;
+	struct version_watch version;
+	double tcur;
 };
 
 struct recv_model {
