@@ -23,11 +23,20 @@ void recv_model_fixture_setup(struct recv_model_fixture	*f,
 	f->params.recv.tvars = xcalloc(recv_tvar_dim, sizeof(double));
 	f->params.dyad.traits = xcalloc(dyad_trait_dim, sizeof(double));
 	f->params.dyad.tvars = xcalloc(dyad_tvar_dim, sizeof(double));
+	f->params.exclude_loops = 0;
+
 	f->recv_trait_dim = recv_trait_dim;
 	f->recv_tvar_dim = recv_tvar_dim;
 	f->dyad_trait_dim = dyad_trait_dim;
 	f->dyad_tvar_dim = dyad_tvar_dim;
 }
+
+
+void recv_model_fixture_set_exlude_loops(struct recv_model_fixture *f, int exclude_loops)
+{
+	f->params.exclude_loops = exclude_loops;
+}
+
 
 void recv_model_fixture_set_rand(struct recv_model_fixture *f)
 {

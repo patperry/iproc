@@ -12,6 +12,7 @@ struct recv_model_fixture {
 void recv_model_fixture_setup(struct recv_model_fixture	*f,
 			      const struct design_fixture *r,
 			      const struct design2_fixture *d);
+void recv_model_fixture_set_exlude_loops(struct recv_model_fixture *f, int exclude_loops);
 void recv_model_fixture_set_rand(struct recv_model_fixture *f);
 void recv_model_fixture_teardown(struct recv_model_fixture *f);
 

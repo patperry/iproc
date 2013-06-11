@@ -31,7 +31,6 @@
 /m4/ltsugar.m4
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
-/tests/array_test
 /tests/catdist_test
 /tests/catdist1_test
 /tests/design_test
@@ -39,6 +38,6 @@
 /tests/enronfit
 /tests/history_test
 /tests/mlogit_test
-/tests/model_test
 /tests/recv_loglik_test
+/tests/recv_model_test
 /tests/send_model_test
