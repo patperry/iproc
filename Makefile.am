@@ -270,6 +270,8 @@ tests_libfixtures_a_SOURCES = \
 	tests/fixtures/design2.h \
 	tests/fixtures/history.c \
 	tests/fixtures/history.h \
+	tests/fixtures/recv_model.c \
+	tests/fixtures/recv_model.h \
 	tests/fixtures/send_model.c \
 	tests/fixtures/send_model.h
 

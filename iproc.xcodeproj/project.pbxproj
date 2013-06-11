@@ -75,6 +75,8 @@
 		224977811765873300819F95 /* v2-nrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = 224977801765873300819F95 /* v2-nrecv.c */; };
 		224CE7FD176758E2007EBBBE /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224CE7FB176758E2007EBBBE /* recv_model.c */; };
 		224CE7FE176758E2007EBBBE /* recv_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE7FC176758E2007EBBBE /* recv_model.h */; };
+		224CE8011767680E007EBBBE /* recv_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224CE7FF1767680E007EBBBE /* recv_model.c */; };
+		224CE8021767680E007EBBBE /* recv_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE8001767680E007EBBBE /* recv_model.h */; };
 		224E8D30175E7C3F00868DF2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D2E175E7C3F00868DF2 /* send_model.c */; };
 		224E8D31175E7C3F00868DF2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224E8D2F175E7C3F00868DF2 /* send_model.h */; };
 		224E8D4A175ED36500868DF2 /* send_model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D49175ED36500868DF2 /* send_model_test.c */; };
@@ -677,6 +679,8 @@
 		224977801765873300819F95 /* v2-nrecv.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v2-nrecv.c"; path = "src/v2-nrecv.c"; sourceTree = "<group>"; };
 		224CE7FB176758E2007EBBBE /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = src/recv_model.c; sourceTree = "<group>"; };
 		224CE7FC176758E2007EBBBE /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = src/recv_model.h; sourceTree = "<group>"; };
+		224CE7FF1767680E007EBBBE /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = tests/fixtures/recv_model.c; sourceTree = "<group>"; };
+		224CE8001767680E007EBBBE /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = tests/fixtures/recv_model.h; sourceTree = "<group>"; };
 		224E8D2E175E7C3F00868DF2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = tests/fixtures/send_model.c; sourceTree = "<group>"; };
 		224E8D2F175E7C3F00868DF2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = tests/fixtures/send_model.h; sourceTree = "<group>"; };
 		224E8D37175ED31300868DF2 /* send_model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = send_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1138,6 +1142,8 @@
 				2249775E17656A7E00819F95 /* design2.h */,
 				2289E7191758566100811E37 /* history.c */,
 				2289E71A1758566100811E37 /* history.h */,
+				224CE7FF1767680E007EBBBE /* recv_model.c */,
+				224CE8001767680E007EBBBE /* recv_model.h */,
 				224E8D2E175E7C3F00868DF2 /* send_model.c */,
 				224E8D2F175E7C3F00868DF2 /* send_model.h */,
 			);
@@ -1326,6 +1332,7 @@
 				2289E7261758590F00811E37 /* design.h in Headers */,
 				224E8D31175E7C3F00868DF2 /* send_model.h in Headers */,
 				2249776017656A7E00819F95 /* design2.h in Headers */,
+				224CE8021767680E007EBBBE /* recv_model.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1853,6 +1860,7 @@
 				2289E7251758590F00811E37 /* design.c in Sources */,
 				224E8D30175E7C3F00868DF2 /* send_model.c in Sources */,
 				2249775F17656A7E00819F95 /* design2.c in Sources */,
+				224CE8011767680E007EBBBE /* recv_model.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
