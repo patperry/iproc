@@ -48,8 +48,8 @@ static void cohort_clear(struct recv_model_cohort *cm, size_t c,
 
 	mlogit_set_all_x(&cm->mlogit, x);
 
-	cm->tcur = -INFINITY;
 	version_watch_set(&cm->version, history_version(h));
+	cm->tcur = -INFINITY;
 
 	free(x);
 }
@@ -78,8 +78,6 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 		}
 	}
 
-	cohort_clear(cm, c, r, d);
-	mlogit_set_all_offset(&cm->mlogit, NULL);
 	mlogit_set_coefs(&cm->mlogit, beta);
 
 	free(beta);
@@ -152,6 +150,7 @@ static void cohort_init(struct recv_model_cohort *cm,
 
 	mlogit_init(&cm->mlogit, nrecv, dim, work);
 	version_watch_init(&cm->version, history_version(h));
+	cohort_clear(cm, c, r, d);
 	cohort_set(cm, c, r, d, p);
 }
 
@@ -170,9 +169,12 @@ size_t recv_model_cohort(const struct recv_model *m, size_t isend)
 }
 
 
-static void sender_clear(struct recv_model_sender *sm)
+static void sender_clear(struct recv_model_sender *sm, const struct design2 *d)
 {
+	const struct history *h = design2_history(d);
 	mlogitaug_set_all_x(&sm->mlogitaug, NULL, NULL, 0);
+	version_watch_set(&sm->version, history_version(h));
+	sm->tcur = -INFINITY;
 }
 
 
@@ -182,12 +184,6 @@ static void sender_set(struct recv_model_sender *sm,
 {
 	int exclude_loops = p ? p->exclude_loops : 0;
 	const double *coefs = p ? p->dyad.tvars : NULL;
-
-	const double *x;
-	const size_t *indx;
-	size_t nzx;
-	design2_get_tvar_matrix(d, isend, &x, &indx, &nzx);
-	mlogitaug_set_all_x(&sm->mlogitaug, indx, x, nzx);
 
 	if (exclude_loops) {
 		const double neginf = -INFINITY;
@@ -201,70 +197,71 @@ static void sender_set(struct recv_model_sender *sm,
 }
 
 
+static void sender_update(struct recv_model_sender *sm, size_t isend,
+			  const struct design2 *d)
+{
+	const struct history *h = design2_history(d);
+	const struct version *v = history_version(h);
+	const struct deltaset *ds = design2_changes(d, isend);
+	const struct delta *delta;
+	size_t j;
+	const double *xj;
+	const double *x;
+	const size_t *ind;
+	size_t dim = design2_tvar_dim(d);
+	size_t nz;
+	ptrdiff_t iz;
+
+	if (version_changed(v, &sm->version)) {
+		sender_clear(sm, d);
+	}
+
+	double t0 = sm->tcur;
+	double t = history_time(h);
+
+	if (t0 == t)
+		return;
+
+	design2_get_tvar_matrix(d, isend, &x, &ind, &nz);
+
+	for (delta = deltaset_head(ds); delta != NULL; delta = delta->prev) {
+		if (delta->t < t0 || delta->t == -INFINITY)
+			break;
+
+		j = delta->i;
+		iz = find_index(j, ind, nz);
+		assert(iz >= 0);
+		xj = x + iz * dim;
+
+		//mlogitaug_set_x(&sm->mlogitaug, j, 0, dim, xj);
+		mlogitaug_set_x(&sm->mlogitaug, j, xj);
+	}
+
+	sm->tcur = t;
+}
+
+
 static void sender_init(struct recv_model_sender *sm, size_t isend,
 			const struct design2 *d, const struct recv_params *p,
 			struct recv_model_cohort *cm,
 			struct mlogitaug_work *work)
 {
 	assert(isend < design2_count1(d));
+	struct history *h = design2_history(d);
 	size_t dim = design2_tvar_dim(d);
 
 	mlogitaug_init(&sm->mlogitaug, &cm->mlogit, dim, work);
+	version_watch_init(&sm->version, history_version(h));
+	sender_clear(sm, d);
 	sender_set(sm, isend, d, p);
 }
 
 
-static void sender_deinit(struct recv_model_sender *sm)
+static void sender_deinit(struct recv_model_sender *sm, struct history *h)
 {
+	version_watch_deinit(&sm->version, history_version(h));
 	mlogitaug_deinit(&sm->mlogitaug);
 }
-
-
-static void recv_model_dyad_update(void *udata, struct design2 *d, size_t isend,
-				   size_t jrecv, const double *delta,
-				   const size_t *ind, size_t nz)
-{
-	struct recv_model *m = udata;
-	assert(isend < recv_model_send_count(m));
-	assert(jrecv < recv_model_send_count(m));
-
-	struct recv_model_sender *sm = &m->sender_models[isend];
-	mlogitaug_inc_x(&sm->mlogitaug, jrecv, ind, delta, nz);
-	//mlogitaug_check(&sm->mlogitaug);
-	(void)d;
-}
-
-
-
-
-static void recv_model_dyad_clear(void *udata, struct design2 *d)
-{
-	struct recv_model *m = udata;
-	struct recv_model_sender *sms = m->sender_models;
-	size_t i, n = recv_model_send_count(m);
-
-	for (i = 0; i < n; i++) {
-		sender_clear(&sms[i]);
-	}
-
-	(void)d;
-}
-
-
-static void recv_model_recv_clear(void *udata, const struct design *r,
-				  const struct design2 *d)
-{
-	struct recv_model *m = udata;
-	struct recv_model_cohort *cms = m->cohort_models;
-	size_t ic, nc = cohort_count(m);
-
-	for (ic = 0; ic < nc; ic++) {
-		cohort_clear(&cms[ic], ic, r, d);
-	}
-
-	(void)d;
-}
-
 
 
 void recv_model_init(struct recv_model *m,
@@ -346,7 +343,7 @@ void recv_model_deinit(struct recv_model *m)
 	struct recv_model_sender *sms = m->sender_models;
 	size_t isend, nsend = recv_model_send_count(m);
 	for (isend = 0; isend < nsend; isend++) {
-		sender_deinit(&sms[isend]);
+		sender_deinit(&sms[isend], h);
 	}
 	free(sms);
 
@@ -404,6 +401,7 @@ size_t recv_model_dim(const struct recv_model *m)
 	return dim;
 }
 
+
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend)
 {
 	assert(isend < recv_model_send_count(m));
@@ -412,20 +410,23 @@ struct catdist1 *recv_model_dist(const struct recv_model *m, size_t isend)
 	return dist;
 }
 
-struct mlogitaug *recv_model_mlogit(const struct recv_model *m, size_t isend)
+
+struct mlogitaug *recv_model_mlogit(const struct recv_model *m, size_t i)
 {
-	assert(isend < recv_model_send_count(m));
+	assert(i < recv_model_send_count(m));
 
 	const struct design *r = recv_model_design(m);
 	const struct design2 *d = recv_model_design2(m);
-	size_t c = recv_model_cohort(m, isend);
+	size_t c = recv_model_cohort(m, i);
 
 	cohort_update(&m->cohort_models[c], c, r, d);
+	sender_update(&m->sender_models[i], i, d);
 
-	struct recv_model_sender *sm = &m->sender_models[isend];
+	struct recv_model_sender *sm = &m->sender_models[i];
 	struct mlogitaug *mlogitaug = &sm->mlogitaug;
 	return mlogitaug;
 }
+
 
 void recv_model_set_params(struct recv_model *m, const struct recv_params *p)
 {
