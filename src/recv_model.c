@@ -136,6 +136,8 @@ static void sender_set(struct recv_model_sender *sm,
 	if (exclude_loops) {
 		const double neginf = -INFINITY;
 		mlogitaug_set_all_offset(&sm->mlogitaug, &isend, &neginf, 1);
+	} else {
+		mlogitaug_set_all_offset(&sm->mlogitaug, NULL, NULL, 0);
 	}
 
 	mlogitaug_set_coefs(&sm->mlogitaug, coefs);
@@ -241,6 +243,7 @@ void recv_model_init(struct recv_model *m,
 	m->params.recv.tvars = m->params.recv.traits + dimr0;
 	m->params.dyad.traits = m->params.recv.tvars + dimr1;
 	m->params.dyad.tvars = m->params.dyad.traits + dimd0;
+	m->params.exclude_loops = 0;
 
 	if (p && p->recv.traits) {
 		memcpy(m->params.recv.traits, p->recv.traits, dimr0 * sizeof(double));
@@ -253,6 +256,9 @@ void recv_model_init(struct recv_model *m,
 	}
 	if (p && p->dyad.tvars) {
 		memcpy(m->params.dyad.tvars, p->dyad.tvars, dimd1 * sizeof(double));
+	}
+	if (p) {
+		m->params.exclude_loops = p->exclude_loops;
 	}
 
 
@@ -372,6 +378,8 @@ void recv_model_set_params(struct recv_model *m, const struct recv_params *p)
 	size_t dim = dimr0 + dimr1 + dimd0 + dimd1;
 
 	memset(m->params.recv.traits, 0, dim * sizeof(double));
+	m->params.exclude_loops = 0;
+
 	if (p && p->recv.traits) {
 		memcpy(m->params.recv.traits, p->recv.traits, dimr0 * sizeof(double));
 	}
@@ -383,6 +391,9 @@ void recv_model_set_params(struct recv_model *m, const struct recv_params *p)
 	}
 	if (p && p->dyad.tvars) {
 		memcpy(m->params.dyad.tvars, p->dyad.tvars, dimd1 * sizeof(double));
+	}
+	if (p) {
+		m->params.exclude_loops = p->exclude_loops;
 	}
 
 	struct recv_model_cohort *cms = m->cohort_models;
