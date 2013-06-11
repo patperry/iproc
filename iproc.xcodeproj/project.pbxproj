@@ -79,6 +79,8 @@
 		224CE8021767680E007EBBBE /* recv_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE8001767680E007EBBBE /* recv_model.h */; };
 		224CE8051767691E007EBBBE /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
 		224CE80817676930007EBBBE /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
+		224CE80B1767C1F7007EBBBE /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 224CE8091767C1F7007EBBBE /* recv_loglik.c */; };
+		224CE80C1767C1F7007EBBBE /* recv_loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE80A1767C1F7007EBBBE /* recv_loglik.h */; };
 		224E8D30175E7C3F00868DF2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D2E175E7C3F00868DF2 /* send_model.c */; };
 		224E8D31175E7C3F00868DF2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224E8D2F175E7C3F00868DF2 /* send_model.h */; };
 		224E8D4A175ED36500868DF2 /* send_model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D49175ED36500868DF2 /* send_model_test.c */; };
@@ -697,6 +699,8 @@
 		224CE7FC176758E2007EBBBE /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = src/recv_model.h; sourceTree = "<group>"; };
 		224CE7FF1767680E007EBBBE /* recv_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model.c; path = tests/fixtures/recv_model.c; sourceTree = "<group>"; };
 		224CE8001767680E007EBBBE /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = tests/fixtures/recv_model.h; sourceTree = "<group>"; };
+		224CE8091767C1F7007EBBBE /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
+		224CE80A1767C1F7007EBBBE /* recv_loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_loglik.h; path = src/recv_loglik.h; sourceTree = "<group>"; };
 		224E8D2E175E7C3F00868DF2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = tests/fixtures/send_model.c; sourceTree = "<group>"; };
 		224E8D2F175E7C3F00868DF2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = tests/fixtures/send_model.h; sourceTree = "<group>"; };
 		224E8D37175ED31300868DF2 /* send_model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = send_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -733,7 +737,7 @@
 		22749E4E1402A97000C5A955 /* dSFMT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dSFMT.h; path = lib/dSFMT/dSFMT.h; sourceTree = "<group>"; };
 		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
 		2285AD1913B147E900C46E8B /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enron/enronfit.c; sourceTree = "<group>"; };
-		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = model_test; sourceTree = BUILT_PRODUCTS_DIR; };
+		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = model_test; path = recv_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* recv_model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model_test.c; path = tests/recv_model_test.c; sourceTree = "<group>"; };
 		2289D5371703F528000182EE /* uintset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uintset.c; path = lib/core/src/uintset.c; sourceTree = "<group>"; };
 		2289D5381703F528000182EE /* uintset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uintset.h; path = lib/core/src/uintset.h; sourceTree = "<group>"; };
@@ -1036,6 +1040,8 @@
 				226905591764C14100C99BC2 /* design2.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
+				224CE8091767C1F7007EBBBE /* recv_loglik.c */,
+				224CE80A1767C1F7007EBBBE /* recv_loglik.h */,
 				224CE7FB176758E2007EBBBE /* recv_model.c */,
 				224CE7FC176758E2007EBBBE /* recv_model.h */,
 				22690557175BD10200C99BC2 /* send_model.c */,
@@ -1311,6 +1317,7 @@
 				2249777E1765859200819F95 /* v2-ndyad-source.h in Headers */,
 				22B105F317663FF5002C55F6 /* v2-ntriad-source.h in Headers */,
 				224CE7FE176758E2007EBBBE /* recv_model.h in Headers */,
+				224CE80C1767C1F7007EBBBE /* recv_loglik.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1820,6 +1827,7 @@
 				22B105F117663FF5002C55F6 /* v2-nsend2.c in Sources */,
 				22B105F217663FF5002C55F6 /* v2-nsib.c in Sources */,
 				224CE7FD176758E2007EBBBE /* recv_model.c in Sources */,
+				224CE80B1767C1F7007EBBBE /* recv_loglik.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

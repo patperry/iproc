@@ -11,7 +11,6 @@
 struct recv_params {
 	struct coefs recv;
 	struct coefs2 dyad;
-	int exclude_loops;
 };
 
 struct recv_model_cohort {
@@ -29,6 +28,7 @@ struct recv_model_sender {
 struct recv_model {
 	struct design *recv;
 	struct design2 *dyad;
+	int exclude_loops;
 	struct recv_params params;
 	struct recv_model_cohort *cohort_models;
 	struct recv_model_sender *sender_models;
@@ -37,6 +37,9 @@ struct recv_model {
 	int moments;
 };
 
+
+void recv_params_init(struct recv_params *p, const struct design *r, const struct design2 *d);
+void recv_params_deinit(struct recv_params *p);
 
 void recv_model_init(struct recv_model *m, const struct recv_params *p,
 		     struct design *r, struct design2 *d);
@@ -48,6 +51,13 @@ const struct recv_params *recv_model_params(const struct recv_model *m);
 size_t recv_model_send_count(const struct recv_model *model);
 size_t recv_model_dim(const struct recv_model *model);
 size_t recv_model_count(const struct recv_model *model);
+
+static inline int recv_model_exclude_loops(const struct recv_model *m)
+{
+	return m->exclude_loops;
+}
+
+void recv_model_set_exclude_loops(struct recv_model *m, int exclude_loops);
 
 
 int recv_model_moments(const struct recv_model *m);

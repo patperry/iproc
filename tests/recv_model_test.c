@@ -38,7 +38,7 @@ struct fixture ctx;
 #define NRECV (ctx.h.nrecv)
 #define NSEND (ctx.h.nsend)
 #define RECV_PARAMS (&ctx.m.params)
-
+#define EXCLUDE_LOOPS (ctx.m.exclude_loops)
 
 
 struct test {
@@ -230,7 +230,7 @@ static void test_probs()
 		design_mul(1.0, r, &p->recv, 0.0, eta);
 		design2_mul(1.0, d, i, &p->dyad, 1.0, eta);
 			
-		if (p->exclude_loops)
+		if (recv_model_exclude_loops(m))
 			eta[i] = -INFINITY;
 
 		struct catdist1 *dist = recv_model_dist(m, i);

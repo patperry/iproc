@@ -444,3 +444,19 @@ double *design_make_active(struct design *d, struct tvar *v, size_t i)
 
 	return d->tvar_x + iz * dim + v->var.index;
 }
+
+
+void coefs_init(struct coefs *c, const struct design *d)
+{
+	size_t dim0 = design_trait_dim(d);
+	size_t dim1 = design_tvar_dim(d);
+	c->traits = xcalloc(dim0, sizeof(double));
+	c->tvars = xcalloc(dim1, sizeof(double));
+}
+
+
+void coefs_deinit(struct coefs *c)
+{
+	free(c->tvars);
+	free(c->traits);
+}

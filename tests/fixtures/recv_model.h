@@ -7,6 +7,7 @@ struct recv_model_fixture {
 	size_t recv_tvar_dim;
 	size_t dyad_trait_dim;
 	size_t dyad_tvar_dim;
+	int exclude_loops;
 };
 
 void recv_model_fixture_setup(struct recv_model_fixture	*f,

@@ -82,6 +82,10 @@ struct coefs2 {
 	double *tvars;
 };
 
+void coefs2_init(struct coefs2 *c, const struct design2 *d);
+void coefs2_deinit(struct coefs2 *c);
+
+
 
 void design2_init(struct design2 *d, struct history *h, size_t count1, size_t count2);
 void design2_deinit(struct design2 *d);

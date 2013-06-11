@@ -11,7 +11,7 @@ static void cohort_deinit(struct recv_loglik_cohort *cll);
 static void cohort_clear(struct recv_loglik_cohort *cll);
 static void cohort_add(struct recv_loglik_cohort *cll);
 
-static void sender_init(struct recv_loglik_sender *sll, const struct frame *f);
+static void sender_init(struct recv_loglik_sender *sll, const struct recv_model *m);
 static void sender_deinit(struct recv_loglik_sender *sll);
 static void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
 		       const struct mlogitaug *m1, size_t isend,
@@ -45,12 +45,15 @@ void cohort_add(struct recv_loglik_cohort *cll)
 
 
 
-void sender_init(struct recv_loglik_sender *sll, const struct frame *f)
+void sender_init(struct recv_loglik_sender *sll, const struct recv_model *m)
 {
-	recv_coefs_init(&sll->mean, f);
-	recv_coefs_init(&sll->score, f);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
+	
+	recv_params_init(&sll->mean, r, d);
+	recv_params_init(&sll->score, r, d);
 
-	size_t dim = sll->mean.dim;
+	size_t dim = recv_model_dim(m);
 	size_t cov_dim = dim * (dim + 1) / 2;
 	sll->cov = xmalloc(cov_dim * sizeof(*sll->cov));
 
@@ -60,8 +63,8 @@ void sender_init(struct recv_loglik_sender *sll, const struct frame *f)
 void sender_deinit(struct recv_loglik_sender *sll)
 {
 	free(sll->cov);
-	recv_coefs_deinit(&sll->score);
-	recv_coefs_deinit(&sll->mean);
+	recv_params_deinit(&sll->score);
+	recv_params_deinit(&sll->mean);
 }
 
 void sender_clear(struct recv_loglik_sender *sll)

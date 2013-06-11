@@ -588,3 +588,20 @@ double *design2_make_active(struct design2 *d, struct tvar2 *v, size_t i, size_t
 
 	return d->tvar_x + (ir0 + ix) * dim + v->var.index;
 }
+
+
+void coefs2_init(struct coefs2 *c, const struct design2 *d)
+{
+	size_t dim0 = design2_trait_dim(d);
+	size_t dim1 = design2_tvar_dim(d);
+	c->traits = xcalloc(dim0, sizeof(double));
+	c->tvars = xcalloc(dim1, sizeof(double));
+}
+
+
+void coefs2_deinit(struct coefs2 *c)
+{
+	free(c->tvars);
+	free(c->traits);
+}
+

@@ -73,6 +73,9 @@ struct coefs {
 	double *tvars;
 };
 
+void coefs_init(struct coefs *c, const struct design *d);
+void coefs_deinit(struct coefs *c);
+
 
 /* create/destroy */
 void design_init(struct design *d, struct history *h, size_t count);
