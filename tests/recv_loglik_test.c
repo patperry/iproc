@@ -8,54 +8,121 @@
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "blas.h"
 #include "cmockery.h"
 #include "coreutil.h"
-#include "blas.h"
-#include "matrixutil.h"
+#include "ieee754.h"
 #include "lapack.h"
+#include "matrixutil.h"
 #include "testutil.h"
 #include "xalloc.h"
 
-#include "ieee754.h"
-#include "enron.h"
-#include "messages.h"
-#include "design.h"
-#include "var.h"
-#include "frame.h"
-#include "recv_model.h"
-#include "recv_loglik.h"
+#include "../src/history.h"
+#include "../src/design.h"
+#include "../src/design2.h"
+#include "../src/recv_model.h"
+#include "../src/recv_loglik.h"
+
+#include "fixtures/history.h"
+#include "fixtures/design.h"
+#include "fixtures/design2.h"
+#include "fixtures/recv_model.h"
 
 
 
+struct fixture {
+	struct history_fixture h;
+	struct design_fixture r;
+	struct design2_fixture d;
+	struct recv_model_fixture m;
+};
 
-static size_t nsend;
-static size_t nrecv;
-static size_t ntrait;
-static double *traits;
-static const char * const *trait_names;
-static struct messages messages;
-static struct frame frame;
-static struct recv_model model;
-static struct recv_coefs coefs;
-static struct recv_loglik loglik;
+struct fixture ctx;
+
+#define NRECV (ctx.h.nrecv)
+#define NSEND (ctx.h.nsend)
+#define RECV_PARAMS (&ctx.m.params)
+#define EXCLUDE_LOOPS (ctx.m.exclude_loops)
 
 
-static void enron_setup_fixture()
+struct test {
+	struct history h;
+	struct design r;
+	struct design2 d;
+	struct recv_model m;
+	struct recv_loglik l;
+};
+
+struct test test;
+
+#define HISTORY	(&test.h)
+#define RECV_DESIGN (&test.r)
+#define DYAD_DESIGN (&test.d)
+#define RECV_MODEL (&test.m)
+#define RECV_LOGLIK (&test.l)
+
+
+
+static void fixture_setup_enron()
 {
-	print_message("Enron\n");
-	print_message("-----\n");
-	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, ENRON_TERMS_MAX);
-	enron_messages_init(&messages, -1);
-	nrecv = nsend;
+	double width = 6 * 7 * 24 * 60 * 60;
+	double intvls[] = { 2 * 60 * 60, 32 * 60 * 60, 3 * 7 * 24 * 60 * 60 };
+	size_t nintvl = 3;
+
+	srand(0);
+
+	history_fixture_setup_enron(&ctx.h);
+
+	design_fixture_setup_enron(&ctx.r);
+	design_fixture_add_traits_enron(&ctx.r);
+	design_fixture_add_isendtot(&ctx.r, width);
+	design_fixture_add_irecvtot(&ctx.r, width);
+	design_fixture_add_nrecvtot(&ctx.r, intvls, nintvl);
+	design_fixture_add_nsendtot(&ctx.r, intvls, nintvl);
+
+	design2_fixture_setup_enron(&ctx.d);
+	design2_fixture_add_irecv(&ctx.d, width);
+	design2_fixture_add_isend(&ctx.d, width);
+	design2_fixture_add_nrecv(&ctx.d, intvls, nintvl);
+	design2_fixture_add_nsend(&ctx.d, intvls, nintvl);
+
+	recv_model_fixture_setup(&ctx.m, &ctx.r, &ctx.d);
+	recv_model_fixture_set_exlude_loops(&ctx.m, 1);
+	recv_model_fixture_set_rand(&ctx.m);
 }
 
-static void enron_teardown_fixture()
+
+static void fixture_teardown()
 {
-	free(traits);
-	messages_deinit(&messages);
-	print_message("\n\n");
+	recv_model_fixture_teardown(&ctx.m);
+	design2_fixture_teardown(&ctx.d);
+	design_fixture_teardown(&ctx.r);
+	history_fixture_teardown(&ctx.h);
 }
 
+
+static void setup()
+{
+	history_test_setup(&test.h, &ctx.h);
+	design_test_setup(&test.r, &test.h, &ctx.r);
+	design2_test_setup(&test.d, &test.h, &ctx.d);
+	recv_model_test_setup(&test.m, &test.r, &test.d, &ctx.m);
+	recv_loglik_init(&test.l, &test.m);
+}
+
+
+static void teardown()
+{
+	recv_loglik_deinit(&test.l);
+	recv_model_test_teardown(&test.m);
+	design2_test_teardown(&test.d);
+	design_test_teardown(&test.r);
+	history_test_teardown(&test.h);
+}
+
+
+/*
 static void basic_setup()
 {
 	double intvls[4] = {
@@ -140,68 +207,50 @@ static void hard_setup()
 	recv_model_init(&model, &frame, &coefs);
 	recv_loglik_init(&loglik, &model);
 }
-
-
-static void teardown()
-{
-	recv_loglik_deinit(&loglik);
-	recv_model_deinit(&model);
-	recv_coefs_deinit(&coefs);
-	frame_deinit(&frame);
-}
+*/
 
 
 static void test_count()
 {
-	struct history *h = frame_history(&frame);
-	struct messages_iter it;
+	const struct message *msgs;
+	size_t i, n;
+
+	history_get_messages(HISTORY, &msgs, &n);
 	const struct message *msg = NULL;
-	double t;
-	size_t itie, ntie, nmsg;
+
 	size_t count0, count1;
 	size_t last_count0, last_count1;
 
 	count0 = 0;
-	nmsg = 0;
 
-	MESSAGES_FOREACH(it, &messages) {
+	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
-		t = MESSAGES_TIME(it);
+		msg = &msgs[i];
 
-		history_advance(h, t);
+		recv_loglik_add(RECV_LOGLIK, msg);
+		assert_real_identical(msg->time, history_time(HISTORY));
 
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			history_add(h, msg);
-			recv_loglik_add(&loglik, &frame, msg);
-			nmsg += msg->nto;
+		last_count0 = msg->nto;
+		last_count1 = recv_loglik_last_count(RECV_LOGLIK);
+		assert_int_equal(last_count0, last_count1);
 
-			if (nmsg > 1000)
-				goto out;
-
-			last_count0 = msg->nto;
-			last_count1 = recv_loglik_last_count(&loglik);
-			assert_int_equal(last_count0, last_count1);
-
-			count0 = count0 + last_count0;
-			count1 = recv_loglik_count(&loglik);
-			assert_int_equal(count0, count1);
-		}
+		count0 = count0 + last_count0;
+		count1 = recv_loglik_count(RECV_LOGLIK);
+		assert_int_equal(count0, count1);
 	}
-out:
-	return;
 }
 
 
 static void test_dev()
 {
-	struct history *h = frame_history(&frame);
-	struct messages_iter it;
+	const struct message *msgs;
+	size_t i, n;
+
+	history_get_messages(HISTORY, &msgs, &n);
 	const struct message *msg = NULL;
+
 	const struct catdist1 *dist = NULL;
-	double t;
-	size_t i, itie, ntie, nmsg;
+	size_t ito, nmsg;
 	double last_dev0, last_dev1;
 	double dev0, dev1, dev_old;
 	
@@ -209,203 +258,179 @@ static void test_dev()
 	
 	nmsg = 0;
 
-	MESSAGES_FOREACH(it, &messages) {
+	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
-		t = MESSAGES_TIME(it);
+		msg = &msgs[i];
 		
-		history_advance(h, t);
-		
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			history_add(h, msg);
-			recv_loglik_add(&loglik, &frame, msg);
-			nmsg += msg->nto;
-			
-			if (nmsg > 1000)
-				goto out;
-			
-			last_dev0 = 0.0;
-			dist = recv_model_dist(&model, msg->from);
-			for (i = 0; i < msg->nto; i++) {
-				last_dev0 += -2 * catdist1_lprob(dist, msg->to[i]);
-			}
-			
-			last_dev1 = recv_loglik_last_dev(&loglik);
-			assert_real_identical(last_dev0, last_dev1);
-			
-			dev0 = dev_old + last_dev0;
-			dev1 = recv_loglik_dev(&loglik);
-			assert_real_approx(dev0, dev1);
+		recv_loglik_add(RECV_LOGLIK, msg);
+		assert_real_identical(msg->time, history_time(HISTORY));
 
-			dev_old = dev1;
+		nmsg += msg->nto;
+						
+		last_dev0 = 0.0;
+		dist = recv_model_dist(RECV_MODEL, msg->from);
+		for (ito = 0; ito < msg->nto; ito++) {
+			last_dev0 += -2 * catdist1_lprob(dist, msg->to[ito]);
 		}
+			
+		last_dev1 = recv_loglik_last_dev(RECV_LOGLIK);
+		assert_real_identical(last_dev0, last_dev1);
+			
+		dev0 = dev_old + last_dev0;
+		dev1 = recv_loglik_dev(RECV_LOGLIK);
+		assert_real_approx(dev0, dev1);
+
+		dev_old = dev1;
 	}
-out:
-	return;
 }
 
 
 static void test_mean()
 {
-	struct history *h = frame_history(&frame);
-	struct messages_iter it;
+	const struct message *msgs;
+	size_t i, j, n;
+
+	history_get_messages(HISTORY, &msgs, &n);
 	const struct message *msg = NULL;
+
 	const struct catdist1 *dist = NULL;
 	double t;
-	size_t i, itie, ntie, nmsg;
-	double probs[nrecv];
-	struct recv_coefs last_mean0, last_mean1;
-	struct recv_coefs mean0, mean1;
+	double probs[NRECV];
+	struct recv_params last_mean0, last_mean1;
+	struct recv_params mean0, mean1;
 
-	size_t dim = recv_model_dim(&model);
-	recv_coefs_init(&mean0, &frame);
-	recv_coefs_init(&mean1, &frame);
-	recv_coefs_init(&last_mean0, &frame);
-	recv_coefs_init(&last_mean1, &frame);
+	const struct design *r = RECV_DESIGN;
+	const struct design2 *d = DYAD_DESIGN;
+	recv_params_init(&mean0, r, d);
+	recv_params_init(&mean1, r, d);
+	recv_params_init(&last_mean0, r, d);
+	recv_params_init(&last_mean1, r, d);
 
-	const struct design *r = frame_recv_design(&frame);
-	const struct design2 *d = frame_dyad_design(&frame);
 
-	nmsg = 0;
+	recv_params_set(&mean0, NULL, r, d);
 
-	memset(mean0.all, 0, dim * sizeof(*mean0.all));
-
-	MESSAGES_FOREACH(it, &messages) {
+	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
-		t = MESSAGES_TIME(it);
+		msg = &msgs[i];
+		t = msg->time;
 
-		history_advance(h, t);
+		history_advance(HISTORY, t);
 
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			history_add(h, msg);
-			recv_loglik_add(&loglik, &frame, msg);
-			nmsg += msg->nto;
+		recv_loglik_add(RECV_LOGLIK, msg);
 
-			if (nmsg > 1000)
-				goto out;
-
-			dist = recv_model_dist(&model, msg->from);
-			for (i = 0; i < nrecv; i++) {
-				probs[i] = catdist1_prob(dist, i);
-			}
-			design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
-			design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
-
-			memset(last_mean1.all, 0, dim * sizeof(*last_mean1.all));
-			recv_loglik_axpy_last_mean(1.0, &loglik, &last_mean1);
-
-			for (i = 0; i < dim; i++) {
-				assert_real_approx(last_mean0.all[i], last_mean1.all[i]);
-			}
-
-			blas_daxpy(dim, 1.0, last_mean0.all, 1, mean0.all, 1);
-
-			memset(mean1.all, 0, dim * sizeof(*mean1.all));
-			recv_loglik_axpy_mean(1.0, &loglik, &mean1);
-
-			for (i = 0; i < dim; i++) {
-				assert_real_approx(mean0.all[i], mean1.all[i]);
-			}
-
-			blas_dcopy(dim, mean1.all, 1, mean0.all, 1);
+		dist = recv_model_dist(RECV_MODEL, msg->from);
+		for (j = 0; j < NRECV; j++) {
+			probs[j] = catdist1_prob(dist, j);
 		}
+		design_tmul(msg->nto, r, probs, 0.0, &last_mean0.recv);
+		design2_tmul(msg->nto, d, msg->from, probs, 0.0, &last_mean0.dyad);
+
+		recv_params_set(&last_mean1, NULL, r, d);
+		recv_loglik_axpy_last_mean(1.0, RECV_LOGLIK, &last_mean1);
+
+		assert_vec_approx(last_mean0.recv.traits, last_mean1.recv.traits, design_trait_dim(r));
+		assert_vec_approx(last_mean0.recv.tvars, last_mean1.recv.tvars, design_tvar_dim(r));
+		assert_vec_approx(last_mean0.dyad.traits, last_mean1.dyad.traits, design2_trait_dim(d));
+		assert_vec_approx(last_mean0.dyad.tvars, last_mean1.dyad.tvars, design2_tvar_dim(d));
+
+		recv_params_axpy(1.0, &last_mean0, &mean0, r, d);
+
+		recv_params_set(&mean1, NULL, r, d);
+		recv_loglik_axpy_mean(1.0, RECV_LOGLIK, &mean1);
+
+		assert_vec_approx(mean0.recv.traits, mean1.recv.traits, design_trait_dim(r));
+		assert_vec_approx(mean0.recv.tvars, mean1.recv.tvars, design_tvar_dim(r));
+		assert_vec_approx(mean0.dyad.traits, mean1.dyad.traits, design2_trait_dim(d));
+		assert_vec_approx(mean0.dyad.tvars, mean1.dyad.tvars, design2_tvar_dim(d));
+
+		recv_params_set(&mean1, &mean0, r, d);
 	}
-out:
-	recv_coefs_deinit(&last_mean1);
-	recv_coefs_deinit(&last_mean0);
-	recv_coefs_deinit(&mean1);
-	recv_coefs_deinit(&mean0);
+
+	recv_params_deinit(&last_mean1);
+	recv_params_deinit(&last_mean0);
+	recv_params_deinit(&mean1);
+	recv_params_deinit(&mean0);
 }
 
 
 static void test_score()
 {
-	struct history *h = frame_history(&frame);
-	struct messages_iter it;
+	const struct message *msgs;
+	size_t i, ito, n;
+
+	history_get_messages(HISTORY, &msgs, &n);
 	const struct message *msg = NULL;
+
 	double t;
-	size_t i, itie, ntie, nmsg;
-	struct recv_coefs last_score0, last_score1;
-	struct recv_coefs score0, score1;
+	struct recv_params last_score0, last_score1;
+	struct recv_params score0, score1;
 
-	size_t dim = recv_model_dim(&model);
-	recv_coefs_init(&score0, &frame);
-	recv_coefs_init(&score1, &frame);
-	recv_coefs_init(&last_score0, &frame);
-	recv_coefs_init(&last_score1, &frame);
+	const struct design *r = RECV_DESIGN;
+	const struct design2 *d = DYAD_DESIGN;
+	recv_params_init(&score0, r, d);
+	recv_params_init(&score1, r, d);
+	recv_params_init(&last_score0, r, d);
+	recv_params_init(&last_score1, r, d);
 
-	const struct design *r = frame_recv_design(&frame);
-	const struct design2 *d = frame_dyad_design(&frame);
+	recv_params_set(&score0, NULL, r, d);
 
-	nmsg = 0;
-
-	memset(score0.all, 0, dim * sizeof(*score0.all));
-
-	MESSAGES_FOREACH(it, &messages) {
+	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
-		t = MESSAGES_TIME(it);
+		msg = &msgs[i];
+		t = msg->time;
 
-		history_advance(h, t);
+		recv_loglik_add(RECV_LOGLIK, msg);
 
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			history_add(h, msg);
-			recv_loglik_add(&loglik, &frame, msg);
-			nmsg += msg->nto;
-
-			if (nmsg > 1000)
-				goto out;
-
-			memset(last_score0.all, 0, dim * sizeof(*last_score0.all));
-			for (i = 0; i < msg->nto; i++) {
-				design_axpy(1.0, r, msg->to[i], &last_score0.recv);
-				design2_axpy(1.0, d, msg->from, msg->to[i], &last_score0.dyad);
-			}
-			recv_loglik_axpy_last_mean(-1.0, &loglik, &last_score0);
-
-			memset(last_score1.all, 0, dim * sizeof(*last_score1.all));
-			recv_loglik_axpy_last_score(1.0, &loglik, &last_score1);
-
-			for (i = 0; i < dim; i++) {
-				assert_real_approx(last_score0.all[i], last_score1.all[i]);
-			}
-
-			blas_daxpy(dim, 1.0, last_score0.all, 1, score0.all, 1);
-
-			memset(score1.all, 0, dim * sizeof(*score1.all));
-			recv_loglik_axpy_score(1.0, &loglik, &score1);
-
-			for (i = 0; i < dim; i++) {
-				assert_real_approx(score0.all[i], score1.all[i]);
-			}
-
-			blas_dcopy(dim, score1.all, 1, score0.all, 1);
+		recv_params_set(&last_score0, NULL, r, d);
+		for (ito = 0; ito < msg->nto; ito++) {
+			design_axpy(1.0, r, msg->to[ito], &last_score0.recv);
+			design2_axpy(1.0, d, msg->from, msg->to[ito], &last_score0.dyad);
 		}
+		recv_loglik_axpy_last_mean(-1.0, RECV_LOGLIK, &last_score0);
+
+		recv_params_set(&last_score1, NULL, r, d);
+		recv_loglik_axpy_last_score(1.0, RECV_LOGLIK, &last_score1);
+
+		assert_vec_approx(last_score0.recv.traits, last_score1.recv.traits, design_trait_dim(r));
+		assert_vec_approx(last_score0.recv.tvars, last_score1.recv.tvars, design_tvar_dim(r));
+		assert_vec_approx(last_score0.dyad.traits, last_score1.dyad.traits, design2_trait_dim(d));
+		assert_vec_approx(last_score0.dyad.tvars, last_score1.dyad.tvars, design2_tvar_dim(d));
+
+		recv_params_axpy(1.0, &last_score0, &score0, r, d);
+
+		recv_params_set(&score1, NULL, r, d);
+		recv_loglik_axpy_score(1.0, RECV_LOGLIK, &score1);
+
+		assert_vec_approx(score0.recv.traits, score1.recv.traits, design_trait_dim(r));
+		assert_vec_approx(score0.recv.tvars, score1.recv.tvars, design_tvar_dim(r));
+		assert_vec_approx(score0.dyad.traits, score1.dyad.traits, design2_trait_dim(d));
+		assert_vec_approx(score0.dyad.tvars, score1.dyad.tvars, design2_tvar_dim(d));
+
+		recv_params_set(&score0, &score1, r, d);
 	}
-out:
-	recv_coefs_deinit(&last_score1);
-	recv_coefs_deinit(&last_score0);
-	recv_coefs_deinit(&score1);
-	recv_coefs_deinit(&score0);
+
+	recv_params_deinit(&last_score1);
+	recv_params_deinit(&last_score0);
+	recv_params_deinit(&score1);
+	recv_params_deinit(&score0);
 }
 
 
 static void test_imat()
 {
-	struct history *h = frame_history(&frame);
-	struct messages_iter it;
+	const struct message *msgs;
+	size_t i, j, n;
+
+	history_get_messages(HISTORY, &msgs, &n);
 	const struct message *msg = NULL;
-	double t;
-	size_t i, itie, ntie, nmsg;
 
-	size_t dim = recv_model_dim(&model);
+	size_t dim = recv_model_dim(RECV_MODEL);
 	size_t cov_dim = dim * (dim + 1) / 2;
-	struct recv_coefs mean, diff;
+	const struct design *r = RECV_DESIGN;
+	const struct design2 *d = DYAD_DESIGN;
+	struct recv_params mean, diff;
 
+	double *diff_vec = xmalloc(dim * sizeof(double));
 	double *cov0 = xmalloc(cov_dim * sizeof(double));
 	double *cov1 = xmalloc(cov_dim * sizeof(double));
 	double *scaled_cov0 = xmalloc(cov_dim * sizeof(double));
@@ -413,102 +438,90 @@ static void test_imat()
 	double *last_cov0 = xmalloc(cov_dim * sizeof(double));
 	double *last_cov1 = xmalloc(cov_dim * sizeof(double));
 
-	recv_coefs_init(&mean, &frame);
-	recv_coefs_init(&diff, &frame);
+	recv_params_init(&mean, r, d);
+	recv_params_init(&diff, r, d);
 
-	const struct design *r = frame_recv_design(&frame);
-	const struct design2 *d = frame_dyad_design(&frame);
 	const struct catdist1 *dist = NULL;
 	const enum blas_uplo uplo = MLOGIT_COV_UPLO;
 	const enum blas_uplo fuplo = uplo == BLAS_UPPER ? BLAS_LOWER : BLAS_UPPER;
 
-	nmsg = 0;
-
 	memset(cov0, 0, cov_dim * sizeof(*cov0));
 
-	MESSAGES_FOREACH(it, &messages) {
+	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
-		t = MESSAGES_TIME(it);
+		msg = &msgs[i];
 
-		history_advance(h, t);
+		recv_loglik_add(RECV_LOGLIK, msg);
 
-		ntie = MESSAGES_COUNT(it);
-		for (itie = 0; itie < ntie; itie ++) {
-			msg = MESSAGES_VAL(it, itie);
-			history_add(h, msg);
-			recv_loglik_add(&loglik, &frame, msg);
-			nmsg += msg->nto;
+		/* compute mean */
+		recv_params_set(&mean, NULL, r, d);
+		recv_loglik_axpy_last_mean(1.0 / (msg->nto), RECV_LOGLIK, &mean);
 
-			if (nmsg > 1000)
-				goto out;
+		/* compute last_cov0 */
+		dist = recv_model_dist(RECV_MODEL, msg->from);
+		memset(last_cov0, 0, cov_dim * sizeof(double));
+		for (j = 0; j < NRECV; j++) {
+			recv_params_set(&diff, &mean, r, d);
+			design_axpy(-1.0, r, j, &diff.recv);
+			design2_axpy(-1.0, d, msg->from, j, &diff.dyad);
 
-			/* compute mean */
-			memset(mean.all, 0, dim * sizeof(double));
-			recv_loglik_axpy_last_mean(1.0 / (msg->nto), &loglik, &mean);
+			double w = catdist1_prob(dist, j);
+			size_t off = 0;
+			memcpy(diff_vec + off, diff.recv.traits, design_trait_dim(r) * sizeof(double)); off += design_trait_dim(r);
+			memcpy(diff_vec + off, diff.recv.tvars, design_tvar_dim(r) * sizeof(double)); off += design_tvar_dim(r);
+			memcpy(diff_vec + off, diff.dyad.traits, design2_trait_dim(d) * sizeof(double)); off += design2_trait_dim(d);
+			memcpy(diff_vec + off, diff.dyad.tvars, design2_tvar_dim(d) * sizeof(double)); off += design2_tvar_dim(d);
 
-			/* compute last_cov0 */
-			dist = recv_model_dist(&model, msg->from);
-			memset(last_cov0, 0, cov_dim * sizeof(double));
-			for (i = 0; i < nrecv; i++) {
-				memcpy(diff.all, mean.all, dim * sizeof(double));
-				design_axpy(-1.0, r, i, &diff.recv);
-				design2_axpy(-1.0, d, msg->from, i, &diff.dyad);
-
-				double w = catdist1_prob(dist, i);
-				blas_dspr(fuplo, dim, w, diff.all, 1, last_cov0);
-			}
-			blas_dscal(cov_dim, msg->nto, last_cov0, 1);
-
-			/* compute last_cov1 */
-			memset(last_cov1, 0, cov_dim * sizeof(double));
-			recv_loglik_axpy_last_imat(1.0, &loglik, last_cov1);
-
-			assert_sym_approx(last_cov0, last_cov1, uplo, dim);
-
-			/* compute cov0 */
-			blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
-
-			/* compute cov1 */
-			memset(cov1, 0, cov_dim * sizeof(double));
-			recv_loglik_axpy_imat(1.0, &loglik, cov1);
-
-			double n = (double)recv_loglik_count(&loglik);
-			memcpy(scaled_cov0, cov0, cov_dim * sizeof(double));
-			memcpy(scaled_cov1, cov1, cov_dim * sizeof(double));
-			blas_dscal(cov_dim, 1.0/n, scaled_cov0, 1);
-			blas_dscal(cov_dim, 1.0/n, scaled_cov1, 1);
-			assert_sym_approx(scaled_cov0, scaled_cov1, BLAS_UPPER, dim);
-
-			blas_dcopy(dim, cov1, 1, cov0, 1);
+			blas_dspr(fuplo, dim, w, diff_vec, 1, last_cov0);
 		}
+		blas_dscal(cov_dim, msg->nto, last_cov0, 1);
+
+		/* compute last_cov1 */
+		memset(last_cov1, 0, cov_dim * sizeof(double));
+		recv_loglik_axpy_last_imat(1.0, RECV_LOGLIK, last_cov1);
+
+		assert_sym_approx(last_cov0, last_cov1, uplo, dim);
+
+		/* compute cov0 */
+		blas_daxpy(cov_dim, 1.0, last_cov0, 1, cov0, 1);
+
+		/* compute cov1 */
+		memset(cov1, 0, cov_dim * sizeof(double));
+		recv_loglik_axpy_imat(1.0, RECV_LOGLIK, cov1);
+
+		double n = (double)recv_loglik_count(RECV_LOGLIK);
+		memcpy(scaled_cov0, cov0, cov_dim * sizeof(double));
+		memcpy(scaled_cov1, cov1, cov_dim * sizeof(double));
+		blas_dscal(cov_dim, 1.0/n, scaled_cov0, 1);
+		blas_dscal(cov_dim, 1.0/n, scaled_cov1, 1);
+		assert_sym_approx(scaled_cov0, scaled_cov1, BLAS_UPPER, dim);
+
+		blas_dcopy(dim, cov1, 1, cov0, 1);
 	}
-out:
-	recv_coefs_deinit(&diff);
-	recv_coefs_deinit(&mean);
+
+	recv_params_deinit(&diff);
+	recv_params_deinit(&mean);
 	free(last_cov1);
 	free(last_cov0);
 	free(scaled_cov1);
 	free(scaled_cov0);
 	free(cov1);
 	free(cov0);
+	free(diff_vec);
 }
+
 
 
 int main()
 {
 	UnitTest tests[] = {
-		unit_test_setup(enron_suite, enron_setup_fixture),
-		unit_test_setup_teardown(test_count, basic_setup, teardown),
-		unit_test_setup_teardown(test_count, hard_setup, teardown),
-		unit_test_setup_teardown(test_dev, basic_setup, teardown),
-		unit_test_setup_teardown(test_dev, hard_setup, teardown),
-		unit_test_setup_teardown(test_mean, basic_setup, teardown),
-		unit_test_setup_teardown(test_mean, hard_setup, teardown),
-		unit_test_setup_teardown(test_score, basic_setup, teardown),
-		unit_test_setup_teardown(test_score, hard_setup, teardown),
-		unit_test_setup_teardown(test_imat, basic_setup, teardown),
-		unit_test_setup_teardown(test_imat, hard_setup, teardown),
-		unit_test_teardown(enron_suite, enron_teardown_fixture),
+		unit_test_setup(enron_suite, fixture_setup_enron),
+		unit_test_setup_teardown(test_count, setup, teardown),
+		unit_test_setup_teardown(test_dev, setup, teardown),
+		unit_test_setup_teardown(test_mean, setup, teardown),
+		unit_test_setup_teardown(test_score, setup, teardown),
+		unit_test_setup_teardown(test_imat, setup, teardown),
+		unit_test_teardown(enron_suite, fixture_teardown),
 		
 	};
 	return run_tests(tests);
