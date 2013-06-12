@@ -92,6 +92,8 @@
 		225355DE17625EA200DFF865 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 225355DC17625EA200DFF865 /* version.h */; };
 		2254F0751768AE1200011CF0 /* recv_resid.c in Sources */ = {isa = PBXBuildFile; fileRef = 2254F0731768AE1100011CF0 /* recv_resid.c */; };
 		2254F0761768AE1200011CF0 /* recv_resid.h in Headers */ = {isa = PBXBuildFile; fileRef = 2254F0741768AE1100011CF0 /* recv_resid.h */; };
+		2254F0791768B09900011CF0 /* recv_boot.c in Sources */ = {isa = PBXBuildFile; fileRef = 2254F0771768B09900011CF0 /* recv_boot.c */; };
+		2254F07A1768B09900011CF0 /* recv_boot.h in Headers */ = {isa = PBXBuildFile; fileRef = 2254F0781768B09900011CF0 /* recv_boot.h */; };
 		22602688146B38EE00BA6347 /* port.h in Headers */ = {isa = PBXBuildFile; fileRef = 22602687146B38EE00BA6347 /* port.h */; };
 		226216C415F1BA50000C83C4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 226216C315F1BA50000C83C4 /* Accelerate.framework */; };
 		2264EE8A17595E6400C1AB5D /* v-ntot-source.h in Headers */ = {isa = PBXBuildFile; fileRef = 2264EE8917595E6400C1AB5D /* v-ntot-source.h */; };
@@ -711,6 +713,8 @@
 		225355DC17625EA200DFF865 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = lib/version.h; sourceTree = "<group>"; };
 		2254F0731768AE1100011CF0 /* recv_resid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_resid.c; path = src/recv_resid.c; sourceTree = "<group>"; };
 		2254F0741768AE1100011CF0 /* recv_resid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_resid.h; path = src/recv_resid.h; sourceTree = "<group>"; };
+		2254F0771768B09900011CF0 /* recv_boot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_boot.c; path = src/recv_boot.c; sourceTree = "<group>"; };
+		2254F0781768B09900011CF0 /* recv_boot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_boot.h; path = src/recv_boot.h; sourceTree = "<group>"; };
 		22602687146B38EE00BA6347 /* port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = port.h; path = lib/port.h; sourceTree = "<group>"; };
 		226216C315F1BA50000C83C4 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		2264EE8917595E6400C1AB5D /* v-ntot-source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "v-ntot-source.h"; path = "src/v-ntot-source.h"; sourceTree = "<group>"; };
@@ -1044,6 +1048,8 @@
 				226905591764C14100C99BC2 /* design2.h */,
 				228D4D5315A4CD5F007DBCCA /* history.c */,
 				228D4D5415A4CD5F007DBCCA /* history.h */,
+				2254F0771768B09900011CF0 /* recv_boot.c */,
+				2254F0781768B09900011CF0 /* recv_boot.h */,
 				224CE8091767C1F7007EBBBE /* recv_loglik.c */,
 				224CE80A1767C1F7007EBBBE /* recv_loglik.h */,
 				224CE7FB176758E2007EBBBE /* recv_model.c */,
@@ -1325,6 +1331,7 @@
 				224CE7FE176758E2007EBBBE /* recv_model.h in Headers */,
 				224CE80C1767C1F7007EBBBE /* recv_loglik.h in Headers */,
 				2254F0761768AE1200011CF0 /* recv_resid.h in Headers */,
+				2254F07A1768B09900011CF0 /* recv_boot.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1836,6 +1843,7 @@
 				224CE7FD176758E2007EBBBE /* recv_model.c in Sources */,
 				224CE80B1767C1F7007EBBBE /* recv_loglik.c in Sources */,
 				2254F0751768AE1200011CF0 /* recv_resid.c in Sources */,
+				2254F0791768B09900011CF0 /* recv_boot.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

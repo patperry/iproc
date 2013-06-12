@@ -62,8 +62,7 @@ static void axpy_probs(double alpha, const struct recv_model *m, size_t isend,
 		       double *y)
 {
 	const struct catdist1 *dist = recv_model_dist(m, isend);
-	const struct frame *f = recv_model_frame(m);
-	size_t j, n = frame_recv_count(f);
+	size_t j, n = recv_model_count(m);
 
 	for (j = 0; j < n; j++) {
 		double p = catdist1_prob(dist, j);
@@ -72,65 +71,67 @@ static void axpy_probs(double alpha, const struct recv_model *m, size_t isend,
 }
 
 void recv_boot_init(struct recv_boot *boot,
-		    struct frame *f,
-		    const struct messages *msgs,
-		    const struct recv_coefs *coefs, dsfmt_t * dsfmt)
-{
-	messages_init(&boot->messages);
-	recv_model_init(&boot->model, f, coefs);
+		    const struct recv_model *m,
+		    const struct message *msgs,
+		    size_t nmsg,
+		    dsfmt_t * dsfmt)
 
-	struct history *h = frame_history(f);
-	size_t nrecv = frame_recv_count(f);
-	size_t max_nto = messages_max_nto(msgs);
+{
+	size_t nsend = recv_model_send_count(m);
+	size_t j, nrecv = recv_model_count(m);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
+	struct history *hr = design_history(r);
+	struct history *hd = design2_history(d);
+	size_t imsg;
+
+	size_t max_nto = nrecv;
 	size_t *to = xcalloc(max_nto, sizeof(to[0]));
 	double *p = xmalloc(nrecv * sizeof(p[0]));
 	size_t maxntry = 100000000;
 
-	struct messages_iter it;
-	const struct message *msg;
-	double t;
-	size_t i, n;
-	size_t from, nto;
+	history_init(&boot->history, nsend, nrecv);
 
-	history_clear(h);
+	for (imsg = 0; imsg < nmsg; imsg++) {
+		const struct message *msg = &msgs[imsg];
+		double t = msg->time;
+		size_t from = msg->from;
+		size_t nto = msg->nto;
 
-	MESSAGES_FOREACH(it, msgs) {
-		t = MESSAGES_TIME(it);
-		n = MESSAGES_COUNT(it);
+		if (t < history_time(hr)) {
+			history_reset(hr);
+		}
+		history_advance(hr, t);
 
-		history_advance(h, t);
+		if (t < history_time(hd)) {
+			history_reset(hd);
+		}
+		history_advance(hd, t);
 
-		for (i = 0; i < n; i++) {
-			msg = MESSAGES_VAL(it, i);
-			from = msg->from;
-			nto = msg->nto;
 
-			memset(p, 0, nrecv * sizeof(p[0]));
-			axpy_probs(1.0, &boot->model, from, p);
+		memset(p, 0, nrecv * sizeof(p[0]));
+		axpy_probs(1.0, m, from, p);
 
-			if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
-				fprintf(stdout,
-					"Failed to sample subset of size %zu\n",
-					nto);
-				fprintf(stderr,
-					"Failed to sample subset of size %zu\n",
-					nto);
+		if (!sample_subset(p, nrecv, dsfmt, maxntry, to, nto)) {
+			fprintf(stdout,
+				"Failed to sample subset of size %zu\n",
+				nto);
+			fprintf(stderr,
+				"Failed to sample subset of size %zu\n",
+				nto);
 
-				printf("probs:\n");
-				for (i = 0; i < nrecv; i++) {
-					printf("%.10e, ", p[i]);
-				}
-				exit(1);
+			printf("probs:\n");
+			for (j = 0; j < nrecv; j++) {
+				printf("%.10e, ", p[j]);
 			}
-
-			messages_add(&boot->messages, t, from, to, nto,
-				     msg->attr);
+			exit(1);
 		}
 
-		for (i = 0; i < n; i++) {
-			msg = MESSAGES_VAL(it, i);
-			history_add(h, msg);
+		if (t < history_time(&boot->history)) {
+			history_reset(&boot->history);
 		}
+		history_advance(&boot->history, t);
+		history_add(&boot->history, from, to, nto, msg->attr);
 	}
 
 	free(p);
@@ -139,6 +140,5 @@ void recv_boot_init(struct recv_boot *boot,
 
 void recv_boot_deinit(struct recv_boot *boot)
 {
-	recv_model_deinit(&boot->model);
-	messages_deinit(&boot->messages);
+	history_deinit(&boot->history);
 }

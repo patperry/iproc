@@ -36,6 +36,8 @@ libiproc_a_SOURCES = \
 	src/design2.h \
 	src/history.c \
 	src/history.h \
+	src/recv_boot.c \
+	src/recv_boot.h \
 	src/recv_loglik.c \
 	src/recv_loglik.h \
 	src/recv_model.c \

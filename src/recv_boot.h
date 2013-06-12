@@ -7,19 +7,19 @@
 #define DSFMT_DO_NOT_USE_OLD_NAMES
 #include "dSFMT/dSFMT.h"
 
-#include "messages.h"
+#include "history.h"
 #include "design.h"
 #include "recv_model.h"
 
 struct recv_boot {
-	struct recv_model model;
-	struct messages messages;
+	struct history history;
 };
 
 void recv_boot_init(struct recv_boot *boot,
-		    struct frame *f,
-		    const struct messages *msgs,
-		    const struct recv_coefs *coefs, dsfmt_t * dsfmt);
+		    const struct recv_model *m,
+		    const struct message *msgs,
+		    size_t nmsg,
+		    dsfmt_t * dsfmt);
 void recv_boot_deinit(struct recv_boot *boot);
 
 #endif /* RECV_BOOT_H */
