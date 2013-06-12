@@ -25,18 +25,18 @@ size_t constr_count0(const struct constr *c)
 	return c ? constr_count(c) : 0;
 }
 
-void recv_params_init(struct recv_params *x, const struct frame *f,
+void recv_fit_params_init(struct recv_fit_params *x, const struct frame *f,
 		      const struct constr *c)
 {
 	size_t coefs_dim = recv_coefs_dim(f);
 	size_t nc = constr_count0(c);
 	size_t dim = coefs_dim + nc;
 	double *data = xmalloc(dim * sizeof(data[0]));
-	recv_params_init_view(x, f, c, data);
+	recv_fit_params_init_view(x, f, c, data);
 	x->owner = 1;
 }
 
- void recv_params_init_view(struct recv_params *x, const struct frame *f,
+ void recv_fit_params_init_view(struct recv_fit_params *x, const struct frame *f,
 			    const struct constr *c, const double *data)
 {
 	x->all = (double *)data;
@@ -52,7 +52,7 @@ void recv_params_init(struct recv_params *x, const struct frame *f,
 }
 
 
-void recv_params_deinit(struct recv_params *x)
+void recv_fit_params_deinit(struct recv_fit_params *x)
 {
 	if (x->owner)
 		free(x->all);
@@ -62,20 +62,20 @@ void recv_params_deinit(struct recv_params *x)
 static void resid_init(struct recv_fit_resid *resid, const struct frame *f,
 		       const struct constr *c)
 {
-	recv_params_init(&resid->params, f, c);
+	recv_fit_params_init(&resid->params, f, c);
 	resid->norm2 = NAN;
 }
 
 static void resid_deinit(struct recv_fit_resid *resid)
 {
-	recv_params_deinit(&resid->params);
+	recv_fit_params_deinit(&resid->params);
 }
 
 
 static void resid_set(struct recv_fit_resid *resid,
 		      const struct recv_loglik *ll,
 		      const struct constr *c,
-		      const struct recv_params *params)
+		      const struct recv_fit_params *params)
 {
 	const struct recv_model *m = recv_loglik_model(ll);
 	size_t dim = recv_model_dim(m);
@@ -113,14 +113,14 @@ static void eval_init(struct recv_fit_eval *eval, struct recv_model *m,
 	const struct frame *f = recv_model_frame(m);
 
 	recv_loglik_init(&eval->loglik, m);
-	recv_params_init(&eval->params, f, c);
+	recv_fit_params_init(&eval->params, f, c);
 	resid_init(&eval->resid, f, c);
 }
 
 static void eval_deinit(struct recv_fit_eval *eval)
 {
 	resid_deinit(&eval->resid);
-	recv_params_deinit(&eval->params);
+	recv_fit_params_deinit(&eval->params);
 	recv_loglik_deinit(&eval->loglik);
 }
 
@@ -133,7 +133,7 @@ static void _eval_update(struct recv_fit_eval *eval,
 	// clear frame; set model coefs
 	struct history *h = frame_history(frame);
 	history_clear(h);
-	recv_model_set_coefs(model, &eval->params.coefs);
+	recv_model_set_par(model, &eval->params.params);
 	recv_model_set_moments(model, moments);
 
 	// set loglik
@@ -174,13 +174,13 @@ static void _eval_update(struct recv_fit_eval *eval,
 		n = MESSAGES_COUNT(yit);
 		for (i = 0; i < n; i++) {
 			msg = MESSAGES_VAL(yit, i);
-			recv_loglik_add(&eval->loglik, frame, msg);
+			recv_loglik_add(&eval->loglik, msg);
 		}
 	}
 }
 
 static void eval_set(struct recv_fit_eval *eval,
-		     const struct recv_params *params,
+		     const struct recv_fit_params *params,
 		     const struct messages *xmsgs,
 		     const struct messages *ymsgs,
 		     struct frame *frame, struct recv_model *model, int moments)
@@ -195,8 +195,8 @@ static void eval_set(struct recv_fit_eval *eval,
 }
 
 static void eval_step(struct recv_fit_eval *eval,
-		      const struct recv_params *params0, double scale,
-		      const struct recv_params *dir, const struct messages *xmsgs,
+		      const struct recv_fit_params *params0, double scale,
+		      const struct recv_fit_params *dir, const struct messages *xmsgs,
 		      const struct messages *ymsgs,
 		      struct frame *frame, struct recv_model *model, int moments)
 {
@@ -264,12 +264,12 @@ static void kkt_set(struct recv_fit_kkt *kkt, const struct recv_loglik *ll,
 static void search_init(struct recv_fit_search *search, const struct frame *f,
 			const struct constr *c)
 {
-	recv_params_init(&search->params, f, c);
+	recv_fit_params_init(&search->params, f, c);
 }
 
 static void search_deinit(struct recv_fit_search *search)
 {
-	recv_params_deinit(&search->params);
+	recv_fit_params_deinit(&search->params);
 }
 
 static void search_set(struct recv_fit_search *search,
@@ -301,12 +301,12 @@ static void search_set(struct recv_fit_search *search,
 
 static void rgrad_init(struct recv_fit_rgrad *rgrad, const struct frame *f, const struct constr *c)
 {
-	recv_params_init(&rgrad->params, f, c);
+	recv_fit_params_init(&rgrad->params, f, c);
 }
 
 static void rgrad_deinit(struct recv_fit_rgrad *rgrad)
 {
-	recv_params_deinit(&rgrad->params);
+	recv_fit_params_deinit(&rgrad->params);
 }
 
 static void rgrad_set(struct recv_fit_rgrad *rgrad, size_t dim, size_t nc,
@@ -486,7 +486,7 @@ void recv_fit_init(struct recv_fit *fit,
 
 
 enum recv_fit_task recv_fit_start(struct recv_fit *fit,
-				  const struct recv_params *params0)
+				  const struct recv_fit_params *params0)
 {
 	eval_set(fit->cur, params0, fit->xmsgs, fit->ymsgs, fit->frame,
 		 &fit->model, 2);

@@ -36,22 +36,22 @@ enum recv_fit_task {
 };
 
 
-struct recv_params {
+struct recv_fit_params {
 	double *all;
 	size_t dim;
-	struct recv_coefs coefs;
+	struct recv_params params;
 	double *duals;
 	int owner;
 };
 
 struct recv_fit_resid {
-	struct recv_params params;
+	struct recv_fit_params params;
 	double norm2;
 };
 
 struct recv_fit_eval {
 	struct recv_loglik loglik;
-	struct recv_params params;
+	struct recv_fit_params params;
 	struct recv_fit_resid resid;
 };
 
@@ -65,11 +65,11 @@ struct recv_fit_kkt {
 };
 
 struct recv_fit_search {
-	struct recv_params params;
+	struct recv_fit_params params;
 };
 
 struct recv_fit_rgrad {
-	struct recv_params params;
+	struct recv_fit_params params;
 };
 
 struct recv_fit {
@@ -98,11 +98,11 @@ struct recv_fit {
 	double step;
 };
 
-void recv_params_init(struct recv_params *params, const struct frame *f,
+void recv_fit_params_init(struct recv_fit_params *params, const struct frame *f,
 		      const struct constr *c);
-void recv_params_init_view(struct recv_params *params, const struct frame *f,
+void recv_fit_params_init_view(struct recv_fit_params *params, const struct frame *f,
 			   const struct constr *c, const double *data);
-void recv_params_deinit(struct recv_params *params);
+void recv_fit_params_deinit(struct recv_fit_params *params);
 
 size_t constr_add_identify_recv_fit(struct constr *c, struct frame *f,
 				    const struct messages *xmsgs,
@@ -119,7 +119,7 @@ void recv_fit_deinit(struct recv_fit *fit);
 
 
 /* fitting */
-enum recv_fit_task recv_fit_start(struct recv_fit *fit, const struct recv_params *params0);
+enum recv_fit_task recv_fit_start(struct recv_fit *fit, const struct recv_fit_params *params0);
 enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 const char *recv_fit_errmsg(const struct recv_fit *fit);
 

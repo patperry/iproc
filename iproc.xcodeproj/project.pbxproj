@@ -81,6 +81,8 @@
 		224CE80817676930007EBBBE /* libtestfixtures.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2289E70F1758562C00811E37 /* libtestfixtures.dylib */; };
 		224CE80B1767C1F7007EBBBE /* recv_loglik.c in Sources */ = {isa = PBXBuildFile; fileRef = 224CE8091767C1F7007EBBBE /* recv_loglik.c */; };
 		224CE80C1767C1F7007EBBBE /* recv_loglik.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE80A1767C1F7007EBBBE /* recv_loglik.h */; };
+		224CE8131768C240007EBBBE /* recv_fit.c in Sources */ = {isa = PBXBuildFile; fileRef = 224CE8111768C240007EBBBE /* recv_fit.c */; };
+		224CE8141768C240007EBBBE /* recv_fit.h in Headers */ = {isa = PBXBuildFile; fileRef = 224CE8121768C240007EBBBE /* recv_fit.h */; };
 		224E8D30175E7C3F00868DF2 /* send_model.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D2E175E7C3F00868DF2 /* send_model.c */; };
 		224E8D31175E7C3F00868DF2 /* send_model.h in Headers */ = {isa = PBXBuildFile; fileRef = 224E8D2F175E7C3F00868DF2 /* send_model.h */; };
 		224E8D4A175ED36500868DF2 /* send_model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 224E8D49175ED36500868DF2 /* send_model_test.c */; };
@@ -705,6 +707,8 @@
 		224CE8001767680E007EBBBE /* recv_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_model.h; path = tests/fixtures/recv_model.h; sourceTree = "<group>"; };
 		224CE8091767C1F7007EBBBE /* recv_loglik.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_loglik.c; path = src/recv_loglik.c; sourceTree = "<group>"; };
 		224CE80A1767C1F7007EBBBE /* recv_loglik.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_loglik.h; path = src/recv_loglik.h; sourceTree = "<group>"; };
+		224CE8111768C240007EBBBE /* recv_fit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_fit.c; path = src/recv_fit.c; sourceTree = "<group>"; };
+		224CE8121768C240007EBBBE /* recv_fit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = recv_fit.h; path = src/recv_fit.h; sourceTree = "<group>"; };
 		224E8D2E175E7C3F00868DF2 /* send_model.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = send_model.c; path = tests/fixtures/send_model.c; sourceTree = "<group>"; };
 		224E8D2F175E7C3F00868DF2 /* send_model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = send_model.h; path = tests/fixtures/send_model.h; sourceTree = "<group>"; };
 		224E8D37175ED31300868DF2 /* send_model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = send_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1050,6 +1054,8 @@
 				228D4D5415A4CD5F007DBCCA /* history.h */,
 				2254F0771768B09900011CF0 /* recv_boot.c */,
 				2254F0781768B09900011CF0 /* recv_boot.h */,
+				224CE8111768C240007EBBBE /* recv_fit.c */,
+				224CE8121768C240007EBBBE /* recv_fit.h */,
 				224CE8091767C1F7007EBBBE /* recv_loglik.c */,
 				224CE80A1767C1F7007EBBBE /* recv_loglik.h */,
 				224CE7FB176758E2007EBBBE /* recv_model.c */,
@@ -1332,6 +1338,7 @@
 				224CE80C1767C1F7007EBBBE /* recv_loglik.h in Headers */,
 				2254F0761768AE1200011CF0 /* recv_resid.h in Headers */,
 				2254F07A1768B09900011CF0 /* recv_boot.h in Headers */,
+				224CE8141768C240007EBBBE /* recv_fit.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1844,6 +1851,7 @@
 				224CE80B1767C1F7007EBBBE /* recv_loglik.c in Sources */,
 				2254F0751768AE1200011CF0 /* recv_resid.c in Sources */,
 				2254F0791768B09900011CF0 /* recv_boot.c in Sources */,
+				224CE8131768C240007EBBBE /* recv_fit.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
