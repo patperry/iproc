@@ -40,6 +40,8 @@ libiproc_a_SOURCES = \
 	src/recv_loglik.h \
 	src/recv_model.c \
 	src/recv_model.h \
+	src/recv_resid.c \
+	src/recv_resid.h \
 	src/send_model.c \
 	src/send_model.h \
 	src/v-irecvtot.c \
