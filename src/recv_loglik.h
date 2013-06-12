@@ -8,9 +8,6 @@
 #define RECV_LOGLIK_UPLO  MLOGIT_COV_UPLO
 
 
-struct recv_loglik_cohort {
-};
-
 struct recv_loglik_sender {
 	size_t count;
 	double dev;
@@ -29,7 +26,6 @@ struct recv_loglik_update {
 
 struct recv_loglik {
 	struct recv_model *model;
-	struct recv_loglik_cohort *cohorts;
 	struct recv_loglik_sender *senders;
 	struct recv_loglik_update last;
 };

@@ -6,43 +6,17 @@
 #include "xalloc.h"
 #include "recv_loglik.h"
 
-static void cohort_init(struct recv_loglik_cohort *cll);
-static void cohort_deinit(struct recv_loglik_cohort *cll);
-static void cohort_clear(struct recv_loglik_cohort *cll);
-static void cohort_add(struct recv_loglik_cohort *cll);
-
 static void sender_init(struct recv_loglik_sender *sll, const struct recv_model *m);
 static void sender_deinit(struct recv_loglik_sender *sll);
-static void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
-		       const struct mlogitaug *m1, size_t isend,
-		       const size_t *jrecv, size_t nto,
+static void sender_add(struct recv_loglik_sender *sll, const struct design *r,
+		       const struct design2 *d, const struct mlogitaug *m1,
+		       size_t isend, const size_t *jrecv, size_t nto,
 		       struct recv_loglik_update *last);
 static void sender_clear(struct recv_loglik_sender *sll);
 
 #ifndef NDEBUG
 static int recv_loglik_moments(const struct recv_loglik *ll);
 #endif
-
-void cohort_init(struct recv_loglik_cohort *cll)
-{
-	(void)cll;
-}
-
-void cohort_deinit(struct recv_loglik_cohort *cll)
-{
-	(void)cll;
-}
-
-void cohort_clear(struct recv_loglik_cohort *cll)
-{
-	(void)cll;
-}
-
-void cohort_add(struct recv_loglik_cohort *cll)
-{
-	(void)cll;
-}
-
 
 
 void sender_init(struct recv_loglik_sender *sll, const struct recv_model *m)
@@ -121,13 +95,12 @@ static void copy_cov(const struct mlogitaug *m1, double *dst)
 	}
 }
 
-void sender_add(struct recv_loglik_sender *sll, const struct frame *f,
+void sender_add(struct recv_loglik_sender *sll, const struct design *r,
+		const struct design2 *d,
 		const struct mlogitaug *m1, size_t isend,
 		const size_t *jrecv, size_t nto,
 		struct recv_loglik_update *last)
 {
-	const struct design *r = frame_recv_design(f);
-	const struct design2 *d = frame_dyad_design(f);
 	int moments = mlogit_moments(mlogitaug_base(m1));
 
 	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
@@ -191,28 +164,22 @@ void recv_loglik_init(struct recv_loglik *ll, struct recv_model *m)
 	assert(ll);
 	assert(m);
 
-	const struct frame *f = recv_model_frame(m);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
 
 	ll->model = m;
-
-	size_t ic, nc = recv_model_cohort_count(m);
-	struct recv_loglik_cohort *cohorts = xcalloc(nc, sizeof(*cohorts));
-	for (ic = 0; ic < nc; ic++) {
-		cohort_init(&cohorts[ic]);
-	}
-	ll->cohorts = cohorts;
 
 	size_t is, ns = recv_model_send_count(m);
 	struct recv_loglik_sender *senders = xcalloc(ns, sizeof(*senders));
 	for (is = 0; is < ns; is++) {
-		sender_init(&senders[is], f);
+		sender_init(&senders[is], m);
 	}
 	ll->senders = senders;
 
-	recv_coefs_init(&ll->last.mean, recv_model_frame(m));
-	recv_coefs_init(&ll->last.score, recv_model_frame(m));
+	recv_params_init(&ll->last.mean, r, d);
+	recv_params_init(&ll->last.score, r, d);
 
-	size_t dim = ll->last.mean.dim;
+	size_t dim = recv_model_dim(m);
 	size_t cov_dim = dim * (dim + 1) / 2;
 	ll->last.cov = xmalloc(cov_dim * sizeof(*ll->last.cov));
 
@@ -225,8 +192,8 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 	assert(ll);
 
 	free(ll->last.cov);
-	recv_coefs_deinit(&ll->last.score);
-	recv_coefs_deinit(&ll->last.mean);
+	recv_params_deinit(&ll->last.score);
+	recv_params_deinit(&ll->last.mean);
 
 	struct recv_loglik_sender *senders = ll->senders;
 	size_t is, ns = recv_model_send_count(ll->model);
@@ -234,13 +201,6 @@ void recv_loglik_deinit(struct recv_loglik *ll)
 		sender_deinit(&senders[is]);
 	}
 	free(senders);
-
-	struct recv_loglik_cohort *cohorts = ll->cohorts;
-	size_t ic, nc = recv_model_cohort_count(ll->model);
-	for (ic = 0; ic < nc; ic++) {
-		cohort_deinit(&cohorts[ic]);
-	}
-	free(cohorts);
 }
 
 
@@ -249,13 +209,6 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	assert(ll);
 
 	const struct recv_model *m = ll->model;
-	struct recv_loglik_cohort *cohorts = ll->cohorts;
-	size_t ic, nc = recv_model_cohort_count(m);
-
-	for (ic = 0; ic < nc; ic++) {
-		cohort_clear(&cohorts[ic]);
-	}
-
 	struct recv_loglik_sender *senders = ll->senders;
 	size_t is, ns = recv_model_send_count(m);
 	for (is = 0; is < ns; is++) {
@@ -274,9 +227,7 @@ void recv_loglik_add(struct recv_loglik *ll,
 {
 	size_t isend = msg->from;
 	const struct mlogitaug *m1 = recv_model_mlogit(ll->model, isend);
-	size_t c = recv_model_cohort(ll->model, isend);
 	sender_add(&ll->senders[isend], f, m1, msg->from, msg->to, msg->nto, &ll->last);
-	cohort_add(&ll->cohorts[c]);
 }
 
 
