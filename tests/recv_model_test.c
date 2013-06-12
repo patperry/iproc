@@ -5,12 +5,6 @@
 #include <setjmp.h>
 #include <stdlib.h>
 
-#include "../src/history.h"
-#include "../src/design.h"
-#include "../src/design2.h"
-#include "../src/recv_model.h"
-
-
 #include "coreutil.h"
 #include "testutil.h"
 #include "cmockery.h"
@@ -19,6 +13,11 @@
 #include "matrixutil.h"
 #include "sblas.h"
 #include "xalloc.h"
+
+#include "../src/history.h"
+#include "../src/design.h"
+#include "../src/design2.h"
+#include "../src/recv_model.h"
 
 #include "fixtures/history.h"
 #include "fixtures/design.h"
