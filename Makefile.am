@@ -90,6 +90,8 @@ libcore_a_SOURCES = \
 	lib/mlogit.h \
 	lib/mlogitaug.c \
 	lib/mlogitaug.h \
+	lib/newton.c \
+	lib/newton.h \
 	lib/strata.c \
 	lib/strata.h \
 	lib/util.c \
