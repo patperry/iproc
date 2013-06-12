@@ -209,12 +209,13 @@ static int vec_approx_display_error(const double *expect, const double *actual, 
 	size_t i;
 	const int approx = vec_approx(expect, actual, n, &i);
 	if (!approx) {
+		int p = double_eqrel(expect[i], actual[i]);
 		print_error_vector(expect, n);
 		print_error("\n!=\n");
 		print_error_vector(actual, n);
 		print_error("\n(index "LargestIntegralTypePrintfFormat": "
-			    LargestRealTypePrintfFormat" != "LargestRealTypePrintfFormat")\n",
-			    i, expect[i], actual[i]);
+			    LargestRealTypePrintfFormat" != "LargestRealTypePrintfFormat"; %d bits differ)\n",
+			    i, expect[i], actual[i], DBL_MANT_DIG - p);
 	}
 	return approx;
 }
