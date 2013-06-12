@@ -61,7 +61,7 @@ static void cohort_set(struct recv_model_cohort *cm, size_t c,
 {
 	size_t dimr = design_dim(r);
 	size_t dimr0 = design_trait_dim(r);
-	size_t dimr1 = design_trait_dim(r);
+	size_t dimr1 = design_tvar_dim(r);
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dim = dimr + dimd0;
 	double *beta = xcalloc(dim, sizeof(double));
@@ -280,8 +280,8 @@ void recv_model_init(struct recv_model *m,
 	size_t nrecv = design_count(r);
 	size_t dimr0 = design_trait_dim(r);
 	size_t dimr1 = design_tvar_dim(r);
-	size_t dimd0 = design_trait_dim(r);
-	size_t dimd1 = design_tvar_dim(r);
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dimd1 = design2_tvar_dim(d);
 	size_t base_dim = dimr0 + dimr1 + dimd0;
 	size_t aug_dim = dimd1;
 	size_t dim = base_dim + aug_dim;
