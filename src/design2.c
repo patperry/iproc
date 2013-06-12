@@ -605,3 +605,26 @@ void coefs2_deinit(struct coefs2 *c)
 	free(c->traits);
 }
 
+
+void coefs2_set(struct coefs2 *dst, const struct coefs2 *src, const struct design2 *d)
+{
+	size_t dim0 = design2_trait_dim(d);
+	size_t dim1 = design2_tvar_dim(d);
+
+	if (src) {
+		memcpy(dst->traits, src->traits, dim0 * sizeof(double));
+		memcpy(dst->tvars, src->tvars, dim1 * sizeof(double));
+	} else {
+		memset(dst->traits, 0, dim0 * sizeof(double));
+		memset(dst->tvars, 0, dim1 * sizeof(double));
+	}
+}
+
+void coefs2_axpy(double alpha, const struct coefs2 *x, struct coefs2 *y, const struct design2 *d)
+{
+	size_t dim0 = design2_trait_dim(d);
+	size_t dim1 = design2_tvar_dim(d);
+
+	blas_daxpy(dim0, alpha, x->traits, 1, y->traits, 1);
+	blas_daxpy(dim1, alpha, x->tvars, 1, y->tvars, 1);
+}

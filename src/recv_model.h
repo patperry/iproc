@@ -40,6 +40,9 @@ struct recv_model {
 
 void recv_params_init(struct recv_params *p, const struct design *r, const struct design2 *d);
 void recv_params_deinit(struct recv_params *p);
+void recv_params_set(struct recv_params *dst, const struct recv_params *src, const struct design *r, const struct design2 *d);
+void recv_params_axpy(double alpha, const struct recv_params *x, struct recv_params *y, const struct design *r, const struct design2 *d);
+
 
 void recv_model_init(struct recv_model *m, const struct recv_params *p,
 		     struct design *r, struct design2 *d);

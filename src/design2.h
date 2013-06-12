@@ -84,7 +84,8 @@ struct coefs2 {
 
 void coefs2_init(struct coefs2 *c, const struct design2 *d);
 void coefs2_deinit(struct coefs2 *c);
-
+void coefs2_set(struct coefs2 *dst, const struct coefs2 *src, const struct design2 *d);
+void coefs2_axpy(double alpha, const struct coefs2 *x, struct coefs2 *y, const struct design2 *d);
 
 
 void design2_init(struct design2 *d, struct history *h, size_t count1, size_t count2);

@@ -12,7 +12,7 @@ static void sender_add(struct recv_loglik_sender *sll, const struct design *r,
 		       const struct design2 *d, const struct mlogitaug *m1,
 		       size_t isend, const size_t *jrecv, size_t nto,
 		       struct recv_loglik_update *last);
-static void sender_clear(struct recv_loglik_sender *sll);
+static void sender_clear(struct recv_loglik_sender *sll, const struct design *r, const struct design2 *d);
 
 #ifndef NDEBUG
 static int recv_loglik_moments(const struct recv_loglik *ll);
@@ -31,7 +31,7 @@ void sender_init(struct recv_loglik_sender *sll, const struct recv_model *m)
 	size_t cov_dim = dim * (dim + 1) / 2;
 	sll->cov = xmalloc(cov_dim * sizeof(*sll->cov));
 
-	sender_clear(sll);
+	sender_clear(sll, r, d);
 }
 
 void sender_deinit(struct recv_loglik_sender *sll)
@@ -41,14 +41,14 @@ void sender_deinit(struct recv_loglik_sender *sll)
 	recv_params_deinit(&sll->mean);
 }
 
-void sender_clear(struct recv_loglik_sender *sll)
+void sender_clear(struct recv_loglik_sender *sll, const struct design *r, const struct design2 *d)
 {
-	size_t dim = sll->mean.dim;
+	size_t dim = design_dim(r) + design2_dim(d);
 	size_t cov_dim = dim * (dim + 1) / 2;
 	sll->count = 0;
 	sll->dev = 0;
-	memset(sll->mean.all, 0, dim * sizeof(*sll->mean.all));
-	memset(sll->score.all, 0, dim * sizeof(*sll->score.all));
+	recv_params_set(&sll->mean, NULL, r, d);
+	recv_params_set(&sll->score, NULL, r, d);
 	memset(sll->cov, 0, cov_dim * sizeof(*sll->cov));
 }
 
@@ -103,6 +103,11 @@ void sender_add(struct recv_loglik_sender *sll, const struct design *r,
 {
 	int moments = mlogit_moments(mlogitaug_base(m1));
 
+	size_t dimr0 = design_trait_dim(r);
+	size_t dimr1 = design_tvar_dim(r);
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dimd1 = design2_tvar_dim(d);
+
 	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
 	size_t aug_dim = mlogitaug_dim(m1);
 	size_t dim = base_dim + aug_dim;
@@ -116,7 +121,7 @@ void sender_add(struct recv_loglik_sender *sll, const struct design *r,
 
 	/* compute dev and set score := observed */
 	if (moments >= 1) {
-		memset(last->score.all, 0, dim * sizeof(*last->score.all));
+		recv_params_set(&last->score, NULL, r, d);
 	}
 	for (ito = 0; ito < nto; ito++) {
 		double lp = catdist1_lprob(dist, jrecv[ito]);
@@ -140,14 +145,21 @@ void sender_add(struct recv_loglik_sender *sll, const struct design *r,
 	/* compute mean */
 	const double *base_mean = mlogitaug_base_mean(m1);
 	const double *mean = mlogitaug_mean(m1);
-	blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
-	blas_dcopy(aug_dim, mean, 1, last->mean.all + base_dim, 1);
+
+	//blas_dcopy(base_dim, base_mean, 1, last->mean.all, 1);
+	memcpy(last->mean.recv.traits, base_mean, dimr0 * sizeof(double));
+	memcpy(last->mean.recv.tvars, base_mean + dimr0, dimr1 * sizeof(double));
+	memcpy(last->mean.dyad.traits, base_mean + dimr0 + dimr1, dimd0 * sizeof(double));
+	
+	//blas_dcopy(aug_dim, mean, 1, last->mean.all + base_dim, 1);
+	memcpy(last->mean.dyad.tvars, mean, dimd1 * sizeof(double));
+
 
 	/* compute score := observed - expected */
-	blas_daxpy(dim, -(double)nto, last->mean.all, 1, last->score.all, 1);
+	recv_params_axpy(-(double)nto, &last->mean, &last->score, r, d);
 
-	blas_daxpy(dim, last->count, last->mean.all, 1, sll->mean.all, 1);
-	blas_daxpy(dim, 1.0, last->score.all, 1, sll->score.all, 1);
+	recv_params_axpy(last->count, &last->mean, &sll->mean, r, d);
+	recv_params_axpy(1.0, &last->score, &sll->score, r, d);
 
 	if (moments < 2)
 		return;
@@ -209,53 +221,54 @@ void recv_loglik_clear(struct recv_loglik *ll)
 	assert(ll);
 
 	const struct recv_model *m = ll->model;
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
 	struct recv_loglik_sender *senders = ll->senders;
 	size_t is, ns = recv_model_send_count(m);
 	for (is = 0; is < ns; is++) {
-		sender_clear(&senders[is]);
+		sender_clear(&senders[is], r, d);
 	}
 
 	ll->last.count = 0;
 	ll->last.dev = 0;
-	memset(ll->last.mean.all, 0, ll->last.mean.dim * sizeof(*ll->last.mean.all));
-	memset(ll->last.score.all, 0, ll->last.score.dim * sizeof(*ll->last.score.all));
+	recv_params_set(&ll->last.mean, NULL, r, d);
+	recv_params_set(&ll->last.score, NULL, r, d);
 }
 
 
-void recv_loglik_add(struct recv_loglik *ll,
-		     const struct frame *f, const struct message *msg)
+void recv_loglik_add(struct recv_loglik *ll, const struct message *msg)
 {
+	const struct recv_model *m = recv_loglik_model(ll);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
+	struct history *hr = design_history(r);
+	struct history *hd = design2_history(d);
+	double t = msg->time;
 	size_t isend = msg->from;
+
+	if (t < history_time(hr)) {
+		history_reset(hr);
+	}
+	history_advance(hr, t);
+
+	if (t < history_time(hd)) {
+		history_reset(hd);
+	}
+	history_advance(hd, t);
+
 	const struct mlogitaug *m1 = recv_model_mlogit(ll->model, isend);
-	sender_add(&ll->senders[isend], f, m1, msg->from, msg->to, msg->nto, &ll->last);
+	sender_add(&ll->senders[isend], r, d, m1, msg->from, msg->to, msg->nto, &ll->last);
 }
 
 
-void recv_loglik_add_all(struct recv_loglik *ll,
-			 struct frame *f, const struct messages *msgs)
+void recv_loglik_add_all(struct recv_loglik *ll, const struct message *msgs, size_t n)
 {
-	struct history *h = frame_history(f);
-	struct messages_iter it;
-	const struct message *msg;
-	size_t i, n;
+	size_t i;
 
-	MESSAGES_FOREACH(it, msgs) {
-		double t = MESSAGES_TIME(it);
-		history_advance(h, t);
-
-		n = MESSAGES_COUNT(it);
-		for (i = 0; i < n; i++) {
-			msg = MESSAGES_VAL(it, i);
-			recv_loglik_add(ll, f, msg);
-		}
-
-		n = MESSAGES_COUNT(it);
-		for (i = 0; i < n; i++) {
-			msg = MESSAGES_VAL(it, i);
-			history_add(h, msg);
-		}
+	for (i = 0; i < n; i++) {
+		const struct message *msg = &msgs[i];
+		recv_loglik_add(ll, msg);
 	}
-
 }
 
 
@@ -291,32 +304,34 @@ double recv_loglik_dev(const struct recv_loglik *ll)
 }
 
 
-void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+void recv_loglik_axpy_mean(double alpha, const struct recv_loglik *ll, struct recv_params *y)
 {
 	assert(recv_loglik_moments(ll) >= 1);
 	const struct recv_model *m = ll->model;
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
 	const struct recv_loglik_sender *sll;
-	size_t dim = recv_model_dim(m);
 
 	size_t is, ns = recv_model_send_count(m);
 	for (is = 0; is < ns; is++) {
 		sll = &ll->senders[is];
-		blas_daxpy(dim, alpha, sll->mean.all, 1, y->all, 1);
+		recv_params_axpy(alpha, &sll->mean, y, r, d);
 	}
 }
 
 
-void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+void recv_loglik_axpy_score(double alpha, const struct recv_loglik *ll, struct recv_params *y)
 {
 	assert(recv_loglik_moments(ll) >= 1);
 	const struct recv_model *m = ll->model;
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
 	const struct recv_loglik_sender *sll;
-	size_t dim = recv_model_dim(m);
 
 	size_t is, ns = recv_model_send_count(m);
 	for (is = 0; is < ns; is++) {
 		sll = &ll->senders[is];
-		blas_daxpy(dim, alpha, sll->score.all, 1, y->all, 1);
+		recv_params_axpy(alpha, &sll->score, y, r, d);
 	}
 }
 
@@ -348,19 +363,27 @@ double recv_loglik_last_dev(const struct recv_loglik *ll)
 	return ll->last.dev;
 }
 
-void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+void recv_loglik_axpy_last_mean(double alpha, const struct recv_loglik *ll, struct recv_params *y)
 {
 	assert(recv_loglik_moments(ll) >= 1);
-	assert(ll->last.mean.dim == y->dim);
+
+	const struct recv_model *m = recv_loglik_model(ll);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
 	double scale = ll->last.count * alpha;
-	blas_daxpy(ll->last.mean.dim, scale, ll->last.mean.all, 1, y->all, 1);
+
+	recv_params_axpy(scale, &ll->last.mean, y, r, d);
 }
 
-void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_coefs *y)
+void recv_loglik_axpy_last_score(double alpha, const struct recv_loglik *ll, struct recv_params *y)
 {
 	assert(recv_loglik_moments(ll) >= 1);
-	assert(ll->last.score.dim == y->dim);
-	blas_daxpy(ll->last.score.dim, alpha, ll->last.score.all, 1, y->all, 1);
+
+	const struct recv_model *m = recv_loglik_model(ll);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
+
+	recv_params_axpy(alpha, &ll->last.score, y, r, d);
 }
 
 void recv_loglik_axpy_last_imat(double alpha, const struct recv_loglik *ll, double *y)

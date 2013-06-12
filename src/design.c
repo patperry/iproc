@@ -460,3 +460,27 @@ void coefs_deinit(struct coefs *c)
 	free(c->tvars);
 	free(c->traits);
 }
+
+
+void coefs_set(struct coefs *dst, const struct coefs *src, const struct design *d)
+{
+	size_t dim0 = design_trait_dim(d);
+	size_t dim1 = design_tvar_dim(d);
+
+	if (src) {
+		memcpy(dst->traits, src->traits, dim0 * sizeof(double));
+		memcpy(dst->tvars, src->tvars, dim1 * sizeof(double));
+	} else {
+		memset(dst->traits, 0, dim0 * sizeof(double));
+		memset(dst->tvars, 0, dim1 * sizeof(double));
+	}
+}
+
+void coefs_axpy(double alpha, const struct coefs *x, struct coefs *y, const struct design *d)
+{
+	size_t dim0 = design_trait_dim(d);
+	size_t dim1 = design_tvar_dim(d);
+
+	blas_daxpy(dim0, alpha, x->traits, 1, y->traits, 1);
+	blas_daxpy(dim1, alpha, x->tvars, 1, y->tvars, 1);
+}

@@ -507,12 +507,20 @@ void recv_params_init(struct recv_params *p, const struct design *r, const struc
 	coefs2_init(&p->dyad, d);
 }
 
-
 void recv_params_deinit(struct recv_params *p)
 {
 	coefs2_deinit(&p->dyad);
 	coefs_deinit(&p->recv);
 }
 
+void recv_params_set(struct recv_params *dst, const struct recv_params *src, const struct design *r, const struct design2 *d)
+{
+	coefs_set(&dst->recv, src ? &src->recv : NULL, r);
+	coefs2_set(&dst->dyad, src ? &src->dyad : NULL, d);
+}
 
-
+void recv_params_axpy(double alpha, const struct recv_params *x, struct recv_params *y, const struct design *r, const struct design2 *d)
+{
+	coefs_axpy(alpha, &x->recv, &y->recv, r);
+	coefs2_axpy(alpha, &x->dyad, &y->dyad, d);
+}
