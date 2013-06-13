@@ -33,6 +33,7 @@ struct recv_fit {
 	size_t ncextra;
 
 	struct newton opt;
+	enum newton_task task;
 };
 
 

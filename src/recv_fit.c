@@ -73,7 +73,6 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 	size_t dimd0 = design2_trait_dim(d);
 	size_t dimd1 = design2_tvar_dim(d);
 	size_t dim = dimr + dimd0 + dimd1;
-	enum newton_task ntask;
 
 	assert(dim == recv_model_dim(&fit->model));
 
@@ -108,22 +107,76 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
 	recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
 
-	ntask = newton_start(&fit->opt, x, fit->dev, fit->score, duals);
-	if (ntask == NEWTON_ERR_DOM) {
+	fit->task = newton_start(&fit->opt, x, fit->dev, fit->score, duals);
+	if (fit->task == NEWTON_ERR_DOM) {
 		return RECV_FIT_ERR_DOM;
-	} else if (ntask == NEWTON_CONV) {
+	} else if (fit->task == NEWTON_CONV) {
 		return RECV_FIT_CONV;
 	}
-	assert(ntask == NEWTON_HESS);
+	assert(fit->task == NEWTON_HESS);
 
-	ntask = newton_set_hess(&fit->opt, fit->imat, fit->uplo);
-	if (ntask == NEWTON_ERR_HESS) {
+	fit->task = newton_set_hess(&fit->opt, fit->imat, fit->uplo);
+	if (fit->task == NEWTON_ERR_HESS) {
 		return RECV_FIT_ERR_IMAT;
 	}
-	assert(ntask == NEWTON_STEP);
+	assert(fit->task == NEWTON_STEP);
 
 	return RECV_FIT_STEP;
 }
 
 
+enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
+{
+	assert(fit->task == NEWTON_STEP || fit->task == NEWTON_HESS);
+
+	const struct design *r = fit->recv;
+	const struct design2 *d = fit->dyad;
+	size_t dimr0 = design_trait_dim(r);
+	size_t dimr1 = design_tvar_dim(r);
+	size_t dimr = dimr0 + dimr1;
+	size_t dimd0 = design2_trait_dim(d);
+	size_t dimd1 = design2_tvar_dim(d);
+	size_t dim = dimr + dimd0 + dimd1;
+
+	if (fit->task == NEWTON_HESS) {
+		recv_model_set_moments(&fit->model, 2);
+	} else {
+		double *x = (double *)newton_next(&fit->opt);
+		struct recv_params p;
+
+		p.recv.traits = x;
+		p.recv.tvars = x + dimr0;
+		p.dyad.traits = x + dimr;
+		p.dyad.tvars = x + dimr + dimd0;
+
+		recv_model_set_moments(&fit->model, 1);
+		recv_model_set_params(&fit->model, &p);
+	}
+
+	recv_loglik_clear(&fit->loglik);
+	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
+
+	if (fit->task == NEWTON_STEP) {
+		fit->dev = recv_loglik_dev(&fit->loglik);
+
+		struct recv_params score;
+		score.recv.traits = fit->score;
+		score.recv.tvars = fit->score + dimr0;
+		score.dyad.traits = fit->score + dimr;
+		score.dyad.tvars = fit->score + dimr + dimd0;
+
+		memset(fit->score, 0, dim * sizeof(double));
+		recv_loglik_axpy_score(1.0, &fit->loglik, &score);
+
+		fit->task = newton_step(&fit->opt, fit->dev, fit->score);
+	} else {
+		memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
+		recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
+
+		fit->task = newton_set_hess(&fit->opt, fit->imat, fit->uplo);
+	}
+
+	switch (fit->task) {
+	}
+}
 
