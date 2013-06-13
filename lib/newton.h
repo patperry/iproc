@@ -27,7 +27,7 @@
 struct newton_ctrl {
 	double gtol;
 	double xtol;
-	size_t ls_maxit;
+	unsigned int ls_maxit;
 	struct linesearch_ctrl ls;
 };
 
@@ -38,7 +38,7 @@ enum newton_task {
 	NEWTON_HESS = 2,
 	NEWTON_ERR_LNSRCH = -1,	/* linesearch failed to converge */
 	NEWTON_ERR_XTOL = -2,	/* step size is smaller than tolerance */
-	NEWTON_ERR_HESS = -3,   /* Hessian is singular */
+	NEWTON_ERR_HESS = -3,   /* Hessian is not positive definite */
 	NEWTON_ERR_XDOM = -4    /* starting point is not in domain */
 };
 
@@ -74,13 +74,12 @@ struct newton {
 	size_t dim;
 	const struct constr *constr;
 
-	double *hess;
-
 	/* workspace */
 	struct newton_eval eval[2], *cur, *next;
 	struct newton_kkt kkt;
 	struct newton_params search;
 	double step;
+	unsigned int ls_iter;
 };
 
 
@@ -96,7 +95,7 @@ static inline const struct newton_ctrl *newton_ctrl(const struct newton *opt) { 
 
 enum newton_task newton_start(struct newton *opt, const double *x0,
 			      double f0, const double *grad0,
-			      const double *hess0);
+			      const double *duals);
 
 const double *newton_next(const struct newton *opt);
 
@@ -110,7 +109,6 @@ const double *newton_params(const struct newton *opt);
 const double *newton_duals(const struct newton *opt);
 double newton_val(const struct newton *opt);
 const double *newton_grad(const struct newton *opt);
-const double *newton_hess(const struct newton *opt);
 
 
 int newton_ctrl_valid(const struct newton_ctrl *ctrl);

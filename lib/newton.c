@@ -147,6 +147,7 @@ static void eval_set(struct newton_eval *e, double val, const double *grad,
 	e->val = val;
 	memcpy(e->grad, grad, dim * sizeof(double));
 
+	/* TODO: better feasible test, check for nans in resid, grad */
 	eval_set_resid(e, dim, c);
 	e->feasible = blas_dnrm2(dim, params_dual(&e->resid), 1) < nc * 1e-8;
 	e->indomain = isfinite(val) && isfinite(e->resid_norm);
@@ -255,10 +256,9 @@ void newton_init(struct newton *opt, size_t dim,
 		 const struct newton_ctrl *ctrl)
 {
 	assert(!constr || constr_dim(constr) == dim);
-	assert(newton_ctrl_valid(ctrl));
+	assert(!ctrl || newton_ctrl_valid(ctrl));
 
 	size_t nc = constr ? constr_count(constr) : 0;
-
 
 	if (!ctrl) {
 		opt->ctrl = NEWTON_CTRL0;
@@ -268,12 +268,10 @@ void newton_init(struct newton *opt, size_t dim,
 	opt->dim = dim;
 	opt->constr = constr;
 
-	opt->hess = xcalloc(dim * (dim + 1) / 2, sizeof(double));
-
 	eval_init(&opt->eval[0], dim, nc);
 	eval_init(&opt->eval[1], dim, nc);
-	opt->cur = &opt->eval[0];
-	opt->next = &opt->eval[1];
+	opt->cur = NULL;
+	opt->next = NULL;
 
 	kkt_init(&opt->kkt, dim, nc);
 	params_init(&opt->search, dim, nc);
@@ -287,32 +285,37 @@ void newton_deinit(struct newton *opt)
 	kkt_deinit(&opt->kkt);
 	eval_deinit(&opt->eval[1]);
 	eval_deinit(&opt->eval[0]);
-	free(opt->hess);
 }
 
 
 enum newton_task newton_start(struct newton *opt, const double *x0,
 			      double f0, const double *grad0,
-			      const double *hess0)
+			      const double *duals)
 {
 	size_t dim = newton_dim(opt);
 	const struct constr *c = newton_constr(opt);
 	size_t nc = c ? constr_count(c) : 0;
 	const struct newton_ctrl *ctrl = newton_ctrl(opt);
+	enum newton_task task;
 
-	params_set(&opt->cur->params, x0, NULL, dim, nc);
+	opt->cur = &opt->eval[0];
+	opt->next = NULL;
+
+	params_set(&opt->cur->params, x0, duals, dim, nc);
 	eval_set(opt->cur, f0, grad0, dim, c);
-	memcpy(opt->hess, hess0, dim * (dim + 1) / 2 * sizeof(double));
 
 	/* ensure x0 is in domain */
-	if (!opt->cur->indomain)
-		return NEWTON_ERR_XDOM;
+	if (!opt->cur->indomain) {
+		task = NEWTON_ERR_XDOM;
 
 	/* stop early if residual is below tolerance */
-	if (opt->cur->feasible && opt->cur->resid_norm < ctrl->gtol)
-		return NEWTON_CONV;
+	} else if (opt->cur->feasible && opt->cur->resid_norm < ctrl->gtol) {
+		task = NEWTON_CONV;
 
-	enum newton_task task = newton_set_hess(opt, hess0);
+	/* compute first newton step */
+	} else {
+		task = NEWTON_HESS;
+	}
 
 	return task;
 }
@@ -320,37 +323,84 @@ enum newton_task newton_start(struct newton *opt, const double *x0,
 
 const double *newton_next(const struct newton *opt)
 {
+	assert(opt->next);
 	return params_pri(&opt->next->params);
 }
 
+
 enum newton_task newton_step(struct newton *opt, double f, const double *grad)
 {
+	assert(opt->next);
+
 	size_t dim = newton_dim(opt);
 	const struct constr *c = newton_constr(opt);
+	size_t nc = c ? constr_count(c) : 0;
+	const struct newton_ctrl *ctrl = newton_ctrl(opt);
+	struct newton_eval *cur = opt->cur;
+	struct newton_eval *next = opt->next;
+	double beta = 0.5;
+	double alpha = 0.1;
+	double t = opt->step;
+	double t1 = beta * t;
+	enum newton_task task;
 
-	eval_set(opt->next, f, grad, dim, c);
-	return 0;
+	opt->ls_iter++;
+	eval_set(next, f, grad, dim, c);
+
+	if (next->indomain) {
+		if (next->feasible && next->resid_norm < ctrl->gtol) {
+			task = NEWTON_CONV;
+			goto out;
+		} else if (next->resid_norm <= (1 - alpha * t) * cur->resid_norm) {
+			task = NEWTON_HESS;
+			goto out;
+		}
+	}
+
+	if (t1 < ctrl->xtol) {
+		task = NEWTON_ERR_XTOL;
+	} else if (opt->ls_iter == ctrl->ls_maxit) {
+		task = NEWTON_ERR_LNSRCH;
+	} else {
+		opt->step = t1;
+		params_assign(&next->params, &cur->params, dim, nc);
+		params_axpy(opt->step, &opt->search, &next->params, dim, nc);
+		task = NEWTON_STEP;
+	}
+
+out:
+	if (task == NEWTON_CONV || task == NEWTON_HESS) {
+		opt->cur = next;
+	}
+	if (task != NEWTON_STEP) {
+		opt->next = NULL;
+	}
+	return task;
 }
+
 
 enum newton_task newton_set_hess(struct newton *opt, const double *hess)
 {
+	assert(!opt->next);
+
 	size_t dim = newton_dim(opt);
 	const struct constr *c = newton_constr(opt);
 	size_t nc = c ? constr_count(c) : 0;
 	int err;
 
-	/* copy Hessian */
-	memcpy(opt->hess, hess, dim * (dim + 1) / 2 * sizeof(double));
-
 	/* compute search direction */
-	kkt_set(&opt->kkt, opt->hess, dim, c);
+	kkt_set(&opt->kkt, hess, dim, c);
 	err = search_set(&opt->search, &opt->cur->resid, &opt->kkt, dim, nc);
 	if (err == -EDOM)
 		return NEWTON_ERR_HESS;
 	assert(err == 0);
+
+	/* start a new line search */
 	opt->step = 1.0;
+	opt->ls_iter = 0;
 
 	/* compute next x */
+	opt->next = opt->cur == &opt->eval[0] ? &opt->eval[1] : &opt->eval[0];
 	params_assign(&opt->next->params, &opt->cur->params, dim, nc);
 	params_axpy(opt->step, &opt->search, &opt->next->params, dim, nc);
 
@@ -382,30 +432,27 @@ const char *newton_errmsg(enum newton_task task)
 /* current values */
 const double *newton_params(const struct newton *opt)
 {
+	assert(opt->cur);
 	return params_pri(&opt->cur->params);
 }
 
 const double *newton_duals(const struct newton *opt)
 {
+	assert(opt->cur);
 	return params_dual(&opt->cur->params);
 }
 
 double newton_val(const struct newton *opt)
 {
+	assert(opt->cur);
 	return opt->cur->val;
 }
 
 const double *newton_grad(const struct newton *opt)
 {
+	assert(opt->cur);
 	return opt->cur->grad;
 }
-
-const double *newton_hess(const struct newton *opt)
-{
-	return opt->hess;
-}
-
-
 
 
 int newton_ctrl_valid(const struct newton_ctrl *ctrl)
@@ -413,8 +460,6 @@ int newton_ctrl_valid(const struct newton_ctrl *ctrl)
 	assert(ctrl);
 
 	if (!(ctrl->gtol > 0)) {
-		return 0;
-	} else if (!(ctrl->ls_maxit > 0)) {
 		return 0;
 	} else {
 		return linesearch_ctrl_valid(&ctrl->ls);
