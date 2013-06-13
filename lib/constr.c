@@ -29,6 +29,21 @@ void constr_init(struct constr *c, size_t dim)
 	c->nmax = 0;
 }
 
+void constr_init_copy(struct constr *c, const struct constr *c0)
+{
+	size_t dim = c0->dim;
+	size_t n = c0->n;
+
+	c->dim = dim;
+	c->wts = xmalloc(n * dim * sizeof(double));
+	c->vals = xmalloc(n * sizeof(double));
+	c->n = n;
+	c->nmax = n;
+
+	memcpy(c->wts, c0->wts, n * dim * sizeof(double));
+	memcpy(c->vals, c->wts, n * sizeof(double));
+}
+
 void constr_deinit(struct constr *c)
 {
 	free(c->vals);
@@ -93,7 +108,7 @@ int constr_add_eq(struct constr *c, size_t i1, size_t i2)
 }
 
 
-size_t constr_add_identify(struct constr *c, const double *imatp,
+size_t constr_add_identify(struct constr *c, const double *hess,
 			   enum blas_uplo uplo)
 {
 	enum blas_uplo f77uplo = uplo == BLAS_LOWER ? BLAS_UPPER : BLAS_LOWER;
@@ -104,34 +119,34 @@ size_t constr_add_identify(struct constr *c, const double *imatp,
 	if (dim == 0)
 		goto out;
 
-	/* copy the information matrix */
-	double *imat = xmalloc(dim * dim * sizeof(imat[0]));
-	packed_dsctr(f77uplo, dim, imatp, imat, dim);
+	/* copy the Hessian */
+	double *H = xmalloc(dim * dim * sizeof(H[0]));
+	packed_dsctr(f77uplo, dim, hess, H, dim);
 
 	/* compute the scale */
 	double *scale = xmalloc(dim * sizeof(scale[0]));
 	for (i = 0; i < dim; i++) {
-		double s2 = imat[i * dim + i];
+		double s2 = H[i * dim + i];
 		scale[i] = 1.0 / (s2 < VARTOL ? 1.0 : sqrt(s2));
 	}
 
-	/* scale the information matrix */
-	matrix_dscalr(dim, dim, scale, 1, imat, dim);
-	matrix_dscalc(dim, dim, scale, 1, imat, dim);
+	/* scale the Hessian */
+	matrix_dscalr(dim, dim, scale, 1, H, dim);
+	matrix_dscalc(dim, dim, scale, 1, H, dim);
 
-	/* compute the eigendecomposition of the information matrix */
+	/* compute the eigendecomposition of the Hessian */
 	enum lapack_eigjob jobz = LA_EIG_VEC;
 	size_t lwork, liwork;
 	lwork = lapack_dsyevd_lwork(jobz, dim, &liwork);
 	double *work = xmalloc(lwork * sizeof(work[0]));
 	ptrdiff_t *iwork = xmalloc(liwork * sizeof(iwork[0]));
 	double *evals = xmalloc(dim * sizeof(evals[0]));
-	ptrdiff_t info = lapack_dsyevd(jobz, f77uplo, dim, imat, dim, evals,
+	ptrdiff_t info = lapack_dsyevd(jobz, f77uplo, dim, H, dim, evals,
 				       work, lwork, iwork, liwork);
 	assert(info == 0);
 
 	/* change back to the original scale */
-	matrix_dscalr(dim, dim, scale, 1, imat, dim);
+	matrix_dscalr(dim, dim, scale, 1, H, dim);
 
 	/* compute the dimension of the nullspace */
 	size_t nulldim;
@@ -139,16 +154,16 @@ size_t constr_add_identify(struct constr *c, const double *imatp,
 		if (evals[nulldim] > EIGTOL)
 			break;
 	}
-	/* at this point, the first nulldim cols of imat store its nullspace */
+	/* at this point, the first nulldim cols of H store its nullspace */
 
 	if (nulldim == 0)
 		goto cleanup_eig_imat;
 
 	if (n == 0) {
-		/* add the nullspace of the information matrix as constraints */
+		/* add the nullspace of the Hessian as constraints */
 		nadd = nulldim;
 		for (iadd = 0; iadd < nadd; iadd++) {
-			int ok = constr_add(c, imat + iadd * dim, 0.0);
+			int ok = constr_add(c, H + iadd * dim, 0.0);
 			assert(ok);
 			(void)ok;
 		}
@@ -156,7 +171,7 @@ size_t constr_add_identify(struct constr *c, const double *imatp,
 		/* project the constraints onto the nullspace */
 		double *proj = xmalloc(nulldim * n * sizeof(proj[0]));
 		blas_dgemm(BLAS_TRANS, BLAS_NOTRANS, nulldim, n, dim, 1.0,
-			   imat, dim, c->wts, dim, 0.0, proj, nulldim);
+			   H, dim, c->wts, dim, 0.0, proj, nulldim);
 
 		/* compute the nullspace of the projection */
 		double *s = xmalloc(MIN(n, nulldim) * sizeof(s[0]));
@@ -188,7 +203,7 @@ size_t constr_add_identify(struct constr *c, const double *imatp,
 		nadd = nulldim - rank;
 		double *compl = xmalloc(dim * nadd * sizeof(compl[0]));
 		blas_dgemm(BLAS_NOTRANS, BLAS_NOTRANS, dim, nadd, nulldim, 1.0,
-			   imat, dim, u + rank, nulldim, 0.0, compl, dim);
+			   H, dim, u + rank, nulldim, 0.0, compl, dim);
 
 		for (iadd = 0; iadd < nadd; iadd++) {
 			int ok = constr_add(c, compl + iadd * dim, 0.0);
@@ -208,7 +223,7 @@ cleanup_eig_imat:
 	free(iwork);
 	free(work);
 	free(scale);
-	free(imat);
+	free(H);
 out:
 	return nadd;
 

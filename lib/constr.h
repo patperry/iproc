@@ -15,6 +15,7 @@ struct constr {
 
 /* init/deinit */
 void constr_init(struct constr *c, size_t dim);
+void constr_init_copy(struct constr *c, const struct constr *c0);
 void constr_deinit(struct constr *c);
 
 /* properties */
@@ -29,7 +30,7 @@ static inline const double *constr_all_vals(const struct constr *c);
 int constr_add(struct constr *c, const double *wts, double val);
 int constr_add_set(struct constr *c, size_t i, double val);
 int constr_add_eq(struct constr *c, size_t i1, size_t i2);
-size_t constr_add_identify(struct constr *c, const double *imatp,
+size_t constr_add_identify(struct constr *c, const double *hess,
 			   enum blas_uplo uplo);
 
 
