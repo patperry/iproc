@@ -29,7 +29,7 @@ static void eval_deinit(struct newton_eval *e);
 static void kkt_init(struct newton_kkt *kkt, size_t dim, size_t nc);
 static void kkt_deinit(struct newton_kkt *kkt);
 static void kkt_set(struct newton_kkt *kkt, const double *hess, size_t dim,
-		    const struct constr *c);
+		    enum blas_uplo uplo, const struct constr *c);
 static int kkt_solve(struct newton_kkt *kkt, struct newton_params *x,
 		     size_t dim, size_t nc);
 
@@ -185,27 +185,30 @@ static void kkt_deinit(struct newton_kkt *kkt)
 
 
 static void kkt_set(struct newton_kkt *kkt, const double *hess, size_t dim,
-		    const struct constr *c)
+		    enum blas_uplo uplo, const struct constr *c)
 {
 	size_t nc = c ? constr_count(c) : 0;
 	size_t n = dim + nc;
+	enum blas_uplo f77uplo = (uplo == BLAS_UPPER) ? BLAS_LOWER : BLAS_UPPER;
 
 	kkt->factored = 0;
 
 	memset(kkt->matrix, 0, n * n * sizeof(double));
 
 	/* k11 */
-	packed_dsctr(NEWTON_HESS_F77UPLO, dim, hess, kkt->matrix, n);
+	packed_dsctr(f77uplo, dim, hess, kkt->matrix, n);
 
 	if (!nc)
 		return;
 
-	if (NEWTON_HESS_UPLO == BLAS_UPPER) { /* k12 */
+	if (uplo == BLAS_UPPER) { /* k12 */
 		matrix_dtrans(dim, nc, c->wts, dim, kkt->matrix + dim, n);
 	} else { /* k21 */
 		lapack_dlacpy(LA_COPY_ALL, dim, nc, c->wts, dim,
 			      kkt->matrix + dim * n, n);
 	}
+
+	kkt->uplo = uplo;
 }
 
 
@@ -215,11 +218,12 @@ static int kkt_solve(struct newton_kkt *kkt, struct newton_params *x,
 	assert(!kkt->factored);
 
 	size_t n = dim + nc;
+	enum blas_uplo f77uplo = (kkt->uplo == BLAS_UPPER) ? BLAS_LOWER : BLAS_UPPER;
 	ptrdiff_t info = 0;
 	int err = 0;
 
 	if (n) {
-		info = lapack_dsysv(NEWTON_HESS_F77UPLO, n, 1, kkt->matrix, n,
+		info = lapack_dsysv(f77uplo, n, 1, kkt->matrix, n,
 				    kkt->ldl_ipiv, params_all(x), n,
 				    kkt->ldl_work, kkt->ldl_lwork);
 	}
@@ -379,7 +383,8 @@ out:
 }
 
 
-enum newton_task newton_set_hess(struct newton *opt, const double *hess)
+enum newton_task newton_set_hess(struct newton *opt, const double *hess,
+				 enum blas_uplo uplo)
 {
 	assert(!opt->next);
 
@@ -389,7 +394,7 @@ enum newton_task newton_set_hess(struct newton *opt, const double *hess)
 	int err;
 
 	/* compute search direction */
-	kkt_set(&opt->kkt, hess, dim, c);
+	kkt_set(&opt->kkt, hess, dim, uplo, c);
 	err = search_set(&opt->search, &opt->cur->resid, &opt->kkt, dim, nc);
 	if (err == -EDOM)
 		return NEWTON_ERR_HESS;

@@ -7,10 +7,6 @@
 #include "linesearch.h"
 
 
-#define NEWTON_HESS_UPLO	BLAS_UPPER
-#define NEWTON_HESS_F77UPLO	(NEWTON_HESS_UPLO == BLAS_UPPER ? BLAS_LOWER : BLAS_UPPER)
-
-
 #define NEWTON_GTOL0	(1e-8)
 #define NEWTON_XTOL0	(1e-8)
 #define NEWTON_LSMAX0	(10)
@@ -61,6 +57,7 @@ struct newton_eval {
 
 struct newton_kkt {
 	double *matrix;
+	enum blas_uplo uplo;
 	ptrdiff_t *ldl_ipiv;
 	double *ldl_work;
 	size_t ldl_lwork;
@@ -100,7 +97,7 @@ enum newton_task newton_start(struct newton *opt, const double *x0,
 const double *newton_next(const struct newton *opt);
 
 enum newton_task newton_step(struct newton *opt, double f, const double *grad);
-enum newton_task newton_set_hess(struct newton *opt, const double *hess);
+enum newton_task newton_set_hess(struct newton *opt, const double *hess, enum blas_uplo uplo);
 
 const char *newton_errmsg(enum newton_task task);
 
