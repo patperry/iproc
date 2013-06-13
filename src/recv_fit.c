@@ -10,36 +10,50 @@
 #include "coreutil.h"
 #include "xalloc.h"
 
-#include "lapack.h"
-#include "matrixutil.h"
-#include "sblas.h"
-
-#include "linesearch.h"
 #include "recv_fit.h"
 
-/*
-size_t constr_add_identify_recv_fit(struct constr *c, struct frame *f,
-				    const struct messages *xmsgs,
-				    const struct messages *ymsgs)
+
+void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
+		   const struct message *msgs, size_t nmsg,
+		   const struct constr *c, const struct newton_ctrl *ctrl)
 {
-	struct recv_model model;
-	struct recv_fit_eval eval;
+	size_t dim = design_dim(r) + design2_dim(d);
 
-	recv_model_init(&model, f, NULL);
-	eval_init(&eval, &model, c);
-	eval_set(&eval, NULL, xmsgs, ymsgs, f, &model, 2);
+	assert(!c || constr_dim(c) == dim);
 
-	size_t n = recv_coefs_dim(f);
-	double *imatp = xcalloc(n * (n + 1) / 2, sizeof(double));
+	fit->recv = r;
+	fit->dyad = d;
+	fit->msgs = msgs;
+	fit->nmsg = nmsg;
 
-	recv_loglik_axpy_imat(1.0, &eval.loglik, imatp);
+	recv_model_init(&fit->model, NULL, fit->recv, fit->dyad);
+	assert(dim == recv_model_dim(&fit->model));
 
-	size_t nadd = constr_add_identify(c, imatp, RECV_LOGLIK_UPLO);
+	recv_loglik_init(&fit->loglik, &fit->model);
 
-	free(imatp);
-	eval_deinit(&eval);
-	recv_model_deinit(&model);
+	fit->imat = xmalloc(dim * (dim + 1) / 2 * sizeof(double));
+	fit->uplo = RECV_LOGLIK_UPLO;
 
-	return nadd;
+	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
+	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
+	recv_loglik_axpy_last_imat(1.0, &fit->loglik, fit->imat);
+
+	if (c) {
+		constr_init_copy(&fit->constr, c);
+	} else {
+		constr_init(&fit->constr, dim);
+	}
+	fit->ncextra = constr_add_identify(&fit->constr, fit->imat, fit->uplo);
+
+	newton_init(&fit->opt, dim, &fit->constr, ctrl);
 }
-*/
+
+
+void recv_fit_deinit(struct recv_fit *fit)
+{
+	newton_deinit(&fit->opt);
+	constr_deinit(&fit->constr);
+	free(fit->imat);
+	recv_loglik_deinit(&fit->loglik);
+	recv_model_deinit(&fit->model);
+}

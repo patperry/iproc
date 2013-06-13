@@ -9,30 +9,23 @@
 #include "recv_model.h"
 
 
-
-
-
 struct recv_fit {
-	struct newton opt;
-
+	struct design *recv;
+	struct design2 *dyad;
 	const struct message *msgs;
 	size_t nmsg;
 
-	/* working frame + model */
-	struct frame *frame;
 	struct recv_model model;
+	struct recv_loglik loglik;
+	double *imat;
+	enum blas_uplo uplo;
 
-	/* null deviance */
-	double dev0;
+	struct constr constr;
+	size_t ncextra;
 
+	struct newton opt;
 };
 
-
-/*
-size_t constr_add_identify_recv_fit(struct constr *c, struct frame *f,
-				    const struct messages *xmsgs,
-				    const struct messages *ymsgs);
-*/
 
 void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 		   const struct message *msgs, size_t nmsg,
