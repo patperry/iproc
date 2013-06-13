@@ -35,7 +35,7 @@ enum newton_task {
 	NEWTON_ERR_LNSRCH = -1,	/* linesearch failed to converge */
 	NEWTON_ERR_XTOL = -2,	/* step size is smaller than tolerance */
 	NEWTON_ERR_HESS = -3,   /* Hessian is not positive definite */
-	NEWTON_ERR_XDOM = -4    /* starting point is not in domain */
+	NEWTON_ERR_DOM = -4     /* starting point is not in domain */
 };
 
 

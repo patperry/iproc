@@ -310,7 +310,7 @@ enum newton_task newton_start(struct newton *opt, const double *x0,
 
 	/* ensure x0 is in domain */
 	if (!opt->cur->indomain) {
-		task = NEWTON_ERR_XDOM;
+		task = NEWTON_ERR_DOM;
 
 	/* stop early if residual is below tolerance */
 	} else if (opt->cur->feasible && opt->cur->resid_norm < ctrl->gtol) {
@@ -424,7 +424,7 @@ const char *newton_errmsg(enum newton_task task)
 		return "step size is less than tolerance";
 	case NEWTON_ERR_HESS:
 		return "Hessian is singular";
-	case NEWTON_ERR_XDOM:
+	case NEWTON_ERR_DOM:
 		return "initial point is not in domain";
 	case NEWTON_CONV:
 		return NULL;
