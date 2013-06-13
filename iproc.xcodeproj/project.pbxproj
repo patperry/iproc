@@ -1255,14 +1255,14 @@
 		22FFF12013871A50003DDA26 /* Lib */ = {
 			isa = PBXGroup;
 			children = (
-				229AC2BE174FC29C0085D43C /* deltaset.c */,
-				229AC2BF174FC29C0085D43C /* deltaset.h */,
 				228B128915E605A9000DC495 /* catdist.c */,
 				228B128A15E605A9000DC495 /* catdist.h */,
 				228B12A415E66568000DC495 /* catdist1.c */,
 				228B12A515E66568000DC495 /* catdist1.h */,
 				228E846416444C6500A189E5 /* constr.c */,
 				228E846516444C6500A189E5 /* constr.h */,
+				229AC2BE174FC29C0085D43C /* deltaset.c */,
+				229AC2BF174FC29C0085D43C /* deltaset.h */,
 				228E845E1643598C00A189E5 /* linesearch.h */,
 				228E8455164342B900A189E5 /* logsumexp.c */,
 				228E8456164342B900A189E5 /* logsumexp.h */,
