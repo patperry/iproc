@@ -8,86 +8,101 @@
 #include <hdf5_hl.h>
 #include "coreutil.h"
 #include "xalloc.h"
-#include "yajl/yajl_tree.h"
+
 #define DSFMT_MEXP 19937
 #define DSFMT_DO_NOT_USE_OLD_NAMES
 #include "dSFMT/dSFMT.h"
 
-#include "ieee754.h"
-#include "enron.h"
-#include "messages.h"
-#include "design.h"
-#include "var.h"
-#include "frame.h"
+#include "enron/actors.h"
+#include "enron/messages.h"
+
 #include "recv_boot.h"
-#include "recv_model.h"
-#include "recv_loglik.h"
 #include "recv_fit.h"
 #include "recv_resid.h"
 
 
-static size_t nsend;
-static size_t nrecv;
-static size_t ntrait;
-static double *traits;
-static const char * const *trait_names;
-static int has_loops;
+static int setup_history(struct history *h)
+{
+	size_t nsend = ENRON_ACTOR_COUNT;
+	size_t nrecv = nsend;
+	size_t maxrecip = 5; /* exclude messages with more than 5 recipients */
 
-static struct frame frame;
-static struct constr constr;
+	double *time;
+	size_t *from;
+	size_t **to;
+	size_t *nto;
+	ptrdiff_t *attr;
+	size_t i, nmsg;
+	int err;
+
+	err = enron_messages_init(maxrecip, &time, &from, &to, &nto, &attr, &nmsg);
+	if (err)
+		return err;
+
+	history_init(h, nsend, nrecv);
+	for (i = 0; i < nmsg; i++) {
+		history_set_time(h, time[i]);
+		history_add(h, from[i], to[i], nto[i], attr[i]);
+		free(to[i]);
+	}
+
+	free(attr);
+	free(nto);
+	free(to);
+	free(from);
+	free(time);
+
+	return err;
+}
 
 
-static void setup_frame(void) {
-	char namebuf[1024];
-	size_t i, j;
-
-	size_t terms = 1; // first-order interactions only
-	enron_employees_init(&nsend, &traits, &ntrait, &trait_names, terms);
-	nrecv = nsend;
-	has_loops = 0;
+static int setup_designs(struct design *r, struct design2 *d, struct history *h)
+{
+	size_t nsend = history_nsend(h);
+	size_t nrecv = history_nrecv(h);
 
 	double intvls[] = {
-		// 450.00,
-		//900.00,    // 15 min
-		1800.00,   // 30 min
-			   //3600.00,   //  1 hr
-		7200.00,   //  2 hr
-			   //14400.00,  //  4 hr
-		28800.00,  //  8 hr
-			   //57600.00,  // 16 hr
-		115200.00, // 32 hr
-			   // 230400.00, // 2.66 day 
-		460800.00, // 5.33 day
-			   // 921600.00, // 10.66 day
-		1843200.00, // 21.33 day
-			    // 3686400.00, // 42.66 day
-			    // 7372800.00, // 85.33 day
-			    // 14745600.00, // 170.66 day
-			    // 29491200.00 // 341.33 day
-			    // 58982400.00 // 682.66 day
-		INFINITY
+		/* 450, */	/*   7.5m */
+		/* 900, */	/*  15.0m */
+		1800,		/*  30.0m */
+		/* 3600, */	/*   1.0h */
+		7200,		/*   2.0h */
+		/* 14400, */	/*   4.0h */
+		28800,		/*   8.0h */
+		/* 57600, */	/*  16.0h */
+		115200,		/*  32.0h */
+		/* 230400, */	/*   2.6d */
+		460800,		/*   5.3d */
+		/* 921600, */	/*  10.6d */
+		1843200,	/*  21.3d */
+		/* 3686400, */	/*  42.6d */
+		/* 7372800, */	/*  85.3d */
+		/* 14745600, */	/* 170.6d */
+		INFINITY	/*   Inf  */
 	};
-	size_t nintvls = sizeof(intvls) / sizeof(intvls[0]);
-	//int has_effects = 0;
-	frame_init(&frame, nsend, nrecv, has_loops, intvls, nintvls);
+	size_t nintvl = sizeof(intvls) / sizeof(intvls[0]);
+	double window = INFINITY;
 
-	/* send design */
-	struct design *s = frame_send_design(&frame);
-	design_add_traits(s, trait_names, traits, ntrait);
-	//design_add_prod(s, "Leg:Jun", design_var(s, "Leg"), design_var(s, "Jun"));
-	//design_add_prod(s, "Trad:Jun", design_var(s, "Trad"), design_var(s, "Jun"));
-	//design_add_prod(s, "Leg:Fem", design_var(s, "Leg"), design_var(s, "Fem"));
-	//design_add_prod(s, "Trad:Fem", design_var(s, "Trad"), design_var(s, "Fem"));
-	//design_add_prod(s, "Jun:Fem", design_var(s, "Jun"), design_var(s, "Fem"));
+	size_t terms = 1; /* first-order interactions only */
+	double *trait_x;
+	const char * const *trait_names;
+	size_t trait_dim;
+	int err;
 
-	/* third order */
-	//design_add_prod(s, "Leg:Jun:Fem", design_var(s, "Leg:Jun"), design_var(s, "Fem"));
-	//design_add_prod(s, "Trad:Jun:Fem", design_var(s, "Trad:Jun"), design_var(s, "Fem"));
+	char namebuf[1024];
+	size_t k, l;
+
+
+	err = enron_actors_init(terms, &trait_x, &trait_names, &trait_dim);
+	if (err)
+		return err;
+
+	design_init(r, h, nsend);
+	design2_init(d, h, nsend, nrecv);
 
 
 	/* recv design */
-	struct design *r = frame_recv_design(&frame);
-	design_add_traits(r, trait_names, traits, ntrait);
+	design_add_traits(r, trait_names, trait_x, trait_dim);
 	//design_add_prod(r, "Leg:Jun", design_var(r, "Leg"), design_var(r, "Jun"));
 	//design_add_prod(r, "Trad:Jun", design_var(r, "Trad"), design_var(r, "Jun"));
 	//design_add_prod(r, "Leg:Fem", design_var(r, "Leg"), design_var(r, "Fem"));
@@ -98,80 +113,52 @@ static void setup_frame(void) {
 	//design_add_prod(r, "Leg:Jun:Fem", design_var(r, "Leg:Jun"), design_var(r, "Fem"));
 	//design_add_prod(r, "Trad:Jun:Fem", design_var(r, "Trad:Jun"), design_var(r, "Fem"));
 
-
-	//design_add_tvar(r, "ISendTot", VAR_ISENDTOT);
-	//design_add_tvar(r, "IRecvTot", VAR_IRECVTOT);
+	//design_add_tvar(r, "ISendTot", VAR_ISENDTOT, window);
+	//design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
 	//design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
-	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT);
-	design_add_tvar(r, "NSendTot", VAR_NSENDTOT);
-	design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
+	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
+	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
+	//design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
+
 
 	/* dyad design */
-	struct design2 *d = frame_dyad_design(&frame);
+	//design2_add_tvar(d, "ISend", VAR2_ISEND, window);
+	//design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
+	//design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	design2_add_tvar(d, "ISend", VAR2_ISEND);
-	design2_add_tvar(d, "IRecv", VAR2_IRECV);
-	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
+	//design2_add_tvar(d, "NSend", VAR2_NSEND, intvls, nintvl);
+	//design2_add_tvar(d, "NRecv", VAR2_NRECV, intvls, nintvl);
 
-	design2_add_tvar(d, "NSend", VAR2_NSEND);
-	design2_add_tvar(d, "NRecv", VAR2_NRECV);
+	//design2_add_tvar(d, "NSend2", VAR2_NSEND2, intvls, nintvl, intvls, nintvl);
+	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2, intvls, nintvl, intvls, nintvl);
+	//design2_add_tvar(d, "NSib", VAR2_NSIB, intvls, nintvl, intvls, nintvl);
+	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB, intvls, nintvl, intvls, nintvl);
 
-	//design2_add_tvar(d, "ISend2", VAR2_ISEND2);
-	//design2_add_tvar(d, "IRecv2", VAR2_IRECV2);
-	//design2_add_tvar(d, "ISib", VAR2_ISIB);
-	//design2_add_tvar(d, "ICosib", VAR2_ICOSIB);
-
-	//design2_add_tvar(d, "NSend2", VAR2_NSEND2);
-	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2);
-	//design2_add_tvar(d, "NSib", VAR2_NSIB);
-	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB);
-
-
-	for (i = 0; i < design_trait_count(s); i++) {
-		const struct var *vi = design_trait_var(s, i);
-		for (j = 0; j < design_trait_count(r); j++) {
-			const struct var *vj = design_trait_var(r, j);
-			sprintf(namebuf, "%s*%s", vi->meta.name, vj->meta.name);
-			design2_add_kron(d, namebuf, vi, vj);
+	/*for (k = 0; k < design_trait_count(r); k++) {
+		const struct var *u = design_trait_item(r, k);
+		for (l = 0; l < design_trait_count(r); l++) {
+			const struct var *v = design_trait_item(r, l);
+			sprintf(namebuf, "%s*%s", u->meta.name, v->meta.name);
+			design2_add_kron(d, namebuf, u, v);
 		}
 	}
+	 */
 
+	free(trait_x);
 
-
-	// recv_model_init(&m, &frame);
-	//recv_model_add_inter(&m, design_var(r, "Female"), design_var(d, "NRecv"));
-	
-	/* dyad design */
-	//struct dyad_design *d = frame_dyad_design(&frame);
-	//dyad_design_add_interact(d, design_ix(s, "Legal"), design_ix(r, "Legal"));
+	return err;
 }
 
-static void teardown_frame(void)
+
+static void setup_constr(struct constr *c, const struct design *r, const struct design2 *d)
 {
-	frame_deinit(&frame);
-	free(traits);
-}
-
-static void setup_constr(struct frame *f, const struct messages *xmsgs,
-			 const struct messages *ymsgs)
-{
-	size_t dim = recv_coefs_dim(f);
-	constr_init(&constr, dim);
-
-	/* add constraints to make the model identifiable */
-	//size_t nadd = constr_add_identify_recv_fit(&constr, f, xmsgs, ymsgs);
-	//if (nadd > 0)
-	//	fprintf(stderr, "Adding %zd %s to make parameters identifiable\n",
-	//		nadd, nadd == 1 ? "constraint" : "constraints");
-}
-
-static void teardown_constr(void)
-{
-	constr_deinit(&constr);
+	size_t dim = design_dim(r) + design2_dim(d);
+	constr_init(c, dim);
 }
 
 
+/*
 
 #define INTERVALS		"intervals"
 #define VARIATE_NAMES		"variate_names"
@@ -424,57 +411,46 @@ static herr_t output(const char *output, const struct recv_fit *fit, int resid)
 	hid_t file_id;
 	herr_t status;
 
-	/* Create a new file using default properties. */
+	// Create a new file using default properties.
 	file_id = H5Fcreate(output, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 	status = output_recv_fit(file_id, fit, resid);
 
-	/* Terminate access to the file. */
+	// Terminate access to the file.
 	status = H5Fclose(file_id);
 	
 	return status;
 }
+*/
 
-static int do_fit(struct recv_fit *fit, const struct recv_params *params0)
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0)
 {
-	size_t maxit = 30;
+	size_t maxit = 300;
 	size_t report = 1;
 	int trace = 1;
-
-
 	enum recv_fit_task task;
 	size_t it = 0;
+	int err = 0;
 
-	//struct matrix coefs0;
-	//matrix_init(&coefs0, dim, nc);
-	//matrix_fill(&coefs0, 0.0001);
-
-	for (it = 0, task = recv_fit_start(fit, params0);
+	for (it = 0, task = recv_fit_start(fit, params0, duals0);
 	     it < maxit && task == RECV_FIT_STEP;
 	     it++, task = recv_fit_advance(fit)) {
 		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
 			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
 			// const struct recv_loglik_info *info = recv_loglik_info(ll);
 			// size_t n = info->nrecv;
-			// double dev = n * info->dev;
-			// const struct vector *score = &info->score;
-			// double ngrad = vector_max_abs(score);
-			double step = recv_fit_step(fit);
-			double ngrad = recv_fit_grad_norm2(fit);
-			fprintf(stderr, "iter %zu; |grad| = %.16f; step = %.16f\n",
-				it, ngrad, step);
+			double dev = recv_fit_dev(fit);
+			double nscore = recv_fit_score_norm(fit);
+			double step = recv_fit_step_size(fit);
 
-			// fprintf(stderr, "iter %zu deviance = %.2f; |grad| = %.16f; step = %.16f\n",
-			//	it, dev, ngrad, step);
+			fprintf(stderr, "iter %zu deviance = %.2f; |score| = %.16f; step = %.16f\n",
+				it, dev, nscore, step);
 		}
 	}
 
-	//matrix_deinit(&coefs0);
-
-	int err = 0;
 
 	if (task != RECV_FIT_CONV) {
-		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(fit));
+		fprintf(stderr, "ERROR: %s\n", "YOWZA!!"); //recv_fit_errmsg(fit));
 		err = -1;
 	}
 
@@ -482,6 +458,7 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0)
 }
 
 
+/*
 static void init_params(struct recv_params *params,
 			const struct frame *f,
 			const struct constr *c,
@@ -543,7 +520,9 @@ static void init_params(struct recv_params *params,
 		exit(EXIT_FAILURE);
 }
 
+*/
 
+/*
 struct options {
 	char *startfile;
 	char *output;
@@ -556,10 +535,10 @@ static struct options parse_options(int argc, char **argv)
 {
 	int c;
 	static struct option long_options[] = {
-		/* These optoins set a flag. */
+		*//* These optoins set a flag. *//*
 		{ "resid", no_argument, 0, 'r' },
 
-		/* These options don't set a flag */
+		*//* These options don't set a flag *//*
 		{ "output", required_argument, 0, 'o' },
 		{ "start", required_argument, 0, 's' },
 		{ "boot", optional_argument, 0, 'b' },
@@ -607,26 +586,33 @@ static struct options parse_options(int argc, char **argv)
 
 	return opts;
 }
-
+*/
 
 int main(int argc, char **argv)
 {
-	int err = 0;
-	struct options opts = parse_options(argc, argv);
+	/* struct options opts = parse_options(argc, argv); */
+	struct history h;
+	struct design r;
+	struct design2 d;
+	struct constr c;
+	int exclude_loops = 1;
+	struct recv_fit fit;
+	const struct message *msgs;
+	size_t nmsg;
+	size_t ncextra;
+	int err;
 
-	// setup frame
-	setup_frame();
+	err = setup_history(&h);
+	if (err)
+		goto fail_history;
 
-	// setup messages
-	struct messages enron_messages;
-	struct messages *xmsgs = &enron_messages;
-	struct messages *ymsgs = &enron_messages;
-	enron_messages_init(&enron_messages, 5);
+	err = setup_designs(&r, &d, &h);
+	if (err)
+		goto fail_designs;
 
-	// setup constraints; only depends on times of ymsgs,
-	// so same for boot and non-boot runs.
-	setup_constr(&frame, xmsgs, ymsgs);
+	setup_constr(&c, &r, &d);
 
+	/*
 	// setup initial parameters
 	struct recv_params params0;
 	int has_params0 = 0;
@@ -646,26 +632,33 @@ int main(int argc, char **argv)
 		recv_boot_init(&boot, &frame, &enron_messages, pcoefs0, &dsfmt);
 		ymsgs = &boot.messages;
 	}
+	*/
 
-	// setup fit
-	struct recv_fit fit;
-	struct recv_fit_ctrl ctrl = RECV_FIT_CTRL0;
-	recv_fit_init(&fit, &frame, &constr, xmsgs, ymsgs, &ctrl);
+	history_get_messages(&h, &msgs, &nmsg);
+	recv_fit_init(&fit, &r, &d, exclude_loops, msgs, nmsg, &c, NULL);
+
+	ncextra = recv_fit_extra_constr_count(&fit);
+	if (ncextra)
+		fprintf(stderr, "Adding %zd %s to make parameters identifiable\n",
+			ncextra, ncextra == 1 ? "constraint" : "constraints");
 
 	// fit the model
-	err = do_fit(&fit, pparams0);
+	err = do_fit(&fit, NULL, NULL);
 
 	// output the results
-	output(opts.output, &fit, opts.resid);
+	//output(opts.output, &fit, opts.resid);
 
-	if (opts.boot)
-		recv_boot_deinit(&boot);
-	if (has_params0)
-		recv_params_deinit(&params0);
+	//if (opts.boot)
+	//	recv_boot_deinit(&boot);
+	//if (has_params0)
+	//	recv_params_deinit(&params0);
+
 	recv_fit_deinit(&fit);
-	messages_deinit(&enron_messages);
-	teardown_constr();
-	teardown_frame();
-
+	constr_deinit(&c);
+	design2_deinit(&d);
+	design_deinit(&r);
+fail_designs:
+	history_deinit(&h);
+fail_history:
 	return err;
 }
