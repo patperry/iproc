@@ -165,7 +165,7 @@ const struct var2 *design2_add_prod(struct design2 *d, const char *name,
 		res = add_trait_prod(d, name, container_of(u, struct trait2, var),
 				     container_of(v, struct trait2, var));
 	} else {
-		res = design2_add_tvar(d, name, VAR2_PROD2, d, u, v);
+		res = design2_add_tvar(d, name, VAR2_PROD2, u, v);
 	}
 
 	return res;
