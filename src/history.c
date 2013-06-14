@@ -174,6 +174,18 @@ void history_advance(struct history *h, double time)
 }
 
 
+void history_set_time(struct history *h, double time)
+{
+	assert(!isnan(time));
+
+	if (time < history_time(h)) {
+		history_reset(h);
+	}
+
+	history_advance(h, time);
+}
+
+
 void history_add(struct history *h, size_t from, const size_t *to, size_t nto,
 		 intptr_t attr)
 {

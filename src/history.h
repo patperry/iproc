@@ -61,6 +61,7 @@ static inline struct message *history_item(const struct history *h, size_t i)
 static inline double history_time(const struct history *h) { return h->tcur; }
 void history_reset(struct history *h); // reset time to -INFINITY
 void history_advance(struct history *h, double time);	// advance time
+void history_set_time(struct history *h, double time);
 
 
 /* add messages */
