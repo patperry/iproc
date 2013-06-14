@@ -375,7 +375,7 @@ int enron_messages_init_fread(FILE *stream, size_t maxrecip, double **time,
 	*attr = parse.attr;
 	*nmsg = parse.nmsg;
 
-	return parse_ok;
+	return parse_ok ? 0 : -1;
 }
 
 int enron_messages_init(size_t maxrecip,
@@ -387,18 +387,18 @@ int enron_messages_init(size_t maxrecip,
 	if (!f) {
 		fprintf(stderr, "Couldn't open messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
-		return 0;
+		return -1;
 	}
 
-	if (!enron_messages_init_fread(f, maxrecip, time, from, to, nto, attr, nmsg)) {
+	if (enron_messages_init_fread(f, maxrecip, time, from, to, nto, attr, nmsg)) {
 		fprintf(stderr, "Couldn't parse messages file '%s'\n",
 			ENRON_MESSAGES_FILE);
 		fclose(f);
-		return 0;
+		return -1;
 	}
 
 	fclose(f);
-	return 1;
+	return 0;
 }
 
 

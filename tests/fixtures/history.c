@@ -8,14 +8,14 @@
 
 void history_fixture_setup_enron(struct history_fixture *f)
 {
-	int ok;
+	int err;
 
-	ok = enron_messages_init(0, (double **)&f->time, (size_t **)&f->from,
+	err = enron_messages_init(0, (double **)&f->time, (size_t **)&f->from,
 				 (size_t ***)&f->to, (size_t **)&f->nto,
 				 (intptr_t **)&f->attr, &f->count);
 	f->nsend = ENRON_ACTOR_COUNT;
 	f->nrecv = ENRON_ACTOR_COUNT;
-	assert(ok);
+	assert(!err);
 }
 
 
