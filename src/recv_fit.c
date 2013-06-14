@@ -193,20 +193,6 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 		recv_loglik_axpy_imat(1.0/df, &fit->loglik, fit->imat);
 
 		fit->task = newton_set_hess(&fit->opt, fit->imat, fit->uplo);
-
-		while (fit->task == NEWTON_STEP) {
-			const double *s = newton_search(&fit->opt);
-			size_t ismax = blas_idamax(dim, s, 1) - 1;
-			double smax = fabs(s[ismax]);
-			double stpmax = 4.0 / MAX(1.0, smax);
-			double stp = newton_step_size(&fit->opt);
-
-			if (stp <= stpmax) {
-				break;
-			}
-
-			fit->task = newton_step(&fit->opt, NAN, NULL);
-		}
 	}
 
 	switch (fit->task) {
