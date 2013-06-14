@@ -56,32 +56,32 @@ static int setup_history(struct history *h)
 }
 
 
-static int setup_designs(struct design *r, struct design2 *d, struct history *h)
+static int setup_designs(struct design *r, struct design2 *d, double *dtmax, struct history *h)
 {
 	size_t nsend = history_nsend(h);
 	size_t nrecv = history_nrecv(h);
 
 	double intvls[] = {
-		/* 450, */	/*   7.5m */
-		/* 900, */	/*  15.0m */
+		450,		/*   7.5m */
+		900,		/*  15.0m */
 		1800,		/*  30.0m */
-		/* 3600, */	/*   1.0h */
+		3600,		/*   1.0h */
 		7200,		/*   2.0h */
-		/* 14400, */	/*   4.0h */
+		14400,		/*   4.0h */
 		28800,		/*   8.0h */
-		/* 57600, */	/*  16.0h */
+		57600,		/*  16.0h */
 		115200,		/*  32.0h */
-		/* 230400, */	/*   2.6d */
+		230400,		/*   2.6d */
 		460800,		/*   5.3d */
-		/* 921600, */	/*  10.6d */
+		921600,		/*  10.6d */
 		1843200,	/*  21.3d */
-		/* 3686400, */	/*  42.6d */
+		3686400,	/*  42.6d */
 		/* 7372800, */	/*  85.3d */
 		/* 14745600, */	/* 170.6d */
 		/* INFINITY */	/*   Inf  */
 	};
 	size_t nintvl = sizeof(intvls) / sizeof(intvls[0]);
-	double window = 1843200; /* 21.3d */
+	double window = intvls[nintvl - 1];
 
 	size_t terms = 1; /* first-order interactions only */
 	double *trait_x;
@@ -92,7 +92,6 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 	char namebuf[1024];
 	size_t k, l;
 
-
 	err = enron_actors_init(terms, &trait_x, &trait_names, &trait_dim);
 	if (err)
 		return err;
@@ -100,6 +99,7 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 	design_init(r, h, nsend);
 	design2_init(d, h, nsend, nrecv);
 
+	*dtmax = MAX(window, intvls[nintvl - 1]);
 
 	/* recv design */
 	design_add_traits(r, trait_names, trait_x, trait_dim);
@@ -117,9 +117,10 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
 	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
-	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
-	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
+	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
+	design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
 	//design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
+
 	/* dyad design */
 	design2_add_tvar(d, "ISend", VAR2_ISEND, window);
 	design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
@@ -598,13 +599,14 @@ int main(int argc, char **argv)
 	const struct message *msgs;
 	size_t nmsg;
 	size_t ncextra;
+	double t0, dtmax;
 	int err;
 
 	err = setup_history(&h);
 	if (err)
 		goto fail_history;
 
-	err = setup_designs(&r, &d, &h);
+	err = setup_designs(&r, &d, &dtmax, &h);
 	if (err)
 		goto fail_designs;
 
@@ -633,6 +635,14 @@ int main(int argc, char **argv)
 	*/
 
 	history_get_messages(&h, &msgs, &nmsg);
+
+	/* skip initial observation period (missing covariates) */
+	t0 = nmsg ? msgs[0].time : -INFINITY;
+	while (nmsg && msgs->time < t0 + dtmax) {
+		nmsg--;
+		msgs++;
+	}
+
 	recv_fit_init(&fit, &r, &d, exclude_loops, msgs, nmsg, &c, NULL);
 
 	ncextra = recv_fit_extra_constr_count(&fit);
