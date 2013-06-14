@@ -172,7 +172,7 @@ const struct var *design_add_prod(struct design *d, const char *name,
 		res = design_add_trait(d, name, x, dims, rank);
 		free(x);
 	} else {
-		res = design_add_tvar(d, name, VAR_PROD, d, u, v);
+		res = design_add_tvar(d, name, VAR_PROD, u, v);
 	}
 
 	return res;
