@@ -241,9 +241,9 @@ static yajl_callbacks parse_callbacks = {
 };
 
 
-int enron_actors_init_fread(FILE *stream, size_t terms,
-			    size_t *count, double **trait_x,
-			    const char * const **trait_names, size_t *trait_dim)
+int enron_actors_init_fread(FILE *stream, size_t terms, double **trait_x,
+			    const char * const **trait_names,
+			    size_t *trait_dim)
 {
 	unsigned char fileData[65536];
 	size_t rd;
@@ -293,13 +293,11 @@ int enron_actors_init_fread(FILE *stream, size_t terms,
 	yajl_free(hand);
 
 	if (!parse_ok) {
-		*count = 0;
 		*trait_x = NULL;
 		free(parse.traits);
 		*trait_dim = 0;
 		*trait_names = NULL;
 	} else {
-		*count = parse.nactor;
 		*trait_x = parse.traits;
 		*trait_dim = parse.dim;
 		*trait_names = ENRON_TRAIT_NAMES;
@@ -309,7 +307,7 @@ int enron_actors_init_fread(FILE *stream, size_t terms,
 }
 
 
-int enron_actors_init(size_t terms, size_t *count, double **trait_x,
+int enron_actors_init(size_t terms, double **trait_x,
 		      const char * const **trait_names, size_t *trait_dim)
 {
 	FILE *f = fopen(ENRON_ACTORS_FILE, "r");
@@ -320,7 +318,7 @@ int enron_actors_init(size_t terms, size_t *count, double **trait_x,
 		return errno;
 	}
 
-	if (!enron_actors_init_fread(f, terms, count, trait_x, trait_names, trait_dim)) {
+	if (!enron_actors_init_fread(f, terms, trait_x, trait_names, trait_dim)) {
 		fprintf(stderr, "Couldn't parse employees file '%s'\n",
 			ENRON_ACTORS_FILE);
 		fclose(f);

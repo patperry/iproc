@@ -22,12 +22,12 @@ enum enron_trait {
 #define ENRON_ACTOR_COUNT 156
 #define ENRON_TERMS_MAX 3
 
-int enron_actors_init(size_t terms, size_t *count, double **trait_x,
+int enron_actors_init(size_t terms, double **trait_x,
 		      const char * const **trait_names, size_t *trait_dim);
 
-int enron_actors_init_fread(FILE *stream, size_t terms,
-			    size_t *count, double **trait_x,
-			    const char * const **trait_names, size_t *trait_dim);
+int enron_actors_init_fread(FILE *stream, size_t terms, double **trait_x,
+			    const char * const **trait_names,
+			    size_t *trait_dim);
 
 
 #endif /* ENRON_ACTORS_H */

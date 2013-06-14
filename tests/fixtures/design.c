@@ -24,8 +24,12 @@ void design_fixture_setup_enron(struct design_fixture *f)
 
 void design_fixture_add_traits_enron(struct design_fixture *f)
 {
-	enron_actors_init(ENRON_TERMS_MAX, &f->count, (double **)&f->trait_x,
-			  &f->trait_names, &f->trait_dim);
+	int err;
+
+	assert(f->count == ENRON_ACTOR_COUNT);
+	err = enron_actors_init(ENRON_TERMS_MAX, (double **)&f->trait_x,
+				&f->trait_names, &f->trait_dim);
+	assert(!err);
 }
 
 
