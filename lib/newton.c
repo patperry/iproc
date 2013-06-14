@@ -194,6 +194,7 @@ static void kkt_set(struct newton_kkt *kkt, const double *hess, size_t dim,
 	kkt->factored = 0;
 
 	memset(kkt->matrix, 0, n * n * sizeof(double));
+	kkt->uplo = uplo;
 
 	/* k11 */
 	packed_dsctr(f77uplo, dim, hess, kkt->matrix, n);
