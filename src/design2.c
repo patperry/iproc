@@ -306,6 +306,8 @@ static size_t cohort_strata_dim(struct design2 *d)
 		} else {
 			vdim = v->dimi;
 		}
+
+		dim += vdim;
 	}
 
 	return dim;
@@ -319,7 +321,7 @@ static void recompute_cohorts(struct design2 *d)
 	size_t i, n = d->count1;
 
 	struct strata s;
-	double *x = xmalloc(dim * sizeof(*x));
+	double *x = xmalloc(dim * sizeof(double));
 
 	strata_init(&s, dim);
 	d->ncohort = 0;
