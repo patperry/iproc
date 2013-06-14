@@ -92,6 +92,9 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 
 	assert(cur->i == i);
 
+	if (deltaset_count(ds) == 1)
+		goto out;
+
 	/* remove delta[i] from the update list */
 	struct delta *prev = cur->prev;
 	struct delta *next = cur->next;
@@ -106,9 +109,10 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 	if (prev)
 		prev->next = next;
 
+	assert(ds->head);
 
 	/* find appropriate place for delta[i] */
-	if (!ds->head || ds->head->t <= t) {	/* delta[i] belongs at new head */
+	if (ds->head->t <= t) {	/* delta[i] belongs at new head */
 		cur->prev = ds->head;
 		cur->next = NULL;
 		ds->head->next = cur;
@@ -134,6 +138,7 @@ void deltaset_update(struct deltaset *ds, size_t i, double t)
 		cur->prev = prev;
 	}
 
+out:
 	/* update time */
 	cur->t = t;
 
