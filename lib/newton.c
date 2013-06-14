@@ -349,6 +349,10 @@ enum newton_task newton_step(struct newton *opt, double f, const double *grad)
 	enum newton_task task;
 
 	opt->ls_iter++;
+
+	if (isnan(f) || !grad)
+		goto shrink;
+
 	eval_set(next, f, grad, dim, c);
 
 	if (next->indomain) {
@@ -361,6 +365,7 @@ enum newton_task newton_step(struct newton *opt, double f, const double *grad)
 		}
 	}
 
+shrink:
 	if (t1 < ctrl->xtol) {
 		task = NEWTON_ERR_XTOL;
 	} else if (opt->ls_iter == ctrl->ls_maxit) {
@@ -459,6 +464,32 @@ const double *newton_grad(const struct newton *opt)
 	return opt->cur->grad;
 }
 
+double newton_grad_norm(const struct newton *opt)
+{
+	assert(opt->cur);
+	size_t n = opt->dim;
+	const double *g = params_pri(&opt->cur->resid);
+	double nrm = blas_dnrm2(n, g, 1);
+	return nrm;
+}
+
+double newton_resid_norm(const struct newton *opt)
+{
+	assert(opt->cur);
+	return opt->cur->resid_norm;
+}
+
+double newton_step_size(const struct newton *opt)
+{
+	assert(opt->cur);
+	return opt->step;
+}
+
+const double *newton_search(const struct newton *opt)
+{
+	assert(opt->cur);
+	return params_pri(&opt->search);
+}
 
 int newton_ctrl_valid(const struct newton_ctrl *ctrl)
 {

@@ -104,8 +104,14 @@ const char *newton_errmsg(enum newton_task task);
 /* current values */
 const double *newton_params(const struct newton *opt);
 const double *newton_duals(const struct newton *opt);
+
 double newton_val(const struct newton *opt);
 const double *newton_grad(const struct newton *opt);
+double newton_grad_norm(const struct newton *opt);
+
+double newton_resid_norm(const struct newton *opt);
+const double *newton_search(const struct newton *opt);
+double newton_step_size(const struct newton *opt);
 
 
 int newton_ctrl_valid(const struct newton_ctrl *ctrl);
