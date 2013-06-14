@@ -58,7 +58,6 @@ static void copy_cov(const struct mlogitaug *m1, double *dst)
 	size_t base_dim = mlogit_dim(mlogitaug_base(m1));
 	size_t aug_dim = mlogitaug_dim(m1);
 	//size_t dim = base_dim + aug_dim;
-	size_t base_cov_dim = base_dim * (base_dim + 1) / 2;
 	size_t aug_cov_dim = aug_dim * (aug_dim + 1) / 2;
 	const double *base_cov = mlogitaug_base_cov(m1);
 	const double *cross_cov = mlogitaug_cross_cov(m1);
@@ -79,6 +78,7 @@ static void copy_cov(const struct mlogitaug *m1, double *dst)
 		}
 		memcpy(dst, aug_cov, aug_cov_dim * sizeof(double));
 	} else {
+		size_t base_cov_dim = base_dim * (base_dim + 1) / 2;
 		memcpy(dst, base_cov, base_cov_dim * sizeof(double));
 		dst += base_cov_dim;
 
