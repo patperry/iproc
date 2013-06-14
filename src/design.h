@@ -57,9 +57,8 @@ struct design {
 
 	size_t tvar_dim;
 	double *tvar_x;
-	struct uintset active;
 	struct tvar **tvars;
-	size_t ntvar, ntvar_max;
+	size_t ntvar;
 
 	struct deltaset deltaset;
 	struct version_watch history_version;
@@ -165,7 +164,7 @@ static inline const struct var * design_tvar_item(const struct design *d, size_t
 
 const struct var *design_add_tvar(struct design *d, const char *name, const struct tvar_type *type, ...);
 
-void design_get_tvar_matrix(const struct design *d, const double **x, const size_t **ind, size_t *nz);
+const double *design_tvar_matrix(const struct design *d);
 const double *design_tvars(const struct design *d, size_t i);
 const double *design_tvar(const struct design *d, const struct var *v, size_t i);
 

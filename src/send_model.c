@@ -25,10 +25,7 @@ static void send_model_update(struct send_model *m)
 	size_t i;
 	const double *xi;
 	const double *x;
-	const size_t *ind;
 	size_t dim = design_tvar_dim(d);
-	size_t nz;
-	ptrdiff_t iz;
 
 	if (version_changed(v, &m->history_version)) {
 		mlogitaug_set_all_x(&m->aug, NULL, NULL, 0);
@@ -42,16 +39,14 @@ static void send_model_update(struct send_model *m)
 	if (t0 == t)
 		return;
 
-	design_get_tvar_matrix(d, &x, &ind, &nz);
+	x = design_tvar_matrix(d);
 
 	for (delta = deltaset_head(ds); delta != NULL; delta = delta->prev) {
 		if (delta->t < t0 || delta->t == -INFINITY)
 			break;
 
 		i = delta->i;
-		iz = find_index(i, ind, nz);
-		assert(iz >= 0);
-		xi = x + iz * dim;
+		xi = x + i * dim;
 
 		mlogitaug_set_x(&m->aug, i, xi);
 	}

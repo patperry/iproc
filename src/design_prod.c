@@ -55,17 +55,13 @@ static double *get_x(const struct var *v, size_t i)
 {
 	const struct design *d = v->design;
 	size_t index = v->index;
-	size_t iz;
 	double *x = NULL;
 
 	if (v->meta.type == VAR_TYPE_TRAIT) {
 		x = d->trait_x + i * d->trait_dim + index;
 	} else {
 		assert(v->meta.type == VAR_TYPE_TVAR);
-
-		if (uintset_find(&d->active, i, &iz)) {
-			x = d->tvar_x + iz * d->tvar_dim + index;
-		}
+		x = d->tvar_x + i * d->tvar_dim + index;
 	}
 
 	return x;

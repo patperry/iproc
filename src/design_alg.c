@@ -63,40 +63,29 @@ void design_tvars_mul(double alpha, const struct design *d,
 		      const double *x, double beta, double *y)
 {
 	size_t n = design_count(d);
-	size_t dim = design_tvar_dim(d);
-	const double *a;
-	const size_t *k;
-	size_t nz;
+	size_t p = design_tvar_dim(d);
+	const double *a = design_tvar_matrix(d);
+	size_t lda = p;
 
-	if (beta == 0.0) {
+	if (p) {
+		blas_dgemv(BLAS_TRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
+	} else if (beta == 0) {
 		memset(y, 0, n * sizeof(*y));
-	} else if (beta != 1.0) {
+	} else if (beta != 1) {
 		blas_dscal(n, beta, y, 1);
-	}
-
-	design_get_tvar_matrix(d, &a, &k, &nz);
-	for (; nz != 0; a += dim, k++, nz--) {
-		y[*k] += alpha * blas_ddot(dim, a, 1, x, 1);
 	}
 }
 
 
 void design_tvars_tmul(double alpha, const struct design *d, const double *x, double beta, double *y)
 {
-	size_t dim = design_tvar_dim(d);
-	const double *a;
-	const size_t *k;
-	size_t nz;
+	size_t n = design_count(d);
+	size_t p = design_tvar_dim(d);
+	const double *a = design_tvar_matrix(d);
+	size_t lda = p;
 
-	if (beta == 0.0) {
-		memset(y, 0, dim * sizeof(*y));
-	} else if (beta != 1.0) {
-		blas_dscal(dim, beta, y, 1);
-	}
-
-	design_get_tvar_matrix(d, &a, &k, &nz);
-	for (; nz != 0; a += dim, k++, nz--) {
-		blas_daxpy(dim, alpha * x[*k], a, 1, y, 1);
+	if (p) {
+		blas_dgemv(BLAS_NOTRANS, p, n, alpha, a, lda, x, 1, beta, y, 1);
 	}
 }
 

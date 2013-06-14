@@ -53,7 +53,7 @@ static void tvar_clear(struct tvar *tv)
 	size_t index = tv->var.index;
 	size_t size = tv->var.meta.size;
 
-	size_t i, n = uintset_count(&d->active);
+	size_t i, n = design_count(d);
 	size_t dim = design_tvar_dim(d);
 	double *ptr = d->tvar_x + index;
 
@@ -87,10 +87,8 @@ void design_init(struct design *d, struct history *h, size_t count)
 
 	d->tvar_dim = 0;
 	d->tvar_x = NULL;
-	uintset_init(&d->active);
 	d->tvars = NULL;
 	d->ntvar = 0;
-	d->ntvar_max = 0;
 
 	deltaset_init(&d->deltaset, count);
 	version_watch_init(&d->history_version, history_version(h));
@@ -191,7 +189,6 @@ void design_deinit(struct design *d)
 
 	tvars_deinit(d->tvars, d->ntvar);
 	free2((void **)d->tvars, d->ntvar);
-	uintset_deinit(&d->active);
 	free(d->tvar_x);
 
 	traits_deinit(d->traits, d->ntrait);
@@ -324,11 +321,24 @@ void design_add_traits(struct design *d, const char * const *names, const double
 }
 
 
-static void design_grow_tvars(struct design *d, size_t delta)
+static void design_tvars_grow(struct design *d, size_t dnv, size_t ddim)
 {
-	if (needs_grow(d->ntvar + delta, &d->ntvar_max)) {
-		d->tvars = xrealloc(d->tvars, d->ntvar_max * sizeof(*d->tvars));
+	size_t count = design_count(d);
+
+	size_t nv = design_tvar_count(d);
+	size_t nv1 = nv + dnv;
+	size_t dim = design_tvar_dim(d);
+	size_t dim1 = dim + ddim;
+
+	if (count) {
+		double *x = xcalloc(count * dim1, sizeof(*x));
+		lapack_dlacpy(LA_COPY_ALL, dim, count, d->tvar_x, dim, x, dim1);
+		free(d->tvar_x);
+		d->tvar_x = x;
 	}
+
+	d->tvars = xrealloc(d->tvars, nv1 * sizeof(*d->tvars));
+	d->tvar_dim = dim1;
 }
 
 
@@ -336,7 +346,6 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 {
 	assert(name);
 	assert(type);
-	assert(!d->tvar_x); // Not Implemented otherwise
 
 	struct tvar *tv = xmalloc(sizeof(*tv));
 	struct var *v = &tv->var;
@@ -347,9 +356,8 @@ const struct var *design_add_tvar(struct design *d, const char *name, const stru
 	va_end(ap);
 
 	size_t index = d->ntvar;
-	design_grow_tvars(d, 1);
+	design_tvars_grow(d, 1, v->meta.size);
 	d->tvars[index] = tv;
-	d->tvar_dim += v->meta.size;
 	d->ntvar = index + 1;
 		
 	return v;
@@ -401,48 +409,23 @@ const double *design_tvars(const struct design *d, size_t i)
 {
 	assert(i < design_count(d));
 
-	design_tvars_update((struct design *)d);
-
-	const double *dx = NULL;
-	size_t iz;
-
-	if (uintset_find(&d->active, i, &iz)) {
-		dx = d->tvar_x + iz * d->tvar_dim;
-	}
-
-	return dx;
+	const double *x = design_tvar_matrix(d);
+	size_t dim = d->tvar_dim;
+	return x + i * dim;
 }
 
 
-void design_get_tvar_matrix(const struct design *d, const double **x, const size_t **ind, size_t *nz)
+const double *design_tvar_matrix(const struct design *d)
 {
 	design_tvars_update((struct design *)d);
-	*x = d->tvar_x;
-	uintset_get_vals(&d->active, ind, nz);
+	return d->tvar_x;
 }
 
 
 double *design_make_active(struct design *d, struct tvar *v, size_t i)
 {
 	size_t dim = d->tvar_dim;
-	size_t iz;
-
-	if (!uintset_find(&d->active, i, &iz)) {
-		size_t nzmax0 = uintset_capacity(&d->active);
-		size_t ntail = uintset_insert(&d->active, iz, i);
-		size_t nzmax = uintset_capacity(&d->active);
-
-		if (nzmax != nzmax0) {
-			d->tvar_x = xrealloc(d->tvar_x, nzmax * dim * sizeof(*d->tvar_x));
-		}
-
-		memmove(d->tvar_x + (iz + 1) * dim,
-			d->tvar_x + iz * dim,
-			ntail * dim * sizeof(*d->tvar_x));
-		memset(d->tvar_x + iz * dim, 0, dim * sizeof(*d->tvar_x));
-	}
-
-	return d->tvar_x + iz * dim + v->var.index;
+	return d->tvar_x + i * dim + v->var.index;
 }
 
 

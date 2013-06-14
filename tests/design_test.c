@@ -349,36 +349,35 @@ static void test_isendtot()
 	double window = 1000;
 	const struct var *v = design_add_tvar(DESIGN, "ISendTot", VAR_ISENDTOT, window);
 	double t0 = 910930020;
+	size_t dim = 1;
+	size_t len = NRECV * dim;
+	double *x0 = xcalloc(len, sizeof(double));
 	const double *x;
-	const size_t *ind;
-	size_t nz;
 
 	assert_true(v);
 
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz); /* -inf */
-	assert_int_equal(nz, 0);
+	x = design_tvar_matrix(DESIGN); /* -inf */
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, t0); /* t */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 0);
+	x = design_tvar_matrix(DESIGN);
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, double_nextup(t0)); /* (t)+ */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	x0[137] = 1.0;
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, t0 + window); /* t + w */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, double_nextup(t0 + window)); /* (t + w)+ */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 0.0);
+	x = design_tvar_matrix(DESIGN);
+	x0[137] = 0.0;
+	assert_vec_identical(x0, x, len);
+
+	free(x0);
 }
 
 
@@ -389,53 +388,47 @@ static void test_nsendtot1()
 	const struct var *v = design_add_tvar(DESIGN, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
 	double t0 = 910930020;
 	const double *x;
-	const size_t *ind;
-	size_t nz;
+	size_t dim = 2;
+	size_t len = NRECV * dim;
+	double *x0 = xcalloc(len, sizeof(double));
 
 	assert_true(v);
 	assert_int_equal(v->meta.rank, 1);
 	assert_int_equal(v->meta.dims[0], nintvl);
 	assert_int_equal(v->meta.size, nintvl);
 
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz); /* -inf */
-	assert_int_equal(nz, 0);
+	x = design_tvar_matrix(DESIGN); /* -inf */
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, t0); /* t */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 0);
+	x = design_tvar_matrix(DESIGN);
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, double_nextup(t0)); /* (t)+ */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	x0[137 * dim + 0] = 1.0;
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, t0 + intvls[0]); /* t + w1 */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, double_nextup(t0 + intvls[0])); /* (t + w1)+ */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 0.0);
-	assert_real_identical(x[1], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	x0[137 * dim + 0] = 0.0;
+	x0[137 * dim + 1] = 1.0;
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, t0 + intvls[1]); /* (t + w2) */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 0.0);
-	assert_real_identical(x[1], 1.0);
+	x = design_tvar_matrix(DESIGN);
+	assert_vec_identical(x0, x, len);
 
 	history_advance(HISTORY, double_nextup(t0 + intvls[1])); /* (t + w2)+ */
-	design_get_tvar_matrix(DESIGN, &x, &ind, &nz);
-	assert_int_equal(nz, 1);
-	assert_int_equal(ind[0], 137);
-	assert_real_identical(x[0], 0.0);
-	assert_real_identical(x[1], 0.0);
+	x = design_tvar_matrix(DESIGN);
+	x0[137 * dim + 1] = 0.0;
+	assert_vec_identical(x0, x, len);
+
+	free(x0);
 }
 
 

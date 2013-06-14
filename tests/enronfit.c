@@ -78,10 +78,10 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 		/* 3686400, */	/*  42.6d */
 		/* 7372800, */	/*  85.3d */
 		/* 14745600, */	/* 170.6d */
-		INFINITY	/*   Inf  */
+		/* INFINITY */	/*   Inf  */
 	};
 	size_t nintvl = sizeof(intvls) / sizeof(intvls[0]);
-	double window = INFINITY;
+	double window = 1843200; /* 21.3d */
 
 	size_t terms = 1; /* first-order interactions only */
 	double *trait_x;
@@ -113,29 +113,28 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 	//design_add_prod(r, "Leg:Jun:Fem", design_var(r, "Leg:Jun"), design_var(r, "Fem"));
 	//design_add_prod(r, "Trad:Jun:Fem", design_var(r, "Trad:Jun"), design_var(r, "Fem"));
 
-	//design_add_tvar(r, "ISendTot", VAR_ISENDTOT, window);
-	//design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
-	//design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
+	design_add_tvar(r, "ISendTot", VAR_ISENDTOT, window);
+	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
+	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
 	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
 	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
 	//design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
-
-
 	/* dyad design */
-	//design2_add_tvar(d, "ISend", VAR2_ISEND, window);
-	//design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
-	//design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
+	design2_add_tvar(d, "ISend", VAR2_ISEND, window);
+	design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
+	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	//design2_add_tvar(d, "NSend", VAR2_NSEND, intvls, nintvl);
-	//design2_add_tvar(d, "NRecv", VAR2_NRECV, intvls, nintvl);
+	design2_add_tvar(d, "NSend", VAR2_NSEND, intvls, nintvl);
+	design2_add_tvar(d, "NRecv", VAR2_NRECV, intvls, nintvl);
 
 	//design2_add_tvar(d, "NSend2", VAR2_NSEND2, intvls, nintvl, intvls, nintvl);
 	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2, intvls, nintvl, intvls, nintvl);
 	//design2_add_tvar(d, "NSib", VAR2_NSIB, intvls, nintvl, intvls, nintvl);
+	//design2_add_tvar(d, "NSib", VAR2_NSIB, &window, (size_t)1, &window, (size_t)1);
 	//design2_add_tvar(d, "NCosib", VAR2_NCOSIB, intvls, nintvl, intvls, nintvl);
 
-	/*for (k = 0; k < design_trait_count(r); k++) {
+	for (k = 0; k < design_trait_count(r); k++) {
 		const struct var *u = design_trait_item(r, k);
 		for (l = 0; l < design_trait_count(r); l++) {
 			const struct var *v = design_trait_item(r, l);
@@ -143,7 +142,6 @@ static int setup_designs(struct design *r, struct design2 *d, struct history *h)
 			design2_add_kron(d, namebuf, u, v);
 		}
 	}
-	 */
 
 	free(trait_x);
 

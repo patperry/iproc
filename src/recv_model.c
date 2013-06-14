@@ -94,11 +94,8 @@ static void cohort_update(struct recv_model_cohort *cm, size_t c,
 	size_t j;
 	const double *xj;
 	const double *x;
-	const size_t *ind;
 	size_t off = design_trait_dim(r);
 	size_t dim = design_tvar_dim(r);
-	size_t nz;
-	ptrdiff_t iz;
 
 	if (version_changed(v, &cm->version)) {
 		cohort_clear(cm, c, r, d);
@@ -110,16 +107,14 @@ static void cohort_update(struct recv_model_cohort *cm, size_t c,
 	if (t0 == t)
 		return;
 
-	design_get_tvar_matrix(r, &x, &ind, &nz);
+	x = design_tvar_matrix(r);
 
 	for (delta = deltaset_head(ds); delta != NULL; delta = delta->prev) {
 		if (delta->t < t0 || delta->t == -INFINITY)
 			break;
 
 		j = delta->i;
-		iz = find_index(j, ind, nz);
-		assert(iz >= 0);
-		xj = x + iz * dim;
+		xj = x + j * dim;
 
 		mlogit_set_x(&cm->mlogit, j, off, dim, xj);
 	}
