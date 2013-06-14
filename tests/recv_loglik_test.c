@@ -306,15 +306,13 @@ static void test_mean()
 	recv_params_init(&last_mean0, r, d);
 	recv_params_init(&last_mean1, r, d);
 
-
 	recv_params_set(&mean0, NULL, r, d);
+
 
 	for (i = 0; i < MIN(1000, n); i++) {
 		printf("."); fflush(stdout);
 		msg = &msgs[i];
 		t = msg->time;
-
-		history_advance(HISTORY, t);
 
 		recv_loglik_add(RECV_LOGLIK, msg);
 
