@@ -124,7 +124,6 @@
 		22749E591402A97000C5A955 /* dSFMT-params216091.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4C1402A97000C5A955 /* dSFMT-params216091.h */; };
 		22749E5A1402A97000C5A955 /* dSFMT.c in Sources */ = {isa = PBXBuildFile; fileRef = 22749E4D1402A97000C5A955 /* dSFMT.c */; settings = {COMPILER_FLAGS = "-Wmissing-prototypes -Wall -O3 -finline-functions -fomit-frame-pointer -DNDEBUG -fno-strict-aliasing --param max-inline-insns-single=1800 -std=c99 -DDSFMT_MEXP=19937"; }; };
 		22749E5B1402A97000C5A955 /* dSFMT.h in Headers */ = {isa = PBXBuildFile; fileRef = 22749E4E1402A97000C5A955 /* dSFMT.h */; };
-		2285AD1A13B147E900C46E8B /* enronfit.c in Sources */ = {isa = PBXBuildFile; fileRef = 2285AD1913B147E900C46E8B /* enronfit.c */; settings = {COMPILER_FLAGS = "-I$(SRCROOT)/lib/include"; }; };
 		2285AD1B13B147F300C46E8B /* libenron.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 22D2DDB3136A5E5B0048244C /* libenron.dylib */; };
 		2285AD1C13B147F300C46E8B /* libiproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222FC40D13607C3F00E64FC9 /* libiproc.dylib */; };
 		2288809713A9327E00D673A6 /* recv_model_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 2288809613A9327E00D673A6 /* recv_model_test.c */; };
@@ -177,6 +176,7 @@
 		228E845F1643598C00A189E5 /* linesearch.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E845E1643598C00A189E5 /* linesearch.h */; };
 		228E846616444C6600A189E5 /* constr.c in Sources */ = {isa = PBXBuildFile; fileRef = 228E846416444C6500A189E5 /* constr.c */; };
 		228E846716444C6600A189E5 /* constr.h in Headers */ = {isa = PBXBuildFile; fileRef = 228E846516444C6500A189E5 /* constr.h */; };
+		22989C23176ABAB2002EABC3 /* enronfit.c in Sources */ = {isa = PBXBuildFile; fileRef = 22989C22176ABAB2002EABC3 /* enronfit.c */; };
 		229AC2C0174FC29C0085D43C /* deltaset.c in Sources */ = {isa = PBXBuildFile; fileRef = 229AC2BE174FC29C0085D43C /* deltaset.c */; };
 		229AC2C1174FC29C0085D43C /* deltaset.h in Headers */ = {isa = PBXBuildFile; fileRef = 229AC2BF174FC29C0085D43C /* deltaset.h */; };
 		22A1E449175B9C8F006C869C /* v-nrecvtot.c in Sources */ = {isa = PBXBuildFile; fileRef = 22A1E448175B9C8F006C869C /* v-nrecvtot.c */; };
@@ -752,7 +752,6 @@
 		22749E4D1402A97000C5A955 /* dSFMT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dSFMT.c; path = lib/dSFMT/dSFMT.c; sourceTree = "<group>"; };
 		22749E4E1402A97000C5A955 /* dSFMT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dSFMT.h; path = lib/dSFMT/dSFMT.h; sourceTree = "<group>"; };
 		2285AD0913B1474200C46E8B /* enronfit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = enronfit; sourceTree = BUILT_PRODUCTS_DIR; };
-		2285AD1913B147E900C46E8B /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enron/enronfit.c; sourceTree = "<group>"; };
 		2288808D13A9325D00D673A6 /* model_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = model_test; path = recv_model_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		2288809613A9327E00D673A6 /* recv_model_test.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = recv_model_test.c; path = tests/recv_model_test.c; sourceTree = "<group>"; };
 		2289D5371703F528000182EE /* uintset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uintset.c; path = lib/core/src/uintset.c; sourceTree = "<group>"; };
@@ -789,6 +788,7 @@
 		228E845E1643598C00A189E5 /* linesearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = linesearch.h; path = lib/linesearch.h; sourceTree = "<group>"; };
 		228E846416444C6500A189E5 /* constr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = constr.c; path = lib/constr.c; sourceTree = "<group>"; };
 		228E846516444C6500A189E5 /* constr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = constr.h; path = lib/constr.h; sourceTree = "<group>"; };
+		22989C22176ABAB2002EABC3 /* enronfit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = enronfit.c; path = tests/enronfit.c; sourceTree = "<group>"; };
 		229AC2BE174FC29C0085D43C /* deltaset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = deltaset.c; path = lib/deltaset.c; sourceTree = "<group>"; };
 		229AC2BF174FC29C0085D43C /* deltaset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = deltaset.h; path = lib/deltaset.h; sourceTree = "<group>"; };
 		22A1E448175B9C8F006C869C /* v-nrecvtot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "v-nrecvtot.c"; path = "src/v-nrecvtot.c"; sourceTree = "<group>"; };
@@ -1101,6 +1101,7 @@
 				228B12A915E6657D000DC495 /* catdist1_test.c */,
 				22EA3325136B29AE00C5627F /* design_test.c */,
 				2249776E17656F0400819F95 /* design2_test.c */,
+				22989C22176ABAB2002EABC3 /* enronfit.c */,
 				22AEA44B1756453200780475 /* history_test.c */,
 				228B12C515E67ED0000DC495 /* mlogit_test.c */,
 				22D4788813AC4C0F00FF46CD /* recv_loglik_test.c */,
@@ -1236,7 +1237,6 @@
 				22EA3337136B4CEC00C5627F /* messages.c */,
 				2289E6F917583CEE00811E37 /* messages.h */,
 				22D2DDAC136A58010048244C /* paths.h */,
-				2285AD1913B147E900C46E8B /* enronfit.c */,
 				22D2DDAD136A58230048244C /* actors.json */,
 				22D2DDAE136A58230048244C /* messages.json */,
 			);
@@ -1900,7 +1900,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2285AD1A13B147E900C46E8B /* enronfit.c in Sources */,
+				22989C23176ABAB2002EABC3 /* enronfit.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
