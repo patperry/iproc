@@ -38,8 +38,7 @@ void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 
 	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
 	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
-	double df = (double)recv_loglik_count(&fit->loglik);
-	recv_loglik_axpy_imat(1.0/df, &fit->loglik, fit->imat);
+	recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
 
 	if (c) {
 		constr_init_copy(&fit->constr, c);
@@ -94,7 +93,6 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 	recv_model_set_params(&fit->model, p);
 	recv_model_set_moments(&fit->model, 2);
 	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
-	double df = (double)recv_loglik_count(&fit->loglik);
 	fit->dev = recv_loglik_dev(&fit->loglik);
 
 	struct recv_params nscore;
@@ -104,10 +102,10 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 	nscore.dyad.tvars = fit->nscore + dimr + dimd0;
 
 	memset(fit->nscore, 0, dim * sizeof(double));
-	recv_loglik_axpy_score(-1.0/df, &fit->loglik, &nscore);
+	recv_loglik_axpy_score(-1.0, &fit->loglik, &nscore);
 
 	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
-	recv_loglik_axpy_imat(1.0/df, &fit->loglik, fit->imat);
+	recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
 
 	fit->task = newton_start(&fit->opt, x, fit->dev, fit->nscore, duals);
 	free(x);
@@ -173,7 +171,6 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 
 	recv_loglik_clear(&fit->loglik);
 	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
-	double df = (double)recv_loglik_count(&fit->loglik);
 
 	if (fit->task == NEWTON_STEP) {
 		fit->dev = recv_loglik_dev(&fit->loglik);
@@ -185,14 +182,28 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 		nscore.dyad.tvars = fit->nscore + dimr + dimd0;
 
 		memset(fit->nscore, 0, dim * sizeof(double));
-		recv_loglik_axpy_score(-1.0/df, &fit->loglik, &nscore);
+		recv_loglik_axpy_score(-1.0, &fit->loglik, &nscore);
 
 		fit->task = newton_step(&fit->opt, fit->dev, fit->nscore);
 	} else {
 		memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
-		recv_loglik_axpy_imat(1.0/df, &fit->loglik, fit->imat);
+		recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
 
 		fit->task = newton_set_hess(&fit->opt, fit->imat, fit->uplo);
+
+		while (fit->task == NEWTON_STEP) {
+			const double *s = newton_search(&fit->opt);
+			size_t ismax = blas_idamax(dim, s, 1) - 1;
+			double smax = fabs(s[ismax]);
+			double stpmax = 4.0 / MAX(1.0, smax);
+			double stp = newton_step_size(&fit->opt);
+
+			if (stp <= stpmax) {
+				break;
+			}
+
+			fit->task = newton_step(&fit->opt, NAN, NULL);
+		}
 	}
 
 	switch (fit->task) {
