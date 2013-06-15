@@ -113,21 +113,21 @@ static int setup_designs(struct design *r, struct design2 *d, double *dtmax, str
 	//design_add_prod(r, "Leg:Jun:Fem", design_var(r, "Leg:Jun"), design_var(r, "Fem"));
 	//design_add_prod(r, "Trad:Jun:Fem", design_var(r, "Trad:Jun"), design_var(r, "Fem"));
 
-	design_add_tvar(r, "ISendTot", VAR_ISENDTOT, window);
-	design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
-	design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
+	//design_add_tvar(r, "ISendTot", VAR_ISENDTOT, window);
+	//design_add_tvar(r, "IRecvTot", VAR_IRECVTOT, window);
+	//design_add_prod(r, "ISendTot:IRecvTot", design_var(r, "ISendTot"), design_var(r, "IRecvTot"));
 
-	design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
-	design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
+	//design_add_tvar(r, "NRecvTot", VAR_NRECVTOT, intvls, nintvl);
+	//design_add_tvar(r, "NSendTot", VAR_NSENDTOT, intvls, nintvl);
 	//design_add_prod(r, "NRecvTot:Fem", design_var(r, "NRecvTot"), design_var(r, "Fem"));
 
 	/* dyad design */
-	design2_add_tvar(d, "ISend", VAR2_ISEND, window);
-	design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
-	design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
+	//design2_add_tvar(d, "ISend", VAR2_ISEND, window);
+	//design2_add_tvar(d, "IRecv", VAR2_IRECV, window);
+	//design2_add_prod(d, "ISend:IRecv", design2_var(d, "ISend"), design2_var(d, "IRecv"));
 
-	design2_add_tvar(d, "NSend", VAR2_NSEND, intvls, nintvl);
-	design2_add_tvar(d, "NRecv", VAR2_NRECV, intvls, nintvl);
+	//design2_add_tvar(d, "NSend", VAR2_NSEND, intvls, nintvl);
+	//design2_add_tvar(d, "NRecv", VAR2_NRECV, intvls, nintvl);
 
 	//design2_add_tvar(d, "NSend2", VAR2_NSEND2, intvls, nintvl, intvls, nintvl);
 	//design2_add_tvar(d, "NRecv2", VAR2_NRECV2, intvls, nintvl, intvls, nintvl);
@@ -431,10 +431,11 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 	size_t it = 0;
 	int err = 0;
 
-	for (it = 0, task = recv_fit_start(fit, params0, duals0);
-	     it < maxit && task == RECV_FIT_STEP;
-	     it++, task = recv_fit_advance(fit)) {
-		if (trace && it % report == 0 && task != RECV_FIT_CONV) {
+	task = recv_fit_start(fit, params0, duals0);
+	for (it = 0; it < maxit && task == RECV_FIT_STEP; it++) {
+		task = recv_fit_advance(fit);
+
+		if (trace && it % report == 0) {
 			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
 			// const struct recv_loglik_info *info = recv_loglik_info(ll);
 			// size_t n = info->nrecv;
@@ -446,7 +447,6 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 				it, dev, nscore, step);
 		}
 	}
-
 
 	if (task != RECV_FIT_CONV) {
 		fprintf(stderr, "ERROR: %s\n", "YOWZA!!"); //recv_fit_errmsg(fit));
