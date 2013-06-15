@@ -1,5 +1,5 @@
-AC_INIT([iproc], [0.1], [patperry@gmail.com])
-AC_SUBST([PACKAGE_DATE], [2011-03-17])
+AC_INIT([iproc], [0.1], [pperry@stern.nyu.edu])
+AC_SUBST([PACKAGE_DATE], [2013-06-15])
 AC_SUBST([RPACKAGE], AC_PACKAGE_NAME[_]AC_PACKAGE_VERSION[.tar.gz])
 
 AC_CONFIG_SRCDIR([src/history.h])
@@ -38,5 +38,5 @@ AC_CONFIG_LIBOBJ_DIR([lib])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])
-## AC_CONFIG_FILES([interfaces/R/DESCRIPTION])
+AC_CONFIG_FILES([R/DESCRIPTION])
 AC_OUTPUT

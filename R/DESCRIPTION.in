@@ -5,6 +5,7 @@ Title:       Point Process Modeling of Directed Interactions
 Author:      Patrick O. Perry
 Maintainer:  Patrick O. Perry <@PACKAGE_BUGREPORT@>
 Description: 
-    Blah blah blah.
-License:     BSD
+    Implements methods from the paper "Point Process Modelling for Directed
+    Interaction Networks," by Perry and Wolfe (2013).
+License:     GPL
 Encoding:    UTF-8
