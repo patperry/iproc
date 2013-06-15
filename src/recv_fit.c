@@ -17,6 +17,7 @@ void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 		   int exclude_loops, const struct message *msgs, size_t nmsg,
 		   const struct constr *c, const struct newton_ctrl *ctrl)
 {
+	struct newton_ctrl myctrl = NEWTON_CTRL0;
 	size_t dim = design_dim(r) + design2_dim(d);
 
 	assert(!c || constr_dim(c) == dim);
@@ -36,8 +37,10 @@ void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 	fit->imat = xmalloc(dim * (dim + 1) / 2 * sizeof(double));
 	fit->uplo = RECV_LOGLIK_UPLO;
 
-	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
 	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
+	fit->df = recv_loglik_count(&fit->loglik);
+
+	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
 	recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
 
 	if (c) {
@@ -47,7 +50,9 @@ void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 	}
 	fit->ncextra = constr_add_identify(&fit->constr, fit->imat, fit->uplo);
 
-	newton_init(&fit->opt, dim, &fit->constr, ctrl);
+	myctrl.gtol *= MAX(1, fit->df * sqrt(dim));
+
+	newton_init(&fit->opt, dim, &fit->constr, ctrl ? ctrl : &myctrl);
 }
 
 

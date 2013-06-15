@@ -26,6 +26,7 @@ struct recv_fit {
 
 	struct recv_model model;
 	struct recv_loglik loglik;
+	double df;
 	double dev;
 	double *nscore; /* negative score */
 	double *imat;
