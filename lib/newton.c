@@ -149,7 +149,7 @@ static void eval_set(struct newton_eval *e, double val, const double *grad,
 
 	/* TODO: better feasible test, check for nans in resid, grad */
 	eval_set_resid(e, dim, c);
-	e->feasible = blas_dnrm2(dim, params_dual(&e->resid), 1) < nc * 1e-8;
+	e->feasible = blas_dnrm2(nc, params_dual(&e->resid), 1) <= nc * 1e-8;
 	e->indomain = isfinite(val) && isfinite(e->resid_norm);
 }
 
@@ -314,7 +314,7 @@ enum newton_task newton_start(struct newton *opt, const double *x0,
 		task = NEWTON_ERR_DOM;
 
 	/* stop early if residual is below tolerance */
-	} else if (opt->cur->feasible && opt->cur->resid_norm < ctrl->gtol) {
+	} else if (opt->cur->feasible && opt->cur->resid_norm <= ctrl->gtol) {
 		task = NEWTON_CONV;
 
 	/* compute first newton step */
@@ -357,7 +357,7 @@ enum newton_task newton_step(struct newton *opt, double f, const double *grad)
 	eval_set(next, f, grad, dim, c);
 
 	if (next->indomain) {
-		if (next->feasible && next->resid_norm < ctrl->gtol) {
+		if (next->feasible && next->resid_norm <= ctrl->gtol) {
 			task = NEWTON_CONV;
 			goto out;
 		} else if (next->resid_norm <= (1 - alpha * t) * cur->resid_norm) {
@@ -367,7 +367,7 @@ enum newton_task newton_step(struct newton *opt, double f, const double *grad)
 	}
 
 shrink:
-	if (t1 < ctrl->xtol) {
+	if (t1 <= ctrl->xtol) {
 		task = NEWTON_ERR_XTOL;
 	} else if (opt->ls_iter == ctrl->ls_maxit) {
 		task = NEWTON_ERR_LNSRCH;
