@@ -36,8 +36,6 @@ libiproc_a_SOURCES = \
 	src/design2.h \
 	src/history.c \
 	src/history.h \
-	src/recv_boot.c \
-	src/recv_boot.h \
 	src/recv_fit.c \
 	src/recv_fit.h \
 	src/recv_loglik.c \
@@ -195,54 +193,35 @@ libyajl_a_CPPFLAGS = \
 	$(AM_CPPFLAGS)
 
 
-## dist_noinst_DATA = \
-##	@RPACKAGE@
+dist_noinst_DATA = \
+	@RPACKAGE@
 
-## rpkg_sources = \
-##	interfaces/R/DESCRIPTION \
-##	interfaces/R/LICENSE \
-##	interfaces/R/NAMESPACE \
-##	interfaces/R/data/enron.rda \
-##	interfaces/R/inst/extdata/enron/employees.tsv \
-##	interfaces/R/inst/extdata/enron/messages.tsv \
-##	interfaces/R/inst/extdata/enron/recipients.tsv \
-##	interfaces/R/inst/unitTests/runit.actors.R \
-##	interfaces/R/R/actors.R \
-##	interfaces/R/R/design.R \
-##	interfaces/R/R/enron.R \
-##	interfaces/R/R/fit.R \
-##	interfaces/R/R/iproc.R \
-##	interfaces/R/R/loglik.R \
-##	interfaces/R/R/messages.R \
-##	interfaces/R/R/methods.R \
-##	interfaces/R/R/model.R \
-##	interfaces/R/R/runit.R \
-##	interfaces/R/R/utils.R \
-##	interfaces/R/src/Makevars \
-##	interfaces/R/src/Makevars.win \
-##	interfaces/R/src/config.h \
-##	interfaces/R/src/r-actors.c \
-##	interfaces/R/src/r-actors.h \
-##	interfaces/R/src/r-design.c \
-##	interfaces/R/src/r-design.h \
-##	interfaces/R/src/r-fit.c \
-##	interfaces/R/src/r-fit.h \
-##	interfaces/R/src/r-init.c \
-##	interfaces/R/src/r-messages.c \
-##	interfaces/R/src/r-messages.h \
-##	interfaces/R/src/r-utils.c \
-##	interfaces/R/src/r-utils.h \
-##	interfaces/R/tests/doRUnit.R
+rpkg_sources = \
+	R/DESCRIPTION \
+	R/LICENSE \
+	R/NAMESPACE \
+	R/data/enron.rda \
+	R/inst/unitTests/runit.actors.R \
+	R/R/actors.R \
+	R/R/design.R \
+	R/R/enron.R \
+	R/R/fit.R \
+	R/R/iproc.R \
+	R/R/loglik.R \
+	R/R/messages.R \
+	R/R/methods.R \
+	R/R/model.R \
+	R/R/utils.R \
+	R/src/Makevars \
+	R/src/Makevars.win
 
-##rpkg_extra_sources = \
-##	$(libiproc_a_SOURCES) \
-##	$(libcore_a_SOURCES) \
-##	$(libf2c_a_SOURCES) \
-##	$(libminpack_a_SOURCES)
+rpkg_extra_sources = \
+	$(libiproc_a_SOURCES) \
+	$(libcore_a_SOURCES)
 
-##@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
-##	$(AM_V_GEN)cp $(rpkg_extra_sources)  interfaces/R/src
-##	R CMD build interfaces/R
+@RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
+	$(AM_V_GEN)cp $(rpkg_extra_sources)  R/src
+	R CMD build R
 
 check_LIBRARIES = \
 	tests/libcmockery.a \
@@ -355,7 +334,8 @@ TESTS = \
 ##check-local:
 ##	R CMD check --no-codoc --no-examples --no-manual --no-multiarch @RPACKAGE@
 
-##clean-local:
-##	rm -rf iproc.Rcheck
-##	rm -f @RPACKAGE@
-##	rm -f $(addprefix interfaces/R/src/,$(notdir $(rpkg_extra_sources)))
+clean-local:
+	rm -rf iproc.Rcheck
+	rm -f @RPACKAGE@
+	rm -f $(addprefix R/src/,$(notdir $(rpkg_extra_sources)))
+	rm -f R/src/*.o R/src/*.so
