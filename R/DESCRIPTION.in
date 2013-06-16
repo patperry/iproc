@@ -7,5 +7,5 @@ Maintainer:  Patrick O. Perry <@PACKAGE_BUGREPORT@>
 Description: 
     Implements methods from the paper "Point Process Modelling for Directed
     Interaction Networks," by Perry and Wolfe (2013).
-License:     GPL
+License:     BSD
 Encoding:    UTF-8
