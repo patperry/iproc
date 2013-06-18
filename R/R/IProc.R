@@ -177,3 +177,22 @@ is.IProc <- function(x) inherits(x, "IProc")
 as.matrix.IProc <- function(x, ...) {
     x[seq_len(nrow(x)), seq_len(ncol(x)), drop=FALSE]
 }
+
+
+summary.IProc <- function(object, ...) {
+    ans <- list()
+    ans$n <- nrow(object)
+    ans$nsender <- length(attr(object, "sender.orig"))
+    ans$nreceiver <- length(attr(object, "receiver.orig"))
+    class(ans) <- "summary.IProc"
+
+    ans
+}
+
+
+print.summary.IProc <- function(x, ...) {
+    cat(sprintf("%d messages (%d senders, %d receivers)",
+                x$n, x$nsender, x$nreceiver))
+    cat("\n")
+    invisible(x)
+}
