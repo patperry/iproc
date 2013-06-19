@@ -75,60 +75,103 @@ recv.frame <- function(formula, receiver.data = actor.data,
     v <- attr(tm, "variables")[-1L]
     nv <- nrow(attr(tm, "factors"))
     nt <- ncol(attr(tm, "factors"))
+    special.ind <- unlist(attr(tm, "specials"))
 
     # validate the formula
     if (any(attr(tm, "factors") == 2L))
         stop("interactions without main effects are not supported")
-    if (attr(tm, "intercept") == 0L)
-        warning("intercept term is irrelevant")
-    if (attr(tm, "response") == 0L)
-        stop("must specify a response")
-    if (!is.null(attr(tm, "offset")) && attr(tm, "offset") != 0L)
-        stop("offsets are not supported")
+#    if (attr(tm, "intercept") == 0L)
+#        warning("intercept term is irrelevant")
+#    if (attr(tm, "response") == 0L)
+#        stop("must specify a response")
+#    if (!is.null(attr(tm, "offset")) && attr(tm, "offset") != 0L)
+#        stop("offsets are not supported")
 
 
     # extract the response
-    call.y <- v[[attr(tm, "response")]]
-    ny <- length(call.y)
+    if (attr(tm, "response") != 0L) {
+        call.y <- v[[attr(tm, "response")]]
+        ny <- length(call.y)
 
-    if (!is.null(sender.set)) {
-        ny <- ny + 1L
-        call.y[[ny]] <- substitute(sender.set)
-        names(call.y)[[ny]] <- "sender.set"
+        if (!is.null(sender.set)) {
+            ny <- ny + 1L
+            call.y[[ny]] <- substitute(sender.set)
+            names(call.y)[[ny]] <- "sender.set"
+        }
+        if (!is.null(receiver.set)) {
+            ny <- ny + 1L
+            call.y[[ny]] <- substitute(receiver.set)
+            names(call.y)[[ny]] <- "receiver.set"
+        }
+        y <- eval(call.y, message.data)
+
+        if (is.Mesg(y)) {
+            sender.set <- attr(y, "sender.set")
+            receiver.set <- attr(y, "receiver.set")
+        }
+    } else {
+        y <- NULL
     }
-    if (!is.null(receiver.set)) {
-        ny <- ny + 1L
-        call.y[[ny]] <- substitute(receiver.set)
-        names(call.y)[[ny]] <- "receiver.set"
-    }
-    y <- eval(call.y, message.data)
-    if (!inherits(y, "Mesg"))
-        stop("response must be a message object")
+
+    if (is.null(sender.set))
+        stop("must specify sender.set")
+    if (is.null(receiver.set))
+        stop("must specify receiver.set")
+
+#    if (!inherits(y, "Mesg"))
+#        stop("response must be a message object")
 
 
-    # extract the model frame for the receivers
-    mf.tvars <- list()
+    # extract the model frame for the specials and traits
+    mf.specials <- list()
+
+    names <- rownames(attr(tm, "factors"))
     is.trait <- rep(TRUE, nv)
-    is.trait[[attr(tm, "response")]] <- FALSE
+    if (attr(tm, "response") != 0L) {
+        i <- attr(tm, "response")
+        is.trait[[i]] <- FALSE
+    }
 
-    term.labels <- attr(tm, "term.labels")
-    special.ind <- unlist(attr(tm, "specials"))
-    for (i in seq_along(term.labels)) {
-        k <- match(i + 1L, special.ind)
+    for (i in seq_along(names)) {
+        k <- match(i, special.ind)
         if (!is.na(k)) {
-            call.i <- v[[i + 1L]]
-            mf.tvars[[length(mf.tvars) + 1L]] <- eval(call.i, list(...))
-            names(mf.tvars)[[length(mf.tvars)]] <- term.labels[[i]]
-            is.trait[[i + 1L]] <- FALSE
+            call.i <- v[[i]]
+            mf.specials[[length(mf.specials) + 1L]] <- eval(call.i, list(...))
+            names(mf.specials)[[length(mf.specials)]] <- names[[i]]
+            is.trait[[i]] <- FALSE
         }
     }
-    browser()
+
     call.x <- attr(tm, "variables")[c(1L, 1L + which(is.trait))]
     call.x[[1L]] <- quote(data.frame)
     data.x <- eval(call.x, receiver.data)
     mf.traits <- model.frame(~ . - 1, data.x)
     x.traits <- model.matrix(mf.traits, data.x, contrasts)
-    # attr(x.traits, "assign") <- which(is.trait)[attr(x.traits, "assign")]
 
-    browser()
+
+    frame <- list(formula = formula(tm),
+                 terms = tm, response = y, traits = mf.traits,
+                 specials = mf.specials, sender.set = sender.set,
+                 receiver.set = receiver.set)
+    class(frame) <- "recv.frame"
+    frame
+}
+
+
+recv.frame.response <- function(frame)
+{
+    if (inherits(frame), "recv.frame")
+        stop("invalid 'frame' argument")
+    frame$response
+}
+
+recv.model.weights <- function(frame)
+{
+    stop("not implemented")
+}
+
+
+model.matrix.recv.frame <- function(object, time, sender, ...)
+{
+    stop("not implemented")
 }
