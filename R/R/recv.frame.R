@@ -83,20 +83,17 @@ recv.frame <- function(formula, receiver.data = actor.data,
     nv <- nrow(attr(tm, "factors"))
     nt <- ncol(attr(tm, "factors"))
     special.ind <- unlist(attr(tm, "specials"))
+    special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"), is.null)]
 
 
     # validate the formula
     if (any(attr(tm, "factors") == 2L))
         stop("interactions without main effects are not supported")
-    if (bipartite && grep("recv", names(special.ind)) > 0L)
-        stop(sprintf("the special term '%s' is invalid for bipartite processes",
-                     grep("recv", names(special.ind), value=TRUE)[[1L]]))
-    if (bipartite && grep("sib", names(special.ind)) > 0L)
-        stop(sprintf("the special term '%s' is invalid for bipartite processes",
-                     grep("sib", names(special.ind), value=TRUE)[[1L]]))
-    if (bipartite && grep("2", names(special.ind)) > 0L)
-        stop(sprintf("the special term '%s' is invalid for bipartite processes",
-                     grep("2", names(special.ind), value=TRUE)[[1L]]))
+    for (s in c("irecvtot", "nrecvtot", "irecv", "nrecv",
+                "nsend2", "nrecv2", "nsib", "ncosib")) {
+        if (bipartite && s %in% special.names)
+            stop(sprintf("the special term '%s' is invalid for bipartite processes", s))
+    }
 
 
 #    if (attr(tm, "intercept") == 0L)
@@ -191,8 +188,6 @@ recv.frame <- function(formula, receiver.data = actor.data,
     data.x <- eval(call.x, receiver.data)
     mf.traits <- model.frame(~ . - 1, data.x)
     x.traits <- model.matrix(mf.traits, data.x, contrasts)
-
-    browser()
 
     frame <- list(formula = formula(tm),
                   terms = tm, response = y, traits = mf.traits,
