@@ -60,8 +60,9 @@ nsendtot <- var.intervals("nsendtot")
 recv.frame <- function(formula, receiver.data = actor.data,
                        sender.data = actor.data,
                        actor.data = NULL, message.data = NULL,
-                       sender.set = actor.set,
-                       receiver.set = actor.set,
+                       bipartite = is.null(actor.set), loops = FALSE,
+                       sender.set = NULL,
+                       receiver.set = NULL,
                        actor.set = NULL, contrasts = NULL, ...)
 {
     call <- match.call()
@@ -70,6 +71,12 @@ recv.frame <- function(formula, receiver.data = actor.data,
     if (missing(actor.data))
         actor.data <- environment(formula)
 
+    if (!(is.logical(bipartite) && length(bipartite) == 1L))
+        stop("'bipartite' must be a logical scalar")
+    if (!(is.logical(loops) && length(loops) == 1L))
+        stop("'loops' must be a logical scalar")
+
+
     specials <- SPECIALS
     tm <- terms(formula, specials, data=receiver.data)
     v <- attr(tm, "variables")[-1L]
@@ -77,9 +84,21 @@ recv.frame <- function(formula, receiver.data = actor.data,
     nt <- ncol(attr(tm, "factors"))
     special.ind <- unlist(attr(tm, "specials"))
 
+
     # validate the formula
     if (any(attr(tm, "factors") == 2L))
         stop("interactions without main effects are not supported")
+    if (bipartite && grep("recv", names(special.ind)) > 0L)
+        stop(sprintf("the special term '%s' is invalid for bipartite processes",
+                     grep("recv", names(special.ind), value=TRUE)[[1L]]))
+    if (bipartite && grep("sib", names(special.ind)) > 0L)
+        stop(sprintf("the special term '%s' is invalid for bipartite processes",
+                     grep("sib", names(special.ind), value=TRUE)[[1L]]))
+    if (bipartite && grep("2", names(special.ind)) > 0L)
+        stop(sprintf("the special term '%s' is invalid for bipartite processes",
+                     grep("2", names(special.ind), value=TRUE)[[1L]]))
+
+
 #    if (attr(tm, "intercept") == 0L)
 #        warning("intercept term is irrelevant")
 #    if (attr(tm, "response") == 0L)
@@ -106,17 +125,42 @@ recv.frame <- function(formula, receiver.data = actor.data,
         y <- eval(call.y, message.data)
 
         if (is.Mesg(y)) {
-            sender.set <- attr(y, "sender.set")
-            receiver.set <- attr(y, "receiver.set")
+            if (bipartite) {
+                sender.set <- attr(y, "sender.set")
+                receiver.set <- attr(y, "receiver.set")
+            } else {
+                actor.set <- sort(unique(c(attr(y, "sender.set"),
+                                           attr(y, "receiver.set"))))
+            }
         }
     } else {
         y <- NULL
     }
 
-    if (is.null(sender.set))
-        stop("must specify sender.set")
-    if (is.null(receiver.set))
-        stop("must specify receiver.set")
+    if (bipartite) {
+        if (is.null(sender.set))
+            stop("must specify sender.set")
+        if (length(sender.set) == 0L)
+            stop("must have at least one sender")
+        if (is.null(receiver.set))
+            stop("must specify receiver.set")
+        if (length(receiver.set) == 0L)
+            stop("must have at least one receiver")
+        if (!is.null(actor.set))
+            stop("cannot specify actor.set for bipartite processes")
+    } else {
+        if (is.null(actor.set))
+            stop("must specify actor.set")
+        if (length(actor.set) == 0L)
+            stop("must have at least one actor")
+        if (!loops && length(actor.set) == 1L)
+            stop("must have at least two actors")
+        if (!is.null(sender.set))
+            stop("cannot specify sender.set for bipartite processes")
+        if (!is.null(receiver.set))
+            stop("cannot specify receiver.set for bipartite processes")
+
+    }
 
 #    if (!inherits(y, "Mesg"))
 #        stop("response must be a message object")
@@ -148,11 +192,13 @@ recv.frame <- function(formula, receiver.data = actor.data,
     mf.traits <- model.frame(~ . - 1, data.x)
     x.traits <- model.matrix(mf.traits, data.x, contrasts)
 
+    browser()
 
     frame <- list(formula = formula(tm),
-                 terms = tm, response = y, traits = mf.traits,
-                 specials = mf.specials, sender.set = sender.set,
-                 receiver.set = receiver.set)
+                  terms = tm, response = y, traits = mf.traits,
+                  specials = mf.specials, sender.set = sender.set,
+                  receiver.set = receiver.set, actor.set = actor.set,
+                  bipartite = bipartite, loops = loops)
     class(frame) <- "recv.frame"
     frame
 }
@@ -160,7 +206,7 @@ recv.frame <- function(formula, receiver.data = actor.data,
 
 recv.frame.response <- function(frame)
 {
-    if (inherits(frame), "recv.frame")
+    if (!inherits(frame, "recv.frame"))
         stop("invalid 'frame' argument")
     frame$response
 }
