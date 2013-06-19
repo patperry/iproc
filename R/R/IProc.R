@@ -1,4 +1,5 @@
-IProc <- function(time, sender, receiver, attribute = NULL, data = NULL)
+IProc <- function(time, sender, receiver, attribute = NULL, data = NULL,
+                  sender.set = NULL, receiver.set = NULL)
 {
     if (missing(time))
         stop("Must have a time argument")
@@ -34,6 +35,22 @@ IProc <- function(time, sender, receiver, attribute = NULL, data = NULL)
     sender <- as.integer(sender)
 
 
+    # switch to sender set coding, validate sender set
+    sender.set <- as.integer(sender.set)
+    if (length(sender.set) == 0)
+        sender.set <- sort.int(unique(sender))
+
+    if (any(is.na(sender.set)))
+        stop("Sender.set variable contains missing values")
+    if (length(sender.set) != length(unique(sender.set)))
+        stop("Sender.set variable contains duplicate elements")
+
+    sender <- match(sender, sender.set)
+
+    if (any(is.na(sender)))
+        stop("Sender variable contains values outside sender.set variable")
+
+
     # validate and normalize receiver
     receiver <- as.list(receiver)
     if (!all(as.integer(unlist(receiver)) == unlist(receiver)))
@@ -45,6 +62,21 @@ IProc <- function(time, sender, receiver, attribute = NULL, data = NULL)
     receiver <- lapply(receiver, as.integer)
 
 
+    # switch to receiver set coding, validate receiver set
+    receiver.set <- as.integer(receiver.set)
+    if (length(receiver.set) == 0)
+        receiver.set <- sort.int(unique(unlist(receiver)))
+
+    if (any(is.na(receiver.set)))
+        stop("Receiver.set variable contains missing values")
+    if (length(receiver.set) != length(unique(receiver.set)))
+        stop("Receiver.set variable contains duplicate elements")
+    receiver <- lapply(receiver, match, table=receiver.set)
+
+    if (any(is.na(unlist(receiver))))
+        stop("Receiver variable contains values outside receiver.set variable")
+
+
     # validate and normalize attribute
     if (!is.null(attribute)) {
         if (length(attribute) != length(time))
@@ -54,12 +86,6 @@ IProc <- function(time, sender, receiver, attribute = NULL, data = NULL)
 
     attribute <- as.vector(attribute)
 
-
-    # convert ids to compact form
-    sender.orig <- sort.int(unique(sender))
-    sender <- match(sender, sender.orig)
-    receiver.orig <- sort.int(unique(unlist(receiver)))
-    receiver <- lapply(receiver, match, table=receiver.orig)
 
     # sort observations by time
     id <- order(time)
@@ -75,8 +101,8 @@ IProc <- function(time, sender, receiver, attribute = NULL, data = NULL)
 
     attr(z, "id") <- id
     attr(z, "id.orig") <- id.orig
-    attr(z, "sender.orig") <- sender.orig
-    attr(z, "receiver.orig") <- receiver.orig
+    attr(z, "sender.set") <- sender.set
+    attr(z, "receiver.set") <- receiver.set
     class(z) <- c("IProc", class(z))
 
     z
@@ -122,8 +148,8 @@ as.character.IProc <- function(x, ...)
 {
     id <- attr(x, "id")
     id.orig <- attr(x, "id.orig")
-    sender.orig <- attr(x, "sender.orig")
-    receiver.orig <- attr(x, "receiver.orig")
+    sender.set <- attr(x, "sender.set")
+    receiver.set <- attr(x, "receiver.set")
 
     i <- if (missing(i))
         seq_len(nrow(x))
@@ -138,14 +164,14 @@ as.character.IProc <- function(x, ...)
         class(x) <- ctemp
         attr(x, "id") <- id[i]
         attr(x, "id.orig") <- i
-        attr(x, "sender.orig") <- sender.orig
-        attr(x, "receiver.orig") <- receiver.orig
+        attr(x, "sender.set") <- sender.set
+        attr(x, "receiver.set") <- receiver.set
         x
     }
     else { # return  a matrix or vector
         class(x) <- "data.frame"
-        x$sender <- sender.orig[x$sender]
-        x$receiver <- lapply(x$receiver, function(r) receiver.orig[r])
+        x$sender <- sender.set[x$sender]
+        x$receiver <- lapply(x$receiver, function(r) receiver.set[r])
         NextMethod("[")
     }
 }
@@ -182,8 +208,8 @@ as.matrix.IProc <- function(x, ...) {
 summary.IProc <- function(object, ...) {
     ans <- list()
     ans$n <- nrow(object)
-    ans$nsender <- length(attr(object, "sender.orig"))
-    ans$nreceiver <- length(attr(object, "receiver.orig"))
+    ans$nsender <- length(attr(object, "sender.set"))
+    ans$nreceiver <- length(attr(object, "receiver.set"))
     class(ans) <- "summary.IProc"
 
     ans
@@ -196,3 +222,4 @@ print.summary.IProc <- function(x, ...) {
     cat("\n")
     invisible(x)
 }
+
