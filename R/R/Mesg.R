@@ -1,5 +1,5 @@
-IProc <- function(time, sender, receiver, attribute = NULL, data = NULL,
-                  sender.set = NULL, receiver.set = NULL)
+Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
+                 sender.set = NULL, receiver.set = NULL)
 {
     if (missing(time))
         stop("Must have a time argument")
@@ -103,15 +103,15 @@ IProc <- function(time, sender, receiver, attribute = NULL, data = NULL,
     attr(z, "id.orig") <- id.orig
     attr(z, "sender.set") <- sender.set
     attr(z, "receiver.set") <- receiver.set
-    class(z) <- c("IProc", class(z))
+    class(z) <- c("Mesg", class(z))
 
     z
 }
 
 
-print.IProc <- function(x, ...)
+print.Mesg <- function(x, ...)
 {
-    str <- as.character.IProc(x)
+    str <- as.character.Mesg(x)
     n <- length(str)
 
     if (n > 0) {
@@ -124,14 +124,14 @@ print.IProc <- function(x, ...)
         cat(paste(pad, "[", i, "] ", str, sep=""), sep="\n")
 
     } else {
-        cat("IProc(0)")
+        cat("Mesg(0)")
     }
 
     invisible(str)
 }
 
 
-as.character.IProc <- function(x, ...)
+as.character.Mesg <- function(x, ...)
 {
     tw <- if(inherits(x$time, "POSIXct")) 80 else NULL
     nr <- sapply(x$receiver, length)
@@ -144,7 +144,7 @@ as.character.IProc <- function(x, ...)
 }
 
 
-"[.IProc" <- function(x, i, j, drop = FALSE)
+"[.Mesg" <- function(x, i, j, drop = FALSE)
 {
     id <- attr(x, "id")
     id.orig <- attr(x, "id.orig")
@@ -155,7 +155,7 @@ as.character.IProc <- function(x, ...)
         seq_len(nrow(x))
     else id.orig[i]
 
-    # If only 1 subscript is given, the result will still be an IProc object,
+    # If only 1 subscript is given, the result will still be an Mesg object,
     # and the drop argument is ignored.
     if (missing(j)) {
         ctemp <- class(x)
@@ -176,47 +176,47 @@ as.character.IProc <- function(x, ...)
     }
 }
 
-"$.IProc" <- function(x, name)
+"$.Mesg" <- function(x, name)
 {
     x[,name]
 }
 
-"$<-.IProc" <- function(x, name, value) stop("Cannot reassign intersection process values")
+"$<-.Mesg" <- function(x, name, value) stop("Cannot modify messages")
 
 
-"[[.IProc" <- function(x, i, j, ..., exact = TRUE)
+"[[.Mesg" <- function(x, i, j, ..., exact = TRUE)
 {
     x <- as.matrix(x)
     NextMethod("[[")
 }
 
-"[[<-.IProc" <- function(x, i, j, ..., value) stop("Cannot reassign interaction process values")
+"[[<-.Mesg" <- function(x, i, j, ..., value) stop("Cannot modify messages")
 
 
-is.na.IProc <- function(x) rep(FALSE, nrow(x))
+is.na.Mesg <- function(x) rep(FALSE, nrow(x))
 
-Math.IProc <- function(...) stop("Invalid operation on an interaction process")
-Ops.IProc <- function(...) stop("Invalid operation on an interaction process")
-Summary.IProc <- function(...) stop("Invalid operation on an interaction process")
-is.IProc <- function(x) inherits(x, "IProc")
+Math.Mesg <- function(...) stop("Invalid operation on a message")
+Ops.Mesg <- function(...) stop("Invalid operation on a message")
+Summary.Mesg <- function(...) stop("Invalid operation on a message")
+is.Mesg <- function(x) inherits(x, "Mesg")
 
-as.matrix.IProc <- function(x, ...) {
+as.matrix.Mesg <- function(x, ...) {
     x[seq_len(nrow(x)), seq_len(ncol(x)), drop=FALSE]
 }
 
 
-summary.IProc <- function(object, ...) {
+summary.Mesg <- function(object, ...) {
     ans <- list()
     ans$n <- nrow(object)
     ans$nsender <- length(attr(object, "sender.set"))
     ans$nreceiver <- length(attr(object, "receiver.set"))
-    class(ans) <- "summary.IProc"
+    class(ans) <- "summary.Mesg"
 
     ans
 }
 
 
-print.summary.IProc <- function(x, ...) {
+print.summary.Mesg <- function(x, ...) {
     cat(sprintf("%d messages (%d senders, %d receivers)",
                 x$n, x$nsender, x$nreceiver))
     cat("\n")
