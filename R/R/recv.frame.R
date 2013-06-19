@@ -57,13 +57,11 @@ nrecvtot <- var.intervals("nrecvtot")
 nsendtot <- var.intervals("nsendtot")
 
 
-recv.frame <- function(formula, receiver.data = actor.data,
-                       sender.data = actor.data,
-                       actor.data = NULL, message.data = NULL,
+recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
+                       sender.data = actor.data, receiver.data = actor.data,
                        bipartite = is.null(actor.set), loops = FALSE,
-                       sender.set = NULL,
-                       receiver.set = NULL,
-                       actor.set = NULL, contrasts = NULL, ...)
+                       actor.set = NULL, sender.set = NULL,
+                       receiver.set = NULL, ...)
 {
     call <- match.call()
     if (missing(message.data))
@@ -96,15 +94,7 @@ recv.frame <- function(formula, receiver.data = actor.data,
     }
 
 
-#    if (attr(tm, "intercept") == 0L)
-#        warning("intercept term is irrelevant")
-#    if (attr(tm, "response") == 0L)
-#        stop("must specify a response")
-#    if (!is.null(attr(tm, "offset")) && attr(tm, "offset") != 0L)
-#        stop("offsets are not supported")
-
-
-    # extract the response
+    # extract the response (if one exists)
     if (attr(tm, "response") != 0L) {
         call.y <- v[[attr(tm, "response")]]
         ny <- length(call.y)
@@ -159,9 +149,6 @@ recv.frame <- function(formula, receiver.data = actor.data,
 
     }
 
-#    if (!inherits(y, "Mesg"))
-#        stop("response must be a message object")
-
 
     # extract the model frame for the specials and traits
     mf.specials <- list()
@@ -187,10 +174,10 @@ recv.frame <- function(formula, receiver.data = actor.data,
     call.x[[1L]] <- quote(data.frame)
     data.x <- eval(call.x, receiver.data)
     mf.traits <- model.frame(~ . - 1, data.x)
-    x.traits <- model.matrix(mf.traits, data.x, contrasts)
 
     frame <- list(formula = formula(tm),
                   terms = tm, response = y, traits = mf.traits,
+                  traits.data = data.x,
                   specials = mf.specials, sender.set = sender.set,
                   receiver.set = receiver.set, actor.set = actor.set,
                   bipartite = bipartite, loops = loops)
