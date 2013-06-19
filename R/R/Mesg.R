@@ -2,11 +2,11 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
                  sender.set = NULL, receiver.set = NULL)
 {
     if (missing(time))
-        stop("Must have a time argument")
+        stop("must have a time argument")
     if (missing(sender))
-        stop("Must have a sender argument")
+        stop("must have a sender argument")
     if (missing(receiver))
-        stop("Must have a receiver argument")
+        stop("must have a receiver argument")
 
     time <- eval(call("with", substitute(data), substitute(time)))
     sender <- eval(call("with", substitute(data), substitute(sender)))
@@ -16,20 +16,20 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
 
     # validate and normalize time
     if (!is.numeric(unclass(time)) && !is.integer(time))
-        stop("Time variable is not numeric, integer, or POSIXct")
+        stop("time variable is not numeric, integer, or POSIXct")
     if (any(is.na(time)))
-        stop("Time variable contains missing values")
+        stop("time variable contains missing values")
     if (any(is.nan(time)))
-        stop("Time variable contains NaN values")
+        stop("time variable contains NaN values")
 
     storage.mode(time) <- "numeric"
 
 
     # validate and normalize sender
     if (!all(sender == as.integer(sender))) # fails on NaN, NA, Inf
-        stop("Sender variable contains non-integer values")
+        stop("sender variable contains non-integer values")
     if (length(sender) != length(time))
-        stop(sprintf("Number of senders is %d, should equal %d (number of times)",
+        stop(sprintf("number of senders is %d, should equal %d (number of times)",
              length(sender), length(time)))
 
     sender <- as.integer(sender)
@@ -41,22 +41,22 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
         sender.set <- sort.int(unique(sender))
 
     if (any(is.na(sender.set)))
-        stop("Sender.set variable contains missing values")
+        stop("sender.set variable contains missing values")
     if (length(sender.set) != length(unique(sender.set)))
-        stop("Sender.set variable contains duplicate elements")
+        stop("sender.set variable contains duplicate elements")
 
     sender <- match(sender, sender.set)
 
     if (any(is.na(sender)))
-        stop("Sender variable contains values outside sender.set variable")
+        stop("sender variable contains values outside sender.set variable")
 
 
     # validate and normalize receiver
     receiver <- as.list(receiver)
     if (!all(as.integer(unlist(receiver)) == unlist(receiver)))
-        stop("Receiver variable contains non-integer values")
+        stop("receiver variable contains non-integer values")
     if (length(receiver) != length(time))
-        stop(sprintf("Number of receivers is %d, should equal %d (number of times)",
+        stop(sprintf("number of receivers is %d, should equal %d (number of times)",
              length(receiver), length(time)))
 
     receiver <- lapply(receiver, as.integer)
@@ -68,19 +68,19 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
         receiver.set <- sort.int(unique(unlist(receiver)))
 
     if (any(is.na(receiver.set)))
-        stop("Receiver.set variable contains missing values")
+        stop("receiver.set variable contains missing values")
     if (length(receiver.set) != length(unique(receiver.set)))
-        stop("Receiver.set variable contains duplicate elements")
+        stop("receiver.set variable contains duplicate elements")
     receiver <- lapply(receiver, match, table=receiver.set)
 
     if (any(is.na(unlist(receiver))))
-        stop("Receiver variable contains values outside receiver.set variable")
+        stop("receiver variable contains values outside receiver.set variable")
 
 
     # validate and normalize attribute
     if (!is.null(attribute)) {
         if (length(attribute) != length(time))
-            stop(sprintf("Number of attributes is %d, should equal %d (number of times)",
+            stop(sprintf("number of attributes is %d, should equal %d (number of times)",
                          length(attribute), length(time)))
     }
 
@@ -181,7 +181,7 @@ as.character.Mesg <- function(x, ...)
     x[,name]
 }
 
-"$<-.Mesg" <- function(x, name, value) stop("Cannot modify messages")
+"$<-.Mesg" <- function(x, name, value) stop("cannot modify messages")
 
 
 "[[.Mesg" <- function(x, i, j, ..., exact = TRUE)
@@ -190,14 +190,14 @@ as.character.Mesg <- function(x, ...)
     NextMethod("[[")
 }
 
-"[[<-.Mesg" <- function(x, i, j, ..., value) stop("Cannot modify messages")
+"[[<-.Mesg" <- function(x, i, j, ..., value) stop("cannot modify messages")
 
 
 is.na.Mesg <- function(x) rep(FALSE, nrow(x))
 
-Math.Mesg <- function(...) stop("Invalid operation on a message")
-Ops.Mesg <- function(...) stop("Invalid operation on a message")
-Summary.Mesg <- function(...) stop("Invalid operation on a message")
+Math.Mesg <- function(...) stop("invalid operation on a message")
+Ops.Mesg <- function(...) stop("invalid operation on a message")
+Summary.Mesg <- function(...) stop("invalid operation on a message")
 is.Mesg <- function(x) inherits(x, "Mesg")
 
 as.matrix.Mesg <- function(x, ...) {
