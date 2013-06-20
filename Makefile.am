@@ -201,19 +201,13 @@ rpkg_sources = \
 	R/LICENSE \
 	R/NAMESPACE \
 	R/data/enron.rda \
-	R/inst/unitTests/runit.actors.R \
-	R/R/actors.R \
-	R/R/design.R \
-	R/R/enron.R \
+	R/R/Mesg.R \
 	R/R/fit.R \
-	R/R/iproc.R \
-	R/R/loglik.R \
-	R/R/messages.R \
-	R/R/methods.R \
-	R/R/model.R \
-	R/R/utils.R \
+	R/R/recv.frame.R \
+	R/R/recv.model.R \
 	R/src/Makevars \
-	R/src/Makevars.win
+	R/src/Makevars.win \
+	R/src/r-recv_model.c
 
 rpkg_extra_sources = \
 	$(libiproc_a_SOURCES) \
