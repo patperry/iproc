@@ -59,7 +59,7 @@ nsendtot <- var.intervals("nsendtot")
 
 recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
                        sender.data = actor.data, receiver.data = actor.data,
-                       bipartite = is.null(actor.set), loops = FALSE,
+                       bipartite = FALSE, loops = FALSE,
                        actor.set = NULL, sender.set = NULL,
                        receiver.set = NULL, ...)
 {

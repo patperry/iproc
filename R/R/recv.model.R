@@ -1,7 +1,7 @@
 recv.model <- function(formula, message.data,
                        actor.data, receiver.data = actor.data,
                        sender.data = actor.data,
-                       bipartite = is.null(actor.set), loops = FALSE,
+                       bipartite = FALSE, loops = FALSE,
                        actor.set = NULL, sender.set = NULL,
                        receiver.set = NULL,
                        method = "newton",
