@@ -154,11 +154,7 @@ recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
     mf.specials <- list()
 
     names <- rownames(attr(tm, "factors"))
-    is.trait <- rep(TRUE, nv)
-    if (attr(tm, "response") != 0L) {
-        i <- attr(tm, "response")
-        is.trait[[i]] <- FALSE
-    }
+    types <- rep(NA, nv)
 
     for (i in seq_along(names)) {
         k <- match(i, special.ind)
@@ -166,18 +162,26 @@ recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
             call.i <- v[[i]]
             mf.specials[[length(mf.specials) + 1L]] <- eval(call.i, list(...))
             names(mf.specials)[[length(mf.specials)]] <- names[[i]]
-            is.trait[[i]] <- FALSE
+            types[[i]] <- "special"
+        } else if (i == attr(tm, "response")) {
+            types[[i]] <- "response"
+        } else {
+            types[[i]] <- "trait"
         }
     }
 
-    call.x <- attr(tm, "variables")[c(1L, 1L + which(is.trait))]
+    call.x <- attr(tm, "variables")[c(1L, 1L + which(types == "trait"))]
     call.x[[1L]] <- quote(data.frame)
     data.x <- eval(call.x, receiver.data)
-    mf.traits <- model.frame(~ . - 1, data.x)
 
-    frame <- list(formula = formula(tm),
-                  terms = tm, response = y, traits = mf.traits,
-                  traits.data = data.x,
+    env <- as.environment(data.x)
+    parent.env(env) <- parent.frame()
+    mf.traits <- model.frame(~ ., data.x)
+    environment(mf.traits) <- env
+
+    frame <- list(formula = formula(tm), terms = tm,
+                  types = types,
+                  response = y, traits = mf.traits,
                   specials = mf.specials, sender.set = sender.set,
                   receiver.set = receiver.set, actor.set = actor.set,
                   bipartite = bipartite, loops = loops)

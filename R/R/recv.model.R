@@ -40,8 +40,26 @@ recv.model <- function(formula, message.data,
     if (nrow(attr(mt, "factors")) != ncol(attr(mt, "factors")) + 1L)
         stop("interactions are not implemented")
 
-    x.traits <- model.matrix(mf$traits, mf$traits.data, contrasts)
 
-    browser()
+    time <- y$time
+    sender <- y$sender
+    receiver <- y$receiver
+    attribute <- y$attribute
+
+    sender.set <- if (is.null(mf$sender.set)) mf$actor.set
+        else mf$sender.set
+    receiver.set <- if (is.null(mf$receiver.set)) mf$actor.set
+        else mf$receiver.set
+    loops <- mf$loops
+
+    factors <- attr(mt, "factors")
+    types <- mf$types
+    traits <- model.matrix(mf$traits, contrasts.arg=contrasts)
+    specials <- mf$specials
+
+    #model <- .Call("Riproc_recv_model", time, sender, receiver, attribute,
+    #               sender.set, receiver.set, loops, factors, types, traits,
+    #               specials)
+    #model
 }
 
