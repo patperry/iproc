@@ -1,5 +1,4 @@
-Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
-                 sender.set = NULL, receiver.set = NULL)
+Mesg <- function(time, sender, receiver, data, message.attr = NULL)
 {
     if (missing(time))
         stop("must have a time argument")
@@ -7,11 +6,14 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
         stop("must have a sender argument")
     if (missing(receiver))
         stop("must have a receiver argument")
+    if (missing(data))
+        data <- parent.frame()
 
-    time <- eval(call("with", substitute(data), substitute(time)))
-    sender <- eval(call("with", substitute(data), substitute(sender)))
-    receiver <- eval(call("with", substitute(data), substitute(receiver)))
-    attribute <- eval(call("with", substitute(data), substitute(attribute)))
+    time <- eval(substitute(time), data)
+    sender <- eval(substitute(sender), data)
+    receiver <- eval(substitute(receiver), data)
+    if (!missing(message.attr))
+        message.attr <- eval(substitute(message.attr), data)
 
 
     # validate and normalize time
@@ -35,22 +37,6 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
     sender <- as.integer(sender)
 
 
-    # switch to sender set coding, validate sender set
-    sender.set <- as.integer(sender.set)
-    if (length(sender.set) == 0)
-        sender.set <- sort.int(unique(sender))
-
-    if (any(is.na(sender.set)))
-        stop("sender.set variable contains missing values")
-    if (length(sender.set) != length(unique(sender.set)))
-        stop("sender.set variable contains duplicate elements")
-
-    sender <- match(sender, sender.set)
-
-    if (any(is.na(sender)))
-        stop("sender variable contains values outside sender.set variable")
-
-
     # validate and normalize receiver
     receiver <- as.list(receiver)
     if (!all(as.integer(unlist(receiver)) == unlist(receiver)))
@@ -58,51 +44,28 @@ Mesg <- function(time, sender, receiver, attribute = NULL, data = NULL,
     if (length(receiver) != length(time))
         stop(sprintf("number of receivers is %d, should equal %d (number of times)",
              length(receiver), length(time)))
+    if (length(unlist(lapply(receiver, unique))) != length(unlist(receiver)))
+        stop("receiver variable contains repeated entries (on same message)")
 
     receiver <- lapply(receiver, as.integer)
 
 
-    # switch to receiver set coding, validate receiver set
-    receiver.set <- as.integer(receiver.set)
-    if (length(receiver.set) == 0)
-        receiver.set <- sort.int(unique(unlist(receiver)))
-
-    if (any(is.na(receiver.set)))
-        stop("receiver.set variable contains missing values")
-    if (length(receiver.set) != length(unique(receiver.set)))
-        stop("receiver.set variable contains duplicate elements")
-    receiver <- lapply(receiver, match, table=receiver.set)
-
-    if (any(is.na(unlist(receiver))))
-        stop("receiver variable contains values outside receiver.set variable")
-
-
-    # validate and normalize attribute
-    if (!is.null(attribute)) {
-        if (length(attribute) != length(time))
+    # validate and normalize message.attr
+    if (!is.null(message.attr)) {
+        if (length(message.attr) != length(time))
             stop(sprintf("number of attributes is %d, should equal %d (number of times)",
-                         length(attribute), length(time)))
+                         length(message.attr), length(time)))
     }
 
-    attribute <- as.vector(attribute)
 
+    if (is.unsorted(time))
+        warning("time is not sorted in ascending order; efficiency may be suboptimal")
 
-    # sort observations by time
-    id <- order(time)
-    id.orig <- rank(unclass(time)) # 'unclass' is a work-around for a bug in R-2.15
-    time <- time[id]
-    sender <- sender[id]
-    receiver <- receiver[id]
-    attribute <- attribute[id]
+    z <- data.frame(time = time, sender = sender)
+    z$receiver <- receiver # need a separate assignment in case receiver is a list
+    if (!is.null(message.attr))
+        z$message.attr <- message.attr
 
-    z <- data.frame(time = I(time), sender = sender, receiver = I(receiver))
-    if (!is.null(attribute))
-        z$attribute <- I(attribute)
-
-    attr(z, "id") <- id
-    attr(z, "id.orig") <- id.orig
-    attr(z, "sender.set") <- sender.set
-    attr(z, "receiver.set") <- receiver.set
     class(z) <- c("Mesg", class(z))
 
     z
@@ -113,18 +76,23 @@ print.Mesg <- function(x, ...)
 {
     str <- as.character.Mesg(x)
     n <- length(str)
+    names <- rownames(x)
 
-    if (n > 0) {
-        i <- seq_len(n)
-        d <- 1L + floor(log10(i))
-        dmax <- d[n]
-        spaces <- "                               " # 31 spaces
-        pad <- sapply(dmax - d, substr, x=spaces, start=1)
+    if (is.null(names)) {
+        if (n > 0) {
+            i <- seq_len(n)
+            d <- 1L + floor(log10(i))
+            dmax <- d[n]
+            spaces <- "                               " # 31 spaces
+            pad <- sapply(dmax - d, substr, x=spaces, start=1)
 
-        cat(paste(pad, "[", i, "] ", str, sep=""), sep="\n")
+            cat(paste(pad, "[", i, "] ", str, sep=""), sep="\n")
 
+        } else {
+            cat("Mesg(0)")
+        }
     } else {
-        cat("Mesg(0)")
+        cat(paste(format(names), str, sep=" "), sep="\n")
     }
 
     invisible(str)
@@ -135,65 +103,29 @@ as.character.Mesg <- function(x, ...)
 {
     tw <- if(inherits(x$time, "POSIXct")) 80 else NULL
     nr <- sapply(x$receiver, length)
-    paste(format(x$time, width=tw), " : ",
-          x$sender, " -> ",
-          ifelse(nr > 1, "[ ", ""),
-            format(x$receiver),
-          ifelse(nr > 1, " ]", ""),
-          sep="")
+    str <- paste(format(x$time, width=tw), " : ",
+                 x$sender, " -> ",
+                 ifelse(nr > 1, "[ ", ""),
+                 format(x$receiver),
+                 ifelse(nr > 1, " ]", ""),
+                 sep="")
+    names(str) <- rownames(x)
+    str
 }
 
 
-"[.Mesg" <- function(x, i, j, drop = FALSE)
+is.na.Mesg <- function(x)
 {
-    id <- attr(x, "id")
-    id.orig <- attr(x, "id.orig")
-    sender.set <- attr(x, "sender.set")
-    receiver.set <- attr(x, "receiver.set")
-
-    i <- if (missing(i))
-        seq_len(nrow(x))
-    else id.orig[i]
-
-    # If only 1 subscript is given, the result will still be an Mesg object,
-    # and the drop argument is ignored.
-    if (missing(j)) {
-        ctemp <- class(x)
-        class(x) <- "data.frame"
-        x <- x[i,, drop=FALSE]
-        class(x) <- ctemp
-        attr(x, "id") <- id[i]
-        attr(x, "id.orig") <- i
-        attr(x, "sender.set") <- sender.set
-        attr(x, "receiver.set") <- receiver.set
-        x
+    res <- data.frame(time = is.na(x$time),
+                      sender = is.na(x$sender),
+                      receiver = sapply(x$receiver, function(r)
+                                        is.null(r) || length(r) == 0L || any(is.na(r))))
+    if (!is.null(x$message.attr)) {
+        res$message.attr <- sapply(x$message.attr, is.na)
     }
-    else { # return  a matrix or vector
-        class(x) <- "data.frame"
-        x$sender <- sender.set[x$sender]
-        x$receiver <- lapply(x$receiver, function(r) receiver.set[r])
-        NextMethod("[")
-    }
+
+    res
 }
-
-"$.Mesg" <- function(x, name)
-{
-    x[,name]
-}
-
-"$<-.Mesg" <- function(x, name, value) stop("cannot modify messages")
-
-
-"[[.Mesg" <- function(x, i, j, ..., exact = TRUE)
-{
-    x <- as.matrix(x)
-    NextMethod("[[")
-}
-
-"[[<-.Mesg" <- function(x, i, j, ..., value) stop("cannot modify messages")
-
-
-is.na.Mesg <- function(x) rep(FALSE, nrow(x))
 
 Math.Mesg <- function(...) stop("invalid operation on a message")
 Ops.Mesg <- function(...) stop("invalid operation on a message")
@@ -208,8 +140,8 @@ as.matrix.Mesg <- function(x, ...) {
 summary.Mesg <- function(object, ...) {
     ans <- list()
     ans$n <- nrow(object)
-    ans$nsender <- length(attr(object, "sender.set"))
-    ans$nreceiver <- length(attr(object, "receiver.set"))
+    ans$nsender <- max(object$sender)
+    ans$nreceiver <- max(unlist(object$receiver))
     class(ans) <- "summary.Mesg"
 
     ans
