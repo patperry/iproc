@@ -1,6 +1,6 @@
 get.factors <- function(terms)
 {
-    v <- attr(terms, "variables")[[-1L]]
+    v <- attr(terms, "variables")[-1L]
 
     factors <- attr(terms, "factors")
     if (length(factors) == 0L) {
