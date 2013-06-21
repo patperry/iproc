@@ -74,8 +74,11 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
         stop("'bipartite' must be a logical scalar")
     if (!(is.logical(loops) && length(loops) == 1L))
         stop("'loops' must be a logical scalar")
-    if (!bipartite && !loops && n == 1L) {
+    if (!bipartite && !loops && n == 1L)
         stop("must have at least two receivers")
+    if (bipartite && !missing(loops) && !is.null(loops) && !is.na(loops)) {
+        warning("'loops' argument is ignored for bipartite networks")
+        loops <- NA
     }
 
 

@@ -43,7 +43,7 @@ recv.model <- function(formula, message.data, receiver.data,
     receiver <- y$receiver
     message.attr <- y$message.attr
 
-    loops <- mf$loops
+    loops <- if (is.na(mf$loops)) TRUE else mf$loops
 
     types <- mf$types
     if (!is.null(mf$traits)) {
@@ -58,9 +58,9 @@ recv.model <- function(formula, message.data, receiver.data,
     nrecv <- n
     nsend <- if (bipartite) max(sender) else n
 
-    #model <- .Call("Riproc_recv_model", time, sender, receiver, message.attr,
-    #               nsend, nrecv, loops, factors, types, traits,
-    #               specials)
-    #model
+    model <- .Call("Riproc_recv_model", time, sender, receiver, message.attr,
+                   nsend, nrecv, loops, factors, types, traits,
+                   specials)
+    model
 }
 

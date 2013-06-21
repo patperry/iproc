@@ -23,6 +23,8 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
         stop("time variable contains missing values")
     if (any(is.nan(time)))
         stop("time variable contains NaN values")
+    if (any(is.infinite(time)))
+        stop("time variable contains infinite values")
 
     storage.mode(time) <- "numeric"
 
