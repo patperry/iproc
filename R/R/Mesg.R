@@ -30,6 +30,8 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
     # validate and normalize sender
     if (!all(sender == as.integer(sender))) # fails on NaN, NA, Inf
         stop("sender variable contains non-integer values")
+    if (!all(sender > 0L))
+        stop("sender variable contains non-positive values")
     if (length(sender) != length(time))
         stop(sprintf("number of senders is %d, should equal %d (number of times)",
              length(sender), length(time)))
@@ -41,6 +43,8 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
     receiver <- as.list(receiver)
     if (!all(as.integer(unlist(receiver)) == unlist(receiver)))
         stop("receiver variable contains non-integer values")
+    if (!all(unlist(receiver) > 0L))
+        stop("receiver variable contains non-positive values")
     if (length(receiver) != length(time))
         stop(sprintf("number of receivers is %d, should equal %d (number of times)",
              length(receiver), length(time)))

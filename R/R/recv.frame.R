@@ -57,35 +57,40 @@ nrecvtot <- var.intervals("nrecvtot")
 nsendtot <- var.intervals("nsendtot")
 
 
-recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
-                       sender.data = actor.data, receiver.data = actor.data,
-                       bipartite = FALSE, loops = FALSE,
-                       actor.set = NULL, sender.set = NULL,
-                       receiver.set = NULL, ...)
+recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
+                       sender.data = receiver.data, n = nrow(receiver.data),
+                       bipartite = FALSE, loops = FALSE, ...)
 {
-    call <- match.call()
     if (missing(message.data))
         message.data <- environment(formula)
-    if (missing(actor.data))
-        actor.data <- environment(formula)
+    if (missing(receiver.data))
+        receiver.data <- environment(formula)
 
+    if (missing(n) && missing(receiver.data))
+        stop("must specify 'n'")
+    if (!(length(n) == 1L && n == as.integer(n) && n > 0L))
+        stop("'n' must be a positive integer scalar")
     if (!(is.logical(bipartite) && length(bipartite) == 1L))
         stop("'bipartite' must be a logical scalar")
     if (!(is.logical(loops) && length(loops) == 1L))
         stop("'loops' must be a logical scalar")
+    if (!bipartite && !loops && n == 1L) {
+        stop("must have at least two receivers")
+    }
 
 
     specials <- SPECIALS
     tm <- terms(formula, specials, data=receiver.data)
     v <- attr(tm, "variables")[-1L]
-    nv <- nrow(attr(tm, "factors"))
-    nt <- ncol(attr(tm, "factors"))
+    factors <- get.factors(tm)
+    nv <- nrow(factors)
+    nt <- ncol(factors)
     special.ind <- unlist(attr(tm, "specials"))
     special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"), is.null)]
 
 
     # validate the formula
-    if (any(attr(tm, "factors") == 2L))
+    if (any(factors == 2L))
         stop("interactions without main effects are not supported")
     for (s in c("irecvtot", "nrecvtot", "irecv", "nrecv",
                 "nsend2", "nrecv2", "nsib", "ncosib")) {
@@ -97,63 +102,24 @@ recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
     # extract the response (if one exists)
     if (attr(tm, "response") != 0L) {
         call.y <- v[[attr(tm, "response")]]
-        ny <- length(call.y)
-
-        if (!is.null(sender.set)) {
-            ny <- ny + 1L
-            call.y[[ny]] <- substitute(sender.set)
-            names(call.y)[[ny]] <- "sender.set"
-        }
-        if (!is.null(receiver.set)) {
-            ny <- ny + 1L
-            call.y[[ny]] <- substitute(receiver.set)
-            names(call.y)[[ny]] <- "receiver.set"
-        }
         y <- eval(call.y, message.data)
 
         if (is.Mesg(y)) {
-            if (bipartite) {
-                sender.set <- attr(y, "sender.set")
-                receiver.set <- attr(y, "receiver.set")
-            } else {
-                actor.set <- sort(unique(c(attr(y, "sender.set"),
-                                           attr(y, "receiver.set"))))
-            }
+            if (!bipartite && max(y$sender) > n)
+                stop("message sender is out of range")
+            if (max(unlist(y$receiver)) > n)
+                stop("message receiver is out of range")
         }
     } else {
         y <- NULL
     }
 
-    if (bipartite) {
-        if (is.null(sender.set))
-            stop("must specify sender.set")
-        if (length(sender.set) == 0L)
-            stop("must have at least one sender")
-        if (is.null(receiver.set))
-            stop("must specify receiver.set")
-        if (length(receiver.set) == 0L)
-            stop("must have at least one receiver")
-        if (!is.null(actor.set))
-            stop("cannot specify actor.set for bipartite processes")
-    } else {
-        if (is.null(actor.set))
-            stop("must specify actor.set")
-        if (length(actor.set) == 0L)
-            stop("must have at least one actor")
-        if (!loops && length(actor.set) == 1L)
-            stop("must have at least two actors")
-        if (!is.null(sender.set))
-            stop("cannot specify sender.set for bipartite processes")
-        if (!is.null(receiver.set))
-            stop("cannot specify receiver.set for bipartite processes")
-
-    }
 
 
     # extract the model frame for the specials and traits
     mf.specials <- list()
 
-    names <- rownames(attr(tm, "factors"))
+    names <- rownames(factors)
     types <- rep(NA, nv)
 
     for (i in seq_along(names)) {
@@ -170,21 +136,25 @@ recv.frame <- function(formula, message.data = NULL, actor.data = NULL,
         }
     }
 
-    call.x <- attr(tm, "variables")[c(1L, 1L + which(types == "trait"))]
-    call.x[[1L]] <- quote(data.frame)
-    data.x <- eval(call.x, receiver.data)
+    if (any(types == "trait")) {
+        fmla.x <- ~ .
+        call.x <- attr(tm, "variables")[c(1L, 1L + which(types == "trait"))]
+        call.x[[1L]] <- quote(data.frame)
+        data.x <- eval(call.x, receiver.data)
 
-    env <- as.environment(data.x)
-    parent.env(env) <- parent.frame()
-    mf.traits <- model.frame(~ ., data.x)
-    environment(mf.traits) <- env
+        env.x <- as.environment(data.x)
+        parent.env(env.x) <- parent.frame()
 
-    frame <- list(formula = formula(tm), terms = tm,
-                  types = types,
-                  response = y, traits = mf.traits,
-                  specials = mf.specials, sender.set = sender.set,
-                  receiver.set = receiver.set, actor.set = actor.set,
-                  bipartite = bipartite, loops = loops)
+        mf.traits <- model.frame(fmla.x, data.x)
+        environment(mf.traits) <- env.x
+    } else {
+        mf.traits <- NULL
+    }
+
+
+    frame <- list(formula = formula(tm), terms = tm, types = types,
+                  response = y, traits = mf.traits, specials = mf.specials,
+                  n = n, bipartite = bipartite, loops = loops)
     class(frame) <- "recv.frame"
     frame
 }

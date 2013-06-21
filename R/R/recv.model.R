@@ -1,10 +1,6 @@
-recv.model <- function(formula, message.data,
-                       actor.data, receiver.data = actor.data,
-                       sender.data = actor.data,
-                       bipartite = FALSE, loops = FALSE,
-                       actor.set = NULL, sender.set = NULL,
-                       receiver.set = NULL,
-                       method = "newton",
+recv.model <- function(formula, message.data, receiver.data,
+                       sender.data = receiver.data, n = nrow(receiver.data),
+                       bipartite = FALSE, loops = FALSE, method = "newton",
                        contrasts = NULL, ...)
 {
     call <- match.call()
@@ -25,6 +21,7 @@ recv.model <- function(formula, message.data,
                         method))
 
     mt <- mf$terms
+    factors <- get.factors(mt)
 
     y <- recv.frame.response(mf)
     if (is.null(y))
@@ -37,28 +34,32 @@ recv.model <- function(formula, message.data,
     if (!is.null(attr(mt, "offset")) && attr(mt, "offset") != 0L)
         stop("offsets are not supported")
 
-    if (nrow(attr(mt, "factors")) != ncol(attr(mt, "factors")) + 1L)
+    if (nrow(factors) != ncol(factors) + 1L)
         stop("interactions are not implemented")
 
 
     time <- y$time
     sender <- y$sender
     receiver <- y$receiver
-    attribute <- y$attribute
+    message.attr <- y$message.attr
 
-    sender.set <- if (is.null(mf$sender.set)) mf$actor.set
-        else mf$sender.set
-    receiver.set <- if (is.null(mf$receiver.set)) mf$actor.set
-        else mf$receiver.set
     loops <- mf$loops
 
-    factors <- attr(mt, "factors")
     types <- mf$types
-    traits <- model.matrix(mf$traits, contrasts.arg=contrasts)
+    if (!is.null(mf$traits)) {
+        traits <- model.matrix(mf$traits, contrasts.arg=contrasts)
+    } else {
+        traits <- data.frame(rep(1, n))
+        names(traits) <- "(Intercept)"
+        attr(traits, "assign") <- 0L
+    }
     specials <- mf$specials
 
-    #model <- .Call("Riproc_recv_model", time, sender, receiver, attribute,
-    #               sender.set, receiver.set, loops, factors, types, traits,
+    nrecv <- n
+    nsend <- if (bipartite) max(sender) else n
+
+    #model <- .Call("Riproc_recv_model", time, sender, receiver, message.attr,
+    #               nsend, nrecv, loops, factors, types, traits,
     #               specials)
     #model
 }

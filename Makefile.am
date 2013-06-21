@@ -205,6 +205,7 @@ rpkg_sources = \
 	R/R/fit.R \
 	R/R/recv.frame.R \
 	R/R/recv.model.R \
+	R/R/utils.R \
 	R/src/Makevars \
 	R/src/Makevars.win \
 	R/src/r-recv_model.c
