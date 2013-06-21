@@ -1,7 +1,8 @@
 #include "port.h"
 
-#include <stddef.h>
 #include <errno.h>
+#include <stddef.h>
+#include <string.h>
 
 #include <R.h>
 #include <Rinternals.h>
@@ -13,6 +14,13 @@
 #include "design.h"
 
 
+#define CHECK(x) \
+	do { \
+		if ((err = x)) \
+			return err; \
+	} while (0)
+
+
 #define DOMAIN_ERROR(msg) \
 	do { \
 		error(msg); \
@@ -20,21 +28,37 @@
 	} while (0)
 
 
+enum variable_type {
+	VARIABLE_TYPE_TRAIT,
+	VARIABLE_TYPE_SPECIAL,
+	VARIABLE_TYPE_RESPONSE
+};
+
 
 struct args {
 	/* dimensions */
 	size_t nsend;
 	size_t nrecv;
 
+	/* properties */
+	int loops;
+
 	/* message data */
 	double *time;
 	int *sender;
-	SEXP receiver;
+	SEXP receiver; /* list of integer vectors */
 	size_t nmsg;
 	size_t nto_max;
 
-	/* properties */
-	int loops;
+	/* terms */
+	size_t nvar;
+	size_t nterm;
+	enum variable_type *types;
+	SEXP names; /* character vector */
+	SEXP term_names; /* character vector */
+	int *factors;
+
+	/* recv_traits */
 };
 
 
@@ -43,6 +67,14 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 			SEXP message_attr, SEXP nsend, SEXP nrecv,
 			SEXP loops, SEXP factors, SEXP types, SEXP traits,
 			SEXP specials, struct args *args);
+static int extract_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+			      struct args *args);
+static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
+			    SEXP message_attr, size_t nsend, size_t nrecv,
+			    struct args *args);
+static int extract_terms(SEXP factors, SEXP types, struct args *args);
+
+
 static void setup_history(struct history *h, const struct args *args);
 static void setup_recv_design(struct design *r, struct history *h,
 			      const struct args *args);
@@ -87,10 +119,71 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 			SEXP loops, SEXP factors, SEXP types, SEXP traits,
 			SEXP specials, struct args *args)
 {
+	int err;
+
+	CHECK(extract_properties(nsend, nrecv, loops, args));
+	CHECK(extract_messages(time, sender, receiver, message_attr,
+			       args->nsend, args->nrecv, args));
+	CHECK(extract_terms(factors, types, args));
+
+	return 0;
+}
+
+
+static int extract_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+			      struct args *args)
+{
+	int xnsend, xnrecv, xloops;
+
+	/* validate and extract 'nsend' */
+	if (!IS_INTEGER(nsend) || GET_LENGTH(nsend) != 1)
+		DOMAIN_ERROR("'nsend' should be a single integer");
+
+	xnsend = INTEGER_VALUE(nsend);
+
+	if (xnsend <= 0)
+		DOMAIN_ERROR("'nsend' should be positive");
+
+
+	/* validate and extract 'nrecv' */
+	if (!IS_INTEGER(nrecv) || GET_LENGTH(nrecv) != 1)
+		DOMAIN_ERROR("'nrecv' should be a single integer");
+
+	xnrecv = INTEGER_VALUE(nrecv);
+
+	if (xnrecv <= 0)
+		DOMAIN_ERROR("'nrecv' should be positive");
+
+
+
+	/* validate and extract 'loops' */
+	if (!IS_LOGICAL(loops) || GET_LENGTH(loops) != 1)
+		DOMAIN_ERROR("'loops' should be a single integer");
+
+	xloops = LOGICAL_VALUE(loops);
+
+	if (xloops == NA_LOGICAL)
+		DOMAIN_ERROR("'loops' must be TRUE or FALSE");
+	if (!xloops && xnrecv == 1)
+		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
+
+
+	args->nsend = (size_t)xnsend;
+	args->nrecv = (size_t)xnrecv;
+	args->loops = xloops;
+
+	return 0;
+}
+
+
+static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
+			    SEXP message_attr, size_t nsend, size_t nrecv,
+			    struct args *args)
+{
 	double *xtime;
 	int *xsender, *xr;
 	SEXP r;
-	int i, n, j, m, xnsend, xnrecv, xloops;
+	int i, n, j, m;
 	size_t nto_max = 0;
 
 	n = GET_LENGTH(time);
@@ -107,16 +200,6 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 	}
 
 
-	/* validate and extract 'nsend' */
-	if (!IS_INTEGER(nsend) || GET_LENGTH(nsend) != 1)
-		DOMAIN_ERROR("'nsend' should be a single integer");
-
-	xnsend = INTEGER_VALUE(nsend);
-
-	if (xnsend <= 0)
-		DOMAIN_ERROR("'nsend' should be positive");
-
-
 	/* validate and extract 'sender' */
 	if (!IS_INTEGER(sender))
 		DOMAIN_ERROR("'sender' should be an integer vector");
@@ -126,20 +209,11 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 	xsender = INTEGER_POINTER(sender);
 
 	for (i = 0; i < n; i++) {
-		if (!(1 <= xsender[i] && xsender[i] <= xnsend)) {
+		if ((size_t)xsender[i] > nsend) {
 			DOMAIN_ERROR("'sender' value is out of range");
 		}
 	}
 
-
-	/* validate and extract 'nrecv' */
-	if (!IS_INTEGER(nrecv) || GET_LENGTH(nrecv) != 1)
-		DOMAIN_ERROR("'nrecv' should be a single integer");
-
-	xnrecv = INTEGER_VALUE(nrecv);
-
-	if (xnrecv <= 0)
-		DOMAIN_ERROR("'nrecv' should be positive");
 
 
 	/* validate and extract 'receiver' */
@@ -160,7 +234,7 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 		nto_max = MAX(nto_max, (size_t)m);
 
 		for (j = 0; j < m; j++) {
-			if (!(1 <= xr[j] && xr[j] <= xnrecv)) {
+			if ((size_t)xr[j] > nrecv) {
 				DOMAIN_ERROR("'receiver' value is out of range");
 			}
 		}
@@ -174,25 +248,85 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 		DOMAIN_ERROR("'time' and 'message.attr' lengths differ");
 
 
-	/* validate and extract 'loops' */
-	if (!IS_LOGICAL(loops) || GET_LENGTH(loops) != 1)
-		DOMAIN_ERROR("'loops' should be a single integer");
-
-	xloops = LOGICAL_VALUE(loops);
-
-	if (xloops == NA_LOGICAL)
-		DOMAIN_ERROR("'loops' must be TRUE or FALSE");
-	if (!xloops && xnrecv == 1)
-		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
-
-	args->nsend = (size_t)xnsend;
-	args->nrecv = (size_t)xnrecv;
 	args->time = xtime;
 	args->sender = xsender;
 	args->receiver = receiver;
 	args->nmsg = (size_t)n;
 	args->nto_max = nto_max;
-	args->loops = xloops;
+
+	return 0;
+}
+
+
+static int extract_terms(SEXP factors, SEXP types, struct args *args)
+{
+	SEXP dim, rl, cl;
+	const char *rn, *cn, *xtype;
+	int i, j, m, n, xnv, xnt;
+	int *xfactors;
+	enum variable_type *xtypes;
+
+	/* validate and extract factor matrix */
+	if (!IS_INTEGER(factors))
+		DOMAIN_ERROR("'factors' should be integer");
+	if (!isMatrix(factors))
+		DOMAIN_ERROR("'factors' should be a matrix");
+
+	dim = GET_DIM(factors);
+	m = INTEGER(dim)[0];
+	n = INTEGER(dim)[1];
+	xfactors = INTEGER_POINTER(factors);
+
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < m; i++) {
+			if (xfactors[i * n + j] != 0 && xfactors[i * n + j] != 1)
+				DOMAIN_ERROR("invalid entry in 'factors' matrix");
+		}
+	}
+
+
+	/* validate and extract variable and term names */
+	GetMatrixDimnames(factors, &rl, &cl, &rn, &cn);
+
+	if (!IS_CHARACTER(rl))
+		DOMAIN_ERROR("'factors' should have character rownames");
+	if (GET_LENGTH(rl) != m)
+		DOMAIN_ERROR("'factors' should have a name for each row");
+	if (!IS_CHARACTER(cl))
+		DOMAIN_ERROR("'factors' should have character colnames");
+	if (GET_LENGTH(cl) != n)
+		DOMAIN_ERROR("'factors' should have a name for each column");
+
+
+	/* validate and extract variable types */
+	if (!IS_CHARACTER(types))
+		DOMAIN_ERROR("'types' should be a character vector");
+	if (LENGTH(types) != m)
+		DOMAIN_ERROR("'types' vector has the wrong length");
+
+	xtypes = (void *)R_alloc(m, sizeof(*xtypes));
+
+
+	for (i = 0; i < m; i++) {
+		xtype = CHAR(STRING_ELT(types, i));
+
+		if (strcmp(xtype, "response") == 0) {
+			xtypes[i] = VARIABLE_TYPE_RESPONSE;
+		} else if (strcmp(xtype, "special") == 0) {
+			xtypes[i] = VARIABLE_TYPE_SPECIAL;
+		} else if (strcmp(xtype, "trait") == 0) {
+			xtypes[i] = VARIABLE_TYPE_TRAIT;
+		} else {
+			DOMAIN_ERROR("invalid 'types' value");
+		}
+	}
+
+	args->nvar = m;
+	args->nterm = n;
+	args->types = xtypes;
+	args->names = rl;
+	args->term_names = cl;
+	args->factors = xfactors;
 
 	return 0;
 }
