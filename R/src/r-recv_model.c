@@ -57,8 +57,13 @@ struct args {
 	SEXP names; /* character vector */
 	SEXP term_names; /* character vector */
 	int *factors;
+	size_t *trait_ind;
+	size_t ntrait;
+	size_t *special_ind;
+	size_t nspecial;
 
-	/* recv_traits */
+	/* traits */
+	SEXP traits;
 };
 
 
@@ -73,6 +78,8 @@ static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
 			    SEXP message_attr, size_t nsend, size_t nrecv,
 			    struct args *args);
 static int extract_terms(SEXP factors, SEXP types, struct args *args);
+static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args);
+
 
 
 static void setup_history(struct history *h, const struct args *args);
@@ -125,6 +132,7 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 	CHECK(extract_messages(time, sender, receiver, message_attr,
 			       args->nsend, args->nrecv, args));
 	CHECK(extract_terms(factors, types, args));
+	CHECK(extract_traits(factors, args->nrecv, args->ntrait, args));
 
 	return 0;
 }
@@ -262,9 +270,11 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 {
 	SEXP dim, rl, cl;
 	const char *rn, *cn, *xtype;
-	int i, j, m, n, xnv, xnt;
+	int i, j, m, n;
 	int *xfactors;
 	enum variable_type *xtypes;
+	size_t *trait_ind, *special_ind;
+	size_t ntrait, nspecial;
 
 	/* validate and extract factor matrix */
 	if (!IS_INTEGER(factors))
@@ -306,6 +316,10 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 
 	xtypes = (void *)R_alloc(m, sizeof(*xtypes));
 
+	trait_ind = (void *)R_alloc(m, sizeof(*trait_ind));
+	special_ind = (void *)R_alloc(m, sizeof(*special_ind));
+	ntrait = 0;
+	nspecial = 0;
 
 	for (i = 0; i < m; i++) {
 		xtype = CHAR(STRING_ELT(types, i));
@@ -314,8 +328,10 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 			xtypes[i] = VARIABLE_TYPE_RESPONSE;
 		} else if (strcmp(xtype, "special") == 0) {
 			xtypes[i] = VARIABLE_TYPE_SPECIAL;
+			special_ind[nspecial++] = (size_t)i;
 		} else if (strcmp(xtype, "trait") == 0) {
 			xtypes[i] = VARIABLE_TYPE_TRAIT;
+			trait_ind[ntrait++] = (size_t)i;
 		} else {
 			DOMAIN_ERROR("invalid 'types' value");
 		}
@@ -327,6 +343,40 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 	args->names = rl;
 	args->term_names = cl;
 	args->factors = xfactors;
+	args->ntrait = ntrait;
+	args->trait_ind = trait_ind;
+	args->nspecial = nspecial;
+	args->special_ind = special_ind;
+
+	return 0;
+}
+
+
+static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args)
+{
+	SEXP dim, assign;
+	int m, n;
+	double *xtraits;
+
+	/* validate and extract factor matrix */
+	if (!IS_NUMERIC(traits))
+		DOMAIN_ERROR("'traits' should be numeric");
+	if (!isMatrix(traits))
+		DOMAIN_ERROR("'traits' should be a matrix");
+
+	dim = GET_DIM(traits);
+	m = INTEGER(dim)[0];
+	n = INTEGER(dim)[1];
+
+	if ((size_t)m != nrecv)
+		DOMAIN_ERROR("'traits' should have one row for each receiver");
+
+	assign = GET_ATTR(traits, install("assign"));
+
+	if (assign == NULL_USER_OBJECT)
+		DOMAIN_ERROR("'traits' should have an 'assign' attribute");
+
+	xtraits = NUMERIC_POINTER(traits);
 
 	return 0;
 }

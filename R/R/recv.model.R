@@ -58,6 +58,8 @@ recv.model <- function(formula, message.data, receiver.data,
     nrecv <- n
     nsend <- if (bipartite) max(sender) else n
 
+    browser()
+
     model <- .Call("Riproc_recv_model", time, sender, receiver, message.attr,
                    nsend, nrecv, loops, factors, types, traits,
                    specials)
