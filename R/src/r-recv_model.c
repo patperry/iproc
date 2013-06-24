@@ -440,19 +440,21 @@ static void setup_history(struct history *h, const struct args *args)
 static void setup_recv_design(struct design *r, struct history *h,
 			      const struct args *args)
 {
-	SEXP dims;
+	SEXP traits_dims;
 	double *traits;
 	size_t nrecv;
 	size_t i, ntrait;
 	size_t j, dim_max;
-	size_t dim;
+	size_t dim, rank;
+	size_t *dims;
 	int *assign;
-	double *buf, *tbuf;
+	const char *name = NULL;
+	double *buf, *x;
 
 	nrecv = args->nrecv;
 	ntrait = args->ntrait;
-	dims = GET_DIM(args->traits);
-	dim_max = (size_t)(INTEGER(dims)[1]);
+	traits_dims = GET_DIM(args->traits);
+	dim_max = (size_t)(INTEGER(traits_dims)[1]);
 
 	traits = NUMERIC_POINTER(args->traits);
 	assign = INTEGER_POINTER(args->assign);
@@ -461,7 +463,7 @@ static void setup_recv_design(struct design *r, struct history *h,
 	design_init(r, h, nrecv);
 
 	buf = (void *)R_alloc(dim_max * nrecv, sizeof(*buf));
-	tbuf = (void *)R_alloc(nrecv * dim_max, sizeof(*tbuf));
+	x = (void *)R_alloc(nrecv * dim_max, sizeof(*x));
 
 	for (i = 0; i < ntrait; i++) {
 		dim = 0;
@@ -472,10 +474,18 @@ static void setup_recv_design(struct design *r, struct history *h,
 			}
 		}
 		if (dim > 0)
-			matrix_dtrans(nrecv, dim, buf, nrecv, tbuf, dim);
+			matrix_dtrans(nrecv, dim, buf, nrecv, x, dim);
+
+		if (dim > 0) {
+			rank = 1;
+			dims = &dim;
+		} else {
+			rank = 0;
+			dims = NULL;
+		}
+
+		design_add_trait(r, name, x, dims, rank);
 	}
-
-
 }
 
 
