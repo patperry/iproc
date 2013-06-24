@@ -17,7 +17,7 @@ void var_meta_init(struct var_meta *meta, enum var_type type, const char *name,
 		   const size_t *dims, size_t rank)
 {
 	meta->type = type;
-	meta->name = xstrdup(name);
+	meta->name = name ? xstrdup(name) : NULL;
 	meta->rank = rank;
 	memcpy(meta->dims, dims, meta->rank * sizeof(size_t));
 	meta->size = compute_size(meta->dims, meta->rank);
@@ -81,7 +81,7 @@ int snprint_var_name(char *str, size_t size, const struct var_name_fmt *fmt,
 		}
 	}
 
-	PRINT("%s", meta->name);
+	PRINT("%s", meta->name ? meta->name : "(NULL)");
 
 	if (rank > 0) {
 		PRINT("%s", fmt->open);
