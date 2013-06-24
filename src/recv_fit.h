@@ -68,4 +68,6 @@ double recv_fit_dev0(const struct recv_fit *fit);
 const double *recv_fit_duals(const struct recv_fit *fit);
 
 
+const char *recv_fit_errmsg(enum recv_fit_task task);
+
 #endif /* RECV_FIT_H */

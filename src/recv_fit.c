@@ -251,3 +251,25 @@ double recv_fit_step_size(const struct recv_fit *fit)
 {
 	return newton_step_size(&fit->opt);
 }
+
+const char *recv_fit_errmsg(enum recv_fit_task task)
+{
+	switch (task) {
+		case RECV_FIT_STEP:
+			return "optimization in progress";
+		case RECV_FIT_ERR_LNSRCH:
+			return "linesearch failed";
+		case RECV_FIT_ERR_XTOL:
+			return "step size is less than tolerance";
+		case RECV_FIT_ERR_IMAT:
+			return "observed information matrix is singular";
+		case RECV_FIT_ERR_DOM:
+			return "initial point is not in domain";
+		case RECV_FIT_CONV:
+			return NULL;
+	}
+
+	assert(0);
+	return NULL;
+}
+

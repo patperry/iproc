@@ -449,7 +449,7 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 	}
 
 	if (task != RECV_FIT_CONV) {
-		fprintf(stderr, "ERROR: %s\n", "YOWZA!!"); //recv_fit_errmsg(fit));
+		fprintf(stderr, "ERROR: %s\n", recv_fit_errmsg(task));
 		err = -1;
 	}
 
