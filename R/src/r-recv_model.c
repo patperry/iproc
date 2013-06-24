@@ -14,6 +14,8 @@
 
 #include "history.h"
 #include "design.h"
+#include "design2.h"
+#include "recv_fit.h"
 
 
 #define CHECK(x) \
@@ -35,6 +37,7 @@ enum variable_type {
 	VARIABLE_TYPE_SPECIAL,
 	VARIABLE_TYPE_RESPONSE
 };
+
 
 
 struct args {
@@ -88,6 +91,11 @@ static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args 
 static void setup_history(struct history *h, const struct args *args);
 static void setup_recv_design(struct design *r, struct history *h,
 			      const struct args *args);
+static void setup_dyad_design(struct design2 *d, struct design *r,
+			      struct history *h, const struct args *args);
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
+
+
 static int get_ids(size_t *dst, SEXP src);
 
 
@@ -99,6 +107,12 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 {
 	struct history history;
 	struct design recv;
+	struct design2 dyad;
+	int exclude_loops;
+	const struct message *msgs;
+	size_t nmsg;
+	size_t ncextra;
+	struct recv_fit fit;
 	struct args args;
 	int err = 0;
 
@@ -110,9 +124,23 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 
 	setup_history(&history, &args);
 	setup_recv_design(&recv, &history, &args);
+	setup_dyad_design(&dyad, &recv, &history, &args);
+
+	history_get_messages(&history, &msgs, &nmsg);
+	exclude_loops = args.loops ? 0 : 1;
+
+	recv_fit_init(&fit, &recv, &dyad, exclude_loops, msgs, nmsg, NULL, NULL);
+
+	ncextra = recv_fit_extra_constr_count(&fit);
+	if (ncextra)
+		warning("Adding %zd %s to make parameters identifiable\n",
+			ncextra, ncextra == 1 ? "constraint" : "constraints");
+
+	err = do_fit(&fit, NULL, NULL);
 
 
-
+	recv_fit_deinit(&fit);
+	design2_deinit(&dyad);
 	design_deinit(&recv);
 	history_deinit(&history);
 	error("Not implemented!");
@@ -305,10 +333,12 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 		DOMAIN_ERROR("'factors' should have character rownames");
 	if (GET_LENGTH(rl) != m)
 		DOMAIN_ERROR("'factors' should have a name for each row");
-	if (!IS_CHARACTER(cl))
-		DOMAIN_ERROR("'factors' should have character colnames");
-	if (GET_LENGTH(cl) != n)
-		DOMAIN_ERROR("'factors' should have a name for each column");
+	if (n > 0) {
+		if (!IS_CHARACTER(cl))
+			DOMAIN_ERROR("'factors' should have character colnames");
+		if (GET_LENGTH(cl) != n)
+			DOMAIN_ERROR("'factors' should have a name for each column");
+	}
 
 
 	/* validate and extract variable types */
@@ -459,7 +489,6 @@ static void setup_recv_design(struct design *r, struct history *h,
 	traits = NUMERIC_POINTER(args->traits);
 	assign = INTEGER_POINTER(args->assign);
 
-
 	design_init(r, h, nrecv);
 
 	buf = (void *)R_alloc(dim_max * nrecv, sizeof(*buf));
@@ -471,12 +500,18 @@ static void setup_recv_design(struct design *r, struct history *h,
 			if ((size_t)assign[j] == i + 1) {
 				blas_dcopy(nrecv, traits + j * nrecv, 1,
 					   buf + dim * nrecv, 1);
+				dim++;
 			}
 		}
-		if (dim > 0)
-			matrix_dtrans(nrecv, dim, buf, nrecv, x, dim);
 
-		if (dim > 0) {
+		if (dim == 0) {
+			/* TODO: check for in extract_traits */
+			error("0-dimensional trait %zd", i);
+		}
+
+		matrix_dtrans(nrecv, dim, buf, nrecv, x, dim);
+
+		if (dim > 1) {
 			rank = 1;
 			dims = &dim;
 		} else {
@@ -487,6 +522,56 @@ static void setup_recv_design(struct design *r, struct history *h,
 		design_add_trait(r, name, x, dims, rank);
 	}
 }
+
+
+static void setup_dyad_design(struct design2 *d, struct design *r,
+			      struct history *h, const struct args *args)
+{
+	size_t nsend, nrecv;
+
+	nsend = args->nsend;
+	nrecv = args->nrecv;
+
+	design2_init(d, h, nsend, nrecv);
+}
+
+
+
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0)
+{
+	size_t maxit = 300;
+	size_t report = 1;
+	int trace = 1;
+	enum recv_fit_task task;
+	size_t it = 0;
+	int err = 0;
+
+	task = recv_fit_start(fit, params0, duals0);
+	for (it = 0; it < maxit && task == RECV_FIT_STEP; it++) {
+		task = recv_fit_advance(fit);
+
+		if (trace && it % report == 0) {
+			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
+			// const struct recv_loglik_info *info = recv_loglik_info(ll);
+			// size_t n = info->nrecv;
+			double dev = recv_fit_dev(fit);
+			double nscore = recv_fit_score_norm(fit);
+			double step = recv_fit_step_size(fit);
+
+			Rprintf("iter %zu deviance = %.2f; |score| = %.16f; step = %.16f\n",
+				it, dev, nscore, step);
+		}
+	}
+
+	if (task != RECV_FIT_CONV) {
+		error("%s", recv_fit_errmsg(task));
+		err = -1;
+	}
+
+	return err;
+}
+
+
 
 
 static int get_ids(size_t *dst, SEXP src)
