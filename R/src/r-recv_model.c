@@ -8,7 +8,9 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 
+#include "blas.h"
 #include "coreutil.h"
+#include "matrixutil.h"
 
 #include "history.h"
 #include "design.h"
@@ -64,6 +66,7 @@ struct args {
 
 	/* traits */
 	SEXP traits;
+	SEXP assign;
 };
 
 
@@ -132,7 +135,7 @@ static int extract_args(SEXP time, SEXP sender, SEXP receiver,
 	CHECK(extract_messages(time, sender, receiver, message_attr,
 			       args->nsend, args->nrecv, args));
 	CHECK(extract_terms(factors, types, args));
-	CHECK(extract_traits(factors, args->nrecv, args->ntrait, args));
+	CHECK(extract_traits(traits, args->nrecv, args->ntrait, args));
 
 	return 0;
 }
@@ -355,8 +358,8 @@ static int extract_terms(SEXP factors, SEXP types, struct args *args)
 static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args)
 {
 	SEXP dim, assign;
-	int m, n;
-	double *xtraits;
+	int i, m, n;
+	int *xassign;
 
 	/* validate and extract factor matrix */
 	if (!IS_NUMERIC(traits))
@@ -375,8 +378,21 @@ static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args 
 
 	if (assign == NULL_USER_OBJECT)
 		DOMAIN_ERROR("'traits' should have an 'assign' attribute");
+	if (!IS_INTEGER(assign))
+		DOMAIN_ERROR("'assign' should be integer");
+	if (GET_LENGTH(assign) != n)
+		DOMAIN_ERROR("'assign' should have length"
+			     " equal to the number of columns in 'traits'");
 
-	xtraits = NUMERIC_POINTER(traits);
+	xassign = INTEGER_POINTER(assign);
+	for (i = 0; i < n; i++) {
+		if (!(0 <= xassign[i] && xassign[i] <= (int)ntrait))
+			DOMAIN_ERROR("'assign' values should be between 0"
+				     " and the number of trait variables");
+	}
+
+	args->traits = traits;
+	args->assign = assign;
 
 	return 0;
 }
@@ -424,8 +440,42 @@ static void setup_history(struct history *h, const struct args *args)
 static void setup_recv_design(struct design *r, struct history *h,
 			      const struct args *args)
 {
-	size_t nrecv = args->nrecv;
+	SEXP dims;
+	double *traits;
+	size_t nrecv;
+	size_t i, ntrait;
+	size_t j, dim_max;
+	size_t dim;
+	int *assign;
+	double *buf, *tbuf;
+
+	nrecv = args->nrecv;
+	ntrait = args->ntrait;
+	dims = GET_DIM(args->traits);
+	dim_max = (size_t)(INTEGER(dims)[1]);
+
+	traits = NUMERIC_POINTER(args->traits);
+	assign = INTEGER_POINTER(args->assign);
+
+
 	design_init(r, h, nrecv);
+
+	buf = (void *)R_alloc(dim_max * nrecv, sizeof(*buf));
+	tbuf = (void *)R_alloc(nrecv * dim_max, sizeof(*tbuf));
+
+	for (i = 0; i < ntrait; i++) {
+		dim = 0;
+		for (j = 0; j < dim_max; j++) {
+			if ((size_t)assign[j] == i + 1) {
+				blas_dcopy(nrecv, traits + j * nrecv, 1,
+					   buf + dim * nrecv, 1);
+			}
+		}
+		if (dim > 0)
+			matrix_dtrans(nrecv, dim, buf, nrecv, tbuf, dim);
+	}
+
+
 }
 
 
