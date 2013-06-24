@@ -4,8 +4,10 @@ Date:        @PACKAGE_DATE@
 Title:       Point Process Modeling of Directed Interactions
 Author:      Patrick O. Perry
 Maintainer:  Patrick O. Perry <@PACKAGE_BUGREPORT@>
+Suggests:    testthat
 Description: 
     Implements methods from the paper "Point Process Modelling for Directed
     Interaction Networks," by Perry and Wolfe (2013).
 License:     BSD
 Encoding:    UTF-8
+LazyData:    Yes

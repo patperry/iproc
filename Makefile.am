@@ -201,6 +201,7 @@ rpkg_sources = \
 	R/LICENSE \
 	R/NAMESPACE \
 	R/data/enron.rda \
+	R/inst/tests/test-Mesg.R \
 	R/R/Mesg.R \
 	R/R/fit.R \
 	R/R/recv.frame.R \
@@ -208,7 +209,8 @@ rpkg_sources = \
 	R/R/utils.R \
 	R/src/Makevars \
 	R/src/Makevars.win \
-	R/src/r-recv_model.c
+	R/src/r-recv_model.c \
+	R/tests/test-all.R
 
 rpkg_extra_sources = \
 	$(libiproc_a_SOURCES) \
