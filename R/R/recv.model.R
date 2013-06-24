@@ -49,8 +49,8 @@ recv.model <- function(formula, message.data, receiver.data,
     if (!is.null(mf$traits)) {
         traits <- model.matrix(mf$traits, contrasts.arg=contrasts)
     } else {
-        traits <- data.frame(rep(1, n))
-        names(traits) <- "(Intercept)"
+        traits <- as.matrix(data.frame(rep(1, n)))
+        colnames(traits) <- "(Intercept)"
         attr(traits, "assign") <- 0L
     }
     specials <- mf$specials
