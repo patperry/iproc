@@ -30,9 +30,9 @@ test_that("arguments can be read from parent environment", {
 })
 
 
-test_that("attributes work", {
-    m <- Mesg(time, sender, receiver, enron.messages[1:60,],
-              message.attr=subject)
-
-    expect_that(m$message.attr, is_identical_to(enron.messages$subject[1:60]))
-})
+#test_that("attributes work", {
+#    m <- Mesg(time, sender, receiver, enron.messages[1:60,],
+#              message.attr=subject)
+#
+#    expect_that(m$message.attr, is_identical_to(enron.messages$subject[1:60]))
+#})
