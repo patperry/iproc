@@ -23,6 +23,7 @@ var.interval <- function(name, type, bipartite = FALSE)
 
         x <- list(interval = interval)
         class(x) <- c(name, type, "interval")
+        attr(x, "horizon") <- interval
         x
     }
 }
@@ -53,20 +54,59 @@ var.intervals <- function(name, type, bipartite = FALSE)
 
         x <- list(intervals = intervals)
         class(x) <- c(name, type, "intervals")
+        attr(x, "horizon") <- max(intervals)
         x
     }
 }
+
+var.intervals2 <- function(name, type, bipartite = FALSE)
+{
+    specials <- get("SPECIALS", envir=parent.frame())
+    assign("SPECIALS", c(specials, name), envir=parent.frame())
+
+    if (bipartite) {
+        bspecials <- get("BSPECIALS", envir=parent.frame())
+        assign("BSPECIALS", c(bspecials, name), envir=parent.frame())
+    }
+
+    function (intervals1, intervals2) {
+        intervals1 <- as.numeric(intervals1, units="secs")
+        intervals2 <- as.numeric(intervals2, units="secs")
+        for (intervals in list(intervals1, intervals2)) {
+            if (length(intervals) == 0L)
+                stop("must specify at least one interval in each argument")
+            if (any(is.na(intervals)))
+                stop("interval is missing from")
+            if (any(intervals <= 0))
+                stop("interval is not positive")
+            if (length(intervals) != length(unique(intervals)))
+                stop("intervals must be unique")
+            if (any(intervals != sort(intervals)))
+                stop("intervals must be sorted in increasing order")
+        }
+
+        x <- list(intervals1 = intervals1, intervals2 = intervals2)
+        class(x) <- c(name, type, "intervals2")
+        attr(x, "horizon") <- max(intervals1, intervals2)
+        x
+    }
+}
+
 
 irecv <- var.interval("irecv", "dyad", bipartite=TRUE)
 nrecv <- var.intervals("nrecv", "dyad", bipartite=TRUE)
 irecvtot <- var.interval("irecvtot", "actor", bipartite=TRUE)
 nrecvtot <- var.intervals("nrecvtot", "actor", bipartite=TRUE)
 
-
 isend <- var.interval("isend", "dyad")
 isendtot <- var.interval("isendtot", "actor")
 nsend <- var.intervals("nsend", "dyad")
 nsendtot <- var.intervals("nsendtot", "actor")
+
+nrecv2 <- var.intervals2("nrecv2", "dyad")
+nsend2 <- var.intervals2("nsend2", "dyad")
+nsib <- var.intervals2("nsib", "dyad")
+ncosib <- var.intervals2("ncosib", "dyad")
 
 
 
