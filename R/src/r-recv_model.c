@@ -33,31 +33,51 @@
 
 
 enum variable_type {
-	VARIABLE_TYPE_TRAIT,
-	VARIABLE_TYPE_SPECIAL,
+	VARIABLE_TYPE_RECV_TRAIT,
+	VARIABLE_TYPE_RECV_SPECIAL,
+	VARIABLE_TYPE_DYAD_SPECIAL,
 	VARIABLE_TYPE_RESPONSE
 };
 
 
+struct variable {
+	enum variable_type type;
+	const char *name;
+	const char **names;
+	size_t size;
+	union { struct var *recv; struct var2 *dyad; } var;
+};
 
-struct args {
+/*
+enum term_type {
+	TERM_TYPE_RECV_TRAIT,
+	TERM_TYPE_RECV_SPECIAL,
+	TERM_TYPE_RECV_PROD,
+	TERM_TYPE_DYAD_SPECIAL,
+};
+*/
+
+
+struct properties {
 	/* dimensions */
 	size_t nsend;
 	size_t nrecv;
 
 	/* properties */
-	int loops;
+	int exclude_loops;
+};
 
-	/* message data */
-	double *time;
-	int *sender;
-	SEXP receiver; /* list of integer vectors */
-	size_t nmsg;
-	size_t nto_max;
 
-	/* terms */
+struct terms {
 	size_t nvar;
 	size_t nterm;
+};
+
+
+struct args {
+
+
+	/* terms */
 	enum variable_type *types;
 	SEXP names; /* character vector */
 	SEXP term_names; /* character vector */
@@ -74,103 +94,96 @@ struct args {
 
 
 
-static int extract_args(SEXP time, SEXP sender, SEXP receiver,
-			SEXP message_attr, SEXP nsend, SEXP nrecv,
-			SEXP loops, SEXP factors, SEXP types, SEXP traits,
-			SEXP specials, struct args *args);
-static int extract_properties(SEXP nsend, SEXP nrecv, SEXP loops,
-			      struct args *args);
-static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
-			    SEXP message_attr, size_t nsend, size_t nrecv,
-			    struct args *args);
-static int extract_terms(SEXP factors, SEXP types, struct args *args);
-static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args);
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+			  struct properties *p);
+
+static int get_history(SEXP time, SEXP sender, SEXP receiver,
+		       struct history *h);
+
+static int get_terms(SEXP factors, SEXP variables, SEXP order,
+		     struct design *s, struct design *r, struct design2 *d,
+		     struct terms *tm);
+
+//static int extract_terms(SEXP factors, SEXP types, struct args *args);
+//static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args);
 
 
 
-static void setup_history(struct history *h, const struct args *args);
-static void setup_recv_design(struct design *r, struct history *h,
-			      const struct args *args);
-static void setup_dyad_design(struct design2 *d, struct design *r,
-			      struct history *h, const struct args *args);
-static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
+//static void setup_recv_design(struct design *r, struct history *h,
+//			      const struct args *args);
+//static void setup_dyad_design(struct design2 *d, struct design *r,
+//			      struct history *h, const struct args *args);
+//static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
 
 
-static int get_ids(size_t *dst, SEXP src);
+//static int get_ids(size_t *dst, SEXP src);
 
 
 
 SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
-		       SEXP message_attr, SEXP nsend, SEXP nrecv,
-		       SEXP loops, SEXP factors, SEXP types, SEXP traits,
-		       SEXP specials)
+		       SEXP factors, SEXP variables, SEXP order,
+		       SEXP nsend, SEXP nrecv, SEXP loops)
 {
-	struct history history;
-	struct design recv;
-	struct design2 dyad;
-	int exclude_loops;
+	struct properties p;
+	struct history h;
+	struct design s, r;
+	struct design2 d;
+	struct terms tm;
+
 	const struct message *msgs;
 	size_t nmsg;
-	size_t ncextra;
-	struct recv_fit fit;
-	struct args args;
+	//size_t ncextra;
+	//struct recv_fit fit;
 	int err = 0;
 
-	err = extract_args(time, sender, receiver, message_attr, nsend, nrecv,
-			   loops, factors, types, traits, specials, &args);
-
+	err = get_properties(nsend, nrecv, loops, &p);
 	if (err < 0)
-		goto args_fail;
+		goto properties_fail;
 
-	setup_history(&history, &args);
-	setup_recv_design(&recv, &history, &args);
-	setup_dyad_design(&dyad, &recv, &history, &args);
+	history_init(&h, p.nsend, p.nrecv);
+	err = get_history(time, sender, receiver, &h);
+	if (err < 0)
+		goto history_fail;
 
-	history_get_messages(&history, &msgs, &nmsg);
-	exclude_loops = args.loops ? 0 : 1;
+	design_init(&s, &h, p.nsend);
+	design_init(&r, &h, p.nrecv);
+	design2_init(&d, &h, p.nsend, p.nrecv);
 
-	recv_fit_init(&fit, &recv, &dyad, exclude_loops, msgs, nmsg, NULL, NULL);
+	err = get_terms(factors, variables, order, &s, &r, &d, &tm);
+	if (err < 0)
+		goto terms_fail;
 
-	ncextra = recv_fit_extra_constr_count(&fit);
-	if (ncextra)
-		warning("Adding %zd %s to make parameters identifiable\n",
-			ncextra, ncextra == 1 ? "constraint" : "constraints");
+	//setup_recv_design(&recv, &history, &args);
+	//setup_dyad_design(&dyad, &recv, &history, &args);
 
-	err = do_fit(&fit, NULL, NULL);
+	history_get_messages(&h, &msgs, &nmsg);
+
+	//recv_fit_init(&fit, &recv, &dyad, p.exclude_loops, msgs, nmsg, NULL, NULL);
+
+	//ncextra = recv_fit_extra_constr_count(&fit);
+	//if (ncextra)
+	//	warning("Adding %zd %s to make parameters identifiable\n",
+	//		ncextra, ncextra == 1 ? "constraint" : "constraints");
+
+	//err = do_fit(&fit, NULL, NULL);
 
 
-	recv_fit_deinit(&fit);
-	design2_deinit(&dyad);
-	design_deinit(&recv);
-	history_deinit(&history);
+	//recv_fit_deinit(&fit);
+terms_fail:
+	design2_deinit(&d);
+	design_deinit(&r);
+	design_deinit(&s);
+history_fail:
+	history_deinit(&h);
+properties_fail:
 	error("Not implemented!");
-
-args_fail:
 	return NULL_USER_OBJECT;
 }
 
 
 
-
-static int extract_args(SEXP time, SEXP sender, SEXP receiver,
-			SEXP message_attr, SEXP nsend, SEXP nrecv,
-			SEXP loops, SEXP factors, SEXP types, SEXP traits,
-			SEXP specials, struct args *args)
-{
-	int err;
-
-	CHECK(extract_properties(nsend, nrecv, loops, args));
-	CHECK(extract_messages(time, sender, receiver, message_attr,
-			       args->nsend, args->nrecv, args));
-	CHECK(extract_terms(factors, types, args));
-	CHECK(extract_traits(traits, args->nrecv, args->ntrait, args));
-
-	return 0;
-}
-
-
-static int extract_properties(SEXP nsend, SEXP nrecv, SEXP loops,
-			      struct args *args)
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+			  struct properties *p)
 {
 	int xnsend, xnrecv, xloops;
 
@@ -207,36 +220,43 @@ static int extract_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
 
 
-	args->nsend = (size_t)xnsend;
-	args->nrecv = (size_t)xnrecv;
-	args->loops = xloops;
+	p->nsend = (size_t)xnsend;
+	p->nrecv = (size_t)xnrecv;
+	p->exclude_loops = !xloops;
 
 	return 0;
 }
 
 
-static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
-			    SEXP message_attr, size_t nsend, size_t nrecv,
-			    struct args *args)
+static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 {
+	size_t nsend, nrecv;
 	double *xtime;
 	int *xsender, *xr;
 	SEXP r;
 	int i, n, j, m;
-	size_t nto_max = 0;
+	struct message msg;
+	size_t nto_max;
+	size_t ito;
 
+
+	/* extract dimensions */
+	nsend = history_send_count(h);
+	nrecv = history_recv_count(h);
 	n = GET_LENGTH(time);
+
+
+	/* setup message buffer */
+	nto_max = nrecv;
+	msg.to = (size_t *)R_alloc(nto_max, sizeof(size_t));
+	msg.attr = 0;
+
 
 	/* validate and extract 'time' */
 	if (!IS_NUMERIC(time))
 		DOMAIN_ERROR("'time' should be a numeric vector");
 
 	xtime = NUMERIC_POINTER(time);
-
-	for (i = 0; i < n; i++) {
-		if (!R_FINITE(xtime[i]))
-			DOMAIN_ERROR("'time' values must be finite and non-missing");
-	}
 
 
 	/* validate and extract 'sender' */
@@ -247,13 +267,6 @@ static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
 
 	xsender = INTEGER_POINTER(sender);
 
-	for (i = 0; i < n; i++) {
-		if ((size_t)xsender[i] > nsend) {
-			DOMAIN_ERROR("'sender' value is out of range");
-		}
-	}
-
-
 
 	/* validate and extract 'receiver' */
 	if (!IS_VECTOR(receiver))
@@ -262,43 +275,58 @@ static int extract_messages(SEXP time, SEXP sender, SEXP receiver,
 		DOMAIN_ERROR("'time' and 'receiver' lengths differ");
 
 
+	/* add all messages */
 	for (i = 0; i < n; i++) {
+		msg.time = xtime[i];
+		msg.from = (size_t)(xsender[i] - 1);
+		msg.attr = 0;
+
+		/* validate and extract receiver[[i]] */
 		r = VECTOR_ELT(receiver, i);
-		if (!IS_INTEGER(r) || GET_LENGTH(r) == 0)
-			DOMAIN_ERROR("each element of 'receiver' should be a non-empty integer vector");
+		if (!IS_INTEGER(r))
+			DOMAIN_ERROR("each element of 'receiver' should be an integer vector");
 
-		xr = INTEGER_POINTER(r);
 		m = GET_LENGTH(r);
+		xr = INTEGER_POINTER(r);
 
-		nto_max = MAX(nto_max, (size_t)m);
-
-		for (j = 0; j < m; j++) {
-			if ((size_t)xr[j] > nrecv) {
-				DOMAIN_ERROR("'receiver' value is out of range");
-			}
+		for (j = 0; j < MIN(m, nto_max); j++) {
+			msg.to[j] = (size_t)(xr[j] - 1);
 		}
+		msg.nto = (size_t)m;
+
+
+		/* validate message */
+		if (!R_FINITE(msg.time))
+			DOMAIN_ERROR("'time' value is missing or infinite");
+		if (msg.from >= nsend)
+			DOMAIN_ERROR("'sender' value is out of range");
+		if (msg.nto == 0)
+			DOMAIN_ERROR("'receiver' value is empty");
+		if (msg.nto > nrecv)
+			DOMAIN_ERROR("'receiver' value contains duplicate elements");
+		for (ito = 0; ito < msg.nto; ito++) {
+			if (msg.to[ito] >= nrecv)
+				DOMAIN_ERROR("'receiver' value is out of range");
+		}
+
+
+		/* add the message */
+		history_set_time(h, msg.time);
+		history_add(h, msg.from, msg.to, msg.nto, msg.attr);
 	}
-
-
-	/* validate 'message.attr' */
-	if (message_attr != NULL_USER_OBJECT)
-		warning("'message.attr' has no effect");
-	if (message_attr != NULL_USER_OBJECT && GET_LENGTH(message_attr) != n)
-		DOMAIN_ERROR("'time' and 'message.attr' lengths differ");
-
-
-	args->time = xtime;
-	args->sender = xsender;
-	args->receiver = receiver;
-	args->nmsg = (size_t)n;
-	args->nto_max = nto_max;
 
 	return 0;
 }
 
 
-static int extract_terms(SEXP factors, SEXP types, struct args *args)
+static int get_terms(SEXP factors, SEXP variables, SEXP order,
+		     struct design *s, struct design *r, struct design2 *d,
+		     struct terms *tm)
 {
+	return 0;
+}
+
+#if 0
 	SEXP dim, rl, cl;
 	const char *rn, *cn, *xtype;
 	int i, j, m, n;
@@ -428,44 +456,6 @@ static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args 
 }
 
 
-static void setup_history(struct history *h, const struct args *args)
-{
-	size_t nsend;
-	size_t nrecv;
-	double t, *time;
-	int *sender;
-	SEXP r, receiver;
-	size_t from, *to;
-	size_t nto, nto_max;
-	intptr_t attr;
-	size_t i, n;
-
-	nsend = args->nsend;
-	nrecv = args->nrecv;
-
-	n = args->nmsg;
-	time = args->time;
-	sender = args->sender;
-	receiver = args->receiver;
-	nto_max = args->nto_max;
-	to = (size_t *)R_alloc(nto_max, sizeof(size_t));
-
-
-	history_init(h, nsend, nrecv);
-	for (i = 0; i < n; i++) {
-		t = time[i];
-		from = (size_t)(sender[i] - 1);
-		r = VECTOR_ELT(receiver, i);
-		nto = GET_LENGTH(r);
-		get_ids(to, r);
-
-		attr = 0;
-
-		history_set_time(h, t);
-		history_add(h, from, to, nto, attr);
-	}
-}
-
 
 static void setup_recv_design(struct design *r, struct history *h,
 			      const struct args *args)
@@ -573,7 +563,6 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 
 
 
-
 static int get_ids(size_t *dst, SEXP src)
 {
 	int i, n;
@@ -595,3 +584,4 @@ out:
 	return err;
 }
 
+#endif
