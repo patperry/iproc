@@ -110,38 +110,38 @@ expand.s <- function(object, specials = NULL, data = NULL) {
 }
 
 
-recv.variable <- function(object, specials, data, sender.data, ...)
+recv.frame.variable <- function(object, specials, data, sender.data,
+                                envir=parent.frame(), ...)
 {
     if (is.call(object) && object[[1L]] == "s") {
         if (length(object) != 2L)
             stop("Too many arguments to 's'")
 
-        var <- recv.variable(object[[2L]], specials, sender.data, NULL, ...)
+        var <- recv.frame.variable(object[[2L]], specials, sender.data, NULL,
+                                   envir, ...)
         name <- deparse(object[[2L]])
 
         if (inherits(var, "dyad"))
             stop(sprintf("term 's(%s)' is invalid; '%s' is a dyad-specific variable",
                          name, name))
 
-        if (inherits(var, "trait"))
-            colnames(var) <- paste("s(", colnames(var), ")", sep="")
-
         class(var) <- c("send", class(var))
+
     } else if (is.call(object)
                && as.character(object[[1L]]) %in% specials) {
         var <- eval(object, list(...))
-        class(var) <- c("special", class(var))
+        class(var) <- c(class(var), "special")
     } else {
         data <- eval(call("data.frame", object), data)
-        mm <- model.matrix(~ ., data)
-        int <- match("(Intercept)", colnames(mm))
-        if (!is.na(int)) {
-            assign <- attr(mm, "assign")
-            contrasts <- attr(mm, "contrasts")
-            var <- mm[,-int,drop=FALSE]
-            attr(var, "contrasts") <- contrasts[[1L]]
-            class(var) <- c("trait", class(mm))
-        }
+
+        env <- as.environment(data)
+        parent.env(env) <- envir
+
+        mf <- model.frame(~ ., data)
+        environment(mf) <- env
+
+        var <- mf
+        #class(var) <- c("trait", class(var))
     }
 
     var
@@ -177,8 +177,18 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     bspecials <- BSPECIALS
     formula <- expand.s(formula, specials, data=sender.data)
     tm <- terms(formula, specials, data=receiver.data)
-    v <- attr(tm, "variables")[-1L]
 
+    # validate the formula
+    special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"),
+                                                         is.null)]
+    if (any(attr(tm, "factors") == 2L))
+        stop("interactions without main effects are not supported")
+    for (s in setdiff(specials, bspecials)) {
+        if (bipartite && s %in% special.names)
+            stop(sprintf("the special term '%s' is invalid for bipartite processes", s))
+    }
+
+    v <- attr(tm, "variables")[-1L]
     response <- attr(tm, "response")
     variables <- list()
 
@@ -196,7 +206,8 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
             class(y) <- c("response", class(y))
             variables[[i]] <- y
         } else {
-            rv <- recv.variable(v[[i]], specials, receiver.data, sender.data, ...)
+            rv <- recv.frame.variable(v[[i]], specials, receiver.data,
+                                      sender.data, ...)
             name <- attr(rv, "name")
             attr(rv, "name") <- NULL
             variables[[i]] <- rv
@@ -204,94 +215,44 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
         names(variables)[[i]] <- deparse(v[[i]])
     }
 
-    browser()
+    send <- sapply(variables, function(x) inherits(x, "send"))
+    factors <- attr(tm, "factors")
+    term.labels <- attr(tm, "term.labels")
+    order <- attr(tm, "order")
+    response <- attr(tm, "response")
 
-    factors <- get.factors(tm)
-    nv <- nrow(factors)
-    nt <- ncol(factors)
-    special.ind <- unlist(attr(tm, "specials"))
-    special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"), is.null)]
+    all.send <- colSums(factors * !send) == 0
+    factors <- factors[,!all.send,drop=FALSE]
+    term.names <- term.names[!all.send]
+    order <- order[!all.send]
 
-
-    # validate the formula
-    if (any(factors == 2L))
-        stop("interactions without main effects are not supported")
-
-    for (s in setdiff(specials, bspecials)) {
-        if (bipartite && s %in% special.names)
-            stop(sprintf("the special term '%s' is invalid for bipartite processes", s))
-    }
-
-
-    # extract the response (if one exists)
-    if (attr(tm, "response") != 0L) {
-        call.y <- v[[attr(tm, "response")]]
-        y <- eval(call.y, message.data)
-
-    } else {
-        y <- NULL
-    }
-
-
-
-    # extract the model frame for the specials and traits
-    mf.specials <- list()
-
-    names <- rownames(factors)
-    types <- rep(NA, nv)
-
-    for (i in seq_along(names)) {
-        k <- match(i, special.ind)
-        if (!is.na(k)) {
-            call.i <- v[[i]]
-            mf.specials[[length(mf.specials) + 1L]] <- eval(call.i, list(...))
-            names(mf.specials)[[length(mf.specials)]] <- names[[i]]
-            types[[i]] <- "special"
-        } else if (i == attr(tm, "response")) {
-            types[[i]] <- "response"
-        } else {
-            types[[i]] <- "trait"
-        }
-    }
-
-    if (any(types == "trait")) {
-        fmla.x <- ~ .
-        call.x <- attr(tm, "variables")[c(1L, 1L + which(types == "trait"))]
-        call.x[[1L]] <- quote(data.frame)
-        data.x <- eval(call.x, receiver.data)
-
-        env.x <- as.environment(data.x)
-        parent.env(env.x) <- parent.frame()
-
-        mf.traits <- model.frame(fmla.x, data.x)
-        environment(mf.traits) <- env.x
-    } else {
-        mf.traits <- NULL
-    }
-
-
-    frame <- list(formula = formula(tm), terms = tm, types = types,
-                  response = y, traits = mf.traits, specials = mf.specials,
+    frame <- list(formula = formula(tm), factors = factors,
+                  term.labels = term.labels, variables = variables,
+                  order = order, response = response,
                   n = n, bipartite = bipartite, loops = loops)
     class(frame) <- "recv.frame"
     frame
 }
 
 
-recv.frame.response <- function(frame)
+recv.response <- function(frame)
 {
     if (!inherits(frame, "recv.frame"))
         stop("invalid 'frame' argument")
-    frame$response
+
+    response <- frame$response
+    y <- frame$variables[[response]]
+    if (!is.null(y)) {
+        i <- match("response", class(y))
+        if (!is.na(i))
+            class(y) <- class(y)[-i]
+    }
+    y
 }
 
-recv.model.weights <- function(frame)
+
+recv.weights <- function(frame)
 {
     stop("not implemented")
 }
 
-
-model.matrix.recv.frame <- function(object, time, sender, ...)
-{
-    stop("not implemented")
-}

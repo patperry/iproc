@@ -20,22 +20,16 @@ recv.model <- function(formula, message.data, receiver.data,
         warning(sprintf("method = '%s' is not supported. Using 'newton'",
                         method))
 
-    mt <- mf$terms
-    factors <- get.factors(mt)
+    y <- recv.response(mf)
+    x <- recv.matrix(mf, contrasts=contrasts)
 
-    y <- recv.frame.response(mf)
     if (is.null(y))
         stop("must specify a response")
     if (!inherits(y, "Mesg"))
         stop("response must be a message object")
 
-    if (attr(mt, "intercept") == 0L)
-        warning("intercept term is irrelevant")
-    if (!is.null(attr(mt, "offset")) && attr(mt, "offset") != 0L)
-        stop("offsets are not supported")
-
-    if (nrow(factors) != ncol(factors) + 1L)
-        stop("interactions are not implemented")
+    if (any(x$order > 1L))
+        warning("interactions are not implemented")
 
 
     time <- y$time
@@ -43,17 +37,11 @@ recv.model <- function(formula, message.data, receiver.data,
     receiver <- y$receiver
     message.attr <- y$message.attr
 
-    loops <- if (is.na(mf$loops)) TRUE else mf$loops
+    factors <- x$factors
+    variables <- x$variables
+    order <- x$order
 
-    types <- mf$types
-    if (!is.null(mf$traits)) {
-        traits <- model.matrix(mf$traits, contrasts.arg=contrasts)
-    } else {
-        traits <- as.matrix(data.frame(rep(1, n)))
-        colnames(traits) <- "(Intercept)"
-        attr(traits, "assign") <- 0L
-    }
-    specials <- mf$specials
+    loops <- if (is.na(mf$loops)) TRUE else mf$loops
 
     nrecv <- n
     nsend <- if (bipartite) max(sender) else n
@@ -61,8 +49,7 @@ recv.model <- function(formula, message.data, receiver.data,
     browser()
 
     model <- .Call("Riproc_recv_model", time, sender, receiver, message.attr,
-                   nsend, nrecv, loops, factors, types, traits,
-                   specials)
+                   factors, variables, order, nsend, nrecv, loops)
     model
 }
 
