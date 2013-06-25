@@ -63,8 +63,8 @@ static void teardown()
 
 static void test_sizes()
 {
-	assert_int_equal(history_nsend(HISTORY), NSEND);
-	assert_int_equal(history_nrecv(HISTORY), NRECV);
+	assert_int_equal(history_send_count(HISTORY), NSEND);
+	assert_int_equal(history_recv_count(HISTORY), NRECV);
 }
 
 static void test_messages()

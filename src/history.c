@@ -113,8 +113,8 @@ void history_init(struct history *h, size_t nsend, size_t nrecv)
 void history_deinit(struct history *h)
 {
 	version_deinit(&h->version);
-	actors_deinit(h->recvs, history_nrecv(h));
-	actors_deinit(h->sends, history_nsend(h));
+	actors_deinit(h->recvs, history_recv_count(h));
+	actors_deinit(h->sends, history_send_count(h));
 	free(h->to);
 	free(h->msgs);
 }
@@ -130,8 +130,8 @@ void history_clear(struct history *h)
 
 void history_reset(struct history *h)
 {
-	actors_clear(h->sends, history_nsend(h));
-	actors_clear(h->recvs, history_nrecv(h));
+	actors_clear(h->sends, history_send_count(h));
+	actors_clear(h->recvs, history_recv_count(h));
 	h->ncur = 0;
 	h->tcur = -INFINITY;
 

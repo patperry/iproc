@@ -58,8 +58,8 @@ static int setup_history(struct history *h)
 
 static int setup_designs(struct design *r, struct design2 *d, double *dtmax, struct history *h)
 {
-	size_t nsend = history_nsend(h);
-	size_t nrecv = history_nrecv(h);
+	size_t nsend = history_send_count(h);
+	size_t nrecv = history_recv_count(h);
 
 	double intvls[] = {
 		450,		/*   7.5m */

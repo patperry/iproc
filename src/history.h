@@ -43,8 +43,8 @@ void history_deinit(struct history *h);
 void history_clear(struct history *h); // delete all messages, reset time
 
 /* properties */
-static inline size_t history_nsend(const struct history *h) { return h->nsend; }
-static inline size_t history_nrecv(const struct history *h) { return h->nrecv; }
+static inline size_t history_send_count(const struct history *h) { return h->nsend; }
+static inline size_t history_recv_count(const struct history *h) { return h->nrecv; }
 
 /* access past messages */
 static inline size_t history_count(const struct history *h) { return h->ncur; }
@@ -85,13 +85,13 @@ static inline struct version *history_version(const struct history *h)
 /* actor histories */
 static inline struct history_actor *history_send(const struct history *h, size_t i)
 {
-	assert(i < history_nsend(h));
+	assert(i < history_send_count(h));
 	return &h->sends[i];
 }
 
 static inline struct history_actor *history_recv(const struct history *h, size_t j)
 {
-	assert(j < history_nrecv(h));
+	assert(j < history_recv_count(h));
 	return &h->recvs[j];
 }
 
