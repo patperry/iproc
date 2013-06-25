@@ -471,18 +471,90 @@ static int get_variable(SEXP variable, const char *name,
 		}
 
 		v->size = (size_t)p;
-	} else {
+	} else if (inherits(variable, "special")) {
+		double *xintvl1, *xintvl2;
+		size_t nintvl1, nintvl2;
+		double xintvl;
+		struct design *design;
+		struct design2 *design2;
+		const struct var **var;
+		const struct var2 **var2;
+		size_t size = 0;
+
+		if (inherits(variable, "interval")
+			|| inherits(variable, "intervals")
+			|| inherits(variable, "intervals2")) {
+
+			SEXP intvl = VECTOR_ELT(variable, 0);
+			xintvl1 = NUMERIC_POINTER(intvl);
+			nintvl1 = LENGTH(intvl);
+
+			if (inherits(variable, "interval")) {
+				xintvl = *xintvl1;
+				rank = 0;
+				size = 1;
+			} else if (inherits(variable, "intervals2")) {
+				intvl = VECTOR_ELT(variable, 1);
+				xintvl2 = NUMERIC_POINTER(intvl);
+				nintvl2 = LENGTH(intvl);
+				rank = 2;
+				dims[0] = nintvl1;
+				dims[1] = nintvl2;
+				size = nintvl1 * nintvl2;
+			} else {
+				rank = 1;
+				dims[0] = nintvl1;
+				size = nintvl1;
+			}
+		}
+
 		if (inherits(variable, "send")) {
+			design = s;
 			v->type = VARIABLE_TYPE_SEND_SPECIAL;
+			var = &v->var.send;
 		} else if (inherits(variable, "actor")) {
+			design = r;
 			v->type = VARIABLE_TYPE_RECV_SPECIAL;
+			var = &v->var.recv;
 		} else if (inherits(variable, "dyad")) {
+			design2 = d;
 			v->type = VARIABLE_TYPE_DYAD_SPECIAL;
+			var2 = &v->var.dyad;
 		} else {
 			DOMAIN_ERROR("unknown variable type");
 		}
 
-		v->size = 0;
+		if (inherits(variable, "irecvtot")) {
+			*var = design_add_tvar(design, NULL, VAR_IRECVTOT, xintvl);
+		} else if (inherits(variable, "isendtot")) {
+			*var = design_add_tvar(design, NULL, VAR_ISENDTOT, xintvl);
+		} else if (inherits(variable, "nrecvtot")) {
+			*var = design_add_tvar(design, NULL, VAR_NRECVTOT, xintvl1, nintvl1);
+		} else if (inherits(variable, "nsendtot")) {
+			*var = design_add_tvar(design, NULL, VAR_NSENDTOT, xintvl1, nintvl1);
+		} else if (inherits(variable, "irecv")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_IRECV, xintvl);
+		} else if (inherits(variable, "isend")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_ISEND, xintvl);
+		} else if (inherits(variable, "nrecv")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV, xintvl1, nintvl1);
+		} else if (inherits(variable, "nsend")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV, xintvl1, nintvl1);
+		} else if (inherits(variable, "nrecv2")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND2, xintvl1, nintvl1, xintvl2, nintvl2);
+		} else if (inherits(variable, "nsend2")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV2, xintvl1, nintvl1, xintvl2, nintvl2);
+		} else if (inherits(variable, "nsib")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NSIB, xintvl1, nintvl1, xintvl2, nintvl2);
+		} else if (inherits(variable, "ncosib")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NCOSIB, xintvl1, nintvl1, xintvl2, nintvl2);
+		} else {
+			DOMAIN_ERROR("unknown variable type");
+		}
+
+		v->size = size;
+	} else {
+		DOMAIN_ERROR("unknown variable type");
 	}
 	return 0;
 }
