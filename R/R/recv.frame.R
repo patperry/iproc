@@ -1,10 +1,16 @@
 
 SPECIALS <- character(0)
+BSPECIALS <- character(0)
 
-var.interval <- function(name)
+var.interval <- function(name, type, bipartite = FALSE)
 {
     specials <- get("SPECIALS", envir=parent.frame())
     assign("SPECIALS", c(specials, name), envir=parent.frame())
+
+    if (bipartite) {
+        bspecials <- get("BSPECIALS", envir=parent.frame())
+        assign("BSPECIALS", c(bspecials, name), envir=parent.frame())
+    }
 
     function (interval) {
         interval <- as.numeric(interval, units="secs")
@@ -16,15 +22,20 @@ var.interval <- function(name)
             stop("interval is not positive")
 
         x <- list(interval = interval)
-        class(x) <- c(name, "interval")
+        class(x) <- c(name, type, "interval")
         x
     }
 }
 
-var.intervals <- function(name)
+var.intervals <- function(name, type, bipartite = FALSE)
 {
     specials <- get("SPECIALS", envir=parent.frame())
     assign("SPECIALS", c(specials, name), envir=parent.frame())
+
+    if (bipartite) {
+        bspecials <- get("BSPECIALS", envir=parent.frame())
+        assign("BSPECIALS", c(bspecials, name), envir=parent.frame())
+    }
 
     function (...) {
         intervals <- c(...)
@@ -41,20 +52,101 @@ var.intervals <- function(name)
             stop("intervals must be sorted in increasing order")
 
         x <- list(intervals = intervals)
-        class(x) <- c(name, "intervals")
+        class(x) <- c(name, type, "intervals")
         x
     }
 }
 
-irecv <- var.interval("irecv")
-isend <- var.interval("isend")
-irecvtot <- var.interval("irecvtot")
-isendtot <- var.interval("isendtot")
+irecv <- var.interval("irecv", "dyad", bipartite=TRUE)
+nrecv <- var.intervals("nrecv", "dyad", bipartite=TRUE)
+irecvtot <- var.interval("irecvtot", "actor", bipartite=TRUE)
+nrecvtot <- var.intervals("nrecvtot", "actor", bipartite=TRUE)
 
-nrecv <- var.intervals("nrecv")
-nsend <- var.intervals("nsend")
-nrecvtot <- var.intervals("nrecvtot")
-nsendtot <- var.intervals("nsendtot")
+
+isend <- var.interval("isend", "dyad")
+isendtot <- var.interval("isendtot", "actor")
+nsend <- var.intervals("nsend", "dyad")
+nsendtot <- var.intervals("nsendtot", "actor")
+
+
+
+add.s <- function(object, specials = NULL)
+{
+    if (is.name(object)
+        || (is.call(object) && as.character(object[[1L]]) %in% specials)) {
+        ret <- call("s", object)
+    } else {
+        ret <- object
+        args <- lapply(object[-1L], add.s, specials=specials)
+        ret[-1] <- args
+    }
+    ret
+}
+
+
+expand.s <- function(object, specials = NULL, data = NULL) {
+    if (missing(data))
+        data <- environment(object)
+
+    if (!is.call(object)) {
+        ret <- object
+    } else if (object[[1L]] == quote(s)) {
+        fmla <- object
+        fmla[[1L]] <- quote(`~`)
+        tm <- eval(call("terms", fmla, specials=specials, data=data))
+        labels <- attr(tm, "term.labels")
+        parse <- as.formula(paste("~", paste(labels, collapse=" + ")))[[2]]
+        ret <- add.s(parse, specials=specials)
+        if (attr(tm, "intercept") == 1L) {
+            ret <- as.formula(paste("~ 1 +", deparse(ret)))[[2L]]
+        }
+    } else {
+        ret <- object
+        args <- lapply(object[-1L], expand.s, specials=specials, data=data)
+        ret[-1L] <- args
+    }
+
+    ret
+}
+
+
+recv.variable <- function(object, specials, data, sender.data, ...)
+{
+    if (is.call(object) && object[[1L]] == "s") {
+        if (length(object) != 2L)
+            stop("Too many arguments to 's'")
+
+        var <- recv.variable(object[[2L]], specials, sender.data, NULL, ...)
+        name <- deparse(object[[2L]])
+
+        if (inherits(var, "dyad"))
+            stop(sprintf("term 's(%s)' is invalid; '%s' is a dyad-specific variable",
+                         name, name))
+
+        if (inherits(var, "trait"))
+            colnames(var) <- paste("s(", colnames(var), ")", sep="")
+
+        class(var) <- c("send", class(var))
+    } else if (is.call(object)
+               && as.character(object[[1L]]) %in% specials) {
+        var <- eval(object, list(...))
+        class(var) <- c("special", class(var))
+    } else {
+        data <- eval(call("data.frame", object), data)
+        mm <- model.matrix(~ ., data)
+        int <- match("(Intercept)", colnames(mm))
+        if (!is.na(int)) {
+            assign <- attr(mm, "assign")
+            contrasts <- attr(mm, "contrasts")
+            var <- mm[,-int,drop=FALSE]
+            attr(var, "contrasts") <- contrasts[[1L]]
+            class(var) <- c("trait", class(mm))
+        }
+    }
+
+    var
+}
+
 
 
 recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
@@ -81,10 +173,39 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
         loops <- NA
     }
 
-
     specials <- SPECIALS
+    bspecials <- BSPECIALS
+    formula <- expand.s(formula, specials, data=sender.data)
     tm <- terms(formula, specials, data=receiver.data)
     v <- attr(tm, "variables")[-1L]
+
+    response <- attr(tm, "response")
+    variables <- list()
+
+    for (i in seq_along(v)) {
+        if (i == response) {
+            y <- eval(v[[i]], message.data)
+
+            if (is.Mesg(y)) {
+                if (!bipartite && max(y$sender) > n)
+                    stop("message sender is out of range")
+                if (max(unlist(y$receiver)) > n)
+                    stop("message receiver is out of range")
+            }
+
+            class(y) <- c("response", class(y))
+            variables[[i]] <- y
+        } else {
+            rv <- recv.variable(v[[i]], specials, receiver.data, sender.data, ...)
+            name <- attr(rv, "name")
+            attr(rv, "name") <- NULL
+            variables[[i]] <- rv
+        }
+        names(variables)[[i]] <- deparse(v[[i]])
+    }
+
+    browser()
+
     factors <- get.factors(tm)
     nv <- nrow(factors)
     nt <- ncol(factors)
@@ -95,8 +216,8 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     # validate the formula
     if (any(factors == 2L))
         stop("interactions without main effects are not supported")
-    for (s in c("irecvtot", "nrecvtot", "irecv", "nrecv",
-                "nsend2", "nrecv2", "nsib", "ncosib")) {
+
+    for (s in setdiff(specials, bspecials)) {
         if (bipartite && s %in% special.names)
             stop(sprintf("the special term '%s' is invalid for bipartite processes", s))
     }
@@ -107,12 +228,6 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
         call.y <- v[[attr(tm, "response")]]
         y <- eval(call.y, message.data)
 
-        if (is.Mesg(y)) {
-            if (!bipartite && max(y$sender) > n)
-                stop("message sender is out of range")
-            if (max(unlist(y$receiver)) > n)
-                stop("message receiver is out of range")
-        }
     } else {
         y <- NULL
     }
