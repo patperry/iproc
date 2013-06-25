@@ -123,7 +123,6 @@ static int get_variable(SEXP variable, const char *name,
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
 
 
-//static int get_ids(size_t *dst, SEXP src);
 
 
 
@@ -594,28 +593,3 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 	return err;
 }
 
-
-#if 0
-
-static int get_ids(size_t *dst, SEXP src)
-{
-	int i, n;
-	int *xsrc;
-	int err = 0;
-
-	xsrc = INTEGER_POINTER(src);
-	n = LENGTH(src);
-
-	for (i = 0; i < n; i++) {
-		if (xsrc[i] <= 0) {
-			err = -EDOM;
-			goto out;
-		}
-		dst[i] = (size_t)(xsrc[i] - 1);
-	}
-
-out:
-	return err;
-}
-
-#endif
