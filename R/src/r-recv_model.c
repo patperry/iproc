@@ -34,8 +34,8 @@
 
 enum variable_type {
 	VARIABLE_TYPE_SEND_TRAIT,
-	VARIABLE_TYPE_SEND_SPECIAL,
 	VARIABLE_TYPE_RECV_TRAIT,
+	VARIABLE_TYPE_SEND_SPECIAL,
 	VARIABLE_TYPE_RECV_SPECIAL,
 	VARIABLE_TYPE_DYAD_SPECIAL
 };
@@ -45,10 +45,12 @@ struct variable {
 	enum variable_type type;
 	const char *name;
 	const char **names;
-	size_t dims[VAR_RANK_MAX];
-	size_t rank;
 	size_t size;
-	union { struct var *send; struct var *recv; struct var2 *dyad; } var;
+	union {
+		const struct var *send;
+		const struct var *recv;
+		const struct var2 *dyad;
+	} var;
 };
 
 /*
@@ -71,9 +73,15 @@ struct properties {
 };
 
 
+struct variables {
+	struct variable *item;
+	size_t count;
+};
+
+
+
 struct terms {
-	size_t nvariable;
-	struct variable *variables;
+	struct variables variables;
 };
 
 
@@ -99,24 +107,20 @@ struct args {
 
 static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 			  struct properties *p);
-
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
-
 static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm);
+static int get_variables(SEXP variables,
+			 struct design *s, struct design *r, struct design2 *d,
+			 struct variables *v);
+static int get_variable(SEXP variable, const char *name,
+			struct design *s, struct design *r, struct design2 *d,
+			struct variable *v);
 
-//static int extract_terms(SEXP factors, SEXP types, struct args *args);
-//static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args);
 
-
-
-//static void setup_recv_design(struct design *r, struct history *h,
-//			      const struct args *args);
-//static void setup_dyad_design(struct design2 *d, struct design *r,
-//			      struct history *h, const struct args *args);
-//static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
 
 
 //static int get_ids(size_t *dst, SEXP src);
@@ -135,8 +139,8 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 
 	const struct message *msgs;
 	size_t nmsg;
-	//size_t ncextra;
-	//struct recv_fit fit;
+	size_t ncextra;
+	struct recv_fit fit;
 	int err = 0;
 
 	err = get_properties(nsend, nrecv, loops, &p);
@@ -156,22 +160,18 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	if (err < 0)
 		goto terms_fail;
 
-	//setup_recv_design(&recv, &history, &args);
-	//setup_dyad_design(&dyad, &recv, &history, &args);
-
 	history_get_messages(&h, &msgs, &nmsg);
 
-	//recv_fit_init(&fit, &recv, &dyad, p.exclude_loops, msgs, nmsg, NULL, NULL);
+	recv_fit_init(&fit, &r, &d, p.exclude_loops, msgs, nmsg, NULL, NULL);
 
-	//ncextra = recv_fit_extra_constr_count(&fit);
-	//if (ncextra)
-	//	warning("Adding %zd %s to make parameters identifiable\n",
-	//		ncextra, ncextra == 1 ? "constraint" : "constraints");
+	ncextra = recv_fit_extra_constr_count(&fit);
+	if (ncextra)
+		warning("Adding %zd %s to make parameters identifiable\n",
+			ncextra, ncextra == 1 ? "constraint" : "constraints");
 
-	//err = do_fit(&fit, NULL, NULL);
+	err = do_fit(&fit, NULL, NULL);
 
-
-	//recv_fit_deinit(&fit);
+	recv_fit_deinit(&fit);
 terms_fail:
 	design2_deinit(&d);
 	design_deinit(&r);
@@ -326,11 +326,10 @@ static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm)
 {
-	const char *rn, *cn, *xtype;
 	int i, j, m, n;
 	int *xfactors;
-	int k, l, nvariable, nterm;
-	SEXP variable_names;
+	int nvariable, nterm;
+	int err = 0;
 
 	/* validate types */
 	if (!IS_INTEGER(factors))
@@ -339,8 +338,6 @@ static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		DOMAIN_ERROR("'factors' should be a matrix");
 	if (!IS_CHARACTER(term_labels))
 		DOMAIN_ERROR("'term.labels' should be a character vector");
-	if (!IS_VECTOR(variables))
-		DOMAIN_ERROR("'variables' should be a list");
 	if (!IS_INTEGER(order))
 		DOMAIN_ERROR("'order' should be a list");
 
@@ -363,7 +360,7 @@ static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		if ((size_t)n != nterm)
 			DOMAIN_ERROR("'factors' should have"
 				     " cols equal to the number of terms");
-	
+
 		for (j = 0; j < n; j++) {
 			for (i = 0; i < m; i++) {
 				xf = xfactors[i * n + j];
@@ -377,144 +374,118 @@ static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		xfactors = NULL;
 	}
 
-	variable_names = GET_NAMES(variables);
-	if (!IS_CHARACTER(variable_names) && LENGTH(variable_names) == nvariable)
+	err = get_variables(variables, s, r, d, &tm->variables);
+	if (err < 0)
+		goto out;
+
+out:
+	return err;
+}
+
+
+static int get_variables(SEXP variables,
+			 struct design *s, struct design *r, struct design2 *d,
+			 struct variables *v)
+{
+	SEXP names;
+	int i, n;
+	int err = 0;
+
+	if (!IS_VECTOR(variables))
+		DOMAIN_ERROR("'variables' should be a list");
+
+	n = LENGTH(variables);
+
+	names = GET_NAMES(variables);
+	if (!IS_CHARACTER(names) && LENGTH(names) == n)
 		DOMAIN_ERROR("'variables' must have a name for each component");
 
-	tm->nvariable = nvariable;
-	tm->variables = (void *)R_alloc(nvariable, sizeof(*tm->variables));
-	for (k = 0; k < nvariable; k++) {
-		SEXP v = VECTOR_ELT(variables, k);
-		SEXP nm = STRING_ELT(variable_names, k);
-		struct variable *dst = &tm->variables[k];
-		
-		dst->name = CHAR(nm);
-	}
-
-	for (k = 0; k < nvariable; k++) {
-		struct variable *v = &tm->variables[k];
-		Rprintf("variable[[%d]] = '%s'\n", k + 1, v->name);
-	}
-
-
-	return 0;
-}
-
-
-#if 0
-
-static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args)
-{
-	SEXP dim, assign;
-	int i, m, n;
-	int *xassign;
-
-	/* validate and extract factor matrix */
-	if (!IS_NUMERIC(traits))
-		DOMAIN_ERROR("'traits' should be numeric");
-	if (!isMatrix(traits))
-		DOMAIN_ERROR("'traits' should be a matrix");
-
-	dim = GET_DIM(traits);
-	m = INTEGER(dim)[0];
-	n = INTEGER(dim)[1];
-
-	if ((size_t)m != nrecv)
-		DOMAIN_ERROR("'traits' should have one row for each receiver");
-
-	assign = GET_ATTR(traits, install("assign"));
-
-	if (assign == NULL_USER_OBJECT)
-		DOMAIN_ERROR("'traits' should have an 'assign' attribute");
-	if (!IS_INTEGER(assign))
-		DOMAIN_ERROR("'assign' should be integer");
-	if (LENGTH(assign) != n)
-		DOMAIN_ERROR("'assign' should have length"
-			     " equal to the number of columns in 'traits'");
-
-	xassign = INTEGER_POINTER(assign);
+	v->count = (size_t)n;
+	v->item = (void *)R_alloc(n, sizeof(*v->item));
 	for (i = 0; i < n; i++) {
-		if (!(0 <= xassign[i] && xassign[i] <= (int)ntrait))
-			DOMAIN_ERROR("'assign' values should be between 0"
-				     " and the number of trait variables");
+		SEXP var = VECTOR_ELT(variables, i);
+		SEXP nm = STRING_ELT(names, i);
+
+		err = get_variable(var, CHAR(nm), s, r, d, &v->item[i]);
+		if (err < 0)
+			goto out;
 	}
+out:
+	return err;
+}
 
-	args->traits = traits;
-	args->assign = assign;
 
+static int get_variable(SEXP variable, const char *name,
+			struct design *s, struct design *r, struct design2 *d,
+			struct variable *v)
+{
+	size_t dims[VAR_RANK_MAX];
+	size_t rank;
+
+	double *xt, *x;
+	int j, n, p;
+	SEXP dim, cn, dn, nm;
+
+	v->name = name;
+
+	if (isMatrix(variable) || inherits(variable, "matrix")) {
+		dim = GET_DIM(variable);
+		n = INTEGER(dim)[0];
+		p = INTEGER(dim)[1];
+		xt = NUMERIC_POINTER(variable);
+		x = (void *)R_alloc(n * p, sizeof(*x));
+
+		if (p == 0)
+			DOMAIN_ERROR("variable dimensions must be nonzero");
+
+		if (n > 0)
+			matrix_dtrans(n, p, xt, n, x, p);
+
+		if (p == 1) {
+			rank = 0;
+		} else {
+			rank = 1;
+			dims[0] = (size_t)p;
+		}
+
+		if (inherits(variable, "send")) {
+			if (n != design_count(s))
+				DOMAIN_ERROR("variable dimension must match sender count");
+
+			v->type = VARIABLE_TYPE_SEND_TRAIT;
+			v->var.send = design_add_trait(s, NULL, x, dims, rank);
+		} else {
+			if (n != design_count(r))
+				DOMAIN_ERROR("variable dimension must match receiver count");
+
+			v->type = VARIABLE_TYPE_RECV_TRAIT;
+			v->var.recv = design_add_trait(r, NULL, x, dims, rank);
+		}
+
+		dn = GET_DIMNAMES(variable);
+		cn = GET_COLNAMES(dn);
+		v->names = (void *)R_alloc(p, sizeof(*v->names));
+		for (j = 0; j < p; j++) {
+			nm = STRING_ELT(cn, j);
+			v->names[j] = CHAR(nm);
+		}
+
+		v->size = (size_t)p;
+	} else {
+		if (inherits(variable, "send")) {
+			v->type = VARIABLE_TYPE_SEND_SPECIAL;
+		} else if (inherits(variable, "actor")) {
+			v->type = VARIABLE_TYPE_RECV_SPECIAL;
+		} else if (inherits(variable, "dyad")) {
+			v->type = VARIABLE_TYPE_DYAD_SPECIAL;
+		} else {
+			DOMAIN_ERROR("unknown variable type");
+		}
+
+		v->size = 0;
+	}
 	return 0;
 }
-
-
-
-static void setup_recv_design(struct design *r, struct history *h,
-			      const struct args *args)
-{
-	SEXP traits_dims;
-	double *traits;
-	size_t nrecv;
-	size_t i, ntrait;
-	size_t j, dim_max;
-	size_t dim, rank;
-	size_t *dims;
-	int *assign;
-	const char *name = NULL;
-	double *buf, *x;
-
-	nrecv = args->nrecv;
-	ntrait = args->ntrait;
-	traits_dims = GET_DIM(args->traits);
-	dim_max = (size_t)(INTEGER(traits_dims)[1]);
-
-	traits = NUMERIC_POINTER(args->traits);
-	assign = INTEGER_POINTER(args->assign);
-
-	design_init(r, h, nrecv);
-
-	buf = (void *)R_alloc(dim_max * nrecv, sizeof(*buf));
-	x = (void *)R_alloc(nrecv * dim_max, sizeof(*x));
-
-	for (i = 0; i < ntrait; i++) {
-		dim = 0;
-		for (j = 0; j < dim_max; j++) {
-			if ((size_t)assign[j] == i + 1) {
-				blas_dcopy(nrecv, traits + j * nrecv, 1,
-					   buf + dim * nrecv, 1);
-				dim++;
-			}
-		}
-
-		if (dim == 0) {
-			/* TODO: check for in extract_traits */
-			error("0-dimensional trait %zd", i);
-		}
-
-		matrix_dtrans(nrecv, dim, buf, nrecv, x, dim);
-
-		if (dim > 1) {
-			rank = 1;
-			dims = &dim;
-		} else {
-			rank = 0;
-			dims = NULL;
-		}
-
-		design_add_trait(r, name, x, dims, rank);
-	}
-}
-
-
-static void setup_dyad_design(struct design2 *d, struct design *r,
-			      struct history *h, const struct args *args)
-{
-	size_t nsend, nrecv;
-
-	nsend = args->nsend;
-	nrecv = args->nrecv;
-
-	design2_init(d, h, nsend, nrecv);
-}
-
 
 
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0)
@@ -552,6 +523,7 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 }
 
 
+#if 0
 
 static int get_ids(size_t *dst, SEXP src)
 {
