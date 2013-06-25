@@ -294,3 +294,17 @@ recv.weights <- function(frame)
     stop("not implemented")
 }
 
+
+recv.horizon <- function(frame)
+{
+    if (!inherits(frame, "recv.frame"))
+        stop("invalid 'frame' argument")
+
+    hs <- lapply(frame$variables, function(x) attr(x, "horizon", TRUE))
+    horizon <- max(c(0, unlist(hs)))
+    horizon
+}
+
+
+
+

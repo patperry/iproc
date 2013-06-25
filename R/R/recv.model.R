@@ -1,24 +1,28 @@
 recv.model <- function(formula, message.data, receiver.data,
                        sender.data = receiver.data, n = nrow(receiver.data),
                        bipartite = FALSE, loops = FALSE, method = "newton",
-                       contrasts = NULL, ...)
+                       contrasts = NULL, skip = horizon, ...)
 {
     call <- match.call()
 
     # compute the model frame
     mf <- match.call(expand.dots = TRUE)
-    m <- match(c("contrasts", "method"), names(mf))
+    m <- match(c("contrasts", "method", "skip"), names(mf))
     m <- m[!is.na(m)]
     if (length(m) > 0)
         mf <- mf[-m]
     mf[[1L]] <- as.name("recv.frame")
     mf <- eval(mf, parent.frame())
+    horizon <- recv.horizon(mf)
 
     if (method == "recv.frame")
         return(mf)
     else if (method != "newton")
         warning(sprintf("method = '%s' is not supported. Using 'newton'",
                         method))
+
+    if (!(skip >= 0))
+        stop("'skip' must be non-negative")
 
     y <- recv.response(mf)
     x <- recv.matrix(mf, contrasts=contrasts)
@@ -50,7 +54,7 @@ recv.model <- function(formula, message.data, receiver.data,
 
     model <- .Call("Riproc_recv_model", time, sender, receiver,
                    factors, term.labels, variables, order,
-                   nsend, nrecv, loops)
+                   nsend, nrecv, loops, skip)
     model
 }
 

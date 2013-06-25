@@ -70,6 +70,7 @@ struct properties {
 
 	/* properties */
 	int exclude_loops;
+	double skip;
 };
 
 
@@ -105,7 +106,7 @@ struct args {
 
 
 
-static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 			  struct properties *p);
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
@@ -128,7 +129,7 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 
 SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 		       SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
-		       SEXP nsend, SEXP nrecv, SEXP loops)
+		       SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip)
 {
 	struct properties p;
 	struct history h;
@@ -139,10 +140,11 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	const struct message *msgs;
 	size_t nmsg;
 	size_t ncextra;
+	double t0;
 	struct recv_fit fit;
 	int err = 0;
 
-	err = get_properties(nsend, nrecv, loops, &p);
+	err = get_properties(nsend, nrecv, loops, skip, &p);
 	if (err < 0)
 		goto properties_fail;
 
@@ -160,6 +162,12 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 		goto terms_fail;
 
 	history_get_messages(&h, &msgs, &nmsg);
+	/* skip initial observation period (missing covariates) */
+	t0 = nmsg ? msgs[0].time : -INFINITY;
+	while (nmsg && msgs->time < t0 + p.skip) {
+		nmsg--;
+		msgs++;
+	}
 
 	recv_fit_init(&fit, &r, &d, p.exclude_loops, msgs, nmsg, NULL, NULL);
 
@@ -184,10 +192,11 @@ properties_fail:
 
 
 
-static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 			  struct properties *p)
 {
 	int xnsend, xnrecv, xloops;
+	double xskip;
 
 	/* validate and extract 'nsend' */
 	if (!IS_INTEGER(nsend) || LENGTH(nsend) != 1)
@@ -221,10 +230,18 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 	if (!xloops && xnrecv == 1)
 		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
 
+	if (!IS_NUMERIC(skip) || LENGTH(skip) != 1)
+		DOMAIN_ERROR("'skip' should be a single numeric value");
+
+	xskip = NUMERIC_VALUE(skip);
+	if (!(xskip >= 0))
+		DOMAIN_ERROR("'skip' should be non-negative");
+
 
 	p->nsend = (size_t)xnsend;
 	p->nrecv = (size_t)xnrecv;
 	p->exclude_loops = !xloops;
+	p->skip = xskip;
 
 	return 0;
 }
