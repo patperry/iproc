@@ -1,4 +1,4 @@
-Mesg <- function(time, sender, receiver, data, message.attr = NULL)
+Mesg <- function(time, sender, receiver, data)
 {
     if (missing(time))
         stop("must have a time argument")
@@ -12,8 +12,8 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
     time <- eval(substitute(time), data)
     sender <- eval(substitute(sender), data)
     receiver <- eval(substitute(receiver), data)
-    if (!missing(message.attr))
-        message.attr <- eval(substitute(message.attr), data)
+    #if (!missing(message.attr))
+    #    message.attr <- eval(substitute(message.attr), data)
 
 
     # validate and normalize time
@@ -57,11 +57,11 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
 
 
     # validate and normalize message.attr
-    if (!is.null(message.attr)) {
-        if (length(message.attr) != length(time))
-            stop(sprintf("number of attributes is %d, should equal %d (number of times)",
-                         length(message.attr), length(time)))
-    }
+    #if (!is.null(message.attr)) {
+    #    if (length(message.attr) != length(time))
+    #        stop(sprintf("number of attributes is %d, should equal %d (number of times)",
+    #                     length(message.attr), length(time)))
+    #}
 
 
     if (is.unsorted(time))
@@ -69,8 +69,8 @@ Mesg <- function(time, sender, receiver, data, message.attr = NULL)
 
     z <- data.frame(time = time, sender = sender)
     z$receiver <- receiver # need a separate assignment in case receiver is a list
-    if (!is.null(message.attr))
-        z$message.attr <- message.attr
+    #if (!is.null(message.attr))
+    #    z$message.attr <- message.attr
 
     class(z) <- c("Mesg", class(z))
 
@@ -126,9 +126,9 @@ is.na.Mesg <- function(x)
                       sender = is.na(x$sender),
                       receiver = sapply(x$receiver, function(r)
                                         is.null(r) || length(r) == 0L || any(is.na(r))))
-    if (!is.null(x$message.attr)) {
-        res$message.attr <- sapply(x$message.attr, is.na)
-    }
+    #if (!is.null(x$message.attr)) {
+    #    res$message.attr <- sapply(x$message.attr, is.na)
+    #}
 
     res
 }
