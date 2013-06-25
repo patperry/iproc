@@ -98,7 +98,8 @@ expand.s <- function(object, specials = NULL, data = NULL) {
         parse <- as.formula(paste("~", paste(labels, collapse=" + ")))[[2]]
         ret <- add.s(parse, specials=specials)
         if (attr(tm, "intercept") == 1L) {
-            ret <- as.formula(paste("~ 1 +", deparse(ret)))[[2L]]
+            str <- paste(deparse(ret), collapse=" ")
+            ret <- as.formula(paste("~ 1 +", str))[[2L]]
         }
     } else {
         ret <- object
@@ -106,6 +107,7 @@ expand.s <- function(object, specials = NULL, data = NULL) {
         ret[-1L] <- args
     }
 
+    environment(ret) <- environment(object)
     ret
 }
 
@@ -119,7 +121,7 @@ recv.frame.variable <- function(object, specials, data, sender.data,
 
         var <- recv.frame.variable(object[[2L]], specials, sender.data, NULL,
                                    envir, ...)
-        name <- deparse(object[[2L]])
+        name <- paste(deparse(object[[2L]]), collapse=" ")
 
         if (inherits(var, "dyad"))
             stop(sprintf("term 's(%s)' is invalid; '%s' is a dyad-specific variable",
@@ -177,19 +179,22 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     bspecials <- BSPECIALS
     formula <- expand.s(formula, specials, data=sender.data)
     tm <- terms(formula, specials, data=receiver.data)
+    response <- attr(tm, "response")
 
     # validate the formula
     special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"),
                                                          is.null)]
     if (any(attr(tm, "factors") == 2L))
         stop("interactions without main effects are not supported")
+    if (any(attr(tm, "factors")[response,-response] == 1L))
+        stop("interactions between the response and the predictors are not supported")
+
     for (s in setdiff(specials, bspecials)) {
         if (bipartite && s %in% special.names)
             stop(sprintf("the special term '%s' is invalid for bipartite processes", s))
     }
 
     v <- attr(tm, "variables")[-1L]
-    response <- attr(tm, "response")
     variables <- list()
 
     for (i in seq_along(v)) {
@@ -203,7 +208,6 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
                     stop("message receiver is out of range")
             }
 
-            class(y) <- c("response", class(y))
             variables[[i]] <- y
         } else {
             rv <- recv.frame.variable(v[[i]], specials, receiver.data,
@@ -212,18 +216,17 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
             attr(rv, "name") <- NULL
             variables[[i]] <- rv
         }
-        names(variables)[[i]] <- deparse(v[[i]])
+        names(variables)[[i]] <- paste(deparse(v[[i]]), collapse=" ")
     }
 
     send <- sapply(variables, function(x) inherits(x, "send"))
     factors <- attr(tm, "factors")
     term.labels <- attr(tm, "term.labels")
     order <- attr(tm, "order")
-    response <- attr(tm, "response")
 
     all.send <- colSums(factors * !send) == 0
     factors <- factors[,!all.send,drop=FALSE]
-    term.names <- term.names[!all.send]
+    term.labels <- term.labels[!all.send]
     order <- order[!all.send]
 
     frame <- list(formula = formula(tm), factors = factors,
@@ -242,11 +245,6 @@ recv.response <- function(frame)
 
     response <- frame$response
     y <- frame$variables[[response]]
-    if (!is.null(y)) {
-        i <- match("response", class(y))
-        if (!is.na(i))
-            class(y) <- class(y)[-i]
-    }
     y
 }
 

@@ -37,6 +37,7 @@ recv.model <- function(formula, message.data, receiver.data,
     receiver <- y$receiver
 
     factors <- x$factors
+    term.labels <- x$term.labels
     variables <- x$variables
     order <- x$order
 
@@ -48,7 +49,8 @@ recv.model <- function(formula, message.data, receiver.data,
     browser()
 
     model <- .Call("Riproc_recv_model", time, sender, receiver,
-                   factors, variables, order, nsend, nrecv, loops)
+                   factors, term.labels, variables, order,
+                   nsend, nrecv, loops)
     model
 }
 

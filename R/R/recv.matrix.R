@@ -28,7 +28,17 @@ recv.matrix.variable <- function(var, contrasts = NULL)
 
 recv.matrix <- function(frame, contrasts = NULL)
 {
-    variables <- lapply(frame$variable, recv.matrix.variable, contrasts=contrasts)
+    variables <- list()
+    for (i in seq_along(frame$variables)) {
+        var <- frame$variables[[i]]
+        if (i == frame$response) {
+            variables[[i]] <- var
+        } else {
+            variables[[i]] <- recv.matrix.variable(var, contrasts)
+        }
+    }
+    names(variables) <- names(frame$variables)
+
     mat <- frame
     mat$variables <- variables
 

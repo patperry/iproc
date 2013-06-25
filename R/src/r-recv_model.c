@@ -33,10 +33,11 @@
 
 
 enum variable_type {
+	VARIABLE_TYPE_SEND_TRAIT,
+	VARIABLE_TYPE_SEND_SPECIAL,
 	VARIABLE_TYPE_RECV_TRAIT,
 	VARIABLE_TYPE_RECV_SPECIAL,
-	VARIABLE_TYPE_DYAD_SPECIAL,
-	VARIABLE_TYPE_RESPONSE
+	VARIABLE_TYPE_DYAD_SPECIAL
 };
 
 
@@ -44,8 +45,10 @@ struct variable {
 	enum variable_type type;
 	const char *name;
 	const char **names;
+	size_t dims[VAR_RANK_MAX];
+	size_t rank;
 	size_t size;
-	union { struct var *recv; struct var2 *dyad; } var;
+	union { struct var *send; struct var *recv; struct var2 *dyad; } var;
 };
 
 /*
@@ -69,8 +72,8 @@ struct properties {
 
 
 struct terms {
-	size_t nvar;
-	size_t nterm;
+	size_t nvariable;
+	struct variable *variables;
 };
 
 
@@ -100,7 +103,7 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
 
-static int get_terms(SEXP factors, SEXP variables, SEXP order,
+static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm);
 
@@ -121,7 +124,7 @@ static int get_terms(SEXP factors, SEXP variables, SEXP order,
 
 
 SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
-		       SEXP factors, SEXP variables, SEXP order,
+		       SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		       SEXP nsend, SEXP nrecv, SEXP loops)
 {
 	struct properties p;
@@ -149,7 +152,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	design_init(&r, &h, p.nrecv);
 	design2_init(&d, &h, p.nsend, p.nrecv);
 
-	err = get_terms(factors, variables, order, &s, &r, &d, &tm);
+	err = get_terms(factors, term_labels, variables, order, &s, &r, &d, &tm);
 	if (err < 0)
 		goto terms_fail;
 
@@ -188,7 +191,7 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 	int xnsend, xnrecv, xloops;
 
 	/* validate and extract 'nsend' */
-	if (!IS_INTEGER(nsend) || GET_LENGTH(nsend) != 1)
+	if (!IS_INTEGER(nsend) || LENGTH(nsend) != 1)
 		DOMAIN_ERROR("'nsend' should be a single integer");
 
 	xnsend = INTEGER_VALUE(nsend);
@@ -198,7 +201,7 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 
 
 	/* validate and extract 'nrecv' */
-	if (!IS_INTEGER(nrecv) || GET_LENGTH(nrecv) != 1)
+	if (!IS_INTEGER(nrecv) || LENGTH(nrecv) != 1)
 		DOMAIN_ERROR("'nrecv' should be a single integer");
 
 	xnrecv = INTEGER_VALUE(nrecv);
@@ -209,7 +212,7 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 
 
 	/* validate and extract 'loops' */
-	if (!IS_LOGICAL(loops) || GET_LENGTH(loops) != 1)
+	if (!IS_LOGICAL(loops) || LENGTH(loops) != 1)
 		DOMAIN_ERROR("'loops' should be a single integer");
 
 	xloops = LOGICAL_VALUE(loops);
@@ -243,7 +246,7 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 	/* extract dimensions */
 	nsend = history_send_count(h);
 	nrecv = history_recv_count(h);
-	n = GET_LENGTH(time);
+	n = LENGTH(time);
 
 
 	/* setup message buffer */
@@ -262,7 +265,7 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 	/* validate and extract 'sender' */
 	if (!IS_INTEGER(sender))
 		DOMAIN_ERROR("'sender' should be an integer vector");
-	if (GET_LENGTH(sender) != n)
+	if (LENGTH(sender) != n)
 		DOMAIN_ERROR("'time' and 'receiver' lengths differ");
 
 	xsender = INTEGER_POINTER(sender);
@@ -271,7 +274,7 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 	/* validate and extract 'receiver' */
 	if (!IS_VECTOR(receiver))
 		DOMAIN_ERROR("'receiver' should be a list");
-	if (GET_LENGTH(receiver) != n)
+	if (LENGTH(receiver) != n)
 		DOMAIN_ERROR("'time' and 'receiver' lengths differ");
 
 
@@ -286,7 +289,7 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 		if (!IS_INTEGER(r))
 			DOMAIN_ERROR("each element of 'receiver' should be an integer vector");
 
-		m = GET_LENGTH(r);
+		m = LENGTH(r);
 		xr = INTEGER_POINTER(r);
 
 		for (j = 0; j < MIN(m, nto_max); j++) {
@@ -319,99 +322,86 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 }
 
 
-static int get_terms(SEXP factors, SEXP variables, SEXP order,
+static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm)
 {
-	return 0;
-}
-
-#if 0
-	SEXP dim, rl, cl;
 	const char *rn, *cn, *xtype;
 	int i, j, m, n;
 	int *xfactors;
-	enum variable_type *xtypes;
-	size_t *trait_ind, *special_ind;
-	size_t ntrait, nspecial;
+	int k, l, nvariable, nterm;
+	SEXP variable_names;
 
-	/* validate and extract factor matrix */
+	/* validate types */
 	if (!IS_INTEGER(factors))
 		DOMAIN_ERROR("'factors' should be integer");
 	if (!isMatrix(factors))
 		DOMAIN_ERROR("'factors' should be a matrix");
+	if (!IS_CHARACTER(term_labels))
+		DOMAIN_ERROR("'term.labels' should be a character vector");
+	if (!IS_VECTOR(variables))
+		DOMAIN_ERROR("'variables' should be a list");
+	if (!IS_INTEGER(order))
+		DOMAIN_ERROR("'order' should be a list");
 
-	dim = GET_DIM(factors);
-	m = INTEGER(dim)[0];
-	n = INTEGER(dim)[1];
-	xfactors = INTEGER_POINTER(factors);
+	/* get dimensions */
+	nterm = LENGTH(term_labels);
+	nvariable = LENGTH(variables);
 
-	for (j = 0; j < n; j++) {
-		for (i = 0; i < m; i++) {
-			if (xfactors[i * n + j] != 0 && xfactors[i * n + j] != 1)
-				DOMAIN_ERROR("invalid entry in 'factors' matrix");
+	/* validate factor matrix */
+	if (isMatrix(factors)) {
+		SEXP dim = GET_DIM(factors);
+		int xf;
+
+		m = INTEGER(dim)[0];
+		n = INTEGER(dim)[1];
+		xfactors = INTEGER_POINTER(factors);
+
+		if ((size_t)m != nvariable)
+			DOMAIN_ERROR("'factors' should have"
+				     " rows equal to the number of variables");
+		if ((size_t)n != nterm)
+			DOMAIN_ERROR("'factors' should have"
+				     " cols equal to the number of terms");
+	
+		for (j = 0; j < n; j++) {
+			for (i = 0; i < m; i++) {
+				xf = xfactors[i * n + j];
+				if (xf != 0 && xf != 1)
+					DOMAIN_ERROR("invalid entry in 'factors' matrix");
+			}
 		}
+	} else {
+		m = 0;
+		n = 0;
+		xfactors = NULL;
 	}
 
+	variable_names = GET_NAMES(variables);
+	if (!IS_CHARACTER(variable_names) && LENGTH(variable_names) == nvariable)
+		DOMAIN_ERROR("'variables' must have a name for each component");
 
-	/* validate and extract variable and term names */
-	GetMatrixDimnames(factors, &rl, &cl, &rn, &cn);
-
-	if (!IS_CHARACTER(rl))
-		DOMAIN_ERROR("'factors' should have character rownames");
-	if (GET_LENGTH(rl) != m)
-		DOMAIN_ERROR("'factors' should have a name for each row");
-	if (n > 0) {
-		if (!IS_CHARACTER(cl))
-			DOMAIN_ERROR("'factors' should have character colnames");
-		if (GET_LENGTH(cl) != n)
-			DOMAIN_ERROR("'factors' should have a name for each column");
+	tm->nvariable = nvariable;
+	tm->variables = (void *)R_alloc(nvariable, sizeof(*tm->variables));
+	for (k = 0; k < nvariable; k++) {
+		SEXP v = VECTOR_ELT(variables, k);
+		SEXP nm = STRING_ELT(variable_names, k);
+		struct variable *dst = &tm->variables[k];
+		
+		dst->name = CHAR(nm);
 	}
 
-
-	/* validate and extract variable types */
-	if (!IS_CHARACTER(types))
-		DOMAIN_ERROR("'types' should be a character vector");
-	if (LENGTH(types) != m)
-		DOMAIN_ERROR("'types' vector has the wrong length");
-
-	xtypes = (void *)R_alloc(m, sizeof(*xtypes));
-
-	trait_ind = (void *)R_alloc(m, sizeof(*trait_ind));
-	special_ind = (void *)R_alloc(m, sizeof(*special_ind));
-	ntrait = 0;
-	nspecial = 0;
-
-	for (i = 0; i < m; i++) {
-		xtype = CHAR(STRING_ELT(types, i));
-
-		if (strcmp(xtype, "response") == 0) {
-			xtypes[i] = VARIABLE_TYPE_RESPONSE;
-		} else if (strcmp(xtype, "special") == 0) {
-			xtypes[i] = VARIABLE_TYPE_SPECIAL;
-			special_ind[nspecial++] = (size_t)i;
-		} else if (strcmp(xtype, "trait") == 0) {
-			xtypes[i] = VARIABLE_TYPE_TRAIT;
-			trait_ind[ntrait++] = (size_t)i;
-		} else {
-			DOMAIN_ERROR("invalid 'types' value");
-		}
+	for (k = 0; k < nvariable; k++) {
+		struct variable *v = &tm->variables[k];
+		Rprintf("variable[[%d]] = '%s'\n", k + 1, v->name);
 	}
 
-	args->nvar = m;
-	args->nterm = n;
-	args->types = xtypes;
-	args->names = rl;
-	args->term_names = cl;
-	args->factors = xfactors;
-	args->ntrait = ntrait;
-	args->trait_ind = trait_ind;
-	args->nspecial = nspecial;
-	args->special_ind = special_ind;
 
 	return 0;
 }
 
+
+#if 0
 
 static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args *args)
 {
@@ -438,7 +428,7 @@ static int extract_traits(SEXP traits, size_t nrecv, size_t ntrait, struct args 
 		DOMAIN_ERROR("'traits' should have an 'assign' attribute");
 	if (!IS_INTEGER(assign))
 		DOMAIN_ERROR("'assign' should be integer");
-	if (GET_LENGTH(assign) != n)
+	if (LENGTH(assign) != n)
 		DOMAIN_ERROR("'assign' should have length"
 			     " equal to the number of columns in 'traits'");
 
@@ -570,7 +560,7 @@ static int get_ids(size_t *dst, SEXP src)
 	int err = 0;
 
 	xsrc = INTEGER_POINTER(src);
-	n = GET_LENGTH(src);
+	n = LENGTH(src);
 
 	for (i = 0; i < n; i++) {
 		if (xsrc[i] <= 0) {
