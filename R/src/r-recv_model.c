@@ -539,11 +539,11 @@ static int get_variable(SEXP variable, const char *name,
 		} else if (inherits(variable, "nrecv")) {
 			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV, xintvl1, nintvl1);
 		} else if (inherits(variable, "nsend")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV, xintvl1, nintvl1);
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND, xintvl1, nintvl1);
 		} else if (inherits(variable, "nrecv2")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND2, xintvl1, nintvl1, xintvl2, nintvl2);
-		} else if (inherits(variable, "nsend2")) {
 			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV2, xintvl1, nintvl1, xintvl2, nintvl2);
+		} else if (inherits(variable, "nsend2")) {
+			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND2, xintvl1, nintvl1, xintvl2, nintvl2);
 		} else if (inherits(variable, "nsib")) {
 			*var2 = design2_add_tvar(design2, NULL, VAR2_NSIB, xintvl1, nintvl1, xintvl2, nintvl2);
 		} else if (inherits(variable, "ncosib")) {
