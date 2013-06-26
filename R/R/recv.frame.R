@@ -186,7 +186,7 @@ recv.frame.variable <- function(object, specials, data, sender.data,
         env <- as.environment(data)
         parent.env(env) <- envir
 
-        mf <- model.frame(~ ., data)
+        mf <- model.frame(~ ., data, na.action=na.fail)
         environment(mf) <- env
 
         var <- mf
