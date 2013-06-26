@@ -42,18 +42,20 @@ struct properties {
 	double skip;
 };
 
+enum variable_design {
+	VARIABLE_DESIGN_SEND,
+	VARIABLE_DESIGN_RECV,
+	VARIABLE_DESIGN_DYAD
+};
 
 enum variable_type {
-	VARIABLE_TYPE_SEND_TRAIT,
-	VARIABLE_TYPE_SEND_SPECIAL,
-	VARIABLE_TYPE_RECV_TRAIT,
-	VARIABLE_TYPE_RECV_SPECIAL,
-	VARIABLE_TYPE_DYAD_TRAIT,
-	VARIABLE_TYPE_DYAD_SPECIAL
+	VARIABLE_TYPE_TRAIT,
+	VARIABLE_TYPE_SPECIAL
 };
 
 
 struct variable {
+	enum variable_design design;
 	enum variable_type type;
 	const char **names;
 	union {
@@ -88,23 +90,25 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 			  struct properties *p);
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
-static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables,
-			    struct design *s, struct design *r, struct design2 *d,
+static int get_terms_object(SEXP factors, SEXP variables, struct design *s,
+		            struct design *r, struct design2 *d,
 			    struct terms_object *tm);
-static int get_variables(SEXP variables,
-			 struct design *s, struct design *r, struct design2 *d,
-			 struct variables *v);
-static int get_variable(SEXP variable, struct design *s, struct design *r, struct design2 *d,
-			struct variable *v);
-static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v);
-static int get_special(SEXP variable, struct design *s, struct design *r, struct design2 *d,
-		       struct variable *v);
-static int get_terms(SEXP factors, const struct variables *v,
-		     struct design *s, struct design *r, struct design2 *d,
-		     struct terms *tm);
-static int get_term_factors(const int *factors, const struct variables *v, size_t j,
-			    size_t *ind, size_t *n);
-static int get_product(const struct variable *u, const struct variable *v,
+static int get_variables(SEXP variables, struct design *s, struct design *r,
+		         struct design2 *d, struct variables *v);
+static int get_variable(SEXP variable, struct design *s, struct design *r,
+			struct design2 *d, struct variable *v);
+static int get_trait(SEXP variable, struct design *s, struct design *r,
+		     struct variable *v);
+static int get_special(SEXP variable, struct design *s, struct design *r,
+		       struct design2 *d, struct variable *v);
+static int get_terms(SEXP factors, const struct variables *v, struct design *s,
+		     struct design *r, struct design2 *d, struct terms *tm);
+static int get_term_factors(const char *name, const int *factors,
+			    const struct variables *v, size_t j, size_t *ind,
+			    size_t *n);
+static int get_product(const char *name, const struct variable *u,
+		       const struct variable *v, struct design *s,
+		       struct design *r, struct design2 *d,
 		       struct variable *tm);
 
 
@@ -115,9 +119,9 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 
 
 
-SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
-		       SEXP factors, SEXP term_labels, SEXP variables,
-		       SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip)
+SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
+		       SEXP variables, SEXP nsend, SEXP nrecv, SEXP loops,
+		       SEXP skip)
 {
 	struct properties p;
 	struct history h;
@@ -145,7 +149,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	design_init(&r, &h, p.nrecv);
 	design2_init(&d, &h, p.nsend, p.nrecv);
 
-	err = get_terms_object(factors, term_labels, variables, &s, &r, &d, &tm);
+	err = get_terms_object(factors, variables, &s, &r, &d, &tm);
 	if (err < 0)
 		goto terms_fail;
 
@@ -327,16 +331,11 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 }
 
 
-static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables,
-			    struct design *s, struct design *r, struct design2 *d,
+static int get_terms_object(SEXP factors, SEXP variables, struct design *s,
+			    struct design *r, struct design2 *d,
 			    struct terms_object *tm)
 {
 	int err = 0;
-
-	/* validate term.labels */
-	if (!IS_CHARACTER(term_labels))
-		DOMAIN_ERROR("'term.labels' should be a character vector");
-
 
 	err = get_variables(variables, s, r, d, &tm->variables);
 	if (err < 0)
@@ -394,7 +393,7 @@ static int get_variable(SEXP variable, struct design *s, struct design *r, struc
 	return err;
 }
 
-		
+
 static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v)
 {
 	SEXP dim, cn, dn, nm;
@@ -426,15 +425,16 @@ static int get_trait(SEXP variable, struct design *s, struct design *r, struct v
 		if (n != design_count(s))
 			DOMAIN_ERROR("variable dimension must match sender count");
 
-		v->type = VARIABLE_TYPE_SEND_TRAIT;
+		v->design = VARIABLE_DESIGN_SEND;
 		v->var.send = design_add_trait(s, NULL, x, dims, rank);
 	} else {
 		if (n != design_count(r))
 			DOMAIN_ERROR("variable dimension must match receiver count");
 
-		v->type = VARIABLE_TYPE_RECV_TRAIT;
+		v->design = VARIABLE_DESIGN_RECV;
 		v->var.recv = design_add_trait(r, NULL, x, dims, rank);
 	}
+	v->type = VARIABLE_TYPE_TRAIT;
 
 	dn = GET_DIMNAMES(variable);
 	cn = GET_COLNAMES(dn);
@@ -505,18 +505,19 @@ static int get_special(SEXP variable, struct design *s, struct design *r, struct
 	/* set type */
 	if (inherits(variable, "send")) {
 		a = s;
-		v->type = VARIABLE_TYPE_SEND_SPECIAL;
+		v->design = VARIABLE_DESIGN_SEND;
 		var = &v->var.send;
 	} else if (inherits(variable, "actor")) {
 		a = r;
-		v->type = VARIABLE_TYPE_RECV_SPECIAL;
+		v->design = VARIABLE_DESIGN_RECV;
 		var = &v->var.recv;
 	} else if (inherits(variable, "dyad")) {
-		v->type = VARIABLE_TYPE_DYAD_SPECIAL;
+		v->design = VARIABLE_DESIGN_DYAD;
 		var2 = &v->var.dyad;
 	} else {
 		DOMAIN_ERROR("unknown variable type");
 	}
+	v->type = VARIABLE_TYPE_SPECIAL;
 
 
 	/* add variable to design */
@@ -556,10 +557,11 @@ static int get_terms(SEXP factors, const struct variables *v,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm)
 {
-	SEXP dim;
+	SEXP dim, dimnames, colnames;
 	int j, m, n, *xfactors;
 	size_t *ind, order;
 	int err = 0;
+	const char *name;
 
 	if (!IS_INTEGER(factors))
 		DOMAIN_ERROR("'factors' should be integer");
@@ -577,6 +579,9 @@ static int get_terms(SEXP factors, const struct variables *v,
 		if ((size_t)m != v->count)
 			DOMAIN_ERROR("'factors' should have"
 				     " rows equal to the number of variables");
+
+		dimnames = GET_DIMNAMES(factors);
+		colnames = GET_COLNAMES(dimnames);
 	} else {
 		m = 0;
 		n = 0;
@@ -590,7 +595,8 @@ static int get_terms(SEXP factors, const struct variables *v,
 	tm->count = n;
 
 	for (j = 0; j < n; j++) {
-		err = get_term_factors(xfactors, v, j, ind, &order);
+		name = CHAR(STRING_ELT(colnames, j));
+		err = get_term_factors(name, xfactors, v, j, ind, &order);
 		if (err < 0)
 			goto out;
 
@@ -600,8 +606,9 @@ static int get_terms(SEXP factors, const struct variables *v,
 			memcpy(&tm->item[j], &v->item[ind[0]],
 			       sizeof(struct variable));
 		} else if (order == 2) {
-			err = get_product(v->item + ind[0], v->item + ind[1],
-					  tm->item + j);
+			err = get_product(name,
+					  v->item + ind[0], v->item + ind[1],
+					  s, r, d, tm->item + j);
 			if (err < 0)
 				goto out;
 		} else {
@@ -615,7 +622,8 @@ out:
 }
 
 
-static int get_term_factors(const int *factors, const struct variables *v, size_t j,
+static int get_term_factors(const char *name,
+		            const int *factors, const struct variables *v, size_t j,
 			    size_t *ind, size_t *n)
 {
 	size_t i, m, order;
@@ -629,7 +637,8 @@ static int get_term_factors(const int *factors, const struct variables *v, size_
 		if (f == 1) {
 			ind[order++] = i;
 		} else if (f != 0) {
-			DOMAIN_ERROR("invalid entry in 'factors' matrix");
+			error("invalid entry in 'factors' matrix for term '%s'", name);
+			return -EDOM;
 		}
 	}
 
@@ -638,11 +647,30 @@ static int get_term_factors(const int *factors, const struct variables *v, size_
 }
 
 
-static int get_product(const struct variable *u, const struct variable *v,
+static int get_product(const char *name, const struct variable *u, const struct variable *v,
+		       struct design *s, struct design *r, struct design2 *d,
 		       struct variable *tm)
 {
-	DOMAIN_ERROR("interactions are not implemented yet");
-	return 0;
+	int err = -EDOM;
+
+	if (u->design == VARIABLE_DESIGN_SEND
+		&& u->type == VARIABLE_TYPE_TRAIT) {
+		if (v->design == VARIABLE_DESIGN_RECV
+			&& v->type == VARIABLE_TYPE_TRAIT) {
+
+			tm->design = VARIABLE_DESIGN_DYAD;
+			tm->type = VARIABLE_TYPE_TRAIT;
+			tm->var.dyad = design2_add_kron(d, NULL, u->var.send,
+							v->var.recv);
+			err = 0;
+
+		}
+	}
+
+	if (err < 0)
+		error("interaction for terms of type '%s' are not implemented yet", name);
+
+	return err;
 }
 
 

@@ -32,16 +32,12 @@ recv.model <- function(formula, message.data, receiver.data,
     if (!inherits(y, "Mesg"))
         stop("response must be a message object")
 
-    if (any(x$order > 1L))
-        warning("interactions are not implemented")
-
 
     time <- y$time
     sender <- y$sender
     receiver <- y$receiver
 
     factors <- x$factors
-    term.labels <- x$term.labels
     variables <- x$variables
 
     loops <- if (is.na(mf$loops)) TRUE else mf$loops
@@ -52,8 +48,7 @@ recv.model <- function(formula, message.data, receiver.data,
     browser()
 
     model <- .Call("Riproc_recv_model", time, sender, receiver,
-                   factors, term.labels, variables,
-                   nsend, nrecv, loops, skip)
+                   factors, variables, nsend, nrecv, loops, skip)
     model
 }
 
