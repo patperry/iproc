@@ -24,6 +24,7 @@ var.interval <- function(name, type, bipartite = FALSE)
         x <- list(interval = interval)
         class(x) <- c(name, type, "interval")
         attr(x, "horizon") <- interval
+	attr(x, "labels") <- paste(name, "(", interval, ")", sep="")
         x
     }
 }
@@ -55,6 +56,7 @@ var.intervals <- function(name, type, bipartite = FALSE)
         x <- list(intervals = intervals)
         class(x) <- c(name, type, "intervals")
         attr(x, "horizon") <- max(intervals)
+	attr(x, "labels") <- paste(name, "(", intervals, ")", sep="")
         x
     }
 }
@@ -88,6 +90,11 @@ var.intervals2 <- function(name, type, bipartite = FALSE)
         x <- list(intervals1 = intervals1, intervals2 = intervals2)
         class(x) <- c(name, type, "intervals2")
         attr(x, "horizon") <- max(intervals1, intervals2)
+	attr(x, "labels") <- paste(name, "(",
+				   rep(intervals1, times=length(intervals2)),
+				   ",",
+				   rep(intervals2, each=length(intervals1)),
+				   ")", sep="")
         x
     }
 }

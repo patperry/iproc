@@ -119,6 +119,9 @@ static int get_variables(SEXP variables,
 static int get_variable(SEXP variable, const char *name,
 			struct design *s, struct design *r, struct design2 *d,
 			struct variable *v);
+static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v);
+static int get_special(SEXP variable, struct design *s, struct design *r, struct design2 *d,
+		       struct variable *v);
 
 
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
@@ -435,143 +438,177 @@ static int get_variable(SEXP variable, const char *name,
 			struct design *s, struct design *r, struct design2 *d,
 			struct variable *v)
 {
-	size_t dims[VAR_RANK_MAX];
-	size_t rank;
-
-	double *xt, *x;
-	int j, n, p;
-	SEXP dim, cn, dn, nm;
+	int err = 0;
 
 	v->name = name;
 
 	if (isMatrix(variable) || inherits(variable, "matrix")) {
-		dim = GET_DIM(variable);
-		n = INTEGER(dim)[0];
-		p = INTEGER(dim)[1];
-		xt = NUMERIC_POINTER(variable);
-		x = (void *)R_alloc(n * p, sizeof(*x));
-
-		if (p == 0)
-			DOMAIN_ERROR("variable dimensions must be nonzero");
-
-		if (n > 0)
-			matrix_dtrans(n, p, xt, n, x, p);
-
-		if (p == 1) {
-			rank = 0;
-		} else {
-			rank = 1;
-			dims[0] = (size_t)p;
-		}
-
-		if (inherits(variable, "send")) {
-			if (n != design_count(s))
-				DOMAIN_ERROR("variable dimension must match sender count");
-
-			v->type = VARIABLE_TYPE_SEND_TRAIT;
-			v->var.send = design_add_trait(s, NULL, x, dims, rank);
-		} else {
-			if (n != design_count(r))
-				DOMAIN_ERROR("variable dimension must match receiver count");
-
-			v->type = VARIABLE_TYPE_RECV_TRAIT;
-			v->var.recv = design_add_trait(r, NULL, x, dims, rank);
-		}
-
-		dn = GET_DIMNAMES(variable);
-		cn = GET_COLNAMES(dn);
-		v->names = (void *)R_alloc(p, sizeof(*v->names));
-		for (j = 0; j < p; j++) {
-			nm = STRING_ELT(cn, j);
-			v->names[j] = CHAR(nm);
-		}
-
-		v->size = (size_t)p;
+		err = get_trait(variable, s, r, v);
 	} else if (inherits(variable, "special")) {
-		double *xintvl1, *xintvl2;
-		size_t nintvl1, nintvl2;
-		double xintvl;
-		struct design *design;
-		struct design2 *design2;
-		const struct var **var;
-		const struct var2 **var2;
-		size_t size = 0;
-
-		if (inherits(variable, "interval")
-			|| inherits(variable, "intervals")
-			|| inherits(variable, "intervals2")) {
-
-			SEXP intvl = VECTOR_ELT(variable, 0);
-			xintvl1 = NUMERIC_POINTER(intvl);
-			nintvl1 = LENGTH(intvl);
-
-			if (inherits(variable, "interval")) {
-				xintvl = *xintvl1;
-				rank = 0;
-				size = 1;
-			} else if (inherits(variable, "intervals2")) {
-				intvl = VECTOR_ELT(variable, 1);
-				xintvl2 = NUMERIC_POINTER(intvl);
-				nintvl2 = LENGTH(intvl);
-				rank = 2;
-				dims[0] = nintvl1;
-				dims[1] = nintvl2;
-				size = nintvl1 * nintvl2;
-			} else {
-				rank = 1;
-				dims[0] = nintvl1;
-				size = nintvl1;
-			}
-		}
-
-		if (inherits(variable, "send")) {
-			design = s;
-			v->type = VARIABLE_TYPE_SEND_SPECIAL;
-			var = &v->var.send;
-		} else if (inherits(variable, "actor")) {
-			design = r;
-			v->type = VARIABLE_TYPE_RECV_SPECIAL;
-			var = &v->var.recv;
-		} else if (inherits(variable, "dyad")) {
-			design2 = d;
-			v->type = VARIABLE_TYPE_DYAD_SPECIAL;
-			var2 = &v->var.dyad;
-		} else {
-			DOMAIN_ERROR("unknown variable type");
-		}
-
-		if (inherits(variable, "irecvtot")) {
-			*var = design_add_tvar(design, NULL, VAR_IRECVTOT, xintvl);
-		} else if (inherits(variable, "isendtot")) {
-			*var = design_add_tvar(design, NULL, VAR_ISENDTOT, xintvl);
-		} else if (inherits(variable, "nrecvtot")) {
-			*var = design_add_tvar(design, NULL, VAR_NRECVTOT, xintvl1, nintvl1);
-		} else if (inherits(variable, "nsendtot")) {
-			*var = design_add_tvar(design, NULL, VAR_NSENDTOT, xintvl1, nintvl1);
-		} else if (inherits(variable, "irecv")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_IRECV, xintvl);
-		} else if (inherits(variable, "isend")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_ISEND, xintvl);
-		} else if (inherits(variable, "nrecv")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV, xintvl1, nintvl1);
-		} else if (inherits(variable, "nsend")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND, xintvl1, nintvl1);
-		} else if (inherits(variable, "nrecv2")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NRECV2, xintvl1, nintvl1, xintvl2, nintvl2);
-		} else if (inherits(variable, "nsend2")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NSEND2, xintvl1, nintvl1, xintvl2, nintvl2);
-		} else if (inherits(variable, "nsib")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NSIB, xintvl1, nintvl1, xintvl2, nintvl2);
-		} else if (inherits(variable, "ncosib")) {
-			*var2 = design2_add_tvar(design2, NULL, VAR2_NCOSIB, xintvl1, nintvl1, xintvl2, nintvl2);
-		} else {
-			DOMAIN_ERROR("unknown variable type");
-		}
-
-		v->size = size;
+		err = get_special(variable, s, r, d, v);
 	} else {
 		DOMAIN_ERROR("unknown variable type");
 	}
+
+	return err;
+}
+		
+static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v)
+{
+	SEXP dim, cn, dn, nm;
+	int j, n, p;
+	double *xt, *x;
+	size_t dims[VAR_RANK_MAX];
+	size_t rank;
+
+	dim = GET_DIM(variable);
+	n = INTEGER(dim)[0];
+	p = INTEGER(dim)[1];
+	xt = NUMERIC_POINTER(variable);
+	x = (void *)R_alloc(n * p, sizeof(*x));
+
+	if (p == 0)
+		DOMAIN_ERROR("variable dimensions must be nonzero");
+
+	if (n > 0)
+		matrix_dtrans(n, p, xt, n, x, p);
+
+	if (p == 1) {
+		rank = 0;
+	} else {
+		rank = 1;
+		dims[0] = (size_t)p;
+	}
+
+	if (inherits(variable, "send")) {
+		if (n != design_count(s))
+			DOMAIN_ERROR("variable dimension must match sender count");
+
+		v->type = VARIABLE_TYPE_SEND_TRAIT;
+		v->var.send = design_add_trait(s, NULL, x, dims, rank);
+	} else {
+		if (n != design_count(r))
+			DOMAIN_ERROR("variable dimension must match receiver count");
+
+		v->type = VARIABLE_TYPE_RECV_TRAIT;
+		v->var.recv = design_add_trait(r, NULL, x, dims, rank);
+	}
+
+	dn = GET_DIMNAMES(variable);
+	cn = GET_COLNAMES(dn);
+	v->names = (void *)R_alloc(p, sizeof(*v->names));
+	for (j = 0; j < p; j++) {
+		nm = STRING_ELT(cn, j);
+		v->names[j] = CHAR(nm);
+	}
+
+	v->size = (size_t)p;
+
+	return 0;
+}
+
+
+static int get_special(SEXP variable, struct design *s, struct design *r, struct design2 *d,
+		       struct variable *v)
+{
+	SEXP i1, i2, labels, l;
+	double xi, *xi1, *xi2;
+	size_t ni1, ni2, k, i, j, size, rank;
+	struct design *a;
+	const struct var **var;
+	const struct var2 **var2;
+
+	if (!(inherits(variable, "interval")
+		|| inherits(variable, "intervals")
+		|| inherits(variable, "intervals2")))
+		DOMAIN_ERROR("unknown variable type");
+
+
+	/* extract intervals */
+	i1 = VECTOR_ELT(variable, 0);
+	xi1 = NUMERIC_POINTER(i1);
+	ni1 = LENGTH(i1);
+
+	if (inherits(variable, "interval")) {
+		xi = *xi1;
+		size = 1;
+		rank = 0;
+	} else if (inherits(variable, "intervals")) {
+		size = ni1;
+		rank = 1;
+	} else {
+		/* intervals2 */
+		i2 = VECTOR_ELT(variable, 1);
+		xi2 = NUMERIC_POINTER(i2);
+		ni2 = LENGTH(i2);
+		size = ni1 * ni2;
+		rank = 2;
+	}
+
+
+	/* set variable names */
+	labels = getAttrib(variable, install("labels"));
+	v->names = (void *)R_alloc(size, sizeof(*v->names));
+	for (k = 0; k < size; k++) {
+		l = STRING_ELT(labels, k);
+
+		if (rank == 2) {
+			i = k % ni1;
+			j = k / ni1;
+			v->names[i * ni2 + j] = CHAR(l);
+		} else {
+			v->names[k] = CHAR(l);
+		}
+	}
+
+
+	/* set type */
+	if (inherits(variable, "send")) {
+		a = s;
+		v->type = VARIABLE_TYPE_SEND_SPECIAL;
+		var = &v->var.send;
+	} else if (inherits(variable, "actor")) {
+		a = r;
+		v->type = VARIABLE_TYPE_RECV_SPECIAL;
+		var = &v->var.recv;
+	} else if (inherits(variable, "dyad")) {
+		v->type = VARIABLE_TYPE_DYAD_SPECIAL;
+		var2 = &v->var.dyad;
+	} else {
+		DOMAIN_ERROR("unknown variable type");
+	}
+
+
+	/* add variable to design */
+	if (inherits(variable, "irecvtot")) {
+		*var = design_add_tvar(a, NULL, VAR_IRECVTOT, xi);
+	} else if (inherits(variable, "isendtot")) {
+		*var = design_add_tvar(a, NULL, VAR_ISENDTOT, xi);
+	} else if (inherits(variable, "nrecvtot")) {
+		*var = design_add_tvar(a, NULL, VAR_NRECVTOT, xi1, ni1);
+	} else if (inherits(variable, "nsendtot")) {
+		*var = design_add_tvar(a, NULL, VAR_NSENDTOT, xi1, ni1);
+	} else if (inherits(variable, "irecv")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_IRECV, xi);
+	} else if (inherits(variable, "isend")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_ISEND, xi);
+	} else if (inherits(variable, "nrecv")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NRECV, xi1, ni1);
+	} else if (inherits(variable, "nsend")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NSEND, xi1, ni1);
+	} else if (inherits(variable, "nrecv2")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NRECV2, xi1, ni1, xi2, ni2);
+	} else if (inherits(variable, "nsend2")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NSEND2, xi1, ni1, xi2, ni2);
+	} else if (inherits(variable, "nsib")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NSIB, xi1, ni1, xi2, ni2);
+	} else if (inherits(variable, "ncosib")) {
+		*var2 = design2_add_tvar(d, NULL, VAR2_NCOSIB, xi1, ni1, xi2, ni2);
+	} else {
+		DOMAIN_ERROR("unknown variable type");
+	}
+
+	v->size = size;
 	return 0;
 }
 
