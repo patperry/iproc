@@ -46,7 +46,9 @@ recv.matrix <- function(frame, contrasts = NULL)
 
     if (response != 0L) {
         mat$variables <- mat$variables[-response]
-        mat$factors <- mat$factors[-response,,drop=FALSE]
+
+	if (!identical(mat$factors, integer(0)))
+		mat$factors <- mat$factors[-response,,drop=FALSE]
     }
 
     class(mat) <- "recv.matrix"

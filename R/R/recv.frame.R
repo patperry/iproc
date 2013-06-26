@@ -227,13 +227,14 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     formula <- expand.s(formula, specials, data=sender.data)
     tm <- terms(formula, specials, data=receiver.data)
     response <- attr(tm, "response")
+    factors <- attr(tm, "factors")
 
     # validate the formula
     special.names <- names(attr(tm, "specials"))[!sapply(attr(tm, "specials"),
                                                          is.null)]
-    if (any(attr(tm, "factors") == 2L))
+    if (any(factors == 2L))
         stop("interactions without main effects are not supported")
-    if (any(attr(tm, "factors")[response,-response] == 1L))
+    if (!identical(factors, integer(0)) && any(factors)[response,-response] == 1L)
         stop("interactions between the response and the predictors are not supported")
 
     for (s in setdiff(specials, bspecials)) {
@@ -273,26 +274,39 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     is.dyad[[response]] <- FALSE
     is.other <- !(is.send | is.recv | is.dyad)
 
-    factors <- attr(tm, "factors")
-    term.labels <- attr(tm, "term.labels")
     order <- attr(tm, "order")
 
-    # drop terms that don't depend on the receiver
-    all.send <- colSums(factors * !is.send) == 0
-    factors <- factors[,!all.send,drop=FALSE]
-    order <- order[!all.send]
+    if (!identical(factors, integer(0))) {
+	    # drop terms that don't depend on the receiver
+	    all.send <- colSums(factors * !is.send) == 0
+	    factors <- factors[,!all.send,drop=FALSE]
+	    order <- order[!all.send]
 
-    # reorder: other, send, recv, dyad
-    stopifnot(response == 1L || response == 0L)
-    ind <- c(which(is.other), which(is.send), which(is.recv), which(is.dyad))
-    variables <- variables[ind]
-    factors <- factors[ind,,drop=FALSE]
+	    # reorder variables: other, send, recv, dyad
+	    stopifnot(response == 1L || response == 0L)
+	    ind <- c(which(is.other), which(is.send), which(is.recv), which(is.dyad))
+	    variables <- variables[ind]
+	    factors <- factors[ind,,drop=FALSE]
 
-    # recompute term labels after reordering
-    term.labels <- apply(factors, 2, function(f)
-			 paste(rownames(factors)[f == 1L], collapse=":"))
-    term.labels[order == 0L] <- "(Intercept)"
-    colnames(factors) <- term.labels
+	    # reorder terms
+	    for (i in seq_len(nrow(factors))) {
+		    jind <- order(factors[i,])
+		    factors <- factors[,jind,drop=FALSE]
+	    }
+	    order <- colSums(factors)
+	    jind <- order(order)
+	    factors <- factors[,jind,drop=FALSE]
+	    order <- order[jind]
+
+
+	    # recompute term labels after reordering
+	    term.labels <- apply(factors, 2, function(f)
+				 paste(rownames(factors)[f == 1L], collapse=":"))
+	    term.labels[order == 0L] <- "(Intercept)"
+	    colnames(factors) <- term.labels
+    } else {
+	    term.labels <- character(0)
+    }
 
     frame <- list(formula = formula(tm), factors = factors,
                   term.labels = term.labels, variables = variables,
