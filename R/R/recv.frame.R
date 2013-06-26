@@ -265,15 +265,34 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
         }
     }
 
-    send <- sapply(variables, function(x) inherits(x, "send"))
+    is.send <- sapply(variables, function(x) inherits(x, "send"))
+    is.recv <- !is.send & sapply(variables, function(x)
+				inherits(x, "actor") || inherits(x, "data.frame"))
+    is.recv[[response]] <- FALSE
+    is.dyad <- !is.send & sapply(variables, function(x) inherits(x, "dyad"))
+    is.dyad[[response]] <- FALSE
+    is.other <- !(is.send | is.recv | is.dyad)
+
     factors <- attr(tm, "factors")
     term.labels <- attr(tm, "term.labels")
     order <- attr(tm, "order")
 
-    all.send <- colSums(factors * !send) == 0
+    # drop terms that don't depend on the receiver
+    all.send <- colSums(factors * !is.send) == 0
     factors <- factors[,!all.send,drop=FALSE]
-    term.labels <- term.labels[!all.send]
     order <- order[!all.send]
+
+    # reorder: other, send, recv, dyad
+    stopifnot(response == 1L || response == 0L)
+    ind <- c(which(is.other), which(is.send), which(is.recv), which(is.dyad))
+    variables <- variables[ind]
+    factors <- factors[ind,,drop=FALSE]
+
+    # recompute term labels after reordering
+    term.labels <- apply(factors, 2, function(f)
+			 paste(rownames(factors)[f == 1L], collapse=":"))
+    term.labels[order == 0L] <- "(Intercept)"
+    colnames(factors) <- term.labels
 
     frame <- list(formula = formula(tm), factors = factors,
                   term.labels = term.labels, variables = variables,
