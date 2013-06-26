@@ -43,7 +43,6 @@ recv.model <- function(formula, message.data, receiver.data,
     factors <- x$factors
     term.labels <- x$term.labels
     variables <- x$variables
-    order <- x$order
 
     loops <- if (is.na(mf$loops)) TRUE else mf$loops
 
@@ -53,7 +52,7 @@ recv.model <- function(formula, message.data, receiver.data,
     browser()
 
     model <- .Call("Riproc_recv_model", time, sender, receiver,
-                   factors, term.labels, variables, order,
+                   factors, term.labels, variables,
                    nsend, nrecv, loops, skip)
     model
 }

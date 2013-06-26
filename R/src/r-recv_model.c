@@ -88,7 +88,7 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 			  struct properties *p);
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
-static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
+static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables,
 			    struct design *s, struct design *r, struct design2 *d,
 			    struct terms_object *tm);
 static int get_variables(SEXP variables,
@@ -102,6 +102,10 @@ static int get_special(SEXP variable, struct design *s, struct design *r, struct
 static int get_terms(SEXP factors, const struct variables *v,
 		     struct design *s, struct design *r, struct design2 *d,
 		     struct terms *tm);
+static int get_term_factors(const int *factors, const struct variables *v, size_t j,
+			    size_t *ind, size_t *n);
+static int get_product(const struct variable *u, const struct variable *v,
+		       struct variable *tm);
 
 
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
@@ -112,7 +116,7 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 
 
 SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
-		       SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
+		       SEXP factors, SEXP term_labels, SEXP variables,
 		       SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip)
 {
 	struct properties p;
@@ -141,7 +145,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	design_init(&r, &h, p.nrecv);
 	design2_init(&d, &h, p.nsend, p.nrecv);
 
-	err = get_terms_object(factors, term_labels, variables, order, &s, &r, &d, &tm);
+	err = get_terms_object(factors, term_labels, variables, &s, &r, &d, &tm);
 	if (err < 0)
 		goto terms_fail;
 
@@ -202,7 +206,6 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 		DOMAIN_ERROR("'nrecv' should be positive");
 
 
-
 	/* validate and extract 'loops' */
 	if (!IS_LOGICAL(loops) || LENGTH(loops) != 1)
 		DOMAIN_ERROR("'loops' should be a single integer");
@@ -214,6 +217,8 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 	if (!xloops && xnrecv == 1)
 		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
 
+
+	/* validate and extract 'skip' */
 	if (!IS_NUMERIC(skip) || LENGTH(skip) != 1)
 		DOMAIN_ERROR("'skip' should be a single numeric value");
 
@@ -322,17 +327,15 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 }
 
 
-static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
+static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables,
 			    struct design *s, struct design *r, struct design2 *d,
 			    struct terms_object *tm)
 {
 	int err = 0;
 
-	/* validate types */
+	/* validate term.labels */
 	if (!IS_CHARACTER(term_labels))
 		DOMAIN_ERROR("'term.labels' should be a character vector");
-	if (!IS_INTEGER(order))
-		DOMAIN_ERROR("'order' should be an integer vector");
 
 
 	err = get_variables(variables, s, r, d, &tm->variables);
@@ -554,17 +557,19 @@ static int get_terms(SEXP factors, const struct variables *v,
 		     struct terms *tm)
 {
 	SEXP dim;
-	int i, j, m, n, xf, *xfactors;
+	int j, m, n, *xfactors;
+	size_t *ind, order;
+	int err = 0;
 
 	if (!IS_INTEGER(factors))
 		DOMAIN_ERROR("'factors' should be integer");
 	if (!isMatrix(factors))
 		DOMAIN_ERROR("'factors' should be a matrix");
 
+
 	/* validate factor matrix */
 	if (isMatrix(factors)) {
 		dim = GET_DIM(factors);
-
 		m = INTEGER(dim)[0];
 		n = INTEGER(dim)[1];
 		xfactors = INTEGER_POINTER(factors);
@@ -572,20 +577,70 @@ static int get_terms(SEXP factors, const struct variables *v,
 		if ((size_t)m != v->count)
 			DOMAIN_ERROR("'factors' should have"
 				     " rows equal to the number of variables");
-
-		for (j = 0; j < n; j++) {
-			for (i = 0; i < m; i++) {
-				xf = xfactors[i * n + j];
-				if (xf != 0 && xf != 1)
-					DOMAIN_ERROR("invalid entry in 'factors' matrix");
-			}
-		}
 	} else {
 		m = 0;
 		n = 0;
 		xfactors = NULL;
 	}
 
+	ind = (void *)R_alloc(v->count, sizeof(*ind));
+
+
+	tm->item = (void *)R_alloc(n, sizeof(*tm->item));
+	tm->count = n;
+
+	for (j = 0; j < n; j++) {
+		err = get_term_factors(xfactors, v, j, ind, &order);
+		if (err < 0)
+			goto out;
+
+		if (order == 0) {
+			DOMAIN_ERROR("intercepts are not allowed");
+		} else if (order == 1) {
+			memcpy(&tm->item[j], &v->item[ind[0]],
+			       sizeof(struct variable));
+		} else if (order == 2) {
+			err = get_product(v->item + ind[0], v->item + ind[1],
+					  tm->item + j);
+			if (err < 0)
+				goto out;
+		} else {
+			DOMAIN_ERROR("interactions of order >= 3 are not supported");
+		}
+
+	}
+
+out:
+	return err;
+}
+
+
+static int get_term_factors(const int *factors, const struct variables *v, size_t j,
+			    size_t *ind, size_t *n)
+{
+	size_t i, m, order;
+	int f;
+
+	m = v->count;
+	order = 0;
+
+	for (i = 0; i < m; i++) {
+		f = factors[i + j * m];
+		if (f == 1) {
+			ind[order++] = i;
+		} else if (f != 0) {
+			DOMAIN_ERROR("invalid entry in 'factors' matrix");
+		}
+	}
+
+	*n = order;
+	return 0;
+}
+
+
+static int get_product(const struct variable *u, const struct variable *v,
+		       struct variable *tm)
+{
 	return 0;
 }
 
