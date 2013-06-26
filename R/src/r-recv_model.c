@@ -114,7 +114,7 @@ static int get_product(const char *name, const struct variable *u,
 
 
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
-		  const double *duals0);
+		  const double *duals0, size_t *iter);
 
 
 
@@ -129,12 +129,18 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	struct design s, r;
 	struct design2 d;
 	struct terms_object tm;
-
 	const struct message *msgs;
 	size_t nmsg;
+	size_t iter, dim, nc, ntot, rank;
 	size_t ncextra;
 	double t0;
 	struct recv_fit fit;
+	const struct recv_loglik *ll;
+	const struct recv_model *model;
+	const struct constr *constr;
+	SEXP names;
+	SEXP ret = NULL_USER_OBJECT;
+	int k;
 	int err = 0;
 
 	err = get_properties(nsend, nrecv, loops, skip, &p);
@@ -169,8 +175,57 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 		warning("Adding %zd %s to make parameters identifiable\n",
 			ncextra, ncextra == 1 ? "constraint" : "constraints");
 
-	err = do_fit(&fit, NULL, NULL);
+	err = do_fit(&fit, NULL, NULL, &iter);
+	if (err < 0)
+		goto fit_fail;
 
+	constr = recv_fit_constr(&fit);
+	nc = constr_count(constr);
+	ll = recv_fit_loglik(&fit);
+	ntot = recv_loglik_count(ll);
+	model = recv_loglik_model(ll);
+	dim = recv_model_dim(model);
+	rank = dim - nc;
+
+	PROTECT(ret = NEW_LIST(7));
+	PROTECT(names = NEW_CHARACTER(7));
+	SET_NAMES(ret, names);
+	k = 0;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("rank"));
+	SET_VECTOR_ELT(ret, k, ScalarInteger((int)rank));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("deviance"));
+	SET_VECTOR_ELT(ret, k, ScalarReal(recv_fit_dev(&fit)));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("null.deviance"));
+	SET_VECTOR_ELT(ret, k, ScalarReal(recv_fit_dev0(&fit)));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("iter"));
+	SET_VECTOR_ELT(ret, k, ScalarInteger((int)iter));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("df.residual"));
+	SET_VECTOR_ELT(ret, k, ScalarReal((double)(ntot - rank)));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("df.null"));
+	SET_VECTOR_ELT(ret, k, ScalarReal((double)ntot));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("converged"));
+	SET_VECTOR_ELT(ret, k, ScalarLogical(TRUE));
+	k++;
+
+	UNPROTECT(2);
+
+
+
+
+fit_fail:
 	recv_fit_deinit(&fit);
 terms_fail:
 	design2_deinit(&d);
@@ -179,8 +234,7 @@ terms_fail:
 history_fail:
 	history_deinit(&h);
 properties_fail:
-	error("Not implemented!");
-	return NULL_USER_OBJECT;
+	return ret;
 }
 
 
@@ -753,7 +807,8 @@ static int get_product(const char *name, const struct variable *u, const struct 
 }
 
 
-static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0)
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
+		  const double *duals0, size_t *iter)
 {
 	size_t maxit = 300;
 	size_t report = 1;
@@ -780,6 +835,8 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 		error("%s", recv_fit_errmsg(task));
 		err = -1;
 	}
+
+	*iter = it;
 
 	return err;
 }

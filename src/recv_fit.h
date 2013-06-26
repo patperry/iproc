@@ -27,7 +27,7 @@ struct recv_fit {
 	struct recv_model model;
 	struct recv_loglik loglik;
 	double df;
-	double dev;
+	double dev, dev0;
 	double *nscore; /* negative score */
 	double *imat;
 	enum blas_uplo uplo;
@@ -47,6 +47,7 @@ void recv_fit_deinit(struct recv_fit *fit);
 
 
 static inline size_t recv_fit_extra_constr_count(const struct recv_fit *fit) { return fit->ncextra; }
+const struct constr *recv_fit_constr(const struct recv_fit *fit);
 
 
 /* fitting */
@@ -57,7 +58,9 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 
 
 /* current values */
+const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
 double recv_fit_dev(const struct recv_fit *fit);
+double recv_fit_dev0(const struct recv_fit *fit);
 double recv_fit_score_norm(const struct recv_fit *fit);
 double recv_fit_step_size(const struct recv_fit *fit);
 

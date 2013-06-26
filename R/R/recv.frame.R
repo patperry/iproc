@@ -234,7 +234,7 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
                                                          is.null)]
     if (any(factors == 2L))
         stop("interactions without main effects are not supported")
-    if (!identical(factors, integer(0)) && any(factors)[response,-response] == 1L)
+    if (!identical(factors, integer(0)) && any(factors[response,-response] == 1L))
         stop("interactions between the response and the predictors are not supported")
 
     for (s in setdiff(specials, bspecials)) {

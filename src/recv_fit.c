@@ -39,6 +39,7 @@ void recv_fit_init(struct recv_fit *fit, struct design *r, struct design2 *d,
 
 	recv_loglik_add_all(&fit->loglik, fit->msgs, fit->nmsg);
 	fit->df = recv_loglik_count(&fit->loglik);
+	fit->dev0 = recv_loglik_dev(&fit->loglik);
 
 	memset(fit->imat, 0, dim * (dim + 1) / 2 * sizeof(double));
 	recv_loglik_axpy_imat(1.0, &fit->loglik, fit->imat);
@@ -237,9 +238,24 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 	return task;
 }
 
+const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit)
+{
+	return &fit->loglik;
+}
+
+const struct constr *recv_fit_constr(const struct recv_fit *fit)
+{
+	return &fit->constr;
+}
+
 double recv_fit_dev(const struct recv_fit *fit)
 {
 	return newton_val(&fit->opt);
+}
+
+double recv_fit_dev0(const struct recv_fit *fit)
+{
+	return fit->dev0;
 }
 
 double recv_fit_score_norm(const struct recv_fit *fit)
