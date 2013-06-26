@@ -1,7 +1,7 @@
 recv.model <- function(formula, message.data, receiver.data,
                        sender.data = receiver.data, n = nrow(receiver.data),
                        bipartite = FALSE, loops = FALSE, method = "newton",
-                       contrasts = NULL, skip = horizon, ...)
+                       contrasts = NULL, skip = recv.horizon, ...)
 {
     call <- match.call()
 
@@ -13,7 +13,7 @@ recv.model <- function(formula, message.data, receiver.data,
         mf <- mf[-m]
     mf[[1L]] <- as.name("recv.frame")
     mf <- eval(mf, parent.frame())
-    horizon <- recv.horizon(mf)
+    recv.horizon <- recv.horizon(mf)
 
     if (method == "recv.frame")
         return(mf)
