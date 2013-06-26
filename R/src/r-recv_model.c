@@ -605,7 +605,7 @@ static int get_terms(SEXP factors, const struct variables *v,
 			if (err < 0)
 				goto out;
 		} else {
-			DOMAIN_ERROR("interactions of order >= 3 are not supported");
+			DOMAIN_ERROR("interactions of order >= 3 are not implemented yet");
 		}
 
 	}
@@ -641,6 +641,7 @@ static int get_term_factors(const int *factors, const struct variables *v, size_
 static int get_product(const struct variable *u, const struct variable *v,
 		       struct variable *tm)
 {
+	DOMAIN_ERROR("interactions are not implemented yet");
 	return 0;
 }
 
