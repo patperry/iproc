@@ -32,37 +32,6 @@
 	} while (0)
 
 
-enum variable_type {
-	VARIABLE_TYPE_SEND_TRAIT,
-	VARIABLE_TYPE_RECV_TRAIT,
-	VARIABLE_TYPE_SEND_SPECIAL,
-	VARIABLE_TYPE_RECV_SPECIAL,
-	VARIABLE_TYPE_DYAD_SPECIAL
-};
-
-
-struct variable {
-	enum variable_type type;
-	const char *name;
-	const char **names;
-	size_t size;
-	union {
-		const struct var *send;
-		const struct var *recv;
-		const struct var2 *dyad;
-	} var;
-};
-
-/*
-enum term_type {
-	TERM_TYPE_RECV_TRAIT,
-	TERM_TYPE_RECV_SPECIAL,
-	TERM_TYPE_RECV_PROD,
-	TERM_TYPE_DYAD_SPECIAL,
-};
-*/
-
-
 struct properties {
 	/* dimensions */
 	size_t nsend;
@@ -74,35 +43,44 @@ struct properties {
 };
 
 
+enum variable_type {
+	VARIABLE_TYPE_SEND_TRAIT,
+	VARIABLE_TYPE_SEND_SPECIAL,
+	VARIABLE_TYPE_RECV_TRAIT,
+	VARIABLE_TYPE_RECV_SPECIAL,
+	VARIABLE_TYPE_DYAD_TRAIT,
+	VARIABLE_TYPE_DYAD_SPECIAL
+};
+
+
+struct variable {
+	enum variable_type type;
+	const char **names;
+	union {
+		const struct var *send;
+		const struct var *recv;
+		const struct var2 *dyad;
+	} var;
+};
+
+
 struct variables {
 	struct variable *item;
 	size_t count;
 };
 
 
+struct terms {
+	struct variable *item;
+	size_t count;
+};
+
 
 struct terms_object {
 	struct variables variables;
+	struct terms terms;
 };
 
-
-struct args {
-
-
-	/* terms */
-	enum variable_type *types;
-	SEXP names; /* character vector */
-	SEXP term_names; /* character vector */
-	int *factors;
-	size_t *trait_ind;
-	size_t ntrait;
-	size_t *special_ind;
-	size_t nspecial;
-
-	/* traits */
-	SEXP traits;
-	SEXP assign;
-};
 
 
 
@@ -116,12 +94,14 @@ static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP
 static int get_variables(SEXP variables,
 			 struct design *s, struct design *r, struct design2 *d,
 			 struct variables *v);
-static int get_variable(SEXP variable, const char *name,
-			struct design *s, struct design *r, struct design2 *d,
+static int get_variable(SEXP variable, struct design *s, struct design *r, struct design2 *d,
 			struct variable *v);
 static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v);
 static int get_special(SEXP variable, struct design *s, struct design *r, struct design2 *d,
 		       struct variable *v);
+static int get_terms(SEXP factors, const struct variables *v,
+		     struct design *s, struct design *r, struct design2 *d,
+		     struct terms *tm);
 
 
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
@@ -346,55 +326,20 @@ static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP
 			    struct design *s, struct design *r, struct design2 *d,
 			    struct terms_object *tm)
 {
-	int i, j, m, n;
-	int *xfactors;
-	int nvariable, nterm;
 	int err = 0;
 
 	/* validate types */
-	if (!IS_INTEGER(factors))
-		DOMAIN_ERROR("'factors' should be integer");
-	if (!isMatrix(factors))
-		DOMAIN_ERROR("'factors' should be a matrix");
 	if (!IS_CHARACTER(term_labels))
 		DOMAIN_ERROR("'term.labels' should be a character vector");
 	if (!IS_INTEGER(order))
-		DOMAIN_ERROR("'order' should be a list");
+		DOMAIN_ERROR("'order' should be an integer vector");
 
-	/* get dimensions */
-	nterm = LENGTH(term_labels);
-	nvariable = LENGTH(variables);
-
-	/* validate factor matrix */
-	if (isMatrix(factors)) {
-		SEXP dim = GET_DIM(factors);
-		int xf;
-
-		m = INTEGER(dim)[0];
-		n = INTEGER(dim)[1];
-		xfactors = INTEGER_POINTER(factors);
-
-		if ((size_t)m != nvariable)
-			DOMAIN_ERROR("'factors' should have"
-				     " rows equal to the number of variables");
-		if ((size_t)n != nterm)
-			DOMAIN_ERROR("'factors' should have"
-				     " cols equal to the number of terms");
-
-		for (j = 0; j < n; j++) {
-			for (i = 0; i < m; i++) {
-				xf = xfactors[i * n + j];
-				if (xf != 0 && xf != 1)
-					DOMAIN_ERROR("invalid entry in 'factors' matrix");
-			}
-		}
-	} else {
-		m = 0;
-		n = 0;
-		xfactors = NULL;
-	}
 
 	err = get_variables(variables, s, r, d, &tm->variables);
+	if (err < 0)
+		goto out;
+
+	err = get_terms(factors, &tm->variables, s, r, d, &tm->terms);
 	if (err < 0)
 		goto out;
 
@@ -407,7 +352,7 @@ static int get_variables(SEXP variables,
 			 struct design *s, struct design *r, struct design2 *d,
 			 struct variables *v)
 {
-	SEXP names;
+	SEXP var;
 	int i, n;
 	int err = 0;
 
@@ -416,17 +361,12 @@ static int get_variables(SEXP variables,
 
 	n = LENGTH(variables);
 
-	names = GET_NAMES(variables);
-	if (!IS_CHARACTER(names) && LENGTH(names) == n)
-		DOMAIN_ERROR("'variables' must have a name for each component");
-
 	v->count = (size_t)n;
 	v->item = (void *)R_alloc(n, sizeof(*v->item));
 	for (i = 0; i < n; i++) {
-		SEXP var = VECTOR_ELT(variables, i);
-		SEXP nm = STRING_ELT(names, i);
+		var = VECTOR_ELT(variables, i);
 
-		err = get_variable(var, CHAR(nm), s, r, d, &v->item[i]);
+		err = get_variable(var, s, r, d, &v->item[i]);
 		if (err < 0)
 			goto out;
 	}
@@ -435,13 +375,10 @@ out:
 }
 
 
-static int get_variable(SEXP variable, const char *name,
-			struct design *s, struct design *r, struct design2 *d,
+static int get_variable(SEXP variable, struct design *s, struct design *r, struct design2 *d,
 			struct variable *v)
 {
 	int err = 0;
-
-	v->name = name;
 
 	if (isMatrix(variable) || inherits(variable, "matrix")) {
 		err = get_trait(variable, s, r, v);
@@ -503,8 +440,6 @@ static int get_trait(SEXP variable, struct design *s, struct design *r, struct v
 		nm = STRING_ELT(cn, j);
 		v->names[j] = CHAR(nm);
 	}
-
-	v->size = (size_t)p;
 
 	return 0;
 }
@@ -610,7 +545,47 @@ static int get_special(SEXP variable, struct design *s, struct design *r, struct
 		DOMAIN_ERROR("unknown variable type");
 	}
 
-	v->size = size;
+	return 0;
+}
+
+
+static int get_terms(SEXP factors, const struct variables *v,
+		     struct design *s, struct design *r, struct design2 *d,
+		     struct terms *tm)
+{
+	SEXP dim;
+	int i, j, m, n, xf, *xfactors;
+
+	if (!IS_INTEGER(factors))
+		DOMAIN_ERROR("'factors' should be integer");
+	if (!isMatrix(factors))
+		DOMAIN_ERROR("'factors' should be a matrix");
+
+	/* validate factor matrix */
+	if (isMatrix(factors)) {
+		dim = GET_DIM(factors);
+
+		m = INTEGER(dim)[0];
+		n = INTEGER(dim)[1];
+		xfactors = INTEGER_POINTER(factors);
+
+		if ((size_t)m != v->count)
+			DOMAIN_ERROR("'factors' should have"
+				     " rows equal to the number of variables");
+
+		for (j = 0; j < n; j++) {
+			for (i = 0; i < m; i++) {
+				xf = xfactors[i * n + j];
+				if (xf != 0 && xf != 1)
+					DOMAIN_ERROR("invalid entry in 'factors' matrix");
+			}
+		}
+	} else {
+		m = 0;
+		n = 0;
+		xfactors = NULL;
+	}
+
 	return 0;
 }
 

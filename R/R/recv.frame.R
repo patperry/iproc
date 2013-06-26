@@ -263,7 +263,6 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
             attr(rv, "name") <- NULL
             variables[[i]] <- rv
         }
-        names(variables)[[i]] <- paste(deparse(v[[i]]), collapse=" ")
     }
 
     send <- sapply(variables, function(x) inherits(x, "send"))
