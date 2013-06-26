@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <R.h>
@@ -652,20 +653,56 @@ static int get_product(const char *name, const struct variable *u, const struct 
 		       struct variable *tm)
 {
 	int err = -EDOM;
+	size_t k, l, nu, nv, n, len, lenu, lenv;
+	const char *stru, *strv;
+	char *str;
 
-	if (u->design == VARIABLE_DESIGN_SEND
-		&& u->type == VARIABLE_TYPE_TRAIT) {
-		if (v->design == VARIABLE_DESIGN_RECV
-			&& v->type == VARIABLE_TYPE_TRAIT) {
+	if (u->design == VARIABLE_DESIGN_SEND) {
+		nu = u->var.send->meta.size;
 
+		if (v->design == VARIABLE_DESIGN_RECV) {
+			nv = v->var.recv->meta.size;
 			tm->design = VARIABLE_DESIGN_DYAD;
-			tm->type = VARIABLE_TYPE_TRAIT;
-			tm->var.dyad = design2_add_kron(d, NULL, u->var.send,
-							v->var.recv);
-			err = 0;
 
+			if (u->type == VARIABLE_TYPE_TRAIT
+					&& v->type == VARIABLE_TYPE_TRAIT) {
+				tm->type = VARIABLE_TYPE_TRAIT;
+				tm->var.dyad = design2_add_kron(d, NULL,
+								u->var.send,
+								v->var.recv);
+				err = 0;
+			}
 		}
 	}
+
+	if (!err) {
+		n = nu * nv;
+		tm->names = (void *)R_alloc(n, sizeof(*tm->names));
+
+		for (k = 0; k < nu; k++) {
+			stru = u->names[k];
+			lenu = strlen(stru);
+
+			for (l = 0; l < nv; l++) {
+				strv = v->names[l];
+				lenv = strlen(strv);
+
+				len = lenu + lenv + 2;
+				str = (void *)R_alloc(len, sizeof(*str));
+
+
+				sprintf(str, "%s:%s", stru, strv);
+				tm->names[k * nv + l] = str;
+			}
+		}
+
+		/*Rprintf("`%s'\n", name);
+		for (k = 0; k < n; k++) {
+			Rprintf("\t`%s'\n", tm->names[k]);
+		}
+		*/
+	}
+
 
 	if (err < 0)
 		error("interaction for terms of type '%s' are not implemented yet", name);
