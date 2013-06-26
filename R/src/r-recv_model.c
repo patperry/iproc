@@ -81,7 +81,7 @@ struct variables {
 
 
 
-struct terms {
+struct terms_object {
 	struct variables variables;
 };
 
@@ -110,9 +110,9 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 			  struct properties *p);
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
-static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
-		     struct design *s, struct design *r, struct design2 *d,
-		     struct terms *tm);
+static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
+			    struct design *s, struct design *r, struct design2 *d,
+			    struct terms_object *tm);
 static int get_variables(SEXP variables,
 			 struct design *s, struct design *r, struct design2 *d,
 			 struct variables *v);
@@ -124,7 +124,8 @@ static int get_special(SEXP variable, struct design *s, struct design *r, struct
 		       struct variable *v);
 
 
-static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const double *duals0);
+static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
+		  const double *duals0);
 
 
 
@@ -138,7 +139,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	struct history h;
 	struct design s, r;
 	struct design2 d;
-	struct terms tm;
+	struct terms_object tm;
 
 	const struct message *msgs;
 	size_t nmsg;
@@ -160,12 +161,12 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver,
 	design_init(&r, &h, p.nrecv);
 	design2_init(&d, &h, p.nsend, p.nrecv);
 
-	err = get_terms(factors, term_labels, variables, order, &s, &r, &d, &tm);
+	err = get_terms_object(factors, term_labels, variables, order, &s, &r, &d, &tm);
 	if (err < 0)
 		goto terms_fail;
 
 	history_get_messages(&h, &msgs, &nmsg);
-	/* skip initial observation period (missing covariates) */
+
 	t0 = nmsg ? msgs[0].time : -INFINITY;
 	while (nmsg && msgs->time < t0 + p.skip) {
 		nmsg--;
@@ -341,9 +342,9 @@ static int get_history(SEXP time, SEXP sender, SEXP receiver, struct history *h)
 }
 
 
-static int get_terms(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
-		     struct design *s, struct design *r, struct design2 *d,
-		     struct terms *tm)
+static int get_terms_object(SEXP factors, SEXP term_labels, SEXP variables, SEXP order,
+			    struct design *s, struct design *r, struct design2 *d,
+			    struct terms_object *tm)
 {
 	int i, j, m, n;
 	int *xfactors;
@@ -452,6 +453,7 @@ static int get_variable(SEXP variable, const char *name,
 
 	return err;
 }
+
 		
 static int get_trait(SEXP variable, struct design *s, struct design *r, struct variable *v)
 {
@@ -627,9 +629,6 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0, const
 		task = recv_fit_advance(fit);
 
 		if (trace && it % report == 0) {
-			// const struct recv_loglik *ll = recv_fit_loglik(&fit);
-			// const struct recv_loglik_info *info = recv_loglik_info(ll);
-			// size_t n = info->nrecv;
 			double dev = recv_fit_dev(fit);
 			double nscore = recv_fit_score_norm(fit);
 			double step = recv_fit_step_size(fit);
