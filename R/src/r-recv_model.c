@@ -566,8 +566,8 @@ static int get_terms(SEXP factors, const struct variables *v,
 
 	if (!IS_INTEGER(factors))
 		DOMAIN_ERROR("'factors' should be integer");
-	if (!isMatrix(factors))
-		DOMAIN_ERROR("'factors' should be a matrix");
+	if (!(isMatrix(factors) || LENGTH(factors) == 0))
+		DOMAIN_ERROR("'factors' should be a matrix or an empty integer vector");
 
 
 	/* validate factor matrix */
@@ -672,6 +672,48 @@ static int get_product(const char *name, const struct variable *u, const struct 
 								v->var.recv);
 				err = 0;
 			}
+			/* TODO s(trait):r(special) */
+			/* TODO s(special):r(trait) */
+			/* TODO s(special):r(special) */
+		}
+		/* TODO s(.):d(.) */
+	} else if (u->design == VARIABLE_DESIGN_RECV) {
+		nu = u->var.recv->meta.size;
+
+		if (v->design == VARIABLE_DESIGN_RECV) {
+			nv = v->var.recv->meta.size;
+			tm->design = VARIABLE_DESIGN_RECV;
+
+			if (u->type == VARIABLE_TYPE_TRAIT
+					&& v->type == VARIABLE_TYPE_TRAIT) {
+				tm->type = VARIABLE_TYPE_TRAIT;
+			} else {
+				tm->type = VARIABLE_TYPE_SPECIAL;
+			}
+
+			tm->var.recv = design_add_prod(r, NULL, u->var.recv,
+						       v->var.recv);
+			err = 0;
+		}
+		/* TODO r(.):d(.) */
+
+	} else if (u->design == VARIABLE_DESIGN_DYAD) {
+		nu = u->var.dyad->meta.size;
+
+		if (v->design == VARIABLE_DESIGN_DYAD) {
+			nv = v->var.dyad->meta.size;
+			tm->design = VARIABLE_DESIGN_DYAD;
+
+			if (u->type != VARIABLE_TYPE_TRAIT
+					|| v->type != VARIABLE_TYPE_TRAIT) {
+				tm->type = VARIABLE_TYPE_SPECIAL;
+
+				tm->var.dyad = design2_add_prod(d, NULL,
+								u->var.dyad,
+								v->var.dyad);
+				err = 0;
+			}
+			/* TODO d(trait):d(trait) */
 		}
 	}
 
