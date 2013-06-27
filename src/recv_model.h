@@ -50,7 +50,6 @@ void recv_model_deinit(struct recv_model *m);
 
 struct design *recv_model_design(const struct recv_model *m);
 struct design2 *recv_model_design2(const struct recv_model *m);
-const struct recv_params *recv_model_params(const struct recv_model *m);
 size_t recv_model_send_count(const struct recv_model *model);
 size_t recv_model_dim(const struct recv_model *model);
 size_t recv_model_count(const struct recv_model *model);
@@ -66,7 +65,7 @@ void recv_model_set_exclude_loops(struct recv_model *m, int exclude_loops);
 int recv_model_moments(const struct recv_model *m);
 void recv_model_set_moments(struct recv_model *m, int k);
 
-
+const struct recv_params *recv_model_params(const struct recv_model *m);
 void recv_model_set_params(struct recv_model *m, const struct recv_params *p);
 
 struct catdist1 *recv_model_dist(const struct recv_model *m, size_t i);
