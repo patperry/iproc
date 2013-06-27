@@ -47,6 +47,24 @@ recv.model <- function(formula, message.data, receiver.data,
 
     model <- .Call("Riproc_recv_model", time, sender, receiver,
                    factors, variables, nsend, nrecv, loops, skip)
+    perm <- model$perm
+    names <- model$names
+
+    model$coefficients <- model$coefficients[perm]
+    names(model$coefficients) <- names
+
+    model$constraints <- model$constraints[,perm,drop=FALSE]
+    colnames(model$constraints) <- names
+
+    model$score <- model$score[perm]
+    names(model$score) <- names
+
+    model$imat <- model$imat[perm,perm,drop=FALSE]
+    rownames(model$imat) <- names
+    colnames(model$imat) <- names
+
+    model$perm <- NULL
+    model$names <- NULL
     model
 }
 

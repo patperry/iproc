@@ -128,6 +128,14 @@ static void cindex_to_coord(const size_t *dims, size_t rank, size_t i,
 static size_t coord_to_findex(const size_t *dims, size_t rank,
 			      const size_t *coord);
 
+static SEXP alloc_terms_permute(const struct terms *tm,
+				const struct design *r,
+				const struct design2 *d);
+
+static SEXP alloc_vector_copy(const double *x, size_t n);
+static SEXP alloc_matrix_copy(const double *x, size_t m, size_t n);
+static SEXP alloc_score(const struct recv_loglik *ll);
+static SEXP alloc_imat(const struct recv_fit *fit);
 
 
 SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
@@ -148,6 +156,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	const struct recv_loglik *ll;
 	const struct recv_model *model;
 	const struct constr *constr;
+	const double *beta, *nu;
 	double dev;
 	SEXP names;
 	SEXP ret = NULL_USER_OBJECT;
@@ -183,7 +192,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 
 	ncextra = recv_fit_extra_constr_count(&fit);
 	if (ncextra)
-		warning("Adding %zd %s to make parameters identifiable\n",
+		warning("adding %zd %s to make parameters identifiable\n",
 			ncextra, ncextra == 1 ? "constraint" : "constraints");
 
 	err = do_fit(&fit, NULL, NULL, &iter);
@@ -195,14 +204,32 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	ll = recv_fit_loglik(&fit);
 	ntot = recv_loglik_count(ll);
 	model = recv_loglik_model(ll);
+	beta = (recv_model_params(model))->recv.traits; /* HACK */
+	nu = recv_fit_duals(&fit);
 	dim = recv_model_dim(model);
 	rank = dim - nc;
 	dev = recv_loglik_dev(ll);
 
-	PROTECT(ret = NEW_LIST(9));
-	PROTECT(names = NEW_CHARACTER(9));
+	PROTECT(ret = NEW_LIST(16));
+	PROTECT(names = NEW_CHARACTER(16));
 	SET_NAMES(ret, names);
 	k = 0;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("coefficients"));
+	SET_VECTOR_ELT(ret, k, alloc_vector_copy(beta, dim));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("duals"));
+	SET_VECTOR_ELT(ret, k, alloc_vector_copy(nu, nc));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("constraints"));
+	SET_VECTOR_ELT(ret, k, alloc_matrix_copy(constr_all_wts(constr), nc, dim));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("constraint.values"));
+	SET_VECTOR_ELT(ret, k, alloc_vector_copy(constr_all_vals(constr), nc));
+	k++;
 
 	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("rank"));
 	SET_VECTOR_ELT(ret, k, ScalarInteger((int)rank));
@@ -240,9 +267,19 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	SET_VECTOR_ELT(ret, k, alloc_term_labels(&tm.terms));
 	k++;
 
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("perm"));
+	SET_VECTOR_ELT(ret, k, alloc_terms_permute(&tm.terms, &r, &d));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("score"));
+	SET_VECTOR_ELT(ret, k, alloc_score(ll));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("imat"));
+	SET_VECTOR_ELT(ret, k, alloc_imat(&fit));
+	k++;
+
 	UNPROTECT(2);
-
-
 
 
 fit_fail:
@@ -257,6 +294,83 @@ properties_fail:
 	return ret;
 }
 
+
+static SEXP alloc_vector_copy(const double *x, size_t n)
+{
+	SEXP dst = NEW_NUMERIC(n);
+	memcpy(NUMERIC_POINTER(dst), x, n * sizeof(double));
+	return dst;
+}
+
+static SEXP alloc_matrix_copy(const double *x, size_t m, size_t n)
+{
+	SEXP dst = allocMatrix(REALSXP, m, n);
+	double *xdst = NUMERIC_POINTER(dst);
+
+	if (m > 0 && n > 0)
+		matrix_dtrans(n, m, x, n, xdst, m);
+
+	return dst;
+}
+
+static SEXP alloc_score(const struct recv_loglik *ll)
+{
+	const struct recv_model *m = recv_loglik_model(ll);
+	const struct design *r = recv_model_design(m);
+	const struct design2 *d = recv_model_design2(m);
+	struct recv_params p;
+	size_t dim = recv_model_dim(m);
+	SEXP score = NEW_NUMERIC(dim);
+	double *xscore = NUMERIC_POINTER(score);
+
+	p.recv.traits = xscore;
+	p.recv.tvars = p.recv.traits + design_trait_dim(r);
+	p.dyad.traits = p.recv.tvars + design_tvar_dim(r);
+	p.dyad.tvars = p.dyad.traits + design2_trait_dim(d);
+
+	memset(xscore, 0, dim * sizeof(double));
+	recv_loglik_axpy_score(1.0, ll, &p);
+
+	return score;
+}
+
+
+static SEXP alloc_imat(const struct recv_fit *fit)
+{
+	const struct recv_loglik *ll = recv_fit_loglik(fit);
+	const struct recv_model *m = recv_loglik_model(ll);
+	size_t dim = recv_model_dim(m);
+	const double *imatp;
+	SEXP imat = allocMatrix(REALSXP, dim, dim);
+	double *ximat = NUMERIC_POINTER(imat);
+	enum blas_uplo uplo, f77uplo;
+	size_t i, j;
+
+	recv_fit_get_imat(fit, &imatp, &uplo);
+	f77uplo = (uplo == BLAS_UPPER) ? BLAS_LOWER : BLAS_UPPER;
+
+	memset(ximat, 0, dim * dim * sizeof(double));
+
+	if (dim > 0) {
+		packed_dsctr(f77uplo, dim, imatp, ximat, dim);
+	}
+
+	if (uplo == BLAS_UPPER) {
+		for (j = 0; j < dim; j++) {
+			for (i = 0; i < j; i++) {
+				ximat[i + j * dim] = ximat[j + i * dim];
+			}
+		}
+	} else {
+		for (j = 0; j < dim; j++) {
+			for (i = j + 1; i < dim; i++) {
+				ximat[i + j * dim] = ximat[j + i * dim];
+			}
+		}
+	}
+
+	return imat;
+}
 
 
 static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
@@ -898,6 +1012,64 @@ static size_t terms_size(const struct terms *tm)
 	}
 
 	return size;
+}
+
+
+static SEXP alloc_terms_permute(const struct terms *tm,
+				const struct design *r,
+				const struct design2 *d)
+{
+	size_t i, j, jf, ind, m, n, len;
+	const struct variable *v;
+	const struct var_meta *meta;
+	size_t coord[VAR_RANK_MAX];
+	size_t dimr0, dimr, dimd0;
+	size_t off;
+	SEXP perm;
+	int *xperm;
+
+	len = terms_size(tm);
+	PROTECT(perm = NEW_INTEGER(len));
+	xperm = INTEGER_POINTER(perm);
+
+	dimr0 = design_trait_dim(r);
+	dimr = design_dim(r);
+	dimd0 = design2_trait_dim(d);
+
+	m = tm->count;
+
+	ind = 0;
+	for (i = 0; i < m; i++) {
+		v = &tm->item[i];
+		meta = variable_meta(v);
+
+		if (v->design == VARIABLE_DESIGN_RECV) {
+			if (v->type == VARIABLE_TYPE_TRAIT) {
+				off = 0;
+			} else {
+				off = dimr0;
+			}
+			off += v->var.recv->index;
+		} else {
+			if (v->type == VARIABLE_TYPE_TRAIT) {
+				off = dimr;
+			} else {
+				off = dimr + dimd0;
+			}
+			off += v->var.dyad->index;
+		}
+
+		n = meta->size;
+		for (j = 0; j < n; j++) {
+			cindex_to_coord(meta->dims, meta->rank, j, coord);
+			jf = coord_to_findex(meta->dims, meta->rank, coord);
+			xperm[ind + jf] = (int)(off + j + 1);
+		}
+		ind += n;
+	}
+
+	UNPROTECT(1);
+	return perm;
 }
 
 
