@@ -248,9 +248,20 @@ const struct constr *recv_fit_constr(const struct recv_fit *fit)
 	return &fit->constr;
 }
 
+const double *recv_fit_duals(const struct recv_fit *fit)
+{
+	return newton_duals(&fit->opt);
+}
+
 double recv_fit_dev(const struct recv_fit *fit)
 {
 	return newton_val(&fit->opt);
+}
+
+void recv_fit_get_imat(const struct recv_fit *fit, const double **imat, enum blas_uplo *uplo)
+{
+	*imat = fit->imat;
+	*uplo = fit->uplo;
 }
 
 double recv_fit_dev0(const struct recv_fit *fit)

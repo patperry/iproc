@@ -60,6 +60,7 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit);
 /* current values */
 const struct recv_loglik *recv_fit_loglik(const struct recv_fit *fit);
 double recv_fit_dev(const struct recv_fit *fit);
+void recv_fit_get_imat(const struct recv_fit *fit, const double **imat, enum blas_uplo *uplo);
 double recv_fit_dev0(const struct recv_fit *fit);
 double recv_fit_score_norm(const struct recv_fit *fit);
 double recv_fit_step_size(const struct recv_fit *fit);
