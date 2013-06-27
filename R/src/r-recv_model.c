@@ -1,5 +1,6 @@
 #include "port.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -112,11 +113,20 @@ static int get_product(const char *name, const struct variable *u,
 		       struct design *r, struct design2 *d,
 		       struct variable *tm);
 
-
 static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 		  const double *duals0, size_t *iter);
 
 
+static SEXP alloc_term_labels(const struct terms *tm);
+static size_t terms_size(const struct terms *tm);
+static size_t variable_size(const struct variable *v);
+static const struct var_meta *variable_meta(const struct variable *v);
+
+static void get_variable_names(const struct variable *v, SEXP dst, size_t off);
+static void cindex_to_coord(const size_t *dims, size_t rank, size_t i,
+			    size_t *coord);
+static size_t coord_to_findex(const size_t *dims, size_t rank,
+			      const size_t *coord);
 
 
 
@@ -189,8 +199,8 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	rank = dim - nc;
 	dev = recv_loglik_dev(ll);
 
-	PROTECT(ret = NEW_LIST(8));
-	PROTECT(names = NEW_CHARACTER(8));
+	PROTECT(ret = NEW_LIST(9));
+	PROTECT(names = NEW_CHARACTER(9));
 	SET_NAMES(ret, names);
 	k = 0;
 
@@ -224,6 +234,10 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 
 	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("converged"));
 	SET_VECTOR_ELT(ret, k, ScalarLogical(TRUE));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("names"));
+	SET_VECTOR_ELT(ret, k, alloc_term_labels(&tm.terms));
 	k++;
 
 	UNPROTECT(2);
@@ -845,5 +859,119 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 	*iter = it;
 
 	return err;
+}
+
+
+static SEXP alloc_term_labels(const struct terms *tm)
+{
+	SEXP labels;
+	size_t ind, len, i, m, n;
+	const struct variable *v;
+
+	len = terms_size(tm);
+	m = tm->count;
+
+	PROTECT(labels = NEW_STRING(len));
+	ind = 0;
+	for (i = 0; i < m; i++) {
+		v = &tm->item[i];
+		n = variable_size(v);
+		get_variable_names(v, labels, ind);
+		ind += n;
+	}
+	UNPROTECT(1);
+
+	return labels;
+}
+
+
+
+
+static size_t terms_size(const struct terms *tm)
+{
+	size_t size, i, n;
+
+	size = 0;
+	n = tm->count;
+	for (i = 0; i < n; i++) {
+		size += variable_size(&tm->item[i]);
+	}
+
+	return size;
+}
+
+
+static size_t variable_size(const struct variable *v)
+{
+	const struct var_meta *meta = variable_meta(v);
+	return meta->size;
+}
+
+
+static const struct var_meta *variable_meta(const struct variable *v)
+{
+	switch (v->design) {
+	case VARIABLE_DESIGN_SEND:
+		return &v->var.send->meta;
+	case VARIABLE_DESIGN_RECV:
+		return &v->var.recv->meta;
+	case VARIABLE_DESIGN_DYAD:
+		return &v->var.dyad->meta;
+	}
+
+	assert(0);
+	return NULL;
+}
+
+
+static void get_variable_names(const struct variable *v, SEXP dst, size_t off)
+{
+	const struct var_meta *meta = variable_meta(v);
+	const char **names = v->names;
+	size_t i, j, n = meta->size;
+	size_t coord[VAR_RANK_MAX];
+
+	for (i = 0; i < n; i++) {
+		cindex_to_coord(meta->dims, meta->rank, i, coord);
+		j = coord_to_findex(meta->dims, meta->rank, coord);
+
+		SET_STRING_ELT(dst, off + j, COPY_TO_USER_STRING(names[i]));
+	}
+}
+
+
+static void cindex_to_coord(const size_t *dims, size_t rank, size_t i,
+			    size_t *coord)
+{
+	/*
+	 * array1: i1
+	 * array2: i1 *  n2            + i2
+	 * array3: i1 * (n2 * n3)      + i2 *  n3       + i3
+	 * array4: i1 * (n2 * n3 * n4) + i2 * (n3 * n4) + i3 * n4 + i4
+	 *
+	 **/
+
+	if (rank == 1) {
+		coord[0] = i;
+	} else if (rank > 1) {
+		coord[rank - 1] = i % dims[rank - 1];
+		cindex_to_coord(dims, rank - 1, i / dims[rank - 1], coord);
+	}
+}
+
+
+static size_t coord_to_findex(const size_t *dims, size_t rank,
+			      const size_t *coord)
+{
+	size_t r, i, stride;
+
+	stride = 1;
+	i = 0;
+	for (r = 0; r < rank; r++) {
+		i += coord[r] * stride;
+		stride *= dims[r];
+	}
+
+	return i;
 }
 
