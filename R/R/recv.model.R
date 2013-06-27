@@ -66,8 +66,16 @@ recv.model <- function(formula, message.data, receiver.data,
     model$perm <- NULL
     model$names <- NULL
 
+
+    model$call <- call
     class(model) <- "recv.model"
     model
+}
+
+
+print.recv.model <- function(x, digits = max(3, getOption("digits") - 3), ...)
+{
+    print.glm(x, digits, ...)
 }
 
 
