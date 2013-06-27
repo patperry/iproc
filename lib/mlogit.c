@@ -465,7 +465,7 @@ void update_cov(struct mlogit *m)
 		if (!(m->mean_err == 0.0))
 			recompute_mean(m);
 		recompute_cov(m);
-		printf("!");
+		/* printf("!"); */
 
 		blas_dscal(cov_dim, -exp(m->log_cov_scale_ - log_scale1), dcov, 1);
 		blas_daxpy(cov_dim, 1.0, m->cov_, 1, dcov, 1);
