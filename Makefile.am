@@ -201,11 +201,15 @@ rpkg_sources = \
 	R/LICENSE \
 	R/NAMESPACE \
 	R/data/enron.rda \
+	R/demo/00Index \
+	R/demo/enron.R \
 	R/inst/tests/test-Mesg.R \
 	R/R/Mesg.R \
 	R/R/fit.R \
 	R/R/recv.frame.R \
+	R/R/recv.matrix.R \
 	R/R/recv.model.R \
+	R/R/summary.recv.model.R \
 	R/R/utils.R \
 	R/src/Makevars \
 	R/src/Makevars.win \
