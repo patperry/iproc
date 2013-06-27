@@ -214,6 +214,7 @@ rpkg_sources = \
 	R/src/Makevars \
 	R/src/Makevars.win \
 	R/src/r-recv_model.c \
+	R/src/r-xalloc-die.c \
 	R/tests/test-all.R
 
 rpkg_extra_sources = \
@@ -222,6 +223,7 @@ rpkg_extra_sources = \
 
 @RPACKAGE@: $(rpkg_sources) $(rpkg_extra_sources)
 	$(AM_V_GEN)cp $(rpkg_extra_sources)  R/src
+	rm -f R/src/xerbla.c R/src/xalloc-die.c
 	R CMD build R
 
 check_LIBRARIES = \
