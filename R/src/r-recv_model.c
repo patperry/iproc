@@ -138,6 +138,7 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	const struct recv_loglik *ll;
 	const struct recv_model *model;
 	const struct constr *constr;
+	double dev;
 	SEXP names;
 	SEXP ret = NULL_USER_OBJECT;
 	int k;
@@ -186,9 +187,10 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	model = recv_loglik_model(ll);
 	dim = recv_model_dim(model);
 	rank = dim - nc;
+	dev = recv_loglik_dev(ll);
 
-	PROTECT(ret = NEW_LIST(7));
-	PROTECT(names = NEW_CHARACTER(7));
+	PROTECT(ret = NEW_LIST(8));
+	PROTECT(names = NEW_CHARACTER(8));
 	SET_NAMES(ret, names);
 	k = 0;
 
@@ -197,7 +199,11 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	k++;
 
 	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("deviance"));
-	SET_VECTOR_ELT(ret, k, ScalarReal(recv_fit_dev(&fit)));
+	SET_VECTOR_ELT(ret, k, ScalarReal(dev));
+	k++;
+
+	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("aic"));
+	SET_VECTOR_ELT(ret, k, ScalarReal(dev + (double) 2 * rank));
 	k++;
 
 	SET_STRING_ELT(names, k, COPY_TO_USER_STRING("null.deviance"));
