@@ -65,6 +65,34 @@ recv.model <- function(formula, message.data, receiver.data,
 
     model$perm <- NULL
     model$names <- NULL
+
+    class(model) <- "recv.model"
     model
+}
+
+
+vcov.recv.model <- function(object, ...)
+{
+    imat <- object$imat
+    constr <- object$constraints
+
+    n <- nrow(imat)
+    k <- nrow(constr)
+    N <- n + k
+
+    i <- seq_len(n)
+    j <- n + seq_len(k)
+
+    K <- matrix(NA, N, N)
+    K[i, i] <- imat
+    K[i, j] <- t(constr)
+    K[j, i] <- constr
+    K[j, j] <- 0
+
+    cov <- solve(K)
+    cov <- cov[i, i, drop=FALSE]
+    rownames(cov) <- rownames(imat)
+    colnames(cov) <- colnames(imat)
+    cov
 }
 
