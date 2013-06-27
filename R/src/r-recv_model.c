@@ -953,6 +953,9 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 
 	task = recv_fit_start(fit, params0, duals0);
 	for (it = 0; it < maxit && task == RECV_FIT_STEP; it++) {
+
+		R_CheckUserInterrupt();
+
 		task = recv_fit_advance(fit);
 
 		if (trace && it % report == 0) {
@@ -960,8 +963,8 @@ static int do_fit(struct recv_fit *fit, const struct recv_params *params0,
 			double nscore = recv_fit_score_norm(fit);
 			double step = recv_fit_step_size(fit);
 
-			Rprintf("iter %zu deviance = %.2f; |score| = %.16f; step = %.16f\n",
-				it, dev, nscore, step);
+			Rprintf("iter %zu: deviance = %.2f; |score| = %.12f; step = %.6f\n",
+				it + 1, dev, nscore, step);
 		}
 	}
 
