@@ -82,7 +82,7 @@ model2 <- recv.model(Mesg(time, sender, receiver)
                      + nsib(ws,ws) + ncosib(ws,ws),
                      message.data, actor.data,
                      response.data = subset(message.data, time >= horizon & sender == 138),
-                     w = max(intervals), ws = intervals, method="recv.frame")
+                     w = max(intervals), ws = intervals)
 
 
 # Note: the estimated parameters are not bias-corrected for multiple
