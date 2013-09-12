@@ -16,14 +16,15 @@ summary(model0)
 
 # Fit a model with dynamic covariates
 intervals <- c(7.5 * 60 * 4^(1:7))
-horizon <- max(intervals)
+horizon <- min(message.data$time) + max(intervals)
 
 model1 <- recv.model(Mesg(time, sender, receiver)
                      ~ s(.) * .
                      + isend(w) + irecv(w)
                      + nsend(ws) + nrecv(ws),
                      message.data, actor.data,
-                     w = horizon, ws = intervals)
+                     response.data = subset(message.data, time >= horizon),
+                     w = max(intervals), ws = intervals)
 
 
 # Extract the coefficients
@@ -71,8 +72,8 @@ segments(log10(intervals), beta1.nrecv - se1.nrecv,
 
 
 
-# Fit a model with triadic covariates (this takes about 15 minutes on my
-# computer)
+# Fit a model with triadic covariates, but only for messages from
+# sender 138 (all messages are used to compute the covariates)
 model2 <- recv.model(Mesg(time, sender, receiver)
                      ~ s(.) * .
                      + isend(w) + irecv(w)
@@ -80,7 +81,8 @@ model2 <- recv.model(Mesg(time, sender, receiver)
                      + nsend2(ws,ws) + nrecv2(ws,ws)
                      + nsib(ws,ws) + ncosib(ws,ws),
                      message.data, actor.data,
-                     w = horizon, ws = intervals)
+                     response.data = subset(message.data, time >= horizon & sender == 138),
+                     w = max(intervals), ws = intervals, method="recv.frame")
 
 
 # Note: the estimated parameters are not bias-corrected for multiple

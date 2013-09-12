@@ -199,6 +199,7 @@ recv.frame.variable <- function(object, specials, data, sender.data,
 
 
 recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
+                       response.data = message.data,
                        sender.data = receiver.data, n = nrow(receiver.data),
                        bipartite = FALSE, loops = FALSE, ...)
 {
@@ -244,15 +245,24 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
 
     v <- attr(tm, "variables")[-1L]
     variables <- list()
+    y <- NULL
+    ypred <- NULL
 
     for (i in seq_along(v)) {
         if (i == response) {
-            y <- eval(v[[i]], message.data)
+            y <- eval(v[[i]], response.data)
+            ypred <- eval(v[[i]], message.data)
 
             if (is.Mesg(y)) {
                 if (!bipartite && max(y$sender) > n)
                     stop("message sender is out of range")
                 if (max(unlist(y$receiver)) > n)
+                    stop("message receiver is out of range")
+            }
+            if (is.Mesg(ypred)) {
+                if (!bipartite && max(ypred$sender) > n)
+                    stop("message sender is out of range")
+                if (max(unlist(ypred$receiver)) > n)
                     stop("message receiver is out of range")
             }
 
@@ -309,6 +319,7 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
     }
 
     frame <- list(formula = formula(tm), factors = factors,
+                  messages = ypred,
                   term.labels = term.labels, variables = variables,
                   order = order, response = response,
                   n = n, bipartite = bipartite, loops = loops)
@@ -325,6 +336,14 @@ recv.response <- function(frame)
     response <- frame$response
     y <- frame$variables[[response]]
     y
+}
+
+
+recv.messages <- function(frame)
+{
+    if (!inherits(frame, "recv.frame"))
+        stop("invalid 'frame' argument")
+    frame$messages
 }
 
 

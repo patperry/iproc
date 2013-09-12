@@ -1,7 +1,8 @@
 recv.model <- function(formula, message.data, receiver.data,
+		       response.data = message.data,
                        sender.data = receiver.data, n = nrow(receiver.data),
                        bipartite = FALSE, loops = FALSE, method = "newton",
-                       contrasts = NULL, skip = recv.horizon, ...)
+                       contrasts = NULL, ...)
 {
     call <- match.call()
 
@@ -21,21 +22,26 @@ recv.model <- function(formula, message.data, receiver.data,
         warning(sprintf("method = '%s' is not supported. Using 'newton'",
                         method))
 
-    if (!(skip >= 0))
-        stop("'skip' must be non-negative")
-
     y <- recv.response(mf)
+    messages <- recv.messages(mf)
     x <- recv.matrix(mf, contrasts=contrasts)
 
     if (is.null(y))
         stop("must specify a response")
     if (!inherits(y, "Mesg"))
         stop("response must be a message object")
+    if (any(y$time < min(messages$time) + recv.horizon))
+	warning(sprintf("%d response messages have times outside the predictor horizon [%s, Inf)",
+			sum(y$time < min(messages$time) + recv.horizon),
+			min(messages$time) + recv.horizon))
 
+    ytime <- y$time
+    ysender <- y$sender
+    yreceiver <- y$receiver
 
-    time <- y$time
-    sender <- y$sender
-    receiver <- y$receiver
+    xtime <- messages$time
+    xsender <- messages$sender
+    xreceiver <- messages$receiver
 
     factors <- x$factors
     variables <- x$variables
@@ -45,8 +51,10 @@ recv.model <- function(formula, message.data, receiver.data,
     nrecv <- n
     nsend <- if (bipartite) max(sender) else n
 
-    model <- .Call("Riproc_recv_model", time, sender, receiver,
-                   factors, variables, nsend, nrecv, loops, skip)
+    model <- .Call("Riproc_recv_model",
+		   ytime, ysender, yreceiver,
+		   xtime, xsender, xreceiver,
+                   factors, variables, nsend, nrecv, loops)
     perm <- model$perm
     names <- model$names
 

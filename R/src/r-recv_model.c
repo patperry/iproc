@@ -41,7 +41,6 @@ struct properties {
 
 	/* properties */
 	int exclude_loops;
-	double skip;
 };
 
 enum variable_design {
@@ -88,7 +87,7 @@ struct terms_object {
 
 
 
-static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 			  struct properties *p);
 static int get_history(SEXP time, SEXP sender, SEXP receiver,
 		       struct history *h);
@@ -138,12 +137,13 @@ static SEXP alloc_score(const struct recv_loglik *ll);
 static SEXP alloc_imat(const struct recv_fit *fit);
 
 
-SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
-		       SEXP variables, SEXP nsend, SEXP nrecv, SEXP loops,
-		       SEXP skip)
+SEXP Riproc_recv_model(SEXP ytime, SEXP ysender, SEXP yreceiver,
+		       SEXP xtime, SEXP xsender, SEXP xreceiver,
+		       SEXP factors, SEXP variables, SEXP nsend, SEXP nrecv,
+		       SEXP loops)
 {
 	struct properties p;
-	struct history h;
+	struct history hx, hy;
 	struct design s, r;
 	struct design2 d;
 	struct terms_object tm;
@@ -151,7 +151,6 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	size_t nmsg;
 	size_t iter, dim, nc, ntot, rank;
 	size_t ncextra;
-	double t0;
 	struct recv_fit fit;
 	const struct recv_loglik *ll;
 	const struct recv_model *model;
@@ -163,30 +162,29 @@ SEXP Riproc_recv_model(SEXP time, SEXP sender, SEXP receiver, SEXP factors,
 	int k;
 	int err = 0;
 
-	err = get_properties(nsend, nrecv, loops, skip, &p);
+	err = get_properties(nsend, nrecv, loops, &p);
 	if (err < 0)
 		goto properties_fail;
 
-	history_init(&h, p.nsend, p.nrecv);
-	err = get_history(time, sender, receiver, &h);
+	history_init(&hy, p.nsend, p.nrecv);
+	err = get_history(ytime, ysender, yreceiver, &hy);
 	if (err < 0)
-		goto history_fail;
+		goto yhistory_fail;
 
-	design_init(&s, &h, p.nsend);
-	design_init(&r, &h, p.nrecv);
-	design2_init(&d, &h, p.nsend, p.nrecv);
+	history_init(&hx, p.nsend, p.nrecv);
+	err = get_history(xtime, xsender, xreceiver, &hx);
+	if (err < 0)
+		goto xhistory_fail;
+
+	design_init(&s, &hx, p.nsend);
+	design_init(&r, &hx, p.nrecv);
+	design2_init(&d, &hx, p.nsend, p.nrecv);
 
 	err = get_terms_object(factors, variables, &s, &r, &d, &tm);
 	if (err < 0)
 		goto terms_fail;
 
-	history_get_messages(&h, &msgs, &nmsg);
-
-	t0 = nmsg ? msgs[0].time : -INFINITY;
-	while (nmsg && msgs->time < t0 + p.skip) {
-		nmsg--;
-		msgs++;
-	}
+	history_get_messages(&hy, &msgs, &nmsg);
 
 	recv_fit_init(&fit, &r, &d, p.exclude_loops, msgs, nmsg, NULL, NULL);
 
@@ -288,8 +286,10 @@ terms_fail:
 	design2_deinit(&d);
 	design_deinit(&r);
 	design_deinit(&s);
-history_fail:
-	history_deinit(&h);
+xhistory_fail:
+	history_deinit(&hx);
+yhistory_fail:
+	history_deinit(&hy);
 properties_fail:
 	return ret;
 }
@@ -373,11 +373,10 @@ static SEXP alloc_imat(const struct recv_fit *fit)
 }
 
 
-static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
+static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops,
 			  struct properties *p)
 {
 	int xnsend, xnrecv, xloops;
-	double xskip;
 
 	/* validate and extract 'nsend' */
 	if (!IS_INTEGER(nsend) || LENGTH(nsend) != 1)
@@ -411,19 +410,9 @@ static int get_properties(SEXP nsend, SEXP nrecv, SEXP loops, SEXP skip,
 		DOMAIN_ERROR("'nrecv' should be at least 2 (no loops)");
 
 
-	/* validate and extract 'skip' */
-	if (!IS_NUMERIC(skip) || LENGTH(skip) != 1)
-		DOMAIN_ERROR("'skip' should be a single numeric value");
-
-	xskip = NUMERIC_VALUE(skip);
-	if (!(xskip >= 0))
-		DOMAIN_ERROR("'skip' should be non-negative");
-
-
 	p->nsend = (size_t)xnsend;
 	p->nrecv = (size_t)xnrecv;
 	p->exclude_loops = !xloops;
-	p->skip = xskip;
 
 	return 0;
 }
