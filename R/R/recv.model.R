@@ -105,7 +105,13 @@ vcov.recv.model <- function(object, ...)
     K[j, i] <- constr
     K[j, j] <- 0
 
-    cov <- solve(K)
+    v <- diag(K)
+    s <- ifelse(v < 1e-8, 1, sqrt(v))
+    scale <- s %*% t(s)
+    K.s <- K / scale
+    cov.s <- solve(K.s) # Note: result is not exactly symmetric due to numerical error
+    cov.s <- 0.5 * cov.s + 0.5 * t(cov.s)
+    cov <- cov.s * scale
     cov <- cov[i, i, drop=FALSE]
     rownames(cov) <- rownames(imat)
     colnames(cov) <- colnames(imat)
