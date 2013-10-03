@@ -253,13 +253,13 @@ recv.frame <- function(formula, message.data = NULL, receiver.data = NULL,
             y <- eval(v[[i]], response.data)
             ypred <- eval(v[[i]], message.data)
 
-            if (is.Mesg(y)) {
+            if (is.Mesg(y) && nrow(y) > 0L) {
                 if (!bipartite && max(y$sender) > n)
                     stop("message sender is out of range")
                 if (max(unlist(y$receiver)) > n)
                     stop("message receiver is out of range")
             }
-            if (is.Mesg(ypred)) {
+            if (is.Mesg(ypred) && nrow(ypred) > 0L) {
                 if (!bipartite && max(ypred$sender) > n)
                     stop("message sender is out of range")
                 if (max(unlist(ypred$receiver)) > n)
