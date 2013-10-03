@@ -146,8 +146,15 @@ as.matrix.Mesg <- function(x, ...) {
 summary.Mesg <- function(object, ...) {
     ans <- list()
     ans$n <- nrow(object)
-    ans$nsender <- max(object$sender)
-    ans$nreceiver <- max(unlist(object$receiver))
+
+    if (nrow(object) == 0L) {
+        ans$nsender <- 0L
+        ans$nreceiver <- 0L
+    } else {
+        ans$nsender <- max(object$sender)
+        ans$nreceiver <- max(unlist(object$receiver))
+    }
+
     class(ans) <- "summary.Mesg"
 
     ans
