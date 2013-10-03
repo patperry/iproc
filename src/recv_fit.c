@@ -201,7 +201,7 @@ enum recv_fit_task recv_fit_advance(struct recv_fit *fit)
 			const double *s = newton_search(&fit->opt);
 			size_t ismax = blas_idamax(dim, s, 1) - 1;
 			double smax = fabs(s[ismax]);
-			double stpmax = 4.0 / MAX(1.0, smax);
+			double stpmax = 10.0 / MAX(1.0, smax);
 			double stp = newton_step_size(&fit->opt);
 
 			if (stp <= stpmax) {
