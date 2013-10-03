@@ -132,7 +132,7 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 		const double *s = newton_search(&fit->opt);
 		size_t ismax = blas_idamax(dim, s, 1) - 1;
 		double smax = fabs(s[ismax]);
-		double stpmax = 4.0 / MAX(1.0, smax);
+		double stpmax = 10.0 / MAX(1.0, smax);
 		double stp = newton_step_size(&fit->opt);
 
 		if (stp <= stpmax) {
@@ -142,7 +142,32 @@ enum recv_fit_task recv_fit_start(struct recv_fit *fit,
 		fit->task = newton_step(&fit->opt, NAN, NULL);
 	}
 
-	return RECV_FIT_STEP;
+	enum recv_fit_task task;
+
+	switch (fit->task) {
+		case NEWTON_CONV:
+			task = RECV_FIT_CONV;
+			break;
+		case NEWTON_STEP:
+		case NEWTON_HESS:
+			task = RECV_FIT_STEP;
+			break;
+		case NEWTON_ERR_LNSRCH:
+			task = RECV_FIT_ERR_LNSRCH;
+			break;
+		case NEWTON_ERR_XTOL:
+			task = RECV_FIT_ERR_XTOL;
+			break;
+		case NEWTON_ERR_HESS:
+			task = RECV_FIT_ERR_IMAT;
+			break;
+		case NEWTON_ERR_DOM:
+			assert(0);
+			task = RECV_FIT_ERR_DOM;
+			break;
+	}
+
+	return task;
 }
 
 
