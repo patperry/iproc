@@ -111,7 +111,7 @@ vcov.recv.model <- function(object, ...)
     K.s <- K / scale
     cov.s <- solve(K.s) # Note: result is not exactly symmetric due to numerical error
     cov.s <- 0.5 * cov.s + 0.5 * t(cov.s)
-    cov <- cov.s * scale
+    cov <- cov.s / scale
     cov <- cov[i, i, drop=FALSE]
     rownames(cov) <- rownames(imat)
     colnames(cov) <- colnames(imat)
